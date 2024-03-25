@@ -27,13 +27,10 @@ import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiResponseWriter;
 import org.labkey.api.action.ExtendedApiQueryResponse;
 import org.labkey.api.action.NullSafeBindException;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
@@ -170,7 +167,6 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         addExpObjectMethod();
     }
 
-
     @Override
     public ColumnInfo getExpObjectColumn()
     {
@@ -178,7 +174,6 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         ret.setConceptURI(BuiltInColumnTypes.EXPOBJECTID_CONCEPT_URI);
         return ret;
     }
-
 
     public List<String> addFileColumns(boolean isFilesTable)
     {
@@ -235,8 +230,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
     @Override
     public QueryUpdateService getUpdateService()
     {
-        FileContentService svc = FileContentService.get();
-        return svc.getFilePropsUpdateService(this, getContainer());
+        return FileContentService.get().getFilePropsUpdateService(this, getContainer());
     }
 
     @Override
@@ -357,70 +351,35 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
             case DownloadLink:
             {
                 var result = wrapColumn(alias, _rootTable.getColumn("RowId"));
-                result.setDisplayColumnFactory(new DisplayColumnFactory()
-                {
-                    @Override
-                    public DisplayColumn createRenderer(ColumnInfo colInfo)
-                    {
-                        return new DownloadFileDataLinkColumn(colInfo);
-                    }
-                });
+                result.setDisplayColumnFactory(DownloadFileDataLinkColumn::new);
                 result.setDescription("A link to download the file");
                 return result;
             }
             case ViewFileLink:
             {
                 var result = wrapColumn(alias, _rootTable.getColumn("RowId"));
-                result.setDisplayColumnFactory(new DisplayColumnFactory()
-                {
-                    @Override
-                    public DisplayColumn createRenderer(ColumnInfo colInfo)
-                    {
-                        return new ViewFileDataLinkColumn(colInfo);
-                    }
-                });
+                result.setDisplayColumnFactory(ViewFileDataLinkColumn::new);
                 result.setDescription("A link to view the file directly on the web site");
                 return result;
             }
             case ContentLink:
             {
                 var result = wrapColumn(alias, _rootTable.getColumn("RowId"));
-                result.setDisplayColumnFactory(new DisplayColumnFactory()
-                {
-                    @Override
-                    public DisplayColumn createRenderer(ColumnInfo colInfo)
-                    {
-                        return new ViewContentDataLinkColumn(colInfo);
-                    }
-                });
+                result.setDisplayColumnFactory(ViewContentDataLinkColumn::new);
                 result.setDescription("A link to view the imported contents of the file on the web site");
                 return result;
             }
             case Thumbnail:
             {
                 var result = wrapColumn(alias, _rootTable.getColumn("RowId"));
-                result.setDisplayColumnFactory(new DisplayColumnFactory()
-                {
-                    @Override
-                    public DisplayColumn createRenderer(ColumnInfo colInfo)
-                    {
-                        return new ThumbnailDataLinkColumn(colInfo);
-                    }
-                });
+                result.setDisplayColumnFactory(ThumbnailDataLinkColumn::new);
                 result.setDescription("A popup thumbnail of the file if it is an image");
                 return result;
             }
             case InlineThumbnail:
             {
                 var result = wrapColumn(alias, _rootTable.getColumn("RowId"));
-                result.setDisplayColumnFactory(new DisplayColumnFactory()
-                {
-                    @Override
-                    public DisplayColumn createRenderer(ColumnInfo colInfo)
-                    {
-                        return new InlineThumbnailDataLinkColumn(colInfo);
-                    }
-                });
+                result.setDisplayColumnFactory(InlineThumbnailDataLinkColumn::new);
                 result.setDescription("An inline thumbnail of the file if it is an image");
                 return result;
             }
@@ -429,35 +388,28 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
                 var result = wrapColumn(alias, _rootTable.getColumn("RowId"));
                 result.setTextAlign("left");
                 result.setJdbcType(JdbcType.VARCHAR);
-                result.setDisplayColumnFactory(new DisplayColumnFactory()
+                result.setDisplayColumnFactory(colInfo -> new ExpDataFileColumn(colInfo)
                 {
                     @Override
-                    public DisplayColumn createRenderer(ColumnInfo colInfo)
+                    protected void renderData(Writer out, ExpData data) throws IOException
                     {
-                        return new ExpDataFileColumn(colInfo)
-                        {
-                            @Override
-                            protected void renderData(Writer out, ExpData data) throws IOException
-                            {
-                                String val = ((String)getJsonValue(data));
-                                if (val != null)
-                                    out.write(val);
-                            }
+                        String val = ((String)getJsonValue(data));
+                        if (val != null)
+                            out.write(val);
+                    }
 
-                            @Override
-                            public Object getJsonValue(ExpData data)
-                            {
-                                if (data == null || data.getFile() == null)
-                                    return "";
-                                else if (!data.getFile().exists())
-                                    return "File Not Found";
-                                else
-                                {
-                                    long size = data.getFile().length();
-                                    return FileUtils.byteCountToDisplaySize(size);
-                                }
-                            }
-                        };
+                    @Override
+                    public Object getJsonValue(ExpData data)
+                    {
+                        if (data == null || data.getFile() == null)
+                            return "";
+                        else if (!data.getFile().exists())
+                            return "File Not Found";
+                        else
+                        {
+                            long size = data.getFile().length();
+                            return FileUtils.byteCountToDisplaySize(size);
+                        }
                     }
                 });
                 result.setUserEditable(false);
@@ -471,31 +423,24 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
                 var result = wrapColumn(alias, _rootTable.getColumn("RowId"));
                 result.setJdbcType(JdbcType.BOOLEAN);
                 result.setTextAlign("left");
-                result.setDisplayColumnFactory(new DisplayColumnFactory()
+                result.setDisplayColumnFactory(colInfo -> new ExpDataFileColumn(colInfo)
                 {
                     @Override
-                    public DisplayColumn createRenderer(ColumnInfo colInfo)
+                    protected void renderData(Writer out, ExpData data) throws IOException
                     {
-                        return new ExpDataFileColumn(colInfo)
-                        {
-                            @Override
-                            protected void renderData(Writer out, ExpData data) throws IOException
-                            {
-                                Boolean val = (Boolean)getJsonValue(data);
-                                out.write(val.toString());
-                            }
+                        Boolean val = (Boolean)getJsonValue(data);
+                        out.write(val.toString());
+                    }
 
-                            @Override
-                            protected Object getJsonValue(ExpData data)
-                            {
-                                if (data == null)
-                                {
-                                    return false;
-                                }
-                                Path path = data.getFilePath();
-                                return path != null && Files.exists(path);
-                            }
-                        };
+                    @Override
+                    protected Object getJsonValue(ExpData data)
+                    {
+                        if (data == null)
+                        {
+                            return false;
+                        }
+                        Path path = data.getFilePath();
+                        return path != null && Files.exists(path);
                     }
                 });
                 result.setUserEditable(false);
@@ -508,26 +453,19 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
                 var result = wrapColumn(alias, _rootTable.getColumn("RowId"));
                 result.setJdbcType(JdbcType.VARCHAR);
                 result.setTextAlign("left");
-                result.setDisplayColumnFactory(new DisplayColumnFactory()
+                result.setDisplayColumnFactory(colInfo -> new ExpDataFileColumn(colInfo)
                 {
                     @Override
-                    public DisplayColumn createRenderer(ColumnInfo colInfo)
+                    protected void renderData(Writer out, ExpData data) throws IOException
                     {
-                        return new ExpDataFileColumn(colInfo)
-                        {
-                            @Override
-                            protected void renderData(Writer out, ExpData data) throws IOException
-                            {
-                                Object val = getJsonValue(data);
-                                out.write(val == null ? "" : PageFlowUtil.filter(val.toString()));
-                            }
+                        Object val = getJsonValue(data);
+                        out.write(val == null ? "" : PageFlowUtil.filter(val.toString()));
+                    }
 
-                            @Override
-                            protected Object getJsonValue(ExpData data)
-                            {
-                                return data.getFile() == null ? null : FileUtil.getExtension(data.getFile());
-                            }
-                        };
+                    @Override
+                    protected Object getJsonValue(ExpData data)
+                    {
+                        return data.getFile() == null ? null : FileUtil.getExtension(data.getFile());
                     }
                 });
                 result.setUserEditable(false);
@@ -539,14 +477,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
             {
                 var result = wrapColumn(alias, _rootTable.getColumn("RowId"));
                 result.setLabel("View/Download");
-                result.setDisplayColumnFactory(new DisplayColumnFactory()
-                {
-                    @Override
-                    public DisplayColumn createRenderer(ColumnInfo colInfo)
-                    {
-                        return new ViewOrDownloadDataColumn(colInfo);
-                    }
-                });
+                result.setDisplayColumnFactory(ViewOrDownloadDataColumn::new);
                 result.setDescription("Displays links to either download the file or view directly on the web site");
                 return result;
             }
@@ -556,14 +487,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
                 result.setJdbcType(JdbcType.VARCHAR);
                 result.setLabel("WebDAV URL");
                 result.setDescription("This is the full WebDAV URL to this file");
-                result.setDisplayColumnFactory(new DisplayColumnFactory()
-                {
-                    @Override
-                    public DisplayColumn createRenderer(ColumnInfo colInfo)
-                    {
-                        return new WebDavUrlColumn(colInfo, false);
-                    }
-                });
+                result.setDisplayColumnFactory(colInfo -> new WebDavUrlColumn(colInfo, false));
                 return result;
             }
             case WebDavUrlRelative:
@@ -572,14 +496,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
                 result.setJdbcType(JdbcType.VARCHAR);
                 result.setLabel("Relative WebDAV URL");
                 result.setDescription("This is the WebDAV path of this file, relative to the file root of this container");
-                result.setDisplayColumnFactory(new DisplayColumnFactory()
-                {
-                    @Override
-                    public DisplayColumn createRenderer(ColumnInfo colInfo)
-                    {
-                        return new WebDavUrlColumn(colInfo, true);
-                    }
-                });
+                result.setDisplayColumnFactory(colInfo -> new WebDavUrlColumn(colInfo, true));
                 return result;
             }
             case Generated:
@@ -592,7 +509,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
                 return createLineageColumn(this, alias, true, false);
 
             case Properties:
-                return (BaseColumnInfo) createPropertiesColumn(alias);
+                return createPropertiesColumn(alias);
 
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
@@ -723,7 +640,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         return doAdd(ret);
     }
 
-    private class ThumbnailDataLinkColumn extends ViewFileDataLinkColumn
+    private static class ThumbnailDataLinkColumn extends ViewFileDataLinkColumn
     {
         public ThumbnailDataLinkColumn(ColumnInfo colInfo)
         {
@@ -737,7 +654,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         }
     }
 
-    private class InlineThumbnailDataLinkColumn extends ViewFileDataLinkColumn
+    private static class InlineThumbnailDataLinkColumn extends ViewFileDataLinkColumn
     {
         public InlineThumbnailDataLinkColumn(ColumnInfo colInfo)
         {
@@ -751,7 +668,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         }
     }
 
-    private class DownloadFileDataLinkColumn extends DataLinkColumn
+    private static class DownloadFileDataLinkColumn extends DataLinkColumn
     {
         public DownloadFileDataLinkColumn(ColumnInfo colInfo)
         {
@@ -765,7 +682,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         }
     }
 
-    private class ViewFileDataLinkColumn extends DataLinkColumn
+    private static class ViewFileDataLinkColumn extends DataLinkColumn
     {
         public ViewFileDataLinkColumn(ColumnInfo colInfo)
         {
@@ -779,7 +696,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         }
     }
 
-    private class ViewContentDataLinkColumn extends DataLinkColumn
+    private static class ViewContentDataLinkColumn extends DataLinkColumn
     {
         public ViewContentDataLinkColumn(ColumnInfo colInfo)
         {
@@ -793,7 +710,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         }
     }
 
-    private class ViewOrDownloadDataColumn extends DataLinkColumn
+    private static class ViewOrDownloadDataColumn extends DataLinkColumn
     {
         public ViewOrDownloadDataColumn (ColumnInfo colInfo)
         {

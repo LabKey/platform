@@ -335,7 +335,7 @@ describe('Move Sources', () => {
 
         it('error, requires insert perm in targetContainer', async () => {
             // Arrange
-            const sourceRowId = await _createSource('sub1-notmoved-2', subfolder1Options);
+            const sourceRowId = await _createSource('sub1-notMoved-3', subfolder1Options);
 
             // Act
             const response = await server.post('query', 'moveRows.api', {

@@ -58,7 +58,16 @@ public class AmountDataColumn extends DataColumn
 
     private Object convertToDisplayUnits(RenderContext ctx)
     {
-        Double storedAmount = (Double) ctx.get(_amountField);
+        Double storedAmount;
+        Object amountObj = ctx.get(_amountField);
+        // Issue 48500: For the MultiValuedDisplayColumn this may be an empty string when the actual value is null
+        if (amountObj instanceof String)
+            if (StringUtils.isEmpty((String) amountObj))
+                storedAmount = null;
+            else
+                storedAmount = Double.parseDouble((String) amountObj);
+        else
+            storedAmount = (Double) amountObj;
         String sampleTypeUnitsStr = (String) ctx.get(_defaultUnitsField);
         Measurement.Unit sampleTypeUnit = null;
         if (!StringUtils.isEmpty(sampleTypeUnitsStr))

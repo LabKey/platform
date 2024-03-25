@@ -57,11 +57,94 @@ import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.*;
+import org.labkey.api.data.BeanObjectFactory;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ConvertHelper;
+import org.labkey.api.data.DatabaseCache;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbSequence;
+import org.labkey.api.data.DbSequenceManager;
+import org.labkey.api.data.Filter;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.ObjectFactory;
+import org.labkey.api.data.Parameter;
+import org.labkey.api.data.ParameterMapStatement;
+import org.labkey.api.data.RemapCache;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.TempTableTracker;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.defaults.DefaultValueService;
-import org.labkey.api.exp.*;
-import org.labkey.api.exp.api.*;
+import org.labkey.api.exp.AbstractParameter;
+import org.labkey.api.exp.DomainNotFoundException;
+import org.labkey.api.exp.ExperimentDataHandler;
+import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.ExperimentProtocolHandler;
+import org.labkey.api.exp.ExperimentRunListView;
+import org.labkey.api.exp.ExperimentRunType;
+import org.labkey.api.exp.ExperimentRunTypeSource;
+import org.labkey.api.exp.Handler;
+import org.labkey.api.exp.Identifiable;
+import org.labkey.api.exp.IdentifiableBase;
+import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.LsidManager;
+import org.labkey.api.exp.LsidType;
+import org.labkey.api.exp.ObjectProperty;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.OntologyObject;
+import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.ProtocolApplicationParameter;
+import org.labkey.api.exp.ProtocolParameter;
+import org.labkey.api.exp.TemplateInfo;
+import org.labkey.api.exp.XarContext;
+import org.labkey.api.exp.XarFormatException;
+import org.labkey.api.exp.XarSource;
+import org.labkey.api.exp.api.ColumnExporter;
+import org.labkey.api.exp.api.DataClassDomainKindProperties;
+import org.labkey.api.exp.api.DataType;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpDataClass;
+import org.labkey.api.exp.api.ExpDataProtocolInput;
+import org.labkey.api.exp.api.ExpDataRunInput;
+import org.labkey.api.exp.api.ExpExperiment;
+import org.labkey.api.exp.api.ExpLineage;
+import org.labkey.api.exp.api.ExpLineageEdge;
+import org.labkey.api.exp.api.ExpLineageOptions;
+import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpMaterialProtocolInput;
+import org.labkey.api.exp.api.ExpMaterialRunInput;
+import org.labkey.api.exp.api.ExpObject;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpProtocolApplication;
+import org.labkey.api.exp.api.ExpProtocolInput;
+import org.labkey.api.exp.api.ExpProtocolInputCriteria;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExpRunAttachmentParent;
+import org.labkey.api.exp.api.ExpRunEditor;
+import org.labkey.api.exp.api.ExpRunItem;
+import org.labkey.api.exp.api.ExpSampleType;
+import org.labkey.api.exp.api.ExperimentJSONConverter;
+import org.labkey.api.exp.api.ExperimentListener;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.NameExpressionOptionService;
+import org.labkey.api.exp.api.ObjectReferencer;
+import org.labkey.api.exp.api.ProtocolImplementation;
+import org.labkey.api.exp.api.ProvenanceService;
+import org.labkey.api.exp.api.SampleTypeService;
+import org.labkey.api.exp.api.SimpleRunRecord;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
@@ -116,6 +199,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Dataset;
@@ -1341,9 +1425,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public ExpMaterialTable createMaterialTable(String name, UserSchema schema, ContainerFilter cf)
+    public ExpMaterialTable createMaterialTable(UserSchema schema, ContainerFilter cf, @Nullable ExpSampleType sampleType)
     {
-        return new ExpMaterialTableImpl(name, schema, cf);
+        return new ExpMaterialTableImpl(schema, cf, sampleType);
     }
 
     @Override
@@ -2798,7 +2882,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public SQLFragment generateExperimentTreeSQL(SQLFragment lsidsFrag, ExpLineageOptions options)
+    public @NotNull SQLFragment generateExperimentTreeSQL(SQLFragment lsidsFrag, ExpLineageOptions options)
     {
         SQLFragment sqlf = new SQLFragment();
         Pair<String,String> tokens = getRunGraphCommonTableExpressions(sqlf, lsidsFrag, options);
@@ -6613,7 +6697,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     public void savePropertyCollection(Map<String, ObjectProperty> propMap, String ownerLSID, Container container, boolean clearExisting) throws SQLException
     {
-        if (propMap.size() == 0)
+        if (propMap.isEmpty())
             return;
         ObjectProperty[] props = propMap.values().toArray(new ObjectProperty[0]);
         // Todo - make this more efficient - don't delete all the old ones if they're the same
@@ -6669,9 +6753,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     /** @return all the Data objects from this run */
-    private List<ExpData> ensureSimpleExperimentRunParameters(Collection<? extends ExpMaterial> inputMaterials,
-                                                     Collection<? extends ExpData> inputDatas, Collection<ExpMaterial> outputMaterials,
-                                                     Collection<ExpData> outputDatas, Collection<ExpData> transformedDatas, User user)
+    private @NotNull List<ExpData> ensureSimpleExperimentRunParameters(
+        Collection<? extends ExpMaterial> inputMaterials,
+        Collection<? extends ExpData> inputDatas,
+        Collection<ExpMaterial> outputMaterials,
+        Collection<ExpData> outputDatas,
+        Collection<ExpData> transformedDatas,
+        User user
+    )
     {
         // Save all the input and output objects to make sure they've been inserted
         try
@@ -6708,24 +6797,35 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public ExpRun saveSimpleExperimentRun(ExpRun run, Map<? extends ExpMaterial, String> inputMaterials, Map<? extends ExpData, String> inputDatas, Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas, Map<ExpData, String> transformedDatas, ViewBackgroundInfo info, Logger log, boolean loadDataFiles) throws ExperimentException
+    public ExpRun saveSimpleExperimentRun(
+        ExpRun run,
+        Map<? extends ExpMaterial, String> inputMaterials,
+        Map<? extends ExpData, String> inputDatas, 
+        Map<ExpMaterial, String> outputMaterials,
+        Map<ExpData, String> outputDatas, 
+        Map<ExpData, String> transformedDatas, 
+        ViewBackgroundInfo info, 
+        Logger log, 
+        boolean loadDataFiles
+    ) throws ExperimentException
     {
         return saveSimpleExperimentRun(run, inputMaterials, inputDatas, outputMaterials, outputDatas, transformedDatas, info, log, loadDataFiles, null, null);
     }
 
     @Override
-    public ExpRun saveSimpleExperimentRun(ExpRun baseRun,
-                                          Map<? extends ExpMaterial, String> inputMaterials,
-                                          Map<? extends ExpData, String> inputDatas,
-                                          Map<ExpMaterial, String> outputMaterials,
-                                          Map<ExpData, String> outputDatas,
-                                          Map<ExpData, String> transformedDatas,
-                                          ViewBackgroundInfo info,
-                                          @NotNull Logger log,
-                                          boolean loadDataFiles,
-                                          @Nullable Set<String> runInputLsids,
-                                          @Nullable Set<Pair<String, String>> finalOutputLsids)
-            throws ExperimentException
+    public ExpRun saveSimpleExperimentRun(
+        ExpRun baseRun,
+        Map<? extends ExpMaterial, String> inputMaterials,
+        Map<? extends ExpData, String> inputDatas,
+        Map<ExpMaterial, String> outputMaterials,
+        Map<ExpData, String> outputDatas,
+        Map<ExpData, String> transformedDatas,
+        ViewBackgroundInfo info,
+        @NotNull Logger log,
+        boolean loadDataFiles,
+        @Nullable Set<String> runInputLsids,
+        @Nullable Set<Pair<String, String>> finalOutputLsids
+    ) throws ExperimentException
     {
         ExpRunImpl run = (ExpRunImpl)baseRun;
 
@@ -9001,19 +9101,83 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return count;
     }
 
+    private static TableInfo getTableInfo(String schemaName)
+    {
+        // 'samples' | 'exp.data' | 'assay'
+        if (SamplesSchema.SCHEMA_NAME.equalsIgnoreCase(schemaName))
+            return ExperimentService.get().getTinfoMaterial();
+        else if ("exp.data".equalsIgnoreCase(schemaName))
+            return  ExperimentService.get().getTinfoData();
+        else if (AssaySchema.NAME.equalsIgnoreCase(schemaName))
+            return ExperimentService.get().getTinfoExperimentRun();
+        else
+            return null;
+    }
+
+    @Override
+    @Nullable
+    public Collection<Integer> getIdsNotPermitted(@NotNull User user, @NotNull Collection<Integer> rowIds, @NotNull String schemaName, @Nullable Class<? extends Permission> permissionClass)
+    {
+        if (permissionClass == null)
+            return null;
+
+        // get the set of containers involved and find the ones the user does not have requisite permissions to
+        List<Container> containers = getUniqueContainers(rowIds, schemaName);
+        if (containers == null)
+            return null;
+
+        List<Container> notPermittedContainers = containers.stream().filter(container -> !container.hasPermission(user, permissionClass)).toList();
+        if (notPermittedContainers.isEmpty())
+            return Collections.emptyList();
+
+        // select the data where the containers are in the notPermitted set
+        TableInfo tableInfo = getTableInfo(schemaName);
+        if (tableInfo == null)
+            return null;
+
+        DbSchema expSchema = DbSchema.get("exp", DbSchemaType.Module);
+        SqlDialect dialect = expSchema.getSqlDialect();
+
+        SQLFragment notPermittedIdsSql = new SQLFragment()
+                .append(" SELECT RowId FROM ")
+                .append(tableInfo, "t")
+                .append("\nWHERE Container  ");
+        dialect.appendInClauseSql(notPermittedIdsSql, notPermittedContainers.stream().map(Container::getEntityId).toList());
+        notPermittedIdsSql
+                .append("\nAND RowId ");
+        dialect.appendInClauseSql(notPermittedIdsSql, rowIds);
+        return new SqlSelector(expSchema, notPermittedIdsSql).getArrayList(Integer.class);
+    }
+
+    public static List<Container> getUniqueContainers(Collection<Integer> rowIds, String schemaName)
+    {
+        DbSchema expSchema = DbSchema.get("exp", DbSchemaType.Module);
+        SqlDialect dialect = expSchema.getSqlDialect();
+
+        TableInfo tableInfo = getTableInfo(schemaName);
+        if (tableInfo == null)
+            return null;
+
+        SQLFragment containerSql = new SQLFragment()
+                .append(" SELECT c.EntityId FROM\n")
+                .append("  (SELECT DISTINCT container FROM ")
+                .append(tableInfo, "t")
+                .append("\nWHERE RowId ");
+        dialect.appendInClauseSql(containerSql, rowIds);
+        containerSql.append(") t1\n")
+                .append("  JOIN core.containers c ON t1.container = c.entityId");
+        List<String> containerIds = new SqlSelector(expSchema, containerSql).getArrayList(String.class);
+        return containerIds.stream().map(ContainerManager::getForId).toList();
+    }
+
+
     public static Pair<Integer, Integer> getCurrentAndCrossFolderDataCount(Collection<Integer> rowIds, String dataType, Container container)
     {
         DbSchema expSchema = DbSchema.get("exp", DbSchemaType.Module);
         SqlDialect dialect = expSchema.getSqlDialect();
 
-        TableInfo tableInfo;
-        if ("sample".equalsIgnoreCase(dataType))
-            tableInfo = ExperimentService.get().getTinfoMaterial();
-        else if ("data".equalsIgnoreCase(dataType))
-            tableInfo = ExperimentService.get().getTinfoData();
-        else if ("assayrun".equalsIgnoreCase(dataType))
-            tableInfo = ExperimentService.get().getTinfoExperimentRun();
-        else
+        TableInfo tableInfo = getTableInfo(dataType);
+        if (tableInfo == null)
             return null;
 
         SQLFragment currentFolderCountSql = new SQLFragment()

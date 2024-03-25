@@ -177,7 +177,6 @@ abstract public class ExpTableImpl<C extends Enum>
             }
         }
 
-
         return result;
     }
 
@@ -316,8 +315,8 @@ abstract public class ExpTableImpl<C extends Enum>
         if (perm == ReadPermission.class || getUpdateService() != null)
         {
             Set<Role> roles = null;
-            if (_userSchema instanceof UserSchema.HasContextualRoles)
-                roles = ((UserSchema.HasContextualRoles)_userSchema).getContextualRoles();
+            if (_userSchema instanceof UserSchema.HasContextualRoles contextualRolesSchema)
+                roles = contextualRolesSchema.getContextualRoles();
             return isAllowedPermission(perm) && _userSchema.getContainer().hasPermission(user, perm, roles);
         }
         return false;
@@ -367,7 +366,6 @@ abstract public class ExpTableImpl<C extends Enum>
      * Create a hidden column as a fake lookup to include all columns in the domain.
      * @param domain The domain to add columns from
      * @param lookupColName The column name
-     * @return
      */
     protected MutableColumnInfo addDomainColumns(Domain domain, @NotNull String lookupColName)
     {
@@ -396,7 +394,6 @@ abstract public class ExpTableImpl<C extends Enum>
             col.setDescription("Properties from " + domain.getLabel(getContainer()));
         }
     }
-
 
     @Override
     public Domain getDomain()
