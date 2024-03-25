@@ -137,7 +137,6 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
         return o;
     }
 
-
     private ExpRun getRun(Map<String, Object> row, User user, Class<? extends Permission> perm) throws InvalidKeyException
     {
         int dataId = ((Number) row.get("DataId")).intValue();
@@ -159,9 +158,17 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
     }
 
     @Override
-    protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRowMap, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+    protected Map<String, Object> deleteRow(
+        User user,
+        Container container,
+        Map<String, Object> oldRowMap,
+        @Nullable Map<Enum, Object> configParameters,
+        @Nullable Map<String, Object> extraScriptContext
+    ) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         ExpRun run = getRun(oldRowMap, user, DeletePermission.class);
+
+        AssayService.get().onBeforeAssayResultDelete(container, user, run, oldRowMap);
 
         TableInfo datatableInfo = this.getQueryTable();
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("run"), run.getRowId());
@@ -178,11 +185,10 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
         {
             String objectLsid = dataObjectMap.get("LSID").toString();
             OntologyObject objectToDelete = OntologyManager.getOntologyObject(container, objectLsid);
-            ProvenanceService pvs = ProvenanceService.get();
 
             if (null != objectToDelete)
             {
-                pvs.deleteObjectProvenance(objectToDelete.getObjectId());
+                ProvenanceService.get().deleteObjectProvenance(objectToDelete.getObjectId());
                 OntologyManager.deleteOntologyObject(objectLsid, container, false);
             }
         }
@@ -190,18 +196,17 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
         return result;
     }
 
-    private StringBuilder appendPropertyIfChanged(StringBuilder sb, String label, Object oldValue, Object newValue)
+    private void appendPropertyIfChanged(StringBuilder sb, String label, Object oldValue, Object newValue)
     {
-        if (!Objects.equals(oldValue, newValue))
-        {
-            sb.append(" ");
-            sb.append(label);
-            sb.append(" changed from ");
-            sb.append(oldValue == null ? "blank" : "'" + oldValue + "'");
-            sb.append(" to ");
-            sb.append(newValue == null ? "blank" : "'" + newValue + "'");
-            sb.append(".");
-        }
-        return sb;
+        if (Objects.equals(oldValue, newValue))
+            return;
+
+        sb.append(" ");
+        sb.append(label);
+        sb.append(" changed from ");
+        sb.append(oldValue == null ? "blank" : "'" + oldValue + "'");
+        sb.append(" to ");
+        sb.append(newValue == null ? "blank" : "'" + newValue + "'");
+        sb.append(".");
     }
 }

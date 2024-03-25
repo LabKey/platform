@@ -35,19 +35,20 @@ import java.util.Set;
 public class PlateSchema extends SimpleUserSchema
 {
     public static final String SCHEMA_NAME = "plate";
-    public static final String SCHEMA_DESCR = "Contains data about defined plates";
+    private static final String DESCRIPTION = "Contains data about defined plates";
 
     private static final Set<String> AVAILABLE_TABLES = new CaseInsensitiveTreeSet(List.of(
-            PlateTable.NAME,
-            WellGroupTable.NAME,
-            WellTable.NAME,
-            PlateSetTable.NAME,
-            PlateTypeTable.NAME
+        HitTable.NAME,
+        PlateTable.NAME,
+        PlateSetTable.NAME,
+        PlateTypeTable.NAME,
+        WellTable.NAME,
+        WellGroupTable.NAME
     ));
 
     public PlateSchema(User user, Container container)
     {
-        super(SCHEMA_NAME, SCHEMA_DESCR, user, container, AssayDbSchema.getInstance().getSchema(),
+        super(SCHEMA_NAME, DESCRIPTION, user, container, AssayDbSchema.getInstance().getSchema(),
                 null, AVAILABLE_TABLES, null);
     }
 
@@ -60,17 +61,19 @@ public class PlateSchema extends SimpleUserSchema
     @Override
     public TableInfo createTable(String name, ContainerFilter cf)
     {
-        if (name.equalsIgnoreCase(PlateTable.NAME))
+        if (PlateTable.NAME.equalsIgnoreCase(name))
             return new PlateTable(this, cf).init();
-        if (name.equalsIgnoreCase(WellGroupTable.NAME))
-            return new WellGroupTable(this, cf).init();
-        if (name.equalsIgnoreCase(WellTable.NAME))
+        if (WellTable.NAME.equalsIgnoreCase(name))
             return new WellTable(this, cf).init();
-        if (name.equalsIgnoreCase(PlateSetTable.NAME))
+        if (PlateSetTable.NAME.equalsIgnoreCase(name))
             return new PlateSetTable(this, cf).init();
-        if (name.equalsIgnoreCase(PlateTypeTable.NAME))
+        if (PlateTypeTable.NAME.equalsIgnoreCase(name))
             return new PlateTypeTable(this, cf).init();
-        if (name.equalsIgnoreCase(WellTable.WELL_PROPERTIES_TABLE))
+        if (HitTable.NAME.equalsIgnoreCase(name))
+            return new HitTable(this, cf, false).init();
+        if (WellGroupTable.NAME.equalsIgnoreCase(name))
+            return new WellGroupTable(this, cf).init();
+        if (WellTable.WELL_PROPERTIES_TABLE.equalsIgnoreCase(name))
         {
             Domain domain = PlateManager.get().getPlateMetadataDomain(getContainer(), getUser());
             if (domain != null)

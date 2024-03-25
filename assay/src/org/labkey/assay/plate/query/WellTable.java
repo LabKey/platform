@@ -62,7 +62,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
     public static final String WELL_PROPERTIES_TABLE = "WellProperties";
     private static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
     private static final Set<String> ignoredColumns = new CaseInsensitiveHashSet();
-    private Map<FieldKey, ColumnInfo> _provisionedFieldMap = new HashMap<>();
+    private final Map<FieldKey, ColumnInfo> _provisionedFieldMap = new HashMap<>();
 
     static
     {
@@ -326,7 +326,8 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
 
     protected static class WellUpdateService extends DefaultQueryUpdateService
     {
-        private TableInfo _provisionedTable;
+        private final TableInfo _provisionedTable;
+
         public WellUpdateService(TableInfo queryTable, TableInfo dbTable, TableInfo provisionedTable)
         {
             super(queryTable, dbTable);
@@ -377,7 +378,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
                         .setKeyColumns(new CaseInsensitiveHashSet("Lsid"));
             }
             dib = LoggingDataIterator.wrap(dib);
-            dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(getQueryTable(), dib, context.getInsertOption(), user, container);
+            dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(wellTable, dib, context.getInsertOption(), user, container);
 
             return dib;
         }

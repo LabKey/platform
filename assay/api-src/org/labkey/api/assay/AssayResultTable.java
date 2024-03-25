@@ -620,7 +620,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         if (perm.equals(ReadPermission.class))
             return _userSchema.getContainer().hasPermission(user, perm, _userSchema.getContextualRoles());
         if (DeletePermission.class.isAssignableFrom(perm) || UpdatePermission.class.isAssignableFrom(perm))
-                return _provider.isEditableResults(_protocol) && _userSchema.getContainer().hasPermission(user, perm);
+            return _provider.isEditableResults(_protocol) && _userSchema.getContainer().hasPermission(user, perm);
         return false;
     }
 

@@ -35,11 +35,6 @@ import org.labkey.api.view.ActionURL;
 import java.sql.SQLException;
 import java.util.List;
 
-/**
- * User: brittp
- * Date: Oct 20, 2006
- * Time: 10:12:22 AM
- */
 public interface PlateService
 {
     int NO_RUNID = -1;
@@ -110,7 +105,6 @@ public interface PlateService
      * @param name The name of the well group.
      * @param type The type of well group to create.
      * @param positions A list of positions which comprises the group.
-     * @return
      */
     WellGroup createWellGroup(Plate plate, String name, WellGroup.Type type, List<Position> positions);
 
@@ -191,7 +185,6 @@ public interface PlateService
 
     /**
      * Returns the list of available plate types.
-     * @return
      */
     @NotNull List<? extends PlateType> getPlateTypes();
 
@@ -261,7 +254,7 @@ public interface PlateService
      * Copies a plate from one container to another.
      * @param source The source plate template
      * @param user The user performing the copy
-     * @param destination The destinatino container
+     * @param destination The destination container
      * @return The copied plate template
      * @throws SQLException Thrown in the event of a database failure.
      * @throws NameConflictException Thrown if the destination container already contains a template by the same name.
