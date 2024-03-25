@@ -73,4 +73,9 @@ public class AssayDbSchema
     {
         return getSchema().getTable("PlateType");
     }
+
+    public TableInfo getTableInfoHit()
+    {
+        return getSchema().getTable("Hit");
+    }
 }

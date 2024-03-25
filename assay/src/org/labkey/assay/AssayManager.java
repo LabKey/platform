@@ -23,6 +23,7 @@ import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.assay.AssayColumnInfoRenderer;
 import org.labkey.api.assay.AssayFlagHandler;
 import org.labkey.api.assay.AssayHeaderLinkProvider;
+import org.labkey.api.assay.AssayListener;
 import org.labkey.api.assay.AssayProtocolSchema;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayResultsHeaderProvider;
@@ -137,6 +138,7 @@ public class AssayManager implements AssayService
 
     private static final Cache<Container, List<ExpProtocol>> PROTOCOL_CACHE = CacheManager.getCache(CacheManager.UNLIMITED, TimeUnit.HOURS.toMillis(1), "Assay protocols");
 
+    private static final List<AssayListener> _listeners = new CopyOnWriteArrayList<>();
     private final List<AssayProvider> _providers = new CopyOnWriteArrayList<>();
     private final List<AssayHeaderLinkProvider> _headerLinkProviders = new CopyOnWriteArrayList<>();
     private final List<AssayResultsHeaderProvider> _resultsHeaderLinkProviders = new CopyOnWriteArrayList<>();
@@ -184,6 +186,13 @@ public class AssayManager implements AssayService
             PipelineService.get().registerPipelineProvider(pipelineProvider);
         }
         provider.registerLsidHandler();
+    }
+
+    @Override
+    public void registerAssayListener(AssayListener listener)
+    {
+        if (listener != null)
+            _listeners.add(listener);
     }
 
     void verifyLegalName(AssayProvider provider)
@@ -428,6 +437,13 @@ public class AssayManager implements AssayService
         }
 
         return null;
+    }
+
+    @Override
+    public void onBeforeAssayResultDelete(Container container, User user, ExpRun run, Map<String, Object> resultRow)
+    {
+        for (AssayListener listener : _listeners)
+            listener.beforeResultDelete(container, user, run, resultRow);
     }
 
     @Override

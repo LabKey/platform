@@ -44,9 +44,6 @@ public class AssayContainerListener implements ContainerListener
     @Override
     public void containerDeleted(Container c, User user)
     {
-        //
-        // plate service
-        //
         PlateManager.get().deleteAllPlateData(c);
 
         // Changing the container tree can change what assays are in scope
