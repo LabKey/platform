@@ -10,7 +10,9 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class PlateSetAssays
 {
+    // A map of Assay Protocol ID to Plate Set IDs
     private Map<Integer, List<Integer>> _protocolPlateSets = Collections.emptyMap();
+    // A map of Plate Set ID to Plate Set
     private Map<Integer, PlateSet> _plateSets = Collections.emptyMap();
 
     public PlateSetAssays()
