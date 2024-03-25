@@ -49,6 +49,7 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.Filter;
+import org.labkey.api.util.SimpleTime;
 
 import java.io.Closeable;
 import java.io.File;
@@ -95,7 +96,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         Date.class,
         Integer.class,
         Double.class,
-        Time.class, // Time should be tried after Integer and Double since 11 and 11.20 will resolve as time
+        SimpleTime.class,
         Boolean.class,
         String.class
     };

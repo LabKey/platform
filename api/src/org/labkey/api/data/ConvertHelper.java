@@ -59,6 +59,7 @@ import org.labkey.api.security.roles.RoleConverter;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.ReturnURLString;
+import org.labkey.api.util.SimpleTime;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.TimeOnlyDate;
@@ -174,6 +175,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
         _register(new URLHelper.Converter(), URLHelper.class);
         _register(new StringExpressionFactory.Converter(), StringExpression.class);
         _register(new LenientTimeOnlyConverter(), TimeOnlyDate.class);
+        _register(new SimpleTimeConverter(), SimpleTime.class);
         _register(new ShowRowsConverter(), ShowRows.class);
         _register(new UserConverter(), User.class);
         _register(new ExpDataFileConverter(), File.class);
@@ -270,6 +272,21 @@ public class ConvertHelper implements PropertyEditorRegistrar
                 return o;
 
             return new TimeOnlyDate(DateUtil.parseSimpleTime(o).getTime());
+        }
+    }
+
+    public static class SimpleTimeConverter implements Converter
+    {
+        @Override
+        public Object convert(Class clss, Object o)
+        {
+            if (null == o)
+                return null;
+
+            if (o instanceof Time || o instanceof TimeOnlyDate)
+                return o;
+
+            return DateUtil.fromTimeString(o.toString(), true, true);
         }
     }
 

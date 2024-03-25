@@ -997,7 +997,17 @@ validNum:       {
         return fromTimeString(s, getCurrentContainer(), strict);
     }
 
+    public static Time fromTimeString(@NotNull String s, boolean strict, boolean simpleParsingOnly /* for example, when infer domain field type*/)
+    {
+        return fromTimeString(s, getCurrentContainer(), strict, simpleParsingOnly);
+    }
+
     public static Time fromTimeString(@NotNull String s, Container container, boolean strict)
+    {
+        return fromTimeString(s, container, strict, false);
+    }
+
+    public static Time fromTimeString(@NotNull String s, Container container, boolean strict, boolean simpleParsingOnly)
     {
         @Nullable String extraTimeParsingPattern = FolderSettingsCache.getExtraTimeParsingPattern(container);
 
@@ -1020,6 +1030,9 @@ validNum:       {
         catch (ConversionException ignored)
         {
         }
+
+        if (simpleParsingOnly)
+            return null;
 
         // try parse as a datetime first, if contains more than one spaces, or if contains space not followed by am/pm
         if  (StringUtils.countMatches(s, " ") > 1
