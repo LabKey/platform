@@ -930,7 +930,6 @@ public class PlateController extends SpringActionController
         }
     }
 
-    @Marshal(Marshaller.Jackson)
     @RequiresPermission(InsertPermission.class)
     public static class CreatePlateSetAction extends MutatingApiAction<CreatePlateSetForm>
     {
@@ -1057,6 +1056,80 @@ public class PlateController extends SpringActionController
                 cf = form.getContainerFilter().create(getViewContext());
 
             return PlateManager.get().getPlateSetLineage(getContainer(), getUser(), form.getSeed(), cf);
+        }
+    }
+
+    public static class HitForm
+    {
+        private int _assayProtocolId;
+        private Boolean _markAsHit;
+        private List<Integer> _resultRowIds;
+        private String _resultSelectionKey;
+
+        public int getAssayProtocolId()
+        {
+            return _assayProtocolId;
+        }
+
+        public void setAssayProtocolId(int assayProtocolId)
+        {
+            _assayProtocolId = assayProtocolId;
+        }
+
+        public Boolean isMarkAsHit()
+        {
+            return _markAsHit;
+        }
+
+        public void setMarkAsHit(Boolean markAsHit)
+        {
+            _markAsHit = markAsHit;
+        }
+
+        public List<Integer> getResultRowIds()
+        {
+            return _resultRowIds;
+        }
+
+        public void setResultRowIds(List<Integer> resultRowIds)
+        {
+            _resultRowIds = resultRowIds;
+        }
+
+        public String getResultSelectionKey()
+        {
+            return _resultSelectionKey;
+        }
+
+        public void setResultSelectionKey(String resultSelectionKey)
+        {
+            _resultSelectionKey = resultSelectionKey;
+        }
+    }
+
+    @Marshal(Marshaller.JSONObject)
+    @RequiresPermission(UpdatePermission.class)
+    public static class HitAction extends MutatingApiAction<HitForm>
+    {
+        @Override
+        public void validateForm(HitForm form, Errors errors)
+        {
+            if (form.isMarkAsHit() == null)
+                errors.reject(ERROR_REQUIRED, "Specifying \"markAsHit\" is required.");
+        }
+
+        @Override
+        public Object execute(HitForm form, BindException errors) throws Exception
+        {
+            PlateManager.get().markHits(
+                getContainer(),
+                getUser(),
+                form.getAssayProtocolId(),
+                form.isMarkAsHit(),
+                form.getResultRowIds(),
+                form.getResultSelectionKey()
+            );
+            return success();
         }
     }
 }

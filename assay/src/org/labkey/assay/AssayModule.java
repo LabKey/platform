@@ -112,7 +112,7 @@ public class AssayModule extends SpringModule
     @Override
     public Double getSchemaVersion()
     {
-        return 24.004;
+        return 24.005;
     }
 
     @Override
@@ -259,6 +259,9 @@ public class AssayModule extends SpringModule
         });
 
         ExperimentService.get().addExperimentListener(new AssayExperimentListener());
+        ExperimentService.get().addExperimentListener(PlateManager.get());
+
+        AssayService.get().registerAssayListener(PlateManager.get());
 
         AdminConsole.addExperimentalFeatureFlag(EXPERIMENTAL_APP_PLATE_SUPPORT,
                 "Plate samples in Biologics", "Plate samples in Biologics for import and analysis.", false);
