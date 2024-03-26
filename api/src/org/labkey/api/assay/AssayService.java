@@ -66,6 +66,8 @@ public interface AssayService
 
     void registerAssayProvider(AssayProvider provider);
 
+    void registerAssayListener(AssayListener listener);
+
     @Nullable
     AssayProvider getProvider(String providerName);
 
@@ -151,7 +153,7 @@ public interface AssayService
      * and ExpBatch will be searched for the configured TargetStudy.
      *
      * @param run                  experiment run
-     * @param protocol             The run's protocol.  If null, the ExpRun.getProcotol() will be used.
+     * @param protocol             The run's protocol.  If null, the ExpRun.getProtocol() will be used.
      * @param provider             The assay provider.  If null, the provider will be found from the protocol.
      * @param targetStudyContainer The target study.  If null, the ExpRun and ExpBatch properties will be searched.
      * @return The resolver.
@@ -233,6 +235,8 @@ public interface AssayService
      * Returns the TableInfo for the given assay domain based on the assay domain ID.
      */
     TableInfo getTableInfoForDomainId(User user, Container container, int domainId, @Nullable ContainerFilter cf);
+
+    void onBeforeAssayResultDelete(Container container, User user, ExpRun run, Map<String, Object> resultRow);
 
     /**
      * Provides a mechanism to check or validate the results for a specified protocol. An instance of ResultsCheckHelper
