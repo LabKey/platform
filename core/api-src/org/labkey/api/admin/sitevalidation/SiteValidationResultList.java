@@ -22,10 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * User: tgaluhn
- * Date: 4/16/2015
- *
- * Top level object to hold a list of SiteValidationResult's, provide helper add/create methods, and filter results on level
+ * Top level object to hold a list of SiteValidationResults, provide helper add/create methods, and filter results on level
  */
 public class SiteValidationResultList
 {
