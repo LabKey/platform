@@ -1070,6 +1070,7 @@ validNum:       {
         }
 
         long time = DateUtil.parseTime(s, strict);
+        // DateUtil.parseTime throws away the timezone part during parsing, need to add offset back
         int timezoneDiffSec = TimeZone.getDefault().getOffset(time);
         return new Time(time - 1000 * timezoneDiffSec);
     }
