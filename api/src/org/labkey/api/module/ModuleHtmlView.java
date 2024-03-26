@@ -23,6 +23,7 @@ import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.util.CspUtils;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JSoupUtil;
 import org.labkey.api.util.Path;
@@ -36,12 +37,10 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.PageConfig;
 import org.w3c.dom.Document;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -227,7 +226,9 @@ public class ModuleHtmlView extends HtmlView
         @Test
         public void testForCspViolations()
         {
+            Collection<String> violations = new LinkedList<>();
             // Inspect every module HTML view for nonce-less script tags and inline event handlers
+
             ModuleLoader.getInstance().getModules().forEach(module -> MODULE_HTML_VIEW_DEFINITION_CACHE.getResourceMap(module).forEach((key, view) -> {
                 HtmlString html = view.getHtml();
                 String source = "<html><body>" + StringUtils.trimToEmpty(html.toString()) + "</body></html>";
@@ -235,48 +236,16 @@ public class ModuleHtmlView extends HtmlView
                 Document doc = JSoupUtil.convertHtmlToDocument(source, false, errors);
                 if (null != doc)
                 {
-                    String viewName = "[" + module.getName() + "] " + key;
-
-                    // Log nonce-less script tags
-                    NodeList nl = doc.getElementsByTagName("script");
-
-                    for (int i = 0; i < nl.getLength(); i++)
-                    {
-                        NamedNodeMap attributes = nl.item(i).getAttributes();
-                        Node nonce = attributes.getNamedItem("nonce");
-                        if (null == nonce)
-                        {
-                            Node src = attributes.getNamedItem("src");
-                            if (null == src)
-                                LOG.info(viewName + ": non-src script tag without a nonce!");
-                        }
-                    }
-
-                    // Log inline event handlers
-                    logInlineEvents(viewName, doc);
+                    CspUtils.enumerateCspViolations(doc, message -> {
+                        String name = "[" + module.getName() + "] " + key;
+                        if (!"[LINCS] views/CustomGCT.html".equals(name)) // TODO: Remove check once this view is fixed
+                            violations.add(name + ": " + message);
+                    });
                 }
             }));
-        }
 
-        private void logInlineEvents(String viewName, Node node)
-        {
-            NamedNodeMap attributes = node.getAttributes();
-            if (null != attributes)
-            {
-                for (int i = 0; i < attributes.getLength(); i++)
-                {
-                    String nodeName = attributes.item(i).getNodeName();
-                    if (nodeName.startsWith("on"))
-                    {
-                        LOG.info(viewName + ": " + nodeName);
-                    }
-                }
-            }
-            NodeList children = node.getChildNodes();
-            for (int i = 0; i < children.getLength(); i++)
-            {
-                logInlineEvents(viewName, children.item(i));
-            }
+            if (!violations.isEmpty())
+                fail("The following CSP violations were detected in module HTML views:\n" + StringUtils.join(violations, "\n"));
         }
     }
 }
