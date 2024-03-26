@@ -7,6 +7,7 @@ import org.labkey.gradle.util.BuildUtils
 // Announcements module manages the "comm" schema, which holds the wiki tables
 dependencies {
    BuildUtils.addLabKeyDependency(project: project, config: "modules", depProjectPath: BuildUtils.getPlatformModuleProjectPath(project.gradle, "announcements"), depProjectConfig: "published", depExtension: "module")
+   BuildUtils.addLabKeyDependency(project: project, config: "implementation", depProjectPath:  BuildUtils.getPlatformModuleProjectPath(project.gradle, "core"), depProjectConfig: 'apiJarFile')
 }
 
 sourceSets {
