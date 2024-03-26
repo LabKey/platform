@@ -1132,4 +1132,54 @@ public class PlateController extends SpringActionController
             return success();
         }
     }
+
+    public static class PlateSetAssaysForm
+    {
+        private ContainerFilter.Type _containerFilter;
+
+        private int _plateSetId;
+
+        public ContainerFilter.Type getContainerFilter()
+        {
+            return _containerFilter;
+        }
+
+        public void setContainerFilter(ContainerFilter.Type containerFilter)
+        {
+            _containerFilter = containerFilter;
+        }
+
+        public int getPlateSetId()
+        {
+            return _plateSetId;
+        }
+
+        public void setPlateSetId(int plateSetId)
+        {
+            _plateSetId = plateSetId;
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public static class AssaysAction extends ReadOnlyApiAction<PlateSetAssaysForm>
+    {
+        @Override
+        public void validateForm(PlateSetAssaysForm form, Errors errors)
+        {
+            if (form.getPlateSetId() <= 0)
+                errors.reject(ERROR_REQUIRED, "\"plateSetId\" is required.");
+        }
+
+        @Override
+        public Object execute(PlateSetAssaysForm form, BindException errors) throws Exception
+        {
+            ContainerFilter cf = null;
+
+            // if an optional container filter is specified
+            if (form.getContainerFilter() != null)
+                cf = form.getContainerFilter().create(getViewContext());
+
+            return PlateManager.get().getPlateSetAssays(getContainer(), getUser(), form.getPlateSetId(), cf);
+        }
+    }
 }
