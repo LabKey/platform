@@ -2004,7 +2004,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return PLATE_NAME_EXPRESSION;
     }
 
-    public record CreatePlateSetPlate(String name, Integer plateType) {}
+    public record CreatePlateSetPlate(String name, Integer plateType, List<Map<String, Object>> data) {}
 
     public PlateSetImpl createPlateSet(
         Container container,
@@ -2059,7 +2059,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                         throw new ValidationException("Failed to create plate set. Plate Type (" + plate.plateType + ") is invalid.");
 
                     // TODO: Write a cheaper plate create/save for multiple plates
-                    createAndSavePlate(container, user, plateType, plate.name, plateSetId, TsvPlateLayoutHandler.TYPE, null);
+                    createAndSavePlate(container, user, plateType, plate.name, plateSetId, TsvPlateLayoutHandler.TYPE, plate.data);
                 }
             }
 
@@ -2588,9 +2588,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
             // Act
             PlateSet plateSet = PlateManager.get().createPlateSet(container, user, plateSetImpl, List.of(
-                new CreatePlateSetPlate("testAccessPlateByIdentifiersFirst", plateType.getRowId()),
-                new CreatePlateSetPlate("testAccessPlateByIdentifiersSecond", plateType.getRowId()),
-                new CreatePlateSetPlate("testAccessPlateByIdentifiersThird", plateType.getRowId())
+                new CreatePlateSetPlate("testAccessPlateByIdentifiersFirst", plateType.getRowId(), null),
+                new CreatePlateSetPlate("testAccessPlateByIdentifiersSecond", plateType.getRowId(), null),
+                new CreatePlateSetPlate("testAccessPlateByIdentifiersThird", plateType.getRowId(), null)
             ), null);
 
             // Assert
