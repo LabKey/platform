@@ -69,10 +69,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/**
- * User: kevink
- * Date: 12/10/12
- */
 public class LinkedSchema extends ExternalSchema
 {
     public static void register()
@@ -82,8 +78,7 @@ public class LinkedSchema extends ExternalSchema
             @Override
             public QuerySchema getSchema(User user, Container container, String name)
             {
-                QueryServiceImpl svc = (QueryServiceImpl)QueryService.get();
-                return svc.getLinkedSchema(user, container, name);
+                return QueryService.get().getLinkedSchema(user, container, name);
             }
 
             @NotNull
