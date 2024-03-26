@@ -123,12 +123,6 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
         _loggedIn = true;
     }
 
-    public static boolean isGuestSession(HttpSession session)
-    {
-        return session.getAttribute(AuthenticatedRequest.GuestSessionMarker.class.getName()) != null;
-    }
-
-
     @Override
     public HttpSession getSession()
     {
