@@ -275,6 +275,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
         }
     }
 
+    // used by DataLoader to infer domain field types
     public static class SimpleTimeConverter implements Converter
     {
         @Override
@@ -286,7 +287,11 @@ public class ConvertHelper implements PropertyEditorRegistrar
             if (o instanceof Time || o instanceof TimeOnlyDate)
                 return o;
 
-            return DateUtil.fromTimeString(o.toString(), true, true);
+            Time parsedTime = DateUtil.fromTimeString(o.toString(), true, true);
+            // must throw error for DataLoader.inferColumnInfo to try a next classesToTest
+            if (parsedTime == null)
+                throw new ConversionException("Cannot convert " + o + " to Time");
+            return parsedTime;
         }
     }
 
