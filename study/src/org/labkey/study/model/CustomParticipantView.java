@@ -15,9 +15,12 @@
  */
 package org.labkey.study.model;
 
+import org.labkey.api.data.Transient;
+import org.labkey.api.module.Module;
 import org.labkey.api.data.Entity;
 import org.labkey.api.module.ModuleHtmlView;
-import org.labkey.api.view.HtmlView;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.Path;
 import org.springframework.web.servlet.ModelAndView;
 
 /**
@@ -26,20 +29,42 @@ import org.springframework.web.servlet.ModelAndView;
  */
 public class CustomParticipantView extends Entity
 {
-    private static int MODULE_PTID_VIEW_ID = -1;
+    private static final int MODULE_PTID_VIEW_ID = -1;
+
+    private String _title;
+
+    // database
     private Integer _rowId;
     private String _body;
+
+    // module view
+    private Module _module;
+    private Path _path;
+
     private boolean _active;
-    private ModelAndView _view = null;
-    
-    public static CustomParticipantView create(ModuleHtmlView moduleView)
+
+    public static CustomParticipantView create(Module module, Path path)
     {
         CustomParticipantView view = new CustomParticipantView();
         view.setRowId(MODULE_PTID_VIEW_ID);
         view.setActive(true);
-        view._view = moduleView;
-
+        view.setModule(module);
+        view._path = path;
         return view;
+    }
+
+    public CustomParticipantView()
+    {
+    }
+
+    public void setModule(Module module)
+    {
+        _module = module;
+    }
+
+    public void setTitle(String title)
+    {
+        _title = title;
     }
 
     public String getBody()
@@ -77,13 +102,14 @@ public class CustomParticipantView extends Entity
         return getRowId() != null && getRowId() == MODULE_PTID_VIEW_ID;
     }
 
+    @Transient
     public ModelAndView getView()
     {
-        return _view != null ? _view : HtmlView.unsafe(_body);
-    }
-
-    public void setView(ModelAndView view)
-    {
-        _view = view;
+        if (null == _module)
+            throw new IllegalStateException("module is not set");
+        /* NOTE: We can't cache this view in this object, because CustomParticipantView is stored in a cache, and HttpView is mutable (e.g. _viewContext). */
+        if (null != _path)
+            return ModuleHtmlView.get(_module, _path);
+        return new ModuleHtmlView(_module, _title, HtmlString.unsafe(getBody()));
     }
 }
