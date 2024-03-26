@@ -25,6 +25,7 @@ import org.labkey.api.assay.plate.WellCustomField;
 import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveLinkedHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -517,14 +518,17 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
     }
 
     @Override
-    public List<Map<String, Object>> parsePlateGrids(Container container, User user, AssayProvider provider, ExpProtocol protocol, Integer plateSetId, File dataFile) throws ExperimentException
+    public List<Map<String, Object>> parsePlateData(
+            Container container,
+            User user,
+            AssayProvider provider,
+            ExpProtocol protocol,
+            Integer plateSetId,
+            File dataFile,
+            List<Map<String, Object>> data,
+            Pair<String, Boolean> plateIdAdded
+    ) throws ExperimentException
     {
-        // NOTE: currently only supporting single measure assay protocols (this will change soon to support multiple measures)
-        List<DomainProperty> measureProperties = provider.getResultsDomain(protocol).getProperties().stream().filter(DomainProperty::isMeasure).collect(Collectors.toList());
-        if (measureProperties.size() != 1)
-            throw new ExperimentException("The assay protocol must have exactly one measure property to support graphical plate layout file parsing.");
-        String measureName = measureProperties.get(0).getName();
-
         // get the ordered list of plates for the plate set
         ContainerFilter cf = PlateManager.get().getPlateContainerFilter(protocol, container, user);
         PlateSet plateSet = PlateManager.get().getPlateSet(cf, plateSetId);
@@ -533,6 +537,100 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         List<Plate> plates = PlateManager.get().getPlatesForPlateSet(plateSet);
         if (plates.isEmpty())
             throw new ExperimentException("No plates were found for the plate set (" + plateSetId + ").");
+
+        if (!data.isEmpty())
+            return parsePlateRows(container, user, provider, protocol, plates, data, plateIdAdded);
+        else
+        {
+            plateIdAdded.setValue(true);
+            return parsePlateGrids(container, user, provider, protocol, plateSet, plates, dataFile);
+        }
+    }
+
+    private List<Map<String, Object>> parsePlateRows(
+            Container container,
+            User user,
+            AssayProvider provider,
+            ExpProtocol protocol,
+            List<Plate> plates,
+            List<Map<String, Object>> data,
+            Pair<String, Boolean> plateIdAdded
+    ) throws ExperimentException
+    {
+        DomainProperty plateProp = provider.getResultsDomain(protocol).getPropertyByName(AssayResultDomainKind.PLATE_COLUMN_NAME);
+        Set<String> importAliases = new CaseInsensitiveHashSet(plateProp.getImportAliasSet());
+        importAliases.add(AssayResultDomainKind.PLATE_COLUMN_NAME);
+
+        // check whether the data rows have plate identifiers
+        String plateIdField = data.get(0).keySet().stream().filter(importAliases::contains).findFirst().orElse(null);
+        boolean hasPlateIdentifiers = plateIdField != null && (data.stream().filter(row -> row.get(plateIdField) != null).findFirst().orElse(null) != null);
+
+        if (!hasPlateIdentifiers)
+        {
+            final String ERROR_MESSAGE = "Unable to automatically assign plate identifiers to the data rows because %s. Please include plate identifiers for the data rows.";
+            plateIdAdded.second = true;
+
+            // verify all plates in the set have the same shape
+            Set<PlateType> types = plates.stream().map(Plate::getPlateType).collect(Collectors.toSet());
+            if (types.size() > 1)
+                throw new ExperimentException(String.format(ERROR_MESSAGE, "the plate set contains different plate types"));
+
+            PlateType type = types.stream().toList().get(0);
+            int plateSize = type.getRows() * type.getColumns();
+            if ((data.size() % plateSize) != 0)
+                throw new ExperimentException(String.format(ERROR_MESSAGE, "the number of rows in the data (" + data.size() + ") does not fit evenly and would result in a plate with partial wells filled"));
+
+            if (data.size() > (plates.size() * plateSize))
+                throw new ExperimentException(String.format(ERROR_MESSAGE, "the number of rows in the data (" + data.size() + ") exceeds the total number of wells available in the plate set (" + (plates.size() * plateSize) + ")"));
+
+            // attempt to add the plate identifier into the data rows in the order that they appear in the plate set
+            List<Map<String, Object>> newData = new ArrayList<>();
+            int rowCount = 0;
+            int curPlate = 0;
+            Set<Position> positions = new HashSet<>();
+            for (Map<String, Object> row : data)
+            {
+                // well location field is required, return it will fail downstream
+                String well = String.valueOf(row.get(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME));
+                if (well == null)
+                    return data;
+
+                if (rowCount++ >= plateSize)
+                {
+                    // move to the next plate in the set
+                    rowCount = 0;
+                    curPlate++;
+                    positions.clear();
+                }
+                Position position = new PositionImpl(null, well);
+                if (positions.contains(position))
+                    throw new ExperimentException(String.format(ERROR_MESSAGE, "there is more than one well referencing the same position in the plate " + position));
+
+                positions.add(position);
+                Map<String, Object> newRow = new HashMap<>(row);
+                newRow.put(AssayResultDomainKind.PLATE_COLUMN_NAME, plates.get(curPlate).getPlateId());
+                newData.add(newRow);
+            }
+            return newData;
+        }
+        return data;
+    }
+
+    private List<Map<String, Object>> parsePlateGrids(
+            Container container,
+            User user,
+            AssayProvider provider,
+            ExpProtocol protocol,
+            PlateSet plateSet,
+            List<Plate> plates,
+            File dataFile
+    ) throws ExperimentException
+    {
+        // NOTE: currently only supporting single measure assay protocols (this will change soon to support multiple measures)
+        List<DomainProperty> measureProperties = provider.getResultsDomain(protocol).getProperties().stream().filter(DomainProperty::isMeasure).collect(Collectors.toList());
+        if (measureProperties.size() != 1)
+            throw new ExperimentException("The assay protocol must have exactly one measure property to support graphical plate layout file parsing.");
+        String measureName = measureProperties.get(0).getName();
 
         // parse the data file for each distinct plate type found in the set of plates for the plateSetId
         ExcelPlateReader plateReader = new ExcelPlateReader();

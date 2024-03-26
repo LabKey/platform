@@ -16,6 +16,7 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.ExperimentalFeatureService;
+import org.labkey.api.util.Pair;
 
 import java.io.File;
 import java.util.HashMap;
@@ -92,7 +93,20 @@ public interface AssayPlateMetadataService
     Map<String, MetadataLayer> parsePlateMetadata(JSONObject json) throws ExperimentException;
     Map<String, MetadataLayer> parsePlateMetadata(File jsonData) throws ExperimentException;
 
-    List<Map<String, Object>> parsePlateGrids(Container container, User user, AssayProvider provider, ExpProtocol protocol, Integer plateSetId, File dataFile) throws ExperimentException;
+    /**
+     * Handles the validation and parsing of the plate data (or data file) including plate graphical formats as
+     * well as cases where plate identifiers have not been supplied.
+     */
+    List<Map<String, Object>> parsePlateData(
+            Container container,
+            User user,
+            AssayProvider provider,
+            ExpProtocol protocol,
+            Integer plateSetId,
+            File dataFile,
+            List<Map<String, Object>> data,
+            Pair<String, Boolean> plateIdAdded
+    ) throws ExperimentException;
 
     /**
      * Returns an import helper to help join assay results data to well data and metadata that is associated
