@@ -13,10 +13,10 @@
     "test-integration": "cross-env NODE_ENV=test jest --ci --runInBand -c test/js/jest.config.integration.js"
   },
   "dependencies": {
-    "@labkey/components": "3.32.2-fb-package-updates-0324.1"
+    "@labkey/components": "3.34.0"
   },
   "devDependencies": {
-    "@labkey/build": "7.2.1-fb-package-updates-0324.0",
+    "@labkey/build": "7.3.0",
     "@labkey/test": "1.4.0",
     "@types/jest": "29.5.12",
     "@types/react": "16.14.59",

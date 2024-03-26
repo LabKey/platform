@@ -12,10 +12,10 @@
     "clean": "rimraf resources/web/assay/gen && rimraf resources/views/gen && rimraf resources/web/gen"
   },
   "dependencies": {
-    "@labkey/components": "3.32.2-fb-package-updates-0324.1"
+    "@labkey/components": "3.34.0"
   },
   "devDependencies": {
-    "@labkey/build": "7.2.1-fb-package-updates-0324.0",
+    "@labkey/build": "7.3.0",
     "@types/jest": "29.5.12",
     "@types/react": "16.14.59",
     "@types/react-dom": "16.9.24"
