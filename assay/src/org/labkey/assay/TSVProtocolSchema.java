@@ -192,7 +192,6 @@ public class TSVProtocolSchema extends AssayProtocolSchema
                         defaultColumns.addAll(plateDefaultColumns);
                     }
                 }
-                setDefaultVisibleColumns(defaultColumns);
 
                 // join to the well table which may have plate metadata
                 ColumnInfo wellLsidCol = getColumn(AssayResultDomainKind.WELL_LSID_COLUMN_NAME);
@@ -223,7 +222,11 @@ public class TSVProtocolSchema extends AssayProtocolSchema
                     plateHitsColumn.setConceptURI("hit-selection");
                     plateHitsColumn.setLabel("Hit Selection");
                     addColumn(plateHitsColumn);
+                    defaultColumns.add(0, plateHitsColumn.getFieldKey());
                 }
+
+                defaultColumns.add(0, FieldKey.fromParts("Well", "SampleId"));
+                setDefaultVisibleColumns(defaultColumns);
             }
         }
     }
