@@ -1,5 +1,9 @@
 package org.labkey.pipeline.api;
 
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
 import org.quartz.DateBuilder;
 import org.quartz.JobBuilder;
@@ -23,7 +27,7 @@ import java.util.Map;
  */
 public class JobStatusRetryJob implements org.quartz.Job
 {
-    private static final Map<String, Runnable> _queuedUpdates = Collections.synchronizedMap(new HashMap<>());
+    private static final Map<String, Pair<Runnable, Throwable>> _queuedUpdates = Collections.synchronizedMap(new HashMap<>());
 
     static
     {
@@ -54,18 +58,27 @@ public class JobStatusRetryJob implements org.quartz.Job
         // Attempt the updates to the DB rows again in the hopes that the DB is back online
         if (!_queuedUpdates.isEmpty())
         {
-            Map<String, Runnable> todo;
+            Map<String, Pair<Runnable, Throwable>> todo;
             synchronized (_queuedUpdates)
             {
                 // Copy so we can iterate and modify the map
                 todo = new HashMap<>(_queuedUpdates);
             }
 
-            for (Map.Entry<String, Runnable> entry : todo.entrySet())
+            for (Map.Entry<String, Pair<Runnable, Throwable>> entry : todo.entrySet())
             {
-                _queuedUpdates.remove(entry.getKey());
-                // Retry the update
-                entry.getValue().run();
+                String jobId = entry.getKey();
+                _queuedUpdates.remove(jobId);
+                // Retry the update to pipeline.statusfiles
+                entry.getValue().first.run();
+
+                PipelineJob job = PipelineJobService.get().getJobStore().getJob(jobId);
+                if (job != null)
+                {
+                    // Fire a done event so that jobs can send notifications or do other finalization now that the DB
+                    // is back online
+                    job.done(entry.getValue().second);
+                }
             }
         }
     }
@@ -73,9 +86,9 @@ public class JobStatusRetryJob implements org.quartz.Job
     /**
      * Queue a deferred job status update attempt
      */
-    public static void queue(String jobId, Runnable r)
+    public static void queue(@NotNull String jobId, @NotNull Runnable r, @NotNull Throwable failure)
     {
         // We only need to remember the most recent update for a given job
-        _queuedUpdates.put(jobId, r);
+        _queuedUpdates.put(jobId, Pair.of(r, failure));
     }
 }
