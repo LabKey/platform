@@ -220,6 +220,7 @@ public class TSVProtocolSchema extends AssayProtocolSchema
                             .append(")");
 
                     ExprColumn plateHitsColumn = new ExprColumn(this, "Hit", plateHitsSQL, JdbcType.BOOLEAN);
+                    plateHitsColumn.setConceptURI("hit-selection");
                     plateHitsColumn.setLabel("Hit Selection");
                     addColumn(plateHitsColumn);
                 }
