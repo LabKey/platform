@@ -30,6 +30,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
@@ -493,9 +494,7 @@ public class DavCrawler implements ShutdownListener
                 event.wait(wait);
             }
         }
-        catch (InterruptedException x)
-        {
-        }
+        catch (InterruptedException ignored) {}
     }
 
 
@@ -532,6 +531,8 @@ public class DavCrawler implements ShutdownListener
                 try { Thread.sleep(1000); } catch (InterruptedException x) {}
             }
 
+            int consecutiveConfigExceptionCount = 0;
+
             while (!_shuttingDown)
             {
                 try
@@ -547,10 +548,17 @@ public class DavCrawler implements ShutdownListener
                     {
                         _wait(_crawlerEvent, _defaultWait);
                     }
+                    consecutiveConfigExceptionCount = 0;
                 }
-                catch (InterruptedException x)
+                catch (InterruptedException ignored) {}
+                catch (ConfigurationException e)
                 {
-                    continue;
+                    // Issue 49785. Avoid spinning in a tight loop if the DB is unresponsive.
+                    consecutiveConfigExceptionCount++;
+                    _log.error("Unexpected error, delaying next attempt" + (consecutiveConfigExceptionCount > 1 ? (". " + consecutiveConfigExceptionCount + " consecutive ConfigurationExceptions") : ""), e);
+
+                    // Fallback strategy based on the number of consecutive failed attempts
+                    _wait(_crawlerEvent, TimeUnit.MINUTES.toMillis(Math.min(10, consecutiveConfigExceptionCount)));
                 }
                 catch (Throwable t)
                 {

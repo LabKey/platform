@@ -15,9 +15,13 @@
  */
 package org.labkey.api.exp.property;
 
+import org.labkey.api.exp.PropertyType;
+import org.labkey.api.util.SimpleTime;
+
 import java.io.File;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
+import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.Date;
@@ -37,7 +41,8 @@ public enum Type
     LongType("Long", "xsd:long", "bigint", Long.class, long.class),
     DoubleType("Number (Double)", "xsd:double", "double", Double.class, Double.TYPE, BigDecimal.class), // Double.TYPE is here because manually created datasets with required doubles return Double.TYPE as Class
     FloatType("Number (Float)", "xsd:float", "float", Float.class, Float.TYPE),
-    DateTimeType("DateTime", "xsd:dateTime", "timestamp", Date.class, Timestamp.class, java.sql.Time.class, java.sql.Date.class),
+    TimeType("Time", PropertyType.TIME.getTypeUri(), "time", SimpleTime.class),
+    DateTimeType("DateTime", "xsd:dateTime", "timestamp", Date.class, Timestamp.class, java.sql.Date.class),
     BooleanType("Boolean", "xsd:boolean", "boolean", Boolean.class, Boolean.TYPE),
     AttachmentType("Attachment", "xsd:attachment", "varchar", String.class, File.class);
 

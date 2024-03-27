@@ -49,11 +49,13 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.Filter;
+import org.labkey.api.util.SimpleTime;
 
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.sql.Time;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -94,6 +96,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         Date.class,
         Integer.class,
         Double.class,
+        SimpleTime.class,
         Boolean.class,
         String.class
     };
