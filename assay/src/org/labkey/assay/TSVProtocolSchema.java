@@ -214,7 +214,7 @@ public class TSVProtocolSchema extends AssayProtocolSchema
                     SQLFragment plateHitsSQL = new SQLFragment("(CASE WHEN (SELECT ResultId FROM ")
                             .append(AssayDbSchema.getInstance().getTableInfoHit(), "h")
                             .append(" WHERE h.ResultId = ").append(ExprColumn.STR_TABLE_ALIAS + ".RowId")
-                            .append(" AND h.RunId = ").append(ExprColumn.STR_TABLE_ALIAS + ".DataId").append(")")
+                            .append(" AND h.RunId = ").append(ExprColumn.STR_TABLE_ALIAS + ".Run").append(")")
                             .append(" IS NULL THEN ").append(dialect.getBooleanFALSE())
                             .append(" ELSE ").append(dialect.getBooleanTRUE()).append(" END")
                             .append(")");
