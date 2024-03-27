@@ -4170,7 +4170,7 @@ public class StudyManager
         {
             if (ModuleHtmlView.exists(module, path))
             {
-                return CustomParticipantView.create(ModuleHtmlView.get(module, path));
+                return CustomParticipantView.create(module, path);
             }
         }
 
@@ -4182,10 +4182,9 @@ public class StudyManager
             CustomParticipantView participantView = new TableSelector(ti, containerFilter, null).getObject(CustomParticipantView.class);
             if (null == participantView)
                 return null;
-
             Module studyModule = ModuleLoader.getInstance().getModule("study");
-            var htmlView = new ModuleHtmlView(studyModule, study.getSubjectNounSingular(), HtmlString.unsafe(participantView.getBody()));
-            participantView.setView(htmlView);
+            participantView.setModule(studyModule);
+            participantView.setTitle(study.getSubjectNounSingular());
             return participantView;
         });
     }
