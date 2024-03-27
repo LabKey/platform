@@ -58,6 +58,7 @@
     <xsd:simpleType name="propertyName">
         <xsd:restriction base="xsd:string">
             <xsd:enumeration value="columnTitle"/>
+            <xsd:enumeration value="queryExpr"/>
         </xsd:restriction>
     </xsd:simpleType>
 
