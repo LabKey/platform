@@ -161,6 +161,7 @@ public class SchemaColumnMetaData
                 BaseColumnInfo exprColumn  = null != boundColumn ?
                         QueryService.get().createQueryExpressionColumn(tinfo, FieldKey.fromParts(xmlColumn.getColumnName()), boundColumn) :
                         QueryService.get().createQueryExpressionColumn(tinfo, FieldKey.fromParts(xmlColumn.getColumnName()), sql);
+                // TODO - propagate properties calculated/inferred from the SQL expression first, before calling initColumnFromXml()
                 loadFromXml(xmlColumn, exprColumn, false);
                 addColumn(exprColumn);
             }

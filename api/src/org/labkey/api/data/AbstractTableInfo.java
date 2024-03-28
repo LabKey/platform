@@ -58,6 +58,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.sql.LabKeySql;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.MemTrackable;
@@ -99,6 +100,7 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.unmodifiableCollection;
+import static org.apache.poi.util.StringUtil.isNotBlank;
 
 abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable, MemTrackable
 {
@@ -1319,7 +1321,8 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
                 if (null == xmlColumn.getColumnName())
                     throw new ConfigurationException("Table schema has column with empty columnName attribute: ", xmlTable.getTableName());
 
-                if (xmlColumn.getWrappedColumnName() != null)
+                if ((xmlColumn.isSetWrappedColumnName() && isNotBlank(xmlColumn.getWrappedColumnName())) ||
+                    (xmlColumn.isSetValueExpression() && isNotBlank(xmlColumn.getValueExpression())))
                 {
                     wrappedColumns.add(xmlColumn);
                 }
@@ -1345,14 +1348,28 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
                 }
             }
 
-            for (ColumnType wrappedColumnXml : wrappedColumns)
+            for (ColumnType xmlColumn : wrappedColumns)
             {
-                var column = getMutableColumn(wrappedColumnXml.getWrappedColumnName());
+                // expression column can't hide built-in column
+                if (null != getMutableColumn(xmlColumn.getWrappedColumnName()))
+                    continue;
 
-                if (column != null && !getColumnNameSet().contains(wrappedColumnXml.getColumnName()))
+                String sql = "";
+                if (xmlColumn.isSetValueExpression() && isNotBlank(xmlColumn.getValueExpression()))
                 {
-                    var wrappedColumn = new WrappedColumn(column, wrappedColumnXml.getColumnName());
-                    initColumnFromXml(schema, wrappedColumn, wrappedColumnXml, errors);
+                    sql = xmlColumn.getValueExpression();
+                }
+                else if (xmlColumn.isSetWrappedColumnName() && isNotBlank(xmlColumn.getWrappedColumnName()))
+                {
+                    sql = LabKeySql.quoteIdentifier(xmlColumn.getWrappedColumnName());
+                    if (!getColumnNameSet().contains(xmlColumn.getColumnName()))
+                        continue;
+                }
+                if (isNotBlank(sql))
+                {
+                    var wrappedColumn = QueryService.get().createQueryExpressionColumn(this, FieldKey.fromParts(xmlColumn.getColumnName()), sql);
+                    // TODO - propagate properties calculated/inferred from the SQL expression first, before calling initColumnFromXml()
+                    initColumnFromXml(schema, wrappedColumn, xmlColumn, errors);
                     addColumn(wrappedColumn);
                 }
             }
