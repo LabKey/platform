@@ -2458,11 +2458,13 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         TableInfo plateSetTable = dbSchema.getTableInfoPlateSet();
         TableInfo wellTable = dbSchema.getTableInfoWell();
 
+        // Determines the set of primary plate sets that are being touched from the collection of well rowIds
         SQLFragment primaryPlateSetsFromWellRowIdsSQL = new SQLFragment("SELECT PS.RowId FROM ").append(wellTable, "W")
                 .append(" INNER JOIN ").append(plateTable, "P").append(" ON P.RowId = W.PlateId")
                 .append(" INNER JOIN ").append(plateSetTable, "PS").append(" ON PS.RowId = P.PlateSet")
                 .append(" WHERE PS.Type = ?").add("primary").append(" AND W.RowId ").appendInClause(wellRowIds, dialect);
 
+        // From the set of primary plate sets determine if any sample exists in more than one well within the entire plate set
         SQLFragment nonUniqueSamplesPerPrimaryPlateSetSQL = new SQLFragment("SELECT PS.Name AS PlateSetName, M.Name AS SampleName FROM ")
                 .append(wellTable, "W")
                 .append(" INNER JOIN ").append(plateTable, "P").append(" ON P.RowId = W.PlateId")
