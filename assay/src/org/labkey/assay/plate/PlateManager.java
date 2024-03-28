@@ -2447,6 +2447,38 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return plateSetAssays;
     }
 
+    public void validatePrimaryPlateSetUniqueSamples(Set<Integer> wellRowIds, BatchValidationException errors)
+    {
+        if (wellRowIds.isEmpty())
+            return;
+
+        AssayDbSchema dbSchema = AssayDbSchema.getInstance();
+        SqlDialect dialect = dbSchema.getSchema().getSqlDialect();
+        TableInfo plateTable = dbSchema.getTableInfoPlate();
+        TableInfo plateSetTable = dbSchema.getTableInfoPlateSet();
+        TableInfo wellTable = dbSchema.getTableInfoWell();
+
+        SQLFragment primaryPlateSetsFromWellRowIdsSQL = new SQLFragment("SELECT PS.RowId FROM ").append(wellTable, "W")
+                .append(" INNER JOIN ").append(plateTable, "P").append(" ON P.RowId = W.PlateId")
+                .append(" INNER JOIN ").append(plateSetTable, "PS").append(" ON PS.RowId = P.PlateSet")
+                .append(" WHERE PS.Type = ?").add("primary").append(" AND W.RowId ").appendInClause(wellRowIds, dialect);
+
+        SQLFragment nonUniqueSamplesPerPrimaryPlateSetSQL = new SQLFragment("SELECT PS.Name AS PlateSetName, M.Name AS SampleName FROM ")
+                .append(wellTable, "W")
+                .append(" INNER JOIN ").append(plateTable, "P").append(" ON P.RowId = W.PlateId")
+                .append(" INNER JOIN ").append(plateSetTable, "PS").append(" ON PS.RowId = P.PlateSet")
+                .append(" LEFT JOIN ").append(ExperimentService.get().getTinfoMaterial(), "M").append(" ON M.RowId = W.SampleId")
+                .append(" WHERE W.SampleId IS NOT NULL AND PS.RowId IN (").append(primaryPlateSetsFromWellRowIdsSQL).append(")")
+                .append(" GROUP BY PS.RowId, M.Name, W.SampleId HAVING COUNT(W.SampleId) > 1");
+
+        var duplicates = new SqlSelector(dbSchema.getSchema(), nonUniqueSamplesPerPrimaryPlateSetSQL).getMapCollection();
+
+        for (var duplicate : duplicates)
+        {
+            errors.addRowError(new ValidationException(String.format("Sample \"%s\" is recorded in more than one well in Primary Plate Set \"%s\".", duplicate.get("SampleName"), duplicate.get("PlateSetName"))));
+        }
+    }
+
     private void requireActiveTransaction()
     {
         if (!AssayDbSchema.getInstance().getSchema().getScope().isTransactionActive())
