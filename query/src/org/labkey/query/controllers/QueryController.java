@@ -8016,6 +8016,49 @@ public class QueryController extends SpringActionController
         }
     }
 
+    @RequiresPermission(ReadPermission.class)
+    public static class GetDefaultVisibleColumnsAction extends ReadOnlyApiAction<GetQueryDetailsAction.Form>
+    {
+        @Override
+        public Object execute(GetQueryDetailsAction.Form form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+
+            Container container = getContainer();
+            User user = getUser();
+
+            if (StringUtils.isEmpty(form.getSchemaName()))
+                throw new NotFoundException("SchemaName not specified");
+
+            QuerySchema querySchema = DefaultSchema.get(user, container, form.getSchemaName());
+            if (!(querySchema instanceof UserSchema schema))
+                throw new NotFoundException("Could not find the specified schema in the folder '" + container.getPath() + "'");
+
+            QuerySettings settings = schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, form.getQueryName());
+            QueryDefinition queryDef = settings.getQueryDef(schema);
+            if (null == queryDef)
+                // Don't echo the provided query name, but schema name is legit since it was found. See #44528.
+                throw new NotFoundException("Could not find the specified query in the schema '" + form.getSchemaName() + "'");
+
+            TableInfo tinfo = queryDef.getTable(null, true);
+            if (null == tinfo)
+                throw new NotFoundException("Could not find the specified query '" + form.getQueryName() + "' in the schema '" + form.getSchemaName() + "'");
+
+            List<FieldKey> fields = tinfo.getDefaultVisibleColumns();
+
+            List<DisplayColumn> displayColumns = QueryService.get().getColumns(tinfo, fields)
+                    .values()
+                    .stream()
+                    .filter(cinfo -> fields.contains(cinfo.getFieldKey()))
+                    .map(cinfo -> cinfo.getDisplayColumnFactory().createRenderer(cinfo))
+                    .collect(Collectors.toList());
+
+            resp.put("columns", JsonWriter.getNativeColProps(displayColumns, null, false));
+
+            return resp;
+        }
+    }
+
     public static class TestCase extends AbstractActionPermissionTest
     {
         @Override
@@ -8065,7 +8108,8 @@ public class QueryController extends SpringActionController
                 new ExportTablesAction(),
                 new SaveNamedSetAction(),
                 new DeleteNamedSetAction(),
-                new ApiTestAction()
+                new ApiTestAction(),
+                new GetDefaultVisibleColumnsAction()
             );
 
 
