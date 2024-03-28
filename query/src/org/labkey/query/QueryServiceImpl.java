@@ -35,7 +35,6 @@ import org.labkey.api.audit.AbstractAuditHandler;
 import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
-import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
@@ -61,6 +60,7 @@ import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.sql.LabKeySql;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ContainerContext;
@@ -588,18 +588,10 @@ public class QueryServiceImpl implements QueryService
 
     public static class QColumnInfo extends QInternalExpr
     {
-        private final String _tableAliasName;
         private final ColumnInfo _col;
 
         public QColumnInfo(ColumnInfo col)
         {
-            _tableAliasName = null;
-            _col = col;
-        }
-
-        public QColumnInfo(String tableAliasName, ColumnInfo col)
-        {
-            _tableAliasName = tableAliasName;
             _col = col;
         }
 
@@ -614,10 +606,7 @@ public class QueryServiceImpl implements QueryService
         @Override
         public void appendSql(SqlBuilder builder, Query query)
         {
-            if (_tableAliasName == null)
-                builder.append(_col.getAlias());
-            else
-                builder.append(_col.getValueSql(_tableAliasName));
+            builder.append(_col.getAlias());
         }
 
         @Override
@@ -1740,20 +1729,13 @@ public class QueryServiceImpl implements QueryService
         for (Entry<FieldKey, Map<CustomView.ColumnProperty, String>> entry : fields)
         {
             FieldKey fieldKey = entry.getKey();
-            Map<CustomViewInfo.ColumnProperty, String> properties = entry.getValue();
             ColumnInfo column = columns.get(fieldKey);
 
             if (column == null)
-            {
-                String queryExpr = properties.get(CustomViewInfo.ColumnProperty.queryExpr);
-                if (queryExpr == null)
-                    continue;
-
-                column = createQueryColumn(table, fieldKey, queryExpr, null);
-            }
+                continue;
 
             DisplayColumn displayColumn = column.getRenderer();
-            String caption = properties.get(CustomViewInfo.ColumnProperty.columnTitle);
+            String caption = entry.getValue().get(CustomViewInfo.ColumnProperty.columnTitle);
 
             if (caption != null)
                 displayColumn.setCaption(caption);
@@ -2829,10 +2811,19 @@ public class QueryServiceImpl implements QueryService
     }
 
     @Override
-    public BaseColumnInfo createQueryColumn(TableInfo table, FieldKey key, String labKeySql, JdbcType type)
+    public BaseColumnInfo createQueryExpressionColumn(TableInfo table, FieldKey key, String labKeySql)
     {
-        return new LabKeyExprColumn(table, key, labKeySql, type);
+        return new CalculatedExpressionColumn(table, key, labKeySql);
     }
+
+    public BaseColumnInfo createQueryExpressionColumn(TableInfo table, FieldKey key, ColumnInfo wrapped)
+    {
+        // TODO short-circuit parsing/binding in this code path
+        var ret = new CalculatedExpressionColumn(table, key, LabKeySql.quoteIdentifier(wrapped.getName()));
+        ret.copyAttributesFrom(wrapped);
+        return ret;
+    }
+
 
     @Override
     public void addCompareType(CompareType type)

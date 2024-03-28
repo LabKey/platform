@@ -25,6 +25,7 @@ import org.labkey.api.data.dialect.PkMetaDataReader;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.sql.LabKeySql;
 import org.labkey.api.util.DebugInfoDumper;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.Pair;
@@ -43,6 +44,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 /*
 * User: adam
@@ -102,7 +105,8 @@ public class SchemaColumnMetaData
 
         for (ColumnType xmlColumn : xmlColumnArray)
         {
-            if (xmlColumn.getWrappedColumnName() != null)
+            if ((xmlColumn.isSetWrappedColumnName() && isNotBlank(xmlColumn.getWrappedColumnName())) ||
+                (xmlColumn.isSetValueExpression() && isNotBlank(xmlColumn.getValueExpression())))
             {
                 wrappedColumns.add(xmlColumn);
             }
@@ -121,36 +125,44 @@ public class SchemaColumnMetaData
                 }
 
                 if (tinfo.getTableType() != DatabaseTableType.NOT_IN_DB)
-                {
-                    if (xmlColumn.isSetQueryExpr())
-                    {
-                        String sql = xmlColumn.getQueryExpr();
-                        colInfo = QueryService.get().createQueryColumn(tinfo, FieldKey.fromParts(xmlColumn.getColumnName()), sql, null);
-                    }
-                    else
-                    {
                         colInfo = new VirtualColumnInfo(FieldKey.fromParts(xmlColumn.getColumnName()), tinfo);
-                    }
-                }
                 else
-                {
                     colInfo = new BaseColumnInfo(FieldKey.fromParts(xmlColumn.getColumnName()), tinfo);
-                }
                 colInfo.setNullable(true);
                 loadFromXml(xmlColumn, colInfo, false);
                 addColumn(colInfo);
             }
         }
 
-        for (ColumnType wrappedColumnXml : wrappedColumns)
+        for (ColumnType xmlColumn : wrappedColumns)
         {
-            ColumnInfo column = getColumn(wrappedColumnXml.getWrappedColumnName());
-
-            if (column != null && getColumn(wrappedColumnXml.getColumnName()) == null)
+            if (null != getColumn(xmlColumn.getColumnName()))
             {
-                var wrappedColumn = new WrappedColumn(column, wrappedColumnXml.getColumnName());
-                loadFromXml(wrappedColumnXml, wrappedColumn, false);
-                addColumn(wrappedColumn);
+                // do not hide a base column with a wrapped or expression column
+                // _log.warn("Column '" + wrappedColumnXml.getColumnName() + "' already exists in table '" + tinfo.getName() + "'");
+                continue;
+            }
+            ColumnInfo boundColumn = null;
+            String sql = "";
+            if (xmlColumn.isSetValueExpression() && isNotBlank(xmlColumn.getValueExpression()))
+            {
+                sql = xmlColumn.getValueExpression();
+            }
+            else if (xmlColumn.isSetWrappedColumnName() && isNotBlank(xmlColumn.getWrappedColumnName()))
+            {
+                sql = LabKeySql.quoteIdentifier(xmlColumn.getWrappedColumnName());
+                // previous code just continued w/o error if column did not exist
+                boundColumn = getColumn(xmlColumn.getWrappedColumnName());
+                if (null == boundColumn)
+                    continue;
+            }
+            if (isNotBlank(sql))
+            {
+                BaseColumnInfo exprColumn  = null != boundColumn ?
+                        QueryService.get().createQueryExpressionColumn(tinfo, FieldKey.fromParts(xmlColumn.getColumnName()), boundColumn) :
+                        QueryService.get().createQueryExpressionColumn(tinfo, FieldKey.fromParts(xmlColumn.getColumnName()), sql);
+                loadFromXml(xmlColumn, exprColumn, false);
+                addColumn(exprColumn);
             }
         }
 

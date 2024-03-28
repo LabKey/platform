@@ -1,17 +1,19 @@
 package org.labkey.query.sql;
 
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.PHI;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.query.QueryServiceImpl;
 
 import java.util.ArrayList;
@@ -20,43 +22,27 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.labkey.api.query.ExprColumn.STR_TABLE_ALIAS;
-
 /**
  * {@link ColumnInfo} backed by a LabKey SQL fragment
  */
-public class LabKeyExprColumn extends BaseColumnInfo
+public class CalculatedExpressionColumn extends BaseColumnInfo
 {
-    private static final Logger LOG = LogManager.getLogger(LabKeyExprColumn.class);
+    private static final Logger LOG = LogHelper.getLogger(CalculatedExpressionColumn.class, "Calculated Expression Column");
 
     // Query-layer LabKey SQL fragment
-    private String _labKeySql;
+    private final String _labKeySql;
 
     // Parsed expression
     private QExpr _expr;
-    private Query _query;
-    private QueryRelation _rootRelation;
-    private final List<QueryRelation> _subqueries = new ArrayList<>();
-    private boolean _resolved;
-    private boolean _decalareCalled;
 
-    private final ColumnInfo[] _dependentColumns;
+    private JdbcType expressionJdbcType = null;
 
-    public LabKeyExprColumn(TableInfo parent, FieldKey key, String labKeySql, JdbcType type, ColumnInfo ... dependentColumns)
+//    private final ColumnInfo[] _dependentColumns;
+
+    public CalculatedExpressionColumn(TableInfo parent, FieldKey key, String labKeySql)
     {
         super(key, parent);
-        setJdbcType(type);
         _labKeySql = labKeySql;
-        if (dependentColumns != null)
-        {
-            for (ColumnInfo dependentColumn : dependentColumns)
-            {
-                if (dependentColumn == null)
-                {
-                    throw new NullPointerException("Dependent columns may not be null");
-                }
-            }
-        }
         // Since these are typically calculated columns, it doesn't make sense to show them in update or insert views
         setShownInUpdateView(false);
         setShownInInsertView(false);
@@ -64,40 +50,40 @@ public class LabKeyExprColumn extends BaseColumnInfo
         setCalculated(true);
         // Unless otherwise configured, guess that it might be nullable
         setNullable(true);
-        _dependentColumns = dependentColumns;
+
+        // TODO we can't (yet) call getBoundExpression() while our parent table is still being constructed.
+        setJdbcType(null);
     }
 
-    private QExpr parse(String tableAlias)
+    @Override
+    public @NotNull JdbcType getJdbcType()
+    {
+        if (null == expressionJdbcType)
+        {
+            var bound = getBoundExpression();
+            expressionJdbcType = bound.getJdbcType();
+        }
+        return expressionJdbcType;
+    }
+
+    private QExpr parse()
     {
         if (_expr == null)
         {
             TableInfo parentTable = getParentTable();
             UserSchema schema = parentTable.getUserSchema();
-
-            _query = new Query(schema);
-            _query.setDebugName(schema.getName() + "." + parentTable.getName() + "." + getName());
-
             List<QueryParseException> errors = new ArrayList<>();
-            SqlParser parser = new SqlParser(getSqlDialect(), null);
-            String sql = StringUtils.replace(_labKeySql, STR_TABLE_ALIAS, tableAlias);
-            QExpr expr = parser.parseExpr(sql, errors);
-            // better error handling
+
+            SqlParser parser = new SqlParser(getSqlDialect(), null==schema ? null : schema.getContainer());
+            QExpr expr = parser.parseExpr(_labKeySql, errors);
+
+            // TODO better error handling
             if (!errors.isEmpty())
             {
                 LOG.warn("Failed to parse");
                 // TODO: for non-string types, use NULL
                 expr = parser.parseExpr("'ERROR'", new ArrayList<>());
             }
-
-            _query._parameters = parser.getParameters();
-
-            _rootRelation = Query.createQueryRelation(_query, expr, false, true);
-
-            if (_dependentColumns == null)
-            {
-                // TODO: get dependent columns from parsed expr
-            }
-
             _expr = expr;
         }
 
@@ -111,18 +97,19 @@ public class LabKeyExprColumn extends BaseColumnInfo
 //            return;
         if (expr instanceof QQuery)
         {
-            QueryRelation sub = ((QQuery)expr).getQuerySelect();
-            if (sub == null)
-            {
-                sub = Query.createQueryRelation(_query, (QQuery)expr, false);
-                // ?
-//                sub._parent = _rootRelation;
-                ((QQuery)expr)._select = sub;
-                _subqueries.add(sub);
-            }
-            sub.declareFields();
-
-            // XXX: get select fields from sub?
+//            QueryRelation sub = ((QQuery)expr).getQuerySelect();
+//            if (sub == null)
+//            {
+//                sub = Query.createQueryRelation(_query, (QQuery)expr, false);
+//                // ?
+////                sub._parent = _rootRelation;
+//                ((QQuery)expr)._select = sub;
+//                _subqueries.add(sub);
+//            }
+//            sub.declareFields();
+//
+//            // XXX: get select fields from sub?
+            // TODO
             return;
         }
         if (expr instanceof QUnion)
@@ -168,7 +155,7 @@ public class LabKeyExprColumn extends BaseColumnInfo
      */
     // copied from QueryServiceImpl.WhereClause
     // copied from QuerySelect.resolveFields
-    private QExpr resolveFields(String tableAliasName, QExpr expr, Map<FieldKey, ? extends ColumnInfo> columnMap)
+    private QExpr resolveFields(QExpr expr, Map<FieldKey, ? extends ColumnInfo> columnMap)
     {
 //        if (expr instanceof QQuery || expr instanceof QUnion || expr instanceof QRowStar || expr instanceof QIfDefined)
 //        {
@@ -205,8 +192,10 @@ public class LabKeyExprColumn extends BaseColumnInfo
         {
             ColumnInfo c = columnMap.get(key);
             if (null == c)
-                throw new UnsupportedOperationException("column not found: " + key);
-            return new QueryServiceImpl.QColumnInfo(tableAliasName, c);
+                throw new QueryParseException("column not found: " + key, null, 0, 0);
+            if (c.getPHI() != null && !c.getPHI().isLevelAllowed(PHI.NotPHI))
+                throw new QueryParseException("column is PHI: " + key, null, 0, 0);
+            return new _QColumnInfo(c);
         }
 
         QExpr methodName = null;
@@ -223,15 +212,59 @@ public class LabKeyExprColumn extends BaseColumnInfo
             if (child == methodName)
                 ret.appendChild(new QField(null, ((QExpr) child).getFieldKey().getName(), child));
             else
-                ret.appendChild(resolveFields(tableAliasName, (QExpr) child, columnMap));
+                ret.appendChild(resolveFields((QExpr) child, columnMap));
         }
         return ret;
     }
 
+    private static class _Query extends Query
+    {
+        private final String _tableAlias;
+
+        public _Query(String tableAlias)
+        {
+            super(null);
+            _tableAlias = tableAlias;
+        }
+
+        public String getTableALias()
+        {
+            return _tableAlias;
+        }
+    }
+
+    private static class _QColumnInfo extends QueryServiceImpl.QColumnInfo
+    {
+        private final ColumnInfo _column;
+
+        public _QColumnInfo(ColumnInfo column)
+        {
+            super(column);
+            _column = column;
+        }
+
+        @Override
+        public void appendSql(SqlBuilder builder, Query query)
+        {
+            builder.append(_column.getValueSql(((_Query)query).getTableALias()));
+        }
+    }
+
+
+
     @Override
     public SQLFragment getValueSql(String tableAliasName)
     {
-        QExpr parsed = parse(tableAliasName);
+        QExpr bound = getBoundExpression();
+        SQLFragment ret;
+        ret = bound.getSqlFragment(getSqlDialect(), new _Query(tableAliasName));
+        return ret;
+    }
+
+
+    private QExpr getBoundExpression()
+    {
+        QExpr parsed = parse();
         Set<FieldKey> fieldKeys = new HashSet<>();
         collectKeys(parsed, fieldKeys);
 
@@ -259,19 +292,25 @@ public class LabKeyExprColumn extends BaseColumnInfo
 //
 //        QExpr bound = resolveFields(tableAliasName, parsed, reparentedMap);
 
-        QExpr bound = resolveFields(tableAliasName, parsed, columnMap);
-        return bound.getSqlFragment(getSqlDialect(), null);
+        QExpr bound = resolveFields(parsed, columnMap);
+        return bound;
     }
 
     @Override
     public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
     {
-        if (_dependentColumns != null)
-        {
-            for (ColumnInfo col : _dependentColumns)
-            {
-                col.declareJoins(parentAlias, map);
-            }
-        }
+//        if (_dependentColumns != null)
+//        {
+//            for (ColumnInfo col : _dependentColumns)
+//            {
+//                col.declareJoins(parentAlias, map);
+//            }
+//        }
+    }
+
+    @Override
+    public DisplayColumnFactory getDisplayColumnFactory()
+    {
+        return super.getDisplayColumnFactory();
     }
 }

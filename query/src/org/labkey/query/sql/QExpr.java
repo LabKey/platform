@@ -86,10 +86,10 @@ abstract public class QExpr extends QNode
 
     public abstract boolean isConstant();
 
-    
+
     public boolean isAggregate()
     {
-        // avoid ClassCastException org.labkey.query.sql.QSelectFrom cannot be cast to org.labkey.query.sql.QExpr  
+        // avoid ClassCastException org.labkey.query.sql.QSelectFrom cannot be cast to org.labkey.query.sql.QExpr
         if (this instanceof QQuery)
             return false;
         for (QNode n : children())

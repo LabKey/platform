@@ -52,8 +52,7 @@ public interface CustomViewInfo
 
     enum ColumnProperty
     {
-        columnTitle(PropertyName.COLUMN_TITLE),
-        queryExpr(PropertyName.QUERY_EXPR);
+        columnTitle(PropertyName.COLUMN_TITLE);
 
         private PropertyName.Enum _xmlEnum;
 
@@ -71,8 +70,6 @@ public interface CustomViewInfo
         {
             if (xmlEnum == columnTitle._xmlEnum)
                 return columnTitle;
-            if (xmlEnum == queryExpr._xmlEnum)
-                return queryExpr;
             return null;
         }
     }
