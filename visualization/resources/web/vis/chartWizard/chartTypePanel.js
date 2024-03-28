@@ -823,7 +823,7 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionsPanel', {
         Ext4.each(this.query('charttypefield'), function(fieldSelPanel)
         {
             var hasMatchingType = fieldSelPanel.getAllowableTypes().indexOf(selectedColType) > -1,
-                isMeasureDimensionMatch = this.isMeasureDimensionMatch(this.chartType.get('name'), fieldSelPanel, isMeasure, isDimension);
+                isMeasureDimensionMatch = LABKEY.vis.GenericChartHelper.isMeasureDimensionMatch(this.chartType.get('name'), fieldSelPanel.field, isMeasure, isDimension);
 
             if (hasMatchingType || isMeasureDimensionMatch)
             {
@@ -841,20 +841,6 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionsPanel', {
                 this.fieldSelectionDropTargets.push(dropTarget);
             }
         }, this);
-    },
-
-    isMeasureDimensionMatch : function(chartType, fieldSelPanel, isMeasure, isDimension)
-    {
-        if ((chartType === 'box_plot' || chartType === 'bar_chart'))
-        {
-            //x-axis does not support 'measure' column types for these plot types
-            if (fieldSelPanel.field.name === 'x' || fieldSelPanel.field.name === 'xSub')
-                return isDimension;
-            else
-                return isMeasure;
-        }
-
-        return (fieldSelPanel.field.numericOnly && isMeasure) || (fieldSelPanel.field.nonNumericOnly && isDimension);
     },
 
     destroyFieldSelectionDropTargets : function()
@@ -1408,22 +1394,8 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionPanel', {
 
     getAllowableTypes : function()
     {
-        if (this.allowableTypes == null)
-        {
-            var numericTypes = ['int', 'float', 'double', 'INTEGER', 'DOUBLE'],
-                nonNumericTypes = ['string', 'date', 'boolean', 'STRING', 'TEXT', 'DATE', 'BOOLEAN'],
-                numericAndDateTypes = numericTypes.concat(['date','DATE']);
-
-            if (this.field.altSelectionOnly)
-                this.allowableTypes = [];
-            else if (this.field.numericOnly)
-                this.allowableTypes = numericTypes;
-            else if (this.field.nonNumericOnly)
-                this.allowableTypes = nonNumericTypes;
-            else if (this.field.numericOrDateOnly)
-                this.allowableTypes = numericAndDateTypes;
-            else
-                this.allowableTypes = numericTypes.concat(nonNumericTypes);
+        if (this.allowableTypes == null) {
+            this.allowableTypes = LABKEY.vis.GenericChartHelper.getAllowableTypes(this.field);
         }
 
         return this.allowableTypes;

@@ -1,0 +1,15 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect x="6" y="7" width="52" height="52" rx="1" fill="#D3D3D3" stroke="#D3D3D3" stroke-width="2" stroke-linecap="round"/>
+<path d="M58 59H7C6.44772 59 6 58.5523 6 58V7" stroke="#808080" stroke-width="2" stroke-linecap="round"/>
+<path d="M6 33H10" stroke="#808080" stroke-width="2" stroke-linecap="round"/>
+<path d="M32 59V55" stroke="#808080" stroke-width="2" stroke-linecap="round"/>
+<path d="M58 59V55" stroke="#808080" stroke-width="2" stroke-linecap="round"/>
+<path d="M6 7H10" stroke="#808080" stroke-width="2" stroke-linecap="round"/>
+<circle cx="14.1699" cy="50.1699" r="3" fill="white" stroke="white" stroke-width="2" stroke-linecap="round"/>
+<circle cx="23" cy="46" r="1" fill="white" stroke="white" stroke-width="2" stroke-linecap="round"/>
+<circle cx="34" cy="37" r="2" fill="white" stroke="white" stroke-width="2" stroke-linecap="round"/>
+<circle cx="36" cy="29" r="2" fill="white" stroke="white" stroke-width="2" stroke-linecap="round"/>
+<circle cx="50" cy="17" r="4" fill="white" stroke="white" stroke-width="2" stroke-linecap="round"/>
+<circle cx="46" cy="27" r="2" fill="white" stroke="white" stroke-width="2" stroke-linecap="round"/>
+<circle cx="25" cy="38" r="1" fill="white" stroke="white" stroke-width="2" stroke-linecap="round"/>
+</svg>
