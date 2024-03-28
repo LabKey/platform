@@ -2,10 +2,15 @@ package org.labkey.assay.plate;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.junit.After;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.labkey.api.assay.AssayProtocolSchema;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayResultDomainKind;
@@ -52,13 +57,17 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.JsonUtil;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.TestContext;
 import org.labkey.assay.TSVProtocolSchema;
 import org.labkey.assay.plate.model.WellBean;
 import org.labkey.assay.query.AssayDbSchema;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -68,6 +77,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.junit.Assert.assertEquals;
 import static org.labkey.api.assay.AssayResultDomainKind.WELL_LSID_COLUMN_NAME;
 
 public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
@@ -538,13 +548,28 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         if (plates.isEmpty())
             throw new ExperimentException("No plates were found for the plate set (" + plateSetId + ").");
 
-        if (!data.isEmpty())
-            return parsePlateRows(container, user, provider, protocol, plates, data, plateIdAdded);
-        else
+        if (isGridFormat(data))
         {
             plateIdAdded.setValue(true);
-            return parsePlateGrids(container, user, provider, protocol, plateSet, plates, dataFile);
+            List<Map<String, Object>> gridRows = parsePlateGrids(container, user, provider, protocol, plateSet, plates, dataFile);
+
+            // best attempt at returning something we can import
+            return (gridRows.isEmpty() && !data.isEmpty()) ? data : gridRows;
         }
+        else
+        {
+            return parsePlateRows(container, user, provider, protocol, plates, data, plateIdAdded);
+        }
+    }
+
+    private boolean isGridFormat(List<Map<String, Object>> data)
+    {
+        // best guess whether the incoming data is in a graphical grid format
+        if (data.isEmpty())
+            return true;
+
+        // only the tabular formats will have the well location field
+        return !data.get(0).containsKey(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME);
     }
 
     private List<Map<String, Object>> parsePlateRows(
@@ -616,6 +641,71 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         return data;
     }
 
+    /**
+     * Helper class to organize plate grid info and annotations
+     */
+    private static class PlateGridInfo extends PlateUtils.GridInfo
+    {
+        public static final String PLATE_PREFIX = "plate";
+        public static final String MEASURE_PREFIX = "measure";
+        private Plate _plate;
+        private String _measureName;
+
+        public PlateGridInfo(PlateUtils.GridInfo info, PlateSet plateSet)
+        {
+            super(info.getData(), info.getAnnotations());
+
+            // locate the plate in the plate set this grid is associated with plus an optional
+            // measure name
+            List<Plate> plates = PlateManager.get().getPlatesForPlateSet(plateSet);
+            List<String> annotations = getAnnotations();
+
+            // single annotation can only be a plate identifier
+            if (annotations.size() == 1)
+                _plate = getPlateForId(annotations.get(0), plates);
+            else
+            {
+                // multiple annotation must have an annotation prefix
+                for (String annotation : getAnnotations())
+                {
+                    String plateID = getPrefixedValue(annotation, PLATE_PREFIX);
+                    if (plateID != null)
+                        _plate = getPlateForId(plateID, plates);
+                    else
+                        _measureName = getPrefixedValue(annotation, MEASURE_PREFIX);
+                }
+            }
+        }
+
+        private @Nullable Plate getPlateForId(String annotation, List<Plate> platesetPlates)
+        {
+            return platesetPlates.stream().filter(p -> p.isIdentifierMatch(annotation)).findFirst().orElse(null);
+        }
+
+        private @Nullable String getPrefixedValue(String annotation, String prefix)
+        {
+            if (annotation != null && annotation.trim().toLowerCase().startsWith(prefix))
+            {
+                String[] parts = annotation.split(":");
+                if (parts.length == 2)
+                {
+                    return parts[1].trim();
+                }
+            }
+            return null;
+        }
+
+        public @Nullable Plate getPlate()
+        {
+            return _plate;
+        }
+
+        public @Nullable String getMeasureName()
+        {
+            return _measureName;
+        }
+    }
+
     private List<Map<String, Object>> parsePlateGrids(
             Container container,
             User user,
@@ -626,30 +716,38 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             File dataFile
     ) throws ExperimentException
     {
-        // NOTE: currently only supporting single measure assay protocols (this will change soon to support multiple measures)
-        List<DomainProperty> measureProperties = provider.getResultsDomain(protocol).getProperties().stream().filter(DomainProperty::isMeasure).collect(Collectors.toList());
-        if (measureProperties.size() != 1)
-            throw new ExperimentException("The assay protocol must have exactly one measure property to support graphical plate layout file parsing.");
-        String measureName = measureProperties.get(0).getName();
-
         // parse the data file for each distinct plate type found in the set of plates for the plateSetId
         ExcelPlateReader plateReader = new ExcelPlateReader();
-        Map<PlateType, Map<String, double[][]>> plateTypeGrids = new HashMap<>();
+        MultiValuedMap<PlateType, PlateGridInfo> plateTypeGrids = new HashSetValuedHashMap<>();
+
+        boolean hasPlateIdentifiers = false;
+        boolean missingPlateIdentifiers = false;
+        boolean multipleMeasures = false;
+
         for (Plate plate : plates)
         {
             if (!plateTypeGrids.containsKey(plate.getPlateType()))
             {
                 Plate template = PlateService.get().createPlateTemplate(container, TsvPlateLayoutHandler.TYPE, plate.getPlateType());
-                plateTypeGrids.put(plate.getPlateType(), plateReader.loadMultiGridFile(template, dataFile));
+                for (PlateUtils.GridInfo gridInfo : plateReader.loadMultiGridFile(template, dataFile))
+                {
+                    PlateGridInfo plateInfo = new PlateGridInfo(gridInfo, plateSet);
+                    plateTypeGrids.put(plate.getPlateType(), plateInfo);
+
+                    if (plateInfo.getPlate() != null && !hasPlateIdentifiers)
+                        hasPlateIdentifiers = true;
+                    if (plateInfo.getPlate() == null && !missingPlateIdentifiers)
+                        missingPlateIdentifiers = true;
+                    if (plateInfo.getMeasureName() != null && !multipleMeasures)
+                        multipleMeasures = true;
+                }
             }
         }
 
-        // Search through the data grids found to see if any have plate identifiers
-        List<String> plateKeys = new ArrayList<>();
-        for (Map<String, double[][]> plateGrids : plateTypeGrids.values())
-            plateKeys.addAll(plateGrids.keySet());
-        boolean hasPlateIdentifiers = plateKeys.stream().anyMatch(key -> !isDefaultPlateIdentifier(key));
-        boolean missingPlateIdentifiers = plateKeys.stream().anyMatch(this::isDefaultPlateIdentifier);
+        List<DomainProperty> measureProperties = provider.getResultsDomain(protocol).getProperties().stream().filter(DomainProperty::isMeasure).collect(Collectors.toList());
+        if (!multipleMeasures && measureProperties.size() != 1)
+            throw new ExperimentException("The assay protocol must have exactly one measure property to support graphical plate layout file parsing.");
+        String defaultMeasureName = measureProperties.get(0).getName();
 
         // if any of the plateGrids keys have plate identifiers, import using those identifiers
         List<Map<String, Object>> dataRows = new ArrayList<>();
@@ -658,22 +756,54 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             if (missingPlateIdentifiers)
                 throw new ExperimentException("Some plate grids parsed from the file are missing plate identifiers.");
 
-            for (Map.Entry<PlateType, Map<String, double[][]>> plateTypeMapEntry : plateTypeGrids.entrySet())
+            for (Map.Entry<PlateType, Collection<PlateGridInfo>> plateTypeMapEntry : plateTypeGrids.asMap().entrySet())
             {
-                for (Map.Entry<String, double[][]> entry : plateTypeMapEntry.getValue().entrySet())
+                if (multipleMeasures)
                 {
-                    // find the plate set plate for this identifier
-                    Plate matchingPlate = plates.stream().filter(p -> p.isIdentifierMatch(entry.getKey())).findFirst().orElse(null);
-                    if (matchingPlate == null)
-                        throw new ExperimentException("The plate identifier \"" + entry.getKey() + "\" does not match any plate in the plate set \"" + plateSet.getName() + "\".");
+                    // group by plate within the plate type
+                    MultiValuedMap<Plate, PlateGridInfo> plateMaps = new HashSetValuedHashMap<>();
+                    plateTypeMapEntry.getValue().forEach(gi -> {plateMaps.put(gi.getPlate(), gi);});
 
-                    double[][] plateGrid = entry.getValue();
-                    PlateType plateGridType = PlateManager.get().getPlateType(plateGrid.length, plateGrid[0].length);
-                    if (matchingPlate.getPlateType().equals(plateGridType))
+                    for (Map.Entry<Plate, Collection<PlateGridInfo>> entry : plateMaps.asMap().entrySet())
                     {
-                        Plate dataForPlate = PlateService.get().createPlate(matchingPlate, plateGrid, null);
-                        for (Well well : dataForPlate.getWells())
-                            dataRows.add(getDataRowFromWell(entry.getKey(), well, measureName));
+                        Set<String> measures = new HashSet<>();
+                        Map<Position, Map<String, Object>> measureDataRows = new LinkedHashMap<>();
+                        for (PlateGridInfo gridInfo : entry.getValue())
+                        {
+                            String measureName = gridInfo.getMeasureName() != null ? gridInfo.getMeasureName() : defaultMeasureName;
+                            if (measures.contains(measureName))
+                                throw new ExperimentException("The measure name (" + measureName + ") has been previously associated with data for the same plate.");
+                            measures.add(measureName);
+
+                            Plate currentPlate = gridInfo.getPlate();
+                            Plate dataForPlate = PlateService.get().createPlate(currentPlate, gridInfo.getData(), null);
+                            // get wells guarantees a consistent row/column oriented order
+                            for (Well well : dataForPlate.getWells())
+                            {
+                                measureDataRows.computeIfAbsent(well, f -> getDataRowFromWell(currentPlate.getPlateId(), well, measureName)).put(measureName, well.getValue());
+                            }
+                        }
+
+                        // add combined measures to rows for the entire run
+                        dataRows.addAll(measureDataRows.values());
+                    }
+                }
+                else
+                {
+                    for (PlateGridInfo gridInfo : plateTypeMapEntry.getValue())
+                    {
+                        Plate matchingPlate = gridInfo.getPlate();
+                        if (matchingPlate != null)
+                        {
+                            double[][] plateGrid = gridInfo.getData();
+                            PlateType plateGridType = PlateManager.get().getPlateType(plateGrid.length, plateGrid[0].length);
+                            if (matchingPlate.getPlateType().equals(plateGridType))
+                            {
+                                Plate dataForPlate = PlateService.get().createPlate(matchingPlate, plateGrid, null);
+                                for (Well well : dataForPlate.getWells())
+                                    dataRows.add(getDataRowFromWell(matchingPlate.getPlateId(), well, defaultMeasureName));
+                            }
+                        }
                     }
                 }
             }
@@ -681,18 +811,18 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         // else if only one plateType was parsed (i.e. all 96-well plate grids), use plateGrids ordering to match plate set order
         else if (plateTypeGrids.keySet().size() == 1)
         {
-            for (Map.Entry<PlateType, Map<String, double[][]>> entry : plateTypeGrids.entrySet())
+            for (Map.Entry<PlateType, Collection<PlateGridInfo>> entry : plateTypeGrids.asMap().entrySet())
             {
                 if (entry.getValue().size() > plates.size())
                     throw new ExperimentException("The number of plate grids parsed from the file exceeds the number of plates in the plate set.");
 
                 int plateIndex = 0;
-                for (double[][] plateGrid : entry.getValue().values())
+                for (PlateGridInfo gridInfo : entry.getValue())
                 {
                     Plate targetPlate = plates.get(plateIndex++);
-                    Plate dataForPlate = PlateService.get().createPlate(targetPlate, plateGrid, null);
+                    Plate dataForPlate = PlateService.get().createPlate(targetPlate, gridInfo.getData(), null);
                     for (Well well : dataForPlate.getWells())
-                        dataRows.add(getDataRowFromWell(targetPlate.getPlateId(), well, measureName));
+                        dataRows.add(getDataRowFromWell(targetPlate.getPlateId(), well, defaultMeasureName));
                 }
             }
         }
@@ -700,11 +830,6 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             throw new ExperimentException("Unable to match the plate grids parsed from the file to the plates in the plate set. Please include plate identifiers for the plate grids.");
 
         return dataRows;
-    }
-
-    private boolean isDefaultPlateIdentifier(String id)
-    {
-        return id.equals(PlateUtils.DEFAULT_GRID_NAME) || id.startsWith(PlateUtils.DEFAULT_GRID_NAME + "_");
     }
 
     private Map<String, Object> getDataRowFromWell(String plateId, Well well, String measure)
@@ -864,6 +989,81 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         public void addProperty(String name, Object value)
         {
             _properties.put(name, value);
+        }
+    }
+
+    public static final class TestCase
+    {
+        private static Container container;
+        private static User user;
+
+        @BeforeClass
+        public static void setupTest() throws Exception
+        {
+            container = JunitUtil.getTestContainer();
+            user = TestContext.get().getUser();
+
+            PlateService.get().deleteAllPlateData(container);
+        }
+
+        @After
+        public void cleanupTest() throws Exception
+        {
+            PlateManager.get().deleteAllPlateData(container);
+        }
+
+        @Test
+        public void testGridAnnotations() throws Exception
+        {
+            // create a plateset
+            PlateSetImpl plateSet = new PlateSetImpl();
+            PlateType plateType = PlateManager.get().getPlateType(8, 12);
+            List<PlateManager.CreatePlateSetPlate> plates = List.of(
+                    new PlateManager.CreatePlateSetPlate(null, plateType.getRowId(), Collections.emptyList()),
+                    new PlateManager.CreatePlateSetPlate(null, plateType.getRowId(), Collections.emptyList())
+            );
+            plateSet = PlateManager.get().createPlateSet(container, user, plateSet, plates, null);
+            List<Plate> platesetPlates = PlateManager.get().getPlatesForPlateSet(plateSet);
+
+            PlateGridInfo gridInfo = new PlateGridInfo(
+                    new PlateUtils.GridInfo(new double[8][12], List.of(platesetPlates.get(0).getPlateId())),
+                    plateSet);
+            assertEquals("Expected plate to resolve on annotation", platesetPlates.get(0).getRowId(), gridInfo.getPlate().getRowId());
+
+            gridInfo = new PlateGridInfo(
+                    new PlateUtils.GridInfo(new double[8][12], List.of(platesetPlates.get(0).getName())),
+                    plateSet);
+            assertEquals("Expected plate to resolve on annotation", platesetPlates.get(0).getRowId(), gridInfo.getPlate().getRowId());
+
+            gridInfo = new PlateGridInfo(
+                    new PlateUtils.GridInfo(new double[8][12], List.of(platesetPlates.get(0).getRowId().toString())),
+                    plateSet);
+            assertEquals("Expected plate to resolve on annotation", platesetPlates.get(0).getRowId(), gridInfo.getPlate().getRowId());
+
+            // test for multiple annotations
+            gridInfo = new PlateGridInfo(
+                    new PlateUtils.GridInfo(new double[8][12], List.of(platesetPlates.get(0).getPlateId(), "Density")),
+                    plateSet);
+            assertEquals("Expected plate to not resolve on annotation without a prefix", null, gridInfo.getPlate());
+            assertEquals("Expected measure to not resolve on annotation without a prefix", null, gridInfo.getMeasureName());
+
+            gridInfo = new PlateGridInfo(
+                    new PlateUtils.GridInfo(new double[8][12], List.of("PLATE:" + platesetPlates.get(0).getPlateId(), "Density")),
+                    plateSet);
+            assertEquals("Expected plate to resolve on annotation with a prefix", platesetPlates.get(0).getRowId(), gridInfo.getPlate().getRowId());
+            assertEquals("Expected measure to not resolve on annotation without a prefix", null, gridInfo.getMeasureName());
+
+            gridInfo = new PlateGridInfo(
+                    new PlateUtils.GridInfo(new double[8][12], List.of("plate:" + platesetPlates.get(0).getPlateId(), "MEASURE : Density")),
+                    plateSet);
+            assertEquals("Expected plate to resolve on annotation with a prefix", platesetPlates.get(0).getRowId(), gridInfo.getPlate().getRowId());
+            assertEquals("Expected measure to resolve on annotation with a prefix", "Density", gridInfo.getMeasureName());
+
+            gridInfo = new PlateGridInfo(
+                    new PlateUtils.GridInfo(new double[8][12], List.of(platesetPlates.get(0).getPlateId(), "measure : Density")),
+                    plateSet);
+            assertEquals("Expected plate to not resolve on annotation without a prefix", null, gridInfo.getPlate());
+            assertEquals("Expected measure to resolve on annotation with a prefix", "Density", gridInfo.getMeasureName());
         }
     }
 }
