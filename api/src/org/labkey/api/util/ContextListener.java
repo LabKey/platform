@@ -51,8 +51,7 @@ public class ContextListener implements ServletContextListener
             System.setProperty(headless, "true");
         // On most installs, catalina.home and catalina.base point to the same directory. However, it's possible
         // to have multiple instances share the Tomcat binaries but have their own ./logs, ./conf, etc. directories
-        // Thus, we want to use catalina.base for our place to find log files. http://www.jguru.com/faq/view.jsp?EID=1121565
-        //PipelineBootstrapConfig.ensureLogHomeSet(System.getProperty("catalina.base") + "/logs");
+        // Thus, we want to use catalina.base for our place to find log files.
         if (LogHelper.getLabKeyLogDir() == null)
         {
             // Only set this if the user hasn't overridden it
