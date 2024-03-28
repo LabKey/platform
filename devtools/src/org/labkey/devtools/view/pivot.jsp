@@ -87,7 +87,7 @@
             // render select for each hierarchy
             function renderHierarchyFilter(h)
             {
-                var select = ['<select onchange="return run()" class="filter" data-hierarchy="' + h.uniqueName + '">'];
+                var select = ['<select class="hierarchy" class="filter" data-hierarchy="' + h.uniqueName + '">'];
                 // TODO list every member in tree order
                 for (var l=0 ; l<2 ; l++)
                 {
@@ -101,6 +101,7 @@
                 }
                 select.push("</select>");
                 Ext4.get(pivotDesignerId+".filterArea").insertHtml("beforeEnd", select.join(''));
+                LABKEY.Utils.attachEventHandlerForQuerySelector("SELECT.hierarchy", "click", run, true);
             }
 
 
@@ -124,7 +125,7 @@
             for (var m=0 ; m<measures.length ; m++)
             {
                 var measure = measures[m];
-                measureHtml.push('<div style="font-family:verdana; font-size:12pt; padding:2pt;"><input onclick="run()" type="checkbox" ' + (m==0?"checked":"") + ' name="chooseMeasure' + measure.name + '" value="measures:' + measure.uniqueName + '">' + measure.name + '</div>');
+                measureHtml.push('<div style="font-family:verdana; font-size:12pt; padding:2pt;"><input class="measure" type="checkbox" ' + (m===0?"checked":"") + ' name="chooseMeasure' + measure.name + '" value="measures:' + measure.uniqueName + '">' + measure.name + '</div>');
             }
 
             pivotDesignerPages.update(pagesHtml.join(''));
@@ -132,6 +133,7 @@
             pivotDesignerColumns.update(columnsHtml.join(''));
             pivotDesignerRows.update(rowsHtml.join(''));
             pivotDesignerMeasures.update(measureHtml.join(''));
+            LABKEY.Utils.attachEventHandlerForQuerySelector("INPUT.measure", "click", run, true);
 
             // DRAG AND DROP
             var overrides = {
@@ -476,7 +478,7 @@
     border:solid 2px green;
   }
 </style>
-<button onclick="run()">RUN</button>
+<button class="run">RUN</button>
 <table id="<%=unsafe(pivotDesignerId)%>">
     <tr>
         <td rowspan="2"><fieldset style="height:100%"><legend>pages (NYI)</legend><div class="drop" id="<%=unsafe(pivotDesignerId)%>.pages" data-axis="pages" style="min-height:200pt; min-width:100pt;">&nbsp;</div></fieldset></td>
@@ -495,3 +497,6 @@
 <h3>I'm a page header</h3>
 <div id="<%=unsafe(cellsetId)%>">
 </div>
+<labkey:script>
+    LABKEY.Utils.attachEventHandlerForQuerySelector("BUTTON.run", "click", run, true);
+</labkey:script>
