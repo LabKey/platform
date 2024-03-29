@@ -2305,7 +2305,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
                 if (!rowIds.isEmpty())
                 {
-                    ContainerFilter cf = getPlateContainerFilter(protocol, container, user);
+                    ContainerFilter cf = new ContainerFilter.AllInProjectPlusShared(container, user);
                     AssayProtocolSchema schema = provider.createProtocolSchema(user, protocol.getContainer(), protocol, null);
                     TableInfo resultsTable = schema.createDataTable(cf, false);
                     if (resultsTable == null)
