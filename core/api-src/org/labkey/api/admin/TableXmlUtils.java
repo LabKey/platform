@@ -211,23 +211,19 @@ public class TableXmlUtils
                 {
                     xmlColName = xmlCol.getColumnName();
                     boolean isColumnInDatabase = mDbColOrdinals.containsKey(xmlColName.toLowerCase());
+                    boolean isCalculated = null != xmlCol.getWrappedColumnName() || null != xmlCol.getValueExpression();
 
-                    if (null == xmlCol.getWrappedColumnName())
-                    {
-                        if (!isColumnInDatabase)
-                        {
-                            rlOut.addError("ERROR: Table \"").append(xmlTable.getTableName()).append("\", column \"").append(xmlColName).append("\" found in XML but not in database.");
-                            continue;
-                        }
-                    }
-                    else
+                    if (isCalculated)
                     {
                         if (isColumnInDatabase)
-                        {
                             rlOut.addError("ERROR: Table \"").append(xmlTable.getTableName()).append("\", column \"").append(xmlColName).append("\" found in database but shouldn't be, since it's a wrapped column");
-                        }
-
+                        // TODO validate wrappedColumnName and valueExpression
                         continue;   // Skip further checks for wrapped columns... they aren't in the database
+                    }
+                    else if (!isColumnInDatabase)
+                    {
+                        rlOut.addError("ERROR: Table \"").append(xmlTable.getTableName()).append("\", column \"").append(xmlColName).append("\" found in XML but not in database.");
+                        continue;
                     }
 
                     idc = mDbColOrdinals.get(xmlColName.toLowerCase());
