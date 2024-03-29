@@ -770,7 +770,10 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                         Map<Position, Map<String, Object>> measureDataRows = new LinkedHashMap<>();
                         for (PlateGridInfo gridInfo : entry.getValue())
                         {
-                            String measureName = gridInfo.getMeasureName() != null ? gridInfo.getMeasureName() : defaultMeasureName;
+                            String measureName = gridInfo.getMeasureName();
+                            if (measureName == null)
+                                throw new ExperimentException("The measure name for plate (" + gridInfo.getPlate().getPlateId() + ") has not been specified in the data file.");
+
                             if (measures.contains(measureName))
                                 throw new ExperimentException("The measure name (" + measureName + ") has been previously associated with data for the same plate.");
                             measures.add(measureName);
