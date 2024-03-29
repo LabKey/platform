@@ -149,10 +149,6 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.startsWith;
 import static org.labkey.api.util.DOM.A;
 import static org.labkey.api.util.DOM.Attribute.height;
-import static org.labkey.api.util.DOM.Attribute.href;
-import static org.labkey.api.util.DOM.Attribute.onclick;
-import static org.labkey.api.util.DOM.Attribute.onmouseout;
-import static org.labkey.api.util.DOM.Attribute.onmouseover;
 import static org.labkey.api.util.DOM.Attribute.style;
 import static org.labkey.api.util.DOM.Attribute.tabindex;
 import static org.labkey.api.util.DOM.Attribute.title;
@@ -1455,7 +1451,6 @@ public class PageFlowUtil
         HtmlString linkHtml = HtmlString.unsafe("<span class=\"labkey-help-pop-up\">?</span>");
         int width = 0;
         String onClickScript = null;
-        boolean inlineScript = false;
 
         HelpPopupBuilder(@NotNull String helpText)
         {
@@ -1489,13 +1484,6 @@ public class PageFlowUtil
             return this;
         }
 
-        @Deprecated // This will be removed shortly. editSpecLibInfo.jsp is the only caller.
-        public HelpPopupBuilder inlineScript()
-        {
-            this.inlineScript = true;
-            return this;
-        }
-
         @Override
         public String toString()
         {
@@ -1516,17 +1504,14 @@ public class PageFlowUtil
         {
             Objects.requireNonNull(helpText);
 
-            String id = null;
             if (onClickScript == null)
                 onClickScript = popupShowScript;
 
-            if (!inlineScript)
-            {
-                var config = HttpView.currentPageConfig();
-                id = config.makeId("helpPopup");
-                config.addHandler(id, "click", onClickScript);
-            }
-            return DOM.createHtml(A(id(id).at(tabindex,"-1", title, helpText, style, "pointer: help").at(inlineScript, onclick, onClickScript), linkHtml));
+            var config = HttpView.currentPageConfig();
+            String id = config.makeId("helpPopup");
+            config.addHandler(id, "click", onClickScript);
+
+            return DOM.createHtml(A(id(id).at(tabindex,"-1", title, helpText, style, "pointer: help"), linkHtml));
         }
 
         private HtmlString htmlPopup()
@@ -1535,25 +1520,19 @@ public class PageFlowUtil
 
             String id = null;
 
-            if (!inlineScript)
+            var config = HttpView.currentPageConfig();
+            config.addHandlerForQuerySelector("A._helpPopup", "mouseout", popupHideScript);
+            config.addHandlerForQuerySelector("A._helpPopup", "mouseover", popupShowScript);
+            if (null == onClickScript)
             {
-                var config = HttpView.currentPageConfig();
-                config.addHandlerForQuerySelector("A._helpPopup", "mouseout", popupHideScript);
-                config.addHandlerForQuerySelector("A._helpPopup", "mouseover", popupShowScript);
-                if (null == onClickScript)
-                {
-                    config.addHandlerForQuerySelector("A._helpPopup", "click", popupShowScript);
-                }
-                else
-                {
-                    id = config.makeId("helpPopup");
-                    config.addHandler(id, "click", onClickScript);
-                }
+                config.addHandlerForQuerySelector("A._helpPopup", "click", popupShowScript);
+            }
+            else
+            {
+                id = config.makeId("helpPopup");
+                config.addHandler(id, "click", onClickScript);
             }
             return DOM.createHtml(A(id(id).cl("_helpPopup").at(tabindex,"-1", style, "cursor: help")
-                .at(inlineScript, onclick, null==onClickScript ? popupShowScript : onClickScript)
-                .at(inlineScript, onmouseout, popupHideScript)
-                .at(inlineScript, onmouseover, popupShowScript)
                 .data(width != 0, "popupwidth", width)
                 .data(isNotBlank(titleText),"popuptitle", titleText)
                 .data("popupcontent", helpHtml.toString()),

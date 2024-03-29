@@ -65,23 +65,6 @@ boolean isCloudRoot = FileContentService.get().isCloudRoot(c);
 
 Ext4.onReady(function(){
 
-    // javascript version of PageFlowUtil.helpPopup(), returns html and callback to be invoked after element is inserted into page.
-    // Useful for including LabKey-style help in Ext components
-    // CONSIDER: move to dom/Utils.js if this can be used elsewhere
-    function helpPopup(titleText, helpText)
-    {
-        const h = Ext4.util.Format.htmlEncode;
-        const id = Ext4.id();
-        const html = '<a id="' + id + '" href="#" tabindex="-1" class="_helpPopup"><span class="labkey-help-pop-up">?</span></a>';
-        const callback = function()
-        {
-            LABKEY.Utils.attachEventHandler(id, "click", function() {return showHelpDivDelay(this, titleText, h(helpText), 'auto');});
-            LABKEY.Utils.attachEventHandler(id, "mouseover", function() {return showHelpDivDelay(this, titleText, h(helpText), 'auto');});
-            LABKEY.Utils.attachEventHandler(id, "mouseout", hideHelpDivDelay);
-        };
-        return {"html":html, "callback":callback};
-    }
-
     // Literals for PHI
     var restrictedPhi = <%=PHI.Restricted.ordinal()%>;
     var fullPhi = <%=PHI.PHI.ordinal()%>;
@@ -154,11 +137,11 @@ Ext4.onReady(function(){
 
         const subjectNoun = <%=q(subjectNoun)%>;
         const subjectNounLowercase = <%=q(subjectNounLowercase)%>;
-        const popupSubfolder = helpPopup("Include Subfolders", "Recursively export subfolders.");
-        const popupPHI = helpPopup("Include PHI Columns", "Include all dataset and list columns, study properties, and specimen data that have been tagged with this PHI level or below.");
-        const popupShiftDate = helpPopup("Shift Date Columns", "Selecting this option will shift selected date values associated with a " + subjectNounLowercase + " by a random, " + subjectNounLowercase + " specific, offset (from 1 to 365 days).");
-        const popupAlternate = helpPopup("Export Alternate " + subjectNoun + " IDs", "Selecting this option will replace each " + subjectNounLowercase + " id by an alternate randomly generated id.");
-        const popupClinic = helpPopup("Mask Clinic Names", "Selecting this option will change the labels for clinics in the exported list of locations to a generic label (i.e. Clinic).");
+        const popupSubfolder = LABKEY.Utils.helpPopup("Include Subfolders", "Recursively export subfolders.");
+        const popupPHI = LABKEY.Utils.helpPopup("Include PHI Columns", "Include all dataset and list columns, study properties, and specimen data that have been tagged with this PHI level or below.");
+        const popupShiftDate = LABKEY.Utils.helpPopup("Shift Date Columns", "Selecting this option will shift selected date values associated with a " + subjectNounLowercase + " by a random, " + subjectNounLowercase + " specific, offset (from 1 to 365 days).");
+        const popupAlternate = LABKEY.Utils.helpPopup("Export Alternate " + subjectNoun + " IDs", "Selecting this option will replace each " + subjectNounLowercase + " id by an alternate randomly generated id.");
+        const popupClinic = LABKEY.Utils.helpPopup("Mask Clinic Names", "Selecting this option will change the labels for clinics in the exported list of locations to a generic label (i.e. Clinic).");
 
         formItemsCol2.push({xtype: 'box', cls: 'labkey-announcement-title', html: '<span>Options:</span>'});
         formItemsCol2.push({xtype: 'box', cls: 'labkey-title-area-line', html: ''});
