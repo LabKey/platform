@@ -42,10 +42,6 @@
 
         HR(),
 
-        SPAN(A(at(onclick,"alert('hello world')"), "<>>click here<<>")),
-
-        HR(),
-
         SPAN(css("a.b.c"), unsafe("A&nbsp;B&nbsp;C")),
 
         HR(),

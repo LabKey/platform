@@ -1489,7 +1489,7 @@ public class PageFlowUtil
             return this;
         }
 
-        /* ONLY USE TO RENDER INTO JAVASCRIPT CODE */
+        @Deprecated // This will be removed shortly. editSpecLibInfo.jsp is the only caller.
         public HelpPopupBuilder inlineScript()
         {
             this.inlineScript = true;
