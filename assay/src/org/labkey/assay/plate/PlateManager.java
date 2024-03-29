@@ -2299,7 +2299,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                     SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ResultId"), rowIds, CompareType.IN);
                     filter.addCondition(FieldKey.fromParts("ProtocolId"), protocol.getRowId());
 
-                    Set<Integer> preexistingHits = new HashSet<>(new TableSelector(hitTable, Collections.singleton("ResultId")).getArrayList(Integer.class));
+                    Set<Integer> preexistingHits = new HashSet<>(new TableSelector(hitTable, Collections.singleton("ResultId"), filter, null).getArrayList(Integer.class));
                     rowIds.removeAll(preexistingHits);
                 }
 
