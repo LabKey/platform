@@ -35,23 +35,22 @@
     String cellsetId = "cellset" + uid;
 %>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
-    var cube;
-    var starttime;
+    let cube;
+    let starttime;
 
     (function()
     {
-        //var cube;
-        var mdx;
-        var configId = <%=q(configId)%>;
-        var schemaName = <%=q(schemaName)%>;
-        var cubeName = <%=q(cubeName)%>;
-        var pivotDesignerId = <%=q(pivotDesignerId)%>;
-        var cellsetId = <%=q(cellsetId)%>;
-        var pivotDesignerFilter;
-        var pivotDesignerPages;
-        var pivotDesignerColumns;
-        var pivotDesignerRows;
-        var pivotDesignerMeasures;
+        let mdx;
+        const configId = <%=q(configId)%>;
+        const schemaName = <%=q(schemaName)%>;
+        const cubeName = <%=q(cubeName)%>;
+        const pivotDesignerId = <%=q(pivotDesignerId)%>;
+        const cellsetId = <%=q(cellsetId)%>;
+        let pivotDesignerFilter;
+        let pivotDesignerPages;
+        let pivotDesignerColumns;
+        let pivotDesignerRows;
+        let pivotDesignerMeasures;
 
         Ext4.onReady(function ()
         {
@@ -68,7 +67,7 @@
             });
         });
 
-        var model = {onRows:[], onColumns:[], filter:[], measures:[], filterValues:{}};
+        let model = {onRows:[], onColumns:[], filter:[], measures:[], filterValues:{}};
 
 
         function renderUI()
@@ -79,24 +78,24 @@
             pivotDesignerRows = Ext4.get(pivotDesignerId+".rows");
             pivotDesignerMeasures = Ext4.get(pivotDesignerId+".measures");
 
-            var pagesHtml = [];
-            var filterHtml = [];
-            var columnsHtml = [];
-            var rowsHtml = [];
+            let pagesHtml = [];
+            let filterHtml = [];
+            let columnsHtml = [];
+            let rowsHtml = [];
 
             // render select for each hierarchy
             function renderHierarchyFilter(h)
             {
-                var select = ['<select class="hierarchy" class="filter" data-hierarchy="' + h.uniqueName + '">'];
+                let select = ['<select class="hierarchy" class="filter" data-hierarchy="' + Ext4.htmlEncode(h.uniqueName) + '">'];
                 // TODO list every member in tree order
-                for (var l=0 ; l<2 ; l++)
+                for (let l=0 ; l<2 ; l++)
                 {
-                    var level = h.levels[l];
-                    for (var m=0 ; m<level.members.length ; m++)
+                    let level = h.levels[l];
+                    for (let m=0 ; m<level.members.length ; m++)
                     {
-                        var member = level.members[m];
+                        let member = level.members[m];
                         if (member.name === "#notnull") continue;
-                        select.push('<option value="' + member.uniqueName + '">' + member.name + '</option>');
+                        select.push('<option value="' + Ext4.htmlEncode(member.uniqueName) + '">' + Ext4.htmlEncode(member.name) + '</option>');
                     }
                 }
                 select.push("</select>");
@@ -105,27 +104,27 @@
             }
 
 
-            var dimensions = cube.getDimensions();
-            for (var d=0 ; d<dimensions.length ; d++)
+            let dimensions = cube.getDimensions();
+            for (let d=0 ; d<dimensions.length ; d++)
             {
-                var dimension = dimensions[d];
+                let dimension = dimensions[d];
                 if ("Measures" == dimension.name)
                     continue;
-                var hierarchies = dimension.getHierarchies();
-                for (var h=0 ; h<hierarchies.length ; h++)
+                let hierarchies = dimension.getHierarchies();
+                for (let h=0 ; h<hierarchies.length ; h++)
                 {
-                    var hierarchy = hierarchies[h];
-                    filterHtml.push('<div style="font-family:verdana; font-size:12pt; padding:2pt;" class="hierarchy" data-hierarchy="' + hierarchy.uniqueName + '">' + hierarchy.name +'</div>');
+                    let hierarchy = hierarchies[h];
+                    filterHtml.push('<div style="font-family:verdana; font-size:12pt; padding:2pt;" class="hierarchy" data-hierarchy="' + Ext4.htmlEncode(hierarchy.uniqueName) + '">' + Ext4.htmlEncode(hierarchy.name) +'</div>');
                     renderHierarchyFilter(hierarchy);
                 }
             }
 
-            var measures = cube.levelMap.MeasuresLevel.members;
-            var measureHtml = [];
-            for (var m=0 ; m<measures.length ; m++)
+            let measures = cube.levelMap.MeasuresLevel.members;
+            let measureHtml = [];
+            for (let m=0 ; m<measures.length ; m++)
             {
-                var measure = measures[m];
-                measureHtml.push('<div style="font-family:verdana; font-size:12pt; padding:2pt;"><input class="measure" type="checkbox" ' + (m===0?"checked":"") + ' name="chooseMeasure' + measure.name + '" value="measures:' + measure.uniqueName + '">' + measure.name + '</div>');
+                let measure = measures[m];
+                measureHtml.push('<div style="font-family:verdana; font-size:12pt; padding:2pt;"><input class="measure" type="checkbox" ' + (m===0?"checked":"") + ' name="chooseMeasure' + Ext4.htmlEncode(measure.name) + '" value="measures:' + Ext4.htmlEncode(measure.uniqueName) + '">' + Ext4.htmlEncode(measure.name) + '</div>');
             }
 
             pivotDesignerPages.update(pagesHtml.join(''));
@@ -136,7 +135,7 @@
             LABKEY.Utils.attachEventHandlerForQuerySelector("INPUT.measure", "click", run, true);
 
             // DRAG AND DROP
-            var overrides = {
+            let overrides = {
                 // Called the instance the element is dragged.
                 b4StartDrag: function ()
                 {
@@ -165,7 +164,7 @@
                         this.el.removeCls('dropOK');
 
                         // Create the animation configuration object
-                        var animCfgObj = {
+                        let animCfgObj = {
                             easing: 'elasticOut',
                             duration: 1,
                             scope: this,
@@ -189,11 +188,11 @@
                 onDragDrop : function(evtObj, targetElId)
                 {
                     // Wrap the drop target element with Ext.Element
-                    var dropEl = Ext4.get(targetElId);
+                    let dropEl = Ext4.get(targetElId);
 
                     // Perform the node move only if the drag element's
                     // parent is not the same as the drop target
-                    if (this.el.dom.parentNode.id != targetElId)
+                    if (this.el.dom.parentNode.id !== targetElId)
                     {
 
                         // Move the element
@@ -218,7 +217,7 @@
                 // Only called when the drag element is dragged over the a drop target with the same dd group
                 onDragEnter : function(evtObj, targetElId) {
                     /* Colorize the drag target if the drag node's parent is not the same as the drop target */
-                    if (targetElId != this.el.dom.parentNode.id) {
+                    if (targetElId !== this.el.dom.parentNode.id) {
                         this.el.addCls('dropOK');
                     }
                     else {
@@ -231,18 +230,18 @@
                     this.el.removeCls('dropOK');
                 }
             };
-            var draggableDivs = Ext4.DomQuery.select("DIV.hierarchy");
+            let draggableDivs = Ext4.DomQuery.select("DIV.hierarchy");
             draggableDivs.forEach(function(el)
             {
-                var dd = Ext4.create('Ext.dd.DD',el,'hierarchyGroup');
+                let dd = Ext4.create('Ext.dd.DD',el,'hierarchyGroup');
                 Ext4.apply(dd,overrides);
             });
             // targets
             // Instantiate instances of DDTarget for the rented and repair drop target elements
-            var pagesDDTarget = Ext4.create('Ext.dd.DDTarget', pivotDesignerPages, 'hierarchyGroup');
-            var filterDDTarget = Ext4.create('Ext.dd.DDTarget', pivotDesignerFilter, 'hierarchyGroup');
-            var rowsDDTarget = Ext4.create('Ext.dd.DDTarget', pivotDesignerRows, 'hierarchyGroup');
-            var columnsDDTarget = Ext4.create('Ext.dd.DDTarget', pivotDesignerColumns, 'hierarchyGroup');
+            let pagesDDTarget = Ext4.create('Ext.dd.DDTarget', pivotDesignerPages, 'hierarchyGroup');
+            let filterDDTarget = Ext4.create('Ext.dd.DDTarget', pivotDesignerFilter, 'hierarchyGroup');
+            let rowsDDTarget = Ext4.create('Ext.dd.DDTarget', pivotDesignerRows, 'hierarchyGroup');
+            let columnsDDTarget = Ext4.create('Ext.dd.DDTarget', pivotDesignerColumns, 'hierarchyGroup');
         }
 
         function run()
@@ -257,9 +256,9 @@
 
         function updateFilterUI()
         {
-            var filterMap = {};
+            let filterMap = {};
             model.filter.forEach(function (uniqueName) {filterMap[uniqueName] = true;});
-            var selects = Ext4.DomQuery.select("SELECT.filter");
+            let selects = Ext4.DomQuery.select("SELECT.filter");
             selects.forEach(function (s) {
                 if (filterMap[s.dataset.hierarchy])
                     Ext4.fly(s).removeCls("x-hidden");
@@ -275,40 +274,39 @@
             model = {onRows:[], onColumns:[], filter:[], measures:[], filterValues:[]};
 
             // draggable elements
-            var draggableDivs = Ext4.DomQuery.select("DIV.hierarchy");
+            let draggableDivs = Ext4.DomQuery.select("DIV.hierarchy");
             draggableDivs.forEach(function(div){
-                var parent = div.parentElement;
-                var hierarchyName = div.dataset.hierarchy;
-                var axisName = parent.dataset.axis;
+                let parent = div.parentElement;
+                let hierarchyName = div.dataset.hierarchy;
+                let axisName = parent.dataset.axis;
                 model[axisName].push(hierarchyName);
             });
 
             // checkbox elements
-            var elements = Ext4.get(pivotDesignerId).select("INPUT").elements;
-            for (var e=0 ; e<elements.length ; e++)
+            let elements = Ext4.get(pivotDesignerId).select("INPUT").elements;
+            for (let e=0 ; e<elements.length ; e++)
             {
-                var input = elements[e];
+                let input = elements[e];
                 console.log("value="+input.value+" checked="+input.checked);
                 if (!input.checked)
                     continue;
-                var value = input.value;
-                var split = value.indexOf(':');
-                var where = value.substring(0,split);
-                var uniqueName = value.substring(split+1);
+                let value = input.value;
+                let split = value.indexOf(':');
+                let where = value.substring(0,split);
+                let uniqueName = value.substring(split+1);
                 console.log(where + "||" + uniqueName);
                 model[where].push(uniqueName);
             }
 
             // active filters
-            var filterMap = {};
+            let filterMap = {};
             model.filter.forEach(function (uniqueName) {filterMap[uniqueName] = true;});
-            var selects = Ext4.DomQuery.select("SELECT.filter");
+            let selects = Ext4.DomQuery.select("SELECT.filter");
             selects.forEach(function (s)
             {
-                var hierarchy = filterMap[s.dataset.hierarchy];
                 if (!filterMap[s.dataset.hierarchy])
                     return;
-                var value = Ext4.get(s).getValue();
+                let value = Ext4.get(s).getValue();
                 if (Ext4.String.endsWith(value,".[(All)]"))
                     return;
                 model.filterValues.push(value);
@@ -322,9 +320,9 @@
         {
             if (model.measures.length === 0)
                 return;
-            var measureexpr = setFromMembers(model.measures);
+            let measureexpr = setFromMembers(model.measures);
 
-            var query = "SELECT\n";
+            let query = "SELECT\n";
 
             if (model.onColumns.length === 0)
             {
@@ -332,13 +330,13 @@
             }
             else
             {
-                var colexpr = crossExprFromHierarchies(model.onColumns,true);
+                let colexpr = crossExprFromHierarchies(model.onColumns,true);
                 query += "NON EMPTY CROSSJOIN(" + colexpr + "," + measureexpr + ") ON COLUMNS\n";
             }
 
             if (model.onRows.length !== 0)
             {
-                var rowexpr = crossExprFromHierarchies(model.onRows,false);
+                let rowexpr = crossExprFromHierarchies(model.onRows,false);
                 query += ", NON EMPTY " + rowexpr + " ON ROWS\n";
             }
 
@@ -347,7 +345,7 @@
             if (model.filterValues.length !== 0)
             {
                 query += " WHERE (";
-                var comma = "";
+                let comma = "";
                 model.filterValues.forEach(function(s){
                     query += comma + s;
                     comma = ", ";
@@ -358,7 +356,7 @@
             console.log(query);
 
             Ext4.getBody().mask();
-            var config = {
+            let config = {
                 configId:configId,
                 schemaName:schemaName,
                 query:query,
@@ -371,7 +369,7 @@
 
         function crossExprFromHierarchies(hierarchies)
         {
-            if (hierarchies.length == 1)
+            if (hierarchies.length === 1)
             {
                 return hierarchies[0] + ".members";
             }
@@ -381,12 +379,12 @@
             }
             else
             {
-                var u = hierarchies.pop();
-                var p = hierarchies.pop();
-                var join = "NONEMPTYCROSSJOIN(" + p + ".members," + u + ".members)";
+                let u = hierarchies.pop();
+                let p = hierarchies.pop();
+                let join = "NONEMPTYCROSSJOIN(" + p + ".members," + u + ".members)";
                 while (hierarchies.length > 0)
                 {
-                    var h = hierarchies.pop();
+                    let h = hierarchies.pop();
                     join = "NONEMPTYCROSSJOIN(" + h + ".members," + join + ")";
                 }
                 return join;
@@ -403,7 +401,7 @@
         function failed(json,response,options)
         {
             Ext4.getBody().unmask();
-            var msg = response.statusText;
+            let msg = response.statusText;
             if (json && json.exception)
                 msg = json.exception;
             alert(msg);
@@ -412,52 +410,52 @@
 
         function renderCellSet(cs, el)
         {
-            var duration = new Date().getTime() - starttime;
+            const duration = new Date().getTime() - starttime;
             Ext4.getBody().unmask();
-            var h = Ext4.util.Format.htmlEncode;
             el = Ext4.get(el||'cellset');
-            var html = [];
+            let html = [], row, col, cell, value;
+
             html.push('<table class="labkey-data-region-legacy labkey-show-borders"><tr>');
             if (cs.axes.length>1)
                 html.push('<td>&nbsp;</td>');
-            for (var col=0 ; col<cs.axes[0].positions.length ; col++)
+            for (col=0 ; col<cs.axes[0].positions.length ; col++)
             {
                 // only showing first member (handle hierarchy)
-                html.push('<td class="labkey-column-header">' + h(cs.axes[0].positions[col][0].uniqueName) + "</td>");
+                html.push('<td class="labkey-column-header">' + Ext4.htmlEncode(cs.axes[0].positions[col][0].uniqueName) + "</td>");
             }
             html.push("</tr>");
 
-            if (cs.axes.length == 1)
+            if (cs.axes.length === 1)
             {
-                //for (var row=0 ; row<cs.axes[1].positions.length ; row++)
+                //for (let row=0 ; row<cs.axes[1].positions.length ; row++)
                 {
                     html.push('<tr>');
-                    for (var col=0 ; col<cs.axes[0].positions.length ; col++)
+                    for (col=0 ; col<cs.axes[0].positions.length ; col++)
                     {
-                        var cell = cs.cells[col];
-                        var value = Ext4.isObject(cell) ? cell.value : cell;
+                        cell = cs.cells[col];
+                        value = Ext4.isObject(cell) ? cell.value : cell;
                         html.push("<td align=right>" + (null==value?"&nbsp;":value) + "</td>");
                     }
                     html.push('</tr>');
                 }
                 html.push("</table>");
                 html.push("<p><b>" + (duration/1000) + "</b></p>");        }
-            else if (cs.axes.length == 2)
+            else if (cs.axes.length === 2)
             {
-                for (var row=0 ; row<cs.axes[1].positions.length ; row++)
+                for (row=0 ; row<cs.axes[1].positions.length ; row++)
                 {
                     html.push('<tr>');
-                    var pos = cs.axes[1].positions[row];
-                    for (var p=0; p < pos.length; p++)
+                    let pos = cs.axes[1].positions[row];
+                    for (let p=0; p < pos.length; p++)
                     {
                         // only showing first member (handle hierarchy)
-                        html.push('<td class="labkey-column-header">' + h(cs.axes[1].positions[row][p].uniqueName) + "</td>");
+                        html.push('<td class="labkey-column-header">' + Ext4.htmlEncode(cs.axes[1].positions[row][p].uniqueName) + "</td>");
                     }
 
-                    for (var col=0 ; col<cs.axes[0].positions.length ; col++)
+                    for (col=0 ; col<cs.axes[0].positions.length ; col++)
                     {
-                        var cell = cs.cells[row][col];
-                        var value = Ext4.isObject(cell) ? cell.value : cell;
+                        cell = cs.cells[row][col];
+                        value = Ext4.isObject(cell) ? cell.value : cell;
                         html.push("<td align=right>" + (null==value?"&nbsp;":value) + "</td>");
                     }
                     html.push('</tr>');
