@@ -615,7 +615,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             Set<Position> positions = new HashSet<>();
             for (Map<String, Object> row : data)
             {
-                // well location field is required, return it will fail downstream
+                // well location field is required, return if not provided or it will fail downstream
                 String well = String.valueOf(row.get(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME));
                 if (well == null)
                     return data;
