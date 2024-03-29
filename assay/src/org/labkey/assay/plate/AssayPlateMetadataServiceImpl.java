@@ -666,7 +666,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             else
             {
                 // multiple annotation must have an annotation prefix
-                for (String annotation : getAnnotations())
+                for (String annotation : annotations)
                 {
                     String plateID = getPrefixedValue(annotation, PLATE_PREFIX);
                     if (plateID != null)
