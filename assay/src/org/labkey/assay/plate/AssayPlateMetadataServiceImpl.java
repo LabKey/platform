@@ -613,6 +613,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             int rowCount = 0;
             int curPlate = 0;
             Set<Position> positions = new HashSet<>();
+            String plateFieldName = plateIdField != null ? plateIdField : AssayResultDomainKind.PLATE_COLUMN_NAME;
             for (Map<String, Object> row : data)
             {
                 // well location field is required, return if not provided or it will fail downstream
@@ -620,21 +621,22 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 if (well == null)
                     return data;
 
-                if (rowCount++ >= plateSize)
-                {
-                    // move to the next plate in the set
-                    rowCount = 0;
-                    curPlate++;
-                    positions.clear();
-                }
                 Position position = new PositionImpl(null, well);
                 if (positions.contains(position))
                     throw new ExperimentException(String.format(ERROR_MESSAGE, "there is more than one well referencing the same position in the plate " + position));
 
                 positions.add(position);
                 Map<String, Object> newRow = new HashMap<>(row);
-                newRow.put(AssayResultDomainKind.PLATE_COLUMN_NAME, plates.get(curPlate).getPlateId());
+                newRow.put(plateFieldName, plates.get(curPlate).getPlateId());
                 newData.add(newRow);
+
+                if (++rowCount >= plateSize)
+                {
+                    // move to the next plate in the set
+                    rowCount = 0;
+                    curPlate++;
+                    positions.clear();
+                }
             }
             return newData;
         }
@@ -651,7 +653,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         private Plate _plate;
         private String _measureName;
 
-        public PlateGridInfo(PlateUtils.GridInfo info, PlateSet plateSet)
+        public PlateGridInfo(PlateUtils.GridInfo info, PlateSet plateSet) throws ExperimentException
         {
             super(info.getData(), info.getAnnotations());
 
@@ -677,9 +679,13 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             }
         }
 
-        private @Nullable Plate getPlateForId(String annotation, List<Plate> platesetPlates)
+        private @Nullable Plate getPlateForId(String annotation, List<Plate> platesetPlates) throws ExperimentException
         {
-            return platesetPlates.stream().filter(p -> p.isIdentifierMatch(annotation)).findFirst().orElse(null);
+            Plate plate = platesetPlates.stream().filter(p -> p.isIdentifierMatch(annotation)).findFirst().orElse(null);
+            if (plate == null)
+                throw new ExperimentException("The plate identifier (" + annotation + ") is not valid for the configured plate set.");
+
+            return plate;
         }
 
         private @Nullable String getPrefixedValue(String annotation, String prefix)
