@@ -192,7 +192,6 @@ public class TSVProtocolSchema extends AssayProtocolSchema
                         defaultColumns.addAll(plateDefaultColumns);
                     }
                 }
-                setDefaultVisibleColumns(defaultColumns);
 
                 // join to the well table which may have plate metadata
                 ColumnInfo wellLsidCol = getColumn(AssayResultDomainKind.WELL_LSID_COLUMN_NAME);
@@ -214,15 +213,20 @@ public class TSVProtocolSchema extends AssayProtocolSchema
                     SQLFragment plateHitsSQL = new SQLFragment("(CASE WHEN (SELECT ResultId FROM ")
                             .append(AssayDbSchema.getInstance().getTableInfoHit(), "h")
                             .append(" WHERE h.ResultId = ").append(ExprColumn.STR_TABLE_ALIAS + ".RowId")
-                            .append(" AND h.RunId = ").append(ExprColumn.STR_TABLE_ALIAS + ".DataId").append(")")
+                            .append(" AND h.RunId = ").append(ExprColumn.STR_TABLE_ALIAS + ".Run").append(")")
                             .append(" IS NULL THEN ").append(dialect.getBooleanFALSE())
                             .append(" ELSE ").append(dialect.getBooleanTRUE()).append(" END")
                             .append(")");
 
                     ExprColumn plateHitsColumn = new ExprColumn(this, "Hit", plateHitsSQL, JdbcType.BOOLEAN);
+                    plateHitsColumn.setConceptURI("hit-selection");
                     plateHitsColumn.setLabel("Hit Selection");
                     addColumn(plateHitsColumn);
+                    defaultColumns.add(0, plateHitsColumn.getFieldKey());
                 }
+
+                defaultColumns.add(0, FieldKey.fromParts("Well", "SampleId"));
+                setDefaultVisibleColumns(defaultColumns);
             }
         }
     }

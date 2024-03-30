@@ -2299,13 +2299,13 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                     SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ResultId"), rowIds, CompareType.IN);
                     filter.addCondition(FieldKey.fromParts("ProtocolId"), protocol.getRowId());
 
-                    Set<Integer> preexistingHits = new HashSet<>(new TableSelector(hitTable, Collections.singleton("ResultId")).getArrayList(Integer.class));
+                    Set<Integer> preexistingHits = new HashSet<>(new TableSelector(hitTable, Collections.singleton("ResultId"), filter, null).getArrayList(Integer.class));
                     rowIds.removeAll(preexistingHits);
                 }
 
                 if (!rowIds.isEmpty())
                 {
-                    ContainerFilter cf = getPlateContainerFilter(protocol, container, user);
+                    ContainerFilter cf = new ContainerFilter.AllInProjectPlusShared(container, user);
                     AssayProtocolSchema schema = provider.createProtocolSchema(user, protocol.getContainer(), protocol, null);
                     TableInfo resultsTable = schema.createDataTable(cf, false);
                     if (resultsTable == null)
@@ -2445,6 +2445,40 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         plateSetAssays.setProtocolPlateSets(protocolPlateSets);
 
         return plateSetAssays;
+    }
+
+    public void validatePrimaryPlateSetUniqueSamples(Set<Integer> wellRowIds, BatchValidationException errors)
+    {
+        if (wellRowIds.isEmpty())
+            return;
+
+        AssayDbSchema dbSchema = AssayDbSchema.getInstance();
+        SqlDialect dialect = dbSchema.getSchema().getSqlDialect();
+        TableInfo plateTable = dbSchema.getTableInfoPlate();
+        TableInfo plateSetTable = dbSchema.getTableInfoPlateSet();
+        TableInfo wellTable = dbSchema.getTableInfoWell();
+
+        // Determines the set of primary plate sets that are being touched from the collection of well rowIds
+        SQLFragment primaryPlateSetsFromWellRowIdsSQL = new SQLFragment("SELECT PS.RowId FROM ").append(wellTable, "W")
+                .append(" INNER JOIN ").append(plateTable, "P").append(" ON P.RowId = W.PlateId")
+                .append(" INNER JOIN ").append(plateSetTable, "PS").append(" ON PS.RowId = P.PlateSet")
+                .append(" WHERE PS.Type = ?").add("primary").append(" AND W.RowId ").appendInClause(wellRowIds, dialect);
+
+        // From the set of primary plate sets determine if any sample exists in more than one well within the entire plate set
+        SQLFragment nonUniqueSamplesPerPrimaryPlateSetSQL = new SQLFragment("SELECT PS.Name AS PlateSetName, M.Name AS SampleName FROM ")
+                .append(wellTable, "W")
+                .append(" INNER JOIN ").append(plateTable, "P").append(" ON P.RowId = W.PlateId")
+                .append(" INNER JOIN ").append(plateSetTable, "PS").append(" ON PS.RowId = P.PlateSet")
+                .append(" LEFT JOIN ").append(ExperimentService.get().getTinfoMaterial(), "M").append(" ON M.RowId = W.SampleId")
+                .append(" WHERE W.SampleId IS NOT NULL AND PS.RowId IN (").append(primaryPlateSetsFromWellRowIdsSQL).append(")")
+                .append(" GROUP BY PS.RowId, M.Name, W.SampleId HAVING COUNT(W.SampleId) > 1");
+
+        var duplicates = new SqlSelector(dbSchema.getSchema(), nonUniqueSamplesPerPrimaryPlateSetSQL).getMapCollection();
+
+        for (var duplicate : duplicates)
+        {
+            errors.addRowError(new ValidationException(String.format("Sample \"%s\" is recorded in more than one well in Primary Plate Set \"%s\".", duplicate.get("SampleName"), duplicate.get("PlateSetName"))));
+        }
     }
 
     private void requireActiveTransaction()
