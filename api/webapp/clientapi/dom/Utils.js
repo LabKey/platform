@@ -144,6 +144,22 @@ LABKEY.Utils = new function(impl, $) {
         return nextRow;
     };
 
+    // JavaScript version of PageFlowUtil.helpPopup(), returns html and callback to be invoked after element is inserted
+    // into page. Useful for including LabKey-style help in Ext components.
+    impl.helpPopup = function(titleText, helpText)
+    {
+        const h = Ext4.util.Format.htmlEncode;
+        const id = Ext4.id();
+        const html = '<a id="' + id + '" href="#" tabindex="-1" class="_helpPopup"><span class="labkey-help-pop-up">?</span></a>';
+        const callback = function()
+        {
+            LABKEY.Utils.attachEventHandler(id, "click", function() {return showHelpDivDelay(this, titleText, h(helpText), 'auto');});
+            LABKEY.Utils.attachEventHandler(id, "mouseover", function() {return showHelpDivDelay(this, titleText, h(helpText), 'auto');});
+            LABKEY.Utils.attachEventHandler(id, "mouseout", hideHelpDivDelay);
+        };
+        return {"html":html, "callback":callback};
+    };
+
     /**
      * Shows an error dialog box to the user in response to an error from an AJAX request, including
      * any error messages from the server.
