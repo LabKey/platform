@@ -429,23 +429,33 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
                 ArrayList<GWTPropertyDescriptor> newFields = new ArrayList<>();
 
                 Optional<GWTPropertyDescriptor> plateTemplateColumn = update.getFields().stream().filter(field -> field.getName().equals(AssayPlateMetadataService.PLATE_TEMPLATE_COLUMN_NAME)).findFirst();
-                if (plateTemplateColumn.isPresent())
+                if (!AssayPlateMetadataService.isBiologicsFolder(runDomain.getContainer()))
                 {
-                    // Ensure the lookup container is null, so it defaults to "Current Folder" to more easily support
-                    // cross-folder support.
-                    GWTPropertyDescriptor plateTemplate = plateTemplateColumn.get();
-                    plateTemplate.setLookupContainer(null);
-                }
-                else
-                {
-                    GWTPropertyDescriptor plateTemplate = new GWTPropertyDescriptor(AssayPlateMetadataService.PLATE_TEMPLATE_COLUMN_NAME, PropertyType.STRING.getTypeUri());
-                    plateTemplate.setLookupSchema(AssaySchema.NAME + "." + getResourceName());
-                    plateTemplate.setLookupQuery(TsvProviderSchema.PLATE_TEMPLATE_TABLE);
-                    plateTemplate.setLookupContainer(null);
-                    plateTemplate.setRequired(!AssayPlateMetadataService.isExperimentalAppPlateEnabled());
-                    plateTemplate.setShownInUpdateView(false);
+                    // only show the run level plate template field for non-LKB folders, this field is for the legacy JSON plate metadata support
+                    if (plateTemplateColumn.isPresent())
+                    {
+                        // Ensure the lookup container is null, so it defaults to "Current Folder" to more easily support
+                        // cross-folder support.
+                        GWTPropertyDescriptor plateTemplate = plateTemplateColumn.get();
+                        plateTemplate.setLookupContainer(null);
+                    }
+                    else
+                    {
+                        GWTPropertyDescriptor plateTemplate = new GWTPropertyDescriptor(AssayPlateMetadataService.PLATE_TEMPLATE_COLUMN_NAME, PropertyType.STRING.getTypeUri());
+                        plateTemplate.setLookupSchema(AssaySchema.NAME + "." + getResourceName());
+                        plateTemplate.setLookupQuery(TsvProviderSchema.PLATE_TEMPLATE_TABLE);
+                        plateTemplate.setLookupContainer(null);
+                        plateTemplate.setRequired(!AssayPlateMetadataService.isExperimentalAppPlateEnabled());
+                        plateTemplate.setShownInUpdateView(false);
 
-                    newFields.add(plateTemplate);
+                        newFields.add(plateTemplate);
+                    }
+                }
+                else if (plateTemplateColumn.isPresent())
+                {
+                    // remove from LKB folders
+                    List<GWTPropertyDescriptor> fieldsWithoutTemplateColumn = update.getFields().stream().filter(field -> !field.getName().equals(AssayPlateMetadataService.PLATE_TEMPLATE_COLUMN_NAME)).toList();
+                    update.setFields(fieldsWithoutTemplateColumn);
                 }
 
                 if (!existingFields.contains(AssayPlateMetadataService.PLATE_SET_COLUMN_NAME))
