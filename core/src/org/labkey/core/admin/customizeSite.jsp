@@ -222,7 +222,7 @@ Click the Save button at any time to accept the current settings and continue.</
 %>
             <tr>
                 <td style="padding: 5px 0 5px;" colspan="2">
-                            <%=button("View").id("testUsageReport").onClick("testUsageReport(false); return false;")%>
+                            <%=link("View", AdminController.ViewUsageStatistics.class)%>
                             <%=button("Download").id("testUsageReportDownload").onClick("testUsageReport(true); return false;")%>
                     Generate an example usage report. <strong>No data will be submitted.</strong></td>
             </tr>

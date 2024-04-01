@@ -89,6 +89,7 @@ import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.IgnoresForbiddenProjectCheck;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SimpleModule;
 import org.labkey.api.moduleeditor.api.ModuleEditorService;
@@ -11172,6 +11173,22 @@ public class AdminController extends SpringActionController
         public void setHourDelta(Integer hourDelta)
         {
             this.hourDelta = hourDelta;
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public static class ViewUsageStatistics extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors)
+        {
+            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("core"), ModuleHtmlView.getGeneratedViewPath("ViewUsageStatistics"));
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            // TODO: What would be appropriate here?
         }
     }
 
