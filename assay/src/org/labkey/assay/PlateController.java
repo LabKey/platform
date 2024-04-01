@@ -955,6 +955,11 @@ public class PlateController extends SpringActionController
             return _selectionKey != null && _parentPlateSetId != null && !_plates.isEmpty();
         }
 
+        public boolean isEmptyCase()
+        {
+            return _plates.isEmpty() && _selectionKey == null;
+        }
+
         public boolean isDefaultCase()
         {
             return !_plates.isEmpty() && _selectionKey == null;
@@ -968,7 +973,7 @@ public class PlateController extends SpringActionController
         @Override
         public void validateForm(CreatePlateSetForm form, Errors errors)
         {
-            if (!form.isStandaloneAssayPlateCase() && !form.isReplateCase() && !form.isRearrayCase() && !form.isDefaultCase())
+            if (!form.isStandaloneAssayPlateCase() && !form.isReplateCase() && !form.isRearrayCase() && !form.isEmptyCase() && !form.isDefaultCase())
                 errors.reject(ERROR_GENERIC, "Invalid parameters.");
         }
 

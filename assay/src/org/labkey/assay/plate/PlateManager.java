@@ -2567,7 +2567,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         PlateSet parentPlateSet = PlateManager.get().getPlateSet(c, plateSetId);
         if (parentPlateSet == null)
-            throw new IllegalArgumentException("Invalid plate set id.");
+            throw new IllegalArgumentException(String.format("Failed to get plate set. Plate set with rowId (%d) is not available.", plateSetId));
 
         List<Plate> platesList = parentPlateSet.getPlates(u);
 
