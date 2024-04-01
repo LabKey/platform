@@ -27,6 +27,7 @@ import org.labkey.api.reader.DataLoaderFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -58,7 +59,7 @@ public class ExcelPlateReader extends AbstractPlateReader implements PlateReader
     }
 
     @Override
-    public Map<String, double[][]> loadMultiGridFile(Plate template, File dataFile) throws ExperimentException
+    public List<PlateUtils.GridInfo> loadMultiGridFile(Plate template, File dataFile) throws ExperimentException
     {
         DataLoaderFactory factory = DataLoader.get().findFactory(dataFile, null);
         try (DataLoader loader = factory.createLoader(dataFile, false))

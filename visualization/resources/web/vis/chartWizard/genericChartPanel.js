@@ -771,16 +771,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     // the configuration can be used to make a selectRows request
     getQueryConfig : function(serialize)
     {
-        var sortKey = 'lsid'; // needed to keep expected ordering for legend data
-
-        // Issue 38105: For plots with study visit labels on the x-axis, sort by visit display order and then sequenceNum
-        var visitTableName = LABKEY.vis.GenericChartHelper.getStudySubjectInfo().tableName + 'Visit';
-        if (this.measures.x && this.measures.x.fieldKey === visitTableName + '/Visit') {
-            var displayOrderColName = visitTableName + '/Visit/DisplayOrder';
-            var seqNumColName = visitTableName + '/SequenceNum';
-            sortKey = displayOrderColName + ', ' + seqNumColName;
-        }
-
         var config = {
             schemaName  : this.schemaName,
             queryName   : this.queryName,
@@ -790,7 +780,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             parameters  : this.parameters,
             requiredVersion : 13.2,
             maxRows: -1,
-            sort: sortKey,
+            sort: LABKEY.vis.GenericChartHelper.getQueryConfigSortKey(this.measures),
             method: 'POST'
         };
 
@@ -1226,8 +1216,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 {
                     var f = queryConfig.filterArray[i];
                     var type = LABKEY.Filter.getFilterTypeForURLSuffix(f.type);
-                    var value = type.isMultiValued() ? f.value : (Ext4.isArray(f.value) ? f.value[0]: f.value);
-                    filters.push(LABKEY.Filter.create(f.name, value, type));
+                    if (type !== undefined) {
+                        var value = type.isMultiValued() ? f.value : (Ext4.isArray(f.value) ? f.value[0]: f.value);
+                        filters.push(LABKEY.Filter.create(f.name, value, type));
+                    }
                 }
                 this.userFilters = filters;
             }
@@ -1276,7 +1268,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             if (chartConfig.geomOptions)
                 Ext4.apply(this.options.general, chartConfig.geomOptions);
 
-            if (chartConfig.labels && chartConfig.labels.main)
+            if (chartConfig.labels && LABKEY.Utils.isString(chartConfig.labels.main))
                 this.options.general.label = chartConfig.labels.main;
             else
                 this.options.general.label = this.getDefaultTitle();
@@ -1574,8 +1566,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         var plotConfigArr = [], geom, labels, data = this.getMeasureStoreRecords(), me = this;
 
         geom = LABKEY.vis.GenericChartHelper.generateGeom(chartType, chartConfig.geomOptions);
-        if (chartType === 'line_plot' && (chartConfig.geomOptions.hideDataPoints || data.length > this.dataPointLimit)){
-            geom = null;
+        if (chartType === 'line_plot' && data.length > this.dataPointLimit){
+            chartConfig.geomOptions.hideDataPoints = true;
         }
         
         labels = LABKEY.vis.GenericChartHelper.generateLabels(chartConfig.labels);
@@ -1871,7 +1863,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     border: 1,
                     autoEl: {tag: 'div'},
                     padding: 10,
-                    html: '<h3 style="color:red;">Error rendering chart:</h2>' + validation.message,
+                    html: '<h3 style="color:red;">Error rendering chart:</h3>' + validation.message,
                     autoScroll: true
                 });
                 this.getViewPanel().add(errorDiv);

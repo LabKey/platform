@@ -95,7 +95,7 @@ public abstract class GenericChartReport extends AbstractReport
             @Override
             public String getIconPath()
             {
-                return "/visualization/report/box_plot.gif";
+                return "/visualization/report/box_plot_icon.svg";
             }
             @Override
             public String getThumbnailName()
@@ -209,7 +209,7 @@ public abstract class GenericChartReport extends AbstractReport
             @Override
             public String getIconPath()
             {
-                return "/visualization/report/scatter_plot.gif";
+                return "/visualization/report/scatter_plot_icon.svg";
             }
             @Override
             public String getThumbnailName()

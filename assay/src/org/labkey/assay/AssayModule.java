@@ -324,7 +324,8 @@ public class AssayModule extends SpringModule
             PlateManager.TestCase.class,
             PositionImpl.TestCase.class,
             PlateImpl.TestCase.class,
-            PlateUtils.TestCase.class
+            PlateUtils.TestCase.class,
+            AssayPlateMetadataServiceImpl.TestCase.class
         );
     }
 

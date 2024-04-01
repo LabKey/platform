@@ -208,16 +208,27 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         {
             Map<DataType, List<Map<String, Object>>> datas = new HashMap<>();
             List<Map<String, Object>> dataRows = loader.load();
-            boolean loaderDataRowsEmpty = dataRows.isEmpty();
+            boolean skipFirstRowAdjustment = false;
 
             if (plateMetadataEnabled)
-                dataRows = parsePlateFormats(context, provider, protocol, dataRows, dataFile);
+            {
+                AssayPlateMetadataService svc = AssayPlateMetadataService.getService(PlateMetadataDataHandler.DATA_TYPE);
+                if (AssayPlateMetadataService.isExperimentalAppPlateEnabled() && svc != null)
+                {
+                    Pair<String, Boolean> plateIdAdded = new Pair<>("PlateIdAdded", false);
+                    Integer plateSetId = getPlateSetValueFromRunProps(context, provider, protocol);
+                    dataRows = svc.parsePlateData(context.getContainer(), context.getUser(), provider, protocol, plateSetId, dataFile, dataRows, plateIdAdded);
+
+                    // need to do this otherwise the added plateID may get stripped
+                    skipFirstRowAdjustment = plateIdAdded.second;
+                }
+            }
 
             // loader did not parse any rows
             if (dataRows.isEmpty() && !settings.isAllowEmptyData() && !dataDomain.getProperties().isEmpty())
                 throw new ExperimentException("Unable to load any rows from the input data. Please check the format of the input data to make sure it matches the assay data columns.");
 
-            if (!loaderDataRowsEmpty)
+            if (!skipFirstRowAdjustment)
                 adjustFirstRowOrder(dataRows, loader);
 
             // assays with plate metadata support will merge the plate metadata with the data rows to make it easier for
@@ -232,17 +243,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         {
             throw new ExperimentException("There was a problem loading the data file. " + (ioe.getMessage() == null ? "" : ioe.getMessage()), ioe);
         }
-    }
-
-    private List<Map<String, Object>> parsePlateFormats(XarContext context, AssayProvider provider, ExpProtocol protocol, List<Map<String, Object>> dataRows, File dataFile) throws ExperimentException
-    {
-        AssayPlateMetadataService svc = AssayPlateMetadataService.getService(PlateMetadataDataHandler.DATA_TYPE);
-        if (AssayPlateMetadataService.isExperimentalAppPlateEnabled() && dataRows.isEmpty() && svc != null)
-        {
-            Integer plateSetId = getPlateSetValueFromRunProps(context, provider, protocol);
-            dataRows = svc.parsePlateGrids(context.getContainer(), context.getUser(), provider, protocol, plateSetId, dataFile);
-        }
-        return dataRows;
     }
 
     private List<Map<String, Object>> mergePlateMetadata(XarContext context, AssayProvider provider, ExpProtocol protocol, List<Map<String, Object>> dataRows,

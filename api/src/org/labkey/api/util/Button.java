@@ -28,7 +28,6 @@ import java.util.Map;
 
 import static org.labkey.api.util.DOM.A;
 import static org.labkey.api.util.DOM.Attribute;
-import static org.labkey.api.util.DOM.Attribute.onclick;
 import static org.labkey.api.util.DOM.Attribute.tabindex;
 import static org.labkey.api.util.DOM.Attribute.title;
 import static org.labkey.api.util.DOM.Attribute.type;
@@ -71,7 +70,6 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
     private final String style;
     private final String confirmMessage;
     private final String target;
-    private final boolean inlineScript;
 
     private Button(ButtonBuilder builder)
     {
@@ -94,7 +92,6 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
         this.style = builder.style;
         this.confirmMessage = builder.confirmMessage;
         this.target = builder.target;
-        this.inlineScript = builder.inlineScript;
 
         if (this.usePost && null != this.onClick)
             throw new IllegalStateException("Can't specify both usePost and onClick");
@@ -245,7 +242,6 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
             .id(id)
             .at(title, tip, Attribute.rel, getRel(), Attribute.name, getName(), Attribute.style, getStyle(), Attribute.target, getTarget())
             .at(!usePost, Attribute.href, StringUtils.defaultIfBlank(this.href,  "#"), "#")
-            .at(inlineScript, onclick, clickHandler)
             .data(usePost, "href", this.href)
             .data(usePost, "confirmmessage", confirmMessage)
             .data("submitid", submitId)         // this id is used by the event handler, stash in a data attribute rather than hard-coding in the handler source
@@ -257,8 +253,7 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
             .cl(isDropdown(), "dropdown-toggle")
             .cl(iconOnly, "icon-only");
 
-        if (!inlineScript)
-            page.addHandler(id, "click", clickHandler);
+        page.addHandler(id, "click", clickHandler);
         return createHtmlFragment(
             isSubmit() ?
             INPUT(at(type,"submit",tabindex,"-1",Attribute.style,"position:absolute;left:-9999px;width:1px;height:1px;",Attribute.id,submitId)) : null,
@@ -275,7 +270,6 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
         private boolean dropdown;
         private boolean enabled = true;
         private boolean submit;
-        private boolean inlineScript = false;
 
         public ButtonBuilder(@NotNull String text)
         {
@@ -325,14 +319,6 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
         {
             this.submit = submit;
             this.primary(true);
-            return this;
-        }
-
-        /* ONLY WHEN RENDER MARKUP INTO JAVASCRIPT CODE */
-
-        public ButtonBuilder inlineScript()
-        {
-            this.inlineScript = true;
             return this;
         }
 

@@ -1116,7 +1116,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
     },
 
     getFillColor: function(){
-        if (!this.pointTypeCombo.isDisabled() && this.getPointType() == 'all') {
+        if (!this.pointTypeCombo.isDisabled() && this.getPointType() == 'all' && this.renderType == 'box_plot') {
             return 'none';
         }
 
