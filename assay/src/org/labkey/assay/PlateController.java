@@ -878,6 +878,7 @@ public class PlateController extends SpringActionController
         private List<PlateManager.CreatePlateSetPlate> _plates = new ArrayList<>();
         private Integer _parentPlateSetId;
         private PlateSetType _type;
+        private String _selectionKey;
 
         public String getDescription()
         {
@@ -928,11 +929,49 @@ public class PlateController extends SpringActionController
         {
             _type = type;
         }
+
+        public String getSelectionKey()
+        {
+            return _selectionKey;
+        }
+
+        public void setSelectionKey(String selectionKey)
+        {
+            _selectionKey = selectionKey;
+        }
+
+        public boolean isStandaloneAssayPlateCase()
+        {
+            return _selectionKey != null && !_plates.isEmpty() && _parentPlateSetId == null;
+        }
+
+        public boolean isReplateCase()
+        {
+            return _parentPlateSetId != null && _selectionKey == null && _plates.isEmpty();
+        }
+
+        public boolean isRearrayCase()
+        {
+            return _selectionKey != null && _parentPlateSetId != null && !_plates.isEmpty();
+        }
+
+        public boolean isDefaultCase()
+        {
+            return !_plates.isEmpty() && _selectionKey == null;
+        }
+
     }
 
     @RequiresPermission(InsertPermission.class)
     public static class CreatePlateSetAction extends MutatingApiAction<CreatePlateSetForm>
     {
+        @Override
+        public void validateForm(CreatePlateSetForm form, Errors errors)
+        {
+            if (!form.isStandaloneAssayPlateCase() && !form.isReplateCase() && !form.isRearrayCase() && !form.isDefaultCase())
+                errors.reject(ERROR_GENERIC, "Invalid parameters.");
+        }
+
         @Override
         public Object execute(CreatePlateSetForm form, BindException errors) throws Exception
         {
@@ -943,7 +982,25 @@ public class PlateController extends SpringActionController
                 plateSet.setName(form.getName());
                 plateSet.setType(form.getType());
 
-                plateSet = PlateManager.get().createPlateSet(getContainer(), getUser(), plateSet, form.getPlates(), form.getParentPlateSetId());
+                List<PlateManager.CreatePlateSetPlate> plates = new ArrayList<>();
+                if (form.isStandaloneAssayPlateCase())
+                {
+                    plates = PlateManager.get().getPlateData(getViewContext(), form.getSelectionKey(), form.getPlates());
+                }
+                else if (form.isRearrayCase())
+                {
+                    plates = null; // Rosaline ToDo: next story
+                }
+                else if (form.isReplateCase())
+                {
+                    plates = PlateManager.get().getPlates(form.getParentPlateSetId(), getContainer(), getUser());
+                }
+                else if (form.isDefaultCase())
+                {
+                    plates = form.getPlates();
+                }
+
+                plateSet = PlateManager.get().createPlateSet(getContainer(), getUser(), plateSet, plates, form.getParentPlateSetId());
                 return success(plateSet);
             }
             catch (Exception e)

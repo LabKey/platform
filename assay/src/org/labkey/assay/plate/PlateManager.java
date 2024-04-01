@@ -166,6 +166,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     private static final String PLATE_SET_NAME_EXPRESSION = "PLS-${now:date('yyyyMMdd')}-${RowId}";
     private static final String PLATE_NAME_EXPRESSION = "${${PlateSet/PlateSetId}-:withCounter}";
 
+    private static final List<String> POSITION_PREFIXES = Arrays.stream("A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,AA,AB,AC,AD,AE,AF".split(",")).toList();
+
     public SearchService.SearchCategory PLATE_CATEGORY = new SearchService.SearchCategory("plate", "Plate") {
         @Override
         public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
@@ -2485,6 +2487,110 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     {
         if (!AssayDbSchema.getInstance().getSchema().getScope().isTransactionActive())
             throw new IllegalStateException("This method must be called from within a transaction");
+    }
+
+    private Pair<Integer, List<Map<String, Object>>> getWellSampleData(int[] sampleIdsSorted, Integer rowCount, Integer columnCount, int sampleIdsCounter)
+    {
+        List<Map<String, Object>> wellSampleDataForPlate = new ArrayList<>();
+        for (int rowIdx = 0; rowIdx < rowCount; rowIdx++)
+        {
+            for (int colIdx = 0; colIdx < columnCount; colIdx++)
+            {
+                if (sampleIdsCounter >= sampleIdsSorted.length)
+                    break;
+
+                Map<String, Object> wellData = Map.of(
+                        "sampleId", sampleIdsSorted[sampleIdsCounter],
+                        "wellLocation", POSITION_PREFIXES.get(rowIdx) + (colIdx + 1)
+                );
+                wellSampleDataForPlate.add(wellData);
+                sampleIdsCounter++;
+            }
+        }
+
+        return new Pair<>(sampleIdsCounter, wellSampleDataForPlate);
+    }
+
+    public List<PlateManager.CreatePlateSetPlate> getPlateData(ViewContext viewContext, String selectionKey, List<PlateManager.CreatePlateSetPlate> platesModel)
+    {
+        int[] sampleIdsSorted = Arrays.stream(PageFlowUtil.toInts( DataRegionSelection.getSelected(viewContext, selectionKey, false)))
+                .sorted()
+                .toArray();
+        int sampleIdsCounter = 0;
+
+        List<PlateManager.CreatePlateSetPlate> platesData = new ArrayList<>();
+        Map<Integer, PlateType> plateTypesHash = new HashMap<>();
+
+        for (PlateManager.CreatePlateSetPlate plate : platesModel)
+        {
+            int plateTypeId = plate.plateType;
+            String plateName = plate.name;
+
+            PlateType plateType;
+            if (plateTypesHash.get(plateTypeId) != null)
+            {
+                plateType = plateTypesHash.get(plateTypeId);
+            }
+            else
+            {
+                plateType = PlateManager.get().getPlateType(plateTypeId);
+                plateTypesHash.put(plateTypeId, plateType);
+            }
+
+            // Iterate through sorted samples array and place them in ascending order in each plate's wells
+            Pair<Integer, List<Map<String, Object>>> pair = getWellSampleData(sampleIdsSorted, plateType.getRows(), plateType.getColumns(), sampleIdsCounter);
+            platesData.add(new PlateManager.CreatePlateSetPlate(plateName, plateTypeId, pair.second));
+
+            sampleIdsCounter = pair.first;
+        }
+
+        if (sampleIdsSorted.length != sampleIdsCounter)
+            throw new IllegalArgumentException("Plate dimensions are incompatible with selected sample count.");
+
+        return platesData;
+    }
+
+    public String getWellPosition(Integer rowIndex, Integer columnIndex)
+    {
+        if (rowIndex < 0 || rowIndex >= POSITION_PREFIXES.size())
+            throw new IllegalArgumentException("Invalid row index: " + rowIndex);
+
+        if (columnIndex < 0 || columnIndex >= 99)
+            throw new IllegalArgumentException("Invalid column index: " + columnIndex);
+
+        return POSITION_PREFIXES.get(rowIndex) + (columnIndex + 1);
+    }
+
+    public List<PlateManager.CreatePlateSetPlate> getPlates(Integer plateSetId, Container c, User u)
+    {
+        List<PlateManager.CreatePlateSetPlate> plates = new ArrayList<>();
+
+        PlateSet parentPlateSet = PlateManager.get().getPlateSet(c, plateSetId);
+        if (parentPlateSet == null)
+            throw new IllegalArgumentException("Invalid plate set id.");
+
+        List<Plate> platesList = parentPlateSet.getPlates(u);
+
+        for (Plate p : platesList)
+        {
+            String name = p.getName();
+            Integer plateTypeId = p.getPlateType().getRowId();
+
+            TableSelector ts = new TableSelector(AssayDbSchema.getInstance().getTableInfoWell(), Set.of("SampleId", "Row", "Col"), new SimpleFilter(FieldKey.fromParts("PlateId"), p.getRowId()), null);
+
+            List<Map<String, Object>> data = new ArrayList<>();
+            for (Map<String, Object> row : ts.getMapArray())
+            {
+                Map<String, Object> dataEntry = new HashMap<>();
+                dataEntry.put("wellLocation", PlateManager.get().getWellPosition((Integer) row.get("row"), (Integer) row.get("col")));
+                dataEntry.put("sampleId", row.get("sampleid"));
+                data.add(dataEntry);
+            }
+
+            plates.add(new PlateManager.CreatePlateSetPlate(name, plateTypeId, data));
+        }
+
+        return plates;
     }
 
     public static final class TestCase
