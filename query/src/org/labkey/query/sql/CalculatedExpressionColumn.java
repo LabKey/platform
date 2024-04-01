@@ -1,26 +1,48 @@
 package org.labkey.query.sql;
 
 import org.apache.logging.log4j.Logger;
+import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.NotNull;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DatabaseTableType;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SchemaColumnMetaData;
+import org.labkey.api.data.SchemaTableInfo;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.StandardSchemaTableInfoFactory;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.data.xml.TableType;
+import org.labkey.data.xml.TablesDocument;
 import org.labkey.query.QueryServiceImpl;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static org.labkey.api.util.DOM.Attribute.cols;
 
 /**
  * {@link ColumnInfo} backed by a LabKey SQL fragment
@@ -44,15 +66,27 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
         super(key, parent);
         _labKeySql = labKeySql;
         // Since these are typically calculated columns, it doesn't make sense to show them in update or insert views
-        setShownInUpdateView(false);
-        setShownInInsertView(false);
-        setUserEditable(false);
-        setCalculated(true);
+        super.setShownInUpdateView(false);
+        super.setShownInInsertView(false);
+        super.setUserEditable(false);
+        super.setCalculated(true);
         // Unless otherwise configured, guess that it might be nullable
         setNullable(true);
 
         // TODO we can't (yet) call getBoundExpression() while our parent table is still being constructed.
         setJdbcType(null);
+    }
+
+    @Override
+    public void setCalculated(boolean calculated)
+    {
+        // can't touch this e.g. copyAttributesFrom()
+    }
+
+    @Override
+    public void setUserEditable(boolean editable)
+    {
+        // can't touch this e.g. copyAttributesFrom()
     }
 
     @Override
@@ -312,5 +346,204 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
     public DisplayColumnFactory getDisplayColumnFactory()
     {
         return super.getDisplayColumnFactory();
+    }
+
+
+    /*
+     * TESTS
+     */
+
+    public static class _SchemaTableInfo extends SchemaTableInfo
+    {
+        final private List<MutableColumnInfo> colsToAdd;
+        final private TableType xmlToApply;
+
+        public _SchemaTableInfo(DbSchema schema, DatabaseTableType tableType, String tableName,
+            List<MutableColumnInfo> cols, TableType xmlTable)
+        {
+            super(schema, tableType, tableName);
+            colsToAdd = cols;
+            colsToAdd.forEach(c -> c.setParentTable(this));
+            xmlToApply = xmlTable;
+        }
+
+        @Override
+        protected SchemaColumnMetaData createSchemaColumnMetaData() throws SQLException
+        {
+            return new SchemaColumnMetaData(this, colsToAdd, xmlToApply);
+        }
+
+        public BaseColumnInfo addColumn(String name, JdbcType type, String alias)
+        {
+            BaseColumnInfo c = new BaseColumnInfo(name, null, type);
+            c.setMetaDataName(alias);
+            addColumn(c);
+            return c;
+        }
+    }
+
+    public static class TestCase extends Assert
+    {
+        DbSchema getDbSchema(TablesDocument tablesDoc) throws XmlException
+        {
+            StandardSchemaTableInfoFactory factoryR = new StandardSchemaTableInfoFactory("R", DatabaseTableType.NOT_IN_DB, null)
+            {
+                @Override
+                public String getTableName()
+                {
+                    return super.getTableName();
+                }
+
+                MutableColumnInfo makeColumn(String name, JdbcType type, String alias)
+                {
+                    BaseColumnInfo c = new BaseColumnInfo(name, null, type)
+                    {
+                        @Override
+                        public String getAlias()
+                        {
+                            return super.getAlias();
+                        }
+
+                        @Override
+                        public void setAlias(String alias)
+                        {
+                            super.setAlias(alias);
+                        }
+                    };
+                    c.setMetaDataName(alias);
+                    c.setAlias(alias);
+                    return c;
+                }
+
+                @Override
+                public SchemaTableInfo getSchemaTableInfo(DbSchema schema)
+                {
+                    var cols = List.of(
+                        makeColumn("ZERO", JdbcType.INTEGER, "zero_"),
+                        makeColumn("TWO", JdbcType.INTEGER, "two_"),
+                        makeColumn("THREE", JdbcType.INTEGER, "three_"),
+                        makeColumn("X", JdbcType.VARCHAR, "x_"),
+                        makeColumn("Y", JdbcType.VARCHAR, "y_"),
+                        makeColumn("Z", JdbcType.VARCHAR, "z_"),
+                        makeColumn("EPOCH", JdbcType.TIMESTAMP, "epoch_"),
+                        makeColumn("NOW", JdbcType.TIMESTAMP, "now_")
+                    );
+                    _SchemaTableInfo ti = new _SchemaTableInfo(schema, DatabaseTableType.NOT_IN_DB, getTableName(), cols, schema.getTableXmlMap().get(getTableName()))
+                    {
+                        @Override
+                        public @NotNull SQLFragment getFromSQL(String alias)
+                        {
+                            // FROM (VALUES (1, 'one'), (2, 'two'), (3, 'three')) AS t (num,letter)
+                            Timestamp now = new Timestamp(new Date().getTime()), epoch = new Timestamp(0);
+                            return new SQLFragment("FROM (VALUES (0, 2, 3, 'x', 'y', 'z', {ts '" + epoch + "'}, {ts '" + now + "'})) AS " + alias + " (zero_, two_, three_, x_, y_, z_, epoch_, now_)");
+                        }
+                    };
+                    return ti;
+                }
+            };
+
+            var dbSchema = new DbSchema(CalculatedExpressionColumn.class.getName() + new GUID(), DbSchemaType.Junit, CoreSchema.getInstance().getScope(), Map.of("R",factoryR), ModuleLoader.getInstance().getModule("query"));
+            if (null != tablesDoc)
+            {
+                TableType[] xmlTables = tablesDoc.getTables().getTableArray();
+
+                for (TableType xmlTable : xmlTables)
+                {
+                    String xmlTableName = xmlTable.getTableName();
+                    dbSchema.getTableXmlMap().put(xmlTable.getTableName(), xmlTable);
+                }
+            }
+            return dbSchema;
+        }
+
+
+        @Test
+        public void testDbSchemaBasic() throws Exception
+        {
+            DbSchema dbSchema;
+            TableInfo t;
+            SQLFragment sql;
+
+/*            // NO METADATA
+            dbSchema = getDbSchema(null);
+            assertNotNull(dbSchema);
+            t = dbSchema.getTable("R");
+            assertNotNull(t);
+            assertNull(t.getColumn("WRAPPED"));
+
+            sql = new SQLFragment().append("SELECT ").append(t.getColumn("ZERO").getValueSql("t")).append("\n").append(t.getFromSQL("t"));
+            try (ResultSet rs = new SqlSelector(dbSchema, sql).getResultSet())
+            {
+                assertTrue(rs.next());
+                assertEquals(0, rs.getInt(1));
+            }*/
+
+            // WRAPPED AND CALCULATED
+            dbSchema = getDbSchema(TablesDocument.Factory.parse("""
+                    <tables xmlns="http://labkey.org/data/xml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                        <table tableName="R">
+                          <columns>
+                            <column columnName="ZED" wrappedColumnName="zero" />
+                            <column columnName="SIX">
+                                <valueExpression>TWO * "THREE"</valueExpression>
+                            </column>
+                          </columns>
+                        </table>
+                    </tables>
+                    """));
+            assertNotNull(dbSchema);
+            t = dbSchema.getTable("R");
+            assertNotNull(t);
+            var wrapped = t.getColumn("ZED");
+            assertNotNull(wrapped);
+            assertTrue(wrapped.isCalculated());
+            assertFalse(wrapped.isUserEditable());
+            var calculated = t.getColumn("SIX");
+            assertNotNull(calculated);
+            assertTrue(calculated.isCalculated());
+            assertFalse(calculated.isUserEditable());
+
+            sql = new SQLFragment()
+                    .append("SELECT\n")
+                    .append("  ").append(wrapped.getValueSql("t")).append(" AS ").append(wrapped.getAlias()).append(",\n")
+                    .append("  ").append(calculated.getValueSql("t")).append(" AS ").append(calculated.getAlias()).append(",\n")
+                    .append("  ").append("*\n")
+                    .append(t.getFromSQL("t"))
+                    .append("\nWHERE ").append(t.getColumn("ZED").getValueSql("t")).append(" = 0 AND ").append(t.getColumn("SIX").getValueSql("t")).append(" = 6");
+            try (ResultSet rs = new SqlSelector(dbSchema, sql).getResultSet())
+            {
+                assertTrue(rs.next());
+                assertEquals(0, rs.getInt(1));
+                assertEquals(0, t.getColumn("ZED").getValue(rs));
+                assertEquals(6, rs.getInt(2));
+                assertEquals(6, t.getColumn("SIX").getValue(rs));
+                assertEquals("x", t.getColumn("X").getValue(rs));
+            }
+        }
+
+        @Test
+        public void testWrappedColumnDb()
+        {
+        }
+
+        @Test
+        public void testWrappedColumnUser()
+        {
+        }
+
+        @Test
+        public void testCalculatedColumnDb()
+        {
+        }
+
+        @Test
+        public void testCalculatedColumnUser()
+        {
+        }
+
+        @Test
+        public void testQuery()
+        {
+        }
     }
 }

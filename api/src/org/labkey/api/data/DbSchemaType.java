@@ -98,6 +98,16 @@ public enum DbSchemaType
         {
             throw new IllegalStateException("Should not be creating a schema of type " + Unknown);
         }
+    },
+
+    /* Testing ONLY */
+    Junit("junit", CacheManager.SECOND*5, true)
+    {
+        @Override
+        DbSchema createDbSchema(DbScope scope, String metaDataName, Module module)
+        {
+            throw new UnsupportedOperationException("Junit schema type is for testing only");
+        }
     };
 
     private final String _cacheKeySuffix;  // Suffix makes it easy for Unknown type to remove all versions of a schema from the cache

@@ -72,7 +72,6 @@ import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.SummaryStatisticRegistry;
 import org.labkey.api.util.JspTestCase;
@@ -121,6 +120,7 @@ import org.labkey.query.reports.getdata.AggregateQueryDataTransform;
 import org.labkey.query.reports.getdata.FilterClauseBuilder;
 import org.labkey.query.reports.view.ReportAndDatasetChangeDigestEmailTemplate;
 import org.labkey.query.reports.view.ReportUIProvider;
+import org.labkey.query.sql.CalculatedExpressionColumn;
 import org.labkey.query.sql.Method;
 import org.labkey.query.sql.QNode;
 import org.labkey.query.sql.SqlParser;
@@ -378,6 +378,7 @@ public class QueryModule extends DefaultModule
         return Set.of(
             AggregateQueryDataTransform.TestCase.class,
             AttachmentReport.TestCase.class,
+            CalculatedExpressionColumn.TestCase.class,
             FilterClauseBuilder.TestCase.class,
             JdbcType.TestCase.class,
             MemberSet.TestCase.class,

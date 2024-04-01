@@ -23,6 +23,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.PkMetaDataReader;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.sql.LabKeySql;
@@ -73,20 +74,40 @@ public class SchemaColumnMetaData
         if (load)
         {
             loadFromMetaData(_tinfo);
-            loadColumnsFromXml(_tinfo);
+            loadColumnsFromXml(_tinfo, tinfo.getXmlTable());
         }
     }
 
-    private void loadColumnsFromXml(SchemaTableInfo tinfo)
+    /* This constructor is used only to create a virtual/fake SchemaTableInfo */
+    public SchemaColumnMetaData(SchemaTableInfo tinfo, List<MutableColumnInfo> cols, TableType xmlTable) throws SQLException
     {
-        TableType xmlTable = tinfo.getXmlTable();
+        _tinfo = tinfo;
+        for (var col : cols)
+            addColumn(col);
+        loadColumnsFromXml(_tinfo, xmlTable);
+    }
 
+    private AliasManager getAliasManager(AliasManager aliasManager)
+    {
+        if (null == aliasManager)
+        {
+            aliasManager = new AliasManager(_tinfo.getSchema());
+            aliasManager.claimAliases(_columns);
+        }
+        return aliasManager;
+    }
+
+    private void loadColumnsFromXml(SchemaTableInfo tinfo, TableType xmlTable)
+    {
         if (null == xmlTable)
             return;
 
         TableType.Columns columns = xmlTable.getColumns();
 
         if (null == columns)
+            return;
+        ColumnType[] xmlColumnArray = columns.getColumnArray();
+        if (0 == xmlColumnArray.length)
             return;
 
         // Don't overwrite pk
@@ -100,7 +121,7 @@ public class SchemaColumnMetaData
             }
         }
 
-        ColumnType[] xmlColumnArray = columns.getColumnArray();
+        AliasManager aliasManager = null; // We're making an effort to be lazy about initializing.  Most SchemaTableInfo only have "real" columns.
         List<ColumnType> wrappedColumns = new ArrayList<>();
 
         for (ColumnType xmlColumn : xmlColumnArray)
@@ -125,11 +146,13 @@ public class SchemaColumnMetaData
                 }
 
                 if (tinfo.getTableType() != DatabaseTableType.NOT_IN_DB)
-                        colInfo = new VirtualColumnInfo(FieldKey.fromParts(xmlColumn.getColumnName()), tinfo);
+                    colInfo = new VirtualColumnInfo(FieldKey.fromParts(xmlColumn.getColumnName()), tinfo);
                 else
                     colInfo = new BaseColumnInfo(FieldKey.fromParts(xmlColumn.getColumnName()), tinfo);
                 colInfo.setNullable(true);
                 loadFromXml(xmlColumn, colInfo, false);
+                aliasManager = getAliasManager(aliasManager);
+                aliasManager.ensureAlias(colInfo);
                 addColumn(colInfo);
             }
         }
@@ -163,6 +186,8 @@ public class SchemaColumnMetaData
                         QueryService.get().createQueryExpressionColumn(tinfo, FieldKey.fromParts(xmlColumn.getColumnName()), sql);
                 // TODO - propagate properties calculated/inferred from the SQL expression first, before calling initColumnFromXml()
                 loadFromXml(xmlColumn, exprColumn, false);
+                aliasManager = getAliasManager(aliasManager);
+                aliasManager.ensureAlias(exprColumn);
                 addColumn(exprColumn);
             }
         }
@@ -374,12 +399,20 @@ public class SchemaColumnMetaData
             _log.warn("Duplicate column '" + column.getName() + "' on table '" + _tinfo.getName() + "'");
 
         _columns.add(column);
-//        assert !column.isAliasSet();       // TODO: Investigate -- had to comment this out since ExprColumn() sets alias
         assert null == column.getFieldKey().getParent();
         assert column.getName().equals(column.getFieldKey().getName());
         assert !(column instanceof BaseColumnInfo) || ((BaseColumnInfo)column).lockName();
         // set alias explicitly, so that getAlias() won't call makeLegalName() and mangle it
-        column.setAlias(column.getName());
+        if (!column.isAliasSet())
+        {
+            if (null != column.getMetaDataName())
+                column.setAlias(column.getMetaDataName());
+            else
+            {
+                assert false : "TODO: I don't think we should get here???";
+                column.setAlias(column.getName());
+            }
+        }
         _colMap = null;
     }
 
