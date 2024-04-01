@@ -990,7 +990,7 @@ public class PlateController extends SpringActionController
                 List<PlateManager.CreatePlateSetPlate> plates = new ArrayList<>();
                 if (form.isStandaloneAssayPlateCase())
                 {
-                    plates = PlateManager.get().getPlateData(getViewContext(), form.getSelectionKey(), form.getPlates());
+                    plates = PlateManager.get().getPlateData(getViewContext(), form.getSelectionKey(), form.getPlates(), getContainer());
                 }
                 else if (form.isRearrayCase())
                 {

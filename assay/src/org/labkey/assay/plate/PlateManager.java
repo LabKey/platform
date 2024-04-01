@@ -166,8 +166,6 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     private static final String PLATE_SET_NAME_EXPRESSION = "PLS-${now:date('yyyyMMdd')}-${RowId}";
     private static final String PLATE_NAME_EXPRESSION = "${${PlateSet/PlateSetId}-:withCounter}";
 
-    private static final List<String> POSITION_PREFIXES = Arrays.stream("A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,AA,AB,AC,AD,AE,AF".split(",")).toList();
-
     public SearchService.SearchCategory PLATE_CATEGORY = new SearchService.SearchCategory("plate", "Plate") {
         @Override
         public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
@@ -2489,7 +2487,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             throw new IllegalStateException("This method must be called from within a transaction");
     }
 
-    private Pair<Integer, List<Map<String, Object>>> getWellSampleData(int[] sampleIdsSorted, Integer rowCount, Integer columnCount, int sampleIdsCounter)
+    private Pair<Integer, List<Map<String, Object>>> getWellSampleData(int[] sampleIdsSorted, Integer rowCount, Integer columnCount, int sampleIdsCounter, Container c)
     {
         List<Map<String, Object>> wellSampleDataForPlate = new ArrayList<>();
         for (int rowIdx = 0; rowIdx < rowCount; rowIdx++)
@@ -2501,7 +2499,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
                 Map<String, Object> wellData = Map.of(
                         "sampleId", sampleIdsSorted[sampleIdsCounter],
-                        "wellLocation", POSITION_PREFIXES.get(rowIdx) + (colIdx + 1)
+                        "wellLocation", PlateManager.get().createPosition(c, rowIdx,colIdx + 1).getDescription()
                 );
                 wellSampleDataForPlate.add(wellData);
                 sampleIdsCounter++;
@@ -2511,7 +2509,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return new Pair<>(sampleIdsCounter, wellSampleDataForPlate);
     }
 
-    public List<PlateManager.CreatePlateSetPlate> getPlateData(ViewContext viewContext, String selectionKey, List<PlateManager.CreatePlateSetPlate> platesModel)
+    public List<PlateManager.CreatePlateSetPlate> getPlateData(ViewContext viewContext, String selectionKey, List<PlateManager.CreatePlateSetPlate> platesModel, Container c)
     {
         int[] sampleIdsSorted = Arrays.stream(PageFlowUtil.toInts( DataRegionSelection.getSelected(viewContext, selectionKey, false)))
                 .sorted()
@@ -2538,7 +2536,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             }
 
             // Iterate through sorted samples array and place them in ascending order in each plate's wells
-            Pair<Integer, List<Map<String, Object>>> pair = getWellSampleData(sampleIdsSorted, plateType.getRows(), plateType.getColumns(), sampleIdsCounter);
+            Pair<Integer, List<Map<String, Object>>> pair = getWellSampleData(sampleIdsSorted, plateType.getRows(), plateType.getColumns(), sampleIdsCounter, c);
             platesData.add(new PlateManager.CreatePlateSetPlate(plateName, plateTypeId, pair.second));
 
             sampleIdsCounter = pair.first;
@@ -2548,17 +2546,6 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             throw new IllegalArgumentException("Plate dimensions are incompatible with selected sample count.");
 
         return platesData;
-    }
-
-    public String getWellPosition(Integer rowIndex, Integer columnIndex)
-    {
-        if (rowIndex < 0 || rowIndex >= POSITION_PREFIXES.size())
-            throw new IllegalArgumentException("Invalid row index: " + rowIndex);
-
-        if (columnIndex < 0 || columnIndex >= 99)
-            throw new IllegalArgumentException("Invalid column index: " + columnIndex);
-
-        return POSITION_PREFIXES.get(rowIndex) + (columnIndex + 1);
     }
 
     public List<PlateManager.CreatePlateSetPlate> getPlates(Integer plateSetId, Container c, User u)
@@ -2582,7 +2569,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             for (Map<String, Object> row : ts.getMapArray())
             {
                 Map<String, Object> dataEntry = new HashMap<>();
-                dataEntry.put("wellLocation", PlateManager.get().getWellPosition((Integer) row.get("row"), (Integer) row.get("col")));
+                dataEntry.put("wellLocation", PlateManager.get().createPosition(c, (Integer) row.get("row"),(Integer) row.get("col")).getDescription());
                 dataEntry.put("sampleId", row.get("sampleid"));
                 data.add(dataEntry);
             }
