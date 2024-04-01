@@ -14,6 +14,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.usageMetrics.UsageMetricsProvider;
 import org.labkey.assay.TsvAssayProvider;
 import org.labkey.assay.query.AssayDbSchema;
@@ -139,10 +140,11 @@ public class PlateMetricsProvider implements UsageMetricsProvider
     @Override
     public Map<String, Object> getUsageMetrics()
     {
-        // TODO: bail if plates experimental flag is not enabled
+        if (!ExperimentalFeatureService.get().isFeatureEnabled("experimental-app-plate-support"))
+            return Map.of("plates", new HashMap<String, Object>());
+
         var plateMetrics = new HashMap<String, Object>();
         var schema = AssayDbSchema.getInstance();
-        ContainerFilter cf = ContainerFilter.Type.CurrentAndSubfolders.create(ContainerManager.getRoot(), User.getSearchUser());
         TableInfo plateSetTable = schema.getTableInfoPlateSet();
         TableInfo plateTable = schema.getTableInfoPlate();
         Long plateSetCount = new SqlSelector(schema.getSchema(), new SQLFragment("SELECT COUNT(*) FROM ").append(plateSetTable, "ps")).getObject(Long.class);
