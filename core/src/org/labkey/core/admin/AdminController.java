@@ -11177,7 +11177,7 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public static class ViewUsageStatistics extends SimpleViewAction<Object>
+    public class ViewUsageStatistics extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -11188,7 +11188,7 @@ public class AdminController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            // TODO: What would be appropriate here?
+            addAdminNavTrail(root, "Usage Statistics", this.getClass());
         }
     }
 
