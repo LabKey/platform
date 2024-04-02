@@ -3,6 +3,7 @@ package org.labkey.assay.plate;
 import org.labkey.api.assay.AssayProtocolSchema;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
+import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.plate.PlateSetType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -14,7 +15,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.usageMetrics.UsageMetricsProvider;
 import org.labkey.assay.TsvAssayProvider;
 import org.labkey.assay.query.AssayDbSchema;
@@ -62,7 +62,7 @@ public class PlateMetricsProvider implements UsageMetricsProvider
 
     private List<Container> getBiologicsFolders()
     {
-        return ContainerManager.getAllChildren(ContainerManager.getRoot())
+        return ContainerManager.getProjects()
                 .stream()
                 .filter(c -> "Biologics".equals(ContainerManager.getFolderTypeName(c)))
                 .toList();
@@ -85,6 +85,11 @@ public class PlateMetricsProvider implements UsageMetricsProvider
         return allPlateProtocols;
     }
 
+    private ContainerFilter getContainerFilter(Container c)
+    {
+        return ContainerFilter.Type.AllInProject.create(c, User.getSearchUser());
+    }
+
     private Long getPlateBasedAssayRunsCount(List<ExpProtocol> protocols)
     {
         Long count = 0L;
@@ -94,7 +99,7 @@ public class PlateMetricsProvider implements UsageMetricsProvider
         for (ExpProtocol protocol : protocols)
         {
             AssayProtocolSchema assayProtocolSchema = provider.createProtocolSchema(User.getSearchUser(), protocol.getContainer(), protocol, null);
-            TableInfo runsTable = assayProtocolSchema.createRunsTable(ContainerFilter.EVERYTHING);
+            TableInfo runsTable = assayProtocolSchema.createRunsTable(getContainerFilter(protocol.getContainer()));
             if (runsTable != null)
             {
                 SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM ").append(runsTable, "ar");
@@ -114,7 +119,7 @@ public class PlateMetricsProvider implements UsageMetricsProvider
         for (ExpProtocol protocol : protocols)
         {
             AssayProtocolSchema assayProtocolSchema = provider.createProtocolSchema(User.getSearchUser(), protocol.getContainer(), protocol, null);
-            TableInfo assayDataTable = assayProtocolSchema.createDataTable(ContainerFilter.EVERYTHING, false);
+            TableInfo assayDataTable = assayProtocolSchema.createDataTable(getContainerFilter(protocol.getContainer()), false);
             if (assayDataTable != null)
             {
                 SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM ").append(assayDataTable, "ad");
@@ -140,7 +145,7 @@ public class PlateMetricsProvider implements UsageMetricsProvider
     @Override
     public Map<String, Object> getUsageMetrics()
     {
-        if (!ExperimentalFeatureService.get().isFeatureEnabled("experimental-app-plate-support"))
+        if (!AssayPlateMetadataService.isExperimentalAppPlateEnabled())
             return Map.of("plates", new HashMap<String, Object>());
 
         var plateMetrics = new HashMap<String, Object>();
@@ -183,7 +188,7 @@ public class PlateMetricsProvider implements UsageMetricsProvider
         plateMetrics.put("assays", Map.of(
                 "hitCount", new SqlSelector(schema.getSchema(), new SQLFragment("SELECT COUNT(*) FROM ").append(hitTable, "h")).getObject(Long.class),
                 "assaysWithPlateMetadataEnabled", plateEnabledProtocols.size(),
-                "assayRunsRount", getPlateBasedAssayRunsCount(plateEnabledProtocols),
+                "assayRunsCount", getPlateBasedAssayRunsCount(plateEnabledProtocols),
                 "assayResultsCount", getPlateBasedAssayResultsCount(plateEnabledProtocols)
         ));
 
