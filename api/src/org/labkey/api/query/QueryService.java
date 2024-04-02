@@ -266,6 +266,7 @@ public interface QueryService
 
     BaseColumnInfo createQueryExpressionColumn(TableInfo table, FieldKey key, String labKeySql);
     BaseColumnInfo createQueryExpressionColumn(TableInfo table, FieldKey key, ColumnInfo wrapped);
+    void validateQueryExpressionColumn(ColumnInfo col, Map<FieldKey,ColumnInfo> columns) throws QueryParseException;
 
     void addCompareType(CompareType type);
 

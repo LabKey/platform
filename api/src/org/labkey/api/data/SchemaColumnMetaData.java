@@ -20,13 +20,16 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.PkMetaDataReader;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.sql.LabKeySql;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DebugInfoDumper;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.Pair;
@@ -157,14 +160,17 @@ public class SchemaColumnMetaData
             }
         }
 
+        // snapshot the names of "real" columns at this point.  These are use for validation.
+        Map<FieldKey,ColumnInfo> allowedColumns = new HashMap<>();
+        for (var c : _columns)
+            allowedColumns.put(c.getFieldKey(), c);
+
         for (ColumnType xmlColumn : wrappedColumns)
         {
+            // Treat schema.xml as "code" and throw ConfigurationException if problems are found
             if (null != getColumn(xmlColumn.getColumnName()))
-            {
-                // do not hide a base column with a wrapped or expression column
-                // _log.warn("Column '" + wrappedColumnXml.getColumnName() + "' already exists in table '" + tinfo.getName() + "'");
-                continue;
-            }
+                throw new ConfigurationException("Error adding column '" + xmlColumn.getColumnName() + "' to table '" + tinfo.getName() + "'. Column already exists.");
+
             ColumnInfo boundColumn = null;
             String sql = "";
             if (xmlColumn.isSetValueExpression() && isNotBlank(xmlColumn.getValueExpression()))
@@ -174,21 +180,28 @@ public class SchemaColumnMetaData
             else if (xmlColumn.isSetWrappedColumnName() && isNotBlank(xmlColumn.getWrappedColumnName()))
             {
                 sql = LabKeySql.quoteIdentifier(xmlColumn.getWrappedColumnName());
-                // previous code just continued w/o error if column did not exist
                 boundColumn = getColumn(xmlColumn.getWrappedColumnName());
                 if (null == boundColumn)
-                    continue;
+                    throw new ConfigurationException("Error adding column '" + xmlColumn.getColumnName() + "' to table '" + tinfo.getName() + "'. '" + xmlColumn.getWrappedColumnName() + "' was not found.");
             }
             if (isNotBlank(sql))
             {
-                BaseColumnInfo exprColumn  = null != boundColumn ?
-                        QueryService.get().createQueryExpressionColumn(tinfo, FieldKey.fromParts(xmlColumn.getColumnName()), boundColumn) :
-                        QueryService.get().createQueryExpressionColumn(tinfo, FieldKey.fromParts(xmlColumn.getColumnName()), sql);
-                // TODO - propagate properties calculated/inferred from the SQL expression first, before calling initColumnFromXml()
-                loadFromXml(xmlColumn, exprColumn, false);
-                aliasManager = getAliasManager(aliasManager);
-                aliasManager.ensureAlias(exprColumn);
-                addColumn(exprColumn);
+                try
+                {
+                    BaseColumnInfo exprColumn  = null != boundColumn ?
+                            QueryService.get().createQueryExpressionColumn(tinfo, FieldKey.fromParts(xmlColumn.getColumnName()), boundColumn) :
+                            QueryService.get().createQueryExpressionColumn(tinfo, FieldKey.fromParts(xmlColumn.getColumnName()), sql);
+                    QueryService.get().validateQueryExpressionColumn(exprColumn, allowedColumns);
+                    // TODO - propagate properties calculated/inferred from the SQL expression first, before calling loadFromXml()
+                    loadFromXml(xmlColumn, exprColumn, false);
+                    aliasManager = getAliasManager(aliasManager);
+                    aliasManager.ensureAlias(exprColumn);
+                    addColumn(exprColumn);
+                }
+                catch (QueryParseException qpe)
+                {
+                    throw new ConfigurationException("Error adding column '" + xmlColumn.getColumnName() + "' to table '" + tinfo.getName() + "'. " + qpe.getMessage());
+                }
             }
         }
 

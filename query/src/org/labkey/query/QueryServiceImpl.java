@@ -2824,6 +2824,13 @@ public class QueryServiceImpl implements QueryService
         return ret;
     }
 
+    @Override
+    public void validateQueryExpressionColumn(ColumnInfo col, Map<FieldKey,ColumnInfo> columns) throws QueryParseException
+    {
+        if (!(col instanceof CalculatedExpressionColumn calc))
+            throw new IllegalStateException();
+        calc.validate(columns);
+    }
 
     @Override
     public void addCompareType(CompareType type)

@@ -367,6 +367,8 @@ public class QueryModule extends DefaultModule
         ret.add(new JspTestCase("/org/labkey/query/olap/OlapTestCase.jsp"));
         ret.add(new JspTestCase("/org/labkey/query/QueryServiceImplTestCase.jsp"));
         ret.add(new JspTestCase("/org/labkey/query/QueryTestCase.jsp"));
+        ret.add(new JspTestCase("/org/labkey/query/sql/CalculatedColumnTestCase.jsp"));
+
         return ret;
     }
 
@@ -378,7 +380,6 @@ public class QueryModule extends DefaultModule
         return Set.of(
             AggregateQueryDataTransform.TestCase.class,
             AttachmentReport.TestCase.class,
-            CalculatedExpressionColumn.TestCase.class,
             FilterClauseBuilder.TestCase.class,
             JdbcType.TestCase.class,
             MemberSet.TestCase.class,
