@@ -2499,7 +2499,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
                 Map<String, Object> wellData = Map.of(
                         "sampleId", sampleIdsSorted[sampleIdsCounter],
-                        "wellLocation", PlateManager.get().createPosition(c, rowIdx,colIdx + 1).getDescription()
+                        "wellLocation", PlateManager.get().createPosition(c, rowIdx, colIdx).getDescription()
                 );
                 wellSampleDataForPlate.add(wellData);
                 sampleIdsCounter++;
@@ -2511,7 +2511,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
     public List<PlateManager.CreatePlateSetPlate> getPlateData(ViewContext viewContext, String selectionKey, List<PlateManager.CreatePlateSetPlate> platesModel, Container c)
     {
-        int[] sampleIdsSorted = Arrays.stream(PageFlowUtil.toInts( DataRegionSelection.getSelected(viewContext, selectionKey, false)))
+        int[] sampleIdsSorted = DataRegionSelection.getSelectedIntegers(viewContext, selectionKey, false)
+                .stream()
+                .mapToInt(Integer::intValue)
                 .sorted()
                 .toArray();
         int sampleIdsCounter = 0;
