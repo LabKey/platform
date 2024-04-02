@@ -572,14 +572,14 @@
                             itemId: 'template_folder_options',
                             hidden: true,
                             items: [{
+                                xtype: 'labkey_phi_option',
+                                maxAllowedLevel: <%=q(form.getExportPhiLevel().name())%>
+                            },{
                                 xtype: 'checkbox',
                                 hideLabel: true,
                                 boxLabel: 'Include Subfolders',
                                 name: 'templateIncludeSubfolders',
                                 checked: <%=form.getTemplateIncludeSubfolders()%>
-                            },{
-                                xtype: 'labkey_phi_option',
-                                maxAllowedLevel: <%=q(form.getExportPhiLevel().name())%>
                             }]
                         }
                     ]);
