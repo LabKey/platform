@@ -511,7 +511,7 @@
                     // get the panel holding the list of folder objects
                     let pnl = this.down('#template_folder_writers');
                     if (pnl) {
-                        this.down('#templateIncludeSubfolders').setVisible(true);
+                        this.down('#template_folder_options').setVisible(true);
                         this.down('#folderObjectsLabel').setVisible(true);
                         this.down('#folderOptionsLabel').setVisible(true);
 
@@ -566,14 +566,21 @@
                             cls: 'labkey-wizard-header',
                             itemId: 'folderOptionsLabel',
                             hidden: true
-                        },{
-                            xtype: 'checkbox',
-                            hideLabel: true,
+                        }, {
+                            xtype: 'panel',
+                            border: false,
+                            itemId: 'template_folder_options',
                             hidden: true,
-                            boxLabel: 'Include Subfolders',
-                            name: 'templateIncludeSubfolders',
-                            itemId: 'templateIncludeSubfolders',
-                            checked: <%=form.getTemplateIncludeSubfolders()%>
+                            items: [{
+                                xtype: 'checkbox',
+                                hideLabel: true,
+                                boxLabel: 'Include Subfolders',
+                                name: 'templateIncludeSubfolders',
+                                checked: <%=form.getTemplateIncludeSubfolders()%>
+                            },{
+                                xtype: 'labkey_phi_option',
+                                maxAllowedLevel: <%=q(form.getExportPhiLevel().name())%>
+                            }]
                         }
                     ]);
 
