@@ -2153,6 +2153,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
         }
     }
 
+    @Override
     public void refreshNow()
     {
         try
@@ -2161,7 +2162,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
         }
         catch (IOException x)
         {
-            /* pass */
+            _log.warn("Unable to refresh index manager", x);
         }
     }
 
