@@ -27,6 +27,14 @@
 <%@ page import="org.labkey.api.util.ConfigurationException" %>
 <%@ page import="org.labkey.api.data.DbScope" %>
 <%@ page import="org.apache.commons.lang3.tuple.Triple" %>
+<%@ page import="org.labkey.api.query.DefaultSchema" %>
+<%@ page import="org.labkey.api.util.TestContext" %>
+<%@ page import="org.labkey.api.util.JunitUtil" %>
+<%@ page import="org.labkey.api.query.UserSchema" %>
+<%@ page import="org.labkey.api.query.QueryDefinition" %>
+<%@ page import="org.labkey.api.query.QueryService" %>
+<%@ page import="org.labkey.api.query.QueryException" %>
+<%@ page import="java.util.ArrayList" %>
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
 
 <%!
@@ -34,6 +42,7 @@ DbSchema getDbSchema() throws XmlException
 {
     return getDbSchema(null);
 }
+
 
 DbSchema getDbSchema(String columns) throws XmlException
 {
@@ -105,6 +114,7 @@ DbSchema getDbSchema(String columns) throws XmlException
     return dbSchema;
 }
 
+
 private String schemaXml(String columns)
 {
     return """
@@ -116,6 +126,13 @@ private String schemaXml(String columns)
                 </table>
             </tables>""".formatted(columns);
 }
+
+
+private TableInfo getSchemaTableInfo(String columns) throws XmlException
+{
+    return getDbSchema(columns).getTable("R");
+}
+
 
 @Test
 public void testBasicSchemaXML() throws Exception
@@ -241,11 +258,10 @@ public void testParseError() throws Exception
 public void testNotFound()throws Exception
 {
     // In schema xml, this used to silently fail ignore this column. We expect this to fail now.
-    var dbSchema = getDbSchema("""
-                    <column columnName="ERR" wrappedColumnName="nosuchcolumn" />""");
     try
     {
-        dbSchema.getTable("R");
+        getSchemaTableInfo("""
+                <column columnName="ERR" wrappedColumnName="nosuchcolumn" />""");
         fail("Expected exception");
     }
     catch (ConfigurationException e)
@@ -254,13 +270,12 @@ public void testNotFound()throws Exception
     }
 
     // In schema xml, this used to silently fail ignore this column. We expect this to fail now.
-    dbSchema = getDbSchema("""
-                     <column columnName="SIX">
-                        <valueExpression>TWO * "nosuchcolumn"</valueExpression>
-                    </column>""");
     try
     {
-        dbSchema.getTable("R");
+        getSchemaTableInfo("""
+                <column columnName="SIX">
+                <valueExpression>TWO * "nosuchcolumn"</valueExpression>
+                </column>""");
         fail("Expected exception");
     }
     catch (ConfigurationException e)
@@ -290,7 +305,7 @@ public void testDisallowedSyntax()throws Exception
     {
         try
         {
-            getDbSchema(xml).getTable("R");
+            getSchemaTableInfo(xml);
             fail("Expected exception for xml: " + xml);
         }
         catch (ConfigurationException e)
@@ -316,7 +331,7 @@ public void testExpressions()throws Exception
         JdbcType type = pair.getMiddle();
         Object expected = pair.getRight();
 
-        var r = getDbSchema(xml).getTable("R");
+        var r = getSchemaTableInfo(xml);
         assertEquals(type, r.getColumn("EXPR").getJdbcType());
         SQLFragment sql = new SQLFragment().append("SELECT ").append(r.getColumn("EXPR").getValueSql("t")).append("\n").append(r.getFromSQL("t"));
         var result = new SqlSelector(scope, sql).getObject(type.getJavaClass());
@@ -325,8 +340,39 @@ public void testExpressions()throws Exception
 }
 
 
+
+/********** SCHEMA OVERRIDE ***********/
+
+
+
+/*
+ * NOTE: Both tables and queries in UserSchema use AbstractTableInfo.overlayMetadata();
+ * For the unit test It's mostly redundant to test both paths.
+ */
+TableInfo getQueryTableInfo(String columns) throws XmlException
+{
+    UserSchema qs = (UserSchema)DefaultSchema.get(TestContext.get().getUser(), JunitUtil.getTestContainer()).getSchema("core");
+    assertNotNull(qs);
+
+    QueryDefinition qdef = QueryService.get().createQueryDef(qs.getUser(), qs.getContainer(), qs, "R");
+    Timestamp now = new Timestamp(new Date().getTime()), epoch = new Timestamp(0);
+    var sql = "SELECT 0 as ZERO, 2 as TWO, 3 as THREE, 'x' as X, 'y' as Y, 'z' as Z, {ts '" + epoch + "'} as EPOCK, {ts '" + now + "'} AS NOW";
+    qdef.setSql(sql);
+    if (null != columns)
+        qdef.setMetadataXml(schemaXml(columns));
+    List<QueryException> errors = new ArrayList<>();
+    var ret = qdef.getTable(qs, errors, true, true);
+    assertNotNull(ret);
+    assertTrue(errors.isEmpty());
+    return ret;
+}
+
+
 @Test
 public void testQuery()throws Exception
 {
+    TableInfo r = getQueryTableInfo(null);
+    assertNotNull(r);
+    assertNotNull(r.getColumn("ZERO"));
 }
 %>

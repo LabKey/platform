@@ -19,14 +19,11 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.data.xml.TableType;
-import org.labkey.query.QueryServiceImpl;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
