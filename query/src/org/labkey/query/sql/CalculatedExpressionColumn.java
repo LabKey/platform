@@ -19,6 +19,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.data.xml.TableType;
 import org.labkey.query.QueryServiceImpl;
@@ -69,6 +70,23 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
 
         // TODO we can't (yet) call getBoundExpression() while our parent table is still being constructed.
         setJdbcType(null);
+    }
+
+
+    /**
+     * We don't have a phase where we the TableInfo notifies it's columns, that it is "done".  But since this object
+     * is shared, I'd prefer to calculate the type during construction and not on demand.
+     *
+     * Nothing breaks if we don't do this here, as we will still calculate the type getJdbcType() if we need to.
+     *
+     * @param b
+     */
+    @Override
+    public void setLocked(boolean b)
+    {
+        _boundExpr = null;
+        super.setJdbcType(getJdbcType());
+        super.setLocked(b);
     }
 
     @Override
@@ -179,45 +197,32 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
     // copied from QuerySelect.resolveFields
     private QExpr resolveFields(QExpr expr, Map<FieldKey, ? extends ColumnInfo> columnMap)
     {
-//        if (expr instanceof QQuery || expr instanceof QUnion || expr instanceof QRowStar || expr instanceof QIfDefined)
-//        {
-//            throw new QueryParseException("unsupported expression: " + expr.getTokenText());
-//        }
         if (expr instanceof QQuery || expr instanceof QUnion)
-        {
-            QueryRelation subquery;
-            if (expr instanceof QQuery)
-                subquery = ((QQuery)expr)._select;
-            else
-                subquery = ((QUnion)expr)._union;
-            if (null == subquery)
-            {
-                throw new QueryParseException("Unexpected error: sub query not resolved", null, 0, 0);
-            }
-            else
-            {
-                subquery.resolveFields();
-            }
-            return expr;
-        }
+            throw new QueryParseException("SELECT and UNION are not allowed in calculated columns.", null, 0, 0);
         if (expr instanceof QRowStar)
-        {
-            return expr;
-        }
+            throw new QueryParseException("Syntax error unexepected symbox '*'", null, 0, 0);
+
         if (expr instanceof QIfDefined && !((QIfDefined)expr).isDefined)
-        {
             return new QNull();
-        }
 
         FieldKey key = expr.getFieldKey();
         if (key != null)
         {
+            if (null != key.getParent())
+                throw new QueryParseException("Lookup is not allowed '" + key.toSQLString() + "'.", null, 0, 0);
+            if (key.equals(this.getFieldKey()))
+                throw new QueryParseException("Calculated expression can not refer to itself.", null, 0, 0);
             ColumnInfo c = columnMap.get(key);
             if (null == c)
-                throw new QueryParseException("'" + key + "' not found.", null, 0, 0);
+                throw new QueryParseException("'" + key.toSQLString() + "' not found.", null, 0, 0);
             if (c.getPHI() != null && !c.getPHI().isLevelAllowed(PHI.NotPHI))
-                throw new QueryParseException("'" + key + "' has PHI, it cannot be used in a calculated expression." + key, null, 0, 0);
+                throw new QueryParseException("'" + key.toSQLString() + "' has PHI, it cannot be used in a calculated expression.", null, 0, 0);
             return new _BoundColumn(key);
+        }
+
+        if (expr instanceof QAggregate)
+        {
+            throw new QueryParseException("SELECT and UNION are not allowed in calculated columns.", null, 0, 0);
         }
 
         QExpr methodName = null;
@@ -263,6 +268,13 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
         {
             super();
             _fieldKey = fieldKey;
+        }
+
+        @Override
+        public @NotNull JdbcType getJdbcType()
+        {
+            ColumnInfo column = getParentTable().getColumn(_fieldKey);
+            return null == column ? JdbcType.OTHER : column.getJdbcType();
         }
 
         @Override

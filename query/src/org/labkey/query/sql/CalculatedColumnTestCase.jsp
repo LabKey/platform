@@ -25,12 +25,19 @@
 <%@ page import="org.labkey.api.data.SqlSelector" %>
 <%@ page import="static org.junit.Assert.*" %>
 <%@ page import="org.labkey.api.util.ConfigurationException" %>
+<%@ page import="org.labkey.api.data.DbScope" %>
+<%@ page import="org.apache.commons.lang3.tuple.Triple" %>
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
 
 <%!
-
-DbSchema getDbSchema(TablesDocument tablesDoc) throws XmlException
+DbSchema getDbSchema() throws XmlException
 {
+    return getDbSchema(null);
+}
+
+DbSchema getDbSchema(String columns) throws XmlException
+{
+    var tablesDoc = null == columns ? null : TablesDocument.Factory.parse(schemaXml(columns));
     StandardSchemaTableInfoFactory factoryR = new StandardSchemaTableInfoFactory("R", DatabaseTableType.NOT_IN_DB, null)
     {
         @Override
@@ -93,24 +100,32 @@ DbSchema getDbSchema(TablesDocument tablesDoc) throws XmlException
         TableType[] xmlTables = tablesDoc.getTables().getTableArray();
 
         for (TableType xmlTable : xmlTables)
-        {
-            String xmlTableName = xmlTable.getTableName();
             dbSchema.getTableXmlMap().put(xmlTable.getTableName(), xmlTable);
-        }
     }
     return dbSchema;
 }
 
+private String schemaXml(String columns)
+{
+    return """
+            <tables xmlns="http://labkey.org/data/xml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                <table tableName="R">
+                  <columns>
+                     %s
+                  </columns>
+                </table>
+            </tables>""".formatted(columns);
+}
 
 @Test
-public void testBasic() throws Exception
+public void testBasicSchemaXML() throws Exception
 {
     DbSchema dbSchema;
     TableInfo t;
     SQLFragment sql;
 
     // NO METADATA
-    dbSchema = getDbSchema(null);
+    dbSchema = getDbSchema();
     assertNotNull(dbSchema);
     t = dbSchema.getTable("R");
     assertNotNull(t);
@@ -124,18 +139,11 @@ public void testBasic() throws Exception
     }
 
     // WRAPPED AND CALCULATED
-    dbSchema = getDbSchema(TablesDocument.Factory.parse("""
-            <tables xmlns="http://labkey.org/data/xml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-                <table tableName="R">
-                  <columns>
+    dbSchema = getDbSchema("""
                     <column columnName="ZED" wrappedColumnName="zero" />
                     <column columnName="SIX">
                         <valueExpression>TWO * "THREE"</valueExpression>
-                    </column>
-                  </columns>
-                </table>
-            </tables>
-            """));
+                    </column>""");
     assertNotNull(dbSchema);
     t = dbSchema.getTable("R");
     assertNotNull(t);
@@ -171,19 +179,54 @@ public void testBasic() throws Exception
 public void testParseError() throws Exception
 {
     // In schema xml, this used to silently fail ignore this column. We expect this to fail now.
-    var dbSchema = getDbSchema(TablesDocument.Factory.parse("""
-            <tables xmlns="http://labkey.org/data/xml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-                <table tableName="R">
-                  <columns>
-                     <column columnName="SIX">
-                        <valueExpression>TWO times 3</valueExpression>
-                    </column>
-                  </columns>
-                </table>
-            </tables>
-            """));
     try
     {
+        var dbSchema = getDbSchema("""
+                 <column columnName="SIX">
+                    <valueExpression>TWO times 3</valueExpression>
+                </column>""");
+        dbSchema.getTable("R");
+        fail("Expected exception");
+    }
+    catch (ConfigurationException e)
+    {
+        assertTrue(e.getMessage().contains("Syntax"));
+    }
+
+    try
+    {
+        var dbSchema = getDbSchema("""
+                 <column columnName="SIX">
+                    <valueExpression>two.lookup</valueExpression>
+                </column>""");
+        dbSchema.getTable("R");
+        fail("Expected exception");
+    }
+    catch (ConfigurationException e)
+    {
+        assertTrue(e.getMessage().contains("Lookup"));
+    }
+
+    try
+    {
+        var dbSchema = getDbSchema("""
+                 <column columnName="ME">
+                    <valueExpression>ME+1</valueExpression>
+                </column>""");
+        dbSchema.getTable("R");
+        fail("Expected exception");
+    }
+    catch (ConfigurationException e)
+    {
+        assertTrue(e.getMessage().contains("itself"));
+    }
+
+    try
+    {
+        var dbSchema = getDbSchema("""
+                 <column columnName="SIX">
+                    <valueExpression>TWO times 3</valueExpression>
+                </column>""");
         dbSchema.getTable("R");
         fail("Expected exception");
     }
@@ -198,15 +241,8 @@ public void testParseError() throws Exception
 public void testNotFound()throws Exception
 {
     // In schema xml, this used to silently fail ignore this column. We expect this to fail now.
-    var dbSchema = getDbSchema(TablesDocument.Factory.parse("""
-            <tables xmlns="http://labkey.org/data/xml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-                <table tableName="R">
-                  <columns>
-                    <column columnName="ERR" wrappedColumnName="nosuchcolumn" />
-                  </columns>
-                </table>
-            </tables>
-            """));
+    var dbSchema = getDbSchema("""
+                    <column columnName="ERR" wrappedColumnName="nosuchcolumn" />""");
     try
     {
         dbSchema.getTable("R");
@@ -218,17 +254,10 @@ public void testNotFound()throws Exception
     }
 
     // In schema xml, this used to silently fail ignore this column. We expect this to fail now.
-    dbSchema = getDbSchema(TablesDocument.Factory.parse("""
-            <tables xmlns="http://labkey.org/data/xml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-                <table tableName="R">
-                  <columns>
+    dbSchema = getDbSchema("""
                      <column columnName="SIX">
                         <valueExpression>TWO * "nosuchcolumn"</valueExpression>
-                    </column>
-                  </columns>
-                </table>
-            </tables>
-            """));
+                    </column>""");
     try
     {
         dbSchema.getTable("R");
@@ -242,14 +271,59 @@ public void testNotFound()throws Exception
 
 
 @Test
-public void testAllowedSyntax()throws Exception
+public void testPHI()
 {
+
+}
+
+
+@Test
+public void testDisallowedSyntax()throws Exception
+{
+    var disallowed = List.of(
+        "<column columnName=\"DISALLOW\"><valueExpression>MAX(two)</valueExpression></column>",
+        "<column columnName=\"DISALLOW\"><valueExpression>(SELECT 1)</valueExpression></column>",
+        "<column columnName=\"DISALLOW\"><valueExpression>(EXISTS (SELECT 1))</valueExpression></column>"
+    );
+
+    for (String xml : disallowed)
+    {
+        try
+        {
+            getDbSchema(xml).getTable("R");
+            fail("Expected exception for xml: " + xml);
+        }
+        catch (ConfigurationException e)
+        {
+            System.err.println("\n\n" + xml + "\n" + e.getMessage() + "\n\n");
+        }
+    }
 }
 
 @Test
-public void testCalculatedColumnUser()throws Exception
+public void testExpressions()throws Exception
 {
+    DbScope scope = CoreSchema.getInstance().getScope();
+    var expressions = List.of(
+            Triple.of("<column columnName=\"EXPR\"><valueExpression>CASE WHEN two=2 THEN 'success' ELSE 'fail' END</valueExpression></column>", JdbcType.VARCHAR, "success"),
+            Triple.of("<column columnName=\"EXPR\"><valueExpression>5*three</valueExpression></column>", JdbcType.INTEGER, 15),
+            Triple.of("<column columnName=\"EXPR\"><valueExpression>AGE_IN_YEARS(\"epoch\", {ts '2001-02-04 05:06:07'})</valueExpression></column>", JdbcType.INTEGER, 31)
+    );
+
+    for (var pair : expressions)
+    {
+        String xml = pair.getLeft();
+        JdbcType type = pair.getMiddle();
+        Object expected = pair.getRight();
+
+        var r = getDbSchema(xml).getTable("R");
+        assertEquals(type, r.getColumn("EXPR").getJdbcType());
+        SQLFragment sql = new SQLFragment().append("SELECT ").append(r.getColumn("EXPR").getValueSql("t")).append("\n").append(r.getFromSQL("t"));
+        var result = new SqlSelector(scope, sql).getObject(type.getJavaClass());
+        assertEquals(expected, result);
+    }
 }
+
 
 @Test
 public void testQuery()throws Exception
