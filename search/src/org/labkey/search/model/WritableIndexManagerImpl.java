@@ -32,6 +32,7 @@ import org.apache.lucene.search.SearcherFactory;
 import org.apache.lucene.search.SearcherManager;
 import org.apache.lucene.store.AlreadyClosedException;
 import org.apache.lucene.store.Directory;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.quartz.DateBuilder;
@@ -55,6 +56,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -107,7 +109,7 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
         }
 
         WritableIndexManagerImpl impl = new WritableIndexManagerImpl(iw, factory, directory);
-        MaybeRefreshJob.initializeTimer(impl);
+        MaybeRefreshJob.initializeTimer();
 
         return impl;
     }
@@ -353,7 +355,7 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
         private static final int MAYBE_REFRESH_SECONDS = 5;
         private static final TriggerKey TRIGGER_KEY = new TriggerKey(MaybeRefreshJob.class.getName());
 
-        private static void initializeTimer(WritableIndexManagerImpl impl)
+        private static void initializeTimer()
         {
             try
             {
@@ -371,7 +373,6 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
 
                 // Quartz Job that executes maybe refresh
                 JobDetail job = JobBuilder.newJob(MaybeRefreshJob.class).build();
-                job.getJobDataMap().put(WritableIndexManagerImpl.class.getName(), impl);
 
                 // Schedule trigger to execute the maybe refresh job on the configured schedule
                 scheduler.scheduleJob(job, trigger);
@@ -390,8 +391,7 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
                 int requests = _maybeRefreshRequests.getAndSet(0);
                 if (requests > 0)
                 {
-                    WritableIndexManagerImpl impl = (WritableIndexManagerImpl)context.getJobDetail().getJobDataMap().get(WritableIndexManagerImpl.class.getName());
-                    impl.refreshNow();
+                    Objects.requireNonNull(SearchService.get()).refreshNow();
                 }
             }
             catch (Exception e)

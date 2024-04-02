@@ -16,6 +16,7 @@
 
 package org.labkey.api.data.dialect;
 
+import jakarta.servlet.ServletException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -25,10 +26,31 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.*;
-import org.labkey.api.data.ConnectionWrapper.Closer;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ConnectionWrapper;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DatabaseTableType;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbScope.LabKeyDataSource;
+import org.labkey.api.data.InClauseGenerator;
 import org.labkey.api.data.JdbcMetaDataSelector.JdbcMetaDataResultSetFactory;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.ParameterMarkerInClauseGenerator;
+import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SchemaTableInfoFactory;
+import org.labkey.api.data.SqlExecutingSelector.ConnectionFactory;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlScanner;
+import org.labkey.api.data.SqlScriptExecutor;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableChange;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TempTableTracker;
+import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.AliasManager;
@@ -42,7 +64,6 @@ import org.labkey.api.view.template.Warnings;
 import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.jdbc.BadSqlGrammarException;
 
-import jakarta.servlet.ServletException;
 import javax.sql.DataSource;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -329,21 +350,15 @@ public abstract class SqlDialect
 
     public abstract String getSqlTypeName(PropertyStorageSpec prop);
 
-
     protected @Nullable String getDatabaseMaintenanceSql()
     {
         return null;
     }
 
-    public boolean isJdbcCachingEnabledByDefault()
+    // Return a ConnectionFactory only if the default behavior needs to be overridden
+    public @Nullable ConnectionFactory getConnectionFactory(boolean useJdbcCaching, DbScope scope, SQLFragment sql)
     {
-        return false;
-    }
-
-    public Closer configureToDisableJdbcCaching(Connection connection, DbScope scope, SQLFragment sql) throws SQLException
-    {
-        // No-op by default
-        return () -> {};
+        return null;
     }
 
     /**
