@@ -19,12 +19,17 @@ interface SearchResult {
     validSegments: string[];
 }
 
+function computeKeys(node: any) {
+    if (node !== null && typeof node === 'object') return Object.keys(node).sort(naturalSort);
+    return [];
+}
+
 function searchStats(stats: Record<string, any>, path: string): SearchResult {
     if (stats === undefined) return undefined;
     if (path === '')
         return {
             invalidSegment: undefined,
-            keys: Object.keys(stats).sort(naturalSort),
+            keys: computeKeys(stats),
             node: JSON.stringify(stats, undefined, 2),
             validSegments: undefined,
         };
@@ -39,9 +44,7 @@ function searchStats(stats: Record<string, any>, path: string): SearchResult {
         } else {
             return {
                 invalidSegment: segment,
-                keys: Object.keys(node)
-                    .filter(k => k.startsWith(segment))
-                    .sort(naturalSort),
+                keys: computeKeys(node).filter(k => k.startsWith(segment)),
                 node: JSON.stringify(node, undefined, 2),
                 validSegments,
             };
@@ -50,7 +53,7 @@ function searchStats(stats: Record<string, any>, path: string): SearchResult {
 
     return {
         invalidSegment: undefined,
-        keys: node === null ? [] : Object.keys(node).sort(naturalSort),
+        keys: computeKeys(node),
         node: JSON.stringify(node, undefined, 2),
         validSegments: undefined,
     };
@@ -77,12 +80,12 @@ interface StatsDisplayProps {
 
 export const StatsDisplay: FC<StatsDisplayProps> = memo(({ searchResult, selectKey }) => {
     const { invalidSegment, keys, node, validSegments } = searchResult;
-    const invalidSeg = <code className="text-danger">{invalidSegment === '' ? '.' : invalidSegment}</code>;
+    const invalidEl = <code className="text-danger">{invalidSegment === '' ? '.' : invalidSegment}</code>;
     return (
         <div className="usage-stats__search-result">
             {invalidSegment !== undefined && (
                 <div className="usage-stats__invalid-messsage">
-                    {invalidSeg} not found{' '}
+                    {invalidEl} not found{' '}
                     {validSegments.length > 0 && (
                         <>
                             in <code className="text-success">{validSegments.join('.')}</code>
@@ -94,7 +97,7 @@ export const StatsDisplay: FC<StatsDisplayProps> = memo(({ searchResult, selectK
             <div className="usage-stats__valid-keys">
                 {keys.length > 0 && (
                     <>
-                        {invalidSegment && <label>Keys starting with {invalidSeg}:</label>}
+                        {invalidSegment && <label>Keys starting with {invalidEl}:</label>}
                         {!invalidSegment && <label>Keys:</label>}
                         <ul className="key-list">
                             {keys.map(key => (
@@ -103,7 +106,7 @@ export const StatsDisplay: FC<StatsDisplayProps> = memo(({ searchResult, selectK
                         </ul>
                     </>
                 )}
-                {keys.length === 0 && <>No valid keys starting with {invalidSeg}</>}
+                {invalidSegment && keys.length === 0 && <>No valid keys starting with {invalidEl}</>}
             </div>
             {node !== undefined && <pre>{node}</pre>}
         </div>
