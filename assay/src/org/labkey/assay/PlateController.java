@@ -975,6 +975,9 @@ public class PlateController extends SpringActionController
         {
             if (!form.isStandaloneAssayPlateCase() && !form.isReplateCase() && !form.isRearrayCase() && !form.isEmptyCase() && !form.isDefaultCase())
                 errors.reject(ERROR_GENERIC, "Invalid parameters.");
+
+            if ((form.isStandaloneAssayPlateCase() || form.isRearrayCase()) && form.getType() != PlateSetType.assay)
+                errors.reject(ERROR_GENERIC, "This Plate Set must be of type Assay.");
         }
 
         @Override
@@ -994,7 +997,10 @@ public class PlateController extends SpringActionController
                 }
                 else if (form.isReplateCase())
                 {
-                    plates = PlateManager.get().getPlates(form.getParentPlateSetId(), getContainer(), getUser());
+                    // When replating, we want the new plate names to be auto-generated
+                    plates = PlateManager.get()
+                            .getPlates(form.getParentPlateSetId(), getContainer(), getUser()).stream()
+                            .map(p -> new PlateManager.CreatePlateSetPlate(null, p.plateType(), p.data())).toList();
                 }
                 else if (form.isDefaultCase())
                 {
