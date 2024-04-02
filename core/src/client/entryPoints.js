@@ -14,6 +14,11 @@ module.exports = {
         title: '@labkey/components',
         permission: 'admin',
         path: './src/client/LabKeyUIComponentsPage'
+    }, {
+        name: 'viewUsageStatistics',
+        title: 'View Usage Statistics',
+        permission: 'admin',
+        path: './src/client/ViewUsageStatistics',
     },{
         name: 'errorHandler',
         title: 'Error Handler',
