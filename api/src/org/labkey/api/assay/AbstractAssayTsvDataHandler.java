@@ -208,7 +208,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         {
             Map<DataType, List<Map<String, Object>>> datas = new HashMap<>();
             List<Map<String, Object>> dataRows = loader.load();
-            boolean skipFirstRowAdjustment = false;
+            boolean skipFirstRowAdjustment = dataRows.isEmpty();
 
             if (plateMetadataEnabled)
             {

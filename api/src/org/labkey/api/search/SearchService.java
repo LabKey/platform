@@ -399,6 +399,8 @@ public interface SearchService extends SearchMXBean
     void startCrawler();
     void pauseCrawler();
     void updateIndex();
+    void refreshNow();
+
     @Nullable Throwable getConfigurationError();
 
     IndexTask defaultTask();

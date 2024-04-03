@@ -59,6 +59,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
+import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.JspTestCase;
 import org.labkey.api.util.PageFlowUtil;
@@ -76,6 +77,7 @@ import org.labkey.assay.plate.PlateDocumentProvider;
 import org.labkey.assay.plate.PlateImpl;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.PlateMetadataDomainKind;
+import org.labkey.assay.plate.PlateMetricsProvider;
 import org.labkey.assay.plate.TsvPlateLayoutHandler;
 import org.labkey.assay.plate.query.PlateSchema;
 import org.labkey.assay.query.AssayDbSchema;
@@ -265,6 +267,12 @@ public class AssayModule extends SpringModule
 
         AdminConsole.addExperimentalFeatureFlag(EXPERIMENTAL_APP_PLATE_SUPPORT,
                 "Plate samples in Biologics", "Plate samples in Biologics for import and analysis.", false);
+
+        UsageMetricsService svc = UsageMetricsService.get();
+        if (null != svc)
+        {
+            svc.registerUsageMetrics(getName(), new PlateMetricsProvider());
+        }
     }
 
     @Override
