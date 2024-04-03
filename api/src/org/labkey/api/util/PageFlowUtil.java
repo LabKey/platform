@@ -420,6 +420,7 @@ public class PageFlowUtil
         StringBuilder js = new StringBuilder(s.length() + 10);
         js.append("'");
         int len = s.length();
+        char prev = 0;
         for (int i = 0 ; i<len ; i++)
         {
             char c = s.charAt(i);
@@ -429,7 +430,10 @@ public class PageFlowUtil
                     js.append("\\\\");
                     break;
                 case '/':
-                    js.append("\\/"); // JSONObject.toString() escapes '/'
+                    if (prev == '<')
+                        js.append("\\/"); // JSONObject.toString() escapes '/'
+                    else
+                        js.append('/');
                     break;
                 case '\n':
                     js.append("\\n");
@@ -453,6 +457,7 @@ public class PageFlowUtil
                     js.append(c);
                     break;
             }
+            prev = c;
         }
         js.append("'");
         return js.toString();

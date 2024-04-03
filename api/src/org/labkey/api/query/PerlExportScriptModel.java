@@ -20,14 +20,8 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.util.PageFlowUtil;
 
-import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * User: bbimber
- * Date: 2/5/12
- * Time: 8:39 PM
- */
 public class PerlExportScriptModel extends ExportScriptModel
 {
     private int _indentSpaces = 0;
@@ -43,31 +37,24 @@ public class PerlExportScriptModel extends ExportScriptModel
     {
         String indent = StringUtils.repeat(" ", _indentSpaces);
 
-        List<String> filterExprs = getFilterExpressions();
-        if (null == filterExprs || filterExprs.size() == 0)
-            return null;
+        return getFilters(null, "[", "\n" + indent + indent, ",", "\n" + indent + "]");
+    }
 
-        StringBuilder ret = new StringBuilder("[");
-        String sep = "\n";
-        for (String filterExpr : filterExprs)
-        {
-            ret.append(sep).append(indent).append(indent);
-            ret.append(filterExpr);
-            sep = ",\n";
-        }
-        ret.append("\n").append(indent).append("]");
-        return ret.toString();
+    @Override
+    protected String quote(String value)
+    {
+        // JavaScript quoting is close
+        return PageFlowUtil.jsString(value);
     }
 
     // Our Perl clientapi expects filters with operators in the middle
     @Override
     protected String makeFilterExpression(String name, CompareType operator, String value)
     {
-        return "[" + PageFlowUtil.jsString(name) + ", "
-                + operator.getPreferredUrlKey() + ", '" + PageFlowUtil.jsString(value) + "']";
+        return "[" + quote(name) + ", " + quote(operator.getPreferredUrlKey()) + ", " + quote(value) + "]";
     }
 
-    // Produce Perl code block containing all the standard query parameters.  Callers need to wrap this block in
+    // Produce Perl code block containing all the standard query parameters. Callers need to wrap this block in
     // curly braces (at a minimum) and modify/add parameters as appropriate.
     public String getStandardScriptParameters(int indentSpaces)
     {
@@ -75,15 +62,15 @@ public class PerlExportScriptModel extends ExportScriptModel
         _indentSpaces = indentSpaces;
         StringBuilder params = new StringBuilder();
         //params.append(indent).append("requiredVersion => 9.1,\n");
-        params.append(indent).append("-baseUrl => ").append(PageFlowUtil.jsString(getBaseUrl())).append(",\n");
-        params.append(indent).append("-containerPath => ").append(PageFlowUtil.jsString(getFolderPath())).append(",\n");
-        params.append(indent).append("-schemaName => ").append(PageFlowUtil.jsString(getSchemaName())).append(",\n");
+        params.append(indent).append("-baseUrl => ").append(quote(getBaseUrl())).append(",\n");
+        params.append(indent).append("-containerPath => ").append(quote(getFolderPath())).append(",\n");
+        params.append(indent).append("-schemaName => ").append(quote(getSchemaName())).append(",\n");
 
         if (null != getViewName())
-            params.append(indent).append("-viewName => ").append(PageFlowUtil.jsString(getViewName())).append(",\n");
+            params.append(indent).append("-viewName => ").append(quote(getViewName())).append(",\n");
 
-        params.append(indent).append("-queryName => ").append(PageFlowUtil.jsString(getQueryName())).append(",\n");
-        params.append(indent).append("-columns => ").append(PageFlowUtil.jsString(getColumns()));  // TODO: Inconsistent with R and SAS, which don't include view columns
+        params.append(indent).append("-queryName => ").append(quote(getQueryName())).append(",\n");
+        params.append(indent).append("-columns => ").append(quote(getColumns()));
 
         String filters = getFilters();
 
@@ -91,7 +78,7 @@ public class PerlExportScriptModel extends ExportScriptModel
             params.append(",\n").append(indent).append("-filterArray => ").append(filters);
 
         if (hasSort())
-            params.append(",\n").append(indent).append("-sort => ").append(PageFlowUtil.jsString(getSort()));
+            params.append(",\n").append(indent).append("-sort => ").append(quote(getSort()));
 
         if (hasContainerFilter())
             params.append(",\n").append(indent).append("-containerFilterName => '").append(getContainerFilterTypeName()).append("'");

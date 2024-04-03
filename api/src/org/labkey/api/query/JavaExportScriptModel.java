@@ -21,15 +21,9 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.util.HelpTopic;
 
-import java.util.List;
 import java.util.Map.Entry;
-import java.util.Set;
+import java.util.stream.Collectors;
 
-/*
-* User: Dave
-* Date: Apr 2, 2009
-* Time: 12:44:51 PM
-*/
 public class JavaExportScriptModel extends ExportScriptModel
 {
     public JavaExportScriptModel(QueryView view)
@@ -40,18 +34,7 @@ public class JavaExportScriptModel extends ExportScriptModel
     @Override
     public String getFilters()
     {
-        List<String> filterExprs = getFilterExpressions();
-        if (null == filterExprs || filterExprs.size() == 0)
-            return "";
-        
-        StringBuilder ret = new StringBuilder();
-
-        for (String filterExpr : filterExprs)
-        {
-            ret.append(filterExpr);
-        }
-
-        return ret.toString();
+        return getFilters("", "", "", "", "");
     }
 
     @Override
@@ -66,21 +49,13 @@ public class JavaExportScriptModel extends ExportScriptModel
     private String getListOfColumns()
     {
         StringBuilder ret = new StringBuilder();
-        List<DisplayColumn> columns = getQueryView().getDisplayColumns();
-        appendListOperator(ret, columns.size());
-
-        String sep = "";
-
-        for (DisplayColumn dc : getQueryView().getDisplayColumns())
-        {
-            if (dc.isQueryColumn())
-            {
-                ret.append(sep);
-                ret.append(quote(dc.getColumnInfo().getName()));
-                sep = ", ";
-            }
-        }
-
+        appendListOperator(ret);
+        ret.append(
+            getQueryView().getDisplayColumns().stream()
+                .filter(DisplayColumn::isQueryColumn)
+                .map(dc -> quote(dc.getColumnInfo().getName()))
+                .collect(Collectors.joining(", "))
+        );
         ret.append(")");
 
         return ret.toString();
@@ -89,12 +64,11 @@ public class JavaExportScriptModel extends ExportScriptModel
     private StringBuilder getListOfSorts(String sortColumns)
     {
         StringBuilder sortParameters = new StringBuilder();
-        Set<String> set = new CsvSet(sortColumns);
-        appendListOperator(sortParameters, set.size());
+        appendListOperator(sortParameters);
 
         String sep = "";
 
-        for (String sortColumn : set)
+        for (String sortColumn : new CsvSet(sortColumns))
         {
             sortParameters.append(sep);
             sortParameters.append("new Sort(");
@@ -118,15 +92,13 @@ public class JavaExportScriptModel extends ExportScriptModel
         return sortParameters;
     }
 
-    private void appendListOperator(StringBuilder sb, int size)
+    private void appendListOperator(StringBuilder sb)
     {
-        if (size > 1)
-            sb.append("Arrays.asList(");
-        else
-            sb.append("Collections.singletonList(");
+        sb.append("List.of(");
     }
 
-    private String quote(String value)
+    @Override
+    protected String quote(String value)
     {
         return "\"" + StringEscapeUtils.escapeJava(value) + "\"";
     }

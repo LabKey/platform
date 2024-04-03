@@ -21,7 +21,6 @@ import org.labkey.api.util.HelpTopic;
 import org.labkey.api.view.ActionURL;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -29,11 +28,6 @@ import static org.apache.commons.lang3.StringUtils.defaultIfBlank;
 import static org.apache.commons.lang3.StringUtils.startsWith;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
-/*
-* User: Dave
-* Date: Aug 13, 2008
-* Time: 1:21:48 PM
-*/
 public class RExportScriptModel extends ExportScriptModel
 {
     private static final String DEFAULT_VARIABLE_NAME = "labkey.data";
@@ -85,35 +79,24 @@ public class RExportScriptModel extends ExportScriptModel
     @Override
     public String getFilters()
     {
-        List<String> filterExprs = getFilterExpressions();
+        return getFilters("NULL", "makeFilter(", "", ",", ")");
+    }
 
-        if (filterExprs.isEmpty())
-            return "NULL";
-
-        StringBuilder filtersExpr = new StringBuilder("makeFilter(");
-        String sep = "";
-
-        for (String mf : filterExprs)
-        {
-            filtersExpr.append(sep);
-            filtersExpr.append(mf);
-            sep = ",";
-        }
-
-        filtersExpr.append(")");
-
-        return filtersExpr.toString();
+    @Override
+    protected String quote(String value)
+    {
+        return doubleQuote(value);
     }
 
     @Override
     protected String makeFilterExpression(String name, CompareType operator, String value)
     {
-        return "c(" + doubleQuote(name) + ", " + doubleQuote(operator.getScriptName()) + ", " + doubleQuote(value) + ")";
+        return "c(" + quote(name) + ", " + quote(operator.getScriptName()) + ", " + quote(value) + ")";
     }
 
     private String getContainerFilterString()
     {
-        return hasContainerFilter() ? (" " + doubleQuote(getContainerFilterTypeName()) + " ") : "NULL";
+        return hasContainerFilter() ? (" " + quote(getContainerFilterTypeName()) + " ") : "NULL";
     }
 
     @Override
@@ -132,24 +115,24 @@ public class RExportScriptModel extends ExportScriptModel
             sb.append("\n");
             sb.append("library(Rlabkey)").append("\n");
             sb.append("\n");
-            sb.append("# Select rows into a data frame called '" + variableName + "'").append("\n");
+            sb.append("# Select rows into a data frame called '").append(variableName).append("'").append("\n");
             sb.append("\n");
         }
         String nl = "\n"; //clean ? "" : "\n";
         String indent = "    "; //clean ? StringUtils.repeat(" ", 4) : "";
         sb.append(variableName).append(" <- labkey.selectRows(").append(nl);
-        sb.append(indent).append("baseUrl=").append(doubleQuote(getBaseUrl())).append(", ").append(nl);
-        sb.append(indent).append("folderPath=").append(doubleQuote(getFolderPath())).append(", ").append(nl);
-        sb.append(indent).append("schemaName=").append(doubleQuote(getSchemaName())).append(", ").append(nl);
-        sb.append(indent).append("queryName=").append(doubleQuote(getQueryName())).append(", ").append(nl);
-        sb.append(indent).append("viewName=").append(doubleQuote(getViewName())).append(", ").append(nl);
-        sb.append(indent).append("colSelect=").append(doubleQuote(getColumns())).append(", ").append(nl);
+        sb.append(indent).append("baseUrl=").append(quote(getBaseUrl())).append(", ").append(nl);
+        sb.append(indent).append("folderPath=").append(quote(getFolderPath())).append(", ").append(nl);
+        sb.append(indent).append("schemaName=").append(quote(getSchemaName())).append(", ").append(nl);
+        sb.append(indent).append("queryName=").append(quote(getQueryName())).append(", ").append(nl);
+        sb.append(indent).append("viewName=").append(quote(getViewName())).append(", ").append(nl);
+        sb.append(indent).append("colSelect=").append(quote(getColumns())).append(", ").append(nl);
 
         if (hasSort())
-            sb.append(indent).append("colSort=").append(doubleQuote(getSort())).append(", ").append(nl);
+            sb.append(indent).append("colSort=").append(quote(getSort())).append(", ").append(nl);
         sb.append(indent).append("colFilter=").append(getFilters()).append(", ").append(nl);
         sb.append(indent).append("containerFilter=").append(getContainerFilterString()).append(", ").append(nl);
-        sb.append(indent).append("colNameOpt=").append(doubleQuote("rname"));
+        sb.append(indent).append("colNameOpt=").append(quote("rname"));
 
         if (hasQueryParameters())
         {
