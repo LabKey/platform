@@ -700,6 +700,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         Map<String, Object> validRowCopy = new CaseInsensitiveHashMap<>();
         boolean hasNonStatusChange = false;
+        boolean hasStatusCol = false;
         for (String updateField : rowCopy.keySet())
         {
             Object updateValue = rowCopy.get(updateField);
@@ -721,9 +722,12 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 hasNonStatusChange = hasNonStatusChange || !SampleTypeServiceImpl.statusUpdateColumns.contains(updateField.toLowerCase());
                 validRowCopy.put(updateField, updateValue);
             }
+
+            if (ExpMaterialTable.Column.SampleState.name().toLowerCase().equals(updateField.toLowerCase()))
+                hasStatusCol = true;
         }
         // had a locked status before and either not updating the status or updating to a new locked status
-        if (hasNonStatusChange && !oldAllowsOp && !newAllowsOp)
+        if (hasNonStatusChange && !oldAllowsOp && (!hasStatusCol || !newAllowsOp))
         {
             throw new ValidationException(String.format("Updating sample data when status is %s is not allowed.", oldStatus.getLabel()));
         }
