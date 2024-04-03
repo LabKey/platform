@@ -2972,6 +2972,7 @@ public class ExpDataIterators
                 "ModifiedBy",
                 "Created",
                 "_rowNumber",
+                RowId.name(),
                 AliquotedFromLSID.name(),
                 ALIQUOTED_FROM_INPUT,
                 ROOT_RECOMPUTE_ROWID_COL,
