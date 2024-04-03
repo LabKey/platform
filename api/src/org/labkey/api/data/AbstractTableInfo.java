@@ -1367,7 +1367,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
                 }
                 if (isNotBlank(sql))
                 {
-                    var wrappedColumn = QueryService.get().createQueryExpressionColumn(this, FieldKey.fromParts(xmlColumn.getColumnName()), sql);
+                    var wrappedColumn = QueryService.get().createQueryExpressionColumn(this, FieldKey.fromParts(xmlColumn.getColumnName()), sql, xmlColumn);
                     // TODO - propagate properties calculated/inferred from the SQL expression first, before calling initColumnFromXml()
                     initColumnFromXml(schema, wrappedColumn, xmlColumn, errors);
                     addColumn(wrappedColumn);

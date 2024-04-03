@@ -2,6 +2,7 @@ package org.labkey.query.sql;
 
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DatabaseTableType;
@@ -20,6 +21,7 @@ import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 
 import java.sql.SQLException;
@@ -37,6 +39,7 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
 
     // Query-layer LabKey SQL fragment
     private final String _labKeySql;
+    private final ColumnType _xmlColumn;
 
     // Parsed expression -- READ ONLY
     private QExpr _parsedExpr;
@@ -53,24 +56,61 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
 
 //    private final ColumnInfo[] _dependentColumns;
 
-    public CalculatedExpressionColumn(TableInfo parent, FieldKey key, String labKeySql)
+    public CalculatedExpressionColumn(TableInfo parent, FieldKey key, String labKeySql, ColumnType columnType)
     {
         super(key, parent);
         _labKeySql = labKeySql;
-        // Since these are typically calculated columns, it doesn't make sense to show them in update or insert views
+        _xmlColumn = columnType;
+    }
+
+    @Override
+    public @Nullable String getWrappedColumnName()
+    {
+        var bound = getBoundExpression();
+        if (bound instanceof _BoundColumn)
+        {
+            FieldKey key = bound.getFieldKey();
+            if (null != key && null == key.getParent())
+                return key.getName();
+        }
+        return null;
+    }
+
+    public void computeMetaData(Map<FieldKey,ColumnInfo> columns)
+    {
+        if (null == columns)
+            columns = Table.createColumnMap(getParentTable(), null);
+
+        // set properties based on the expression
+        QExpr bound = getBoundExpression();
+        ColumnInfo from = null;
+        if (bound instanceof _BoundColumn)
+            from = columns.get(bound.getFieldKey());
+        else
+            from = bound.createColumnInfo(getParentTable(), getColumnName(), null);
+        FieldKey me = getFieldKey();
+        if (null != from)
+            this.copyAttributesFrom(from);
+        setLabel(null);
+        setFieldKey(me);
+
+        // set CalculatedExpressionColumn properties (over-writable)
         super.setShownInUpdateView(false);
         super.setShownInInsertView(false);
+
+        if (null != _xmlColumn)
+            this.loadFromXml(_xmlColumn, true);
+
+        // set CalculatedExpressionColumn properties (not over-writable)
         super.setUserEditable(false);
         super.setCalculated(true);
-        // Unless otherwise configured, guess that it might be nullable
-        setNullable(true);
-
-        // TODO we can't (yet) call getBoundExpression() while our parent table is still being constructed.
-        setJdbcType(null);
     }
 
 
+
     /**
+     * TODO maybe have TableInfo call computeMetadata() in fireAfterConstruct()?
+     *
      * We don't have a phase where we the TableInfo notifies it's columns, that it is "done".  But since this object
      * is shared, I'd prefer to calculate the type during construction and not on demand.
      *
@@ -81,21 +121,8 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
     @Override
     public void setLocked(boolean b)
     {
-        _boundExpr = null;
-        super.setJdbcType(getJdbcType());
+        computeMetaData(null);
         super.setLocked(b);
-    }
-
-    @Override
-    public void setCalculated(boolean calculated)
-    {
-        // can't touch this e.g. copyAttributesFrom()
-    }
-
-    @Override
-    public void setUserEditable(boolean editable)
-    {
-        // can't touch this e.g. copyAttributesFrom()
     }
 
     @Override

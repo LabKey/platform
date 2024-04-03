@@ -189,11 +189,9 @@ public class SchemaColumnMetaData
                 try
                 {
                     BaseColumnInfo exprColumn  = null != boundColumn ?
-                            QueryService.get().createQueryExpressionColumn(tinfo, FieldKey.fromParts(xmlColumn.getColumnName()), boundColumn) :
-                            QueryService.get().createQueryExpressionColumn(tinfo, FieldKey.fromParts(xmlColumn.getColumnName()), sql);
-                    QueryService.get().validateQueryExpressionColumn(exprColumn, allowedColumns);
-                    // TODO - propagate properties calculated/inferred from the SQL expression first, before calling loadFromXml()
-                    loadFromXml(xmlColumn, exprColumn, false);
+                            QueryService.get().createQueryExpressionColumn(tinfo, FieldKey.fromParts(xmlColumn.getColumnName()), boundColumn.getFieldKey(), xmlColumn) :
+                            QueryService.get().createQueryExpressionColumn(tinfo, FieldKey.fromParts(xmlColumn.getColumnName()), sql, xmlColumn);
+                    QueryService.get().bindQueryExpressionColumn(exprColumn, allowedColumns, true);
                     aliasManager = getAliasManager(aliasManager);
                     aliasManager.ensureAlias(exprColumn);
                     addColumn(exprColumn);

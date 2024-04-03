@@ -52,6 +52,7 @@ import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -264,9 +265,9 @@ public interface QueryService
     SelectBuilder getSelectBuilder(TableInfo table);
     SelectBuilder getSelectBuilder(QuerySchema schema, String sql);
 
-    BaseColumnInfo createQueryExpressionColumn(TableInfo table, FieldKey key, String labKeySql);
-    BaseColumnInfo createQueryExpressionColumn(TableInfo table, FieldKey key, ColumnInfo wrapped);
-    void validateQueryExpressionColumn(ColumnInfo col, Map<FieldKey,ColumnInfo> columns) throws QueryParseException;
+    BaseColumnInfo createQueryExpressionColumn(TableInfo table, FieldKey key, String labKeySql, ColumnType columnType);
+    BaseColumnInfo createQueryExpressionColumn(TableInfo table, FieldKey key, FieldKey wrapped, ColumnType columnType);
+    void bindQueryExpressionColumn(ColumnInfo col, Map<FieldKey,ColumnInfo> columns, boolean validateOnly) throws QueryParseException;
 
     void addCompareType(CompareType type);
 

@@ -21,6 +21,7 @@ import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MethodInfo;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
@@ -172,7 +173,7 @@ public class QField extends QInternalExpr
 
 
     @Override
-    public BaseColumnInfo createColumnInfo(SQLTableInfo table, String alias, Query query)
+    public BaseColumnInfo createColumnInfo(TableInfo table, String alias, Query query)
     {
         final AbstractQueryRelation.RelationColumn rcol = getRelationColumn();
         // Delay call to getValueSql() avoid unnecessary work during getTable().

@@ -27,6 +27,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedDisplayColumn;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 
 import java.util.Collection;
@@ -461,7 +462,7 @@ public class QAggregate extends QExpr
     }
 
     @Override
-    public ColumnInfo createColumnInfo(SQLTableInfo table, String alias, Query query)
+    public ColumnInfo createColumnInfo(TableInfo table, String alias, Query query)
     {
         var ret = (MutableColumnInfo)super.createColumnInfo(table, alias, query);
         List<QNode> children = childList();

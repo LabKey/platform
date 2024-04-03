@@ -79,6 +79,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
@@ -596,7 +597,7 @@ public class QueryServiceImpl implements QueryService
         }
 
         @Override
-        public ColumnInfo createColumnInfo(SQLTableInfo table, String name, Query query)
+        public ColumnInfo createColumnInfo(TableInfo table, String name, Query query)
         {
             var ret = super.createColumnInfo(table, name, query);
             _col.copyTo((ColumnRenderPropertiesImpl) ret);
@@ -2811,25 +2812,28 @@ public class QueryServiceImpl implements QueryService
     }
 
     @Override
-    public BaseColumnInfo createQueryExpressionColumn(TableInfo table, FieldKey key, String labKeySql)
+    public BaseColumnInfo createQueryExpressionColumn(TableInfo table, FieldKey key, String labKeySql, ColumnType columnType)
     {
-        return new CalculatedExpressionColumn(table, key, labKeySql);
+        return new CalculatedExpressionColumn(table, key, labKeySql, columnType);
     }
 
-    public BaseColumnInfo createQueryExpressionColumn(TableInfo table, FieldKey key, ColumnInfo wrapped)
+    public BaseColumnInfo createQueryExpressionColumn(TableInfo table, FieldKey key, FieldKey wrapped, ColumnType columnType)
     {
         // TODO short-circuit parsing/binding in this code path
-        var ret = new CalculatedExpressionColumn(table, key, LabKeySql.quoteIdentifier(wrapped.getName()));
-        ret.copyAttributesFrom(wrapped);
+        var ret = new CalculatedExpressionColumn(table, key, LabKeySql.quoteIdentifier(wrapped.getName()), columnType);
         return ret;
     }
 
+     /** Compute and set the metadata for this column based on the source expressoin and the xml override */
     @Override
-    public void validateQueryExpressionColumn(ColumnInfo col, Map<FieldKey,ColumnInfo> columns) throws QueryParseException
+    public void bindQueryExpressionColumn(ColumnInfo col, Map<FieldKey,ColumnInfo> columns, boolean validateOnly) throws QueryParseException
     {
         if (!(col instanceof CalculatedExpressionColumn calc))
             throw new IllegalStateException();
-        calc.validate(columns);
+        if (validateOnly)
+            calc.validate(columns);
+        else
+            calc.computeMetaData(columns);
     }
 
     @Override
