@@ -1,5 +1,6 @@
 package org.labkey.api.security;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -18,12 +19,12 @@ import org.labkey.api.security.AuthenticationProvider.LoginFormAuthenticationPro
 import org.labkey.api.security.AuthenticationProvider.PrimaryAuthenticationProvider;
 import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.security.AuthenticationProvider.SecondaryAuthenticationProvider;
+import org.labkey.api.security.permissions.RequireSecondaryAuthenticationPermission;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -84,7 +85,7 @@ public interface AuthenticationConfiguration<AP extends AuthenticationProvider> 
         return map;
     }
 
-    interface PrimaryAuthenticationConfiguration<AP extends PrimaryAuthenticationProvider> extends AuthenticationConfiguration<AP>
+    interface PrimaryAuthenticationConfiguration<AP extends PrimaryAuthenticationProvider<?>> extends AuthenticationConfiguration<AP>
     {
         default @Nullable URLHelper logout(HttpServletRequest request, @Nullable URLHelper returnURL)
         {
@@ -96,7 +97,7 @@ public interface AuthenticationConfiguration<AP extends AuthenticationProvider> 
     {
     }
 
-    interface SSOAuthenticationConfiguration<AP extends SSOAuthenticationProvider> extends PrimaryAuthenticationConfiguration<AP>
+    interface SSOAuthenticationConfiguration<AP extends SSOAuthenticationProvider<?>> extends PrimaryAuthenticationConfiguration<AP>
     {
         LinkFactory getLinkFactory();
         URLHelper getUrl(String secret, ViewContext ctx);
@@ -202,5 +203,31 @@ public interface AuthenticationConfiguration<AP extends AuthenticationProvider> 
         AP getAuthenticationProvider();
 
         ActionURL getRedirectURL(User candidate, Container c);
+
+        @NotNull RequiredFor getRequiredFor();
+
+        boolean isRequired(User user);
+
+        enum RequiredFor
+        {
+            all
+            {
+                @Override
+                public boolean isRequired(User user)
+                {
+                    return true;
+                }
+            },
+            role
+            {
+                @Override
+                public boolean isRequired(User user)
+                {
+                    return user.hasRootPermission(RequireSecondaryAuthenticationPermission.class);
+                }
+            };
+
+            public abstract boolean isRequired(User user);
+        }
     }
 }

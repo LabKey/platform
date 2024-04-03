@@ -16,6 +16,7 @@
 
 package org.labkey.api.security;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -36,7 +37,6 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -241,6 +241,15 @@ public interface AuthenticationProvider
          * a 3rd party service provider is unavailable.
          */
         boolean bypass();
+
+        default JSONArray addRequiredForField(JSONArray fields, String name)
+        {
+            return fields
+                .put(OptionsField.of("requiredFor", "Require " + name + " for:", "Specifying the role option allows for a progressive roll-out of " + name + " to site users.", true, "all")
+                    .addOption("all", "All users")
+                    .addOption("role", "Only users assigned the \"Require Secondary Authentication\" site role")
+                );
+        }
     }
 
     interface DisableLoginProvider extends AuthenticationProvider
