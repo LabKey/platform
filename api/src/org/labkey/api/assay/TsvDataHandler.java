@@ -18,13 +18,12 @@ package org.labkey.api.assay;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.Results;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
-import org.labkey.api.data.StashingResultsFactory;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -39,26 +38,22 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Path;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
-/**
- * User: brittp
- * Date: Jul 11, 2007
- * Time: 11:17:56 AM
- */
 public class TsvDataHandler extends AbstractAssayTsvDataHandler implements TransformDataHandler
 {
     public static final DataType RELATED_TRANSFORM_FILE_DATA_TYPE = new DataType("RelatedTransformFile");
     public static final String NAMESPACE = "AssayRunTSVData";
+    private static final Logger LOG = LogHelper.getLogger(TsvDataHandler.class, "Assay data export issues");
     private static final AssayDataType DATA_TYPE;
 
     static
@@ -147,18 +142,15 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
                     {
                         // Filter to get rows just from that one file
                         TableSelector ts = new TableSelector(dataTable, new SimpleFilter(FieldKey.fromParts("DataId"), data.getRowId()), new Sort("RowId"));
-                        // Be sure to request lookup values and other renderer-required info, see issue 36746
+                        // Be sure to request lookup values and other renderer-required info, see Issue 36746
                         ts.setForDisplay(true);
+                        ts.setJdbcCaching(false); // Don't cache result set in the PostgreSQL JDBC driver, Issue 49913
 
-                        try (var factory = new StashingResultsFactory(ts))
+                        try
                         {
-                            Results results = factory.get();
-                            if (results.getSize() == 0)
-                                return;
-
                             File tempFile = FileUtil.createTempFile(FileUtil.getBaseName(FileUtil.getFileName(dataFile)), ".tsv");
 
-                            // Figure out the subset of columns to actually export in the TSV, see issue 36746
+                            // Figure out the subset of columns to actually export in the TSV, see Issue 36746
                             Set<FieldKey> ignored = Set.of(FieldKey.fromParts("Run"), FieldKey.fromParts("RowId"), FieldKey.fromParts("DataId"), FieldKey.fromParts("Folder"));
                             List<DisplayColumn> displayColumns = new ArrayList<>();
                             for (ColumnInfo column : dataTable.getColumns())
@@ -169,15 +161,21 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
                                 }
                             }
 
-                            try (TSVGridWriter writer = new TSVGridWriter(factory, displayColumns))
+                            int rowCount;
+
+                            try (TSVGridWriter writer = new TSVGridWriter(() -> ts.getResults(false), displayColumns))
                             {
                                 writer.setColumnHeaderType(ColumnHeaderType.FieldKey);
-                                writer.write(tempFile);
+                                rowCount = writer.write(tempFile);
                             }
 
-                            FileUtils.copyFile(tempFile, out);
+                            if (rowCount > 0)
+                                FileUtils.copyFile(tempFile, out);
+
+                            if (!tempFile.delete())
+                                LOG.warn("Unable to delete temp file: " + tempFile.getPath());
                         }
-                        catch (IOException | SQLException e)
+                        catch (IOException e)
                         {
                             throw new ExperimentException("Problem creating TSV grid for run " + run.getName() + "(lsid: " + run.getLSID() + ")", e);
                         }

@@ -76,8 +76,8 @@ var enableTestButton = function(el, level) {
     }
 };
 
-var testUsageReport = function(download) {
-    testMothershipReport('CheckForUpdates', '<%=UsageReportingLevel.ON%>', download);
+var testUsageReport = function() {
+    testMothershipReport('CheckForUpdates', '<%=UsageReportingLevel.ON%>', true);
 };
 
 var testExceptionReport = function(download) {
@@ -222,8 +222,8 @@ Click the Save button at any time to accept the current settings and continue.</
 %>
             <tr>
                 <td style="padding: 5px 0 5px;" colspan="2">
-                            <%=button("View").id("testUsageReport").onClick("testUsageReport(false); return false;")%>
-                            <%=button("Download").id("testUsageReportDownload").onClick("testUsageReport(true); return false;")%>
+                            <%=link("View", AdminController.ViewUsageStatistics.class)%>
+                            <%=button("Download").id("testUsageReportDownload").onClick("testUsageReport(); return false;")%>
                     Generate an example usage report. <strong>No data will be submitted.</strong></td>
             </tr>
         </table>
