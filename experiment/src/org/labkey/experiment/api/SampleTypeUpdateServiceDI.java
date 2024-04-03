@@ -59,7 +59,7 @@ import org.labkey.api.dataiterator.DropColumnsDataIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.dataiterator.Pump;
-import org.labkey.api.dataiterator.SampleUpdateAliquotedFromDataIterator;
+import org.labkey.api.dataiterator.SampleUpdateAddColumnsDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.WrapperDataIterator;
 import org.labkey.api.exp.ExperimentException;
@@ -125,6 +125,7 @@ import static java.util.Collections.emptyMap;
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.labkey.api.data.TableSelector.ALL_COLUMNS;
 import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs;
+import static org.labkey.api.dataiterator.SampleUpdateAddColumnsDataIterator.CURRENT_SAMPLE_STATUS_COLUMN_NAME;
 import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipAliquotRollup;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipMaxSampleCounterFunction;
@@ -722,7 +723,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             }
         }
         // had a locked status before and either not updating the status or updating to a new locked status
-        if (hasNonStatusChange && !oldAllowsOp && (newStatus == null || !newAllowsOp))
+        if (hasNonStatusChange && !oldAllowsOp && !newAllowsOp)
         {
             throw new ValidationException(String.format("Updating sample data when status is %s is not allowed.", oldStatus.getLabel()));
         }
@@ -1014,7 +1015,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (null == remap)
             remap = CaseInsensitiveHashMap.of();
 
-        Set<String> includedColumns = new CaseInsensitiveHashSet("name", "lsid", "rowid");
+        Set<String> includedColumns = new CaseInsensitiveHashSet("name", "lsid", "rowid", "samplestate");
         for (ColumnInfo column : getQueryTable().getColumns())
         {
             if (dataColumns.contains(column.getColumnName()))
@@ -1408,15 +1409,16 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     addAliquotedFrom.addNullColumn(AliquotedFromLSID.name(), JdbcType.VARCHAR);
                 if (!columnNameMap.containsKey(RootMaterialRowId.name()))
                     addAliquotedFrom.addNullColumn(RootMaterialRowId.name(), JdbcType.INTEGER);
+                addAliquotedFrom.addNullColumn(CURRENT_SAMPLE_STATUS_COLUMN_NAME, JdbcType.INTEGER);
                 addAliquotedFrom.addColumn(new BaseColumnInfo("cpasType", JdbcType.VARCHAR), new SimpleTranslator.ConstantColumn(sampleType.getLSID()));
                 addAliquotedFrom.addColumn(new BaseColumnInfo("materialSourceId", JdbcType.INTEGER), new SimpleTranslator.ConstantColumn(sampleType.getRowId()));
                 addAliquotedFrom.addNullColumn(ROOT_RECOMPUTE_ROWID_COL, JdbcType.INTEGER);
                 addAliquotedFrom.addNullColumn(PARENT_RECOMPUTE_NAME_COL, JdbcType.VARCHAR);
                 addAliquotedFrom.selectAll();
 
-                var addAliquotedFromDI = new SampleUpdateAliquotedFromDataIterator(new CachingDataIterator(addAliquotedFrom), materialTable, sampleType.getRowId(), columnNameMap.containsKey("lsid"));
+                var addRequiredColsDI = new SampleUpdateAddColumnsDataIterator(new CachingDataIterator(addAliquotedFrom), materialTable, sampleType.getRowId(), columnNameMap.containsKey("lsid"));
 
-                SimpleTranslator c = new _SamplesCoerceDataIterator(addAliquotedFromDI, context, sampleType, materialTable);
+                SimpleTranslator c = new _SamplesCoerceDataIterator(addRequiredColsDI, context, sampleType, materialTable);
                 return LoggingDataIterator.wrap(c);
             }
 

@@ -136,6 +136,7 @@ import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.labkey.api.data.CompareType.IN;
+import static org.labkey.api.dataiterator.SampleUpdateAddColumnsDataIterator.CURRENT_SAMPLE_STATUS_COLUMN_NAME;
 import static org.labkey.api.exp.api.ExpData.DATA_INPUTS_PREFIX_LC;
 import static org.labkey.api.exp.api.ExpData.DATA_INPUT_PARENT;
 import static org.labkey.api.exp.api.ExpMaterial.ALIQUOTED_FROM_INPUT;
@@ -2260,9 +2261,15 @@ public class ExpDataIterators
                 return ret;
             };
 
+            DataIteratorBuilder step2c = step2b;
+            if (isSample && isMergeOrUpdate)
+            {
+                step2c = LoggingDataIterator.wrap(new ExpDataIterators.SampleStatusCheckIteratorBuilder(step2b, _container));
+            }
+
             // Insert into exp.data then the provisioned table
             // Use embargo data iterator to ensure rows are committed before being sent along Issue 26082 (row at a time, reselect rowid)
-            DataIteratorBuilder step3 = LoggingDataIterator.wrap(new TableInsertDataIteratorBuilder(step2b, _expTable, _container)
+            DataIteratorBuilder step3 = LoggingDataIterator.wrap(new TableInsertDataIteratorBuilder(step2c, _expTable, _container)
                     .setKeyColumns(keyColumns)
                     .setDontUpdate(dontUpdate)
                     .setAddlSkipColumns(_excludedColumns)
@@ -2930,4 +2937,88 @@ public class ExpDataIterators
             return LoggingDataIterator.wrap(new MultiDataTypeCrossProjectDataIterator(pre, context, _container, _user, _isCrossType, _isCrossFolder, _dataType, _isSamples));
         }
     }
+
+    public static class SampleStatusCheckIteratorBuilder implements DataIteratorBuilder
+    {
+        private final DataIteratorBuilder _in;
+        private final Container _container;
+
+        public SampleStatusCheckIteratorBuilder(@NotNull DataIteratorBuilder in, Container container)
+        {
+            _in = in;
+            _container = container;
+        }
+
+        @Override
+        public DataIterator getDataIterator(DataIteratorContext context)
+        {
+            DataIterator pre = _in.getDataIterator(context);
+            return LoggingDataIterator.wrap(new SampleStatusCheckDataIterator(pre, context, _container));
+        }
+    }
+
+    public static class SampleStatusCheckDataIterator extends WrapperDataIterator
+    {
+        final DataIteratorContext _context;
+        private final Integer _sampleStateCol;
+        private final Integer _oldSampleStateCol;
+        private Map<Integer, DataState> _allStates;
+        private final boolean _hasNoStatusChange;
+
+        protected SampleStatusCheckDataIterator(DataIterator di, DataIteratorContext context, Container container)
+        {
+            super(di);
+            _context = context;
+            Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
+            _sampleStateCol = map.get(SampleState.name());
+            _hasNoStatusChange = _sampleStateCol == null;
+            _oldSampleStateCol = map.get(CURRENT_SAMPLE_STATUS_COLUMN_NAME);
+
+            _allStates = SampleStatusService.get()
+                    .getAllProjectStates(container)
+                    .stream().collect(Collectors.toMap(DataState::getRowId, data -> data));
+        }
+
+        @Override
+        public boolean next() throws BatchValidationException
+        {
+            boolean hasNext = super.next();
+
+            if (_context.getErrors().hasErrors())
+                return hasNext;
+
+            if (_oldSampleStateCol == null && getExistingRecord() == null)
+                return hasNext;
+
+            Integer oldState;
+            if (_oldSampleStateCol != null)
+                oldState = (Integer) get(_oldSampleStateCol);
+            else
+                oldState = (Integer) getExistingRecord().get(SampleState.name());
+
+            if (oldState == null)
+                return hasNext;
+
+            DataState oldStatus = _allStates.get(oldState);
+            boolean oldAllowsOp = SampleStatusService.get().isOperationPermitted(oldStatus, SampleTypeService.SampleOperations.EditMetadata);
+            if (oldAllowsOp)
+                return hasNext;
+
+            if (_hasNoStatusChange)
+            {
+                _context.getErrors().addRowError(new ValidationException(String.format("Updating sample data when status is %s is not allowed.", oldStatus.getLabel())));
+                return hasNext;
+            }
+
+            Integer newState = (Integer) get(_sampleStateCol);
+            DataState newStatus = _allStates.get(newState);
+            boolean newAllowsOp = SampleStatusService.get().isOperationPermitted(newStatus, SampleTypeService.SampleOperations.EditMetadata);
+
+            if (!newAllowsOp)
+                _context.getErrors().addRowError(new ValidationException(String.format("Updating sample data when status is %s is not allowed.", oldStatus.getLabel())));
+
+            return hasNext;
+        }
+    }
+
 }
