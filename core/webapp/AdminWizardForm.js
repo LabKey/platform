@@ -71,9 +71,9 @@ Ext4.define('LABKEY.ext4.PHIExport', {
             fieldName: 'exportPhiLevel'
         });
 
-        this.phiHelp = LABKEY.export.Util.helpPopup("Include PHI Columns", "Include all dataset and list columns, study properties, and specimen data that have been tagged with this PHI level or below.");
-        let isIncludePhiChecked = config.maxAllowedLevel !== 'NotPHI';
-        let phiStore = Ext4.create('LABKEY.ext4.PHIStore', {
+        this.phiHelp = LABKEY.Utils.helpPopup("Include PHI Columns", "Include all dataset and list columns, study properties, and specimen data that have been tagged with this PHI level or below.");
+        const isIncludePhiChecked = config.maxAllowedLevel !== 'NotPHI';
+        const phiStore = Ext4.create('LABKEY.ext4.PHIStore', {
             maxAllowedLevel: config.maxAllowedLevel
         });
 
@@ -118,28 +118,3 @@ Ext4.define('LABKEY.ext4.PHIExport', {
         this.callParent(config);
     }
 });
-
-LABKEY.export = LABKEY.export || {};
-LABKEY.export.Util = new function () {
-
-    return {
-        // javascript version of PageFlowUtil.helpPopup(), returns html and callback to be invoked after element is inserted into page.
-        // Useful for including LabKey-style help in Ext components
-        // CONSIDER: move to dom/Utils.js if this can be used elsewhere
-        helpPopup: function (titleText, helpText) {
-            const h = Ext4.util.Format.htmlEncode;
-            const id = Ext4.id();
-            const html = '<a id="' + id + '" href="#" tabindex="-1" class="_helpPopup"><span class="labkey-help-pop-up">?</span></a>';
-            const callback = function () {
-                LABKEY.Utils.attachEventHandler(id, "click", function () {
-                    return showHelpDivDelay(this, titleText, h(helpText), 'auto');
-                });
-                LABKEY.Utils.attachEventHandler(id, "mouseover", function () {
-                    return showHelpDivDelay(this, titleText, h(helpText), 'auto');
-                });
-                LABKEY.Utils.attachEventHandler(id, "mouseout", hideHelpDivDelay);
-            };
-            return { "html": html, "callback": callback };
-        }
-    }
-};

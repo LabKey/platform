@@ -116,10 +116,10 @@ Ext4.onReady(function(){
 
         const subjectNoun = <%=q(subjectNoun)%>;
         const subjectNounLowercase = <%=q(subjectNounLowercase)%>;
-        const popupSubfolder = LABKEY.export.Util.helpPopup("Include Subfolders", "Recursively export subfolders.");
-        const popupShiftDate = LABKEY.export.Util.helpPopup("Shift Date Columns", "Selecting this option will shift selected date values associated with a " + subjectNounLowercase + " by a random, " + subjectNounLowercase + " specific, offset (from 1 to 365 days).");
-        const popupAlternate = LABKEY.export.Util.helpPopup("Export Alternate " + subjectNoun + " IDs", "Selecting this option will replace each " + subjectNounLowercase + " id by an alternate randomly generated id.");
-        const popupClinic = LABKEY.export.Util.helpPopup("Mask Clinic Names", "Selecting this option will change the labels for clinics in the exported list of locations to a generic label (i.e. Clinic).");
+        const popupSubfolder = LABKEY.Utils.helpPopup("Include Subfolders", "Recursively export subfolders.");
+        const popupShiftDate = LABKEY.Utils.helpPopup("Shift Date Columns", "Selecting this option will shift selected date values associated with a " + subjectNounLowercase + " by a random, " + subjectNounLowercase + " specific, offset (from 1 to 365 days).");
+        const popupAlternate = LABKEY.Utils.helpPopup("Export Alternate " + subjectNoun + " IDs", "Selecting this option will replace each " + subjectNounLowercase + " id by an alternate randomly generated id.");
+        const popupClinic = LABKEY.Utils.helpPopup("Mask Clinic Names", "Selecting this option will change the labels for clinics in the exported list of locations to a generic label (i.e. Clinic).");
 
         formItemsCol2.push({xtype: 'box', cls: 'labkey-announcement-title', html: '<span>Options:</span>'});
         formItemsCol2.push({xtype: 'box', cls: 'labkey-title-area-line', html: ''});
