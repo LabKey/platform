@@ -2487,6 +2487,106 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             throw new IllegalStateException("This method must be called from within a transaction");
     }
 
+    private Pair<Integer, List<Map<String, Object>>> getWellSampleData(int[] sampleIdsSorted, Integer rowCount, Integer columnCount, int sampleIdsCounter, Container c)
+    {
+        if (sampleIdsSorted.length == 0)
+            throw new IllegalArgumentException("No samples are in the current selection.");
+
+        List<Map<String, Object>> wellSampleDataForPlate = new ArrayList<>();
+        for (int rowIdx = 0; rowIdx < rowCount; rowIdx++)
+        {
+            for (int colIdx = 0; colIdx < columnCount; colIdx++)
+            {
+                if (sampleIdsCounter >= sampleIdsSorted.length)
+                    return new Pair<>(sampleIdsCounter, wellSampleDataForPlate);
+
+                Map<String, Object> wellData = Map.of(
+                        "sampleId", sampleIdsSorted[sampleIdsCounter],
+                        "wellLocation", PlateManager.get().createPosition(c, rowIdx, colIdx).getDescription()
+                );
+                wellSampleDataForPlate.add(wellData);
+                sampleIdsCounter++;
+            }
+        }
+
+        return new Pair<>(sampleIdsCounter, wellSampleDataForPlate);
+    }
+
+    public List<PlateManager.CreatePlateSetPlate> getPlateData(ViewContext viewContext, String selectionKey, List<PlateManager.CreatePlateSetPlate> platesModel, Container c)
+    {
+        int[] sampleIdsSorted = DataRegionSelection.getSelectedIntegers(viewContext, selectionKey, false)
+                .stream()
+                .mapToInt(Integer::intValue)
+                .sorted()
+                .toArray();
+        int sampleIdsCounter = 0;
+
+        List<PlateManager.CreatePlateSetPlate> platesData = new ArrayList<>();
+        Map<Integer, PlateType> plateTypesHash = new HashMap<>();
+
+        for (PlateManager.CreatePlateSetPlate plate : platesModel)
+        {
+            int plateTypeId = plate.plateType;
+            String plateName = plate.name;
+
+            PlateType plateType;
+            if (plateTypesHash.get(plateTypeId) != null)
+            {
+                plateType = plateTypesHash.get(plateTypeId);
+            }
+            else
+            {
+                plateType = PlateManager.get().getPlateType(plateTypeId);
+                if (plateType == null)
+                    throw new IllegalArgumentException(String.format("The plate type id (%d) is invalid.", plateTypeId));
+                plateTypesHash.put(plateTypeId, plateType);
+            }
+
+            // Iterate through sorted samples array and place them in ascending order in each plate's wells
+            Pair<Integer, List<Map<String, Object>>> pair = getWellSampleData(sampleIdsSorted, plateType.getRows(), plateType.getColumns(), sampleIdsCounter, c);
+            platesData.add(new PlateManager.CreatePlateSetPlate(plateName, plateTypeId, pair.second));
+
+            sampleIdsCounter = pair.first;
+        }
+
+        if (sampleIdsSorted.length != sampleIdsCounter)
+            throw new IllegalArgumentException("Plate dimensions are incompatible with selected sample count.");
+
+        return platesData;
+    }
+
+    public List<PlateManager.CreatePlateSetPlate> getPlates(Integer plateSetId, Container c, User u)
+    {
+        List<PlateManager.CreatePlateSetPlate> plates = new ArrayList<>();
+
+        PlateSet parentPlateSet = PlateManager.get().getPlateSet(c, plateSetId);
+        if (parentPlateSet == null)
+            throw new IllegalArgumentException(String.format("Failed to get plate set. Plate set with rowId (%d) is not available.", plateSetId));
+
+        List<Plate> platesList = parentPlateSet.getPlates(u);
+
+        for (Plate p : platesList)
+        {
+            String name = p.getName();
+            Integer plateTypeId = p.getPlateType().getRowId();
+
+            TableSelector ts = new TableSelector(AssayDbSchema.getInstance().getTableInfoWell(), Set.of("SampleId", "Row", "Col"), new SimpleFilter(FieldKey.fromParts("PlateId"), p.getRowId()), null);
+
+            List<Map<String, Object>> data = new ArrayList<>();
+            for (Map<String, Object> row : ts.getMapArray())
+            {
+                Map<String, Object> dataEntry = new HashMap<>();
+                dataEntry.put("wellLocation", PlateManager.get().createPosition(c, (Integer) row.get("row"),(Integer) row.get("col")).getDescription());
+                dataEntry.put("sampleId", row.get("sampleid"));
+                data.add(dataEntry);
+            }
+
+            plates.add(new PlateManager.CreatePlateSetPlate(name, plateTypeId, data));
+        }
+
+        return plates;
+    }
+
     public static final class TestCase
     {
         private static Container container;
@@ -2905,6 +3005,45 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                     }
                     row++;
                 }
+            }
+        }
+
+        @Test
+        public void getWellSampleData()
+        {
+            // Act
+            int[] sampleIdsSorted = new int[]{0, 3, 5, 8, 10, 11, 12, 13, 15, 17, 19};
+            Pair<Integer, List<Map<String, Object>>> wellSampleDataFilledFull = PlateManager.get().getWellSampleData(sampleIdsSorted, 2, 3, 0, container);
+
+            Pair<Integer, List<Map<String, Object>>> wellSampleDataFilledParital = PlateManager.get().getWellSampleData(sampleIdsSorted, 2, 3, 6, container);
+
+            // Assert
+            assertEquals(wellSampleDataFilledFull.first, 6, 0);
+            ArrayList<String> wellLocations = new ArrayList<>(Arrays.asList("A1", "A2", "A3", "B1", "B2", "B3"));
+            for (int i = 0; i < wellSampleDataFilledFull.second.size(); i++)
+            {
+                Map<String, Object> well = wellSampleDataFilledFull.second.get(i);
+                assertEquals(well.get("sampleId"), sampleIdsSorted[i]);
+                assertEquals(well.get("wellLocation"), wellLocations.get(i));
+            }
+
+            assertEquals(wellSampleDataFilledParital.first, 11, 0);
+            for (int i = 0; i < wellSampleDataFilledParital.second.size(); i++)
+            {
+                Map<String, Object> well = wellSampleDataFilledParital.second.get(i);
+                assertEquals(well.get("sampleId"), sampleIdsSorted[i + 6]);
+                assertEquals(well.get("wellLocation"), wellLocations.get(i));
+            }
+
+            // Act
+            try
+            {
+                PlateManager.get().getWellSampleData(new int[]{}, 2, 3, 0, container);
+            }
+            // Assert
+            catch (IllegalArgumentException e)
+            {
+                assertEquals("Expected validation exception", "No samples are in the current selection.", e.getMessage());
             }
         }
     }
