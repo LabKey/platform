@@ -251,7 +251,7 @@ public interface AuthenticationProvider
         @Override
         default <FORM extends SaveConfigurationForm, AC extends AuthenticationConfiguration, T extends Enum<T> & StartupProperty> void saveStartupProperties(String category, Class<FORM> formClass, Class<AC> configurationClass, Class<T> type)
         {
-            // Secondary authentication provider StartupProperty enums must define RequireFor constant
+            // Secondary authentication provider StartupProperty enums must define RequiredFor constant
             assert Arrays.stream(type.getEnumConstants()).filter(c -> c.name().equals(REQUIRED_FOR)).count() == 1 :
                 type.getName() + " does not define requiredFor constant!";
 
