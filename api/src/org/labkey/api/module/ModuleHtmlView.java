@@ -238,8 +238,7 @@ public class ModuleHtmlView extends HtmlView
                 {
                     CspUtils.enumerateCspViolations(doc, message -> {
                         String name = "[" + module.getName() + "] " + key;
-                        if (!"[LINCS] views/CustomGCT.html".equals(name)) // TODO: Remove check once this view is fixed
-                            violations.add(name + ": " + message);
+                        violations.add(name + ": " + message);
                     });
                 }
             }));

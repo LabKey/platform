@@ -30,9 +30,6 @@ import static org.labkey.api.module.ModuleHtmlViewDefinition.HTML_VIEW_EXTENSION
 /**
  * Cache for views provided by modules as simple HTML files (along with metadata from an associated .view.xml file) in
  * the /resources/views directory or /resources/assays/[provider name]/views.
- *
- * User: adam
- * Date: 1/21/14
  */
 public class ModuleHtmlViewCacheHandler implements ModuleResourceCacheHandler<Map<Path, ModuleHtmlViewDefinition>>
 {
