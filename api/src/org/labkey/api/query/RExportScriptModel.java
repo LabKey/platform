@@ -139,7 +139,7 @@ public class RExportScriptModel extends ExportScriptModel
             sb.append(",").append(nl);
             sb.append(indent).append("parameters=c(");
             sb.append(getQueryParameters().entrySet().stream()
-                .map(entry -> "\"" + entry.getKey() + "=" + entry.getValue() + "\"")
+                .map(entry -> quote(entry.getKey() + "=" + entry.getValue()))
                 .collect(Collectors.joining(",")));
             sb.append(")");
         }

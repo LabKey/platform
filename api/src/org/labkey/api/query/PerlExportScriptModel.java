@@ -81,13 +81,13 @@ public class PerlExportScriptModel extends ExportScriptModel
             params.append(",\n").append(indent).append("-sort => ").append(quote(getSort()));
 
         if (hasContainerFilter())
-            params.append(",\n").append(indent).append("-containerFilterName => '").append(getContainerFilterTypeName()).append("'");
+            params.append(",\n").append(indent).append("-containerFilterName => ").append(quote(getContainerFilterTypeName()));
 
         if (hasQueryParameters())
         {
             params.append(",\n").append(indent).append("-parameters => [\n");
             params.append(getQueryParameters().entrySet().stream()
-                .map(e -> indent + indent + "['" + e.getKey() + "', '" + e.getValue() + "']")
+                .map(e -> indent + indent + "[" + quote(e.getKey()) + ", " + quote(e.getValue()) + "]")
                 .collect(Collectors.joining(",\n")));
             params.append("\n").append(indent).append("]");
         }

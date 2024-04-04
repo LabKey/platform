@@ -136,7 +136,7 @@ public class JavaExportScriptModel extends ExportScriptModel
 
             for (Entry<String, String> entry : getQueryParameters().entrySet())
             {
-                sb.append("parameters.put(\"").append(entry.getKey()).append("\", \"").append(entry.getValue()).append("\");\n");
+                sb.append("parameters.put(").append(quote(entry.getKey())).append(", ").append(quote(entry.getValue())).append(");\n");
             }
 
             sb.append("cmd.setQueryParameters(parameters);\n");
