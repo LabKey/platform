@@ -16,7 +16,6 @@
 
 package org.labkey.pipeline.api;
 
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -48,7 +47,9 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -77,7 +78,7 @@ public class PipelineStatusManager
     public static final DbScope.TransactionKind TRANSACTION_KIND = () -> "PIPELINESTATUS";
 
     private static final PipelineSchema _schema = PipelineSchema.getInstance();
-    private static final Logger LOG = LogManager.getLogger(PipelineStatusManager.class);
+    private static final Logger LOG = LogHelper.getLogger(PipelineStatusManager.class, "Manages setting states for pipeline jobs");
 
     public static TableInfo getTableInfo()
     {
@@ -162,84 +163,93 @@ public class PipelineStatusManager
 
     public static boolean setStatusFile(PipelineJob job, User user, String status, @Nullable String info, boolean allowInsert)
     {
-        PipelineStatusFileImpl sfExist = getJobStatusFile(job.getJobGUID());
-        if (sfExist == null && null != job.getLogFilePath())
+        try
         {
-            // Then try based on file path
-            sfExist = getStatusFile(job.getContainer(), job.getLogFilePath());
-        }
-
-        if (sfExist == null && job.getLogFilePath() != job.getRemoteLogPath() && null != job.getRemoteLogPath())
-        {
-            // Check to see if the job is listed under the Remote log file.
-            // This will happen if job was previously run from a cloud root.
-            sfExist = getStatusFile(job.getContainer(), job.getRemoteLogPath());
-        }
-        PipelineStatusFileImpl sfSet = new PipelineStatusFileImpl(job, status, info);
-
-        if (null == sfExist)
-        {
-            if (allowInsert)
+            PipelineStatusFileImpl sfExist = getJobStatusFile(job.getJobGUID());
+            if (sfExist == null && null != job.getLogFilePath())
             {
-                sfSet.beforeInsert(user, job.getContainerId());
-                try (DbScope.Transaction transaction = getTableInfo().getSchema().getScope().ensureTransaction(PipelineStatusManager.TRANSACTION_KIND))
-                {
-                    // Use separate transaction/connection for TableInfoStatusFiles
-                    PipelineStatusFileImpl sfNew = Table.insert(user, _schema.getTableInfoStatusFiles(), sfSet);
-                    transaction.commit();
+                // Then try based on file path
+                sfExist = getStatusFile(job.getContainer(), job.getLogFilePath());
+            }
 
-                    // Make sure rowID is correct, since it might be used in email.
-                    sfSet.setRowId(sfNew.getRowId());
+            if (sfExist == null && job.getLogFilePath() != job.getRemoteLogPath() && null != job.getRemoteLogPath())
+            {
+                // Check to see if the job is listed under the Remote log file.
+                // This will happen if job was previously run from a cloud root.
+                sfExist = getStatusFile(job.getContainer(), job.getRemoteLogPath());
+            }
+            PipelineStatusFileImpl sfSet = new PipelineStatusFileImpl(job, status, info);
+
+            if (null == sfExist)
+            {
+                if (allowInsert)
+                {
+                    sfSet.beforeInsert(user, job.getContainerId());
+                    try (DbScope.Transaction transaction = getTableInfo().getSchema().getScope().ensureTransaction(PipelineStatusManager.TRANSACTION_KIND))
+                    {
+                        // Use separate transaction/connection for TableInfoStatusFiles
+                        PipelineStatusFileImpl sfNew = Table.insert(user, _schema.getTableInfoStatusFiles(), sfSet);
+                        transaction.commit();
+
+                        // Make sure rowID is correct, since it might be used in email.
+                        sfSet.setRowId(sfNew.getRowId());
+                    }
+                }
+                else
+                {
+                    job.getLogger().error("Could not find job in database for job GUID " + job.getJobGUID() + ", unable to set its status to '" + status + "'");
+                    return false;
                 }
             }
             else
             {
-                job.getLogger().error("Could not find job in database for job GUID " + job.getJobGUID() + ", unable to set its status to '" + status + "'");
-                return false;
+                boolean cancelled = false;
+                if (PipelineJob.TaskStatus.cancelling.matches(sfExist.getStatus()) && sfSet.isActive())
+                {
+                    // Mark as officially dead
+                    sfSet.setStatus(PipelineJob.TaskStatus.cancelled.toString());
+                    cancelled = true;
+                }
+                sfSet.beforeUpdate(user, sfExist);
+                Set<StatusFileField> changedFields = sfSet.diff(sfExist);
+                updateStatusFile(sfSet, changedFields.toArray(new StatusFileField[0]));
+                if (cancelled)
+                {
+                    // Signal to the caller that the job shouldn't move on to its next state
+                    throw new CancelledException();
+                }
             }
-        }
-        else
-        {
-            boolean cancelled = false;
-            if (PipelineJob.TaskStatus.cancelling.matches(sfExist.getStatus()) && sfSet.isActive())
+
+            if (isNotifyOnError(job) && PipelineJob.TaskStatus.error.matches(sfSet.getStatus()) &&
+                    (sfExist == null || !PipelineJob.TaskStatus.error.matches(sfExist.getStatus())))
             {
-                // Mark as officially dead
-                sfSet.setStatus(PipelineJob.TaskStatus.cancelled.toString());
-                cancelled = true;
-            }
-            sfSet.beforeUpdate(user, sfExist);
-            Set<StatusFileField> changedFields = sfSet.diff(sfExist);
-            updateStatusFile(sfSet, changedFields.toArray(new StatusFileField[0]));
-            if (cancelled)
-            {
-                // Signal to the caller that the job shouldn't move on to its next state
-                throw new CancelledException();
-            }
-        }
-
-        if (isNotifyOnError(job) && PipelineJob.TaskStatus.error.matches(sfSet.getStatus()) &&
-                (sfExist == null || !PipelineJob.TaskStatus.error.matches(sfExist.getStatus())))
-        {
-            LOG.info("Error status has changed - considering an email notification");
-            PipelineManager.sendNotificationEmail(sfSet, job.getContainer(), user);
-        }
-
-        if (PipelineJob.TaskStatus.error.matches(status))
-        {
-            // Count this error on the job.
-            job.setErrors(job.getErrors() + 1);
-        }
-        else if (PipelineJob.TaskStatus.complete.matches(status))
-        {
-            // Make sure the Enterprise Pipeline recognizes this as a completed
-            // job, even if did it not have a TaskPipeline.
-            job.setActiveTaskId(null, false);
-
-            // Notify if this is not a split job
-            if (job.getParentGUID() == null)
+                LOG.info("Error status has changed - considering an email notification");
                 PipelineManager.sendNotificationEmail(sfSet, job.getContainer(), user);
+            }
+
+            if (PipelineJob.TaskStatus.error.matches(status))
+            {
+                // Count this error on the job.
+                job.setErrors(job.getErrors() + 1);
+            }
+            else if (PipelineJob.TaskStatus.complete.matches(status))
+            {
+                // Make sure the Enterprise Pipeline recognizes this as a completed
+                // job, even if it did not have a TaskPipeline.
+                job.setActiveTaskId(null, false);
+
+                // Notify if this is not a split job
+                if (job.getParentGUID() == null)
+                    PipelineManager.sendNotificationEmail(sfSet, job.getContainer(), user);
+            }
+            return true;
         }
-        return true;
+        catch (ConfigurationException e)
+        {
+            // Issue 49822: Pipeline does not show a job as failed if DB fails
+            JobStatusRetryJob.queue(job.getJobGUID(), () -> setStatusFile(job, user, status, info, allowInsert), e);
+            throw e;
+        }
     }
 
     private static boolean isNotifyOnError(PipelineJob job)
@@ -411,6 +421,12 @@ public class PipelineStatusManager
             }
 
             transaction.commit();
+        }
+        catch (ConfigurationException e)
+        {
+            // Issue 49822: Pipeline does not show a job as failed if DB fails
+            JobStatusRetryJob.queue(sf.getJobId(), () -> updateStatusFile(sf, fields), e);
+            throw e;
         }
     }
 
