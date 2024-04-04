@@ -5,6 +5,8 @@ import org.jetbrains.annotations.NotNull;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.labkey.api.security.AuthenticationProvider.SecondaryAuthenticationProvider.REQUIRED_FOR;
+
 public abstract class SecondarySaveConfigurationForm extends SaveConfigurationForm
 {
     private String _requiredFor = null;
@@ -24,7 +26,7 @@ public abstract class SecondarySaveConfigurationForm extends SaveConfigurationFo
     public @NotNull Map<String, Object> getPropertyMap()
     {
         Map<String, Object> map = new HashMap<>();
-        map.put("requiredFor", getRequiredFor());
+        map.put(REQUIRED_FOR, getRequiredFor());
         return map;
     }
 }

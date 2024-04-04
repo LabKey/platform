@@ -1455,9 +1455,9 @@ public class AuthenticationManager
                     if (notRequired)
                     {
                         if (bypass)
-                            _log.info("Per configuration, bypassing secondary authentication for provider: " + provider.getClass());
+                            _log.info("Per application.properties configuration, bypassing secondary authentication for provider: " + provider.getClass());
                         else
-                            _log.info("Bypassing secondary authentication since authenticated user lacks the \"Require Secondary Authentication\" role: " + primaryAuthUser.getDisplayName(null));
+                            _log.debug("Bypassing secondary authentication since authenticated user lacks the \"Require Secondary Authentication\" role: " + primaryAuthUser.getDisplayName(null));
 
                         setSecondaryAuthenticationUser(session, configuration.getRowId(), primaryAuthUser);
                         continue;

@@ -43,11 +43,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-/**
- * User: adam
- * Date: Oct 10, 2007
- * Time: 6:49:05 PM
- */
 public interface AuthenticationProvider
 {
     Logger LOG = LogHelper.getLogger(AuthenticationProvider.class, "Authentication startup property actions");
@@ -233,8 +228,10 @@ public interface AuthenticationProvider
         @Nullable SecurityMessage getAPIResetPasswordMessage(User user, boolean isAdminCopy);
     }
 
-    interface SecondaryAuthenticationProvider<AC extends SecondaryAuthenticationConfiguration<?>> extends AuthenticationProvider, AuthenticationConfigurationFactory<AC>
+    interface SecondaryAuthenticationProvider<SAC extends SecondaryAuthenticationConfiguration<?>> extends AuthenticationProvider, AuthenticationConfigurationFactory<SAC>
     {
+        String REQUIRED_FOR = "requiredFor";
+
         /**
          * Bypass authentication from this provider. Might be configured via context.bypass2FA=true property in
          * application.properties to temporarily not require secondary authentication if this has been misconfigured or
@@ -245,10 +242,20 @@ public interface AuthenticationProvider
         default JSONArray addRequiredForField(JSONArray fields, String name)
         {
             return fields
-                .put(OptionsField.of("requiredFor", "Require " + name + " for:", "Specifying the role option allows for a progressive roll-out of " + name + " to site users.", true, "all")
+                .put(OptionsField.of(REQUIRED_FOR, "Require " + name + " for:", "Specifying the role option allows for a progressive roll-out of " + name + " to site users.", true, "all")
                     .addOption("all", "All users")
                     .addOption("role", "Only users assigned the \"Require Secondary Authentication\" site role")
                 );
+        }
+
+        @Override
+        default <FORM extends SaveConfigurationForm, AC extends AuthenticationConfiguration, T extends Enum<T> & StartupProperty> void saveStartupProperties(String category, Class<FORM> formClass, Class<AC> configurationClass, Class<T> type)
+        {
+            // Secondary authentication provider StartupProperty enums must define RequireFor constant
+            assert Arrays.stream(type.getEnumConstants()).filter(c -> c.name().equals(REQUIRED_FOR)).count() == 1 :
+                type.getName() + " does not define requiredFor constant!";
+
+            AuthenticationProvider.super.saveStartupProperties(category, formClass, configurationClass, type);
         }
     }
 

@@ -204,8 +204,6 @@ public interface AuthenticationConfiguration<AP extends AuthenticationProvider> 
 
         ActionURL getRedirectURL(User candidate, Container c);
 
-        @NotNull RequiredFor getRequiredFor();
-
         boolean isRequired(User user);
 
         enum RequiredFor

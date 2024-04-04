@@ -8,6 +8,8 @@ import org.labkey.api.security.AuthenticationProvider.SecondaryAuthenticationPro
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.labkey.api.security.AuthenticationProvider.SecondaryAuthenticationProvider.REQUIRED_FOR;
+
 public abstract class BaseSecondaryAuthenticationConfiguration<AP extends SecondaryAuthenticationProvider<?>> extends BaseAuthenticationConfiguration<AP> implements SecondaryAuthenticationConfiguration<AP>
 {
     private final @NotNull AuthenticationConfiguration.SecondaryAuthenticationConfiguration.RequiredFor _requiredFor;
@@ -15,13 +17,7 @@ public abstract class BaseSecondaryAuthenticationConfiguration<AP extends Second
     public BaseSecondaryAuthenticationConfiguration(AP provider, Map<String, Object> standardSettings, Map<String, Object> properties)
     {
         super(provider, standardSettings);
-        _requiredFor = EnumUtils.getEnum(RequiredFor.class, (String)properties.get("requiredFor"), RequiredFor.all);
-    }
-
-    @Override
-    public @NotNull AuthenticationConfiguration.SecondaryAuthenticationConfiguration.RequiredFor getRequiredFor()
-    {
-        return _requiredFor;
+        _requiredFor = EnumUtils.getEnum(RequiredFor.class, (String)properties.get(REQUIRED_FOR), RequiredFor.all);
     }
 
     @Override
@@ -34,7 +30,7 @@ public abstract class BaseSecondaryAuthenticationConfiguration<AP extends Second
     public @NotNull Map<String, Object> getCustomProperties()
     {
         Map<String, Object> map = new HashMap<>();
-        map.put("requiredFor", getRequiredFor().name());
+        map.put(REQUIRED_FOR, _requiredFor.name());
 
         return map;
     }
