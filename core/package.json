@@ -54,7 +54,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "3.37.3-fb-chartBuilderTestFix.0",
+    "@labkey/components": "3.37.4-fb-chartBuilderTestFix.0",
     "@labkey/themes": "1.3.3"
   },
   "devDependencies": {
