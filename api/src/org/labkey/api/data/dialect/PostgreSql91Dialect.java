@@ -16,6 +16,7 @@
 
 package org.labkey.api.data.dialect;
 
+import jakarta.servlet.ServletException;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -23,10 +24,31 @@ import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.CopyOnWriteHashMap;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.ConnectionWrapper.Closer;
+import org.labkey.api.data.Constraint;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbScope.LabKeyDataSource;
+import org.labkey.api.data.InClauseGenerator;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MetadataSqlSelector;
+import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Selector;
 import org.labkey.api.data.Selector.ForEachBlock;
+import org.labkey.api.data.SqlExecutingSelector.ConnectionFactory;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableChange;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TempTableInClauseGenerator;
+import org.labkey.api.data.TempTableTracker;
 import org.labkey.api.data.dialect.LimitRowsSqlGenerator.LimitRowsCustomizer;
 import org.labkey.api.data.dialect.LimitRowsSqlGenerator.StandardLimitRowsCustomizer;
 import org.labkey.api.query.AliasManager;
@@ -38,7 +60,6 @@ import org.labkey.api.view.template.Warnings;
 import org.labkey.remoteapi.collections.CaseInsensitiveHashMap;
 import org.springframework.jdbc.BadSqlGrammarException;
 
-import jakarta.servlet.ServletException;
 import java.io.IOException;
 import java.sql.CallableStatement;
 import java.sql.Connection;
@@ -1749,7 +1770,6 @@ public abstract class PostgreSql91Dialect extends SqlDialect
         return new PkMetaDataReader(rs, "COLUMN_NAME", "KEY_SEQ");
     }
 
-
     @Override
     public String getExtraInfo(SQLException e)
     {
@@ -1762,46 +1782,53 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     }
 
     @Override
-    public boolean isJdbcCachingEnabledByDefault()
+    public ConnectionFactory getConnectionFactory(boolean useJdbcCaching, DbScope scope, SQLFragment sql)
     {
-        return true;
+        // Fiddle with the Connection settings only if asked to turn off JDBC caching, we're not inside a transaction,
+        // and it's a read-only statement (a SELECT), so we won't mess up any state the caller is relying on.
+        if (useJdbcCaching || scope.isTransactionActive() || !Table.isSelect(sql.getSQL()))
+        {
+            return null;
+        }
+        else
+        {
+            // Factory that gets a fresh, read-only connection directly from the pool (not shared with the thread) and
+            // configures it to not cache ResultSet data in the JDBC driver, making it suitable for streaming very large
+            // ResultSets. See #39753 and #39888.
+            return () -> {
+                ConnectionWrapper conn = scope.getPooledConnection(DbScope.ConnectionType.Pooled, null);
+                Closer closer = configureToDisableJdbcCaching(conn, scope);
+                conn.setRunOnClose(closer);
+                return conn;
+            };
+        }
     }
 
-    @Override
-    public Closer configureToDisableJdbcCaching(Connection connection, DbScope scope, SQLFragment sql) throws SQLException
+    private Closer configureToDisableJdbcCaching(ConnectionWrapper connection, DbScope scope) throws SQLException
     {
-        Closer ret = super.configureToDisableJdbcCaching(connection, scope, sql);
+        assert connection.getAutoCommit(); // We just got a new connection... it better  be set to auto commit
 
-        // Only fiddle with the Connection settings if we're fairly certain that it's a read-only statement (starting
-        // with SELECT) and we're not inside a transaction, so we won't mess up any state the caller is relying on.
-        // Also, now that connections are reused within a thread, setAutoCommit(false) may have already been called on
-        // this connection; check so we don't call setAutoCommit(false) again (that will throw).
-        if (Table.isSelect(sql.getSQL()) && !scope.isTransactionActive() && connection.getAutoCommit())
+        try
         {
-            try
-            {
-                // See http://stackoverflow.com/questions/1468036/java-jdbc-ignores-setfetchsize
-                int previousTransactionIsolation = connection.getTransactionIsolation();
-                connection.setTransactionIsolation(Connection.TRANSACTION_READ_UNCOMMITTED);
-                connection.setAutoCommit(false);
+            // See http://stackoverflow.com/questions/1468036/java-jdbc-ignores-setfetchsize
+            int previousTransactionIsolation = connection.getTransactionIsolation();
+            connection.setTransactionIsolation(Connection.TRANSACTION_READ_UNCOMMITTED);
+            connection.setAutoCommit(false);
 
-                Closer previous = ret;
+            Closer previous = connection.getRunOnClose(); // We know this is a no-op closer, but do this just in case these get shared or wrapped in the future
 
-                ret = () -> {
-                    previous.close();
-                    connection.setAutoCommit(true);
-                    connection.setTransactionIsolation(previousTransactionIsolation);
-                };
-            }
-            catch (SQLException e)
-            {
-                LOG.error("SQLException hit for " + connection);
-                scope.logCurrentConnectionState();
-                throw e;
-            }
+            return () -> {
+                previous.close();
+                connection.setAutoCommit(true);
+                connection.setTransactionIsolation(previousTransactionIsolation);
+            };
         }
-
-        return ret;
+        catch (SQLException e)
+        {
+            LOG.error("SQLException hit for " + connection);
+            scope.logCurrentConnectionState();
+            throw e;
+        }
     }
 
     @Override

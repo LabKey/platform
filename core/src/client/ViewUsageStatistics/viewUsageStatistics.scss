@@ -1,0 +1,42 @@
+.usage-stats ul.key-list {
+  display: inline;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.usage-stats .key-list li {
+  display: inline;
+  cursor: pointer;
+  color: #2980B9;
+
+  &:hover {
+    text-decoration: underline;
+    color: darken(#2980B9, 15);
+  }
+
+  &:after {
+    content: ", "
+  }
+  &:last-child:after {
+    content: "";
+  }
+}
+.usage-stats__button-bar,
+.usage-stats__inputs {
+  margin-bottom: 10px;
+}
+
+.usage-stats__inputs,
+.usage-stats__button-bar {
+  display: flex;
+  gap: 10px;
+}
+
+.usage-stats label {
+  font-weight: bold;
+  margin-right: 8px;
+}
+.usage-stats__inputs label {
+  width: 80px;
+  line-height: 27px;
+}
