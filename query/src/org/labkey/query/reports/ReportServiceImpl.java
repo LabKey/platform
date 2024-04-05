@@ -18,16 +18,18 @@ package org.labkey.query.reports;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.collections4.MultiSet;
+import org.apache.commons.collections4.multiset.HashMultiSet;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderImportContext;
+import org.labkey.api.collections.MultiSetUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerManager.AbstractContainerListener;
@@ -54,10 +56,8 @@ import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.report.AbstractReportIdentifier;
 import org.labkey.api.reports.report.DbReportIdentifier;
 import org.labkey.api.reports.report.ModuleJavaScriptReportDescriptor;
-import org.labkey.api.reports.report.r.ModuleRReportDescriptor;
 import org.labkey.api.reports.report.ModuleReportDescriptor;
 import org.labkey.api.reports.report.ModuleReportIdentifier;
-import org.labkey.api.reports.report.r.RReportDescriptor;
 import org.labkey.api.reports.report.ReportDB;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
@@ -65,6 +65,8 @@ import org.labkey.api.reports.report.ReportIdentifierConverter;
 import org.labkey.api.reports.report.ScriptEngineReport;
 import org.labkey.api.reports.report.ScriptReportDescriptor;
 import org.labkey.api.reports.report.python.ModuleIpynbReportDescriptor;
+import org.labkey.api.reports.report.r.ModuleRReportDescriptor;
+import org.labkey.api.reports.report.r.RReportDescriptor;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityPolicy;
@@ -75,6 +77,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
@@ -85,8 +88,10 @@ import org.labkey.api.util.SystemMaintenance.MaintenanceTask;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.visualization.GenericChartReport;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.DefaultContainerUser;
 import org.labkey.api.writer.VirtualFile;
@@ -109,13 +114,9 @@ import java.util.stream.Collectors;
 
 import static org.labkey.api.reports.report.ScriptReportDescriptor.REPORT_METADATA_EXTENSION;
 
-/**
- * User: Karl Lum
- * Date: Dec 21, 2007
- */
 public class ReportServiceImpl extends AbstractContainerListener implements ReportService
 {
-    private static final Logger _log = LogManager.getLogger(ReportService.class);
+    private static final Logger _log = LogHelper.getLogger(ReportService.class, "Errors and warnings with reports");
     private static final List<UIProvider> _uiProviders = new CopyOnWriteArrayList<>();
     private static final Map<String, UIProvider> _typeToProviderMap = new ConcurrentHashMap<>();
     private static final List<String> _globalItemFilterTypes = new CopyOnWriteArrayList<>();
@@ -123,12 +124,12 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
     /**
      * maps descriptor types to providers
      */
-    private final Map<String, Class> _descriptors = new ConcurrentHashMap<>();
+    private final Map<String, Class<?>> _descriptors = new ConcurrentHashMap<>();
 
     /**
      * maps report types to implementations
      */
-    private final Map<String, Class> _reports = new ConcurrentHashMap<>();
+    private final Map<String, Class<?>> _reports = new ConcurrentHashMap<>();
 
     private final static ReportServiceImpl INSTANCE = new ReportServiceImpl();
 
@@ -176,7 +177,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
             _log.error("createDescriptorInstance : typeName cannot be null");
             return null;
         }
-        Class clazz = _descriptors.get(typeName);
+        Class<?> clazz = _descriptors.get(typeName);
 
         if (null == clazz)
             return null;
@@ -185,7 +186,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         {
             if (ReportDescriptor.class.isAssignableFrom(clazz))
             {
-                return (ReportDescriptor)clazz.newInstance();
+                return (ReportDescriptor)clazz.getDeclaredConstructor().newInstance();
             }
 
             throw new IllegalArgumentException("The specified class: " + clazz.getName() + " is not an instance of ReportDescriptor");
@@ -230,7 +231,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
             return null;
         }
 
-        Class clazz = _reports.get(typeName);
+        Class<?> clazz = _reports.get(typeName);
 
         if (null == clazz)
             return null;
@@ -239,7 +240,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         {
             if (Report.class.isAssignableFrom(clazz))
             {
-                Report report = (Report)clazz.newInstance();
+                Report report = (Report)clazz.getDeclaredConstructor().newInstance();
                 report.getDescriptor().setReportType(typeName);
 
                 return report;
@@ -368,7 +369,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
             StringBuilder sb = new StringBuilder();
             for (ValidationError error : errors)
             {
-                if (sb.length() > 0)
+                if (!sb.isEmpty())
                     sb.append("\n");
 
                 sb.append(error.getMessage());
@@ -1015,7 +1016,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
                 report.getDescriptor().setCategoryId(null);
                 
                 if (c != null)
-                    _instance.saveReport(new DefaultContainerUser(c, user), report.getDescriptor().getReportKey(), report, true);
+                    _instance.saveReportEx(new DefaultContainerUser(c, user), report.getDescriptor().getReportKey(), report, true);
             }
         }
 
@@ -1059,6 +1060,28 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         public void run(Logger log)
         {
             ReportService.get().maintenance(log);
+        }
+    }
+
+    public static void registerUsageMetrics(String moduleName)
+    {
+        UsageMetricsService svc = UsageMetricsService.get();
+        if (null != svc)
+        {
+            // Iterate all the database reports once and produce two occurrence maps: all reports by type and just the charts by render type
+            MultiSet<GenericChartReport.RenderType> chartCountsByRenderType = new HashMultiSet<>();
+            Map<String, Long> countsByType = ContainerManager.getAllChildren(ContainerManager.getRoot()).stream()
+                .flatMap(c -> ReportService.get().getReports(null, c).stream())
+                .peek(report -> {
+                    if (report instanceof GenericChartReport chart)
+                        chartCountsByRenderType.add(chart.getRenderType());
+                })
+                .collect(Collectors.groupingBy(Report::getType, Collectors.counting()));
+
+            svc.registerUsageMetrics(moduleName, ()-> Map.of(
+                "reportCountsByType", countsByType,
+                "genericChartCountsByRenderType", MultiSetUtils.getOccurrenceMap(chartCountsByRenderType)
+            ));
         }
     }
 }
