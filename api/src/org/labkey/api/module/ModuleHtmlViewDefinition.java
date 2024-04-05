@@ -177,7 +177,7 @@ public class ModuleHtmlViewDefinition
     {
         try
         {
-            Class c = Class.forName(permissionClassName);
+            Class<?> c = Class.forName(permissionClassName);
             if (Permission.class.isAssignableFrom(c))
             {
                 _requiredPermissionClasses.add((Class<? extends Permission>)c);
