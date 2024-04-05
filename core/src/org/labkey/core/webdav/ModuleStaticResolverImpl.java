@@ -42,6 +42,7 @@ import org.labkey.api.util.ModuleChangeListener;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.URIUtil;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.webdav.AbstractWebdavResolver;
 import org.labkey.api.webdav.AbstractWebdavResource;
@@ -548,9 +549,9 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
             {
                 for (File dir : _files)
                 {
-                    // might not be case sensitive, but this is just devmode
-                    File f = new File(dir,name);
-                    if (f.exists())
+                    // might not be case-sensitive, but this is just devmode
+                    File f = new File(dir, name);
+                    if (f.exists() && URIUtil.isDescendant(dir.toURI(), FileUtil.getAbsoluteCaseSensitiveFile(f).toURI()))
                         return new StaticResource(this, getPath().append(f.getName()), new ArrayList<>(Collections.singletonList(f)), null);
                 }
             }
