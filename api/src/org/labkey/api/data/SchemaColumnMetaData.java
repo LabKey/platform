@@ -419,10 +419,7 @@ public class SchemaColumnMetaData
             if (null != column.getMetaDataName())
                 column.setAlias(column.getMetaDataName());
             else
-            {
-                assert false : "TODO: I don't think we should get here???";
                 column.setAlias(column.getName());
-            }
         }
         _colMap = null;
     }
