@@ -79,7 +79,7 @@ public class MVDisplayColumn extends DataColumn
                     .unsafeAppend("'.</p>");
 
             out.write("<font class=\"labkey-mv\">");
-            PageFlowUtil.popupHelp(popupText.getHtmlString(), "Missing Value Indicator: " + mvIndicator).link(HtmlString.of(mvIndicator)).appendTo(out);
+            PageFlowUtil.popupHelp(popupText, "Missing Value Indicator: " + mvIndicator).link(HtmlString.of(mvIndicator)).appendTo(out);
             out.write("</font>");
         }
         else
