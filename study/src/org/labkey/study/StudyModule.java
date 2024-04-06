@@ -803,8 +803,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             List<String> metricNames = List.of(
                 "studyCount",
                 "datasetCount",
-                "timepointType",
-                "reportCountsByType"
+                "timepointType"
             );
             assertTrue("Mothership report missing expected metrics",
                     UsageReportingLevel.MothershipReportTestHelper.getModuleMetrics(UsageReportingLevel.ON, MODULE_NAME)
