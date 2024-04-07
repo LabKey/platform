@@ -61,7 +61,7 @@
             WebPartFactory factory = Portal.getPortalPart(menu.getName());
             if (null == factory)
                 continue;
-            WebPartView view = factory.getWebPartView(context, menu);
+            WebPartView<?> view = factory.getWebPartView(context, menu);
             if (view.isEmpty())
                 continue;
             if (null != view.getTitle())

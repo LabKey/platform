@@ -73,6 +73,7 @@ import org.labkey.api.settings.Theme;
 import org.labkey.api.stats.AnalyticsProvider;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.util.Button.ButtonBuilder;
+import org.labkey.api.util.DOM.Renderable;
 import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
@@ -1434,7 +1435,7 @@ public class PageFlowUtil
         return new HelpPopupBuilder(helpText);
     }
 
-    public static HelpPopupBuilder popupHelp(@NotNull HtmlString helpHtml, String titleText)
+    public static HelpPopupBuilder popupHelp(@NotNull Renderable helpHtml, String titleText)
     {
         return new HelpPopupBuilder(helpHtml, titleText);
     }
@@ -1447,8 +1448,8 @@ public class PageFlowUtil
     {
         final String helpText;
         final String titleText;
-        final HtmlString helpHtml;
-        HtmlString linkHtml = HtmlString.unsafe("<span class=\"labkey-help-pop-up\">?</span>");
+        final Renderable helpHtml;
+        Renderable linkHtml = HtmlString.unsafe("<span class=\"labkey-help-pop-up\">?</span>");
         int width = 0;
         String onClickScript = null;
 
@@ -1459,14 +1460,14 @@ public class PageFlowUtil
             this.titleText = null;
         }
 
-        HelpPopupBuilder(@NotNull HtmlString helpHtml, String titleText)
+        HelpPopupBuilder(@NotNull Renderable helpHtml, String titleText)
         {
             this.helpHtml = helpHtml;
             this.helpText = null;
             this.titleText = titleText;
         }
 
-        public HelpPopupBuilder link(HtmlString linkHtml)
+        public HelpPopupBuilder link(Renderable linkHtml)
         {
             this.linkHtml = linkHtml;
             return this;

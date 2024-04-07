@@ -18,7 +18,7 @@ public class StrongPasswordValidator extends EntropyPasswordValidator
 
     public StrongPasswordValidator()
     {
-        _fullRuleHtml = DOM.createHtml(DOM.createHtmlFragment(
+        _fullRuleHtml = DOM.createHtml(
             DOM.UL(
                 DOM.LI("Evaluate passwords using a modern scoring approach based on entropy, a measure of the password's " +
                     "inherent randomness. Long passwords that use multiple character types (upper case, lower case, digits, " +
@@ -29,7 +29,7 @@ public class StrongPasswordValidator extends EntropyPasswordValidator
                     getCharacterCountEstimate() + " or more characters without any easy-to-guess sequences."),
                 PREVIOUS_PASSWORD_BULLET
             )
-        ));
+        );
     }
 
     @Override
@@ -61,7 +61,7 @@ public class StrongPasswordValidator extends EntropyPasswordValidator
         .onClick(_tipsLinkOnClick)
         .clearClasses();
 
-    private final HtmlString _tips = DOM.createHtml(DOM.createHtmlFragment(
+    private final HtmlString _tips = DOM.createHtml(
         DIV(id("passwordTips").at(DOM.Attribute.style, "display:none;"),
             DOM.UL(
                 DOM.LI("Use " + getCharacterCountEstimate() + " characters or more"),
@@ -71,7 +71,7 @@ public class StrongPasswordValidator extends EntropyPasswordValidator
             ),
             "We recommend using a password manager to generate a unique password for every website."
         )
-    ));
+    );
 
     @Override
     public @NotNull HtmlString getSummaryRuleHtml()
