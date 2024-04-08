@@ -278,7 +278,7 @@
         </div>
         <br>
         <h2>Context Content</h2>
-        <% HtmlString helpText = DOM.createHtml(DOM.createHtmlFragment("Go to home: ", DOM.A(DOM.at(DOM.Attribute.href, ActionURL.getBaseServerURL()), "Server Home"))); %>
+        <% HtmlString helpText = DOM.createHtmlFragment("Go to home: ", DOM.A(DOM.at(DOM.Attribute.href, ActionURL.getBaseServerURL()), "Server Home")); %>
 
         <labkey:form action="some-action" layout="horizontal">
             <labkey:input name="name" label="Rich Content" placeholder="URL of page" contextContent="<%= helpText %>" id="exampleRichContext"/>

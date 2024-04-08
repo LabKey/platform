@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.util.DOM.Renderable;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DisplayElement;
 import org.springframework.web.servlet.mvc.Controller;
@@ -28,7 +29,7 @@ import java.util.TreeMap;
 
 public abstract class DisplayElementBuilder<T extends DisplayElement & HasHtmlString, BUILDER extends DisplayElementBuilder<T, BUILDER>> implements HasHtmlString, SafeToRender
 {
-    HtmlString html;
+    Renderable html;
     String href;
     String id;
     String onClick;
