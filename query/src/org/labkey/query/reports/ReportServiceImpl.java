@@ -1068,20 +1068,22 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         UsageMetricsService svc = UsageMetricsService.get();
         if (null != svc)
         {
-            // Iterate all the database reports once and produce two occurrence maps: all reports by type and just the charts by render type
-            MultiSet<GenericChartReport.RenderType> chartCountsByRenderType = new HashMultiSet<>();
-            Map<String, Long> countsByType = ContainerManager.getAllChildren(ContainerManager.getRoot()).stream()
-                .flatMap(c -> ReportService.get().getReports(null, c).stream())
-                .peek(report -> {
-                    if (report instanceof GenericChartReport chart)
-                        chartCountsByRenderType.add(chart.getRenderType());
-                })
-                .collect(Collectors.groupingBy(Report::getType, Collectors.counting()));
+            svc.registerUsageMetrics(moduleName, () -> {
+                // Iterate all the database reports once and produce two occurrence maps: all reports by type and just the charts by render type
+                MultiSet<GenericChartReport.RenderType> chartCountsByRenderType = new HashMultiSet<>();
+                Map<String, Long> countsByType = ContainerManager.getAllChildren(ContainerManager.getRoot()).stream()
+                    .flatMap(c -> ReportService.get().getReports(null, c).stream())
+                    .peek(report -> {
+                        if (report instanceof GenericChartReport chart)
+                            chartCountsByRenderType.add(chart.getRenderType());
+                    })
+                    .collect(Collectors.groupingBy(Report::getType, Collectors.counting()));
 
-            svc.registerUsageMetrics(moduleName, ()-> Map.of(
-                "reportCountsByType", countsByType,
-                "genericChartCountsByRenderType", MultiSetUtils.getOccurrenceMap(chartCountsByRenderType)
-            ));
+                return Map.of(
+                    "reportCountsByType", countsByType,
+                    "genericChartCountsByRenderType", MultiSetUtils.getOccurrenceMap(chartCountsByRenderType)
+                );
+            });
         }
     }
 }
