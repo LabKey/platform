@@ -44,11 +44,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-/**
- * User: adam
- * Date: 7/27/2014
- * Time: 2:13 PM
- */
 public class CollectionUtils
 {
     // Collections.Unmodifiable* classes are not public, so grab them statically to use in the methods below

@@ -33,13 +33,13 @@ import org.labkey.api.query.ValidationError;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.LabKeyScriptEngine;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
+import org.labkey.api.reports.Report;
+import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ExternalScriptEngineReport;
 import org.labkey.api.reports.report.ModuleReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ScriptReportDescriptor;
-import org.labkey.api.reports.Report;
-import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.r.view.KnitrOutput;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.ScriptReportBean;
@@ -91,8 +91,6 @@ public class RReport extends ExternalScriptEngineReport
     public static final int DEFAULT_R_PORT = 6311;
 
     private RReportDescriptor.KnitrFormat _knitrFormat = null;
-
-    private boolean _useDefaultOutputOptions = true;
 
     public RReport()
     {
@@ -193,20 +191,7 @@ public class RReport extends ExternalScriptEngineReport
     public void saveFromExternalEditor(ContainerUser context, String script)
     {
         getDescriptor().setProperty(ScriptReportDescriptor.Prop.script, this.stripScriptProlog(script));
-        ReportService.get().saveReport(context, this.getDescriptor().getReportKey(), this);
-    }
-
-    // legacy method used to provide rserve hints from module based reports, note this property was never exposed
-    // in the UI
-    @Deprecated
-    private boolean requestRemote()
-    {
-        Map<String, String> requestedEngineProperties = getDescriptor().getScriptEngineProperties();
-
-        if (requestedEngineProperties.containsKey(RScriptEngine.PROP_REMOTE))
-            return Boolean.valueOf(requestedEngineProperties.get(RScriptEngine.PROP_REMOTE));
-
-        return false;
+        ReportService.get().saveReportEx(context, this.getDescriptor().getReportKey(), this);
     }
 
     public static synchronized String getDefaultRPath()

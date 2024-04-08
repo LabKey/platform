@@ -177,7 +177,7 @@ class ReportQueryChangeListener implements QueryChangeListener, CustomViewChange
                     if (reportOwner != null)
                     {
                         ContainerUser rptContext = new DefaultContainerUser(container, reportOwner);
-                        ReportService.get().saveReport(rptContext, descriptor.getReportKey(), report, true);
+                        ReportService.get().saveReportEx(rptContext, descriptor.getReportKey(), report, true);
                     }
                     else
                     {
@@ -249,7 +249,7 @@ class ReportQueryChangeListener implements QueryChangeListener, CustomViewChange
                     if (reportOwner != null)
                     {
                         ContainerUser rptContext = new DefaultContainerUser(container, reportOwner);
-                        ReportService.get().saveReport(rptContext, descriptor.getReportKey(), report, true);
+                        ReportService.get().saveReportEx(rptContext, descriptor.getReportKey(), report, true);
                     }
                     else
                     {
