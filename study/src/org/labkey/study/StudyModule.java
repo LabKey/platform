@@ -55,7 +55,6 @@ import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.qc.export.DataStateImportExportHelper;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
-import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportContentEmailManager;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.QueryReport;
@@ -134,7 +133,26 @@ import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.dataset.DatasetViewProvider;
 import org.labkey.study.designer.view.StudyDesignsWebPart;
 import org.labkey.study.importer.StudyImporterFactory;
-import org.labkey.study.model.*;
+import org.labkey.study.model.CohortDomainKind;
+import org.labkey.study.model.ContinuousDatasetDomainKind;
+import org.labkey.study.model.DatasetDefinition;
+import org.labkey.study.model.DateDatasetDomainKind;
+import org.labkey.study.model.GroupSecurityType;
+import org.labkey.study.model.ImportHelperServiceImpl;
+import org.labkey.study.model.Participant;
+import org.labkey.study.model.ParticipantGroupManager;
+import org.labkey.study.model.ParticipantGroupServiceImpl;
+import org.labkey.study.model.ParticipantIdImportHelper;
+import org.labkey.study.model.ProtocolDocumentType;
+import org.labkey.study.model.SequenceNumImportHelper;
+import org.labkey.study.model.StudyDomainKind;
+import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyLsidHandler;
+import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.TestDatasetDomainKind;
+import org.labkey.study.model.TreatmentManager;
+import org.labkey.study.model.VisitDatasetDomainKind;
+import org.labkey.study.model.VisitImpl;
 import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.qc.StudyQCImportExportHelper;
 import org.labkey.study.qc.StudyQCStateHandler;
@@ -416,13 +434,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 Map<String, Object> metric = new HashMap<>();
                 metric.put("studyCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.study").getObject(Long.class));
                 metric.put("datasetCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.dataset").getObject(Long.class));
-
-                // Add counts for all reports and visualizations, by type
-                metric.put("reportCountsByType", Collections.unmodifiableMap(
-                    ContainerManager.getAllChildren(ContainerManager.getRoot()).stream()
-                        .flatMap(c->ReportService.get().getReports(null, c).stream())
-                        .collect(Collectors.groupingBy(Report::getType, Collectors.counting())))
-                );
 
                 metric.put("securityType", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT SecurityType, COUNT(*) FROM study.Study GROUP BY SecurityType").getValueMap());
                 metric.put("timepointType", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT TimepointType, COUNT(*) FROM study.Study GROUP BY TimepointType").getValueMap());
@@ -792,8 +803,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             List<String> metricNames = List.of(
                 "studyCount",
                 "datasetCount",
-                "timepointType",
-                "reportCountsByType"
+                "timepointType"
             );
             assertTrue("Mothership report missing expected metrics",
                     UsageReportingLevel.MothershipReportTestHelper.getModuleMetrics(UsageReportingLevel.ON, MODULE_NAME)
