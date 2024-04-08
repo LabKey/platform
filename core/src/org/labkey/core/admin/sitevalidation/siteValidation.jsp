@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.api.admin.sitevalidation.SiteValidationResultList" %>
 <%@ page import="org.labkey.api.admin.sitevalidation.SiteValidationService" %>
 <%@ page import="org.labkey.api.admin.sitevalidation.SiteValidatorDescriptor" %>
+<%@ page import="org.labkey.core.admin.AdminController.SiteValidationForm" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -28,6 +29,7 @@
     ul {list-style-type: none; padding-left: 5px;}
 </style>
 <%
+    SiteValidationForm form = (SiteValidationForm)getModelBean();
     final String LINK_HEADING = "More info";
     SiteValidationService validationService = SiteValidationService.get();
     if (null == validationService)
@@ -36,11 +38,11 @@
     <%}
     else { %>
         <% if (getContainer().isRoot()) {
-            Map<String,Map<SiteValidatorDescriptor, SiteValidationResultList>> siteResults = validationService.runSiteScopeValidators(getUser());
+            Map<String,Map<SiteValidatorDescriptor, SiteValidationResultList>> siteResults = validationService.runSiteScopeValidators(form.getProviders(), getUser());
         %>
             <strong>Site Level Validation Results</strong>
             <% if (siteResults.isEmpty()) { %>
-            <p>No site-wide validators have been registered.</p>
+            <p>No site-wide validators were run.</p>
             <% }
                 else {
             %>
@@ -70,8 +72,7 @@
                                     <% } %>
                                 </li>
                                 <% } %>
-                                <% if (errors.size() > 0) { %>
-                                        <li><br/></li>
+                                <% if (!errors.isEmpty()) { %>
                                         <li>Errors:
                                 <ul>
                                 <% for (SiteValidationResult result : errors) { %>
@@ -83,9 +84,8 @@
                                 </li>
                                 <% } %></ul>
                                 <% } %>
-                                <% if (warnings.size() > 0) { %>
-                                        <%--<li><br/></li>--%>
-                                        <li>Warnings:
+                                <% if (!warnings.isEmpty()) { %>
+                                         <li>Warnings:
                                 <ul>
                                 <% for (SiteValidationResult result : warnings) { %>
                                 <li>
@@ -103,9 +103,9 @@
         <% } %>
 
         <strong>Folder Validation Results</strong>
-        <%  Map<String, Map<SiteValidatorDescriptor, Map<String, Map<String, SiteValidationResultList>>>> containerResults = validationService.runContainerScopeValidators(getContainer(), getUser());
+        <%  Map<String, Map<SiteValidatorDescriptor, Map<String, Map<String, SiteValidationResultList>>>> containerResults = validationService.runContainerScopeValidators(getContainer(), form.isIncludeSubfolders(), form.getProviders(), getUser());
             if (containerResults.isEmpty()) { %>
-            <span>No folder validators have been registered.</span>
+            <p>No folder validators were run.</p>
         <%} else {
         %>
         <ul>
@@ -142,7 +142,7 @@
                                     <% } %>
                                 </li>
                                 <% } %>
-                                <% if (containerErrors.size() > 0) { %>
+                                <% if (!containerErrors.isEmpty()) { %>
                                     <li>Errors:
                                     <ul>
                                     <% for (SiteValidationResult result : containerErrors) { %>
@@ -153,7 +153,7 @@
                                     </li>
                                     <% } %></ul></li>
                                 <% } %>
-                                <% if (containerWarnings.size() > 0) { %>
+                                <% if (!containerWarnings.isEmpty()) { %>
                                     <li>Warnings:
                                         <ul>
                                         <% for (SiteValidationResult result : containerWarnings) { %>

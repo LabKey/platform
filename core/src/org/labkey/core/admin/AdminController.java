@@ -268,7 +268,6 @@ import static org.labkey.api.util.DOM.at;
 import static org.labkey.api.util.DOM.cl;
 import static org.labkey.api.util.DOM.createHtmlFragment;
 import static org.labkey.api.util.HtmlString.NBSP;
-import static org.labkey.api.util.HtmlString.unsafe;
 import static org.labkey.api.util.logging.LogHelper.getLabKeyLogDir;
 import static org.labkey.api.view.FolderManagement.EVERY_CONTAINER;
 import static org.labkey.api.view.FolderManagement.FOLDERS_AND_PROJECTS;
@@ -340,7 +339,7 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(Diagnostics, "queries", getQueriesURL(null));
         AdminConsole.addLink(Diagnostics, "reset site errors", new ActionURL(ResetErrorMarkAction.class, root), AdminPermission.class);
         AdminConsole.addLink(Diagnostics, "running threads", new ActionURL(ShowThreadsAction.class, root));
-        AdminConsole.addLink(Diagnostics, "site validation", new ActionURL(SiteValidationAction.class, root), AdminPermission.class);
+        AdminConsole.addLink(Diagnostics, "site validation", new ActionURL(ConfigureSiteValidationAction.class, root), AdminPermission.class);
         AdminConsole.addLink(Diagnostics, "sql scripts", new ActionURL(SqlScriptController.ScriptsAction.class, root), AdminOperationsPermission.class);
         AdminConsole.addLink(Diagnostics, "suspicious activity", new ActionURL(SuspiciousAction.class,root));
         AdminConsole.addLink(Diagnostics, "system properties", new ActionURL(SystemPropertiesAction.class, root), SiteAdminPermission.class);
@@ -377,6 +376,7 @@ public class AdminController extends SpringActionController
         addTab(TYPE.FolderManagement,"Files", "files", FOLDERS_AND_PROJECTS, FileRootsAction.class);
         addTab(TYPE.FolderManagement,"Formats", "settings", FOLDERS_ONLY, FolderSettingsAction.class);
         addTab(TYPE.FolderManagement,"Information", "info", NOT_ROOT, FolderInformationAction.class);
+        addTab(TYPE.FolderManagement,"Validate", "validate", EVERY_CONTAINER, ConfigureSiteValidationAction.class);
         addTab(TYPE.FolderManagement,"R Config", "rConfig", NOT_ROOT, RConfigurationAction.class);
 
         addTab(TYPE.ProjectSettings, "Properties", "properties", PROJECTS_ONLY, ProjectSettingsAction.class);
@@ -1383,19 +1383,62 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class SiteValidationAction extends SimpleViewAction<Object>
+    public class ConfigureSiteValidationAction extends FolderManagementViewAction
     {
         @Override
-        public ModelAndView getView(Object o, BindException errors)
+        protected JspView<?> getTabView()
         {
-            return new JspView<>("/org/labkey/core/admin/sitevalidation/siteValidation.jsp");
+            return new JspView<>("/org/labkey/core/admin/sitevalidation/configureSiteValidation.jsp");
         }
 
         @Override
         public void addNavTrail(NavTree root)
         {
             setHelpTopic("siteValidation");
-            addAdminNavTrail(root, "Site Validation", this.getClass());
+            addAdminNavTrail(root, "Configure " + (getContainer().isRoot() ? "Site" : "Folder") + " Validation", getClass());
+        }
+    }
+
+    public static class SiteValidationForm
+    {
+        private boolean _includeSubfolders = false;
+        private List<String> _providers;
+
+        public boolean isIncludeSubfolders()
+        {
+            return _includeSubfolders;
+        }
+
+        public void setIncludeSubfolders(boolean includeSubfolders)
+        {
+            _includeSubfolders = includeSubfolders;
+        }
+
+        public List<String> getProviders()
+        {
+            return _providers;
+        }
+
+        public void setProviders(List<String> providers)
+        {
+            _providers = providers;
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public class SiteValidationAction extends SimpleViewAction<SiteValidationForm>
+    {
+        @Override
+        public ModelAndView getView(SiteValidationForm form, BindException errors)
+        {
+            return new JspView<>("/org/labkey/core/admin/sitevalidation/siteValidation.jsp", form);
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            setHelpTopic("siteValidation");
+            addAdminNavTrail(root, (getContainer().isRoot() ? "Site" : "Folder") + " Validation", getClass());
         }
     }
 
@@ -3016,7 +3059,6 @@ public class AdminController extends SpringActionController
             _enableSystemMaintenance = enableSystemMaintenance;
         }
     }
-
 
     @AdminConsoleAction(AdminOperationsPermission.class)
     public class ConfigureSystemMaintenanceAction extends FormViewAction<ConfigureSystemMaintenanceForm>

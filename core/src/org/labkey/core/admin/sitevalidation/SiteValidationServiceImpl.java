@@ -26,18 +26,15 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 
-/**
- * User: tgaluhn
- * Date: 4/8/2015
- */
 public class SiteValidationServiceImpl implements SiteValidationService
 {
     private final Map<String, Set<SiteValidationProvider>> siteValidators = new ConcurrentSkipListMap<>();
@@ -48,41 +45,52 @@ public class SiteValidationServiceImpl implements SiteValidationService
     {
         if (provider.isSiteScope())
         {
-            Set<SiteValidationProvider> moduleSet = siteValidators.get(module);
-            if (null == moduleSet)
-            {
-                moduleSet = new TreeSet<>();
-                siteValidators.put(module, moduleSet);
-            }
+            Set<SiteValidationProvider> moduleSet = siteValidators.computeIfAbsent(module, k -> new ConcurrentSkipListSet<>());
             moduleSet.add(provider);
         }
         else
         {
-            Set<SiteValidationProvider> moduleSet = containerValidators.get(module);
-            if (null == moduleSet)
-            {
-                moduleSet = new TreeSet<>();
-                containerValidators.put(module, moduleSet);
-            }
+            Set<SiteValidationProvider> moduleSet = containerValidators.computeIfAbsent(module, k -> new ConcurrentSkipListSet<>());
             moduleSet.add(provider);
         }
     }
 
+    @Override
+    public Map<String, Set<SiteValidationProvider>> getSiteProviders()
+    {
+        return siteValidators;
+    }
+
+    @Override
+    public Map<String, Set<SiteValidationProvider>> getContainerProviders()
+    {
+        return containerValidators;
+    }
+
     @NotNull
     @Override
-    public Map<String, Map<SiteValidatorDescriptor, SiteValidationResultList>> runSiteScopeValidators(User u)
+    public Map<String, Map<SiteValidatorDescriptor, SiteValidationResultList>> runSiteScopeValidators(List<String> providers, User u)
     {
         Map<String, Map<SiteValidatorDescriptor, SiteValidationResultList>> siteResults = new LinkedHashMap<>();
         Container root = ContainerManager.getRoot();
+
         for (Map.Entry<String, Set<SiteValidationProvider>> moduleValidators : siteValidators.entrySet())
         {
-            Map<SiteValidatorDescriptor, SiteValidationResultList> moduleResults = new TreeMap<>();
-            siteResults.put(moduleValidators.getKey(), moduleResults);
+            List<SiteValidationProvider> validatorsToRun = getValidatorsToRun(moduleValidators, providers);
 
-            for (SiteValidationProvider validator : moduleValidators.getValue())
+            // Skip work if there are no selected validators
+            if (!validatorsToRun.isEmpty())
             {
-                SiteValidatorDescriptor descriptor = new SiteValidatorDescriptorImpl(validator.getName(), validator.getDescription());
-                moduleResults.put(descriptor, validator.runValidation(root, u));
+                Map<SiteValidatorDescriptor, SiteValidationResultList> moduleResults = new TreeMap<>();
+                siteResults.put(moduleValidators.getKey(), moduleResults);
+
+                for (SiteValidationProvider validator : validatorsToRun)
+                {
+                    SiteValidatorDescriptor descriptor = new SiteValidatorDescriptorImpl(validator.getName(), validator.getDescription());
+                    SiteValidationResultList resultList = validator.runValidation(root, u);
+                    if (null != resultList)
+                        moduleResults.put(descriptor, resultList);
+                }
             }
         }
         return siteResults;
@@ -90,55 +98,73 @@ public class SiteValidationServiceImpl implements SiteValidationService
 
     @NotNull
     @Override
-    public Map<String, Map<SiteValidatorDescriptor, Map<String, Map<String, SiteValidationResultList>>>> runContainerScopeValidators(Container topLevel, User u)
+    public Map<String, Map<SiteValidatorDescriptor, Map<String, Map<String, SiteValidationResultList>>>> runContainerScopeValidators(Container topLevel, boolean includeSubFolders, List<String> providers, User u)
     {
         Map<String, Map<SiteValidatorDescriptor, Map<String, Map<String, SiteValidationResultList>>>> allContainerResults = new LinkedHashMap<>();
-        List<Container> parentList;
-        if (topLevel.isRoot())
-        {
-            parentList = ContainerManager.getProjects();
-        }
-        else
-        {
-            parentList = Collections.singletonList(topLevel);
-        }
-        for (Map.Entry<String, Set<SiteValidationProvider>> moduleValidators : containerValidators.entrySet())
-        {
-            Map<SiteValidatorDescriptor, Map<String, Map<String, SiteValidationResultList>>> moduleResults = new TreeMap<>();
-            allContainerResults.put(moduleValidators.getKey(), moduleResults);
 
-            // Initialize maps for each provider
-            for (SiteValidationProvider validator : moduleValidators.getValue())
+        if (providers != null && !providers.isEmpty())
+        {
+            final List<Container> parentList;
+
+            if (topLevel.isRoot())
             {
-                SiteValidatorDescriptor descriptor = new SiteValidatorDescriptorImpl(validator.getName(), validator.getDescription());
-                moduleResults.put(descriptor, new TreeMap<>());
+                parentList = ContainerManager.getProjects();
+            }
+            else
+            {
+                parentList = Collections.singletonList(topLevel);
             }
 
-            for (Container project : parentList)
+            for (Map.Entry<String, Set<SiteValidationProvider>> moduleValidators : containerValidators.entrySet())
             {
-                List<Container> allChildren = ContainerManager.getAllChildren(project, u);
-                for (Container c : allChildren)
+                Map<SiteValidatorDescriptor, Map<String, Map<String, SiteValidationResultList>>> moduleResults = new TreeMap<>();
+                List<SiteValidationProvider> validatorsToRun = getValidatorsToRun(moduleValidators, providers);
+
+                // Skip work if there are no selected validators from this module
+                if (!validatorsToRun.isEmpty())
                 {
-                    moduleValidators.getValue().stream().filter(validator -> validator.shouldRun(c, u)).forEach(validator -> {
-                        SiteValidationResultList resultList = validator.runValidation(c, u);
-                        if (null != resultList && !resultList.getResults().isEmpty())
+                    // Initialize maps for each provider
+                    for (SiteValidationProvider validator : validatorsToRun)
+                    {
+                        SiteValidatorDescriptor descriptor = new SiteValidatorDescriptorImpl(validator.getName(), validator.getDescription());
+                        moduleResults.put(descriptor, new TreeMap<>());
+                    }
+
+                    for (Container parent : parentList)
+                    {
+                        List<Container> allChildren = includeSubFolders ? ContainerManager.getAllChildren(parent, u) : List.of(parent);
+                        for (Container c : allChildren)
                         {
-                            SiteValidatorDescriptor descriptor = new SiteValidatorDescriptorImpl(validator.getName(), validator.getDescription());
-                            Map<String, Map<String, SiteValidationResultList>> providerResults = moduleResults.get(descriptor);
-                            String projectPath = null == project.getProject() ? project.getName() : StringUtils.substringAfter(project.getProject().getPath(), "/");
-                            Map<String, SiteValidationResultList> projectResults = providerResults.get(projectPath);
-                            if (null == projectResults)
-                            {
-                                projectResults = new TreeMap<>();
-                                providerResults.put(projectPath, projectResults);
-                            }
-                            projectResults.put(StringUtils.substringAfter(c.getPath(), "/"), resultList);
+                            validatorsToRun.stream().filter(validator -> validator.shouldRun(c, u)).forEach(validator -> {
+                                SiteValidationResultList resultList = validator.runValidation(c, u);
+                                if (null != resultList && !resultList.getResults().isEmpty())
+                                {
+                                    SiteValidatorDescriptor descriptor = new SiteValidatorDescriptorImpl(validator.getName(), validator.getDescription());
+                                    Map<String, Map<String, SiteValidationResultList>> providerResults = moduleResults.get(descriptor);
+                                    String projectPath = null == parent.getProject() ? parent.getName() : StringUtils.substringAfter(parent.getProject().getPath(), "/");
+                                    Map<String, SiteValidationResultList> projectResults = providerResults.computeIfAbsent(projectPath, k -> new TreeMap<>());
+                                    projectResults.put(StringUtils.substringAfter(c.getPath(), "/"), resultList);
+                                }
+                            });
                         }
-                    });
+                    }
+
+                    allContainerResults.put(moduleValidators.getKey(), moduleResults);
                 }
             }
         }
 
         return allContainerResults;
+    }
+
+    private List<SiteValidationProvider> getValidatorsToRun(Map.Entry<String, Set<SiteValidationProvider>> moduleValidators, List<String> providers)
+    {
+        Set<String> includedProviderNames = new HashSet<>();
+        if (providers != null)
+            includedProviderNames.addAll(providers);
+
+        return moduleValidators.getValue().stream()
+            .filter(validator -> includedProviderNames.contains(validator.getName()))
+            .toList();
     }
 }
