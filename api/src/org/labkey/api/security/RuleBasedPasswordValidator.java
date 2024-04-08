@@ -66,7 +66,7 @@ abstract class RuleBasedPasswordValidator implements PasswordValidator
         builder.append(" and cannot include portions of your personal information.");
         _summaryRuleHtml = HtmlString.of(builder);
 
-        _fullRuleHtml = DOM.createHtml(DOM.createHtmlFragment(
+        _fullRuleHtml = DOM.createHtml(
             DOM.UL(
                 DOM.LI("Must be " + getMinimumLengthText() + " non-whitespace characters or more."),
                 _patternRequirement != null ? DOM.LI("Must " + _patternRequirement) : null,
@@ -74,7 +74,7 @@ abstract class RuleBasedPasswordValidator implements PasswordValidator
                 isPreviousPasswordForbidden() ? PREVIOUS_PASSWORD_BULLET : null,
                 isDeprecated() ? DOM.LI(cl("labkey-error"), "This password strength is not appropriate for production deployments and will be removed in the next major release.") : null
             )
-        ));
+        );
     }
 
     private void addPattern(List<Pattern> patterns, Pattern pattern, List<String> patternDescriptions, String patternDescription)
