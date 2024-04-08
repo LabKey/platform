@@ -44,8 +44,7 @@ public abstract class AbstractDataStateImporter
                         state.setLabel(xmlState.getName());
                         state.setDescription(xmlState.getDescription());
                         state.setPublicData(xmlState.getPublic());
-                        String stateType = xmlState.getType() == null ? null : xmlState.getType().toString();
-                        state.setStateType(stateType);
+                        state.setStateType(xmlState.getType() == null ? null : xmlState.getType().toString());
                         state.setColor(xmlState.getColor());
 
                         helper.insertDataState(ctx.getUser(), state);
