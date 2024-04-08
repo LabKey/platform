@@ -18,6 +18,8 @@ package org.labkey.query.reports;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.collections4.MultiSet;
+import org.apache.commons.collections4.multiset.HashMultiSet;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -28,6 +30,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderImportContext;
+import org.labkey.api.collections.MultiSetUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerManager.AbstractContainerListener;
@@ -54,10 +57,8 @@ import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.report.AbstractReportIdentifier;
 import org.labkey.api.reports.report.DbReportIdentifier;
 import org.labkey.api.reports.report.ModuleJavaScriptReportDescriptor;
-import org.labkey.api.reports.report.r.ModuleRReportDescriptor;
 import org.labkey.api.reports.report.ModuleReportDescriptor;
 import org.labkey.api.reports.report.ModuleReportIdentifier;
-import org.labkey.api.reports.report.r.RReportDescriptor;
 import org.labkey.api.reports.report.ReportDB;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
@@ -65,6 +66,8 @@ import org.labkey.api.reports.report.ReportIdentifierConverter;
 import org.labkey.api.reports.report.ScriptEngineReport;
 import org.labkey.api.reports.report.ScriptReportDescriptor;
 import org.labkey.api.reports.report.python.ModuleIpynbReportDescriptor;
+import org.labkey.api.reports.report.r.ModuleRReportDescriptor;
+import org.labkey.api.reports.report.r.RReportDescriptor;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityPolicy;
@@ -75,6 +78,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
@@ -87,6 +91,7 @@ import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.visualization.GenericChartReport;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.DefaultContainerUser;
 import org.labkey.api.writer.VirtualFile;
@@ -1059,6 +1064,30 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         public void run(Logger log)
         {
             ReportService.get().maintenance(log);
+        }
+    }
+
+    public static void registerUsageMetrics(String moduleName)
+    {
+        UsageMetricsService svc = UsageMetricsService.get();
+        if (null != svc)
+        {
+            svc.registerUsageMetrics(moduleName, () -> {
+                // Iterate all the database reports once and produce two occurrence maps: all reports by type and just the charts by render type
+                MultiSet<GenericChartReport.RenderType> chartCountsByRenderType = new HashMultiSet<>();
+                Map<String, Long> countsByType = ContainerManager.getAllChildren(ContainerManager.getRoot()).stream()
+                    .flatMap(c -> ReportService.get().getReports(null, c).stream())
+                    .peek(report -> {
+                        if (report instanceof GenericChartReport chart)
+                            chartCountsByRenderType.add(chart.getRenderType());
+                    })
+                    .collect(Collectors.groupingBy(Report::getType, Collectors.counting()));
+
+                return Map.of(
+                    "reportCountsByType", countsByType,
+                    "genericChartCountsByRenderType", MultiSetUtils.getOccurrenceMap(chartCountsByRenderType)
+                );
+            });
         }
     }
 }
