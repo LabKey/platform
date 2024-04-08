@@ -72,7 +72,8 @@ public class PlateSetLineage
      * @return Map<Integer, PlateSet>
      */
     @JsonIgnore
-    public Map<Integer, PlateSet> getPlateSetAndDescendents(Integer plateSetId) {
+    public Map<Integer, PlateSet> getPlateSetAndDescendents(Integer plateSetId)
+    {
         Map<Integer, PlateSet> allPlateSets = new HashMap<>();
         allPlateSets.put(plateSetId, _plateSets.get(plateSetId));
         Set<Integer> parents = new HashSet<>(Arrays.asList(plateSetId));
@@ -83,7 +84,8 @@ public class PlateSetLineage
 
             for (PlateSetEdge edge : _edges)
             {
-                if (parents.contains(edge.getFromPlateSetId())) {
+                if (parents.contains(edge.getFromPlateSetId()))
+                {
                     Integer to = edge.getToPlateSetId();
                     children.add(to);
                     allPlateSets.put(to, _plateSets.get(to));
