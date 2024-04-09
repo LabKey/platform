@@ -72,7 +72,6 @@ import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.SummaryStatisticRegistry;
 import org.labkey.api.util.JspTestCase;
@@ -134,7 +133,6 @@ import java.util.List;
 import java.util.Set;
 
 import static org.labkey.api.query.QueryService.USE_ROW_BY_ROW_UPDATE;
-
 
 public class QueryModule extends DefaultModule
 {
@@ -326,6 +324,7 @@ public class QueryModule extends DefaultModule
         }
 
         QueryManager.registerUsageMetrics(getName());
+        ReportServiceImpl.registerUsageMetrics(getName());
 
         // Administrators, Platform Developers, and Trusted Analysts can edit queries, if they also have edit permissions in the current folder
         RoleManager.registerPermission(new EditQueriesPermission());

@@ -800,7 +800,7 @@ public class ReportUtil
         MutableSecurityPolicy policy = new MutableSecurityPolicy(report.getDescriptor());
         SecurityPolicyManager.savePolicy(policy, performer);
         report.getDescriptor().setOwner(owner != null ? owner.getUserId() : null); // null = "public", owner = "private"
-        ReportService.get().saveReport(context, report.getDescriptor().getReportKey(), report);
+        ReportService.get().saveReportEx(context, report.getDescriptor().getReportKey(), report);
     }
 
     public static void updateReportSecurityPolicy(ViewContext context, @NotNull Report report, Integer principalId, boolean toAdd)
@@ -820,7 +820,7 @@ public class ReportUtil
             
             SecurityPolicyManager.savePolicy(policy, context.getUser());
             report.getDescriptor().setOwner(null); // force the report to be "custom"
-            ReportService.get().saveReport(context, report.getDescriptor().getReportKey(), report);
+            ReportService.get().saveReportEx(context, report.getDescriptor().getReportKey(), report);
         }
     }
 
@@ -849,6 +849,6 @@ public class ReportUtil
 
         SecurityPolicyManager.savePolicy(policy, context.getUser());
         report.getDescriptor().setOwner(null);
-        ReportService.get().saveReport(context, report.getDescriptor().getReportKey(), report);
+        ReportService.get().saveReportEx(context, report.getDescriptor().getReportKey(), report);
     }
 }

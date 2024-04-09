@@ -18,6 +18,7 @@ package org.labkey.api.util;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.util.DOM.Renderable;
 import org.labkey.api.view.DisplayElement;
 import org.labkey.api.view.HttpView;
 
@@ -40,20 +41,19 @@ import static org.labkey.api.util.DOM.createHtmlFragment;
 
 /**
  * Basic button UI element. Might be a simple link, have a JavaScript handler, etc.
- * Created by Nick Arnold on 2/27/14.
  * Testing of this class can be found in the Core module's TestController.ButtonAction
  */
 public class Button extends DisplayElement implements HasHtmlString, SafeToRender
 {
     // Button constants
     private static final String CLS = "labkey-button";
-    private static final String DISABLEDCLS = "labkey-disabled-button";
+    private static final String DISABLED_CLS = "labkey-disabled-button";
     private static final String PRIMARY_CLS = "primary";
 
     // Composable members
     private final String cssClass;
     private final String iconCls;
-    private final HtmlString html; // required
+    private final Renderable html; // required
     private final String href;
     private final String onClick;
     private final String id;
@@ -171,7 +171,7 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
         char quote = PageFlowUtil.getUsedQuoteSymbol(onClick);
 
         // quoted CSS classes used in scripting
-        final String qDisabledCls = quote + DISABLEDCLS + quote;
+        final String qDisabledCls = quote + DISABLED_CLS + quote;
 
         // check if the disabled class is applied, if so, do nothing onclick
         String onClickMethod = "if(this.className.indexOf(" + qDisabledCls + ")!=-1)return false;";
@@ -235,7 +235,7 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
         boolean iconOnly = getIconCls() != null;
         String submitId = page.makeId("submit_");
         // In the icon-only button case, use caption as tooltip. This avoids having to set both caption and tooltip
-        final HtmlString tip = (null != tooltip ? HtmlString.of(tooltip) : (!iconOnly ? null : html));
+        final Renderable tip = (null != tooltip ? HtmlString.of(tooltip) : (!iconOnly ? null : html));
         String clickHandler = generateOnClick();
 
         var attrs = at(attributes)
@@ -245,10 +245,10 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
             .data(usePost, "href", this.href)
             .data(usePost, "confirmmessage", confirmMessage)
             .data("submitid", submitId)         // this id is used by the event handler, stash in a data attribute rather than hard-coding in the handler source
-            .data("tt", (HtmlString.isBlank(tip) ? null : "tooltip"))
+            .data("tt", null == tip ? null : "tooltip")
             .data("placement", "top")
             .cl(CLS, typeCls, getCssClass())
-            .cl(!isEnabled(), DISABLEDCLS)
+            .cl(!isEnabled(), DISABLED_CLS)
             .cl(isDropdown(), "labkey-down-arrow")
             .cl(isDropdown(), "dropdown-toggle")
             .cl(iconOnly, "icon-only");
@@ -263,7 +263,7 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
 
     public static class ButtonBuilder extends DisplayElementBuilder<Button, ButtonBuilder>
     {
-        private final HtmlString html;
+        private final Renderable html;
 
         private String typeCls;
         private boolean disableOnClick;
@@ -276,7 +276,7 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
             this.html = HtmlString.of(text);
         }
 
-        public ButtonBuilder(@NotNull HtmlString html)
+        public ButtonBuilder(@NotNull Renderable html)
         {
             this.html = html;
         }

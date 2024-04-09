@@ -17,6 +17,7 @@ package org.labkey.api.util;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.util.DOM.Renderable;
 import org.labkey.api.view.DisplayElement;
 import org.labkey.api.view.HttpView;
 
@@ -123,7 +124,7 @@ public class Link extends DisplayElement implements HasHtmlString
             this(HtmlString.of(text));
         }
 
-        public LinkBuilder(@NotNull HtmlString html)
+        public LinkBuilder(@NotNull Renderable html)
         {
             this();
             this.html = html;
