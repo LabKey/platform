@@ -21,12 +21,6 @@ import org.labkey.api.view.HttpView;
 
 import jakarta.servlet.jsp.JspWriter;
 
-/**
- * User: adam
- * Date: Aug 10, 2010
- * Time: 4:05:51 PM
- */
-
 // Simple base class for JSP templates that aren't rendering HTML (see JspTemplate)
 public abstract class JspContext extends HttpJspBase
 {

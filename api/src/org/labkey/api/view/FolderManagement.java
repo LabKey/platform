@@ -202,7 +202,7 @@ public class FolderManagement
         }
 
         @Override
-        public ModelAndView getView(Object form, BindException errors) throws Exception
+        public final ModelAndView getView(Object form, BindException errors) throws Exception
         {
             return wrapViewInTabStrip(this, getType(), getTabView(), errors);
         }
@@ -216,7 +216,6 @@ public class FolderManagement
             getType().addNavTrail(this, root, getContainer(), getUser());
         }
     }
-
 
     /**
      * Base action class for management actions that display a view and handle a post.

@@ -20,17 +20,14 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
- * User: tgaluhn
- * Date: 4/8/2015
- *
  * Service for registering/running validators for site configuration, schemas, data heuristics, etc.
- *
  * Validators may declare themselves to either apply to site wide scope (e.g., a schema integrity check),
  * or to container level scope (e.g., business rules for the data visible within that container).
- *
  */
 public interface SiteValidationService
 {
@@ -46,13 +43,16 @@ public interface SiteValidationService
 
     void registerProvider(String module, SiteValidationProvider provider);
 
+    Map<String, Set<SiteValidationProvider>> getSiteProviders();
+    Map<String, Set<SiteValidationProvider>> getContainerProviders();
+
     /**
      * Returns a map of module name -> map of ValidatorDescriptor -> result list for all validators registered by that module
      * Will return an empty map if no validators are registered.
      * ValidatorDescriptor map entry will have empty SiteValidationResultList if no validation errors found by that module
      */
     @NotNull
-    Map<String, Map<SiteValidatorDescriptor, SiteValidationResultList>> runSiteScopeValidators(User u);
+    Map<String, Map<SiteValidatorDescriptor, SiteValidationResultList>> runSiteScopeValidators(List<String> providers, User u);
 
     /**
      * Returns a map of module names -> map ValidatorProviders -> map of projects names ->
@@ -67,5 +67,5 @@ public interface SiteValidationService
      *
      */
     @NotNull
-    Map<String, Map<SiteValidatorDescriptor, Map<String, Map<String, SiteValidationResultList>>>> runContainerScopeValidators(Container topLevel, User u);
+    Map<String, Map<SiteValidatorDescriptor, Map<String, Map<String, SiteValidationResultList>>>> runContainerScopeValidators(Container topLevel, boolean includeSubFolders, List<String> providers, User u);
 }
