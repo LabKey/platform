@@ -1,5 +1,4 @@
 import org.labkey.gradle.util.BuildUtils
-import org.labkey.gradle.util.ExternalDependency
 
 plugins {
     id 'java-library'
@@ -273,6 +272,19 @@ dependencies {
             ExternalDependency.APACHE_2_LICENSE_NAME,
             ExternalDependency.APACHE_2_LICENSE_URL,
             "Object pooling - Pipeline & TargetedMS dependency",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.commons:commons-text:${commonsTextVersion}",
+            "Commons Text",
+            "Apache",
+            "https://commons.apache.org/proper/commons-text/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "String algorithms",
         )
     )
 
