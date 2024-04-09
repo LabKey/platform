@@ -744,7 +744,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         keys = new Object[]{lsid};
         TableInfo t = _sampleType.getTinfo();
         // Sample type uses FILE_LINK not FILE_ATTACHMENT, use convertTypes() to handle posted files
-        convertTypes(c, validRowCopy, t, "sampletype");
+        convertTypes(user, c, validRowCopy, t, "sampletype");
         if (t.getColumnNameSet().stream().anyMatch(validRowCopy::containsKey))
         {
             ret.putAll(Table.update(user, t, validRowCopy, t.getColumn("lsid"), keys, null, Level.DEBUG));
