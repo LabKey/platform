@@ -77,6 +77,9 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
 
         ExpRun run = getRun(originalRow, user, UpdatePermission.class);
 
+        if (!run.getContainer().equals(container))
+            throw new UnauthorizedException("Assay results being updated are from a different container.");
+
         Map<String, Object> result = super.updateRow(user, container, row, oldRow, configParameters);
 
         Map<String, Object> updatedValues = getRow(user, container, oldRow);

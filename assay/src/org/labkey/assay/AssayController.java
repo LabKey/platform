@@ -73,6 +73,7 @@ import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.DataType;
@@ -1676,17 +1677,17 @@ public class AssayController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
-    public static class GetAssayRunOperationConfirmationDataAction extends ReadOnlyApiAction<AssayRunOperationConfirmationForm>
+    public static class GetAssayRunOperationConfirmationDataAction extends ReadOnlyApiAction<AssayOperationConfirmationForm>
     {
 
         @Override
-        public Object execute(AssayRunOperationConfirmationForm form, BindException errors) throws Exception
+        public Object execute(AssayOperationConfirmationForm form, BindException errors) throws Exception
         {
             Collection<Integer> allowedIds = form.getIds(false);
 
             Set<Integer> notAllowedIds = new HashSet<>();
             ExperimentService service = ExperimentService.get();
-            Collection<Integer> notPermittedIds = service.getIdsNotPermitted(getUser(), allowedIds, "assay", form.getDataOperation().getPermissionClass());
+            Collection<Integer> notPermittedIds = service.getIdsNotPermitted(getUser(), allowedIds, ExperimentService.get().getTinfoExperimentRun(), form.getDataOperation().getPermissionClass());
             List<Map<String, Object>> notPermitted = notPermittedIds == null ? Collections.emptyList() : notPermittedIds.stream().map(id -> Map.of("RowId", (Object) id)).toList();
             if (form.getDataOperation() == AssayRunOperations.Delete)
             {
@@ -1724,8 +1725,45 @@ public class AssayController extends SpringActionController
         }
     }
 
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(ReadPermission.class)
+    public static class GetAssayResultsOperationConfirmationDataAction extends ReadOnlyApiAction<AssayOperationConfirmationForm>
+    {
+        @Override
+        public Object execute(AssayOperationConfirmationForm form, BindException errors) throws Exception
+        {
+            Collection<Integer> allowedIds = form.getIds(false);
+
+            ExperimentService service = ExperimentService.get();
+            ExpProtocol protocol = service.getExpProtocol(form.getProtocolId());
+            AssayProvider provider = AssayService.get().getProvider(protocol);
+            AssaySchema schema = provider.createProtocolSchema(getUser(), getContainer(), protocol, null);
+            TableInfo tableInfo = schema.getTable(AssayProtocolSchema.DATA_TABLE_NAME, ContainerFilter.EVERYTHING);
+
+            // need to query to get the dataIds for the data rowIds so that we can check container permissions on that exp.data table
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), allowedIds, CompareType.IN);
+            List<Map<String, Object>> dataRows = new TableSelector(tableInfo, PageFlowUtil.set("rowid", "dataid"), filter, null).getMapCollection().stream().toList();
+            List<Integer> permittedRowIds = new ArrayList<>();
+            for (Map<String, Object> dataRow : dataRows)
+            {
+                Integer rowId = (Integer) dataRow.get("rowid");
+                ExpData data = ExperimentService.get().getExpData((Integer) dataRow.get("dataid"));
+                if (data != null && data.getRun() != null && data.getRun().getContainer().hasPermission(getUser(), AssayRunOperations.Edit.getPermissionClass()))
+                    permittedRowIds.add(rowId);
+            }
+            List<Map<String, Integer>> notPermitted = allowedIds.stream().filter(id -> !permittedRowIds.contains(id)).map(id -> Map.of("RowId", id)).toList();
+
+            return success(Map.of(
+                "allowed", allowedIds.stream().map(id -> Map.of("RowId", id)).toList(),
+                "notAllowed", new HashSet<>(),
+                "notPermitted", notPermitted
+            ));
+        }
+    }
+
     public enum AssayRunOperations {
         Delete("deleting", DeletePermission.class),
+        Edit("editing", UpdatePermission.class),
         Move("moving", MoveEntitiesPermission.class);
 
         private final String _description; // used as a suffix in messaging users about what is not allowed
@@ -1748,9 +1786,10 @@ public class AssayController extends SpringActionController
         }
     }
 
-    public static class AssayRunOperationConfirmationForm extends DataViewSnapshotSelectionForm
+    public static class AssayOperationConfirmationForm extends DataViewSnapshotSelectionForm
     {
         private AssayRunOperations _dataOperation;
+        private Integer _protocolId;
 
         public AssayRunOperations getDataOperation()
         {
@@ -1762,5 +1801,14 @@ public class AssayController extends SpringActionController
             _dataOperation = dataOperation;
         }
 
+        public Integer getProtocolId()
+        {
+            return _protocolId;
+        }
+
+        public void setProtocolId(Integer protocolId)
+        {
+            _protocolId = protocolId;
+        }
     }
 }
