@@ -39,7 +39,7 @@ Ext4.define('LABKEY.form.field.AttachmentFile', {
 
         if (this.hasRemoveButton) {
 
-            var removeBtn = Ext4.widget('button', Ext.apply({
+            var removeBtn = Ext4.widget('button', Ext4.apply({
                 id  : me.id + '-removeButton',
                 ui  : me.ui,
                 disabled: me.disabled,
@@ -132,7 +132,7 @@ Ext4.define('LABKEY.form.field.Attachment', {
                 '<tpl for=".">',
                     '<tr><td>&nbsp;<img src="{icon}" talt="icon"/></td>',
                     '<td>&nbsp;<a href="{downloadURL}">{name}</a></td>',
-                    '<td>&nbsp;&nbsp;<a class="removelink" href="javascript:void(0);" title="remove file"><img src="{[LABKEY.contextPath + "/_images/partdeleted.gif"]}"></a></td></tr>',
+                    '<td>&nbsp;&nbsp;<a class="removelink" style="cursor: pointer" title="remove file"><img src="{[LABKEY.contextPath + "/_images/partdeleted.gif"]}"></a></td></tr>',
                 '</tpl>',
             '</table>&nbsp;'
         );
@@ -170,7 +170,7 @@ Ext4.define('LABKEY.form.field.Attachment', {
                 items.push({
                     xtype : 'box',
                     id : this.id + '-attachFile',
-                    html : '<a href="javascript:void(0);"><img src="' + LABKEY.contextPath + '/_images/paperclip.gif">&nbsp;&nbsp;Attach a file</a>'
+                    html : '<a style="cursor: pointer"><img src="' + LABKEY.contextPath + '/_images/paperclip.gif">&nbsp;&nbsp;Attach a file</a>'
                 });
             }
             else if (!this.attachment)
