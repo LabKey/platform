@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 
@@ -58,13 +59,24 @@ public class SiteValidationServiceImpl implements SiteValidationService
     @Override
     public Map<String, Set<SiteValidationProvider>> getSiteProviders()
     {
-        return siteValidators;
+        return getImmutable(siteValidators);
     }
 
     @Override
     public Map<String, Set<SiteValidationProvider>> getContainerProviders()
     {
-        return containerValidators;
+        return getImmutable(containerValidators);
+    }
+
+    private Map<String, Set<SiteValidationProvider>> getImmutable(Map<String, Set<SiteValidationProvider>> map)
+    {
+        Map<String, Set<SiteValidationProvider>> copy = new TreeMap<>();
+        for (String key : map.keySet())
+        {
+            Set<SiteValidationProvider> set = Collections.unmodifiableSet(new TreeSet<>(map.get(key)));
+            copy.put(key, set);
+        }
+        return Collections.unmodifiableMap(copy);
     }
 
     @NotNull

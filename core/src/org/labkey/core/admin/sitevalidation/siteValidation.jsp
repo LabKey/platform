@@ -143,69 +143,93 @@
             for (Map.Entry<String, Map<SiteValidatorDescriptor, Map<String, Map<String, SiteValidationResultList>>>> moduleResults : containerResults.entrySet())
             {
 %>
-          <li><strong>Module: </strong><%=h(moduleResults.getKey())%>
-              <ul>
-                  <% for (Map.Entry<SiteValidatorDescriptor, Map<String, Map<String, SiteValidationResultList>>> validatorResults : moduleResults.getValue().entrySet()) { %>
-                  <li><strong>Validator: </strong><%=h(validatorResults.getKey().getName() + " ")%><span style="font-style: italic;"><%=h(validatorResults.getKey().getDescription())%></span>
-                      <ul>
-                          <% if (validatorResults.getValue().isEmpty()) { %>
-                          <li>Nothing to report</li>
-                          <% } else {
-                              for (Map.Entry<String, Map<String, SiteValidationResultList>> projectResult : validatorResults.getValue().entrySet()) { %>
-                  <li><%=h("Project: " + projectResult.getKey())%>
+            <li><strong>Module: </strong><%=h(moduleResults.getKey())%>
                 <ul>
-                    <% for (Map.Entry<String, SiteValidationResultList> subtreeResult : projectResult.getValue().entrySet()) { %>
-                    <li><%=h("Folder: " + subtreeResult.getKey())%>
+<%
+                    for (Map.Entry<SiteValidatorDescriptor, Map<String, Map<String, SiteValidationResultList>>> validatorResults : moduleResults.getValue().entrySet())
+                    {
+%>
+                    <li><strong>Validator: </strong><%=h(validatorResults.getKey().getName() + " ")%><span style="font-style: italic;"><%=h(validatorResults.getKey().getDescription())%></span>
                         <ul>
-                            <% if (subtreeResult.getValue() != null)
+<%                      if (validatorResults.getValue().isEmpty())
+                        {
+%>
+                            <li>Nothing to report</li>
+<%                      }
+                        else
+                        {
+                            for (Map.Entry<String, Map<String, SiteValidationResultList>> projectResult : validatorResults.getValue().entrySet())
                             {
-                                containerInfos = subtreeResult.getValue().getResults(Level.INFO);
-                                containerErrors = subtreeResult.getValue().getResults(Level.ERROR);
-                                containerWarnings = subtreeResult.getValue().getResults(Level.WARN);
-                                for (SiteValidationResult result : containerInfos) { %>
-                                <li><%=h(result.getMessage())%>
-                                    <% if (null != result.getLink()) { %>
-                                    <span><%=link(LINK_HEADING, result.getLink())%></span>
-                                    <% } %>
-                                </li>
-                                <% } %>
-                                <% if (!containerErrors.isEmpty()) { %>
-                                    <li>Errors:
-                                    <ul>
-                                    <% for (SiteValidationResult result : containerErrors) { %>
-                                        <li><span class="labkey-error"><%=h(result.getMessage())%></span>
-                                        <% if (null != result.getLink()) { %>
-                                        <span><%=link(LINK_HEADING, result.getLink())%></span>
-                                        <% } %>
-                                    </li>
-                                    <% } %></ul></li>
-                                <% } %>
-                                <% if (!containerWarnings.isEmpty()) { %>
-                                    <li>Warnings:
+%>
+                            <li><%=h("Project: " + projectResult.getKey())%>
+                                <ul>
+<%                              for (Map.Entry<String, SiteValidationResultList> subtreeResult : projectResult.getValue().entrySet())
+                                {
+%>
+                                    <li><%=h("Folder: " + subtreeResult.getKey())%>
                                         <ul>
-                                        <% for (SiteValidationResult result : containerWarnings) { %>
-                                        <li><%=h(result.getMessage())%>
-                                            <% if (null != result.getLink()) { %>
-                                            <span><%=link(LINK_HEADING, result.getLink())%></span>
+                                        <% if (subtreeResult.getValue() != null)
+                                        {
+                                            containerInfos = subtreeResult.getValue().getResults(Level.INFO);
+                                            containerErrors = subtreeResult.getValue().getResults(Level.ERROR);
+                                            containerWarnings = subtreeResult.getValue().getResults(Level.WARN);
+                                            for (SiteValidationResult result : containerInfos) { %>
+                                            <li><%=h(result.getMessage())%>
+                                                <% if (null != result.getLink()) { %>
+                                                <span><%=link(LINK_HEADING, result.getLink())%></span>
+                                                <% } %>
+                                            </li>
                                             <% } %>
-                                        </li>
-                                    <% } %></ul></li>
-                                <% } %>
-                            <% } %>
+                                            <% if (!containerErrors.isEmpty()) { %>
+                                            <li>Errors:
+                                                <ul>
+                                                <% for (SiteValidationResult result : containerErrors) { %>
+                                                    <li><span class="labkey-error"><%=h(result.getMessage())%></span>
+                                                    <% if (null != result.getLink()) { %>
+                                                    <span><%=link(LINK_HEADING, result.getLink())%></span>
+                                                    <% } %>
+                                                    </li>
+                                                <% } %>
+                                                </ul>
+                                            </li>
+                                            <%  }
+                                                if (!containerWarnings.isEmpty())
+                                                { %>
+                                            <li>Warnings:
+                                                <ul>
+                                                <%  for (SiteValidationResult result : containerWarnings)
+                                                    { %>
+                                                <li><%=h(result.getMessage())%>
+                                                    <% if (null != result.getLink()) { %>
+                                                    <span><%=link(LINK_HEADING, result.getLink())%></span>
+                                                    <% } %>
+                                                </li>
+                                                <% } %>
+                                                </ul>
+                                            </li>
+                                            <% } %>
+                                        <% } %>
+                                        </ul>
+                                    </li>
+<%
+                                }
+%>
+                                </ul>
+                            </li>
+<%
+                            }
+                        }
+%>
                         </ul>
                     </li>
-                    <% } %>
-                        </ul>
-                    </li>
-                  <% } %>
-                        </ul>
-                    </li>
-                  <% } %>
-
-                    <% } %>
+<%
+                }
+%>
                 </ul><br/>
             </li>
-            <% } %>
+<%
+            }
+%>
         </ul>
 <%
         }
