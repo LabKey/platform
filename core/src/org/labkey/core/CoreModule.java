@@ -33,8 +33,6 @@ import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.HealthCheck;
 import org.labkey.api.admin.HealthCheckRegistry;
 import org.labkey.api.admin.notification.NotificationService;
-import org.labkey.api.admin.sitevalidation.SiteValidationProvider;
-import org.labkey.api.admin.sitevalidation.SiteValidationResultList;
 import org.labkey.api.admin.sitevalidation.SiteValidationService;
 import org.labkey.api.analytics.AnalyticsService;
 import org.labkey.api.attachments.AttachmentService;
@@ -481,54 +479,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         if (null != svc)
         {
             svc.registerProvider("core", new PermissionsValidator());
-            svc.registerProvider("core", new SiteValidationProvider()
-            {
-                @Override
-                public @Nullable SiteValidationResultList runValidation(Container c, User u)
-                {
-                    SiteValidationResultList rl = new SiteValidationResultList();
-                    rl.addError("Oh that's bad!");
-                    rl.addWarn("That's not quite as bad");
-
-                    return rl;
-                }
-
-                @Override
-                public String getName()
-                {
-                    return "Test 1";
-                }
-
-                @Override
-                public String getDescription()
-                {
-                    return "Some random validator";
-                }
-            });
-            svc.registerProvider("core", new SiteValidationProvider()
-            {
-                @Override
-                public @Nullable SiteValidationResultList runValidation(Container c, User u)
-                {
-                    SiteValidationResultList rl = new SiteValidationResultList();
-                    rl.addError("It's an error!");
-                    rl.addWarn("Just a warning");
-
-                    return rl;
-                }
-
-                @Override
-                public String getName()
-                {
-                    return "Test 2";
-                }
-
-                @Override
-                public String getDescription()
-                {
-                    return "Another random validator";
-                }
-            });
         }
 
         registerHealthChecks();
