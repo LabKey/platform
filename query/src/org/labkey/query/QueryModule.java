@@ -326,6 +326,7 @@ public class QueryModule extends DefaultModule
         }
 
         QueryManager.registerUsageMetrics(getName());
+        ReportServiceImpl.registerUsageMetrics(getName());
 
         // Administrators, Platform Developers, and Trusted Analysts can edit queries, if they also have edit permissions in the current folder
         RoleManager.registerPermission(new EditQueriesPermission());
