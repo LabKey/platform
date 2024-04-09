@@ -15,6 +15,7 @@
  */
 package org.labkey.api.query;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -35,7 +36,6 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.web.servlet.ModelAndView;
 
-import jakarta.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -45,8 +45,6 @@ import static org.apache.commons.lang3.StringUtils.replace;
 
 /**
  * Holds configuration information about a {@link QueryView}, to be used by a {@link ExportScriptFactory}.
- * User: adam
- * Date: Jan 27, 2009
  */
 public abstract class ExportScriptModel
 {
@@ -112,24 +110,32 @@ public abstract class ExportScriptModel
         }
     }
 
+    // Implements appropriate quoting (and escaping) for this language
+    protected abstract String quote(String value);
+
     protected abstract String getScriptExportText();
 
-    public abstract String getFilters();
+    protected abstract String getFilters();
 
-    public String getColumns()
+    protected String getFilters(String emptyText, String prefix, String perLinePrefix, String separator, String postfix)
     {
-        StringBuilder ret = new StringBuilder();
-        String sep = "";
-        for (DisplayColumn dc : getQueryView().getDisplayColumns())
-        {
-            if (dc.isQueryColumn())
-            {
-                ret.append(sep);
-                ret.append(dc.getColumnInfo().getName());
-                sep = ",";
-            }
-        }
-        return ret.toString();
+        List<String> filterExpressions = getFilterExpressions();
+        if (null == filterExpressions || filterExpressions.isEmpty())
+            return emptyText;
+
+        return prefix +
+            filterExpressions.stream()
+                .map(exp -> perLinePrefix + exp)
+                .collect(Collectors.joining(separator)) +
+            postfix;
+    }
+
+    protected String getColumns()
+    {
+        return getQueryView().getDisplayColumns().stream()
+            .filter(DisplayColumn::isQueryColumn)
+            .map(dc -> dc.getColumnInfo().getName())
+            .collect(Collectors.joining(","));
     }
 
     protected abstract String makeFilterExpression(String name, CompareType operator, String value);
@@ -149,10 +155,8 @@ public abstract class ExportScriptModel
 
         for (FilterClause filterClause : filter.getClauses())
         {
-            if (!(filterClause instanceof CompareType.AbstractCompareClause))
+            if (!(filterClause instanceof CompareType.AbstractCompareClause clause))
                 throw new UnsupportedOperationException("Filter clause '" + filterClause.getClass().getName() + "' not currently supported in export scripts");
-
-            CompareType.AbstractCompareClause clause = (CompareType.AbstractCompareClause)filterClause;
 
             //all filter clauses can report col names and values,
             //each of which in this case should contain only one value
@@ -168,17 +172,17 @@ public abstract class ExportScriptModel
     }
 
 
-    public boolean hasSort()
+    protected boolean hasSort()
     {
         return null != getSort();
     }
 
     @Nullable
-    public String getSort()
+    protected String getSort()
     {
         String sortParam = _view.getSettings().getSortFilterURL().getParameter(_view.getDataRegionName() +  ".sort");
 
-        if (null == sortParam || sortParam.length() == 0)
+        if (null == sortParam || sortParam.isEmpty())
             return null;
         else
             return sortParam;
@@ -211,7 +215,7 @@ public abstract class ExportScriptModel
         if (factory == null)
             throw new NotFoundException("Export script type not found: " + scriptType);
 
-        WebPartView scriptView = new JspView<>("/org/labkey/api/query/createExportScript.jsp", factory.getModel(queryView));
+        WebPartView<?> scriptView = new JspView<>("/org/labkey/api/query/createExportScript.jsp", factory.getModel(queryView));
         scriptView.setFrame(WebPartView.FrameType.NOT_HTML);
 
         QueryService.get().addAuditEvent(queryView, "Exported to script type " + scriptType, null);
