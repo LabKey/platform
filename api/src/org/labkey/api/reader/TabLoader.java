@@ -17,8 +17,8 @@ package org.labkey.api.reader;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.CharSequenceReader;
-import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -64,9 +64,6 @@ import java.util.stream.Collectors;
  * NOTE: Column descriptors should not be changed in the midst of iterating; a single set of column descriptors is used
  * to key all the maps.
  * <p/>
- * User: migra
- * Date: Jun 28, 2004
- * Time: 2:25:19 PM
  */
 public class TabLoader extends DataLoader
 {
