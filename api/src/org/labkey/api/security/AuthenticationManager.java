@@ -15,6 +15,8 @@
  */
 package org.labkey.api.security;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.mutable.MutableInt;
@@ -99,8 +101,6 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -1450,9 +1450,15 @@ public class AuthenticationManager
                 if (null == secondaryAuthUser)
                 {
                     SecondaryAuthenticationProvider<?> provider = configuration.getAuthenticationProvider();
-                    if (provider.bypass())
+                    boolean bypass = provider.bypass();
+                    boolean notRequired = bypass || !configuration.isRequired(primaryAuthUser);
+                    if (notRequired)
                     {
-                        _log.info("Per configuration, bypassing secondary authentication for provider: " + provider.getClass());
+                        if (bypass)
+                            _log.info("Per application.properties configuration, bypassing secondary authentication for provider: " + provider.getClass());
+                        else
+                            _log.debug("Bypassing secondary authentication since authenticated user lacks the \"Require Secondary Authentication\" role: " + primaryAuthUser.getDisplayName(null));
+
                         setSecondaryAuthenticationUser(session, configuration.getRowId(), primaryAuthUser);
                         continue;
                     }
