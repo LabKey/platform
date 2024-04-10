@@ -225,9 +225,18 @@ public class ExpDataFileConverter implements Converter
                 // Strip out ".." and "."
                 f = FileUtil.resolveFile(f);
                 PipeRoot root = PipelineService.get().getPipelineRootSetting(container);
-                if (root != null && root.isUnderRoot(f))
+                if (root != null)
                 {
-                    return f;
+                    if (!f.isAbsolute())
+                    {
+                        // Interpret relative paths based on the file root
+                        f = new File(root.getRootPath(), f.getPath());
+                    }
+
+                    if (root.isUnderRoot(f))
+                    {
+                        return f;
+                    }
                 }
 
                 // It's possible to have the file root and pipeline root pointed at different paths

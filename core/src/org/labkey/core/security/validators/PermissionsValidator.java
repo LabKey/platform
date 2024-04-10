@@ -28,9 +28,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * User: tgaluhn
- * Date: 10/25/2015
- *
  * Validates appropriate container level permissions for the guest user.
  */
 public class PermissionsValidator implements SiteValidationProvider
@@ -44,7 +41,7 @@ public class PermissionsValidator implements SiteValidationProvider
     @Override
     public String getDescription()
     {
-        return "Check that the guest user permissions are set appropriately.";
+        return "Check that guest user permissions are set appropriately";
     }
 
     @Override
