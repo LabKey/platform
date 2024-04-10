@@ -66,6 +66,7 @@ public interface AdminUrls extends UrlProvider
     ActionURL getFilesSiteSettingsURL(boolean upgrade);
     ActionURL getSessionLoggingURL();
     ActionURL getTrackedAllocationsViewerURL();
+    ActionURL getSystemMaintenanceURL();
 
     /**
      * Simply adds an "Admin Console" link to nav trail if invoked in the root container. Otherwise, root is unchanged.
