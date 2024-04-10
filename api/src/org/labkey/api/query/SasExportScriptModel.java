@@ -19,13 +19,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.util.HelpTopic;
 
-import java.util.List;
-
-/**
- * User: adam
- * Date: Jan 27, 2009
- * Time: 3:13:06 PM
- */
 public class SasExportScriptModel extends ExportScriptModel
 {
     public SasExportScriptModel(QueryView view)
@@ -36,32 +29,22 @@ public class SasExportScriptModel extends ExportScriptModel
     @Override
     public String getFilters()
     {
-        List<String> filterExprs = getFilterExpressions();
+        return getFilters(null, "%labkeyMakeFilter(", "", ",", ")");
+    }
 
-        if (filterExprs.isEmpty())
-            return null;
-
-        StringBuilder filtersExpr = new StringBuilder("%labkeyMakeFilter(");
-        String sep = "";
-
-        for(String mf : filterExprs)
-        {
-            filtersExpr.append(sep);
-            filtersExpr.append(mf);
-            sep = ",";
-        }
-        filtersExpr.append(")");
-
-        return filtersExpr.toString();
+    @Override
+    protected String quote(String value)
+    {
+        return doubleQuote(value);
     }
 
     @Override
     protected String makeFilterExpression(String name, CompareType operator, String value)
     {
         if (operator.isDataValueRequired())
-            return "\"" + name + "\",\"" + operator.getScriptName() + "\",\"" + value + "\"";
+            return quote(name) + "," + quote(operator.getScriptName()) + "," + quote(value);
         else
-            return "\"" + name + "\",\"" + operator.getScriptName() + "\"";
+            return quote(name) + "," + quote(operator.getScriptName());
     }
 
     @Override
@@ -87,19 +70,20 @@ public class SasExportScriptModel extends ExportScriptModel
             sb.append("\n");
         }
 
+        // Note: Does not output the list a columns for some reason
         sb.append("%labkeySelectRows(dsn=mydata,").append("\n");
-        sb.append(indent).append("baseUrl=").append(doubleQuote(getBaseUrl())).append(",").append("\n");
-        sb.append(indent).append("folderPath=").append(doubleQuote(getFolderPath())).append(",").append("\n");
-        sb.append(indent).append("schemaName=").append(doubleQuote(getSchemaName())).append(",").append("\n");
-        sb.append(indent).append("queryName=").append(doubleQuote(getQueryName()));
+        sb.append(indent).append("baseUrl=").append(quote(getBaseUrl())).append(",").append("\n");
+        sb.append(indent).append("folderPath=").append(quote(getFolderPath())).append(",").append("\n");
+        sb.append(indent).append("schemaName=").append(quote(getSchemaName())).append(",").append("\n");
+        sb.append(indent).append("queryName=").append(quote(getQueryName()));
         if (null != getViewName()) {
             sb.append(",\n");
-            sb.append(indent).append("viewName=").append(doubleQuote(getViewName()));
+            sb.append(indent).append("viewName=").append(quote(getViewName()));
         }
 
         if (hasSort()) {
             sb.append(",\n");
-            sb.append(indent).append("sort=").append(doubleQuote(getSort()));
+            sb.append(indent).append("sort=").append(quote(getSort()));
         }
 
         if (null != getFilters()) {
@@ -109,7 +93,7 @@ public class SasExportScriptModel extends ExportScriptModel
 
         if (hasContainerFilter()) {
             sb.append(",\n");
-            sb.append(indent).append("containerFilter=").append(doubleQuote(getContainerFilterTypeName()));
+            sb.append(indent).append("containerFilter=").append(quote(getContainerFilterTypeName()));
         }
 
         sb.append(");\n");

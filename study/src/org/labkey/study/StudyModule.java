@@ -55,7 +55,6 @@ import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.qc.export.DataStateImportExportHelper;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
-import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportContentEmailManager;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.QueryReport;
@@ -416,13 +415,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 Map<String, Object> metric = new HashMap<>();
                 metric.put("studyCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.study").getObject(Long.class));
                 metric.put("datasetCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.dataset").getObject(Long.class));
-
-                // Add counts for all reports and visualizations, by type
-                metric.put("reportCountsByType", Collections.unmodifiableMap(
-                    ContainerManager.getAllChildren(ContainerManager.getRoot()).stream()
-                        .flatMap(c->ReportService.get().getReports(null, c).stream())
-                        .collect(Collectors.groupingBy(Report::getType, Collectors.counting())))
-                );
 
                 metric.put("securityType", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT SecurityType, COUNT(*) FROM study.Study GROUP BY SecurityType").getValueMap());
                 metric.put("timepointType", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT TimepointType, COUNT(*) FROM study.Study GROUP BY TimepointType").getValueMap());
@@ -792,8 +784,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             List<String> metricNames = List.of(
                 "studyCount",
                 "datasetCount",
-                "timepointType",
-                "reportCountsByType"
+                "timepointType"
             );
             assertTrue("Mothership report missing expected metrics",
                     UsageReportingLevel.MothershipReportTestHelper.getModuleMetrics(UsageReportingLevel.ON, MODULE_NAME)
