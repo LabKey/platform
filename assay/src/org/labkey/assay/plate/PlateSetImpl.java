@@ -29,7 +29,6 @@ public class PlateSetImpl extends Entity implements PlateSet
     private Container _container;
     private String _description;
     private String _name;
-    private String _plateSetPath;
     private String _plateSetId;
     private Integer _primaryPlateSetId;
     private Integer _rootPlateSetId;
@@ -158,16 +157,6 @@ public class PlateSetImpl extends Entity implements PlateSet
     public void setDescription(String description)
     {
         _description = description;
-    }
-
-    public String getPlateSetPath()
-    {
-        return _plateSetPath;
-    }
-
-    public void setPlateSetPath(String plateSetPath)
-    {
-        _plateSetPath = plateSetPath;
     }
 
     public Integer getPrimaryPlateSetId()

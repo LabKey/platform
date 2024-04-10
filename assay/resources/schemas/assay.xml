@@ -210,9 +210,6 @@
         </description>
         <isHidden>true</isHidden>
       </column>
-      <column columnName="PlateSetPath">
-        <isHidden>true</isHidden>
-      </column>
     </columns>
   </table>
   <table tableName="PlateType" tableDbType="TABLE">

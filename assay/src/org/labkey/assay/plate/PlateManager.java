@@ -2092,27 +2092,21 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 primaryPlateSetId = parentPlateSet.getPrimaryPlateSetId(); // could be null
         }
 
-        // Compute plateSetPath based on provided parent
-        final String plateSetPath;
-        if (parentPlateSet == null)
-            plateSetPath = String.format("/%d/", plateSetId);
-        else
-        {
-            plateSetPath = parentPlateSet.getPlateSetPath() + plateSetId + "/";
-
-            // Add lineage edge relating parent to this plate set
+        // Add lineage edge relating parent to this plate set
+        if (parentPlateSet != null)
             addPlateSetEdges(List.of(new PlateSetEdge(parentPlateSet.getRowId(), plateSetId, parentPlateSet.getRootPlateSetId())));
+
+        if (rootPlateSetId != null || primaryPlateSetId != null)
+        {
+            SQLFragment sql = new SQLFragment("UPDATE ").append(AssayDbSchema.getInstance().getTableInfoPlateSet()).append(" SET ");
+            if (rootPlateSetId != null)
+                sql = sql.append("RootPlateSetId = ?").add(rootPlateSetId);
+            if (primaryPlateSetId != null)
+                sql = sql.append(rootPlateSetId != null ? ", " : "").append("PrimaryPlateSetId = ?").add(primaryPlateSetId);
+            sql = sql.append(" WHERE RowId = ?").add(plateSetId);
+
+            new SqlExecutor(AssayDbSchema.getInstance().getSchema()).execute(sql);
         }
-
-        SQLFragment sql = new SQLFragment("UPDATE ").append(AssayDbSchema.getInstance().getTableInfoPlateSet())
-            .append(" SET PlateSetPath = ?").add(plateSetPath);
-        if (rootPlateSetId != null)
-            sql = sql.append(", RootPlateSetId = ?").add(rootPlateSetId);
-        if (primaryPlateSetId != null)
-            sql = sql.append(", PrimaryPlateSetId = ?").add(primaryPlateSetId);
-        sql = sql.append(" WHERE RowId = ?").add(plateSetId);
-
-        new SqlExecutor(AssayDbSchema.getInstance().getSchema()).execute(sql);
     }
 
     public void archivePlateSets(Container container, User user, List<Integer> plateSetIds, boolean archive) throws Exception
@@ -2210,21 +2204,23 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         PlateSetLineage lineage = new PlateSetLineage();
         lineage.setSeed(seedPlateSetId);
+        Integer rootPlateSetId = seedPlateSet.getRootPlateSetId();
 
         // stand-alone plate set
-        if (seedPlateSet.getRootPlateSetId() == null)
+        if (rootPlateSetId == null)
         {
             lineage.setPlateSets(Map.of(seedPlateSetId, seedPlateSet));
             return lineage;
         }
+        lineage.setRoot(rootPlateSetId);
 
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RootPlateSetId"), seedPlateSet.getRootPlateSetId());
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RootPlateSetId"), rootPlateSetId);
         List<PlateSetEdge> edges = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlateSetEdge(), filter, null).getArrayList(PlateSetEdge.class);
         lineage.setEdges(edges);
 
         Set<Integer> nodeIds = new HashSet<>();
         nodeIds.add(seedPlateSetId);
-        nodeIds.add(seedPlateSet.getRootPlateSetId());
+        nodeIds.add(rootPlateSetId);
         for (var edge : edges)
         {
             nodeIds.add(edge.getFromPlateSetId());
@@ -2346,10 +2342,12 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                             if (plateSet == null)
                                 throw new ValidationException(String.format("Failed to mark hits. Unable to resolve plate set for \"%s\" result (Row Id %d)", protocol.getName(), resultId));
 
-                            if (StringUtils.trimToNull(plateSet.getPlateSetPath()) == null)
+                            PlateSetLineage lineage = getPlateSetLineage(container, user, plateSet.getRowId(), ContainerFilter.EVERYTHING);
+                            String plateSetPath = lineage.getSeedPath();
+                            if (plateSetPath == null)
                                 throw new ValidationException(String.format("Failed to mark hits. Unable to resolve path for plate set (Row Id %d)", resultId));
 
-                            cache.put(plateId, Pair.of(plate.getContainer().getEntityId(), plateSet.getPlateSetPath()));
+                            cache.put(plateId, Pair.of(plate.getContainer().getEntityId(), plateSetPath));
                         }
 
                         Pair<GUID, String> parts = cache.get(plateId);

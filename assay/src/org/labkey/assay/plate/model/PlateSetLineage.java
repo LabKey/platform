@@ -2,8 +2,10 @@ package org.labkey.assay.plate.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.plate.PlateSet;
 import org.labkey.api.assay.plate.PlateSetEdge;
+import org.labkey.api.query.ValidationException;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -11,7 +13,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.Stack;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class PlateSetLineage
@@ -96,5 +100,35 @@ public class PlateSetLineage
         }
 
         return allPlateSets;
+    }
+
+    public @Nullable String getSeedPath() throws ValidationException
+    {
+        if (_seed == null)
+            return null;
+
+        if (_edges.isEmpty() || _plateSets.isEmpty() || _root == null || _seed.equals(_root))
+            return "/" + _seed + "/";
+
+        Integer target = _seed;
+        Stack<Integer> stack = new Stack<>();
+        stack.push(target);
+
+        while (!target.equals(_root))
+        {
+            final Integer currentTarget = target;
+            Optional<PlateSetEdge> edge = _edges.stream().filter(e -> currentTarget.equals(e.getToPlateSetId())).findFirst();
+
+            if (edge.isEmpty())
+                throw new ValidationException(String.format("Failed to find edge to plate set Row ID (%d).", target));
+
+            target = edge.get().getFromPlateSetId();
+            stack.push(target);
+        }
+
+        StringBuilder path = new StringBuilder("/");
+        while (!stack.isEmpty())
+            path.append(stack.pop()).append("/");
+        return path.toString();
     }
 }
