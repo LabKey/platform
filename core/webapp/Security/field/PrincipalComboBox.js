@@ -52,7 +52,6 @@ Ext4.define('Security.field.PrincipalComboBox', {
     constructor : function(config)
     {
         var a = Ext4.isArray(config.excludedPrincipals) ? config.excludedPrincipals : [];
-        a.push(Security.util.SecurityCache.groupAdministrators);
 
         delete config.excludedPrincipals;
         this.excludedPrincipals = {};

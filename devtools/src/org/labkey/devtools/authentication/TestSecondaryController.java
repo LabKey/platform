@@ -26,7 +26,7 @@ import org.labkey.api.security.AuthenticationManager.PrimaryAuthenticationResult
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SaveConfigurationAction;
-import org.labkey.api.security.SaveConfigurationForm;
+import org.labkey.api.security.SecondarySaveConfigurationForm;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.util.URLHelper;
@@ -40,11 +40,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-/**
- * User: adam
- * Date: 3/27/2015
- * Time: 5:40 PM
- */
 public class TestSecondaryController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(TestSecondaryController.class);
@@ -169,7 +164,7 @@ public class TestSecondaryController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class TestSecondarySaveConfigurationAction extends SaveConfigurationAction<TestSecondarySaveConfigurationForm, TestSecondaryConfiguration>
+    public static class TestSecondarySaveConfigurationAction extends SaveConfigurationAction<TestSecondarySaveConfigurationForm, TestSecondaryConfiguration>
     {
         @Override
         public void validate(TestSecondarySaveConfigurationForm form, Errors errors)
@@ -177,7 +172,7 @@ public class TestSecondaryController extends SpringActionController
         }
     }
 
-    public static class TestSecondarySaveConfigurationForm extends SaveConfigurationForm
+    public static class TestSecondarySaveConfigurationForm extends SecondarySaveConfigurationForm
     {
         @Override
         public String getProvider()

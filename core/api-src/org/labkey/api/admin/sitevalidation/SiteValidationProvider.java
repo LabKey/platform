@@ -19,18 +19,12 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 
-/**
- * User: tgaluhn
- * Date: 4/8/2015
- */
 public interface SiteValidationProvider extends SiteValidatorDescriptor
 {
     /**
-     *
      * Return false to indicate the validator shouldn't be run for that container.
      * Useful if we know in advance the validator isn't applicable; e.g., the
      * validator is module-dependent and that module isn't enabled in this container.
-     *
      */
     default boolean shouldRun(Container c, User u)
     {

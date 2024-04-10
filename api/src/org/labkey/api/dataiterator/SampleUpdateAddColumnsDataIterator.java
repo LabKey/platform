@@ -17,10 +17,11 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
-public class SampleUpdateAliquotedFromDataIterator extends WrapperDataIterator
+public class SampleUpdateAddColumnsDataIterator extends WrapperDataIterator
 {
     public static final String ALIQUOTED_FROM_LSID_COLUMN_NAME = "AliquotedFromLSID";
     public static final String ROOT_ROW_ID_COLUMN_NAME = "RootMaterialRowId";
+    public static final String CURRENT_SAMPLE_STATUS_COLUMN_NAME = "_CurrentSampleState_";
     static final String KEY_COLUMN_NAME = "Name";
     static final String KEY_COLUMN_LSID = "LSID";
 
@@ -31,14 +32,16 @@ public class SampleUpdateAliquotedFromDataIterator extends WrapperDataIterator
     final Supplier<Object> pkSupplier;
     final int _aliquotedFromColIndex;
     final int _rootMaterialRowIdColIndex;
+    final int _currentSampleStateColIndex;
     final boolean _useLsid;
 
     // prefetch of existing records
     int lastPrefetchRowNumber = -1;
     final HashMap<Integer, String> aliquotParents = new HashMap<>();
     final HashMap<Integer, Integer> aliquotRoots = new HashMap<>();
+    final HashMap<Integer, Integer> sampleState = new HashMap<>();
 
-    public SampleUpdateAliquotedFromDataIterator(DataIterator in, TableInfo target, int sampleTypeId, boolean useLsid)
+    public SampleUpdateAddColumnsDataIterator(DataIterator in, TableInfo target, int sampleTypeId, boolean useLsid)
     {
         super(in);
 
@@ -52,6 +55,7 @@ public class SampleUpdateAliquotedFromDataIterator extends WrapperDataIterator
         var map = DataIteratorUtil.createColumnNameMap(in);
         this._aliquotedFromColIndex = map.get(ALIQUOTED_FROM_LSID_COLUMN_NAME);
         this._rootMaterialRowIdColIndex = map.get(ROOT_ROW_ID_COLUMN_NAME);
+        this._currentSampleStateColIndex = map.get(CURRENT_SAMPLE_STATUS_COLUMN_NAME);
 
         String keyCol = useLsid ? KEY_COLUMN_LSID : KEY_COLUMN_NAME;
         Integer index = map.get(keyCol);
@@ -79,6 +83,8 @@ public class SampleUpdateAliquotedFromDataIterator extends WrapperDataIterator
             return aliquotParents.get(rowNumber);
         else if (i == _rootMaterialRowIdColIndex)
             return aliquotRoots.get(rowNumber);
+        else if (i == _currentSampleStateColIndex)
+            return sampleState.get(rowNumber);
 
         return _delegate.get(i);
     }
@@ -107,6 +113,7 @@ public class SampleUpdateAliquotedFromDataIterator extends WrapperDataIterator
 
         aliquotParents.clear();
         aliquotRoots.clear();
+        sampleState.clear();
 
         int rowsToFetch = 50;
         Map<Integer, String> rowKeyMap = new LinkedHashMap<>();
@@ -128,6 +135,7 @@ public class SampleUpdateAliquotedFromDataIterator extends WrapperDataIterator
             keyRowMap.put(key, lastPrefetchRowNumber);
             aliquotParents.put(lastPrefetchRowNumber, null);
             aliquotRoots.put(lastPrefetchRowNumber, null);
+            sampleState.put(lastPrefetchRowNumber, null);
         }
         while (--rowsToFetch > 0 && _delegate.next());
 
@@ -137,18 +145,21 @@ public class SampleUpdateAliquotedFromDataIterator extends WrapperDataIterator
         filter.addCondition(keyField, rowKeyMap.values(), CompareType.IN);
         filter.addCondition(FieldKey.fromParts("Container"), target.getUserSchema().getContainer());
 
-        Map<String, Object>[] results = new TableSelector(ExperimentService.get().getTinfoMaterial(), Sets.newCaseInsensitiveHashSet(keyCol, "aliquotedfromlsid", "rootMaterialRowId"), filter, null).getMapArray();
+        Map<String, Object>[] results = new TableSelector(ExperimentService.get().getTinfoMaterial(), Sets.newCaseInsensitiveHashSet(keyCol, "aliquotedfromlsid", "rootMaterialRowId", "sampleState"), filter, null).getMapArray();
 
         for (Map<String, Object> result : results)
         {
             String key = (String) result.get(keyCol);
             Object aliquotedFromLSIDObj = result.get("aliquotedFromLSID");
             Object rootMaterialRowIdObj = result.get("rootMaterialRowId");
+            Object sampleStateObj = result.get("sampleState");
             Integer rowInd = keyRowMap.get(key);
             if (aliquotedFromLSIDObj != null)
                 aliquotParents.put(rowInd, (String) aliquotedFromLSIDObj);
             if (rootMaterialRowIdObj != null)
                 aliquotRoots.put(rowInd, (Integer) rootMaterialRowIdObj);
+            if (sampleStateObj != null)
+                sampleState.put(rowInd, (Integer) sampleStateObj);
         }
 
         // backup to where we started so caller can iterate through them one at a time
