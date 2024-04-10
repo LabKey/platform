@@ -90,6 +90,13 @@
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:attribute>
+                                    <xs:attribute name="color" type="xs:string">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                The color of this data state.
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
 								</xs:complexType>
 							</xs:element>
 						</xs:sequence>

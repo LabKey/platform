@@ -673,6 +673,9 @@
       <column columnName="stateType">
         <description>Optional type associated with this data state.  By default, the state will be a QC state.</description>
       </column>
+      <column columnName="color">
+        <description>Optional color associated with this data state.</description>
+      </column>
     </columns>
   </table>
 

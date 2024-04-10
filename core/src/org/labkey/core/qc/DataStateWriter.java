@@ -70,6 +70,7 @@ public class DataStateWriter extends BaseFolderWriter
                     state.setPublic(qc.isPublicData());
                     if (qc.getStateType() != null)
                         state.setType(StateTypeEnum.Enum.forString(qc.getStateType()));
+                    state.setColor(qc.getColor());
                 }
             }
             helper.write(c, ctx, qcXml);
