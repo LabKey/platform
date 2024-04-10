@@ -672,7 +672,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
         {
             super(path, (WebdavResolver)null);
             _target = target;
-            _indexPage = Path.toPathPart(indexPage);
+            _indexPage = null==indexPage ? null :  Path.toPathPart(indexPage);
             _readOnly = ro;
         }
 

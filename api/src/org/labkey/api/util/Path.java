@@ -655,7 +655,7 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
     /**
      * NOTE: Path.Part is just a wrapper for String.  It is not case-sensitive or non-case-sensitive like Path (see Davpath).
      */
-    public static Path.Part toPathPart(String name)
+    public static Path.Part toPathPart(@NotNull String name)
     {
         Path p = Path.parse(name);
         if (p.size() != 1)
