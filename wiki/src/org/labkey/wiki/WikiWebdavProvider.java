@@ -135,13 +135,13 @@ public class WikiWebdavProvider implements WebdavService.Provider
         }
 
         @Override
-        public WebdavResource find(String name)
+        public WebdavResource find(Path.Part name)
         {
-            if (name.equals(WikiWriterFactory.WIKIS_FILENAME))
+            if (name.toString().equals(WikiWriterFactory.WIKIS_FILENAME))
             {
                 return new WikiMetadata(this);
             }
-            return new WikiFolder(this, name);
+            return new WikiFolder(this, name.toString());
         }
 
         @Override
@@ -364,12 +364,12 @@ public class WikiWebdavProvider implements WebdavService.Provider
         }
 
         @Override
-        public synchronized WebdavResource find(String name)
+        public synchronized WebdavResource find(Path.Part name)
         {
             if (null == _wiki)
                 return null;
             String docName = getDocumentName(_wiki);
-            if (docName.equalsIgnoreCase(name))
+            if (docName.equalsIgnoreCase(name.toString()))
             {
                 return new WikiPageResource(this, _wiki, docName);
             }

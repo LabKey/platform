@@ -192,19 +192,19 @@ public class WebdavResolverImpl extends AbstractWebdavResolver
         }
 
         @Override
-        public WebdavResource find(String child)
+        public WebdavResource find(Path.Part child)
         {
             String name = null;
             for (String folder : getWebFoldersNames(false))
             {
-                if (folder.equalsIgnoreCase(child))
+                if (folder.equalsIgnoreCase(child.toString()))
                 {
                     name = folder;
                     break;
                 }
             }
 
-            Container c = getContainer().getChild(child);
+            Container c = getContainer().getChild(child.toString());
             if (name == null && c != null)
                 name = c.getName();
 

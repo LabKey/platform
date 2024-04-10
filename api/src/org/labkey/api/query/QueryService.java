@@ -17,6 +17,7 @@
 package org.labkey.api.query;
 
 import org.apache.commons.collections4.SetValuedMap;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -547,7 +548,7 @@ public interface QueryService
             this.schemaKey = key;
             this.name = name;
             this.url = url;
-            this.key = new Path(container.getId(), type.name(), schemaKey.encode(), name).toString().toLowerCase();
+            this.key = Path.rawParts(container.getId(), type.name(), schemaKey.toString().toLowerCase(), name.toLowerCase()).encode();
         }
 
         @Override

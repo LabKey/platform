@@ -915,7 +915,7 @@ public class AnnouncementManager
                         html.append(" ").append(response.translateBody());
 
                     SimpleDocumentResource sdr = new SimpleDocumentResource(
-                            new Path(docid),
+                            Path.rawParts(docid),
                             docid,
                             containerId,
                             "text/html",

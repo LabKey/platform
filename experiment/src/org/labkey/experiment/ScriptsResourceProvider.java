@@ -10,6 +10,7 @@ import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
+import org.labkey.api.util.Path;
 import org.labkey.api.webdav.FileSystemResource;
 import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.webdav.WebdavResource;
@@ -40,7 +41,7 @@ public class ScriptsResourceProvider implements WebdavService.Provider
         {
             if (!FileUtil.hasCloudScheme(root) && NetworkDrive.exists(root.toFile()))
             {
-                result.add(FileContentService.SCRIPTS_LINK);
+                result.add(FileContentService.SCRIPTS_LINK.toString());
             }
         }
 
@@ -50,7 +51,7 @@ public class ScriptsResourceProvider implements WebdavService.Provider
     @Override
     public WebdavResource resolve(@NotNull WebdavResource parent, @NotNull String name)
     {
-        if (!FileContentService.SCRIPTS_LINK.equalsIgnoreCase(name))
+        if (!FileContentService.SCRIPTS_LINK.toString().equalsIgnoreCase(name))
             return null;
         if (!(parent instanceof WebdavResolverImpl.WebFolderResource folder))
             return null;
@@ -67,7 +68,7 @@ public class ScriptsResourceProvider implements WebdavService.Provider
             AttachmentDirectory dir = service.getMappedAttachmentDirectory(c, FileContentService.ContentType.scripts, false);
             if (dir != null)
             {
-                return new ScriptsResource(parent, name, dir.getFileSystemDirectory(), c.getPolicy());
+                return new ScriptsResource(parent, Path.toPathPart(name), dir.getFileSystemDirectory(), c.getPolicy());
             }
         }
         catch (MissingRootDirectoryException e)
@@ -80,18 +81,18 @@ public class ScriptsResourceProvider implements WebdavService.Provider
 
     static class ScriptsResource extends FileSystemResource
     {
-        public ScriptsResource(WebdavResource folder, String name, File file, SecurityPolicy policy)
+        public ScriptsResource(WebdavResource folder, Path.Part name, File file, SecurityPolicy policy)
         {
             super(folder, name, file, policy);
         }
 
-        public ScriptsResource(FileSystemResource folder, String relativePath)
+        public ScriptsResource(FileSystemResource folder, Path.Part relativePath)
         {
             super(folder,relativePath);
         }
 
         @Override
-        public WebdavResource find(String name)
+        public WebdavResource find(Path.Part name)
         {
             return new ScriptsResource(this, name);
         }

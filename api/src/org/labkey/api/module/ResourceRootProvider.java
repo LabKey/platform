@@ -104,7 +104,7 @@ public interface ResourceRootProvider
     {
         return (topRoot, roots) ->
         {
-            Resource assayRoot = topRoot.find(AssayService.ASSAY_DIR_NAME);
+            Resource assayRoot = topRoot.find(Path.toPathPart(AssayService.ASSAY_DIR_NAME));
 
             if (null != assayRoot && assayRoot.isCollection())
             {

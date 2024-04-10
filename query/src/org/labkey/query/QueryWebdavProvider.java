@@ -30,6 +30,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Path;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.webdav.AbstractDocumentResource;
 import org.labkey.api.webdav.AbstractWebdavResourceCollection;
@@ -100,10 +101,10 @@ public class QueryWebdavProvider implements WebdavService.Provider
 		}
 
 		@Override
-        public WebdavResource find(String name)
+        public WebdavResource find(Path.Part name)
 		{
 			DefaultSchema folderSchema = DefaultSchema.get(null, _c);
-			QuerySchema s  = folderSchema.getSchema(name);
+			QuerySchema s  = folderSchema.getSchema(name.toString());
 			if (null != s && s instanceof UserSchema)
 				return new SchemaResource(this, s.getSchemaName());
 			return null;
@@ -157,8 +158,9 @@ public class QueryWebdavProvider implements WebdavService.Provider
 		}
 
 		@Override
-        public WebdavResource find(String name)
+        public WebdavResource find(Path.Part namePart)
 		{
+			String name = namePart.toString();
 			if (!name.endsWith(".sql"))
 				return null;
 			name = name.substring(0,name.length()-".sql".length());

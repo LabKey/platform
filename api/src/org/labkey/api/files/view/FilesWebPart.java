@@ -162,7 +162,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
                         throw new RuntimeException(e);
                     }
                 }
-                getModelBean().setRootPath(getRootPath(c, FileContentService.FILE_SETS_LINK, legacyFileRoot));
+                getModelBean().setRootPath(getRootPath(c, FileContentService.FILE_SETS_LINK.toString(), legacyFileRoot));
                 setTitle(legacyFileRoot);
                 setFileSet(legacyFileRoot);
                 setTitleHref(PageFlowUtil.urlProvider(FileUrls.class).urlBegin(c).addParameter("fileSetName", legacyFileRoot));
@@ -321,7 +321,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             if (svc.isCloudRoot(rootContextContainer))
                 form.setRootPath(getRootPath(rootContextContainer, FileContentService.CLOUD_LINK, svc.getCloudRootName(rootContextContainer)));
             else
-                form.setRootPath(getRootPath(rootContextContainer, FileContentService.FILES_LINK));
+                form.setRootPath(getRootPath(rootContextContainer, FileContentService.FILES_LINK.toString()));
         }
 
         form.setEnabled(!svc.isFileRootDisabled(rootContextContainer));
@@ -358,9 +358,9 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
 
     private static final Set<String> _allowedDavNames = new HashSet<>(Arrays.asList(
             FileContentService.CLOUD_LINK,
-            FileContentService.FILE_SETS_LINK,
-            FileContentService.FILES_LINK,
-            FileContentService.PIPELINE_LINK
+            FileContentService.FILE_SETS_LINK.toString(),
+            FileContentService.FILES_LINK.toString(),
+            FileContentService.PIPELINE_LINK.toString()
     ));
 
     public static String getRootPath(Container c, @Nullable String davName)

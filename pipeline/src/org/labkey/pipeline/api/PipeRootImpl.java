@@ -75,7 +75,7 @@ public class PipeRootImpl implements PipeRoot
             @Override
             String getDavName()
             {
-                return FileContentService.FILES_LINK;
+                return FileContentService.FILES_LINK.toString();
             }
         },
         pipeline
@@ -83,7 +83,7 @@ public class PipeRootImpl implements PipeRoot
             @Override
             String getDavName()
             {
-                return FileContentService.PIPELINE_LINK;
+                return FileContentService.PIPELINE_LINK.toString();
             }
         },
         cloud

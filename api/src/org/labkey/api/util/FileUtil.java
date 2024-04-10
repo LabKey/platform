@@ -626,6 +626,7 @@ public class FileUtil
         }
     }
 
+
     @NotNull
     public static String getFileName(Path fullPath)
     {
@@ -640,6 +641,47 @@ public class FileUtil
             return fullPath.getFileName().toString();
         }
     }
+
+
+    /* Only returns a child path */
+    public static File appendPath(File dir, org.labkey.api.util.Path path)
+    {
+        path = path.normalize();
+        if (path.size() > 0 && "..".equals(path.get(0)))
+            throw new IllegalArgumentException(path.toString());
+        var ret = new File(dir, path.toString());
+        if (!URIUtil.isDescendant(dir.toURI(), ret.toURI()))
+            throw new IllegalArgumentException(path.toString());
+        return ret;
+    }
+
+
+    /* Only returns an immediate child */
+    public static File appendName(File dir, org.labkey.api.util.Path.Part part)
+    {
+        assert !StringUtils.contains(part.toString(),'/');
+        return appendName(dir, part.toString());
+    }
+
+
+    /* Only returns an immediate child */
+    public static File appendName(File dir, String... parts)
+    {
+        File ret = dir;
+
+        for (String name : parts)
+        {
+            if (StringUtils.contains(name, File.separatorChar))
+                throw new IllegalArgumentException(name);
+            if (".".equals(name) || "..".equals(name))
+                throw new IllegalArgumentException(name);
+            ret = new File(dir, name);
+        }
+        if (!URIUtil.isDescendant(dir.toURI(), ret.toURI()))
+            throw new IllegalArgumentException(StringUtils.join(parts,File.separatorChar));
+        return ret;
+    }
+
 
     public static String decodeSpaces(@NotNull String str)
     {

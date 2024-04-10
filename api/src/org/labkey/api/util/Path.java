@@ -31,6 +31,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import static org.apache.commons.lang3.CharSetUtils.containsAny;
+
 /**
  * User: matthewb
  * Date: Nov 20, 2009
@@ -47,7 +49,7 @@ import java.util.stream.StreamSupport;
  * This might be useful for handling webapp context path, or windows drive letter, etc.
  */
 
-public class Path implements Serializable, Comparable, Iterable<String>
+public class Path implements Serializable, Comparable<Path>, Iterable<String>
 {
     final private int _hash;
     final private String[] _path;
@@ -61,12 +63,12 @@ public class Path implements Serializable, Comparable, Iterable<String>
     // original string started with /
     // UNDONE: not sure how this should affect compareTo() and equals()
     final boolean _isAbsolute;
-    
+
     transient private AtomicReference<Path> _parent;
 
     final public static Path emptyPath = new Path(new String[0], 0, false, true);
     final public static Path rootPath = new Path(new String[0], 0, true, true);
-    
+
 
     @JsonCreator
     private Path(@JsonProperty("_hash") int hash,
@@ -85,6 +87,16 @@ public class Path implements Serializable, Comparable, Iterable<String>
 
     protected Path(String[] path, int length, boolean abs, boolean dir)
     {
+        this(path, length, abs, dir, true);
+    }
+
+    protected Path(String[] path, int length, boolean abs, boolean dir, boolean validate)
+    {
+        if (validate)
+        {
+            for (String part : path)
+                new Path.Part(part);
+        }
         _path = path;
         _length = length;
         _parent = new AtomicReference<>();
@@ -115,20 +127,52 @@ public class Path implements Serializable, Comparable, Iterable<String>
     private static Collection<String> getNames(Iterable<java.nio.file.Path> it)
     {
         return StreamSupport.stream(it.spliterator(), false)
-            .map(java.nio.file.Path::toString)
-            .collect(Collectors.toList());
+                .map(java.nio.file.Path::toString)
+                .collect(Collectors.toList());
     }
+
 
     public Path(Collection<String> names)
     {
-        this(names.toArray(new String[names.size()]));
+        this(names.toArray(new String[0]));
     }
 
+
+    public Path()
+    {
+        this(new String[0], 0, false, false);
+    }
+
+
+    /** This concstructor does not allow '/' in names, use rawParts() to allow free-form paths */
     public Path(String ... names)
     {
         this(names, names.length, false, false);
     }
 
+    public Path(Path.Part ... names)
+    {
+        _path = new String[names.length];
+        _length = names.length;
+        _parent = new AtomicReference<>();
+        int hash = 0;
+        for (int i = 0; i < _length; i++)
+        {
+            _path[i] = names[i].toString();
+            hash = hash * 37 + _path[i].toLowerCase().hashCode();
+        }
+        _hash = hash;
+        _isAbsolute = false;
+        _isDirectory = false;
+    }
+
+    /** same as new Path() but w/o validation (checking for '/').  This can be used when the Path is being used as List<String>.
+     * NOTE: in this case, Path.parse(myPath.toString()) may not work, however, Path.decode(Path.encode()) should work.
+     */
+    public static Path rawParts(String... names)
+    {
+        return new Path(names, names.length, false, false, false);
+    }
 
     /** create a Path from an unencoded string */
     public static Path parse(@NotNull String path)
@@ -142,8 +186,8 @@ public class Path implements Serializable, Comparable, Iterable<String>
         return new Path(arr, arr.length, _abs(path), _dir(path));
     }
 
-    
-    /** create a path from a url encode string */
+
+    /** create a path from a url encoded string */
     public static Path decode(String path)
     {
         String[] arr = StringUtils.strip(path,"/").split("/");
@@ -157,7 +201,7 @@ public class Path implements Serializable, Comparable, Iterable<String>
     {
         return new Path(path,length,abs,dir);
     }
-    
+
 
     public boolean isAbsolute()
     {
@@ -171,13 +215,10 @@ public class Path implements Serializable, Comparable, Iterable<String>
     }
 
     @Override
-    public int compareTo(@NotNull Object o)
+    public int compareTo(@NotNull Path other)
     {
-        if (this == o)
+        if (this == other)
             return 0;
-        if (!(o instanceof Path))
-            return -1;
-        Path other = (Path)o;
         int shorter = Math.min(_length, other._length);
         for (int i=0 ; i<shorter ; i++)
         {
@@ -231,7 +272,12 @@ public class Path implements Serializable, Comparable, Iterable<String>
                 return true;
         return false;
     }
-    
+
+    public boolean contains(Path.Part name)
+    {
+        return contains(name.toString());
+    }
+
 
     public String getName()
     {
@@ -263,6 +309,30 @@ public class Path implements Serializable, Comparable, Iterable<String>
         return _path[i];
     }
 
+    // Return a part of a parsed path. This class is a marker that shows this name came from a parsed Path
+    // a Path.Part will not contain can't contain '/'.  This does not guarantee that it is a valid name to pass to
+    // java.util.File.
+    //
+    // Paths are for a lot of purposes, so they can not be very restrictive.
+    public Path.Part getPart(int i)
+    {
+        return getPart(i, false);
+    }
+
+    public Path.Part getPart(int i, boolean allowRelative)
+    {
+        if (!allowRelative && (_path[i].equals(".") || _path[i].equals("..")))
+            throw new IllegalArgumentException("invalid path part: " + _path[i]);
+        assert !containsAny(_path[i], "/\\");
+        return new Path.Part(_path[i]);
+    }
+
+    // caller is responsible for calling normalize and other validation to avoid an exception when using this method
+    public Path.Part getNamePart() // throws ArrayIndexOutOfBoundsException, IllegalArgumentException
+    {
+        return new Path.Part(_path[_length-1]);
+    }
+
 
     // like java.nio.Path
     public int getNameCount()
@@ -270,7 +340,7 @@ public class Path implements Serializable, Comparable, Iterable<String>
         return _length;
     }
 
-    
+
     public Path getParent()
     {
         if (_length == 0)
@@ -281,7 +351,7 @@ public class Path implements Serializable, Comparable, Iterable<String>
         _parent.compareAndSet(null, createPath(_path, _length-1, isAbsolute(), true));
         return _parent.get();
     }
-    
+
 
     public Path normalize()
     {
@@ -297,19 +367,20 @@ public class Path implements Serializable, Comparable, Iterable<String>
 
     /**
      * CONSIDER: a version that allows a return path that starts with ../
-     *  
+     *
      * @return null indicates illegal path,
      */
     private Path _normalize()
     {
         String[] normal = new String[_length];
         int next = 0;
-        
+
         for (int i=0 ; i<_length ; i++)
         {
             String part = _path[i];
             if (part.length()==0 || ".".equals(part))
             {
+                /* pass */;
             }
             else if ("..".equals(part))
             {
@@ -336,7 +407,9 @@ public class Path implements Serializable, Comparable, Iterable<String>
         int shorter = Math.min(_length, other._length);
         int i;
         for (i=0 ; i<shorter && 0==compareName(_path[i],other._path[i]); i++)
-            ;
+        {
+            /* pass */;
+        }
 
         // used up all of _path
         if (i == _length)
@@ -390,19 +463,41 @@ public class Path implements Serializable, Comparable, Iterable<String>
         return ret;
     }
 
-    
+
     /** NOTE: do not pass in an unparsed path! use .append(Path.parse(path)) to append a path string */
     public Path append(String... names)
     {
-        String[] path = new String[_length+names.length];
+        String[] path = new String[_length + names.length];
         System.arraycopy(_path, 0, path, 0, _length);
-        System.arraycopy(names, 0, path, _length, names.length);
+        for (int i = 0; i < names.length; i++)
+            path[_length + i] = new Path.Part(names[i]).toString();
         Path ret = createPath(path, path.length, isAbsolute(), false);
         if (names.length == 1)
             ret._parent.set(this);
         return ret;
     }
-    
+
+    public Path append(Path.Part... names)
+    {
+        String[] path = new String[_length+names.length];
+        System.arraycopy(_path, 0, path, 0, _length);
+        for (int i=0 ; i<names.length ; i++)
+            path[_length+i] = names[i].toString();
+        Path ret = createPath(path, path.length, isAbsolute(), false);
+        if (names.length == 1)
+            ret._parent.set(this);
+        return ret;
+    }
+
+    public Path append(Path.Part name, boolean isDirectory)
+    {
+        String[] path = new String[_length+1];
+        System.arraycopy(_path, 0, path, 0, _length);
+        path[_length] = name.toString();
+        Path ret = createPath(path, path.length, isAbsolute(), isDirectory);
+        ret._parent.set(this);
+        return ret;
+    }
 
     public Path append(String name, boolean isDirectory)
     {
@@ -431,7 +526,8 @@ public class Path implements Serializable, Comparable, Iterable<String>
 
     public Path subpath(int begin, int end)
     {
-        if (begin > end || end > _length) throw new IllegalArgumentException();
+        if (begin > end || end > _length)
+            throw new IllegalArgumentException();
         if (begin == end)
             return emptyPath;
         String[] path = new String[end-begin];
@@ -444,7 +540,7 @@ public class Path implements Serializable, Comparable, Iterable<String>
         String name = getName();
         if (name.lastIndexOf('.') != -1)
         {
-            return name.substring(name.lastIndexOf('.') + 1, name.length());
+            return name.substring(name.lastIndexOf('.') + 1);
         }
         return null;
     }
@@ -459,11 +555,10 @@ public class Path implements Serializable, Comparable, Iterable<String>
     {
         if (start == null)
             start = isAbsolute() ? "/" : "";
-        if (end == null)
-            end = isDirectory() ? "/" : "";
-        
         if (_length == 0)
             return start;
+        if (end == null)
+            end = isDirectory() ? "/" : "";
 
         StringBuilder sb = new StringBuilder();
         String slash = start;
@@ -494,11 +589,11 @@ public class Path implements Serializable, Comparable, Iterable<String>
     {
         if (start == null)
             start = isAbsolute() ? "/" : "";
-        if (end == null)
-            end = isDirectory() ? "/" : "";
         if (_length == 0)
             return start;
-        
+        if (end == null)
+            end = isDirectory() ? "/" : "";
+
         StringBuilder sb = new StringBuilder();
         String slash = start;
         for (int i=0 ; i<_length ; i++)
@@ -510,7 +605,7 @@ public class Path implements Serializable, Comparable, Iterable<String>
         sb.append(end);
         return sb.toString();
     }
-    
+
 
     protected int compareName(String a, String b)
     {
@@ -539,7 +634,7 @@ public class Path implements Serializable, Comparable, Iterable<String>
 
 
     private void readObject(java.io.ObjectInputStream in)
-        throws IOException, ClassNotFoundException
+            throws IOException, ClassNotFoundException
     {
         in.defaultReadObject();
         _parent = new AtomicReference<>();
@@ -557,6 +652,77 @@ public class Path implements Serializable, Comparable, Iterable<String>
         return path.endsWith("/") || path.endsWith("/.") || path.endsWith("/..");
     }
 
+    /**
+     * NOTE: Path.Part is just a wrapper for String.  It is not case-sensitive or non-case-sensitive like Path (see Davpath).
+     */
+    public static Path.Part toPathPart(String name)
+    {
+        Path p = Path.parse(name);
+        if (p.size() != 1)
+            throw new IllegalArgumentException("invalid name: " + name);
+        var ret = p.getPart(0);
+        assert !".".equalsIgnoreCase(ret.toString()) && !"..".equals(ret.toString());
+        return ret;
+    }
+
+
+    /**
+     * Path.Part is just a wrapper for String.  It only indicates that this String came from a parsed Path, and
+     * that the value is intended to represent a single name in a path.  Because Path is used for so many things,
+     * this can not be relied on to promise any other validation.
+     * <br>
+     * However, see FileUtil.appendName(Path.Part) and Resource.find(Path.Part) for example of where this class is
+     * used to indicate that the parameter is intended to be "filename-like" and not "path-like".
+     */
+    public static class Part implements Serializable, CharSequence
+    {
+        final private @NotNull String _name;
+
+        private Part(@NotNull String name)
+        {
+            if (StringUtils.contains(name, "/"))
+                throw new IllegalArgumentException("invalid name: " + name);
+            _name = name;
+        }
+
+        @Override
+        public int length()
+        {
+            return _name.length();
+        }
+
+        @Override
+        public char charAt(int index)
+        {
+            return _name.charAt(index);
+        }
+
+        @NotNull
+        @Override
+        public CharSequence subSequence(int start, int end)
+        {
+            return _name.subSequence(start, end);
+        }
+
+        public String toString()
+        {
+            return _name;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return _name.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object obj)
+        {
+            // be consistent with Path.equals()
+            return obj instanceof Part otherPart && this._name.equals(otherPart._name);
+        }
+    }
+
 
     public static class TestCase extends Assert
     {
@@ -565,18 +731,18 @@ public class Path implements Serializable, Comparable, Iterable<String>
         {
             Path a = Path.parse("/a");
             assertTrue(a.isAbsolute());
-            assertTrue(!a.isDirectory());
+            assertFalse(a.isDirectory());
 
             Path b = Path.parse("b/");
-            assertTrue(!b.isAbsolute());
+            assertFalse(b.isAbsolute());
             assertTrue(b.isDirectory());
 
             Path ab = a.resolve(b);
             assertTrue(ab.isAbsolute());
             assertTrue(ab.isDirectory());
             Path ab2 = Path.parse("a/b");
-            assertTrue(!ab2.isAbsolute());
-            assertTrue(!ab2.isDirectory());
+            assertFalse(ab2.isAbsolute());
+            assertFalse(ab2.isDirectory());
             assertEquals(ab, ab2);
 
             assertEquals(a.append("b"), ab);

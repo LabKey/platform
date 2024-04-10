@@ -910,7 +910,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
                             else
                             {
                                 // local -> cloud; source starts under @files
-                                File filesSrc = new File(src, FILES_LINK);
+                                File filesSrc = FileUtil.appendName(src, FILES_LINK);
                                 if (filesSrc.exists())
                                     moveFileRoot(filesSrc.toPath(), dest, user, c);
                                 FileUtil.deleteDir(src);        // moveFileRoot will delete @files, but we need to delete its parent
@@ -924,7 +924,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
                         if (!FileUtil.hasCloudScheme(dest))
                         {
                             // cloud -> local; destination is under @files
-                            dest = dest.resolve(FILES_LINK);
+                            dest = dest.resolve(FILES_LINK.toString());
                             moveFileRoot(src, dest, user, c);
                         }
                         else
@@ -1331,11 +1331,11 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
                 if (!isDefault || !isShowOverridesOnly)
                 {
                     ActionURL config = PageFlowUtil.urlProvider(AdminUrls.class).getProjectSettingsFileURL(c);
-                    Map<String, Object> node = createFileSetNode(c, FILES_LINK, root.getFileSystemDirectoryPath());
+                    Map<String, Object> node = createFileSetNode(c, FILES_LINK.toString(), root.getFileSystemDirectoryPath());
                     node.put("default", isUseDefaultRoot(c));
                     node.put("configureURL", config.getEncodedLocalURIString());
                     node.put("browseURL", browseUrl);
-                    node.put("webdavURL", FilesWebPart.getRootPath(c, FILES_LINK));
+                    node.put("webdavURL", FilesWebPart.getRootPath(c, FILES_LINK.toString()));
 
                     children.add(node);
                 }
@@ -1347,7 +1347,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
                 Map<String, Object> node =  createFileSetNode(c, fileSet.getName(), fileSet.getFileSystemDirectoryPath());
                 node.put("configureURL", config.getEncodedLocalURIString());
                 node.put("browseURL", browseUrl);
-                node.put("webdavURL", FilesWebPart.getRootPath(c, FILE_SETS_LINK, fileSet.getName()));
+                node.put("webdavURL", FilesWebPart.getRootPath(c, FILE_SETS_LINK.toString(), fileSet.getName()));
                 node.put("rootType", "fileset");
 
                 children.add(node);
@@ -1361,11 +1361,11 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
                 {
                     ActionURL config = PageFlowUtil.urlProvider(PipelineUrls.class).urlSetup(c);
                     ActionURL pipelineBrowse = PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(c, null);
-                    Map<String, Object> node = createFileSetNode(c, PIPELINE_LINK, pipeRoot.getRootNioPath());
+                    Map<String, Object> node = createFileSetNode(c, PIPELINE_LINK.toString(), pipeRoot.getRootNioPath());
                     node.put("default", isDefault );
                     node.put("configureURL", config.getEncodedLocalURIString());
                     node.put("browseURL", pipelineBrowse.getEncodedLocalURIString());
-                    node.put("webdavURL", FilesWebPart.getRootPath(c, PIPELINE_LINK));
+                    node.put("webdavURL", FilesWebPart.getRootPath(c, PIPELINE_LINK.toString()));
 
                     children.add(node);
                 }

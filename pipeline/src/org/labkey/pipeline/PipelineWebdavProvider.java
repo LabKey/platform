@@ -27,6 +27,7 @@ import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Path;
 import org.labkey.api.webdav.FileSystemResource;
 import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.webdav.WebdavResource;
@@ -62,7 +63,7 @@ public class PipelineWebdavProvider implements WebdavService.Provider
 
         String webdavURL = root.getWebdavURL();
         if (null != webdavURL && webdavURL.contains(FileContentService.PIPELINE_LINK) && root.getContainer().equals(c))
-            return PageFlowUtil.set(FileContentService.PIPELINE_LINK);
+            return PageFlowUtil.set(FileContentService.PIPELINE_LINK.toString());
 
         return null;
     }
@@ -71,7 +72,7 @@ public class PipelineWebdavProvider implements WebdavService.Provider
     @Override
     public WebdavResource resolve(@NotNull WebdavResource parent, @NotNull String name)
     {
-        if (!FileContentService.PIPELINE_LINK.equalsIgnoreCase(name))
+        if (!FileContentService.PIPELINE_LINK.toString().equalsIgnoreCase(name))
             return null;
         if (!(parent instanceof WebdavResolverImpl.WebFolderResource))
             return null;
@@ -92,7 +93,7 @@ public class PipelineWebdavProvider implements WebdavService.Provider
 
         PipelineFolderResource(WebdavResource parent, Container c, PipeRootImpl root)
         {
-            super(parent.getPath(), FileContentService.PIPELINE_LINK);
+            super(parent.getPath(), Path.toPathPart(FileContentService.PIPELINE_LINK));
 
             this.c = c;
             _containerId = c.getId();
@@ -129,11 +130,11 @@ public class PipelineWebdavProvider implements WebdavService.Provider
         @Override
         public String getName()
         {
-            return FileContentService.PIPELINE_LINK;
+            return FileContentService.PIPELINE_LINK.toString();
         }
 
         @Override
-        public FileSystemResource find(String name)
+        public FileSystemResource find(Path.Part name)
         {
             if (_files != null)
                 return new FileSystemResource(this, name);

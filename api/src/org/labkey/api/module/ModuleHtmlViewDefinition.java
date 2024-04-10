@@ -27,6 +27,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.MinorConfigurationException;
+import org.labkey.api.util.Path;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.view.WebPartView;
@@ -92,7 +93,7 @@ public class ModuleHtmlViewDefinition
         Resource parent = r.parent();
         if (parent != null)
         {
-            Resource metadataResource = parent.find(_name + VIEW_METADATA_EXTENSION);
+            Resource metadataResource = parent.find(Path.toPathPart(_name + VIEW_METADATA_EXTENSION));
             if (metadataResource != null)
                 parseMetadata(metadataResource);
         }
