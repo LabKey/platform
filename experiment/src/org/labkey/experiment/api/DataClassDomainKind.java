@@ -299,7 +299,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     private @NotNull ValidationException getNamePatternValidationResult(String dataClassName, String patten, List<? extends GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, Container container)
     {
         ValidationException errors = new ValidationException();
-        NameExpressionValidationResult results = NameGenerator.getValidationMessages(dataClassName, patten, properties, importAliases, container);
+        NameExpressionValidationResult results = NameGenerator.getValidationMessages(ExperimentService.get().getTinfoData(), dataClassName, patten, properties, importAliases, container);
         if (results.errors() != null && !results.errors().isEmpty())
             results.errors().forEach(error -> errors.addError(new SimpleValidationError(error)));
         return errors;
@@ -314,7 +314,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
             List<String> warnings = new ArrayList<>();
             List<String> previewNames = new ArrayList<>();
 
-            NameExpressionValidationResult results = NameGenerator.getValidationMessages(domainDesign.getName(), options.getNameExpression(), domainDesign.getFields(), options.getImportAliases(), container);
+            NameExpressionValidationResult results = NameGenerator.getValidationMessages(ExperimentService.get().getTinfoData(), domainDesign.getName(), options.getNameExpression(), domainDesign.getFields(), options.getImportAliases(), container);
             if (results.errors() != null && !results.errors().isEmpty())
                 results.errors().forEach(error -> errors.add("Name Pattern error: " + error));
             if (results.warnings() != null && !results.warnings().isEmpty())
