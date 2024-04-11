@@ -16,6 +16,7 @@
 
 package org.labkey.query.reports;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -127,7 +128,6 @@ import org.labkey.api.thumbnail.BaseThumbnailAction;
 import org.labkey.api.thumbnail.ThumbnailProvider;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.thumbnail.ThumbnailService.ImageType;
-import org.labkey.api.util.ErrorView;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
@@ -168,7 +168,6 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -1985,7 +1984,7 @@ public class ReportsController extends SpringActionController
 
                     // see NOTE in AttachmentReport.hasContentModified
                     report.getDescriptor().setContentModified();
-                    ReportService.get().saveReport(getViewContext(), getReportKey(report, form), report);
+                    ReportService.get().saveReportEx(getViewContext(), getReportKey(report, form), report);
                 }
             }
             else
@@ -2416,7 +2415,7 @@ public class ReportsController extends SpringActionController
         public boolean handlePost(ReportDesignBean form, BindException errors)
         {
             _report.getDescriptor().setReportName(_newReportName);
-            ReportService.get().saveReport(getViewContext(), _report.getDescriptor().getReportKey(), _report);
+            ReportService.get().saveReportEx(getViewContext(), _report.getDescriptor().getReportKey(), _report);
 
             return true;
         }
@@ -4014,7 +4013,7 @@ public class ReportsController extends SpringActionController
         {
             ReportDescriptor reportDescriptor = _report.getDescriptor();
             reportDescriptor.setProperty(ReportDescriptor.Prop.showInParticipantView, form.isShowInParticipantView());
-            ReportService.get().saveReport(getViewContext(), reportDescriptor.getReportKey(), _report);
+            ReportService.get().saveReportEx(getViewContext(), reportDescriptor.getReportKey(), _report);
 
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("success", true);

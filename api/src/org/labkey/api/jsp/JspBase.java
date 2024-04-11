@@ -27,6 +27,7 @@ import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Button.ButtonBuilder;
+import org.labkey.api.util.DOM.Renderable;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.HelpTopic;
@@ -434,7 +435,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return new LinkBuilder(text);
     }
 
-    public LinkBuilder link(HtmlString html)
+    public LinkBuilder link(Renderable html)
     {
         return new LinkBuilder(html);
     }
@@ -456,7 +457,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return link(text).href(url);
     }
 
-    public LinkBuilder link(HtmlString html, @NotNull String url)
+    public LinkBuilder link(Renderable html, @NotNull String url)
     {
         return new LinkBuilder(html).href(url);
     }
@@ -481,7 +482,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return new ButtonBuilder(text);
     }
 
-    public ButtonBuilder button(HtmlString html)
+    public ButtonBuilder button(Renderable html)
     {
         return new ButtonBuilder(html);
     }

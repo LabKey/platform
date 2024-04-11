@@ -140,7 +140,6 @@ import org.labkey.api.security.roles.RestrictedReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.specimen.SpecimenManager;
-import org.labkey.api.specimen.SpecimenManagerNew;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.location.LocationCache;
 import org.labkey.api.study.AssaySpecimenConfig;
@@ -158,14 +157,12 @@ import org.labkey.api.study.model.ParticipantInfo;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
-import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.UnauthorizedException;
@@ -4848,47 +4845,9 @@ public class StudyManager
         }
     }
 
-    // Enable the specimen module (if it exists) in all studies that have specimen rows
-    public void enableSpecimenModuleInStudyFolders(User user)
-    {
-        Module specimenModule = ModuleLoader.getInstance().getModule("Specimen");
-
-        if (null != specimenModule)
-        {
-            StudyManager.getInstance().getAllStudies().forEach(study->{
-                // Best effort... don't fail upgrade if something goes wrong here
-                try
-                {
-                    Container c = study.getContainer();
-                    if (!SpecimenManagerNew.get().isSpecimensEmpty(c, user))
-                    {
-                        Set<Module> set = new HashSet<>(c.getActiveModules());
-
-                        // Always true in upgrade case, but this check optimizes any repeat calls
-                        if (!set.contains(specimenModule))
-                        {
-                            set.add(specimenModule);
-                            c.setActiveModules(set);
-                        }
-                    }
-                }
-                catch (Throwable t)
-                {
-                    _log.warn("Enabling specimen module failed", t);
-                }
-            });
-        }
-    }
-
-    /****
-     *
-     *
-     *
+    /*
      * TESTING
-     *
-     *
      */
-
 
     // To see detailed logging from StatementDataIterator, configure org.labkey.study.model.StudyManager$DatasetImportTestCase to level TRACE
     private static class Tests {}

@@ -55,23 +55,12 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
-/**
- * User: migra
- * Date: Mar 6, 2006
- * Time: 8:18:58 PM
- */
 public class ReportManager implements DatasetManager.DatasetListener
 {
-    /** records the dataset id used for plotviews (charts not tied to a specific dataset view) */
-    public static final int ALL_DATASETS = -1;
-    public static final String ALL_DATASETS_KEY = StudySchema.getInstance().getSchemaName() + "/*";
-
     private static final ReportManager instance = new ReportManager();
     private static final Logger _log = LogManager.getLogger(ReportManager.class);
 
@@ -108,7 +97,7 @@ public class ReportManager implements DatasetManager.DatasetListener
                 .stream()
                 .filter(view -> null != view.getName())
                 .map(view -> new Pair<>(view.getName(), view.getName()))
-                .collect(Collectors.toList()));
+                .toList());
         }
 
         labels.sort((o1, o2) ->
@@ -287,26 +276,6 @@ public class ReportManager implements DatasetManager.DatasetListener
         }
 */
         return report.hasPermission(user, c, ReadPermission.class);
-    }
-
-    /**
-     * A variant of a report that can contain multiple individual reports.
-     */
-    public interface ReportView extends Report
-    {
-        void init(ViewContext context);
-        void deleteView(ViewContext context);
-        void saveView(ViewContext context);
-
-        Integer getShowWithDataset();
-        void setShowWithDataset(Integer dataset);
-        Container getContainer();
-        void setContainer(Container c);
-        String getParams();
-        void setParams(String params);
-        String getReportViewType();
-
-        void setReports(Collection<Report> reports);
     }
 
     @Override

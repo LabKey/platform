@@ -25,5 +25,6 @@ public class SampleStatusTable extends FilteredTable<ExpSchema>
         addWrapColumn(getRealTable().getColumn("Description"));
         addWrapColumn(getRealTable().getColumn("Container"));
         addWrapColumn("StatusType", getRealTable().getColumn("StateType"));
+        addWrapColumn("Color", getRealTable().getColumn("Color"));
     }
 }

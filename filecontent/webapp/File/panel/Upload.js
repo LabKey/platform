@@ -603,7 +603,7 @@ Ext4.define('File.panel.Upload', {
             return this.multiUpload;
         }
 
-        var helpLinkHtml =  '[<a class="help-link" href="javascript:void(0);">upload help</a>]';
+        var helpLinkHtml =  '[<a class="help-link">upload help</a>]';
 
         var html;
         if (window.Dropzone && window.Dropzone.isBrowserSupported()) {
@@ -666,6 +666,8 @@ Ext4.define('File.panel.Upload', {
             icon: Ext4.Msg.INFO,
             buttons: Ext4.Msg.OK
         });
+
+        return false;
     },
 
     cancelUpload : function () {

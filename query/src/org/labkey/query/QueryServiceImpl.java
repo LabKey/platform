@@ -2772,7 +2772,7 @@ public class QueryServiceImpl implements QueryService
         @Override
         public Results select(@Nullable Map<String, Object> parameters, boolean cache)
         {
-            SqlSelector selector = buildSqlSelector(parameters);
+            SqlSelector selector = buildSqlSelector(parameters).setJdbcCaching(cache);
             ResultSet rs = selector.getResultSet(cache, cache);
 
             // Keep track of whether we've successfully created the ResultSetImpl to return. If not, we should

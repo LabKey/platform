@@ -30,6 +30,7 @@ public class DataState
     private String _description;
     private boolean _publicData;
     private String _stateType;
+    private String _color;
 
     public int getRowId()
     {
@@ -94,6 +95,16 @@ public class DataState
     public boolean isQCState()
     {
         return _stateType == null;
+    }
+
+    public String getColor()
+    {
+        return _color;
+    }
+
+    public void setColor(String color)
+    {
+        _color = color;
     }
 
     public boolean equals(Object o)

@@ -610,8 +610,12 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 throw exception;
             }
 
-            if(null != warning)
-                result.setWarnings(HtmlString.unsafe(warning)); // Issue 49370
+            if (null != warning)
+            {
+                // Issue 49370: we expect the warning to be in HTML format (reading from errors.html). Note that users
+                // must have the Platform Developer or Site Administrator role to attach transform scripts to assay designs.
+                result.setWarnings(HtmlString.unsafe(warning));
+            }
             else
                 result.setWarnings(HtmlString.unsafe("Warnings found in transform script!"));
 

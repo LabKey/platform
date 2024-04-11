@@ -5,7 +5,7 @@ plugins {
     id 'org.labkey.build.module'
 }
 
-ext.mime4jVersion="0.8.10"
+ext.mime4jVersion="0.8.11"
 
 dependencies {
     BuildUtils.addExternalDependency(
@@ -302,7 +302,7 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "com.drewnoakes:metadata-extractor:2.18.0",
+            "com.drewnoakes:metadata-extractor:2.19.0",
             "Metadata Extractor",
             "drewnoakes",
             "https://github.com/drewnoakes/metadata-extractor",
@@ -419,7 +419,7 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "com.googlecode.plist:dd-plist:1.27",
+            "com.googlecode.plist:dd-plist:1.28",
             "DD Plist",
             "com.dd.plist",
             "https://github.com/3breadt/dd-plist",

@@ -135,7 +135,6 @@ import java.util.Set;
 
 import static org.labkey.api.query.QueryService.USE_ROW_BY_ROW_UPDATE;
 
-
 public class QueryModule extends DefaultModule
 {
     public QueryModule()
@@ -326,6 +325,7 @@ public class QueryModule extends DefaultModule
         }
 
         QueryManager.registerUsageMetrics(getName());
+        ReportServiceImpl.registerUsageMetrics(getName());
 
         // Administrators, Platform Developers, and Trusted Analysts can edit queries, if they also have edit permissions in the current folder
         RoleManager.registerPermission(new EditQueriesPermission());
