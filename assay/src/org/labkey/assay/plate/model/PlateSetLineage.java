@@ -2,7 +2,7 @@ package org.labkey.assay.plate.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.assay.plate.PlateSet;
 import org.labkey.api.assay.plate.PlateSetEdge;
 import org.labkey.api.query.ValidationException;
@@ -23,10 +23,11 @@ public class PlateSetLineage
     private List<PlateSetEdge> _edges = Collections.emptyList();
     private Map<Integer, PlateSet> _plateSets = Collections.emptyMap();
     private Integer _root;
-    private Integer _seed;
+    private final Integer _seed;
 
-    public PlateSetLineage()
+    public PlateSetLineage(@NotNull Integer seed)
     {
+        _seed = seed;
     }
 
     public List<PlateSetEdge> getEdges()
@@ -64,11 +65,6 @@ public class PlateSetLineage
         return _seed;
     }
 
-    public void setSeed(Integer seed)
-    {
-        _seed = seed;
-    }
-
     /**
      * Returns a Map<Integer, PlateSet> containing the PlateSet for the given plateSetId as well as all the PlateSets
      * for the descendents of the given plateSetId.
@@ -102,11 +98,18 @@ public class PlateSetLineage
         return allPlateSets;
     }
 
-    public @Nullable String getSeedPath() throws ValidationException
+    /**
+     * Returns a string "lineage path" that expresses all plate sets along the path between the seed
+     * plate set and the root plate set for this lineage. This path is the Row IDs of each plate set along the path
+     * from root to seed read left to right separated by "/".
+     * Example:
+     * seed: 19
+     * root: 4
+     * ancestors: 12, 16
+     * path: "/4/12/16/19/"
+     */
+    public @NotNull String getSeedPath() throws ValidationException
     {
-        if (_seed == null)
-            return null;
-
         if (_edges.isEmpty() || _plateSets.isEmpty() || _root == null || _seed.equals(_root))
             return "/" + _seed + "/";
 

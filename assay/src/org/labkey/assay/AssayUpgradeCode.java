@@ -39,7 +39,6 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -59,7 +58,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.labkey.api.data.ContainerFilter.EVERYTHING;
 import static org.labkey.api.data.Table.CREATED_BY_COLUMN_NAME;
 import static org.labkey.api.data.Table.CREATED_COLUMN_NAME;
 import static org.labkey.api.data.Table.MODIFIED_BY_COLUMN_NAME;
@@ -441,10 +439,7 @@ public class AssayUpgradeCode implements UpgradeCode
                         plateSetRowId,
                         ContainerFilter.EVERYTHING
                     );
-
                     String lineagePath = lineage.getSeedPath();
-                    if (lineagePath == null)
-                        throw new ValidationException("");
 
                     plateSetPaths.put(plateSetRowId, lineagePath);
                     plateSetsToHits.put(plateSetRowId, new ArrayList<>());

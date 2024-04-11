@@ -2202,8 +2202,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         if (seedPlateSet == null)
             throw new NotFoundException();
 
-        PlateSetLineage lineage = new PlateSetLineage();
-        lineage.setSeed(seedPlateSetId);
+        PlateSetLineage lineage = new PlateSetLineage(seedPlateSetId);
         Integer rootPlateSetId = seedPlateSet.getRootPlateSetId();
 
         // stand-alone plate set
@@ -2344,8 +2343,6 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
                             PlateSetLineage lineage = getPlateSetLineage(container, user, plateSet.getRowId(), ContainerFilter.EVERYTHING);
                             String plateSetPath = lineage.getSeedPath();
-                            if (plateSetPath == null)
-                                throw new ValidationException(String.format("Failed to mark hits. Unable to resolve path for plate set (Row Id %d)", resultId));
 
                             cache.put(plateId, Pair.of(plate.getContainer().getEntityId(), plateSetPath));
                         }
