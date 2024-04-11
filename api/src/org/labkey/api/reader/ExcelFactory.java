@@ -20,7 +20,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.poi.UnsupportedFileFormatException;
 import org.apache.poi.ooxml.POIXMLException;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
-import org.apache.poi.openxml4j.exceptions.InvalidOperationException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackageAccess;
 import org.apache.poi.ss.format.CellGeneralFormatter;
@@ -922,7 +921,7 @@ public class ExcelFactory
 
             attemptImportExpectError(new File(dataloading, "doesntexist.xls"), FileNotFoundException.class);
             attemptImportExpectError(new File(dataloading, ""), FileNotFoundException.class);
-            attemptImportExpectError(new File(dataloading, "notreallyexcel.xls"), InvalidOperationException.class);
+            attemptImportExpectError(new File(dataloading, "notreallyexcel.xls"), InvalidFormatException.class);
         }
 
         private void attemptImportExpectError(File excelFile, Class exceptionClass)
