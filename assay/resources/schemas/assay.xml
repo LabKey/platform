@@ -241,6 +241,9 @@
       <column columnName="RowId"/>
       <column columnName="RunId"/>
       <column columnName="WellLsid"/>
+      <column columnName="PlateSetPath">
+        <isHidden>true</isHidden>
+      </column>
     </columns>
   </table>
 </tables>

@@ -12,6 +12,7 @@ import org.labkey.api.assay.plate.PlateBasedAssayProvider;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
@@ -45,10 +46,12 @@ import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.util.Pair;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.PlateSetImpl;
+import org.labkey.assay.plate.model.PlateSetLineage;
 import org.labkey.assay.query.AssayDbSchema;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -397,6 +400,66 @@ public class AssayUpgradeCode implements UpgradeCode
                     new SqlExecutor(AssayDbSchema.getInstance().getScope()).execute(sql);
                 }
             }
+            tx.commit();
+        }
+    }
+
+    /**
+     * Called from assay-24.005-24.006.sql
+     */
+    public static void populatePlateSetPaths(ModuleContext ctx) throws Exception
+    {
+        if (ctx.isNewInstall())
+            return;
+
+        DbScope scope = AssayDbSchema.getInstance().getSchema().getScope();
+        try (DbScope.Transaction tx = scope.ensureTransaction())
+        {
+            Map<Integer, String> plateSetPaths = new HashMap<>();
+            Map<Integer, List<Integer>> plateSetsToHits = new HashMap<>();
+
+            SQLFragment sql = new SQLFragment("SELECT Hit.RowId AS HitRowId, PlateSet.RowId AS PlateSetRowId")
+                    .append(" FROM assay.PlateSet")
+                    .append(" INNER JOIN assay.Plate ON Plate.PlateSet = PlateSet.RowId")
+                    .append(" INNER JOIN assay.Well ON Well.PlateId = Plate.RowId")
+                    .append(" INNER JOIN assay.Hit ON Hit.WellLsid = Well.Lsid")
+                    .appendEOS();
+            Collection<Map<String, Object>> rows = new SqlSelector(scope, sql).getMapCollection();
+
+            for (Map<String, Object> row : rows)
+            {
+                Integer plateSetRowId = (Integer) row.get("PlateSetRowId");
+                Integer hitRowId = (Integer) row.get("HitRowId");
+
+                if (!plateSetsToHits.containsKey(plateSetRowId))
+                {
+                    PlateSetLineage lineage = PlateManager.get().getPlateSetLineage(
+                        ContainerManager.getRoot(),
+                        User.getAdminServiceUser(),
+                        plateSetRowId,
+                        ContainerFilter.EVERYTHING
+                    );
+                    String lineagePath = lineage.getSeedPath();
+
+                    plateSetPaths.put(plateSetRowId, lineagePath);
+                    plateSetsToHits.put(plateSetRowId, new ArrayList<>());
+                }
+
+                plateSetsToHits.get(plateSetRowId).add(hitRowId);
+            }
+
+            for (Map.Entry<Integer, List<Integer>> entry : plateSetsToHits.entrySet())
+            {
+                String plateSetPath = plateSetPaths.get(entry.getKey());
+
+                SQLFragment updateSql = new SQLFragment("UPDATE assay.Hit")
+                        .append(" SET PlateSetPath = ? ").add(plateSetPath)
+                        .append(" WHERE RowId ").appendInClause(entry.getValue(), scope.getSqlDialect())
+                        .appendEOS();
+
+                new SqlExecutor(scope).execute(updateSql);
+            }
+
             tx.commit();
         }
     }
