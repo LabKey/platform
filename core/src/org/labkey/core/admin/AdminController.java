@@ -432,16 +432,6 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(Configuration, "system maintenance", new ActionURL(ConfigureSystemMaintenanceAction.class, root));
         AdminConsole.addLink(Configuration, "External Redirect Hosts", new ActionURL(ExternalRedirectAdminAction.class, root));
 
-/*
-        // Management
-        // note these should match (link and permissions) with SiteAdminMenu.getNavTree()
-        AdminConsole.addLink(Management, "site admins", urlProvider(SecurityUrls.class).getManageGroupURL(root, "Administrators"), AdminOperationsPermission.class);
-        AdminConsole.addLink(Management, "site developers", urlProvider(SecurityUrls.class).getManageGroupURL(root, "Developers"), AdminOperationsPermission.class);
-        AdminConsole.addLink(Management, "site users", urlProvider(UserUrls.class).getSiteUsersURL(), UserManagementPermission.class);
-        AdminConsole.addLink(Management, "site groups", urlProvider(SecurityUrls.class).getSiteGroupsURL(root, null), UserManagementPermission.class);
-        AdminConsole.addLink(Management, "site permissions", urlProvider(SecurityUrls.class).getPermissionsURL(root), UserManagementPermission.class);
-*/
-
         // Diagnostics
         AdminConsole.addLink(Diagnostics, "actions", new ActionURL(ActionsAction.class, root));
         AdminConsole.addLink(Diagnostics, "attachments", new ActionURL(AttachmentsAction.class, root));
@@ -830,6 +820,12 @@ public class AdminController extends SpringActionController
         public ActionURL getTrackedAllocationsViewerURL()
         {
             return new ActionURL(TrackedAllocationsViewerAction.class, ContainerManager.getRoot());
+        }
+
+        @Override
+        public ActionURL getSystemMaintenanceURL()
+        {
+            return new ActionURL(ConfigureSystemMaintenanceAction.class, ContainerManager.getRoot());
         }
     }
 
