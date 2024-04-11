@@ -35,6 +35,12 @@
 <%@ page import="org.labkey.api.query.QueryService" %>
 <%@ page import="org.labkey.api.query.QueryException" %>
 <%@ page import="java.util.ArrayList" %>
+<%@ page import="org.jetbrains.annotations.Nullable" %>
+<%@ page import="org.labkey.api.data.ContainerFilter" %>
+<%@ page import="java.util.Set" %>
+<%@ page import="java.util.TreeSet" %>
+<%@ page import="org.labkey.api.query.FilteredTable" %>
+<%@ page import="java.util.Collection" %>
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
 
 <%!
@@ -310,7 +316,7 @@ public void testDisallowedSyntax()throws Exception
         }
         catch (ConfigurationException e)
         {
-            System.err.println("\n\n" + xml + "\n" + e.getMessage() + "\n\n");
+            // System.err.println("\n\n" + xml + "\n" + e.getMessage() + "\n\n");
         }
     }
 }
@@ -334,7 +340,7 @@ public void testExpressions()throws Exception
         var r = getSchemaTableInfo(xml);
         assertEquals(type, r.getColumn("EXPR").getJdbcType());
         SQLFragment sql = new SQLFragment().append("SELECT ").append(r.getColumn("EXPR").getValueSql("t")).append("\n").append(r.getFromSQL("t"));
-        var result = new SqlSelector(scope, sql).getObject(type.getJavaClass());
+        var result = new SqlSelector(scope, sql).getObject((Class<?>)type.getJavaClass());
         assertEquals(expected, result);
     }
 }
@@ -346,33 +352,84 @@ public void testExpressions()throws Exception
 
 
 /*
- * NOTE: Both tables and queries in UserSchema use AbstractTableInfo.overlayMetadata();
- * For the unit test It's mostly redundant to test both paths.
+ * NOTE: Spec decision.  For phase 1, we don't allow (ignore) calculated columns on queries
  */
-TableInfo getQueryTableInfo(String columns) throws XmlException
+UserSchema getUserSchema(String columns) throws Exception
 {
-    UserSchema qs = (UserSchema)DefaultSchema.get(TestContext.get().getUser(), JunitUtil.getTestContainer()).getSchema("core");
-    assertNotNull(qs);
+    final DbSchema dbSchema = getDbSchema(null);
+    final TablesDocument tablesDoc = null == columns ? null : TablesDocument.Factory.parse(schemaXml(columns));
 
-    QueryDefinition qdef = QueryService.get().createQueryDef(qs.getUser(), qs.getContainer(), qs, "R");
-    Timestamp now = new Timestamp(new Date().getTime()), epoch = new Timestamp(0);
-    var sql = "SELECT 0 as ZERO, 2 as TWO, 3 as THREE, 'x' as X, 'y' as Y, 'z' as Z, {ts '" + epoch + "'} as EPOCK, {ts '" + now + "'} AS NOW";
-    qdef.setSql(sql);
-    if (null != columns)
-        qdef.setMetadataXml(schemaXml(columns));
-    List<QueryException> errors = new ArrayList<>();
-    var ret = qdef.getTable(qs, errors, true, true);
-    assertNotNull(ret);
-    assertTrue(errors.isEmpty());
-    return ret;
+    var userSchema = new UserSchema("junit", "testing", TestContext.get().getUser(), JunitUtil.getTestContainer(), dbSchema)
+    {
+        @Override
+        public @Nullable TableInfo createTable(String name, ContainerFilter cf)
+        {
+            var dbTable = dbSchema.getTable(name);
+            if (null == dbTable)
+                return null;
+            var ret = new FilteredTable<UserSchema>(dbTable, this)
+            {
+                @Override
+                public void overlayMetadata(String tableName, UserSchema schema, Collection<QueryException> errors)
+                {
+                    checkLocked();
+                    if (isMetadataOverrideable())
+                    {
+                        List<TableType> tables = null;
+                        if (null != tablesDoc && 0 < tablesDoc.getTables().getTableArray().length)
+                            tables = tablesDoc.getTables().getTableList();
+                        overlayMetadata(tables, schema, errors);
+                    }
+                }
+            };
+            ret.wrapAllColumns(true);
+            return ret;
+        }
+
+        @Override
+        public Set<String> getTableNames()
+        {
+            return new TreeSet<>(dbSchema.getTableNames());
+        }
+    };
+    return userSchema;
 }
+
+    TableInfo getUserTableInfo(String columns) throws Exception
+    {
+        UserSchema userSchema = getUserSchema(columns);
+        return userSchema.getTable("R", ContainerFilter.EVERYTHING, true, false);
+    }
 
 
 @Test
-public void testQuery()throws Exception
+public void testUserSchema()throws Exception
 {
-    TableInfo r = getQueryTableInfo(null);
+    TableInfo r = getUserTableInfo(null);
     assertNotNull(r);
+    DbScope scope = r.getSchema().getScope();
+    assertNotNull(scope);
     assertNotNull(r.getColumn("ZERO"));
+    assertNotNull(r.getColumn("two"));
+    assertNotNull(r.getColumn("ThrEE"));
+
+    var expressions = List.of(
+            Triple.of("<column columnName=\"EXPR\"><valueExpression>CASE WHEN Two=2 THEN 'success' ELSE 'fail' END</valueExpression></column>", JdbcType.VARCHAR, "success"),
+            Triple.of("<column columnName=\"EXPR\"><valueExpression>5*thRee</valueExpression></column>", JdbcType.INTEGER, 15),
+            Triple.of("<column columnName=\"EXPR\"><valueExpression>AGE_IN_YEARS(\"epoch\", {ts '2001-02-04 05:06:07'})</valueExpression></column>", JdbcType.INTEGER, 31)
+    );
+
+    for (var pair : expressions)
+    {
+        String xml = pair.getLeft();
+        JdbcType type = pair.getMiddle();
+        Object expected = pair.getRight();
+
+        r = getUserTableInfo(xml);
+        assertEquals(type, r.getColumn("EXPR").getJdbcType());
+        SQLFragment sql = new SQLFragment().append("SELECT ").append(r.getColumn("EXPR").getValueSql("t")).append("\n").append(r.getFromSQL("t"));
+        var result = new SqlSelector(scope, sql).getObject((Class<?>)type.getJavaClass());
+        assertEquals(expected, result);
+    }
 }
 %>
