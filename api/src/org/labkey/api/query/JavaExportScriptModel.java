@@ -119,7 +119,6 @@ public class JavaExportScriptModel extends ExportScriptModel
         if (null != getViewName())
             sb.append("cmd.setViewName(").append(quote(getViewName())).append(");\n");
 
-        // TODO: Inconsistent with R and SAS, which don't include view columns
         sb.append("cmd.setColumns(").append(getListOfColumns()).append(");\n");
 
         sb.append(getFilters());
