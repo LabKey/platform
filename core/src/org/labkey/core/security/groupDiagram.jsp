@@ -98,8 +98,19 @@
 
     function renderGroupDiagram(response)
     {
-        var bean = Ext4.JSON.decode(response.responseText);
+        const bean = Ext4.JSON.decode(response.responseText);
         render(bean.html);
+
+        document.querySelector("#groupDiagram").querySelectorAll("a").forEach(tag => {
+            const svgString = tag.href;
+            if (svgString && svgString.baseVal)
+            {
+                const script = svgString.baseVal.replace('js:', '');
+                tag['onclick'] = function() { if (script.length > 0) eval(script); return false; };
+                svgString.baseVal = null;
+                svgString.animVal = null;
+            }
+        });
     }
 
     function onError(response)

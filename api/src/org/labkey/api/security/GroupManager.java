@@ -168,16 +168,19 @@ public class GroupManager
                 boolean isUserManager = user.hasRootPermission(UserManagementPermission.class);
 
                 sb.append("\t").append(g.getUserId()).append(" [");
-                appendDotAttribute(sb, false, "label", g.getName() + (userCount > 0 ? "\\n " + StringUtilsLabKey.pluralize(userCount, "user") : "") + (groupCount > 0 ? "\\n" + StringUtilsLabKey.pluralize(groupCount, "group") : ""));
+                appendDotAttribute(sb, false, "label", g.getName() + (userCount > 0 ? "\\n" + StringUtilsLabKey.pluralize(userCount, "user") : "") + (groupCount > 0 ? "\\n" + StringUtilsLabKey.pluralize(groupCount, "group") : ""));
 
+                // Note: To evade strict CSP checking, client code moves the "js:" code into an onclick handler after
+                // the SVG has been injected into the page. There are other ways to do this (e.g., stop using URL and
+                // pass handler attachment code to the client) but we need to set URL to something so tooltip appears.
                 if (g.isProjectGroup() || (isUserManager && !g.isSystemGroup()) || user.hasSiteAdminPermission())
                 {
-                    appendDotAttribute(sb, true, "URL", "javascript:window.parent.showPopupId(" + g.getUserId() + ")");
+                    appendDotAttribute(sb, true, "URL", "js:window.parent.showPopupId(" + g.getUserId() + ")");
                     appendDotAttribute(sb, true, "tooltip", "Click to manage the '" + g.getName() + "' " + (g.isProjectGroup() ? "project" : "site") + " group");
                 }
                 else
                 {
-                    appendDotAttribute(sb, true, "URL", "javascript:void()");
+                    appendDotAttribute(sb, true, "URL", "js:");
                     appendDotAttribute(sb, true, "tooltip", "You must be a site administrator to manage site groups");
                 }
 
@@ -210,7 +213,7 @@ public class GroupManager
         xmlGroupType.setName(group.getName());
         xmlGroupType.setType(group.isProjectGroup() ? GroupEnumType.PROJECT : GroupEnumType.SITE);
 
-        if (memberGroups != null && memberGroups.size() > 0)
+        if (memberGroups != null && !memberGroups.isEmpty())
         {
             GroupRefsType xmlGroups = xmlGroupType.addNewGroups();
             for (Group member : memberGroups)
@@ -221,7 +224,7 @@ public class GroupManager
             }
         }
 
-        if (memberUsers != null && memberUsers.size() > 0)
+        if (memberUsers != null && !memberUsers.isEmpty())
         {
             UserRefsType  xmlUsers = xmlGroupType.addNewUsers();
             for (User member : memberUsers)
