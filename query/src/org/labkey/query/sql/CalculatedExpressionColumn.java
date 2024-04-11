@@ -321,11 +321,12 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
     public SQLFragment getValueSql(String tableAliasName)
     {
         QExpr bound = getBoundExpression();
-        SQLFragment ret;
-        ret = bound.getSqlFragment(getSqlDialect(), new _Query(tableAliasName));
-        return ret;
+        SqlBuilder sql = new SqlBuilder(getSqlDialect());
+        sql.append("(");
+        bound.appendSql(sql, new _Query(tableAliasName));
+        sql.append(")");
+        return sql;
     }
-
 
     public void validate(Map<FieldKey, ColumnInfo> columnMap) throws QueryParseException
     {

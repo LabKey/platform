@@ -102,7 +102,7 @@ DbSchema getDbSchema(String columns) throws XmlException
                 {
                     // FROM (VALUES (1, 'one'), (2, 'two'), (3, 'three')) AS t (num,letter)
                     Timestamp now = new Timestamp(new Date().getTime()), epoch = new Timestamp(0);
-                    return new SQLFragment("FROM (VALUES (0, 2, 3, 'x', 'y', 'z', {ts '" + epoch + "'}, {ts '" + now + "'})) AS " + alias + " (zero_, two_, three_, x_, y_, z_, epoch_, now_)");
+                    return new SQLFragment("(VALUES (0, 2, 3, 'x', 'y', 'z', {ts '" + epoch + "'}, {ts '" + now + "'})) AS " + alias + " (zero_, two_, three_, x_, y_, z_, epoch_, now_)");
                 }
             };
             return ti;
@@ -154,7 +154,7 @@ public void testBasicSchemaXML() throws Exception
     assertNotNull(t);
     assertNull(t.getColumn("WRAPPED"));
 
-    sql = new SQLFragment().append("SELECT ").append(t.getColumn("ZERO").getValueSql("t")).append("\n").append(t.getFromSQL("t"));
+    sql = new SQLFragment().append("SELECT ").append(t.getColumn("ZERO").getValueSql("t")).append("\nFROM ").append(t.getFromSQL("t"));
     try (ResultSet rs = new SqlSelector(dbSchema, sql).getResultSet())
     {
         assertTrue(rs.next());
@@ -183,8 +183,8 @@ public void testBasicSchemaXML() throws Exception
             .append("SELECT\n")
             .append("  ").append(wrapped.getValueSql("t")).append(" AS ").append(wrapped.getAlias()).append(",\n")
             .append("  ").append(calculated.getValueSql("t")).append(" AS ").append(calculated.getAlias()).append(",\n")
-            .append("  ").append("*\n")
-            .append(t.getFromSQL("t"))
+            .append("  ").append("*")
+            .append("\nFROM ").append(t.getFromSQL("t"))
             .append("\nWHERE ").append(t.getColumn("ZED").getValueSql("t")).append(" = 0 AND ").append(t.getColumn("SIX").getValueSql("t")).append(" = 6");
     try (ResultSet rs = new SqlSelector(dbSchema, sql).getResultSet())
     {
@@ -339,16 +339,11 @@ public void testExpressions()throws Exception
 
         var r = getSchemaTableInfo(xml);
         assertEquals(type, r.getColumn("EXPR").getJdbcType());
-        SQLFragment sql = new SQLFragment().append("SELECT ").append(r.getColumn("EXPR").getValueSql("t")).append("\n").append(r.getFromSQL("t"));
+        SQLFragment sql = new SQLFragment().append("SELECT ").append(r.getColumn("EXPR").getValueSql("t")).append("\nFROM ").append(r.getFromSQL("t"));
         var result = new SqlSelector(scope, sql).getObject((Class<?>)type.getJavaClass());
         assertEquals(expected, result);
     }
 }
-
-
-
-/********** SCHEMA OVERRIDE ***********/
-
 
 
 /*
@@ -395,15 +390,24 @@ UserSchema getUserSchema(String columns) throws Exception
     return userSchema;
 }
 
-    TableInfo getUserTableInfo(String columns) throws Exception
-    {
-        UserSchema userSchema = getUserSchema(columns);
-        return userSchema.getTable("R", ContainerFilter.EVERYTHING, true, false);
-    }
+
+TableInfo getUserTableInfo(String columns) throws Exception
+{
+    UserSchema userSchema = getUserSchema(columns);
+    return userSchema.getTable("R", ContainerFilter.EVERYTHING, true, false);
+}
+
+
+QueryDefinition makeQDef(UserSchema userSchema, String sql)
+{
+    var ret = QueryService.get().createQueryDef(userSchema.getUser(), userSchema.getContainer(), userSchema, "~~junit~~");
+    ret.setSql(sql);
+    return ret;
+}
 
 
 @Test
-public void testUserSchema()throws Exception
+public void testUserSchemaTable()throws Exception
 {
     TableInfo r = getUserTableInfo(null);
     assertNotNull(r);
@@ -427,8 +431,90 @@ public void testUserSchema()throws Exception
 
         r = getUserTableInfo(xml);
         assertEquals(type, r.getColumn("EXPR").getJdbcType());
-        SQLFragment sql = new SQLFragment().append("SELECT ").append(r.getColumn("EXPR").getValueSql("t")).append("\n").append(r.getFromSQL("t"));
+        SQLFragment sql = new SQLFragment().append("SELECT ").append(r.getColumn("EXPR").getValueSql("t")).append("\nFROM ").append(r.getFromSQL("t"));
         var result = new SqlSelector(scope, sql).getObject((Class<?>)type.getJavaClass());
+        assertEquals(expected, result);
+    }
+}
+
+@Test
+public void testUserSchemaDependantColumns() throws Exception
+{
+    var userSchema = getUserSchema("""
+            <column columnName="ONE"><valueExpression>1</valueExpression></column>
+            <column columnName="FOUR"><valueExpression>"two"+2</valueExpression></column>
+            <column columnName="FIVE"><valueExpression>(zero+(two+(three)))*1</valueExpression></column>
+            """
+    );
+    var scope = userSchema.getDbSchema().getScope();
+
+    {
+        var sql = "SELECT * FROM R";
+        var columnName = "five";
+        var type = JdbcType.INTEGER;
+        var expected = 5;
+        var qdef = makeQDef(userSchema, sql);
+
+        // getFromSQL(*)
+        List<QueryException> errors = new ArrayList<>();
+        var table = qdef.getTable(userSchema, errors, false);
+        assertNotNull(table);
+        var column = table.getColumn(columnName);
+        assertNotNull(column);
+        SQLFragment sqlf = new SQLFragment();
+        sqlf.append("SELECT ").append(column.getValueSql("q_")).append(" ").append(column.getAlias())
+                .append("\nFROM ").append(table.getFromSQL("q_"));
+        var result = new SqlSelector(scope, sqlf).getObject((Class<?>) type.getJavaClass());
+        assertEquals(expected, result);
+
+        // getFromSQL(five)
+        sqlf = new SQLFragment("SELECT ").append(column.getValueSql("q_")).append(" ").append(column.getAlias())
+                .append("\nFROM ").append(table.getFromSQL("q_", Set.of(column.getFieldKey())));
+        result = new SqlSelector(scope, sqlf).getObject((Class<?>) type.getJavaClass());
+        assertEquals(expected, result);
+    }
+
+    // precedence
+    //   FOUR * 3 should equal (two+2)*3, not two+2*3
+    {
+        var sql = "SELECT Four * 3 as twelve FROM R";
+        var columnName = "TWELVE";
+        var type = JdbcType.INTEGER;
+        var expected = 12;
+        var qdef = makeQDef(userSchema, sql);
+
+        List<QueryException> errors = new ArrayList<>();
+        var table = qdef.getTable(userSchema, errors, false);
+        assertNotNull(table);
+        var column = table.getColumn(columnName);
+        assertNotNull(column);
+        SQLFragment sqlf = new SQLFragment();
+        sqlf.append("SELECT ").append(column.getValueSql("q_")).append(" ").append(column.getAlias())
+                .append("\nFROM ").append(table.getFromSQL("q_", Set.of(column.getFieldKey())));
+        var result = new SqlSelector(scope, sqlf).getObject((Class<?>) type.getJavaClass());
+        assertEquals(expected, result);
+    }
+
+    // GROUP BY
+    {
+        // nested query where base columns (ZERO, TWO, THREE) are not explicitly pulled through
+        var sql = "SELECT Five, MIN(Four) FROM (SELECT Four, Five FROM R WHERE ZERO<TWO) inner_ GROUP BY Five";
+        var columnName = "five";
+        var type = JdbcType.INTEGER;
+        var expected = 5;
+        var qdef = makeQDef(userSchema, sql);
+
+        // getFromSQL(*)
+        qdef.setSql(sql);
+        List<QueryException> errors = new ArrayList<>();
+        var table = qdef.getTable(userSchema, errors, false);
+        assertNotNull(table);
+        var column = table.getColumn(columnName);
+        assertNotNull(column);
+        SQLFragment sqlf = new SQLFragment();
+        sqlf.append("SELECT ").append(column.getValueSql("q_")).append(" ").append(column.getAlias())
+                .append("\nFROM ").append(table.getFromSQL("q_"));
+        var result = new SqlSelector(scope, sqlf).getObject((Class<?>) type.getJavaClass());
         assertEquals(expected, result);
     }
 }
