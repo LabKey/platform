@@ -56,7 +56,7 @@ public class DataStatesTableInfo extends FilteredTable<CoreQuerySchema>
             var wrappedColumn = addWrapColumn(baseColumn);
             if ("RowId".equalsIgnoreCase(name))
                 wrappedColumn.setHidden(true);
-            if ("StateType".equalsIgnoreCase(name))
+            if ("StateType".equalsIgnoreCase(name) || "Color".equalsIgnoreCase(name))
             {
                 boolean enabledStatus = SampleStatusService.get().supportsSampleStatus();
                 wrappedColumn.setHidden(!enabledStatus);
