@@ -15,11 +15,6 @@
  */
 package org.labkey.api.query;
 
-/*
-* User: Dave
-* Date: Apr 2, 2009
-* Time: 12:42:49 PM
-*/
 public class JavaExportScriptFactory implements ExportScriptFactory
 {
     @Override
