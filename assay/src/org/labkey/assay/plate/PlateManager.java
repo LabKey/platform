@@ -2202,23 +2202,24 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         if (seedPlateSet == null)
             throw new NotFoundException();
 
-        PlateSetLineage lineage = new PlateSetLineage();
-        lineage.setSeed(seedPlateSetId);
+        PlateSetLineage lineage = new PlateSetLineage(seedPlateSetId);
+        Integer rootPlateSetId = seedPlateSet.getRootPlateSetId();
 
         // stand-alone plate set
-        if (seedPlateSet.getRootPlateSetId() == null)
+        if (rootPlateSetId == null)
         {
             lineage.setPlateSets(Map.of(seedPlateSetId, seedPlateSet));
             return lineage;
         }
+        lineage.setRoot(rootPlateSetId);
 
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RootPlateSetId"), seedPlateSet.getRootPlateSetId());
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RootPlateSetId"), rootPlateSetId);
         List<PlateSetEdge> edges = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlateSetEdge(), filter, null).getArrayList(PlateSetEdge.class);
         lineage.setEdges(edges);
 
         Set<Integer> nodeIds = new HashSet<>();
         nodeIds.add(seedPlateSetId);
-        nodeIds.add(seedPlateSet.getRootPlateSetId());
+        nodeIds.add(rootPlateSetId);
         for (var edge : edges)
         {
             nodeIds.add(edge.getFromPlateSetId());
@@ -2315,7 +2316,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                     TableSelector selector = new TableSelector(resultsTable, PageFlowUtil.set("Plate", "RowId", "Run", "WellLsid"), filter, null);
 
                     List<List<?>> newHits = new LinkedList<>();
-                    Map<Integer, GUID> validatedPlates = new HashMap<>();
+                    Map<Integer, Pair<GUID, String>> cache = new HashMap<>();
                     for (var row : selector.getMapCollection())
                     {
                         Integer resultId = (Integer) row.get("RowId");
@@ -2328,21 +2329,30 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                             throw new ValidationException(String.format("Failed to mark hits. \"%s\" result (Row Id %d) is not related to a plate. Only plate related results can be marked as hits.", protocol.getName(), resultId));
 
                         // locally cache plate/container validations
-                        if (!validatedPlates.containsKey(plateId))
+                        if (!cache.containsKey(plateId))
                         {
                             Plate plate = getPlate(cf, plateId);
                             if (plate == null)
                                 throw new ValidationException(String.format("Failed to mark hits. Unable to resolve plate for \"%s\" result (Row Id %d)", protocol.getName(), resultId));
                             if (!plate.getContainer().hasPermission(user, UpdatePermission.class))
                                 throw new UnauthorizedException(String.format("Failed to mark hits. You do not have permissions to update hits in %s.", container.getPath()));
-                            validatedPlates.put(plateId, plate.getContainer().getEntityId());
+
+                            PlateSetImpl plateSet = (PlateSetImpl) plate.getPlateSet();
+                            if (plateSet == null)
+                                throw new ValidationException(String.format("Failed to mark hits. Unable to resolve plate set for \"%s\" result (Row Id %d)", protocol.getName(), resultId));
+
+                            PlateSetLineage lineage = getPlateSetLineage(container, user, plateSet.getRowId(), ContainerFilter.EVERYTHING);
+                            String plateSetPath = lineage.getSeedPath();
+
+                            cache.put(plateId, Pair.of(plate.getContainer().getEntityId(), plateSetPath));
                         }
 
-                        newHits.add(List.of(validatedPlates.get(plateId), protocolId, resultId, row.get("Run"), row.get("WellLsid")));
+                        Pair<GUID, String> parts = cache.get(plateId);
+                        newHits.add(List.of(parts.first, protocolId, resultId, row.get("Run"), row.get("WellLsid"), parts.second));
                     }
 
                     SQLFragment insertSql = new SQLFragment("INSERT INTO ").append(hitTable)
-                            .append(" (Container, ProtocolId, ResultId, RunId, WellLsid) VALUES (?, ?, ?, ?, ?) ");
+                            .append(" (Container, ProtocolId, ResultId, RunId, WellLsid, PlateSetPath) VALUES (?, ?, ?, ?, ?, ?) ");
 
                     Table.batchExecute(hitTable.getSchema(), insertSql.getSQL(), newHits);
                 }

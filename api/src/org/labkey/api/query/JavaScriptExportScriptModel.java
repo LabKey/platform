@@ -36,27 +36,12 @@ public class JavaScriptExportScriptModel extends ExportScriptModel
     @Override
     public String getFilters()
     {
-        List<String> filterExprs = getFilterExpressions();
-        if (null == filterExprs || filterExprs.isEmpty())
-            return "null";
-        
-        StringBuilder ret = new StringBuilder("[");
-        String sep = "";
-        for (String filterExpr : filterExprs)
-        {
-            ret.append(sep);
-            ret.append(filterExpr);
-            sep = ",";
-        }
-        ret.append("]");
-        return ret.toString();
+        return getFilters("null", "[", "", ",", "]");
     }
-
 
     /**
      * This is very close to getStandardJavaScriptParameters(), however,
      * getStandardJavaScriptParameters() may inject JavaScript _code_ e.g. Filter constructors etc.
-     *
      * This method returns a pure JSON representation of the view.
      *
      * @return
@@ -136,7 +121,6 @@ public class JavaScriptExportScriptModel extends ExportScriptModel
         return config;
     }
 
-
     public JSONArray getJSONFilters()
     {
         // Returns filters in a JSON format for use with the GetData API.
@@ -165,7 +149,6 @@ public class JavaScriptExportScriptModel extends ExportScriptModel
         return filters;
     }
 
-
     public JSONArray getJSONColumns()
     {
         // Returns columns in a JSON format for use with the GetData API.
@@ -183,10 +166,15 @@ public class JavaScriptExportScriptModel extends ExportScriptModel
     }
 
     @Override
+    protected String quote(String value)
+    {
+        return PageFlowUtil.jsString(value);
+    }
+
+    @Override
     protected String makeFilterExpression(String name, CompareType operator, String value)
     {
-        return "LABKEY.Filter.create(" + PageFlowUtil.jsString(name) + ", "
-                + PageFlowUtil.jsString(value) + ", LABKEY.Filter.Types." + operator.getScriptName() + ")";
+        return "LABKEY.Filter.create(" + quote(name) + ", " + quote(value) + ", LABKEY.Filter.Types." + operator.getScriptName() + ")";
     }
 
     // Produce javascript code block containing all the standard query parameters. Callers need to wrap this block in
@@ -196,20 +184,20 @@ public class JavaScriptExportScriptModel extends ExportScriptModel
         String indent = StringUtils.repeat(" ", indentSpaces);
         StringBuilder params = new StringBuilder();
         params.append(indent).append("requiredVersion: 9.1,\n");
-        params.append(indent).append("schemaName: ").append(PageFlowUtil.jsString(getSchemaName())).append(",\n");
+        params.append(indent).append("schemaName: ").append(quote(getSchemaName())).append(",\n");
 
         if (null != getViewName())
-            params.append(indent).append("viewName: ").append(PageFlowUtil.jsString(getViewName())).append(",\n");
+            params.append(indent).append("viewName: ").append(quote(getViewName())).append(",\n");
 
-        params.append(indent).append("queryName: ").append(PageFlowUtil.jsString(getQueryName())).append(",\n");
-        params.append(indent).append("columns: ").append(PageFlowUtil.jsString(getColumns())).append(",\n");  // TODO: Inconsistent with R and SAS, which don't include view columns
+        params.append(indent).append("queryName: ").append(quote(getQueryName())).append(",\n");
+        params.append(indent).append("columns: ").append(quote(getColumns())).append(",\n");
         params.append(indent).append("filterArray: ").append(getFilters());
 
         if (hasSort())
-            params.append(",\n").append(indent).append("sort: ").append(PageFlowUtil.jsString(getSort()));
+            params.append(",\n").append(indent).append("sort: ").append(quote(getSort()));
 
         if (hasContainerFilter())
-            params.append(",\n").append(indent).append("containerFilter: ").append(PageFlowUtil.jsString(getContainerFilterTypeName()));
+            params.append(",\n").append(indent).append("containerFilter: ").append(quote(getContainerFilterTypeName()));
 
         if (hasQueryParameters())
         {

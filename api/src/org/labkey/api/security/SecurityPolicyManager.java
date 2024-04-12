@@ -140,13 +140,8 @@ public class SecurityPolicyManager
         return policy.getResourceId();
     }
 
-    // Preferred method: this one validates, creates audit events, and returns whether roles were changed
+    // Validates, creates audit events, and returns whether any role assignments were changed
     public static boolean savePolicy(@NotNull MutableSecurityPolicy policy, @NotNull User user)
-    {
-        return savePolicy(policy, user, true);
-    }
-
-    public static boolean savePolicy(@NotNull MutableSecurityPolicy policy, @NotNull User user, boolean validateUsers)
     {
         Container c = ContainerManager.getForId(policy.getContainerId());
         if (null == c)
@@ -182,13 +177,13 @@ public class SecurityPolicyManager
             }
         }
 
-        savePolicyToDBAndValidate(policy, validateUsers);
+        savePolicyToDBAndValidate(policy);
         writeToAuditLog(c, user, resource, oldPolicy, policy);
 
         return !changedRoles.isEmpty();
     }
 
-    private static void savePolicyToDBAndValidate(@NotNull MutableSecurityPolicy policy, boolean validateUsers)
+    private static void savePolicyToDBAndValidate(@NotNull MutableSecurityPolicy policy)
     {
         DbScope scope = core.getSchema().getScope();
 
@@ -224,14 +219,11 @@ public class SecurityPolicyManager
             //insert rows for the policy entries
             for (RoleAssignment assignment : policy.getAssignments())
             {
-                if (validateUsers)
+                UserPrincipal principal = SecurityManager.getPrincipal(assignment.getUserId());
+                if (principal == null)
                 {
-                    UserPrincipal principal = SecurityManager.getPrincipal(assignment.getUserId());
-                    if (principal == null)
-                    {
-                        logger.info("Principal " + assignment.getUserId() + " no longer in database. Removing from policy.");
-                        continue;
-                    }
+                    logger.info("Principal " + assignment.getUserId() + " no longer in database. Removing from policy.");
+                    continue;
                 }
                 Table.insert(null, table, assignment);
             }

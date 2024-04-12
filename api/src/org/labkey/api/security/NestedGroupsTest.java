@@ -270,9 +270,9 @@ public class NestedGroupsTest extends Assert
         notExpected(allGroups, divB, divC, testers, writers, siteGroup1);
 
         List<Group> projectGroups = SecurityManager.getGroups(_project, false);
-        String svg = GroupManager.getGroupGraphSvg(projectGroups, user, false);
+        String graph = GroupManager.getGroupGraphDot(projectGroups, user, false);
 
-        // TODO: Assert something about svg... maybe just length of svg?
+        // TODO: Assert something about the graph... maybe just length?
     }
 
     private Group create(String name)
