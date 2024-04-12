@@ -18,7 +18,6 @@ package org.labkey.api.query;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ActionURL;
@@ -26,11 +25,6 @@ import org.labkey.api.view.ActionURL;
 import java.net.URLEncoder;
 import java.util.List;
 
-/**
- * User: bbimber
- * Date: 2/5/12
- * Time: 8:39 PM
- */
 public class URLExportScriptModel extends ExportScriptModel
 {
     private final QueryView _view;
@@ -42,10 +36,16 @@ public class URLExportScriptModel extends ExportScriptModel
     }
 
     @Override
+    protected String quote(String value)
+    {
+        throw new IllegalStateException("Should not be called");
+    }
+
+    @Override
     public String getFilters()
     {
-        List<String> expressions = super.getFilterExpressions();
-        if (expressions != null && expressions.size() > 0)
+        List<String> expressions = getFilterExpressions();
+        if (expressions != null && !expressions.isEmpty())
             return "&" + StringUtils.join(expressions, "&");
 
         return "";
@@ -57,24 +57,6 @@ public class URLExportScriptModel extends ExportScriptModel
         return "query." + URLEncoder.encode(FieldKey.fromString(name).toString(), StringUtilsLabKey.DEFAULT_CHARSET) +
                 "~" + URLEncoder.encode(operator.getPreferredUrlKey(), StringUtilsLabKey.DEFAULT_CHARSET) + "=" +
                 (value == null ? "" : URLEncoder.encode(value, StringUtilsLabKey.DEFAULT_CHARSET));
-    }
-
-    @Override
-    public String getColumns()
-    {
-        StringBuilder ret = new StringBuilder();
-        String sep = "";
-        for (DisplayColumn dc : getQueryView().getDisplayColumns())
-        {
-            if (dc.isQueryColumn())
-            {
-                ret.append(sep);
-                ret.append(dc.getColumnInfo().getName());
-                sep = ",";
-            }
-        }
-
-        return ret.toString().replace(",$", "");
     }
 
     private String getURL()
@@ -94,7 +76,7 @@ public class URLExportScriptModel extends ExportScriptModel
         if (null != getViewName())
             url.addParameter("query.viewName", getViewName());
 
-        url.addParameter("query.columns", getColumns());
+        url.addParameter("query.columns", getColumns().replace(",$", ""));
 
         if (hasQueryParameters())
             getQueryParameters().forEach((key, value) -> url.addParameter("query.param." + key, value));
@@ -102,13 +84,12 @@ public class URLExportScriptModel extends ExportScriptModel
         if (hasSort())
             url.addParameter("query.sort", getSort());
 
-        return AppProps.getInstance().getBaseServerUrl() + url.toString() + getFilters();
+        return AppProps.getInstance().getBaseServerUrl() + url + getFilters();
     }
 
     @Override
     public String getScriptExportText()
     {
-        return "The following URL can be used to reload the query, preserving any filters, sorts, or custom sets of columns:\n\n" +
-                getURL();
+        return "The following URL can be used to reload the query, preserving any filters, sorts, or custom sets of columns:\n\n" + getURL();
     }
 }
