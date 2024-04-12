@@ -70,7 +70,7 @@ public class SasExportScriptModel extends ExportScriptModel
             sb.append("\n");
         }
 
-        // Note: Does not output the list a columns for some reason
+        // Note: Does not output the list of columns like all the other exporters
         sb.append("%labkeySelectRows(dsn=mydata,").append("\n");
         sb.append(indent).append("baseUrl=").append(quote(getBaseUrl())).append(",").append("\n");
         sb.append(indent).append("folderPath=").append(quote(getFolderPath())).append(",").append("\n");
