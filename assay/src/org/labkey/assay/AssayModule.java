@@ -69,6 +69,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.assay.data.generator.AssayDesignGenerator;
 import org.labkey.assay.data.generator.AssayRunDataGenerator;
+import org.labkey.assay.data.generator.PlateSetDataGenerator;
 import org.labkey.assay.pipeline.AssayImportRunTask;
 import org.labkey.assay.plate.AssayPlateDataDomainKind;
 import org.labkey.assay.plate.AssayPlateMetadataServiceImpl;
@@ -170,6 +171,7 @@ public class AssayModule extends SpringModule
 
         DataGeneratorRegistry.registerGenerator(DataGeneratorRegistry.DataType.AssayDesigns, new AssayDesignGenerator.Driver());
         DataGeneratorRegistry.registerGenerator(DataGeneratorRegistry.DataType.AssayRunData, new AssayRunDataGenerator.Driver());
+        DataGeneratorRegistry.registerGenerator(DataGeneratorRegistry.DataType.PlateSets, new PlateSetDataGenerator.Driver());
 
         PropertyService.get().registerDomainKind(new PlateMetadataDomainKind());
         CacheManager.addListener(PlateCache::clearCache);
