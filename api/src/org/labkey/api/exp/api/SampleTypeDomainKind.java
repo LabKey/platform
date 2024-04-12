@@ -379,7 +379,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         List<String> previewNames = new ArrayList<>();
         if (StringUtils.isNotBlank(options.getNameExpression()))
         {
-            NameExpressionValidationResult results = NameGenerator.getValidationMessages(domainDesign.getName(), options.getNameExpression(), domainDesign.getFields(), options.getImportAliases(), container);
+            NameExpressionValidationResult results = NameGenerator.getValidationMessages(ExperimentService.get().getTinfoMaterial(), domainDesign.getName(), options.getNameExpression(), domainDesign.getFields(), options.getImportAliases(), container);
             if (results.errors() != null && !results.errors().isEmpty())
                 results.errors().forEach(error -> errors.add("Name Pattern error: " + error));
             if (results.warnings() != null && !results.warnings().isEmpty())
@@ -394,7 +394,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
 
         if (StringUtils.isNotBlank(options.getAliquotNameExpression()))
         {
-            NameExpressionValidationResult results = NameGenerator.getValidationMessages(domainDesign.getName(), options.getAliquotNameExpression(), domainDesign.getFields(), options.getImportAliases(), container);
+            NameExpressionValidationResult results = NameGenerator.getValidationMessages(ExperimentService.get().getTinfoMaterial(), domainDesign.getName(), options.getAliquotNameExpression(), domainDesign.getFields(), options.getImportAliases(), container);
             if (results.errors() != null && !results.errors().isEmpty())
                 results.errors().forEach(error -> errors.add("Aliquot Name Pattern error: " + error));
             if (results.warnings() != null && !results.warnings().isEmpty())
@@ -410,7 +410,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     private @NotNull ValidationException getNamePatternValidationResult(String currentSampleType, String patten, List<? extends GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, Container container)
     {
         ValidationException errors = new ValidationException();
-        NameExpressionValidationResult results = NameGenerator.getValidationMessages(currentSampleType, patten, properties, importAliases, container);
+        NameExpressionValidationResult results = NameGenerator.getValidationMessages(ExperimentService.get().getTinfoMaterial(), currentSampleType, patten, properties, importAliases, container);
         if (results.errors() != null && !results.errors().isEmpty())
             results.errors().forEach(error -> errors.addError(new SimpleValidationError(error)));
         return errors;
