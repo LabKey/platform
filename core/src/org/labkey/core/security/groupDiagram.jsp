@@ -105,8 +105,10 @@
             const svgString = tag.href;
             if (svgString && svgString.baseVal)
             {
-                const script = svgString.baseVal.replace('js:', '');
-                tag['onclick'] = function() { if (script.length > 0) eval(script); return false; };
+                const groupId = svgString.baseVal;
+                tag['onclick'] = 'N/A' !== groupId ?
+                    function() { window.parent.showPopupId(groupId); return false; } :
+                    function() { return false; }
                 svgString.baseVal = null;
                 svgString.animVal = null;
             }
@@ -117,7 +119,7 @@
     {
         if (response.responseText)
         {
-            var bean = Ext4.JSON.decode(response.responseText);
+            const bean = Ext4.JSON.decode(response.responseText);
 
             if (bean.exception)
             {

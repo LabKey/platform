@@ -133,7 +133,7 @@ public class GroupManager
 
 
     // groups is a collection of one or more root groups to diagram
-    public static String getGroupGraphSvg(Collection<Group> groups, User user, boolean hideUnconnected)
+    public static String getGroupGraphDot(Collection<Group> groups, User user, boolean hideUnconnected)
     {
         StringBuilder sb = new StringBuilder("digraph groups\n{\n");
         HashSet<Integer> connected = new HashSet<>();
@@ -170,17 +170,18 @@ public class GroupManager
                 sb.append("\t").append(g.getUserId()).append(" [");
                 appendDotAttribute(sb, false, "label", g.getName() + (userCount > 0 ? "\\n" + StringUtilsLabKey.pluralize(userCount, "user") : "") + (groupCount > 0 ? "\\n" + StringUtilsLabKey.pluralize(groupCount, "group") : ""));
 
-                // Note: To evade strict CSP checking, client code moves the "js:" code into an onclick handler after
-                // the SVG has been injected into the page. There are other ways to do this (e.g., stop using URL and
-                // pass handler attachment code to the client) but we need to set URL to something so tooltip appears.
+                // Note: Strict CSP doesn't allow setting a javascript: URL here, so we'll attach an appropriate event
+                // handler on the client. GraphViz supports a very limited number of attributes, so use "URL" to pass
+                // the groupId through to the SVG (if the admin is able to manage that group). We have to provide some
+                // non-empty value for URL anyway, otherwise the tooltip is ignored.
                 if (g.isProjectGroup() || (isUserManager && !g.isSystemGroup()) || user.hasSiteAdminPermission())
                 {
-                    appendDotAttribute(sb, true, "URL", "js:window.parent.showPopupId(" + g.getUserId() + ")");
+                    appendDotAttribute(sb, true, "URL", String.valueOf(g.getUserId()));
                     appendDotAttribute(sb, true, "tooltip", "Click to manage the '" + g.getName() + "' " + (g.isProjectGroup() ? "project" : "site") + " group");
                 }
                 else
                 {
-                    appendDotAttribute(sb, true, "URL", "js:");
+                    appendDotAttribute(sb, true, "URL", "N/A");
                     appendDotAttribute(sb, true, "tooltip", "You must be a site administrator to manage site groups");
                 }
 
