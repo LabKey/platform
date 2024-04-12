@@ -2171,7 +2171,7 @@ public class SecurityController extends SpringActionController
             }
             else
             {
-                String dot = GroupManager.getGroupGraphSvg(groups, getUser(), form.getHideUnconnected());
+                String graph = GroupManager.getGroupGraphDot(groups, getUser(), form.getHideUnconnected());
                 File dir = FileUtil.getTempDirectory();
                 File svgFile = null;
 
@@ -2179,7 +2179,7 @@ public class SecurityController extends SpringActionController
                 {
                     svgFile = FileUtil.createTempFile("groups", ".svg", dir);
                     svgFile.deleteOnExit();
-                    DotRunner runner = new DotRunner(dir, dot);
+                    DotRunner runner = new DotRunner(dir, graph);
                     runner.addSvgOutput(svgFile);
                     runner.execute();
                     String svg = PageFlowUtil.getFileContentsAsString(svgFile);
