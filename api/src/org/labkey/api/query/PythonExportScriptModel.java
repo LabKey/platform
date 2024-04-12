@@ -15,27 +15,20 @@
  */
 package org.labkey.api.query;
 
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CompareType;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.util.PageFlowUtil;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * User: jimp
- * Date: 8/61/15
- * Time: 8:39 PM
- */
 public class PythonExportScriptModel extends ExportScriptModel
 {
-    private int _indentSpaces = 4;
+    private static final int INDENT_SPACES = 4;
 
     private static final Logger _log = LogManager.getLogger(PythonExportScriptModel.class);
 
@@ -48,55 +41,29 @@ public class PythonExportScriptModel extends ExportScriptModel
     @Nullable
     public String getFilters()
     {
-        String indent = StringUtils.repeat(" ", _indentSpaces);
+        String indent = StringUtils.repeat(" ", INDENT_SPACES);
 
-        List<String> filterExprs = getFilterExpressions();
-        if (null == filterExprs || filterExprs.size() == 0)
-            return null;
+        return getFilters(null, "[", "\n" + indent + indent, ",", "\n" + indent + "]");
+    }
 
-        StringBuilder ret = new StringBuilder("[");
-        String sep = "\n";
-
-        for (String filterExpr : filterExprs)
-        {
-            ret.append(sep).append(indent).append(indent);
-            ret.append(filterExpr);
-            sep = ",\n";
-        }
-        ret.append("\n").append(indent).append("]");
-        return ret.toString();
+    @Override
+    protected String quote(String value)
+    {
+        // Use Java string literals escaping, since it's nearly identical to Python
+        return "\"" + StringEscapeUtils.escapeJava(value) + "\"";
     }
 
     // Our python client api will generate the query filter, so call the constructor
     @Override
     protected String makeFilterExpression(String name, CompareType operator, String value)
     {
-        return "labkey.query.QueryFilter(" + PageFlowUtil.jsString(name) + ", " + PageFlowUtil.jsString(value)
-                + ", " + PageFlowUtil.jsString(operator.getPreferredUrlKey()) + ")";
-    }
-
-    @Override
-    public String getColumns()
-    {
-        StringBuilder ret = new StringBuilder();
-        String sep = "";
-
-        for (DisplayColumn dc : getQueryView().getDisplayColumns())
-        {
-            if (dc.isQueryColumn())
-            {
-                ret.append(sep);
-                ret.append(dc.getColumnInfo().getName());
-                sep = ",";
-            }
-        }
-        return ret.toString();
+        return "labkey.query.QueryFilter(" + quote(name) + ", " + quote(value)
+                + ", " + quote(operator.getPreferredUrlKey()) + ")";
     }
 
     /**
      * Generate the python Server Context object
      * Assumes generating server is export script target.
-     * @return
      */
     private String getPythonApiWrapper()
     {
@@ -106,12 +73,12 @@ public class PythonExportScriptModel extends ExportScriptModel
         {
             URL baseUrl = new URL(getBaseUrl());
             sb.append("api = APIWrapper(");
-            sb.append(PageFlowUtil.jsString(baseUrl.getAuthority())).append(", ");
-            sb.append(PageFlowUtil.jsString(getFolderPath().substring(1))).append(", ");
+            sb.append(quote(baseUrl.getAuthority())).append(", ");
+            sb.append(quote(getFolderPath().substring(1))).append(", ");
 
             // 25082: The server may not have a context path
             if (baseUrl.getPath() != null && baseUrl.getPath().length() > 1)
-                sb.append(PageFlowUtil.jsString(baseUrl.getPath().substring(1))).append(", ");
+                sb.append(quote(baseUrl.getPath().substring(1))).append(", ");
 
             sb.append("use_ssl=").append(baseUrl.getProtocol().equals("https") ? "True" : "False");
             sb.append(")\n");
@@ -132,13 +99,14 @@ public class PythonExportScriptModel extends ExportScriptModel
     private String getStandardScriptParameters()
     {
         StringBuilder params = new StringBuilder();
-        String indent = StringUtils.repeat(" ", _indentSpaces);
+        String indent = StringUtils.repeat(" ", INDENT_SPACES);
 
-        params.append(indent).append("schema_name=").append(PageFlowUtil.jsString(getSchemaName())).append(",\n");
-        params.append(indent).append("query_name=").append(PageFlowUtil.jsString(getQueryName()));
+        params.append(indent).append("schema_name=").append(quote(getSchemaName())).append(",\n");
+        params.append(indent).append("query_name=").append(quote(getQueryName()));
         if (null != getViewName())
-            params.append(",\n").append(indent).append("view_name=").append(PageFlowUtil.jsString(getViewName()));
+            params.append(",\n").append(indent).append("view_name=").append(quote(getViewName()));
 
+        params.append(",\n").append(indent).append("columns=").append(quote(getColumns()));
         // Generate filter string
         String filters = getFilters();
         if (null != filters)
@@ -146,17 +114,17 @@ public class PythonExportScriptModel extends ExportScriptModel
 
         // Generate Sort string
         if (hasSort())
-            params.append(",\n").append(indent).append("sort=").append(PageFlowUtil.jsString(getSort()));
+            params.append(",\n").append(indent).append("sort=").append(quote(getSort()));
 
         // Generate ContainerFilter
         if (hasContainerFilter())
-            params.append(",\n").append(indent).append("container_filter=").append(PageFlowUtil.jsString(getContainerFilterTypeName()));
+            params.append(",\n").append(indent).append("container_filter=").append(quote(getContainerFilterTypeName()));
 
         if (hasQueryParameters())
         {
             params.append(",\n").append(indent).append("parameters={");
             params.append(getQueryParameters().entrySet().stream()
-                .map(e -> "'" + e.getKey() + "': '" + e.getValue() + "'")
+                .map(e -> quote(e.getKey()) + ": " + quote(e.getValue()))
                 .collect(Collectors.joining(", ")));
             params.append("}");
         }

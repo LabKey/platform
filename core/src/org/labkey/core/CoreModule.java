@@ -830,14 +830,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         ContainerManager.bootstrapContainer("/", noPermsRole, noPermsRole, devRole, adminRole);
         Container rootContainer = ContainerManager.getRoot();
 
-        Group devs = SecurityManager.getGroup(Group.groupDevelopers);
-        if (null != devs)
-        {
-            MutableSecurityPolicy policy = new MutableSecurityPolicy(rootContainer, rootContainer.getPolicy());
-            policy.addRoleAssignment(devs, PlatformDeveloperRole.class);
-            SecurityPolicyManager.savePolicy(policy, User.getAdminServiceUser(), false);
-        }
-
         // Create all the standard containers (Home, Home/support, Shared) using an empty Collaboration folder type
         FolderType collaborationType = new CollaborationFolderType(Collections.emptyList());
 
