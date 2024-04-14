@@ -18,6 +18,7 @@ package org.labkey.api.security.roles;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.SecurityPolicy;
@@ -135,7 +136,7 @@ public class RoleManager
         _adminRoleListeners.add(listener);
     }
 
-    public static Role getRole(String name)
+    public static @Nullable Role getRole(String name)
     {
         Role role = _nameToRoleMap.get(name);
         if (null == role)
