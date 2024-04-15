@@ -133,7 +133,7 @@ public class GroupManager
 
 
     // groups is a collection of one or more root groups to diagram
-    public static String getGroupGraphSvg(Collection<Group> groups, User user, boolean hideUnconnected)
+    public static String getGroupGraphDot(Collection<Group> groups, User user, boolean hideUnconnected)
     {
         StringBuilder sb = new StringBuilder("digraph groups\n{\n");
         HashSet<Integer> connected = new HashSet<>();
@@ -168,16 +168,20 @@ public class GroupManager
                 boolean isUserManager = user.hasRootPermission(UserManagementPermission.class);
 
                 sb.append("\t").append(g.getUserId()).append(" [");
-                appendDotAttribute(sb, false, "label", g.getName() + (userCount > 0 ? "\\n " + StringUtilsLabKey.pluralize(userCount, "user") : "") + (groupCount > 0 ? "\\n" + StringUtilsLabKey.pluralize(groupCount, "group") : ""));
+                appendDotAttribute(sb, false, "label", g.getName() + (userCount > 0 ? "\\n" + StringUtilsLabKey.pluralize(userCount, "user") : "") + (groupCount > 0 ? "\\n" + StringUtilsLabKey.pluralize(groupCount, "group") : ""));
 
+                // Note: Strict CSP doesn't allow setting a javascript: URL here, so we'll attach an appropriate event
+                // handler on the client. GraphViz supports a very limited number of attributes, so use "URL" to pass
+                // the groupId through to the SVG (if the admin is able to manage that group). We have to provide some
+                // non-empty value for URL anyway, otherwise the tooltip is ignored.
                 if (g.isProjectGroup() || (isUserManager && !g.isSystemGroup()) || user.hasSiteAdminPermission())
                 {
-                    appendDotAttribute(sb, true, "URL", "javascript:window.parent.showPopupId(" + g.getUserId() + ")");
+                    appendDotAttribute(sb, true, "URL", String.valueOf(g.getUserId()));
                     appendDotAttribute(sb, true, "tooltip", "Click to manage the '" + g.getName() + "' " + (g.isProjectGroup() ? "project" : "site") + " group");
                 }
                 else
                 {
-                    appendDotAttribute(sb, true, "URL", "javascript:void()");
+                    appendDotAttribute(sb, true, "URL", "N/A");
                     appendDotAttribute(sb, true, "tooltip", "You must be a site administrator to manage site groups");
                 }
 
@@ -210,7 +214,7 @@ public class GroupManager
         xmlGroupType.setName(group.getName());
         xmlGroupType.setType(group.isProjectGroup() ? GroupEnumType.PROJECT : GroupEnumType.SITE);
 
-        if (memberGroups != null && memberGroups.size() > 0)
+        if (memberGroups != null && !memberGroups.isEmpty())
         {
             GroupRefsType xmlGroups = xmlGroupType.addNewGroups();
             for (Group member : memberGroups)
@@ -221,7 +225,7 @@ public class GroupManager
             }
         }
 
-        if (memberUsers != null && memberUsers.size() > 0)
+        if (memberUsers != null && !memberUsers.isEmpty())
         {
             UserRefsType  xmlUsers = xmlGroupType.addNewUsers();
             for (User member : memberUsers)

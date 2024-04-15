@@ -976,7 +976,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                             Object oldValue = run.getProperty(propertyDescriptor);
                             if (propertyDescriptor.getPropertyType() == PropertyType.FILE_LINK && (value instanceof MultipartFile || value instanceof SpringAttachmentFile))
                             {
-                                value = saveFile(container, col.getName(), value, AssayFileWriter.DIR_NAME);
+                                value = saveFile(user, container, col.getName(), value, AssayFileWriter.DIR_NAME);
                             }
 
                             ForeignKey fk = col.getFk();
