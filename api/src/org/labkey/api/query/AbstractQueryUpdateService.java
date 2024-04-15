@@ -68,6 +68,8 @@ import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
@@ -86,6 +88,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.test.TestWhen;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
@@ -110,6 +113,7 @@ import static java.util.Objects.requireNonNull;
 import static org.labkey.api.audit.TransactionAuditProvider.DB_SEQUENCE_NAME;
 import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior;
 import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment;
+import static org.labkey.api.files.FileContentService.UPLOADED_FILE;
 
 public abstract class AbstractQueryUpdateService implements QueryUpdateService
 {
@@ -935,8 +939,9 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     /**
      * Save uploaded file to dirName directory under file or pipeline root.
      */
-    public static Object saveFile(Container container, String name, Object value, @Nullable String dirName) throws ValidationException, QueryUpdateServiceException
+    public static Object saveFile(User user, Container container, String name, Object value, @Nullable String dirName) throws ValidationException, QueryUpdateServiceException
     {
+        File file = null;
         if (value instanceof MultipartFile)
         {
             try
@@ -948,10 +953,9 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                     throw new ValidationException("File " + multipartFile.getOriginalFilename() + " for field " + name + " has no content");
                 }
                 File dir = AssayFileWriter.ensureUploadDirectory(container, dirName);
-                File file = AssayFileWriter.findUniqueFileName(multipartFile.getOriginalFilename(), dir);
+                file = AssayFileWriter.findUniqueFileName(multipartFile.getOriginalFilename(), dir);
                 file = checkFileUnderRoot(container, file);
                 multipartFile.transferTo(file);
-                return file;
             }
             catch (ExperimentException | IOException e)
             {
@@ -964,20 +968,35 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             try
             {
                 File dir = AssayFileWriter.ensureUploadDirectory(container, dirName);
-                File file = AssayFileWriter.findUniqueFileName(saf.getFilename(), dir);
+                file = AssayFileWriter.findUniqueFileName(saf.getFilename(), dir);
                 file = checkFileUnderRoot(container, file);
                 saf.saveTo(file);
-                return file;
             }
             catch (IOException | ExperimentException e)
             {
                 throw new QueryUpdateServiceException(e);
             }
         }
-        else
-        {
+
+        if (file == null)
             return value;
+
+        ExpData existingData = ExperimentService.get().getExpDataByURL(file, container);
+        // create exp.data record
+        if (existingData == null)
+        {
+            File canonicalFile = FileUtil.getAbsoluteCaseSensitiveFile(file);
+            ExpData data = ExperimentService.get().createData(container, UPLOADED_FILE);
+            data.setName(file.getName());
+            data.setDataFileURI(canonicalFile.toPath().toUri());
+            if (data.getDataFileUrl() != null && data.getDataFileUrl().length() <= ExperimentService.get().getTinfoData().getColumn("DataFileURL").getScale())
+            {
+                // If the path is too long to store, bail out without creating an exp.data row
+                data.save(user);
+            }
         }
+
+        return file;
     }
 
     // For security reasons, make sure the user hasn't tried to reference a file that's not under

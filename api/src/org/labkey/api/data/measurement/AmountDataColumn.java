@@ -2,6 +2,7 @@ package org.labkey.api.data.measurement;
 
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.math3.util.Precision;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
@@ -82,8 +83,11 @@ public class AmountDataColumn extends DataColumn
             }
         }
 
+        if (storedAmount == null)
+            return null;
+
         if (ctx.get(_unitsField) == null)
-            return storedAmount;
+            return Precision.round(storedAmount, 6);
 
         try
         {
