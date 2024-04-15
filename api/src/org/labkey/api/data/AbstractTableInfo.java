@@ -44,6 +44,8 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.MetadataParseWarning;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryForeignKey;
+import org.labkey.api.query.QueryParseException;
+import org.labkey.api.query.QueryParseWarning;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
@@ -125,6 +127,8 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
 
     /** Used as a marker to indicate that a URL (such as insert or update) has been explicitly disabled. Null values get filled in with default URLs in some cases */
     public static final DetailsURL LINK_DISABLER = new DetailsURL(LINK_DISABLER_ACTION_URL);
+
+    private final List<QueryParseException> _warnings = new ArrayList<>();
     protected Iterable<FieldKey> _defaultVisibleColumns;
     protected DbSchema _schema;
     protected String _titleColumn;
@@ -188,6 +192,18 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     // drop-down list, etc.).
     protected void initializeColumns()
     {
+    }
+
+    public void addWarning(QueryParseException warning)
+    {
+        _warnings.add(warning);
+    }
+
+    @Override
+    public Collection<QueryParseException> getWarnings()
+    {
+        /* REMOVE ME */ if (_warnings.isEmpty()) addWarning(new QueryParseWarning("This is a test",null,0,0)); /* REMOVE ME */
+        return _warnings;
     }
 
     @NotNull
@@ -1256,6 +1272,10 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         if (xmlTable == null)
             return;
 
+        // At least one code path (UserSchema.getTable()) checks for warnings returned in the errors collection.  That seem like a lot of work to require for all callers.
+        // I'll collect warnings separately here and add them directly to the TableInfo.getWarnings() collection.  The local collection just makes this easy to change.
+        List<QueryParseException> warnings = new ArrayList<>();
+
         //See issue 18592
         if (!StringUtils.isEmpty(xmlTable.getTableName()))
         {
@@ -1350,18 +1370,27 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
                             catch (IllegalArgumentException e)
                             {
                                 // XMLBeans throws various subclasses when values in XML are invalid, see issue 27168
-                                LOG.warn("Invalid XML metadata for column " + xmlColumn.getColumnName() + " on " + getPublicSchemaName() + "." + getName() + ", skipping the rest of its metadata", e);
+                                String message = "Invalid XML metadata for column " + xmlColumn.getColumnName() + " on " + getPublicSchemaName() + "." + getName() + ", skipping the rest of its metadata";
+                                LOG.warn(message, e);
+                                warnings.add(new QueryParseWarning(message,null,0,0).setFieldName(xmlColumn.getColumnName()));
                             }
                         }
                     }
                 }
             }
 
+            Map<FieldKey,ColumnInfo> existingColumns = new HashMap<>();
+            for (var col : _columnMap.values())
+                existingColumns.put(col.getFieldKey(), col);
+
             for (ColumnType xmlColumn : wrappedColumns)
             {
                 // expression column can't hide built-in column
-                if (null != getMutableColumn(xmlColumn.getWrappedColumnName()))
+                if (null != getMutableColumn(xmlColumn.getColumnName()))
+                {
+                    warnings.add(new QueryParseWarning("A wrapped or calculated column cannot hide an existing column",null,0,0).setFieldName(xmlColumn.getColumnName()));
                     continue;
+                }
 
                 String sql = "";
                 if (xmlColumn.isSetValueExpression() && isNotBlank(xmlColumn.getValueExpression()))
@@ -1371,15 +1400,17 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
                 else if (xmlColumn.isSetWrappedColumnName() && isNotBlank(xmlColumn.getWrappedColumnName()))
                 {
                     sql = LabKeySql.quoteIdentifier(xmlColumn.getWrappedColumnName());
-                    if (!getColumnNameSet().contains(xmlColumn.getColumnName()))
-                        continue;
                 }
-                if (isNotBlank(sql))
+                try
                 {
                     var wrappedColumn = QueryService.get().createQueryExpressionColumn(this, FieldKey.fromParts(xmlColumn.getColumnName()), sql, xmlColumn);
-                    // TODO - propagate properties calculated/inferred from the SQL expression first, before calling initColumnFromXml()
-                    initColumnFromXml(schema, wrappedColumn, xmlColumn, errors);
+                    QueryService.get().bindQueryExpressionColumn(wrappedColumn, existingColumns, true, null);
                     addColumn(wrappedColumn);
+                }
+                catch (QueryParseException qpe)
+                {
+                    warnings.add(qpe.setFieldName(xmlColumn.getColumnName()));
+                    continue;
                 }
             }
 
@@ -1425,6 +1456,8 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             AuditType.Enum auditBehavior = xmlTable.getAuditLogging();
             setAuditBehavior(AuditBehaviorType.valueOf(auditBehavior.toString()));
         }
+
+        _warnings.addAll(warnings);
     }
 
     protected void configureViaTableCustomizer(Collection<QueryException> errors, TableCustomizerType xmlCustomizer)

@@ -267,7 +267,7 @@ public interface QueryService
 
     BaseColumnInfo createQueryExpressionColumn(TableInfo table, FieldKey key, String labKeySql, ColumnType columnType);
     BaseColumnInfo createQueryExpressionColumn(TableInfo table, FieldKey key, FieldKey wrapped, ColumnType columnType);
-    void bindQueryExpressionColumn(ColumnInfo col, Map<FieldKey,ColumnInfo> columns, boolean validateOnly) throws QueryParseException;
+    void bindQueryExpressionColumn(ColumnInfo col, Map<FieldKey,ColumnInfo> columns, boolean validateOnly, @Nullable Set<FieldKey> referencedKeys) throws QueryParseException;
 
     void addCompareType(CompareType type);
 

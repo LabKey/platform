@@ -25,8 +25,11 @@ import org.labkey.api.util.ExceptionUtil;
 
 import java.util.Map;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
+
 public class QueryParseException extends QueryException
 {
+    protected String _field;    // extra context when appropriate (for warning display in UI)
     protected int _line;
     protected int _column;
     protected Level _level = Level.ERROR;
@@ -45,6 +48,17 @@ public class QueryParseException extends QueryException
         _column = other._column;
     }
 
+    public String getFieldName()
+    {
+        return _field;
+    }
+
+    public QueryParseException setFieldName(String field)
+    {
+        _field = field;
+        return this;
+    }
+
     public boolean isError()
     {
         return _level.isMoreSpecificThan(Level.ERROR);
@@ -60,7 +74,7 @@ public class QueryParseException extends QueryException
     public String getMessage()
     {
         String ret = super.getMessage();
-        if (_line != 0)
+        if (_line > 0)
         {
             if (_level.intLevel() == Level.WARN.intLevel())
                 ret = "Warning on line " + _line + ": " + ret;
@@ -113,6 +127,8 @@ public class QueryParseException extends QueryException
             String errorStr = lines[getLine() - 1];
             error.put("errorStr", errorStr);
         }
+        if (!isBlank(_field))
+            error.put("field", _field);
         Map<Enum<?>, String> decorations = ExceptionUtil.getExceptionDecorations(this);
         if (!decorations.isEmpty())
         {

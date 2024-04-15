@@ -8059,6 +8059,118 @@ public class QueryController extends SpringActionController
         }
     }
 
+    public static class ParseForm implements ApiJsonForm
+    {
+        String expression = "";
+        Map<String,JdbcType> columnMap = new CaseInsensitiveHashMap<>();
+
+        Map<String, JdbcType> getColumnMap()
+        {
+            return columnMap;
+        }
+
+        public String getExpression()
+        {
+            return expression;
+        }
+
+        public void setExpression(String expression)
+        {
+            this.expression = expression;
+        }
+
+        @Override
+        public void bindJson(JSONObject json)
+        {
+            if (json.has("expression"))
+                setExpression(json.getString("expression"));
+            if (json.has("columnMap"))
+            {
+                JSONObject columnMap = json.getJSONObject("columnMap");
+                for (String key : columnMap.keySet())
+                {
+                    try
+                    {
+                        getColumnMap().put(key, JdbcType.valueOf(String.valueOf(columnMap.get(key))));
+                    }
+                    catch (IllegalArgumentException iae)
+                    {
+                        getColumnMap().put(key, JdbcType.OTHER);
+                    }
+                }
+            }
+        }
+    }
+
+
+    /**
+     * Since this api purpose is to return parse errors, it does not generally return success:false
+     * It just returns the errors messages.
+     *<br>
+     * expects JSON like this:
+     * <pre>
+     *     { "expression": "A+B", "columnMap":{"A":"VARCHAR", "B":"VARCHAR"}}
+     * </pre>
+     * and returns a response like this
+     * <pre>
+     *     {
+     *       "jdbcType" : "VARCHAR",
+     *       "success" : true,
+     *       "requiredFieldKeys" : [ "A", "B" ]
+     *     }
+     * </pre>
+     * NOTE: that field keys are returned in FieldKey.toString() formatting e.g. dollar-sign encoded.
+     */
+    @RequiresNoPermission
+    @CSRF(CSRF.Method.NONE)
+    public class ParseCalculatedColumnAction extends ReadOnlyApiAction<ParseForm>
+    {
+        @Override
+        public Object execute(ParseForm form, BindException errors) throws Exception
+        {
+            if (errors.hasErrors())
+                return errors;
+            JSONObject result = new JSONObject(Map.of("success",true));
+            var requiredColumns = new HashSet<FieldKey>();
+            JdbcType jdbcType = JdbcType.OTHER;
+            try
+            {
+                var schema = DefaultSchema.get(getViewContext().getUser(), getViewContext().getContainer()).getUserSchema("core");
+                var table = new VirtualTable(schema.getDbSchema(), "EXPR", schema){};
+                ColumnInfo calculatedCol = QueryServiceImpl.get().createQueryExpressionColumn(table, new FieldKey(null, "expr"), form.getExpression(), null);
+                Map<FieldKey,ColumnInfo> columns = new HashMap<>();
+                for (var entry : form.getColumnMap().entrySet())
+                {
+                    FieldKey fieldKey = new FieldKey(null,entry.getKey());
+                    BaseColumnInfo entryCol = new BaseColumnInfo(fieldKey, entry.getValue());
+                    columns.put(fieldKey, entryCol);
+                    table.addColumn(entryCol);
+                }
+                // TODO: calculating jdbcType still uses calculatedCol.getParentTable().getColumns()
+                QueryServiceImpl.get().bindQueryExpressionColumn(calculatedCol, columns, false, requiredColumns);
+                jdbcType = calculatedCol.getJdbcType();
+            }
+            catch (QueryException x)
+            {
+                JSONArray parseErrors = new JSONArray();
+                parseErrors.put(x.toJSON(form.getExpression()));
+                result.put("errors", parseErrors);
+            }
+            finally
+            {
+                if (!requiredColumns.isEmpty())
+                {
+                    JSONArray fieldKeys = new JSONArray();
+                    for (FieldKey fk : requiredColumns)
+                        fieldKeys.put(fk.toString());
+                    result.put("requiredFieldKeys", fieldKeys);
+                }
+            }
+            result.put("jdbcType", jdbcType.name());
+            return result;
+        }
+    }
+
     public static class TestCase extends AbstractActionPermissionTest
     {
         @Override

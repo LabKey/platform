@@ -1,13 +1,11 @@
 package org.labkey.query.sql;
 
-import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.PHI;
@@ -20,12 +18,12 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.util.logging.LogHelper;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -35,11 +33,11 @@ import java.util.Set;
  */
 public class CalculatedExpressionColumn extends BaseColumnInfo
 {
-    private static final Logger LOG = LogHelper.getLogger(CalculatedExpressionColumn.class, "Calculated Expression Column");
-
     // Query-layer LabKey SQL fragment
     private final String _labKeySql;
     private final ColumnType _xmlColumn;
+    private HashSet<FieldKey> _allFieldKeys;
+    private QueryParseException _resolveException;
 
     // Parsed expression -- READ ONLY
     private QExpr _parsedExpr;
@@ -54,7 +52,6 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
 
     private JdbcType expressionJdbcType = null;
 
-//    private final ColumnInfo[] _dependentColumns;
 
     public CalculatedExpressionColumn(TableInfo parent, FieldKey key, String labKeySql, ColumnType columnType)
     {
@@ -62,6 +59,7 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
         _labKeySql = labKeySql;
         _xmlColumn = columnType;
     }
+
 
     @Override
     public @Nullable String getWrappedColumnName()
@@ -76,13 +74,29 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
         return null;
     }
 
+
+    public void validate(Map<FieldKey, ColumnInfo> columnMap, @Nullable Set<FieldKey> referencedKeys) throws QueryParseException
+    {
+        try
+        {
+            QExpr parsed = parse();
+            resolveFields(parsed, columnMap);
+        }
+        finally
+        {
+            if (null != referencedKeys)
+                referencedKeys.addAll(_allFieldKeys);
+        }
+    }
+
+
     public void computeMetaData(Map<FieldKey,ColumnInfo> columns)
     {
         if (null == columns)
             columns = Table.createColumnMap(getParentTable(), null);
 
         // set properties based on the expression
-        QExpr bound = getBoundExpression();
+        QExpr bound = getBoundExpression(columns);
         ColumnInfo from = null;
         if (bound instanceof _BoundColumn)
             from = columns.get(bound.getFieldKey());
@@ -107,16 +121,15 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
     }
 
 
-
     /**
      * TODO maybe have TableInfo call computeMetadata() in fireAfterConstruct()?
-     *
+     *<br>
      * We don't have a phase where we the TableInfo notifies it's columns, that it is "done".  But since this object
      * is shared, I'd prefer to calculate the type during construction and not on demand.
-     *
+     *<br>
      * Nothing breaks if we don't do this here, as we will still calculate the type getJdbcType() if we need to.
      *
-     * @param b
+     * @param b set locked state
      */
     @Override
     public void setLocked(boolean b)
@@ -125,16 +138,6 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
         super.setLocked(b);
     }
 
-    @Override
-    public @NotNull JdbcType getJdbcType()
-    {
-        if (null == expressionJdbcType)
-        {
-            var bound = getBoundExpression();
-            expressionJdbcType = bound.getJdbcType();
-        }
-        return expressionJdbcType;
-    }
 
     private QExpr parse()
     {
@@ -154,77 +157,41 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
         return _parsedExpr;
     }
 
-    // copied from QueryServiceImpl.WhereClause
-    private void collectKeys(QExpr expr, Set<FieldKey> set)
-    {
-//        if (expr instanceof QQuery || expr instanceof QUnion || expr instanceof QRowStar || expr instanceof QIfDefined)
-//            return;
-        if (expr instanceof QQuery)
-        {
-//            QueryRelation sub = ((QQuery)expr).getQuerySelect();
-//            if (sub == null)
-//            {
-//                sub = Query.createQueryRelation(_query, (QQuery)expr, false);
-//                // ?
-////                sub._parent = _rootRelation;
-//                ((QQuery)expr)._select = sub;
-//                _subqueries.add(sub);
-//            }
-//            sub.declareFields();
-//
-//            // XXX: get select fields from sub?
-            // TODO
-            return;
-        }
-        if (expr instanceof QUnion)
-        {
-            // TODO
-        }
-        if (expr instanceof QRowStar)
-        {
-            // TODO
-        }
-        if (expr instanceof QIfDefined)
-        {
-            // TODO
-//            ((QIfDefined)expr).setQuerySelect(this);
-            return;
-        }
-
-        FieldKey key = expr.getFieldKey();
-        if (key != null)
-            set.add(key);
-
-        QExpr methodName = null;
-        if (expr instanceof QMethodCall)
-        {
-            methodName = (QExpr) expr.childList().get(0);
-            if (null == methodName.getFieldKey())
-                methodName = null;
-        }
-
-        if (!(expr instanceof QDot))
-        {
-            for (QNode child : expr.children())
-            {
-                // skip identifier that is actually a method
-                if (child != methodName)
-                    collectKeys((QExpr) child, set);
-            }
-        }
-    }
 
     /*
      * Return the result of replacing field names in the expression with QField objects.
      */
-    // copied from QueryServiceImpl.WhereClause
-    // copied from QuerySelect.resolveFields
     private QExpr resolveFields(QExpr expr, Map<FieldKey, ? extends ColumnInfo> columnMap)
     {
+        /* NOTE this does not throw immediate on encountering an error, as we want to collect all the referenced fields
+         * this is used for ParseCalculatedColumnAction.
+         */
+        _allFieldKeys = new HashSet<>();
+        _resolveException = null;
+        var ret = _resolveFields(expr, columnMap);
+        if (null != _resolveException)
+            throw _resolveException;
+        return ret;
+    }
+
+    private void setResolveException(String msg)
+    {
+        if (null == _resolveException)
+            _resolveException = new QueryParseException(msg, null, 0, 0);
+    }
+
+    private QExpr _resolveFields(QExpr expr, Map<FieldKey, ? extends ColumnInfo> columnMap)
+    {
         if (expr instanceof QQuery || expr instanceof QUnion)
-            throw new QueryParseException("SELECT and UNION are not allowed in calculated columns.", null, 0, 0);
+        {
+            setResolveException("SELECT and UNION are not allowed in calculated columns.");
+            return null;
+        }
         if (expr instanceof QRowStar)
-            throw new QueryParseException("Syntax error unexepected symbox '*'", null, 0, 0);
+        {
+            setResolveException("SELECT and UNION are not allowed in calculated columns.");
+            return null;
+        }
 
         if (expr instanceof QIfDefined && !((QIfDefined)expr).isDefined)
             return new QNull();
@@ -232,21 +199,35 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
         FieldKey key = expr.getFieldKey();
         if (key != null)
         {
+            _allFieldKeys.add(key);
             if (null != key.getParent())
-                throw new QueryParseException("Lookup is not allowed '" + key.toSQLString() + "'.", null, 0, 0);
+            {
+                setResolveException("Lookup is not allowed '" + key.toSQLString() + "'.");
+                return null;
+            }
             if (key.equals(this.getFieldKey()))
-                throw new QueryParseException("Calculated expression can not refer to itself.", null, 0, 0);
+            {
+                setResolveException("Calculated expression can not refer to itself.");
+                return null;
+            }
             ColumnInfo c = columnMap.get(key);
             if (null == c)
-                throw new QueryParseException("'" + key.toSQLString() + "' not found.", null, 0, 0);
+            {
+                setResolveException(key.toSQLString() + " not found.");
+                return null;
+            }
             if (c.getPHI() != null && !c.getPHI().isLevelAllowed(PHI.NotPHI))
-                throw new QueryParseException("'" + key.toSQLString() + "' has PHI, it cannot be used in a calculated expression.", null, 0, 0);
+            {
+                setResolveException(key.toSQLString() + " has PHI, it cannot be used in a calculated expression.");
+                return null;
+            }
             return new _BoundColumn(key);
         }
 
         if (expr instanceof QAggregate)
         {
-            throw new QueryParseException("SELECT and UNION are not allowed in calculated columns.", null, 0, 0);
+            setResolveException("SELECT and UNION are not allowed in calculated columns.");
+            return null;
         }
 
         QExpr methodName = null;
@@ -261,9 +242,15 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
         for (QNode child : expr.children())
         {
             if (child == methodName)
+            {
                 ret.appendChild(new QField(null, ((QExpr) child).getFieldKey().getName(), child));
+            }
             else
-                ret.appendChild(resolveFields((QExpr) child, columnMap));
+            {
+                var resolved = _resolveFields((QExpr) child, columnMap);
+                assert resolved != null || _resolveException != null;
+                ret.appendChild(null == resolved ? child : resolved);
+            }
         }
         return ret;
     }
@@ -292,6 +279,12 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
         {
             super();
             _fieldKey = fieldKey;
+        }
+
+        @Override
+        public FieldKey getFieldKey()
+        {
+            return _fieldKey;
         }
 
         @Override
@@ -328,42 +321,24 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
         return sql;
     }
 
-    public void validate(Map<FieldKey, ColumnInfo> columnMap) throws QueryParseException
+
+    private QExpr getBoundExpression()
     {
-        QExpr parsed = parse();
-        QExpr expr = resolveFields(parsed, columnMap);
+        if (null != _boundExpr)
+            return _boundExpr;
+        return getBoundExpression(Table.createColumnMap(getParentTable(), null));
     }
 
 
-    private QExpr getBoundExpression()
+    private QExpr getBoundExpression(Map<FieldKey, ColumnInfo> columnMap)
     {
         if (null == _boundExpr)
         {
             QExpr parsed = parse();
-            Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getParentTable(), getParentTable().getColumns());
             columnMap.remove(getFieldKey());
             _boundExpr = resolveFields(parsed, columnMap);
         }
         return _boundExpr;
-    }
-
-
-    @Override
-    public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
-    {
-//        if (_dependentColumns != null)
-//        {
-//            for (ColumnInfo col : _dependentColumns)
-//            {
-//                col.declareJoins(parentAlias, map);
-//            }
-//        }
-    }
-
-    @Override
-    public DisplayColumnFactory getDisplayColumnFactory()
-    {
-        return super.getDisplayColumnFactory();
     }
 
 
@@ -389,14 +364,6 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
         protected SchemaColumnMetaData createSchemaColumnMetaData() throws SQLException
         {
             return new SchemaColumnMetaData(this, colsToAdd, xmlToApply);
-        }
-
-        public BaseColumnInfo addColumn(String name, JdbcType type, String alias)
-        {
-            BaseColumnInfo c = new BaseColumnInfo(name, null, type);
-            c.setMetaDataName(alias);
-            addColumn(c);
-            return c;
         }
     }
 }

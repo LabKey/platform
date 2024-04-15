@@ -191,7 +191,7 @@ public class SchemaColumnMetaData
                     BaseColumnInfo exprColumn  = null != boundColumn ?
                             QueryService.get().createQueryExpressionColumn(tinfo, FieldKey.fromParts(xmlColumn.getColumnName()), boundColumn.getFieldKey(), xmlColumn) :
                             QueryService.get().createQueryExpressionColumn(tinfo, FieldKey.fromParts(xmlColumn.getColumnName()), sql, xmlColumn);
-                    QueryService.get().bindQueryExpressionColumn(exprColumn, allowedColumns, true);
+                    QueryService.get().bindQueryExpressionColumn(exprColumn, allowedColumns, true, null);
                     aliasManager = getAliasManager(aliasManager);
                     aliasManager.ensureAlias(exprColumn);
                     addColumn(exprColumn);
