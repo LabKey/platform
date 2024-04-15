@@ -1738,11 +1738,11 @@ public class AssayController extends SpringActionController
             ExpProtocol protocol = service.getExpProtocol(form.getProtocolId());
             AssayProvider provider = AssayService.get().getProvider(protocol);
             AssaySchema schema = provider.createProtocolSchema(getUser(), getContainer(), protocol, null);
-            TableInfo tableInfo = schema.getTable(AssayProtocolSchema.DATA_TABLE_NAME, ContainerFilter.EVERYTHING);
+            TableInfo tableInfo = schema.getTableOrThrow(AssayProtocolSchema.DATA_TABLE_NAME, ContainerFilter.EVERYTHING);
 
             // need to query to get the dataIds for the data rowIds so that we can check container permissions on that exp.data table
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), allowedIds, CompareType.IN);
-            List<Map<String, Object>> dataRows = new TableSelector(tableInfo, PageFlowUtil.set("rowid", "dataid"), filter, null).getMapCollection().stream().toList();
+            Collection<Map<String, Object>> dataRows = new TableSelector(tableInfo, PageFlowUtil.set("rowid", "dataid"), filter, null).getMapCollection();
             List<Integer> permittedRowIds = new ArrayList<>();
             for (Map<String, Object> dataRow : dataRows)
             {
