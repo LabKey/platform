@@ -112,7 +112,8 @@ public class NameGenerator
     public static final Pattern WITH_COUNTER_PATTERN = Pattern.compile(WITH_COUNTER_REGEX, Pattern.CASE_INSENSITIVE);
     public static final String WITH_COUNTER_NO_GAP_PARAM = "NoGap"; // named parameter to enforce continuity in sequence
 
-    public static final String EXPERIMENTAL_ALLOW_GAP_COUNTER = "AllowCounterGap";
+    public static final String EXPERIMENTAL_WITH_COUNTER = "UseStrictIncrementCounter"; // sql server
+    public static final String EXPERIMENTAL_ALLOW_GAP_COUNTER = "AllowCounterGap"; // postgres
 
     /**
      * Examples:
@@ -2405,7 +2406,7 @@ public class NameGenerator
             {
                 long existingCount = -1;
 
-                if (_strictIncremental || !AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_ALLOW_GAP_COUNTER))
+                if (_strictIncremental || ExperimentService.get().useStrictCounter())
                 {
                     counterSeq = DbSequenceManager.getReclaimable(_container, _counterSeqPrefix + prefix, 0);
                 }
@@ -2452,7 +2453,7 @@ public class NameGenerator
                 boolean noCache = counterSequences == null;
                 DbSequence counterSeq = null;
 
-                if (_strictIncremental || !AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_ALLOW_GAP_COUNTER))
+                if (_strictIncremental || ExperimentService.get().useStrictCounter())
                 {
                     synchronized (this)
                     {

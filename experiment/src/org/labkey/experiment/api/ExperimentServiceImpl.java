@@ -64,6 +64,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ConvertHelper;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
@@ -278,6 +279,8 @@ import static java.util.stream.Collectors.toSet;
 import static org.labkey.api.data.CompareType.IN;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTROLLBACK;
+import static org.labkey.api.data.NameGenerator.EXPERIMENTAL_ALLOW_GAP_COUNTER;
+import static org.labkey.api.data.NameGenerator.EXPERIMENTAL_WITH_COUNTER;
 import static org.labkey.api.exp.OntologyManager.getTinfoObject;
 import static org.labkey.api.exp.XarContext.XAR_JOB_ID_NAME;
 import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ExperimentRun;
@@ -9710,6 +9713,19 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         SchemaKey newSchema = SchemaKey.fromParts(AssaySchema.NAME, provider.getResourceName(), newAssayName);
         SchemaKey oldSchema = SchemaKey.fromParts(AssaySchema.NAME, provider.getResourceName(), oldAssayName);
         QueryChangeListener.QueryPropertyChange.handleSchemaNameChange(oldSchema.toString(), newSchema.toString(), newSchema, user, container);
+    }
+
+    @Override
+    public boolean useStrictCounter()
+    {
+        if (CoreSchema.getInstance().getSqlDialect().isSqlServer())
+        {
+            return AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_WITH_COUNTER);
+        }
+        else
+        {
+            return !AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_ALLOW_GAP_COUNTER);
+        }
     }
 
     public static class TestCase extends Assert

@@ -126,7 +126,6 @@ import static org.labkey.api.audit.SampleTimelineAuditEvent.SAMPLE_TIMELINE_EVEN
 import static org.labkey.api.data.CompareType.STARTS_WITH;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTROLLBACK;
-import static org.labkey.api.data.NameGenerator.EXPERIMENTAL_ALLOW_GAP_COUNTER;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.CPAS_TYPE;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.LSID;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.NAME;
@@ -2095,7 +2094,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                return null;
        }
 
-       if (!AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_ALLOW_GAP_COUNTER))
+       if (ExperimentService.get().useStrictCounter())
             return DbSequenceManager.getReclaimable(seqContainer, seqName, 0);
 
        return DbSequenceManager.getPreallocatingSequence(seqContainer, seqName, 0, 100);
