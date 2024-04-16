@@ -617,6 +617,8 @@ public class QueryManager
     public boolean validateQuery(TableInfo table, boolean testAllColumns, @NotNull List<QueryParseException> errors,
                                  @NotNull List<QueryParseException> warnings)
     {
+        errors.addAll(table.getWarnings());
+
         Collection<QueryService.ParameterDecl> params = table.getNamedParameters();
         Map<String,Object> parameters = new HashMap<>();
         for (QueryService.ParameterDecl p : params)

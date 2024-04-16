@@ -202,7 +202,6 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     @Override
     public Collection<QueryParseException> getWarnings()
     {
-        /* REMOVE ME */ if (_warnings.isEmpty()) addWarning(new QueryParseWarning("This is a test",null,0,0)); /* REMOVE ME */
         return _warnings;
     }
 
