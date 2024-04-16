@@ -381,7 +381,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
      */
     protected Set<FieldKey> expandColumns(Set<FieldKey> columns)
     {
-        if (_referencedColumns.isEmpty())
+        if (null == columns || columns.isEmpty() || _referencedColumns.isEmpty())
             return columns;
         // We're not recursively expanding. However, if expressions can reference each other we'll have to.
         HashSet<FieldKey> expanded = new HashSet<>();
