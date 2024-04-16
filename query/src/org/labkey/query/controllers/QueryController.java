@@ -8123,6 +8123,17 @@ public class QueryController extends SpringActionController
      * in FieldKey.toString() formatting e.g. dollar-sign encoded.  The object structure
      * is compatible with the columnMap input parameter, so it can be used as a template to make a second request
      * with types filled in.  If provided, the type will be copied from the input columnMap, otherwise it will be "OTHER".
+     * <br>
+     * Parse exceptions may contain a line (usually 1) and col location e.g.
+     * <pre>
+     * {
+     *     "msg" : "Error on line 1: Syntax error near 'error', expected 'EOF'
+     *     "col" : 2,
+     *     "line" : 1,
+     *     "type" : "sql",
+     *     "errorStr" : "A error B"
+     *   }
+     * </pre>
      */
     @RequiresNoPermission
     @CSRF(CSRF.Method.NONE)

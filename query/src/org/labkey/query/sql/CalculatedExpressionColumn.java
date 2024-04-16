@@ -84,7 +84,7 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
         }
         finally
         {
-            if (null != referencedKeys)
+            if (null != referencedKeys && null != _allFieldKeys)
                 referencedKeys.addAll(_allFieldKeys);
         }
     }
