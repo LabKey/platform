@@ -8062,9 +8062,9 @@ public class QueryController extends SpringActionController
     public static class ParseForm implements ApiJsonForm
     {
         String expression = "";
-        Map<String,JdbcType> columnMap = new CaseInsensitiveHashMap<>();
+        Map<FieldKey,JdbcType> columnMap = new HashMap<>();
 
-        Map<String, JdbcType> getColumnMap()
+        Map<FieldKey, JdbcType> getColumnMap()
         {
             return columnMap;
         }
@@ -8091,11 +8091,11 @@ public class QueryController extends SpringActionController
                 {
                     try
                     {
-                        getColumnMap().put(key, JdbcType.valueOf(String.valueOf(columnMap.get(key))));
+                        getColumnMap().put(FieldKey.fromString(key), JdbcType.valueOf(String.valueOf(columnMap.get(key))));
                     }
                     catch (IllegalArgumentException iae)
                     {
-                        getColumnMap().put(key, JdbcType.OTHER);
+                        getColumnMap().put(FieldKey.fromString(key), JdbcType.OTHER);
                     }
                 }
             }
@@ -8107,19 +8107,23 @@ public class QueryController extends SpringActionController
      * Since this api purpose is to return parse errors, it does not generally return success:false
      * It just returns the errors messages.
      *<br>
-     * expects JSON like this:
+     * expects JSON like this, note that column names should be in FieldKey.toString() encoded to match the response JSON format.
      * <pre>
-     *     { "expression": "A+B", "columnMap":{"A":"VARCHAR", "B":"VARCHAR"}}
+     *     { "expression": "A+B", "columnMap":{"A":"VARCHAR", "X":"VARCHAR"}}
      * </pre>
      * and returns a response like this
      * <pre>
      *     {
-     *       "jdbcType" : "VARCHAR",
+     *       "jdbcType" : "OTHER",
      *       "success" : true,
-     *       "requiredFieldKeys" : [ "A", "B" ]
+     *       "columnMap" : {"A":"VARCHAR", "B":"OTHER"}
+     *       "errors" : [ { "msg" : "\"B\" not found.", "type" : "sql" } ]
      *     }
      * </pre>
-     * NOTE: that field keys are returned in FieldKey.toString() formatting e.g. dollar-sign encoded.
+     * The columnMap object keys are the names of fields found in the expression.  Names are returned
+     * in FieldKey.toString() formatting e.g. dollar-sign encoded.  The object structure
+     * is compatible with the columnMap input parameter, so it can be used as a template to make a second request
+     * with types filled in.  If provided, the type will be copied from the input columnMap, otherwise it will be "OTHER".
      */
     @RequiresNoPermission
     @CSRF(CSRF.Method.NONE)
@@ -8141,9 +8145,8 @@ public class QueryController extends SpringActionController
                 Map<FieldKey,ColumnInfo> columns = new HashMap<>();
                 for (var entry : form.getColumnMap().entrySet())
                 {
-                    FieldKey fieldKey = new FieldKey(null,entry.getKey());
-                    BaseColumnInfo entryCol = new BaseColumnInfo(fieldKey, entry.getValue());
-                    columns.put(fieldKey, entryCol);
+                    BaseColumnInfo entryCol = new BaseColumnInfo(entry.getKey(), entry.getValue());
+                    columns.put(entry.getKey(), entryCol);
                     table.addColumn(entryCol);
                 }
                 // TODO: calculating jdbcType still uses calculatedCol.getParentTable().getColumns()
@@ -8160,10 +8163,13 @@ public class QueryController extends SpringActionController
             {
                 if (!requiredColumns.isEmpty())
                 {
-                    JSONArray fieldKeys = new JSONArray();
+                    JSONObject columnMap = new JSONObject();
                     for (FieldKey fk : requiredColumns)
-                        fieldKeys.put(fk.toString());
-                    result.put("requiredFieldKeys", fieldKeys);
+                    {
+                        JdbcType type = Objects.requireNonNullElse(form.getColumnMap().get(fk), JdbcType.OTHER);
+                        columnMap.put(fk.toString(), type);
+                    }
+                    result.put("columnMap", columnMap);
                 }
             }
             result.put("jdbcType", jdbcType.name());
