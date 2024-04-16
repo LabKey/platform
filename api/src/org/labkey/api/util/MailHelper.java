@@ -393,10 +393,8 @@ public class MailHelper
     {
         Object content = mm.getContent();
 
-        if (content instanceof MimeMultipart)
+        if (content instanceof MimeMultipart multipart)
         {
-            MimeMultipart multipart = (MimeMultipart)content;
-
             for (int i = 0; i < multipart.getCount(); i++)
             {
                 BodyPart part = multipart.getBodyPart(i);
