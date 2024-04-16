@@ -427,7 +427,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
 
     @NotNull
     @Override
-    public SQLFragment getFromSQL(String alias, Set<FieldKey> selectedColumns)
+    public SQLFragment getFromSQLExpanded(String alias, Set<FieldKey> selectedColumns)
     {
         checkReadBeforeExecute();
         boolean includeCreatedModified = shouldIncludeCreatedModified(selectedColumns);

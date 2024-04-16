@@ -16,8 +16,11 @@
 
 package org.labkey.api.data;
 
+import org.apache.commons.collections.map.MultiValueMap;
+import org.apache.commons.collections4.MultiMapUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlCursor;
@@ -168,6 +171,12 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     private final Set<QueryUpdateService.InsertOption> _disallowedInsertOptions = new HashSet<>(Arrays.asList(QueryUpdateService.InsertOption.MERGE, QueryUpdateService.InsertOption.REPLACE, QueryUpdateService.InsertOption.UPSERT));
 
     private final Map<String, CounterDefinition> _counterDefinitionMap = new CaseInsensitiveHashMap<>();    // Really only 1 for now, but could be more in future
+
+    /* If a subclass generates a non-trivial FROM clause in getFromSQL(), it may need to track dependencies
+     * for calculated columns.  This is where we do that.  This is setup in loadAllButCustomizerFromXML(), and
+     * and used in getFromSQL(String alias, Set<FieldKey> cols)
+     */
+    protected final HashMap<FieldKey, HashSet<FieldKey>> _referencedColumns = new HashMap<>();
 
     private boolean _initialColumnsAreAdded = false;
 
@@ -367,8 +376,32 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             return new SQLFragment().append("(").append(getFromSQL()).append(") ").append(alias);
     }
 
+    /** When a table a) overrides (String alias, Set<FieldKey> cols) b) has CalculatedColumsn we need to make sure that
+     * we include the dependent columns in the Set<>.
+     */
+    protected Set<FieldKey> expandColumns(Set<FieldKey> columns)
+    {
+        if (_referencedColumns.isEmpty())
+            return columns;
+        // We're not recursively expanding. However, if expressions can reference each other we'll have to.
+        HashSet<FieldKey> expanded = new HashSet<>();
+        for (var fk : columns)
+        {
+            expanded.add(fk);
+            HashSet<FieldKey> refs = _referencedColumns.get(fk);
+            if (null != refs)
+                expanded.addAll(refs);
+        }
+        return expanded;
+    }
+
     @Override
-    public SQLFragment getFromSQL(String alias, Set<FieldKey> cols)
+    public final SQLFragment getFromSQL(String alias, Set<FieldKey> cols)
+    {
+        return getFromSQLExpanded(alias, expandColumns(cols));
+    }
+
+    protected SQLFragment getFromSQLExpanded(String alias, Set<FieldKey> cols)
     {
         return getFromSQL(alias);
     }
@@ -1403,7 +1436,9 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
                 try
                 {
                     var wrappedColumn = QueryService.get().createQueryExpressionColumn(this, FieldKey.fromParts(xmlColumn.getColumnName()), sql, xmlColumn);
-                    QueryService.get().bindQueryExpressionColumn(wrappedColumn, existingColumns, true, null);
+                    HashSet<FieldKey> referencedColumns = new HashSet<>();
+                    QueryService.get().bindQueryExpressionColumn(wrappedColumn, existingColumns, true, referencedColumns);
+                    _referencedColumns.put(wrappedColumn.getFieldKey(), referencedColumns);
                     addColumn(wrappedColumn);
                 }
                 catch (QueryParseException qpe)

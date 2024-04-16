@@ -811,7 +811,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
 
     @NotNull
     @Override
-    public SQLFragment getFromSQL(String alias, Set<FieldKey> cols)
+    public SQLFragment getFromSQLExpanded(String alias, Set<FieldKey> cols)
     {
         boolean includePV = false;
         if (cols.contains(new FieldKey(null, "VisitRowId")))
