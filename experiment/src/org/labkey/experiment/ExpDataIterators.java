@@ -96,6 +96,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
@@ -115,11 +116,13 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.sql.Time;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -2865,6 +2868,13 @@ public class ExpDataIterators
             return new TypeData(container, sampleType, samplesTable, dataFile, fieldIndexes, dependencyIndexes, dataRows, new ArrayList<>());
         }
 
+        private Object getSerializingObject(Object data)
+        {
+            if (data instanceof Date d && !(data instanceof Time))
+                return DateUtil.formatIsoDateLongTime(d);
+            return data;
+        }
+
         private void addDataRow(TypeData typeData)
         {
             if (typeData.dataRows.size() == BATCH_SIZE)
@@ -2873,7 +2883,7 @@ public class ExpDataIterators
             List<Object> dataRow = new ArrayList<>();
             typeData.fieldIndexes.forEach(index -> {
                 Object data = get(index);
-                dataRow.add(data);
+                dataRow.add(getSerializingObject(data));
                 if (data != null)
                 {
                     if (index == _dataIdIndex)
