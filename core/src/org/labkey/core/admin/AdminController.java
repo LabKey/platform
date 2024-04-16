@@ -6815,8 +6815,8 @@ public class AdminController extends SpringActionController
         private String templateSourceId;
         private String[] templateWriterTypes;
         private boolean templateIncludeSubfolders = false;
-
         private String[] targets;
+        private PHI _exportPhiLevel = PHI.NotPHI;
 
         public boolean getHasLoaded()
         {
@@ -6982,6 +6982,16 @@ public class AdminController extends SpringActionController
         public void setTargets(String[] targets)
         {
             this.targets = targets;
+        }
+
+        public PHI getExportPhiLevel()
+        {
+            return _exportPhiLevel;
+        }
+
+        public void setExportPhiLevel(PHI exportPhiLevel)
+        {
+            _exportPhiLevel = exportPhiLevel;
         }
 
         /**
@@ -7318,6 +7328,7 @@ public class AdminController extends SpringActionController
                     // If a default folder type has been configured by a site admin set that as the default folder type choice
                     form.setFolderType(folderType.getName());
                 }
+                form.setExportPhiLevel(ComplianceService.get().getMaxAllowedPhi(getContainer(), getUser()));
             }
             JspView<FORM> statusView = new JspView<>("/org/labkey/core/admin/createFolder.jsp", form, errors);
             vbox.addView(statusView);
@@ -7400,7 +7411,7 @@ public class AdminController extends SpringActionController
                         }
 
                         FolderExportContext exportCtx = new FolderExportContext(getUser(), sourceContainer, PageFlowUtil.set(form.getTemplateWriterTypes()), "new",
-                                form.getTemplateIncludeSubfolders(), PHI.NotPHI, false, false, false,
+                                form.getTemplateIncludeSubfolders(), form.getExportPhiLevel(), false, false, false,
                                 new StaticLoggerGetter(LogManager.getLogger(FolderWriterImpl.class)));
 
                         container = ContainerManager.createContainerFromTemplate(parent, folderName, folderTitle, sourceContainer, getUser(), exportCtx, afterCreateHandler);
