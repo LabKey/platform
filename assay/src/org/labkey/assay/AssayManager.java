@@ -566,15 +566,13 @@ public class AssayManager implements AssayService
         else
         {
             ActionButton button = new ActionButton(AbstractAssayProvider.IMPORT_DATA_LINK_NAME);
-            button.setURL("javascript:void(0)");
             button.setActionType(ActionButton.Action.SCRIPT);
             button.setScript("Ext4.create('LABKEY.ext.ImportWizardWin', {" +
                     "controller: '" + provider.getImportURL(currentContainer, protocol).getController() + "'," +
                     "action: '" + provider.getImportURL(currentContainer, protocol).getAction() + "'," +
                     "urlParams: {rowId: " + protocol.getRowId() + "}" +
-                    "}).show();");
+                    "}).show(); return false;");
             result.add(button);
-
         }
 
         return result;
