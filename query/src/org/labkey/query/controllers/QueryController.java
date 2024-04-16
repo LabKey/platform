@@ -8104,10 +8104,9 @@ public class QueryController extends SpringActionController
 
 
     /**
-     * Since this api purpose is to return parse errors, it does not generally return success:false
-     * It just returns the errors messages.
-     *<br>
-     * expects JSON like this, note that column names should be in FieldKey.toString() encoded to match the response JSON format.
+     * Since this api purpose is to return parse errors, it does not generally return success:false.
+     * <br>
+     * The API expects JSON like this, note that column names should be in FieldKey.toString() encoded to match the response JSON format.
      * <pre>
      *     { "expression": "A+B", "columnMap":{"A":"VARCHAR", "X":"VARCHAR"}}
      * </pre>
@@ -8120,7 +8119,7 @@ public class QueryController extends SpringActionController
      *       "errors" : [ { "msg" : "\"B\" not found.", "type" : "sql" } ]
      *     }
      * </pre>
-     * The columnMap object keys are the names of fields found in the expression.  Names are returned
+     * The columnMap object keys are the names of columns found in the expression.  Names are returned
      * in FieldKey.toString() formatting e.g. dollar-sign encoded.  The object structure
      * is compatible with the columnMap input parameter, so it can be used as a template to make a second request
      * with types filled in.  If provided, the type will be copied from the input columnMap, otherwise it will be "OTHER".
