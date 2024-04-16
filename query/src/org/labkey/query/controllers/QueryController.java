@@ -8108,14 +8108,14 @@ public class QueryController extends SpringActionController
      * <br>
      * The API expects JSON like this, note that column names should be in FieldKey.toString() encoded to match the response JSON format.
      * <pre>
-     *     { "expression": "A+B", "columnMap":{"A":"VARCHAR", "X":"VARCHAR"}}
+     *     { "expression": "A$ + B", "columnMap":{"A$D":"VARCHAR", "X":"VARCHAR"}}
      * </pre>
      * and returns a response like this
      * <pre>
      *     {
      *       "jdbcType" : "OTHER",
      *       "success" : true,
-     *       "columnMap" : {"A":"VARCHAR", "B":"OTHER"}
+     *       "columnMap" : {"A$D":"VARCHAR", "B":"OTHER"}
      *       "errors" : [ { "msg" : "\"B\" not found.", "type" : "sql" } ]
      *     }
      * </pre>
