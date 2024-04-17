@@ -118,6 +118,7 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
         // set CalculatedExpressionColumn properties (not over-writable)
         super.setUserEditable(false);
         super.setCalculated(true);
+        super.setRequired(false);
     }
 
 
