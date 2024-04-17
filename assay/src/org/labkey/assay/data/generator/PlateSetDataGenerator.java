@@ -333,16 +333,16 @@ public class PlateSetDataGenerator extends DataGenerator<PlateSetDataGenerator.C
 
     public static class Config extends DataGenerator.Config
     {
-        public static final String NUM_PLATESETS = "numPlatesets";
-        public static final String PLATES_PER_PLATESET = "platesPerPlateset";
-        public static final String MIN_NUM_CUSTOM_PROPERTIES = "minCustomProperties";
-        public static final String MAX_NUM_CUSTOM_PROPERTIES = "maxCustomProperties";
+        public static final String NUM_PLATESETS = "numPlateSets";
+        public static final String PLATES_PER_PLATESET = "platesPerPlateSet";
+        public static final String MIN_NUM_CUSTOM_PROPERTIES = "minCustomWellProperties";
+        public static final String MAX_NUM_CUSTOM_PROPERTIES = "maxCustomWellProperties";
         public static final String PLATE_TYPE = "plateType";
 
         public static final String PLATE_LINEAGE_DEPTH = "plateLineageDepth";
         public static final String ASSAY_PLATE_SETS_PER_LEVEL = "assayPlateSetsPerLevel";
         public static final String PRIMARY_PLATE_SETS_PER_LEVEL = "primaryPlateSetsPerLevel";
-        public static final String IMPORT_PLATE_SETS = "importPlatesets";
+        public static final String IMPORT_PLATE_SETS = "importPlateSets";
 
         int _numPlatesets;
         int _platesPerPlateset;
