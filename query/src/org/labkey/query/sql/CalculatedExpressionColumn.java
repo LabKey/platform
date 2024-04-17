@@ -119,6 +119,7 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
         super.setUserEditable(false);
         super.setCalculated(true);
         super.setRequired(false);
+        super.setAutoIncrement(false);
     }
 
 
