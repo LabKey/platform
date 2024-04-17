@@ -2871,7 +2871,7 @@ public class ExpDataIterators
         private Object getSerializingObject(Object data)
         {
             if (data instanceof Date d && !(data instanceof Time))
-                return DateUtil.formatIsoDateLongTime(d);
+                return DateUtil.formatIsoDateLongTime(d, true);
             return data;
         }
 
@@ -2908,7 +2908,7 @@ public class ExpDataIterators
 
         private void writeRowsToFile(TypeData typeData)
         {
-            if (typeData.dataRows.size() == 0)
+            if (typeData.dataRows.isEmpty())
                 return;
 
             try (FileWriter writer = new FileWriter(typeData.dataFile, true))
