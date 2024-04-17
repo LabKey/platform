@@ -2402,7 +2402,7 @@ public class NameGenerator
         {
             String prefix = prefixRaw.trim().toLowerCase(); // Issue 49338: withCounter should be case-insensitive
             DbSequence counterSeq = null;
-            if (noCache || !counterSequences.containsKey(prefix) || _strictIncremental)
+            if (noCache || !counterSequences.containsKey(prefix))
             {
                 long existingCount = -1;
 
