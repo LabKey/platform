@@ -209,11 +209,17 @@ public class DataGenerator<T extends DataGenerator.Config>
                 _sampleTypes.addAll(service.getSampleTypes(getContainer(), getUser(), false));
             else
             {
-                sampleTypeNames.forEach(typeName -> {
-                    _sampleTypes.add(service.getSampleType(getContainer(), getUser(), typeName));
-                });
+                for (String typeName : sampleTypeNames)
+                {
+                    ExpSampleType sampleType = service.getSampleType(getContainer(), getUser(), typeName);
+                    if (sampleType == null)
+                        _log.warn(String.format("Unable to resolve sample type by name '%s'.", typeName));
+                    else
+                        _sampleTypes.add(sampleType);
+                }
             }
         }
+
         return _sampleTypes;
     }
 
