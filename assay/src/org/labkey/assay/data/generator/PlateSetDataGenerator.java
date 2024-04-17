@@ -293,6 +293,7 @@ public class PlateSetDataGenerator extends DataGenerator<PlateSetDataGenerator.C
 
             for (PlateSet plateSet : _assayPlateSets)
             {
+                checkAlive(_job);
                 List<Map<String, Object>> rawData = createRunData(plateSet, measure);
                 var factory = provider.createRunUploadFactory(assayToImport, context)
                         .setRunProperties(Map.of(AssayPlateMetadataService.PLATE_SET_COLUMN_NAME, plateSet.getRowId()))
