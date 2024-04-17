@@ -2812,12 +2812,13 @@ public class QueryServiceImpl implements QueryService
     }
 
     @Override
-    public BaseColumnInfo createQueryExpressionColumn(TableInfo table, FieldKey key, String labKeySql, ColumnType columnType)
+    public MutableColumnInfo createQueryExpressionColumn(TableInfo table, FieldKey key, String labKeySql, ColumnType columnType)
     {
         return new CalculatedExpressionColumn(table, key, labKeySql, columnType);
     }
 
-    public BaseColumnInfo createQueryExpressionColumn(TableInfo table, FieldKey key, FieldKey wrapped, ColumnType columnType)
+    @Override
+    public MutableColumnInfo createQueryExpressionColumn(TableInfo table, FieldKey key, FieldKey wrapped, ColumnType columnType)
     {
         // TODO short-circuit parsing/binding in this code path
         var ret = new CalculatedExpressionColumn(table, key, LabKeySql.quoteIdentifier(wrapped.getName()), columnType);
