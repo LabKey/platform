@@ -33,7 +33,7 @@ public class StringBeanDynaClass extends StringWrapperDynaClass
     private final Class<?> _beanClass;
     //private Map _dynaClasses = Collections.synchronizedMap(new HashMap());
 
-    protected StringBeanDynaClass(Class beanClass)
+    protected StringBeanDynaClass(Class<?> beanClass)
     {
         this(beanClass, null);
     }
@@ -44,7 +44,7 @@ public class StringBeanDynaClass extends StringWrapperDynaClass
         PropertyDescriptor propDescriptors[] = PropertyUtils.getPropertyDescriptors(beanClass);
         if (propDescriptors == null)
             propDescriptors = new PropertyDescriptor[0];
-        Map<String, Class> propTypes = new CaseInsensitiveHashMap<>();
+        Map<String, Class<?>> propTypes = new CaseInsensitiveHashMap<>();
         for (PropertyDescriptor propDescriptor : propDescriptors)
             propTypes.put(propDescriptor.getName(), propDescriptor.getPropertyType());
         if (null != extras)
@@ -54,7 +54,7 @@ public class StringBeanDynaClass extends StringWrapperDynaClass
                 String prop = entry.getKey();
                 if (propTypes.containsKey(prop))
                     throw new IllegalArgumentException("bean already contains property " + prop);
-                Class type = entry.getValue();
+                Class<?> type = entry.getValue();
                 if (type == null)
                     type = String.class;
                 propTypes.put(prop, type);
@@ -109,7 +109,7 @@ public class StringBeanDynaClass extends StringWrapperDynaClass
     /**
      * Return the bean class underlying this object
      */
-    public Class getBeanClass()
+    public Class<?> getBeanClass()
     {
         return _beanClass;
     }

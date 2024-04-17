@@ -25,19 +25,18 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Creates a DynaClass for a table where all of the properties are
- * strings.
+ * Creates a DynaClass for a table where all properties are strings.
  */
 public class TableWrapperDynaClass extends StringWrapperDynaClass
 {
-    private TableInfo _tinfo;
+    private final TableInfo _tinfo;
     private static final Map<TableInfo, TableWrapperDynaClass> _dynClasses = new ConcurrentHashMap<>();
 
     private TableWrapperDynaClass(TableInfo tinfo)
     {
         _tinfo = tinfo;
         List<ColumnInfo> cols = tinfo.getColumns();
-        Map<String, Class> propMap = new CaseInsensitiveHashMap<>();
+        Map<String, Class<?>> propMap = new CaseInsensitiveHashMap<>();
         for (ColumnInfo col : cols)
             propMap.put(col.getPropertyName(), col.getJavaClass());
 
