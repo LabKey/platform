@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.dataiterator.DataIterator;
@@ -96,12 +97,13 @@ public class ParticipantIdImportHelper implements ParticipantIdTranslator
 
                 //  Build up a HashMap of aliases
                 TableInfo aliasTableInfo = studyManager.getDatasetDefinition(studyImpl, participantAliasDatasetId).getDatasetSchemaTableInfo(_user);
-                Map<String, Object>[] rows = new TableSelector(aliasTableInfo, ImmutableSet.of(studyImpl.getSubjectColumnName(), participantAliasSourceProperty, participantAliasProperty), null, null).getMapArray();
+                ColumnInfo colSubjectColumnName = aliasTableInfo.getColumn(studyImpl.getSubjectColumnName());
+                ColumnInfo colParticipantAliasProperty = aliasTableInfo.getColumn(participantAliasProperty);
+                Map<String, Object>[] rows = new TableSelector(aliasTableInfo, ImmutableSet.of(colSubjectColumnName, colParticipantAliasProperty), null, null).getMapArray();
                 for (Map<String, Object> row : rows)
                 {
-                    Object idObj = row.get(studyImpl.getSubjectColumnName());
-                    Object aliasObj = row.get(participantAliasProperty);
-                    Object sourceObj = row.get(participantAliasSourceProperty);
+                    Object idObj = colSubjectColumnName.getValue(row);
+                    Object aliasObj = colParticipantAliasProperty.getValue(row);
                     // If there was an error in the alias table, (i.e. a column is misconfigured or deleted) stop the import with an error.
                     if (idObj == null || aliasObj == null)
                         throw new ValidationException("Invalid configuration of alternate " + studyImpl.getSubjectNounSingular() + " " + studyImpl.getSubjectColumnName() + "s and aliases.");
