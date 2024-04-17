@@ -66,6 +66,8 @@ public interface SampleTypeService
     enum SampleOperations {
         EditMetadata("editing metadata", UpdatePermission.class),
         EditLineage("editing lineage", UpdatePermission.class),
+        // The storage related operations are not tied to a specific permission class because the permission classes are in another module.
+        // The check for permitted IDs will happen client side based on the container.effectivePermissions list.
         AddToStorage("adding to storage", null),
         UpdateStorageMetadata("updating storage metadata", null),
         RemoveFromStorage("removing from storage", null),
