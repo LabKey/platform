@@ -552,12 +552,12 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * the given permission for the row's container
      * @param user user in question
      * @param rowIds set of rowIds to check
-     * @param schemaName one of 'samples', 'exp.data', and 'assay' (for assay runs)
+     * @param tableInfo table info for the rows being checked
      * @param permissionClass the permission to check
      * @return null if there is no
      */
     @Nullable
-    Collection<Integer> getIdsNotPermitted(@NotNull User user, Collection<Integer> rowIds, String schemaName, @Nullable Class<? extends Permission> permissionClass);
+    Collection<Integer> getIdsNotPermitted(@NotNull User user, Collection<Integer> rowIds, TableInfo tableInfo, @Nullable Class<? extends Permission> permissionClass);
 
     /**
      * The following methods return TableInfo's suitable for using in queries.
@@ -1077,6 +1077,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
     @NotNull Map<String, List<String>> getUniqueIdLsids(List<String> uniqueIds, User user, Container container);
 
     void handleAssayNameChange(String newAssayName, String oldAssayName, AssayProvider provider, ExpProtocol protocol, User user, Container container);
+
+    boolean useStrictCounter();
 
     class XarExportOptions
     {

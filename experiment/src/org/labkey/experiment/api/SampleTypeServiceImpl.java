@@ -126,7 +126,6 @@ import static org.labkey.api.audit.SampleTimelineAuditEvent.SAMPLE_TIMELINE_EVEN
 import static org.labkey.api.data.CompareType.STARTS_WITH;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTROLLBACK;
-import static org.labkey.api.data.NameGenerator.EXPERIMENTAL_WITH_COUNTER;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.CPAS_TYPE;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.LSID;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.NAME;
@@ -1144,27 +1143,39 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             Optional<String> parentFields = row.keySet().stream().filter(this::isInputFieldKey).findAny();
             event.setLineageUpdate(parentFields.isPresent());
 
-            String sampleTypeLsid = null;
-            if (staticsRow.containsKey(CPAS_TYPE))
-                sampleTypeLsid =  String.valueOf(staticsRow.get(CPAS_TYPE));
-            // When a sample is deleted, the LSID is provided via the "sampleset" field instead of "LSID"
-            if (sampleTypeLsid == null && staticsRow.containsKey("sampleset"))
-                sampleTypeLsid = String.valueOf(staticsRow.get("sampleset"));
-            if (sampleTypeLsid != null)
-            {
-                ExpSampleType sampleType = SampleTypeService.get().getSampleTypeByType(sampleTypeLsid, c);
-                if (sampleType != null)
-                {
-                    event.setSampleType(sampleType.getName());
-                    event.setSampleTypeId(sampleType.getRowId());
-                }
-            }
             if (staticsRow.containsKey(LSID))
                 event.setSampleLsid(String.valueOf(staticsRow.get(LSID)));
             if (staticsRow.containsKey(ROW_ID) && staticsRow.get(ROW_ID) != null)
                 event.setSampleId((Integer) staticsRow.get(ROW_ID));
             if (staticsRow.containsKey(NAME))
                 event.setSampleName(String.valueOf(staticsRow.get(NAME)));
+
+            String sampleTypeLsid = null;
+            if (staticsRow.containsKey(CPAS_TYPE))
+                sampleTypeLsid =  String.valueOf(staticsRow.get(CPAS_TYPE));
+            // When a sample is deleted, the LSID is provided via the "sampleset" field instead of "LSID"
+            if (sampleTypeLsid == null && staticsRow.containsKey("sampleset"))
+                sampleTypeLsid = String.valueOf(staticsRow.get("sampleset"));
+
+            ExpSampleType sampleType = null;
+            if (sampleTypeLsid != null)
+                sampleType = SampleTypeService.get().getSampleTypeByType(sampleTypeLsid, c);
+            else if (event.getSampleId() > 0)
+            {
+                ExpMaterial sample = ExperimentService.get().getExpMaterial(event.getSampleId());
+                if (sample != null) sampleType = sample.getSampleType();
+            }
+            else if (event.getSampleLsid() != null)
+            {
+                ExpMaterial sample = ExperimentService.get().getExpMaterial(event.getSampleLsid());
+                if (sample != null) sampleType = sample.getSampleType();
+            }
+            if (sampleType != null)
+            {
+                event.setSampleType(sampleType.getName());
+                event.setSampleTypeId(sampleType.getRowId());
+            }
+
             // NOTE: to avoid a diff in the audit log make sure row("rowid") is correct! (not the unused generated value)
             row.put(ROW_ID,staticsRow.get(ROW_ID));
         }
@@ -2095,7 +2106,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                return null;
        }
 
-       if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_WITH_COUNTER))
+       if (ExperimentService.get().useStrictCounter())
             return DbSequenceManager.getReclaimable(seqContainer, seqName, 0);
 
        return DbSequenceManager.getPreallocatingSequence(seqContainer, seqName, 0, 100);

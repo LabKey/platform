@@ -64,6 +64,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ConvertHelper;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
@@ -278,6 +279,8 @@ import static java.util.stream.Collectors.toSet;
 import static org.labkey.api.data.CompareType.IN;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTROLLBACK;
+import static org.labkey.api.data.NameGenerator.EXPERIMENTAL_ALLOW_GAP_COUNTER;
+import static org.labkey.api.data.NameGenerator.EXPERIMENTAL_WITH_COUNTER;
 import static org.labkey.api.exp.OntologyManager.getTinfoObject;
 import static org.labkey.api.exp.XarContext.XAR_JOB_ID_NAME;
 import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ExperimentRun;
@@ -9116,13 +9119,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     @Override
     @Nullable
-    public Collection<Integer> getIdsNotPermitted(@NotNull User user, @NotNull Collection<Integer> rowIds, @NotNull String schemaName, @Nullable Class<? extends Permission> permissionClass)
+    public Collection<Integer> getIdsNotPermitted(@NotNull User user, @NotNull Collection<Integer> rowIds, @NotNull TableInfo tableInfo, @Nullable Class<? extends Permission> permissionClass)
     {
         if (permissionClass == null)
             return null;
 
         // get the set of containers involved and find the ones the user does not have requisite permissions to
-        List<Container> containers = getUniqueContainers(rowIds, schemaName);
+        List<Container> containers = getUniqueContainers(rowIds, tableInfo);
         if (containers == null)
             return null;
 
@@ -9131,10 +9134,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             return Collections.emptyList();
 
         // select the data where the containers are in the notPermitted set
-        TableInfo tableInfo = getTableInfo(schemaName);
-        if (tableInfo == null)
-            return null;
-
         DbSchema expSchema = DbSchema.get("exp", DbSchemaType.Module);
         SqlDialect dialect = expSchema.getSqlDialect();
 
@@ -9149,12 +9148,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return new SqlSelector(expSchema, notPermittedIdsSql).getArrayList(Integer.class);
     }
 
-    public static List<Container> getUniqueContainers(Collection<Integer> rowIds, String schemaName)
+    private static List<Container> getUniqueContainers(Collection<Integer> rowIds, TableInfo tableInfo)
     {
         DbSchema expSchema = DbSchema.get("exp", DbSchemaType.Module);
         SqlDialect dialect = expSchema.getSqlDialect();
 
-        TableInfo tableInfo = getTableInfo(schemaName);
         if (tableInfo == null)
             return null;
 
@@ -9710,6 +9708,19 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         SchemaKey newSchema = SchemaKey.fromParts(AssaySchema.NAME, provider.getResourceName(), newAssayName);
         SchemaKey oldSchema = SchemaKey.fromParts(AssaySchema.NAME, provider.getResourceName(), oldAssayName);
         QueryChangeListener.QueryPropertyChange.handleSchemaNameChange(oldSchema.toString(), newSchema.toString(), newSchema, user, container);
+    }
+
+    @Override
+    public boolean useStrictCounter()
+    {
+        if (CoreSchema.getInstance().getSqlDialect().isSqlServer())
+        {
+            return AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_WITH_COUNTER);
+        }
+        else
+        {
+            return !AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_ALLOW_GAP_COUNTER);
+        }
     }
 
     public static class TestCase extends Assert
