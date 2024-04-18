@@ -4428,7 +4428,7 @@ public class StudyManager
         view.replaceParameter("datasetId", dsd.getDatasetId());
         view.setExtraPath(dsd.getContainer().getId());
 
-        SimpleDocumentResource r = new SimpleDocumentResource(Path.rawParts(docid), docid,
+        SimpleDocumentResource r = new SimpleDocumentResource(new Path(docid), docid,
                 "text/plain", body.toString(),
                 view, props);
         task.addResource(r, SearchService.PRIORITY.item);

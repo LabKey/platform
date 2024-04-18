@@ -900,7 +900,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
 
         return new ExpDataResource(
             getRowId(),
-            Path.rawParts(docId),
+            new Path(docId),
             docId,
             getContainer().getId(),
             "text/plain",

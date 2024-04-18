@@ -130,7 +130,7 @@ public class PipelineWebdavProvider implements WebdavService.Provider
         @Override
         public String getName()
         {
-            return FileContentService.PIPELINE_LINK.toString();
+            return FileContentService.PIPELINE_LINK;
         }
 
         @Override

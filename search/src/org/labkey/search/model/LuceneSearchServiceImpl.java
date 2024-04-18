@@ -2104,7 +2104,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             props.put(PROPERTY.categories.toString(), _category.getName());
             props.put(PROPERTY.title.toString(), title);
 
-            SimpleDocumentResource resource1 = new SimpleDocumentResource(Path.rawParts(docId), docId, _c.getId(), "text/plain", body, _url, props) {
+            SimpleDocumentResource resource1 = new SimpleDocumentResource(new Path(docId), docId, _c.getId(), "text/plain", body, _url, props) {
                 @Override
                 public void setLastIndexed(long ms, long modified)
                 {

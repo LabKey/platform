@@ -87,25 +87,12 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
 
     protected Path(String[] path, int length, boolean abs, boolean dir)
     {
-        this(path, length, abs, dir, true);
-    }
-
-    protected Path(String[] path, int length, boolean abs, boolean dir, boolean validate)
-    {
-        if (validate)
-        {
-            for (String part : path)
-                new Path.Part(part);
-        }
         _path = path;
         _length = length;
         _parent = new AtomicReference<>();
-        int hash = 0;
-        for (int i=0 ; i<length ; i++)
-            hash = hash*37 + _path[i].toLowerCase().hashCode();
-        _hash = hash;
         _isAbsolute = abs;
         _isDirectory = dir;
+        _hash = computeHash(_path);
     }
 
     // Create an instance from a java.nio.file.Path
@@ -143,8 +130,6 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
         this(new String[0], 0, false, false);
     }
 
-
-    /** This concstructor does not allow '/' in names, use rawParts() to allow free-form paths */
     public Path(String ... names)
     {
         this(names, names.length, false, false);
@@ -157,28 +142,25 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
         _parent = new AtomicReference<>();
         int hash = 0;
         for (int i = 0; i < _length; i++)
-        {
             _path[i] = names[i].toString();
-            hash = hash * 37 + _path[i].toLowerCase().hashCode();
-        }
-        _hash = hash;
         _isAbsolute = false;
         _isDirectory = false;
+        _hash = computeHash(_path);
     }
 
-    /** same as new Path() but w/o validation (checking for '/').  This can be used when the Path is being used as List<String>.
-     * NOTE: in this case, Path.parse(myPath.toString()) may not work, however, Path.decode(Path.encode()) should work.
-     */
-    public static Path rawParts(String... names)
+    private static int computeHash(String[] names)
     {
-        return new Path(names, names.length, false, false, false);
+        int hash = 0;
+        for (int i=0 ; i < names.length ; i++)
+            hash = hash * 37 + names[i].toLowerCase().hashCode();
+        return hash;
     }
 
     /** create a Path from an unencoded string */
     public static Path parse(@NotNull String path)
     {
         String strip = StringUtils.strip(path,"/");
-        if (strip.length() == 0)
+        if (strip.isBlank())
             return path.startsWith("/") ? rootPath : emptyPath;
         String[] arr = strip.split("/");
         for (int i=0 ; i<arr.length ; i++)
@@ -309,9 +291,8 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
         return _path[i];
     }
 
-    // Return a part of a parsed path. This class is a marker that shows this name came from a parsed Path
-    // a Path.Part will not contain can't contain '/'.  This does not guarantee that it is a valid name to pass to
-    // java.util.File.
+    // Return a part of a parsed path. This class is a marker that shows this name came from a parsed Path.
+    // This does not guarantee that it is a valid name to pass to java.util.File (e.g. could contain / \ :).
     //
     // Paths are for a lot of purposes, so they can not be very restrictive.
     public Path.Part getPart(int i)
@@ -323,7 +304,6 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
     {
         if (!allowRelative && (_path[i].equals(".") || _path[i].equals("..")))
             throw new IllegalArgumentException("invalid path part: " + _path[i]);
-        assert !containsAny(_path[i], "/\\");
         return new Path.Part(_path[i]);
     }
 
@@ -467,10 +447,9 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
     /** NOTE: do not pass in an unparsed path! use .append(Path.parse(path)) to append a path string */
     public Path append(String... names)
     {
-        String[] path = new String[_length + names.length];
+        String[] path = new String[_length+names.length];
         System.arraycopy(_path, 0, path, 0, _length);
-        for (int i = 0; i < names.length; i++)
-            path[_length + i] = new Path.Part(names[i]).toString();
+        System.arraycopy(names, 0, path, _length, names.length);
         Path ret = createPath(path, path.length, isAbsolute(), false);
         if (names.length == 1)
             ret._parent.set(this);
@@ -657,21 +636,17 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
      */
     public static Path.Part toPathPart(@NotNull String name)
     {
-        Path p = Path.parse(name);
-        if (p.size() != 1)
-            throw new IllegalArgumentException("invalid name: " + name);
-        var ret = p.getPart(0);
-        assert !".".equalsIgnoreCase(ret.toString()) && !"..".equals(ret.toString());
-        return ret;
+        return new Path.Part(name);
     }
 
 
     /**
      * Path.Part is just a wrapper for String.  It only indicates that this String came from a parsed Path, and
      * that the value is intended to represent a single name in a path.  Because Path is used for so many things,
-     * this can not be relied on to promise any other validation.
+     * this can not be relied on to promise any other validation.  In particular a Path.Part may include '/'.
+     * A method using a Path.Part is responsible for validating in its own context.
      * <br>
-     * However, see FileUtil.appendName(Path.Part) and Resource.find(Path.Part) for example of where this class is
+     * See FileUtil.appendName(Path.Part) and Resource.find(Path.Part) for example of where this class is
      * used to indicate that the parameter is intended to be "filename-like" and not "path-like".
      */
     public static class Part implements Serializable, CharSequence
@@ -680,8 +655,6 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
 
         private Part(@NotNull String name)
         {
-            if (StringUtils.contains(name, "/"))
-                throw new IllegalArgumentException("invalid name: " + name);
             _name = name;
         }
 

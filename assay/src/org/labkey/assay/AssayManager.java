@@ -697,7 +697,7 @@ public class AssayManager implements AssayService
 
             body += runKeywords.toString();
         }
-        WebdavResource r = new SimpleDocumentResource(Path.rawParts(docId), docId, c.getId(), "text/plain", body, assayBeginURL, createdBy, created, modifiedBy, modified, m);
+        WebdavResource r = new SimpleDocumentResource(new Path(docId), docId, c.getId(), "text/plain", body, assayBeginURL, createdBy, created, modifiedBy, modified, m);
         task.addResource(r, SearchService.PRIORITY.item);
     }
 

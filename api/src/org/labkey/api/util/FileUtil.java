@@ -659,7 +659,6 @@ public class FileUtil
     /* Only returns an immediate child */
     public static File appendName(File dir, org.labkey.api.util.Path.Part part)
     {
-        assert !StringUtils.contains(part.toString(),'/');
         return appendName(dir, part.toString());
     }
 
@@ -671,6 +670,8 @@ public class FileUtil
 
         for (String name : parts)
         {
+            if (StringUtils.contains(name, '/'))
+                throw new IllegalArgumentException(name);
             if (StringUtils.contains(name, File.separatorChar))
                 throw new IllegalArgumentException(name);
             if (".".equals(name) || "..".equals(name))

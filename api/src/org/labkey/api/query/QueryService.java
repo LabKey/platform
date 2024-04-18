@@ -548,7 +548,7 @@ public interface QueryService
             this.schemaKey = key;
             this.name = name;
             this.url = url;
-            this.key = Path.rawParts(container.getId(), type.name(), schemaKey.toString().toLowerCase(), name.toLowerCase()).encode();
+            this.key = new Path(container.getId(), type.name(), schemaKey.toString().toLowerCase(), name.toLowerCase()).encode();
         }
 
         @Override

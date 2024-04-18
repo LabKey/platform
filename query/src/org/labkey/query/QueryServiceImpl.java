@@ -2383,7 +2383,7 @@ public class QueryServiceImpl implements QueryService
         // TODO: Schema names can contains slashes (e.g. assay names)
         // TODO: Not sure how the callers deal with this, when they map these into file-system directories.
         // TODO: We could throw IllegalArgument and let the caller handle it.
-        return Path.rawParts(subDirs.toArray(new String[0]));
+        return new Path(subDirs.toArray(new String[0]));
     }
 
     // Look for file-based definitions in modules
