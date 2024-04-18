@@ -1078,6 +1078,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     void handleAssayNameChange(String newAssayName, String oldAssayName, AssayProvider provider, ExpProtocol protocol, User user, Container container);
 
+    boolean useStrictCounter();
+
     class XarExportOptions
     {
         String _lsidRelativizer = LSID_OPTION_FOLDER_RELATIVE;
