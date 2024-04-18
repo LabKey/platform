@@ -25,7 +25,7 @@ import org.labkey.api.util.ExceptionUtil;
 
 import java.util.Map;
 
-import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 public class QueryParseException extends QueryException
 {
@@ -127,7 +127,7 @@ public class QueryParseException extends QueryException
             String errorStr = lines[getLine() - 1];
             error.put("errorStr", errorStr);
         }
-        if (!isBlank(_field))
+        if (isNotBlank(_field))
             error.put("field", _field);
         Map<Enum<?>, String> decorations = ExceptionUtil.getExceptionDecorations(this);
         if (!decorations.isEmpty())

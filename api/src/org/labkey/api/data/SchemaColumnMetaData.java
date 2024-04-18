@@ -184,31 +184,28 @@ public class SchemaColumnMetaData
                 if (null == boundColumn)
                     throw new ConfigurationException("Error adding column '" + xmlColumn.getColumnName() + "' to table '" + tinfo.getName() + "'. '" + xmlColumn.getWrappedColumnName() + "' was not found.");
             }
-            if (isNotBlank(sql))
+            try
             {
-                try
-                {
-                    var exprColumn  = null != boundColumn ?
-                            QueryService.get().createQueryExpressionColumn(tinfo, FieldKey.fromParts(xmlColumn.getColumnName()), boundColumn.getFieldKey(), xmlColumn) :
-                            QueryService.get().createQueryExpressionColumn(tinfo, FieldKey.fromParts(xmlColumn.getColumnName()), sql, xmlColumn);
-                    QueryService.get().bindQueryExpressionColumn(exprColumn, allowedColumns, true, null);
-                    /* TLDR: SchemaTable columns expect getAlias() to match the column name, not the metadata name
-                     * This means ColumnInfo.getValue() works when the table is queried with TableSelector (or getSelectSql()).  The returned names will match column.getAlias().
-                     * The columns will not match if the creates SQL directly e.g. SELECT * FROM table.getFromSQL(), or SELECT column.getValueSql() FROM table.getFromSQL().
-                     * In this case, the returned names will match column.getMetaDataName()
-                     */
-                    // force column to compute alias from name
-                    exprColumn.getAlias();
-                    assert exprColumn.isAliasSet();
-                    // now reserve that alias
-                    aliasManager = getAliasManager(aliasManager);
-                    aliasManager.ensureAlias(exprColumn);
-                    addColumn(exprColumn);
-                }
-                catch (QueryParseException qpe)
-                {
-                    throw new ConfigurationException("Error adding column '" + xmlColumn.getColumnName() + "' to table '" + tinfo.getName() + "'. " + qpe.getMessage());
-                }
+                var exprColumn  = null != boundColumn ?
+                        QueryService.get().createQueryExpressionColumn(tinfo, FieldKey.fromParts(xmlColumn.getColumnName()), boundColumn.getFieldKey(), xmlColumn) :
+                        QueryService.get().createQueryExpressionColumn(tinfo, FieldKey.fromParts(xmlColumn.getColumnName()), sql, xmlColumn);
+                QueryService.get().bindQueryExpressionColumn(exprColumn, allowedColumns, true, null);
+                /* TLDR: SchemaTable columns expect getAlias() to match the column name, not the metadata name
+                 * This means ColumnInfo.getValue() works when the table is queried with TableSelector (or getSelectSql()).  The returned names will match column.getAlias().
+                 * The columns will not match if the creates SQL directly e.g. SELECT * FROM table.getFromSQL(), or SELECT column.getValueSql() FROM table.getFromSQL().
+                 * In this case, the returned names will match column.getMetaDataName()
+                 */
+                // force column to compute alias from name
+                exprColumn.getAlias();
+                assert exprColumn.isAliasSet();
+                // now reserve that alias
+                aliasManager = getAliasManager(aliasManager);
+                aliasManager.ensureAlias(exprColumn);
+                addColumn(exprColumn);
+            }
+            catch (QueryParseException qpe)
+            {
+                throw new ConfigurationException("Error adding column '" + xmlColumn.getColumnName() + "' to table '" + tinfo.getName() + "'. " + qpe.getMessage());
             }
         }
 

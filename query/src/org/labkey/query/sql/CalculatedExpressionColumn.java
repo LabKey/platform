@@ -183,16 +183,22 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
             _resolveException = new QueryParseException(msg, null, 0, 0);
     }
 
+    private void setResolveException(String msg, QExpr token)
+    {
+        if (null == _resolveException)
+            _resolveException = new QueryParseException(msg, null, token.getLine(), token.getColumn());
+    }
+
     private QExpr _resolveFields(QExpr expr, Map<FieldKey, ? extends ColumnInfo> columnMap)
     {
         if (expr instanceof QQuery || expr instanceof QUnion)
         {
-            setResolveException("SELECT and UNION are not allowed in calculated columns.");
+            setResolveException("SELECT and UNION are not allowed in calculated columns.", expr);
             return null;
         }
         if (expr instanceof QRowStar)
         {
-            setResolveException("SELECT and UNION are not allowed in calculated columns.");
+            setResolveException("Unexpected token '*'.", expr);
             return null;
         }
 
@@ -205,18 +211,18 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
             _allFieldKeys.add(key);
             if (null != key.getParent())
             {
-                setResolveException("Lookup is not allowed '" + key.toSQLString() + "'.");
+                setResolveException("Lookup is not allowed '" + key.toSQLString() + "'.", expr);
                 return null;
             }
             if (key.equals(this.getFieldKey()))
             {
-                setResolveException("Calculated expression can not refer to itself.");
+                setResolveException("Calculated expression can not refer to itself.", expr);
                 return null;
             }
             ColumnInfo c = columnMap.get(key);
             if (null == c)
             {
-                setResolveException(key.toSQLString() + " not found.");
+                setResolveException(key.toSQLString() + " not found.", expr);
                 return null;
             }
             if (c.getPHI() != null && !c.getPHI().isLevelAllowed(PHI.NotPHI))
@@ -229,7 +235,7 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
 
         if (expr instanceof QAggregate)
         {
-            setResolveException("SELECT and UNION are not allowed in calculated columns.");
+            setResolveException("Aggregate functions are not allowed in calculated columns.", expr);
             return null;
         }
 
