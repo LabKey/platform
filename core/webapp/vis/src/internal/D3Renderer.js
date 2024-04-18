@@ -3091,11 +3091,13 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                         return geom.yAes.getValue(d) + d.y0;
                     }
                 }).append('title').text(function(d) {
-                    // Issue 50054: stacked bar title value should be the total value
-                    return hoverFn({
-                        subLabel: d.subLabel,
-                        value: geom.yAes.getValue(d) + d.y0
-                    });
+                    if (d.showValue) {
+                        // Issue 50054: stacked bar title value should be the total value
+                        return hoverFn({
+                            subLabel: d.subLabel,
+                            value: geom.yAes.getValue(d) + d.y0
+                        });
+                    }
                 });
 
         if (geom.clickFn) {
