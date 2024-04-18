@@ -2,6 +2,7 @@ package org.labkey.query.sql;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DatabaseTableType;
@@ -113,7 +114,27 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
         super.setShownInInsertView(false);
 
         if (null != _xmlColumn)
-            this.loadFromXml(_xmlColumn, true);
+        {
+            // CONSIDER: I don't really like this, but it does make sense that SchemaTable info and AbstractTableInfo
+            // handle xml slightly differently (particularly constructing foreignkeys).
+            // We could consider making some sort of callback
+            if (getParentTable() instanceof AbstractTableInfo ati)
+            {
+                List<QueryException> errors = new ArrayList<>();
+                ati.initColumnFromXml(ati.getUserSchema(),this, _xmlColumn, errors);
+                for (var error : errors)
+                {
+                    if (error instanceof QueryParseException qpe)
+                        ati.addWarning(qpe);
+                    else
+                        ati.addWarning(new QueryParseException(error.getMessage(), error, 0, 0));
+                }
+            }
+            else
+            {
+                this.loadFromXml(_xmlColumn, false);
+            }
+        }
 
         // set CalculatedExpressionColumn properties (not over-writable)
         setUserEditable(false);

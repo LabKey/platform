@@ -1194,9 +1194,9 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     }
 
 
-    protected void initColumnFromXml(QuerySchema schema, BaseColumnInfo column, ColumnType xbColumn, Collection<QueryException> qpe)
+    public void initColumnFromXml(QuerySchema schema, BaseColumnInfo column, ColumnType xbColumn, Collection<QueryException> qpe)
     {
-        checkLocked();
+        column.checkLocked();
         column.loadFromXml(xbColumn, true);
 
         if (xbColumn.getFk() != null)

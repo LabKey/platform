@@ -20,7 +20,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.PkMetaDataReader;
 import org.labkey.api.data.dialect.SqlDialect;
