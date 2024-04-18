@@ -116,10 +116,11 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
             this.loadFromXml(_xmlColumn, true);
 
         // set CalculatedExpressionColumn properties (not over-writable)
-        super.setUserEditable(false);
-        super.setCalculated(true);
-        super.setRequired(false);
-        super.setAutoIncrement(false);
+        setUserEditable(false);
+        setCalculated(true);
+        setRequired(false);
+        setAutoIncrement(false);
+        setKeyField(false);
     }
 
 
