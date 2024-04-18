@@ -15,27 +15,6 @@
  */
 package org.labkey.api.util;
 
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.Nullable;
-import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.audit.provider.MessageAuditProvider;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.security.User;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.LenientStartupPropertyHandler;
-import org.labkey.api.settings.StartupProperty;
-import org.labkey.api.settings.StartupPropertyEntry;
-import org.labkey.api.util.emailTemplate.EmailTemplate;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.JspView;
-import org.labkey.api.view.WebPartView;
-import org.springframework.mock.web.MockHttpServletResponse;
-
 import jakarta.mail.Address;
 import jakarta.mail.Authenticator;
 import jakarta.mail.BodyPart;
@@ -52,20 +31,34 @@ import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeBodyPart;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.mail.internet.MimeMultipart;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.provider.MessageAuditProvider;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.security.User;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.LenientStartupPropertyHandler;
+import org.labkey.api.settings.StartupProperty;
+import org.labkey.api.settings.StartupPropertyEntry;
+import org.labkey.api.util.emailTemplate.EmailTemplate;
+
 import javax.naming.Context;
 import javax.naming.InitialContext;
-import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 import java.util.StringTokenizer;
 
 /**
@@ -73,10 +66,12 @@ import java.util.StringTokenizer;
  */
 public class MailHelper
 {
-    private static Logger _log = LogManager.getLogger(MailHelper.class);
-    private static Session DEFAULT_SESSION;
-    private static Session _session = null;
     public static final String MESSAGE_AUDIT_EVENT = "MessageAuditEvent";
+
+    private static final Logger _log = LogManager.getLogger(MailHelper.class);
+    private static final Session DEFAULT_SESSION;
+
+    private static Session _session = null;
 
     static
     {
@@ -173,11 +168,6 @@ public class MailHelper
         return new ViewMessage(_session);
     }
 
-    public static ViewMessage createMultipartViewMessage()
-    {
-        return new ViewMessage(_session, true);
-    }
-
     public static MultipartMessage createMultipartMessage()
     {
         return new MultipartMessage(_session);
@@ -202,17 +192,6 @@ public class MailHelper
         return _createMessage(createMessage(), from, to);
     }
 
-    /**
-     * Creates an email message, and sets the "from" and "to" fields.
-     *
-     * @param from Semicolon separated list of senders.
-     * @param to   Semicolon separated list of recipients.
-     */
-    public static ViewMessage createMultipartViewMessage(String from, @Nullable String to) throws MessagingException
-    {
-        return _createMessage(createMultipartViewMessage(), from, to);
-    }
-
     private static ViewMessage _createMessage(ViewMessage m, String from, @Nullable String to) throws MessagingException
     {
         m.addFrom(createAddressArray(from));
@@ -231,15 +210,13 @@ public class MailHelper
         while (st.hasMoreTokens())
             addrs.add(new InternetAddress(st.nextToken()));
 
-        return addrs.toArray(new Address[addrs.size()]);
+        return addrs.toArray(new Address[0]);
     }
 
     /**
-     * Sends an email message, using the system mail session, and SMTP transport.
-     * This function logs a warning on a MessagingException, and then throws it to
-     * the caller.  The caller should avoid double-logging the failure, but may want
-     * to handle the exception in some other way, e.g. displaying a message to the
-     * user.
+     * Sends an email message, using the system mail session, and SMTP transport. This function logs a warning on a
+     * MessagingException, and then throws it to the caller. The caller should avoid double-logging the failure, but
+     * may want to handle the exception in some other way, e.g. displaying a message to the user.
      *
      * @param m    the message to send
      * @param user for auditing purposes, the user who originated the message
@@ -332,9 +309,8 @@ public class MailHelper
 
             String body = null;
             Object content = m.getContent();
-            if (content instanceof Multipart)
+            if (content instanceof Multipart mp)
             {
-                final Multipart mp = (Multipart) content;
                 for (int i = 0; i < mp.getCount(); i++)
                 {
                     BodyPart part = mp.getBodyPart(i);
@@ -377,18 +353,6 @@ public class MailHelper
         return map;
     }
 
-    // Extracts just the content types from the MimeMessage body parts
-    public static Set<String> getBodyPartContentTypes(MimeMessage mm) throws MessagingException, IOException
-    {
-        Set<String> set = new HashSet<>();
-
-        handleBodyParts(mm,
-            (contentType, part) -> set.add(contentType),
-            (contentType, content) -> set.add(contentType));
-
-        return set;
-    }
-
     private static void handleBodyParts(MimeMessage mm, BodyPartHandler<BodyPart> multipartHandler, BodyPartHandler<String> stringHandler) throws MessagingException, IOException
     {
         Object content = mm.getContent();
@@ -417,65 +381,9 @@ public class MailHelper
      */
     public static class ViewMessage extends MimeMessage
     {
-        private final boolean _isMultipart;
-
-        public ViewMessage(Session session, boolean isMultipart)
-        {
-            super(session);
-            _isMultipart = isMultipart;
-        }
-
         public ViewMessage(Session session)
         {
-            this(session, false);
-        }
-
-        private void setBodyContent(HttpServletRequest request, HttpView view, String type) throws Exception
-        {
-            // set the frame type to none to remove the extra div that gets added otherwise.
-            if (view instanceof JspView)
-                ((JspView) view).setFrame(WebPartView.FrameType.NOT_HTML);
-
-            MockHttpServletResponse response = new MockHttpServletResponse();
-            response.setCharacterEncoding("UTF-8");
-            HttpView.include(view, request, response);
-
-            if (_isMultipart)
-            {
-                Object content;
-                try
-                {
-                    content = getContent();
-                }
-                catch (Exception e)
-                {
-                    // will get an IOException or MessagingException if no content exists
-                    content = null;
-                }
-
-                if (content == null)
-                {
-                    content = new MimeMultipart("alternative");
-                    setContent((Multipart) content);
-                }
-                BodyPart body = new MimeBodyPart();
-                body.setContent(response.getContentAsString(), type);
-
-                if (content instanceof Multipart)
-                    ((Multipart) content).addBodyPart(body);
-            }
-            else
-                setContent(response.getContentAsString(), type);
-        }
-
-        public void setTextContent(HttpServletRequest request, HttpView view) throws Exception
-        {
-            setBodyContent(request, view, "text/plain");
-        }
-
-        public void setHtmlContent(HttpServletRequest request, HttpView view) throws Exception
-        {
-            setBodyContent(request, view, "text/html; charset=UTF-8");
+            super(session);
         }
     }
 
