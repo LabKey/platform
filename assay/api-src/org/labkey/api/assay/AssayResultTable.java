@@ -273,6 +273,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
             // for places like multi valued columns
             folderCol.setSqlTypeName("entityid");
             folderCol.setConceptURI(BuiltInColumnTypes.CONTAINERID_CONCEPT_URI);
+            folderCol.setRequired(true);
             addColumn(folderCol);
         }
 

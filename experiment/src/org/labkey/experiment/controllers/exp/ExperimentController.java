@@ -3481,7 +3481,7 @@ public class ExperimentController extends SpringActionController
 
             Map<String, Collection<Map<String, Object>>> response = ExperimentServiceImpl.partitionRequestedOperationObjects(requestIds, notAllowedIds, allData);
 
-            Collection<Integer> notPermittedIds = service.getIdsNotPermitted(getUser(), requestIds, "exp.data", form.getDataOperation().getPermissionClass());
+            Collection<Integer> notPermittedIds = service.getIdsNotPermitted(getUser(), requestIds, ExperimentService.get().getTinfoData(), form.getDataOperation().getPermissionClass());
             response.put("notPermitted", notPermittedIds == null ? Collections.emptyList(): notPermittedIds.stream().map(id -> Map.of("RowId", (Object) id)).toList());
 
             return success(response);
@@ -3536,7 +3536,7 @@ public class ExperimentController extends SpringActionController
 
             Map<String, Collection<Map<String, Object>>> response = ExperimentServiceImpl.partitionRequestedOperationObjects(requestIds, notAllowedIds, allMaterials);
 
-            Collection<Integer> notPermittedIds = service.getIdsNotPermitted(getUser(), requestIds, SamplesSchema.SCHEMA_NAME, form.getSampleOperation().getPermissionClass());
+            Collection<Integer> notPermittedIds = service.getIdsNotPermitted(getUser(), requestIds, ExperimentService.get().getTinfoMaterial(), form.getSampleOperation().getPermissionClass());
 
             response.put("notPermitted", notPermittedIds == null ? Collections.emptyList() : notPermittedIds.stream().map(id -> Map.of("RowId", (Object) id)).toList());
 
