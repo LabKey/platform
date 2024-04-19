@@ -562,19 +562,19 @@ LABKEY.vis.GenericChartHelper = new function(){
      */
     var generateAes = function(chartType, measures, schemaName, queryName) {
         var aes = {}, xMeasureType = getMeasureType(measures.x);
+        var xMeasureName = !measures.x ? undefined : (measures.x.converted ? measures.x.convertedName : measures.x.name);
 
-        if (chartType == "box_plot" && !measures.x)
-        {
-            aes.x = generateMeasurelessAcc(queryName);
-        }
-        else if (isNumericType(xMeasureType) || (chartType == 'scatter_plot' && measures.x.measure))
-        {
-            var xMeasureName = measures.x.converted ? measures.x.convertedName : measures.x.name;
+        if (chartType === "box_plot") {
+            if (!measures.x) {
+                aes.x = generateMeasurelessAcc(queryName);
+            } else {
+                // Issue 50074: box plots with numeric x-axis to support null values
+                var nullValueLabel = isNumericType(xMeasureType) ? "[Blank]" : undefined;
+                aes.x = generateDiscreteAcc(xMeasureName, measures.x.label, nullValueLabel);
+            }
+        } else if (isNumericType(xMeasureType) || (chartType === 'scatter_plot' && measures.x.measure)) {
             aes.x = generateContinuousAcc(xMeasureName);
-        }
-        else
-        {
-            var xMeasureName = measures.x.converted ? measures.x.convertedName : measures.x.name;
+        } else {
             aes.x = generateDiscreteAcc(xMeasureName, measures.x.label);
         }
 
@@ -719,15 +719,16 @@ LABKEY.vis.GenericChartHelper = new function(){
      * Used when an axis has a discrete measure (i.e. string).
      * @param {String} measureName The name of the measure.
      * @param {String} measureLabel The label of the measure.
+     * @param {String} nullValueLabel The label value to use for null values
      * @returns {Function}
      */
-    var generateDiscreteAcc = function(measureName, measureLabel)
+    var generateDiscreteAcc = function(measureName, measureLabel, nullValueLabel)
     {
         return function(row)
         {
             var value = _getRowValue(row, measureName);
             if (value === null)
-                value = "Not in " + measureLabel;
+                value = nullValueLabel !== undefined ? nullValueLabel : "Not in " + measureLabel;
 
             return value;
         };
