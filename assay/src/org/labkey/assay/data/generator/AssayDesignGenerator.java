@@ -65,6 +65,10 @@ public class AssayDesignGenerator extends DataGenerator<AssayDesignGenerator.Con
 
         GWTProtocol assayTemplate = assayDomainService.getAssayTemplate("General");
         assayTemplate.setName(name);
+
+        if (getConfig().isAssayDesignPlateSupport())
+            assayTemplate.setPlateMetadata(true);
+
         List<GWTDomain<GWTPropertyDescriptor>> domains = assayTemplate.getDomains();
 
         // clear the batch domain fields
@@ -108,15 +112,18 @@ public class AssayDesignGenerator extends DataGenerator<AssayDesignGenerator.Con
     {
         public static final String NUM_ASSAY_DESIGNS = "numAssayDesigns";
         public static final String ASSAY_DESIGN_SAMPLE_TYPES = "assayDesignSampleTypes";
+        public static final String ASSAY_DESIGN_PLATE_SUPPORT = "assayDesignPlateSupport";
 
         int _numAssayDesigns = 0;
         List<String> _assayDesignSampleTypes;
+        boolean _assayDesignPlateSupport;
 
         public Config(Properties properties)
         {
             super(properties);
             _numAssayDesigns = Integer.parseInt(properties.getProperty(NUM_ASSAY_DESIGNS, "0"));
             _assayDesignSampleTypes = parseNameList(properties, ASSAY_DESIGN_SAMPLE_TYPES);
+            _assayDesignPlateSupport = Boolean.parseBoolean(properties.getProperty(ASSAY_DESIGN_PLATE_SUPPORT, "false"));
         }
 
 
@@ -138,6 +145,11 @@ public class AssayDesignGenerator extends DataGenerator<AssayDesignGenerator.Con
         public void setAssayDesignSampleTypes(List<String> assayDesignSampleTypes)
         {
             _assayDesignSampleTypes = assayDesignSampleTypes;
+        }
+
+        public boolean isAssayDesignPlateSupport()
+        {
+            return _assayDesignPlateSupport;
         }
     }
 

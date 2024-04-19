@@ -120,6 +120,7 @@ import org.labkey.query.reports.getdata.AggregateQueryDataTransform;
 import org.labkey.query.reports.getdata.FilterClauseBuilder;
 import org.labkey.query.reports.view.ReportAndDatasetChangeDigestEmailTemplate;
 import org.labkey.query.reports.view.ReportUIProvider;
+import org.labkey.query.sql.CalculatedExpressionColumn;
 import org.labkey.query.sql.Method;
 import org.labkey.query.sql.QNode;
 import org.labkey.query.sql.SqlParser;
@@ -366,6 +367,8 @@ public class QueryModule extends DefaultModule
         ret.add(new JspTestCase("/org/labkey/query/olap/OlapTestCase.jsp"));
         ret.add(new JspTestCase("/org/labkey/query/QueryServiceImplTestCase.jsp"));
         ret.add(new JspTestCase("/org/labkey/query/QueryTestCase.jsp"));
+        ret.add(new JspTestCase("/org/labkey/query/sql/CalculatedColumnTestCase.jsp"));
+
         return ret;
     }
 

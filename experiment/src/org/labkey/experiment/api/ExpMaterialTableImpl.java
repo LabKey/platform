@@ -973,7 +973,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     }
 
     @Override
-    public SQLFragment getFromSQL(String alias, Set<FieldKey> selectedColumns)
+    public SQLFragment getFromSQLExpanded(String alias, Set<FieldKey> selectedColumns)
     {
         SQLFragment sql = new SQLFragment("(");
         boolean usedMaterialized;

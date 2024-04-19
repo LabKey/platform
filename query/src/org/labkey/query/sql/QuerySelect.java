@@ -1338,7 +1338,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
 
             @NotNull
             @Override
-            public SQLFragment getFromSQL(String alias, Set<FieldKey> selectedFieldKeys)
+            public SQLFragment getFromSQLExpanded(String alias, Set<FieldKey> selectedFieldKeys)
             {
                 if (null == selectedFieldKeys)
                 {

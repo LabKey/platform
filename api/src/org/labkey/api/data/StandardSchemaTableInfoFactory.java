@@ -44,7 +44,6 @@ public class StandardSchemaTableInfoFactory implements SchemaTableInfoFactory
     {
         SchemaTableInfo ti = new SchemaTableInfo(schema, _tableType, _tableName);
         ti.setDescription(_description);
-
         return ti;
     }
 }

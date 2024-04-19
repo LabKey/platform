@@ -674,7 +674,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     }
 
     @Override
-    public SQLFragment getFromSQL(String alias, Set<FieldKey> selectedColumns)
+    public SQLFragment getFromSQLExpanded(String alias, Set<FieldKey> selectedColumns)
     {
         checkReadBeforeExecute();
         TableInfo provisioned = _dataClassDataTableSupplier.get();

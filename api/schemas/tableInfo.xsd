@@ -985,6 +985,8 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="valueExpression" type="xs:string" minOccurs="0" maxOccurs="1">
+            </xs:element>
         </xs:all>
 		<xs:attribute name="columnName" type="xs:string" use="required">
 			<xs:annotation>
@@ -1005,7 +1007,7 @@
 				<xs:documentation>
                     The name of the column to wrap. This allows, for example, adding a new, user-specified
                     lookup based on the value of an existing column without replacing the existing lookup.
-                    Supported only for SQL metadata on custom queries.
+                    DEPRECATED: Do not use this attribute; use expression element instead.
                 </xs:documentation>
 			</xs:annotation>
 		</xs:attribute>

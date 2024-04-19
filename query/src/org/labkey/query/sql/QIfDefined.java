@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
@@ -108,7 +109,7 @@ public class QIfDefined extends QExpr
     }
 
     @Override
-    public BaseColumnInfo createColumnInfo(SQLTableInfo table, String name, Query query)
+    public BaseColumnInfo createColumnInfo(TableInfo table, String name, Query query)
     {
         throw new IllegalStateException();
     }

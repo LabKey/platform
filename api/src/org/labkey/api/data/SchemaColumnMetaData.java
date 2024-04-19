@@ -23,7 +23,12 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.PkMetaDataReader;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryParseException;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.sql.LabKeySql;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DebugInfoDumper;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.Pair;
@@ -42,6 +47,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 /*
 * User: adam
@@ -69,20 +76,40 @@ public class SchemaColumnMetaData
         if (load)
         {
             loadFromMetaData(_tinfo);
-            loadColumnsFromXml(_tinfo);
+            loadColumnsFromXml(_tinfo, tinfo.getXmlTable());
         }
     }
 
-    private void loadColumnsFromXml(SchemaTableInfo tinfo)
+    /* This constructor is used only to create a virtual/fake SchemaTableInfo */
+    public SchemaColumnMetaData(SchemaTableInfo tinfo, List<MutableColumnInfo> cols, TableType xmlTable) throws SQLException
     {
-        TableType xmlTable = tinfo.getXmlTable();
+        _tinfo = tinfo;
+        for (var col : cols)
+            addColumn(col);
+        loadColumnsFromXml(_tinfo, xmlTable);
+    }
 
+    private AliasManager getAliasManager(AliasManager aliasManager)
+    {
+        if (null == aliasManager)
+        {
+            aliasManager = new AliasManager(_tinfo.getSchema());
+            aliasManager.claimAliases(_columns);
+        }
+        return aliasManager;
+    }
+
+    private void loadColumnsFromXml(SchemaTableInfo tinfo, TableType xmlTable)
+    {
         if (null == xmlTable)
             return;
 
         TableType.Columns columns = xmlTable.getColumns();
 
         if (null == columns)
+            return;
+        ColumnType[] xmlColumnArray = columns.getColumnArray();
+        if (0 == xmlColumnArray.length)
             return;
 
         // Don't overwrite pk
@@ -96,12 +123,13 @@ public class SchemaColumnMetaData
             }
         }
 
-        ColumnType[] xmlColumnArray = columns.getColumnArray();
+        AliasManager aliasManager = null; // We're making an effort to be lazy about initializing.  Most SchemaTableInfo only have "real" columns.
         List<ColumnType> wrappedColumns = new ArrayList<>();
 
         for (ColumnType xmlColumn : xmlColumnArray)
         {
-            if (xmlColumn.getWrappedColumnName() != null)
+            if ((xmlColumn.isSetWrappedColumnName() && isNotBlank(xmlColumn.getWrappedColumnName())) ||
+                (xmlColumn.isSetValueExpression() && isNotBlank(xmlColumn.getValueExpression())))
             {
                 wrappedColumns.add(xmlColumn);
             }
@@ -125,19 +153,58 @@ public class SchemaColumnMetaData
                     colInfo = new BaseColumnInfo(FieldKey.fromParts(xmlColumn.getColumnName()), tinfo);
                 colInfo.setNullable(true);
                 loadFromXml(xmlColumn, colInfo, false);
+                aliasManager = getAliasManager(aliasManager);
+                aliasManager.ensureAlias(colInfo);
                 addColumn(colInfo);
             }
         }
 
-        for (ColumnType wrappedColumnXml : wrappedColumns)
-        {
-            ColumnInfo column = getColumn(wrappedColumnXml.getWrappedColumnName());
+        // snapshot the names of "real" columns at this point.  These are use for validation.
+        Map<FieldKey,ColumnInfo> allowedColumns = new HashMap<>();
+        for (var c : _columns)
+            allowedColumns.put(c.getFieldKey(), c);
 
-            if (column != null && getColumn(wrappedColumnXml.getColumnName()) == null)
+        for (ColumnType xmlColumn : wrappedColumns)
+        {
+            // Treat schema.xml as "code" and throw ConfigurationException if problems are found
+            if (null != getColumn(xmlColumn.getColumnName()))
+                throw new ConfigurationException("Error adding column '" + xmlColumn.getColumnName() + "' to table '" + tinfo.getName() + "'. Column already exists.");
+
+            ColumnInfo boundColumn = null;
+            String sql = "";
+            if (xmlColumn.isSetValueExpression() && isNotBlank(xmlColumn.getValueExpression()))
             {
-                var wrappedColumn = new WrappedColumn(column, wrappedColumnXml.getColumnName());
-                loadFromXml(wrappedColumnXml, wrappedColumn, false);
-                addColumn(wrappedColumn);
+                sql = xmlColumn.getValueExpression();
+            }
+            else if (xmlColumn.isSetWrappedColumnName() && isNotBlank(xmlColumn.getWrappedColumnName()))
+            {
+                sql = LabKeySql.quoteIdentifier(xmlColumn.getWrappedColumnName());
+                boundColumn = getColumn(xmlColumn.getWrappedColumnName());
+                if (null == boundColumn)
+                    throw new ConfigurationException("Error adding column '" + xmlColumn.getColumnName() + "' to table '" + tinfo.getName() + "'. '" + xmlColumn.getWrappedColumnName() + "' was not found.");
+            }
+            try
+            {
+                var exprColumn  = null != boundColumn ?
+                        QueryService.get().createQueryExpressionColumn(tinfo, FieldKey.fromParts(xmlColumn.getColumnName()), boundColumn.getFieldKey(), xmlColumn) :
+                        QueryService.get().createQueryExpressionColumn(tinfo, FieldKey.fromParts(xmlColumn.getColumnName()), sql, xmlColumn);
+                QueryService.get().bindQueryExpressionColumn(exprColumn, allowedColumns, true, null);
+                /* TLDR: SchemaTable columns expect getAlias() to match the column name, not the metadata name
+                 * This means ColumnInfo.getValue() works when the table is queried with TableSelector (or getSelectSql()).  The returned names will match column.getAlias().
+                 * The columns will not match if the creates SQL directly e.g. SELECT * FROM table.getFromSQL(), or SELECT column.getValueSql() FROM table.getFromSQL().
+                 * In this case, the returned names will match column.getMetaDataName()
+                 */
+                // force column to compute alias from name
+                exprColumn.getAlias();
+                assert exprColumn.isAliasSet();
+                // now reserve that alias
+                aliasManager = getAliasManager(aliasManager);
+                aliasManager.ensureAlias(exprColumn);
+                addColumn(exprColumn);
+            }
+            catch (QueryParseException qpe)
+            {
+                throw new ConfigurationException("Error adding column '" + xmlColumn.getColumnName() + "' to table '" + tinfo.getName() + "'. " + qpe.getMessage());
             }
         }
 
@@ -348,12 +415,17 @@ public class SchemaColumnMetaData
             _log.warn("Duplicate column '" + column.getName() + "' on table '" + _tinfo.getName() + "'");
 
         _columns.add(column);
-//        assert !column.isAliasSet();       // TODO: Investigate -- had to comment this out since ExprColumn() sets alias
         assert null == column.getFieldKey().getParent();
         assert column.getName().equals(column.getFieldKey().getName());
         assert !(column instanceof BaseColumnInfo) || ((BaseColumnInfo)column).lockName();
         // set alias explicitly, so that getAlias() won't call makeLegalName() and mangle it
-        column.setAlias(column.getName());
+        if (!column.isAliasSet())
+        {
+            if (null != column.getMetaDataName())
+                column.setAlias(column.getMetaDataName());
+            else
+                column.setAlias(column.getName());
+        }
         _colMap = null;
     }
 
