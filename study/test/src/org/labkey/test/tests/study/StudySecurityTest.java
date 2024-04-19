@@ -86,7 +86,6 @@ public class StudySecurityTest extends BaseWebDriverTest
     @BeforeClass
     public static void doSetup()
     {
-
         USER_ADMIN = getCurrentTest().getCurrentUser();
 
         StudySecurityTest initTest = (StudySecurityTest)getCurrentTest();
@@ -145,10 +144,11 @@ public class StudySecurityTest extends BaseWebDriverTest
     public void testUI()
     {
         goToStudyFolder();
-        StudySecurityPage studySecurityPage = _studyHelper.enterStudySecurity();
 
         // Test dataset security operations as a folder admin to avoid regressions, Issue #50103
         impersonateRole("Folder Administrator");
+
+        StudySecurityPage studySecurityPage = _studyHelper.enterStudySecurity();
 
         log("Verify that the various 'Study Security Type' settings update the UI appropriately.");
 
@@ -266,7 +266,6 @@ public class StudySecurityTest extends BaseWebDriverTest
     @Test
     public void testFolderVsPerDatasetPermissions()
     {
-
         log(String.format("Move the read-only folder group '%s' to be an editor on a dataset '%s'", GROUP_READERS, DS_DEMO));
         Map<String, DatasetRoles> expectedDatasetRoles = Map.of(DS_DEMO, DatasetRoles.EDITOR);
         adjustGroupDatasetPerms(GROUP_READERS, GroupSecuritySetting.PER_DATASET, expectedDatasetRoles);
@@ -279,7 +278,6 @@ public class StudySecurityTest extends BaseWebDriverTest
 
         log(String.format("Impersonate user '%s' and validate that they have no permissions.", USER_EDITOR));
         verifyNoDatasetPermissions(USER_EDITOR);
-
     }
 
     /**
@@ -308,7 +306,6 @@ public class StudySecurityTest extends BaseWebDriverTest
 
         log(String.format("No datasets should be visible to group '%s'.", GROUP_NONE));
         verifyNoDatasetPermissions(USER_NONE);
-
     }
 
     /**
@@ -346,7 +343,6 @@ public class StudySecurityTest extends BaseWebDriverTest
         Collections.sort(actualPermissions);
         checker().verifyEquals(String.format("The 'Per Dataset Permissions' options not as expected for '%s'.", GROUP_GUESTS),
                 expectedPermissions, actualPermissions);
-
     }
 
     /**
@@ -355,7 +351,6 @@ public class StudySecurityTest extends BaseWebDriverTest
     @Test
     public void testPermissionsReset()
     {
-
         log(String.format("Change %s permissions to 'Read All' and verify.", GROUP_LIMITED));
         adjustGroupDatasetPerms(GROUP_LIMITED, GroupSecuritySetting.READ_ALL);
         Map<String, DatasetRoles> expectedDatasetRoles = Map.of(DS_DEMO, DatasetRoles.READER,
@@ -410,7 +405,6 @@ public class StudySecurityTest extends BaseWebDriverTest
     @Test
     public void testUserCanActuallyInsert()
     {
-
         log("Validate that a user with a per dataset permission can really insert a record in that dataset.");
         goToStudyFolder();
 
@@ -493,7 +487,6 @@ public class StudySecurityTest extends BaseWebDriverTest
         clickTab("Overview", false);
 
         checkForDirtyPageAlert("Group Permissions");
-
     }
 
     private void checkForDirtyPageAlert(String changeMade)
@@ -513,7 +506,6 @@ public class StudySecurityTest extends BaseWebDriverTest
                     .error(String.format("No alert shown after changing the '%s' and navigating away.", changeMade));
 
         }
-
     }
 
     protected void adjustGroupDatasetPerms(String groupName, GroupSecuritySetting setting)
@@ -541,7 +533,6 @@ public class StudySecurityTest extends BaseWebDriverTest
     // Special case the check when a user should have no permissions to any datasets.
     private void verifyNoDatasetPermissions(String user)
     {
-
         goToStudyFolder();
 
         checker()
@@ -562,12 +553,10 @@ public class StudySecurityTest extends BaseWebDriverTest
                         datasetLinks.isEmpty());
 
         stopImpersonating();
-
     }
 
     private void verifyPermissions(String user, Map<String, DatasetRoles> expectedDatasetRoles)
     {
-
         goToStudyFolder();
 
         if(!user.equalsIgnoreCase(USER_ADMIN))
@@ -620,9 +609,7 @@ public class StudySecurityTest extends BaseWebDriverTest
 
                 // Go back to the 'Overview' page and check the expected permissions of the next dataset in the list.
                 clickFolder(FOLDER_NAME);
-
             }
-
         }
 
         if(!user.equalsIgnoreCase(USER_ADMIN))
@@ -630,7 +617,6 @@ public class StudySecurityTest extends BaseWebDriverTest
 
         // Go back to where you started.
         goToStudyFolder();
-
     }
 
     private void verifyDataRegionTable(String datasetName, DatasetRoles datasetRole)
@@ -657,7 +643,6 @@ public class StudySecurityTest extends BaseWebDriverTest
         }
         else
         {
-
             verifyInsertPermissions(dataRegionTable, datasetName);
 
             if(datasetRole.equals(DatasetRoles.EDITOR))
@@ -670,7 +655,6 @@ public class StudySecurityTest extends BaseWebDriverTest
                 log("For the 'author' roles none of the entries in the dataset should be editable.");
                 checker().verifyEquals("Entries in the dataset appear to be editable.", 0, updateLinks.size());
             }
-
         }
     }
 
@@ -682,7 +666,6 @@ public class StudySecurityTest extends BaseWebDriverTest
                                 datasetName),
                         dataRegionTable.hasHeaderMenu(INSERT_BUTTON_TEXT)))
         {
-
             // Check the text on the insert menu.
             dataRegionTable.clickHeaderButton(INSERT_BUTTON_TEXT);
 
@@ -698,14 +681,12 @@ public class StudySecurityTest extends BaseWebDriverTest
             checker().verifyEquals("Insert menus not as expected.", expectedMenuText, actualMenuText);
 
             dataRegionTable.clickHeaderButton(INSERT_BUTTON_TEXT);
-
         }
     }
 
     @Before
     public void setTestDefaultStudySecurity()
     {
-
         StudySecurityPage studySecurityPage = goToStudySecurityPage();
 
         studySecurityPage.setSecurityTypeAndUpdate(StudySecurityPage.StudySecurityType.ADVANCED_WRITE);
@@ -739,7 +720,6 @@ public class StudySecurityTest extends BaseWebDriverTest
                 DS_MISSED, DatasetRoles.AUTHOR);
 
         studySecurityPage.setDatasetPermissionsAndSave(GROUP_AUTHORS, permissions);
-
     }
 
     private StudySecurityPage goToStudySecurityPage()
@@ -767,7 +747,6 @@ public class StudySecurityTest extends BaseWebDriverTest
         {
             navigateToFolder(getProjectName(), FOLDER_NAME);
         }
-
     }
 
     @Override
@@ -787,5 +766,4 @@ public class StudySecurityTest extends BaseWebDriverTest
     {
         return "Study_Security_Test";
     }
-
 }
