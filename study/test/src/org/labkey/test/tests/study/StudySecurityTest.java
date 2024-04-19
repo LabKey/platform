@@ -147,6 +147,9 @@ public class StudySecurityTest extends BaseWebDriverTest
         goToStudyFolder();
         StudySecurityPage studySecurityPage = _studyHelper.enterStudySecurity();
 
+        // Test dataset security operations as a folder admin to avoid regressions, Issue #50103
+        impersonateRole("Folder Administrator");
+
         log("Verify that the various 'Study Security Type' settings update the UI appropriately.");
 
         studySecurityPage.setSecurityTypeAndUpdate(StudySecurityPage.StudySecurityType.BASIC_READ);
@@ -232,6 +235,8 @@ public class StudySecurityTest extends BaseWebDriverTest
                 studySecurityPage.isDatasetHighlighted(DS_TYPES));
 
         log("UI looks correct.");
+
+        stopImpersonating();
     }
 
     /**
