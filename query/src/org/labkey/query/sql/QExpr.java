@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
@@ -86,10 +87,10 @@ abstract public class QExpr extends QNode
 
     public abstract boolean isConstant();
 
-    
+
     public boolean isAggregate()
     {
-        // avoid ClassCastException org.labkey.query.sql.QSelectFrom cannot be cast to org.labkey.query.sql.QExpr  
+        // avoid ClassCastException org.labkey.query.sql.QSelectFrom cannot be cast to org.labkey.query.sql.QExpr
         if (this instanceof QQuery)
             return false;
         for (QNode n : children())
@@ -102,7 +103,7 @@ abstract public class QExpr extends QNode
     }
 
 
-    public ColumnInfo createColumnInfo(SQLTableInfo table, String name, final Query query)
+    public ColumnInfo createColumnInfo(TableInfo table, String name, final Query query)
     {
         ExprColumn expr = new ExprColumn(table, name, new SQLFragment("{{expr}}"), getJdbcType())
         {

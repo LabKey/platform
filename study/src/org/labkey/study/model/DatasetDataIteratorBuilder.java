@@ -210,7 +210,6 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
                     catch (ValidationException e)
                     {
                         setupError(e.getMessage());
-                        return it;
                     }
                 }
 

@@ -250,7 +250,7 @@ public class StudyUnionTableInfo extends VirtualTable<StudyQuerySchema>
     }
 
     @Override
-    public SQLFragment getFromSQL(String alias, Set<FieldKey> cols)
+    public SQLFragment getFromSQLExpanded(String alias, Set<FieldKey> cols)
     {
         checkReadBeforeExecute();
         return _getFromSQL(alias, cols, false);

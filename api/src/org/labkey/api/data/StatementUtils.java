@@ -748,7 +748,7 @@ public class StatementUtils
 
         for (ColumnInfo column : table.getColumns())
         {
-            if (column instanceof WrappedColumn)
+            if (column instanceof WrappedColumn || column.isCalculated())
                 continue;
             // if we're allowing the caller to set the auto-increment column, then treat like a regular column
             if (column.isAutoIncrement() && !_allowUpdateAutoIncrement)

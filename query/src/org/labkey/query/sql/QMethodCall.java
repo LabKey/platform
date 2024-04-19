@@ -21,6 +21,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MethodInfo;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryParseException;
@@ -85,7 +86,7 @@ public class QMethodCall extends QExpr
     }
 
     @Override
-    public ColumnInfo createColumnInfo(SQLTableInfo table, String alias, Query query)
+    public ColumnInfo createColumnInfo(TableInfo table, String alias, Query query)
     {
         MethodInfo method = getMethod(table.getSqlDialect());
         if (method == null)

@@ -320,7 +320,7 @@ public class QuerySelectView extends AbstractQueryRelation
         SQLFragment fromFrag = new SQLFragment("FROM ");
         Set<FieldKey> fieldKeySet = new TreeSet<>();
         allColumns.stream()
-                .map(col -> col instanceof WrappedColumn ? ((WrappedColumn) col).getWrappedColumn() : col)
+                .map(col -> (null != col.getWrappedColumnName() && null != table.getColumn(col.getWrappedColumnName())) ?  table.getColumn(col.getWrappedColumnName()) : col)
                 .forEach(col -> {
                     var fk = col.getFieldKey();
                     fieldKeySet.add(fk);
