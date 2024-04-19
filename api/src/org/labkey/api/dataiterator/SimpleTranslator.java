@@ -399,12 +399,12 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 if (_allowBulkLoads && _bulkLoads.add(Pair.of(pkCol, pkCol)))
                 {
                     TableSelector ts = createSelector(pkCol, pkCol);
-                    ts.forEach(pkCol.getJavaObjectClass(), (Object pk) -> map.put(pk, pk));
+                    ts.forEach((Class)pkCol.getJavaObjectClass(), (Object pk) -> map.put(pk, pk));
                 }
                 else
                 {
                     TableSelector ts = createSelector(pkCol, pkCol, k);
-                    ts.forEach(pkCol.getJavaObjectClass(), (Object pk) -> map.put(pk, pk));
+                    ts.forEach((Class)pkCol.getJavaObjectClass(), (Object pk) -> map.put(pk, pk));
                 }
 
                 if (map.containsKey(k))
@@ -1962,13 +1962,9 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             _data.debugLogInfo(sb);
     }
 
-
     /*
     * Tests
     */
-
-
-
     private static String[] as(String... arr)
     {
         return arr;

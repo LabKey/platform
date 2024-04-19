@@ -224,4 +224,9 @@ public interface MutableColumnInfo extends MutableColumnRenderProperties, Column
         ColumnLogging remapped = logging.remapFieldKeys(parent, remap, remapWarnings);
         setColumnLogging(remapped);
     }
+
+    /* should be called just before setLocked() */
+    default void afterConstruct()
+    {
+    }
 }

@@ -33,15 +33,12 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * User: matthewb
- * Date: Jul 21, 2008
- * Time: 12:00:28 PM
- *
  * These are fields used by ColumnInfo and PropertyDescriptor that primarily affect
  * how the field is rendered in the HTML grids, forms, and pickers
  */
@@ -183,7 +180,7 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
     @Override
     public String getNonBlankCaption()
     {
-        if (_label == null || "".equals(_label.trim()))
+        if (_label == null || _label.trim().isEmpty())
         {
             return getName();
         }
@@ -518,10 +515,7 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
     public boolean isDimension()
     {
         // If dimension is unspecified/null, make a best guess based on the type of the field:
-        if (_dimension == null)
-            return inferIsDimension(getName(), isLookup(), isHidden());
-        else
-            return _dimension;
+        return Objects.requireNonNullElseGet(_dimension, () -> inferIsDimension(getName(), isLookup(), isHidden()));
     }
 
     public static boolean inferIsMeasure(ColumnRenderProperties col)
@@ -575,10 +569,7 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
     public boolean isMeasure()
     {
         // If measure is unspecified/null, make a best guess based on the type of the field:
-        if (_measure == null)
-            return inferIsMeasure(getName(), getLabel(), isNumericType(), isAutoIncrement(), isLookup(), isHidden());
-        else
-            return _measure;
+        return Objects.requireNonNullElseGet(_measure, () -> inferIsMeasure(getName(), getLabel(), isNumericType(), isAutoIncrement(), isLookup(), isHidden()));
     }
 
     @Override
@@ -779,20 +770,20 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
 
     /** Don't return TYPEs just real java objects */
     @Override
-    public final Class getJavaObjectClass()
+    public final Class<?> getJavaObjectClass()
     {
         return getJavaClass(true);
     }
 
     /** Return Class or TYPE, based on isNullable */
     @Override
-    public final Class getJavaClass()
+    public final Class<?> getJavaClass()
     {
         return getJavaClass(isNullable());
     }
 
     @Override
-    public Class getJavaClass(boolean isNullable)
+    public Class<?> getJavaClass(boolean isNullable)
     {
         PropertyType pt = getPropertyType();
         if (pt != null)

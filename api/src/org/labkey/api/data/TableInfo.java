@@ -31,6 +31,7 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.SchemaTreeNode;
@@ -62,6 +63,21 @@ import java.util.Set;
  */
 public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNode
 {
+    /**
+     * This is used to report problems encountered during construction of the TableInfo.  These would generally be
+     * reported in the schema browser or editor.  Failing to construct a TableInfo generally breaks the UI badly, so we
+     * want to be able to return a usable TableInfo whenever possible and then report problems here if they the issue
+     * is correctable.
+     *<br>
+     * See also ValidateQueryAction.
+     *<br>
+     * @return warnings collected during TableInfo construction.
+     */
+    default Collection<QueryParseException> getWarnings()
+    {
+        return List.of();
+    }
+
     /** Get title, falling back to the name if title is null **/
     String getTitle();
 

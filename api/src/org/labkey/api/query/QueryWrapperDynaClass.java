@@ -39,7 +39,7 @@ public class QueryWrapperDynaClass extends StringWrapperDynaClass
             throw new IllegalArgumentException();
 
         // CONSIDER: Handle MultiValueFK in column.getJavaClass() directly
-        Map<String, Class> propMap = new CaseInsensitiveHashMap<>();
+        Map<String, Class<?>> propMap = new CaseInsensitiveHashMap<>();
         for (ColumnInfo column : table.getColumns())
         {
             boolean multiValued = column.getFk() instanceof MultiValuedForeignKey && ((MultiValuedForeignKey)column.getFk()).isMultiSelectInput();
