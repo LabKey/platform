@@ -7,6 +7,7 @@ import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.DefaultAssayRunCreator;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.plate.Plate;
+import org.labkey.api.assay.plate.PlateCustomField;
 import org.labkey.api.assay.plate.PlateSet;
 import org.labkey.api.assay.plate.PlateSetType;
 import org.labkey.api.assay.plate.PlateType;
@@ -32,6 +33,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.labkey.assay.plate.PlateManager.CreatePlateSetPlate;
 
@@ -41,10 +44,10 @@ public class PlateSetDataGenerator extends DataGenerator<PlateSetDataGenerator.C
     private static final int MAX_PLATESETS_PER_LEVEL = 10;
     private PlateType _plateType;
     private int _plateSetsCreated = 0;
-    private List<String> _wellProperties = new ArrayList<>();
+    private final List<String> _wellProperties = new ArrayList<>();
     private static final String INT_PROP_PREFIX = "IntegerProp";
     private static final String DOUBLE_PROP_PREFIX = "DoubleProp";
-    private List<PlateSet> _assayPlateSets = new ArrayList<>();
+    private final List<PlateSet> _assayPlateSets = new ArrayList<>();
 
     public PlateSetDataGenerator(PipelineJob job, PlateSetDataGenerator.Config config)
     {
@@ -107,13 +110,13 @@ public class PlateSetDataGenerator extends DataGenerator<PlateSetDataGenerator.C
     {
         if (config.getNumPlatesets() <= 0)
         {
-            _log.info(String.format("No platesets generated because %s=%d", Config.NUM_PLATESETS, config.getNumPlatesets()));
+            _log.info(String.format("No plate sets generated because %s=%d", Config.NUM_PLATESETS, config.getNumPlatesets()));
             return false;
         }
 
         if (config.getPlatesPerPlateset() > PlateSet.MAX_PLATES)
         {
-            _log.error(String.format("The number of plates per platesets cannot exceed %d", PlateSet.MAX_PLATES));
+            _log.error(String.format("The number of plates per plates ets cannot exceed %d", PlateSet.MAX_PLATES));
             return false;
         }
 
@@ -148,17 +151,31 @@ public class PlateSetDataGenerator extends DataGenerator<PlateSetDataGenerator.C
     {
         if (config.getMaxCustomProperties() > 0)
         {
+            Set<String> existingProps = PlateManager.get().getPlateMetadataFields(getContainer(), getUser()).stream().map(PlateCustomField::getName).collect(Collectors.toSet());
             List<GWTPropertyDescriptor> customFields = new ArrayList<>();
             for (int i=0; i < config.getMaxCustomProperties(); i++)
             {
                 String prefix = ((i % 2) == 0) ? INT_PROP_PREFIX : DOUBLE_PROP_PREFIX;
                 String rangeUri = ((i % 2) == 0) ? "http://www.w3.org/2001/XMLSchema#int" : "http://www.w3.org/2001/XMLSchema#double";
-                String name = prefix + "_" + i;
+
+                String name = getUniqueCustomPropName(prefix, existingProps);
                 _wellProperties.add(name);
                 customFields.add(new GWTPropertyDescriptor(name, rangeUri));
             }
             PlateManager.get().createPlateMetadataFields(getContainer(), getUser(), customFields);
         }
+    }
+
+    private String getUniqueCustomPropName(String prefix, Set<String> existing)
+    {
+        int i=1;
+        String name = prefix + "_" + i;
+        while (existing.contains(name))
+        {
+            name = prefix + "_" + (++i);
+        }
+        existing.add(name);
+        return name;
     }
 
     private void createLevel(PlateSet parent, int depth) throws Exception
