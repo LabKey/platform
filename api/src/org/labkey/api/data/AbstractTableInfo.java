@@ -296,6 +296,9 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             }
         }
 
+        for (var c : getMutableColumns())
+            c.afterConstruct();
+
         if (null != getUserSchema())
         {
             QueryService qs = QueryService.get();

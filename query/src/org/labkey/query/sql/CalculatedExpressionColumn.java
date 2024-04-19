@@ -57,6 +57,7 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
     public CalculatedExpressionColumn(TableInfo parent, FieldKey key, String labKeySql, ColumnType columnType)
     {
         super(key, parent);
+        assert parent instanceof SchemaTableInfo || parent instanceof AbstractTableInfo;
         _labKeySql = labKeySql;
         _xmlColumn = columnType;
     }
@@ -109,9 +110,13 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
         setLabel(null);
         setFieldKey(me);
 
-        // set CalculatedExpressionColumn properties (over-writable)
-        super.setShownInUpdateView(false);
-        super.setShownInInsertView(false);
+        setShownInUpdateView(false);
+        setShownInInsertView(false);
+        setUserEditable(false);
+        setRequired(false);
+        setAutoIncrement(false);
+        setKeyField(false);
+        setCalculated(true);
 
         if (null != _xmlColumn)
         {
@@ -135,32 +140,14 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
                 this.loadFromXml(_xmlColumn, false);
             }
         }
-
-        // set CalculatedExpressionColumn properties (not over-writable)
-        setUserEditable(false);
-        setCalculated(true);
-        setRequired(false);
-        setAutoIncrement(false);
-        setKeyField(false);
     }
 
-
-    /**
-     * TODO maybe have TableInfo call computeMetadata() in fireAfterConstruct()?
-     *<br>
-     * We don't have a phase where we the TableInfo notifies it's columns, that it is "done".  But since this object
-     * is shared, I'd prefer to calculate the type during construction and not on demand.
-     *<br>
-     * Nothing breaks if we don't do this here, as we will still calculate the type getJdbcType() if we need to.
-     *
-     * @param b set locked state
-     */
+    
     @Override
-    public void setLocked(boolean b)
+    public void afterConstruct()
     {
-        if (!isLocked())
-            computeMetaData(null);
-        super.setLocked(b);
+        checkLocked();
+        computeMetaData(null);
     }
 
 
