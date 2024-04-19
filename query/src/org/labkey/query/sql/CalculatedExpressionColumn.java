@@ -158,7 +158,8 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
     @Override
     public void setLocked(boolean b)
     {
-        computeMetaData(null);
+        if (!isLocked())
+            computeMetaData(null);
         super.setLocked(b);
     }
 
