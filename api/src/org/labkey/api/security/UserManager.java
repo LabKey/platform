@@ -1308,7 +1308,7 @@ public class UserManager
             MutableSecurityPolicy policy = new MutableSecurityPolicy(root, root.getPolicy());
             policy.addRoleAssignment(_users.get(APPLICATION_ADMIN_EMAIL), ApplicationAdminRole.class);
             policy.addRoleAssignment(_users.get(SITE_ADMIN_EMAIL), SiteAdminRole.class);
-            SecurityPolicyManager.savePolicy(policy, TestContext.get().getUser());
+            SecurityPolicyManager.savePolicyForTests(policy, TestContext.get().getUser());
         }
 
         @Test
