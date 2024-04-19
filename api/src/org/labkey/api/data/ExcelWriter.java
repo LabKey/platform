@@ -545,11 +545,11 @@ public class ExcelWriter implements ExportWriter
         }
     }
 
-    private List<ExcelColumn> getVisibleColumns(Workbook workbook, RenderContext ctx)
+    protected List<ExcelColumn> getVisibleColumns(Workbook workbook, RenderContext ctx, List<DisplayColumn> columns)
     {
-        List<ExcelColumn> visibleColumns = new ArrayList<>(_columns.size());
+        List<ExcelColumn> visibleColumns = new ArrayList<>(columns.size());
 
-        for (DisplayColumn dc : _columns)
+        for (DisplayColumn dc : columns)
         {
             ExcelColumn column = new ExcelColumn(dc, _formatters, workbook);
             if (column.isVisible(ctx))
@@ -566,6 +566,11 @@ public class ExcelWriter implements ExportWriter
         }
 
         return visibleColumns;
+    }
+
+    private List<ExcelColumn> getVisibleColumns(Workbook workbook, RenderContext ctx)
+    {
+        return getVisibleColumns(workbook, ctx, _columns);
     }
 
     // Should be called within a try/catch

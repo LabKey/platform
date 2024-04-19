@@ -335,7 +335,7 @@ public class ExcelColumn extends RenderColumn
     }
 
 
-    protected void writeCell(Sheet sheet, int column, int row, RenderContext ctx)
+    public void writeCell(Sheet sheet, int column, int row, RenderContext ctx)
     {
         Object o = _dc.getExcelCompatibleValue(ctx);
         ColumnInfo columnInfo = _dc.getColumnInfo();
@@ -703,7 +703,7 @@ public class ExcelColumn extends RenderColumn
 
     // Note: width of the column will be adjusted once per call to ExcelWriter.render(), which potentially means
     // multiple times per sheet.  This shouldn't be a problem, though.
-    protected void adjustWidth(RenderContext ctx, Sheet sheet, int column, int startRow, int endRow)
+    public void adjustWidth(RenderContext ctx, Sheet sheet, int column, int startRow, int endRow)
     {
         if (_autoSize)
         {
