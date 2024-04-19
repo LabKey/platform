@@ -156,6 +156,15 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
         if (null == tinfo)
             throw new NotFoundException("Could not find the specified query '" + form.getQueryName() + "' in the schema '" + form.getSchemaName() + "'");
 
+        var warnings = tinfo.getWarnings();
+        if (null != warnings && !warnings.isEmpty())
+        {
+            JSONArray jsonWarnings = new JSONArray();
+            for (var qpw : warnings)
+                jsonWarnings.put(qpw.toJSON(null));
+            resp.put("warnings", jsonWarnings);
+        }
+
         resp.put("supportGroupConcatSubSelect", tinfo.getSqlDialect().supportsGroupConcatSubSelect());
         resp.put("supportMerge", tinfo.supportsInsertOption(QueryUpdateService.InsertOption.MERGE));
 

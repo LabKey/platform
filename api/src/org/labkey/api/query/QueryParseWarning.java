@@ -30,4 +30,10 @@ public class QueryParseWarning extends QueryParseException
         super(message, cause, line, column);
         _level = Level.WARN;
     }
+
+    public QueryParseWarning setFieldName(String field)
+    {
+        _field = field;
+        return this;
+    }
 }

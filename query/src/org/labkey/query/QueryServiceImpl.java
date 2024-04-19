@@ -35,7 +35,6 @@ import org.labkey.api.audit.AbstractAuditHandler;
 import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
-import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
@@ -61,6 +60,7 @@ import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.sql.LabKeySql;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ContainerContext;
@@ -79,6 +79,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
@@ -590,13 +591,13 @@ public class QueryServiceImpl implements QueryService
     {
         private final ColumnInfo _col;
 
-        QColumnInfo(ColumnInfo col)
+        public QColumnInfo(ColumnInfo col)
         {
             _col = col;
         }
 
         @Override
-        public ColumnInfo createColumnInfo(SQLTableInfo table, String name, Query query)
+        public ColumnInfo createColumnInfo(TableInfo table, String name, Query query)
         {
             var ret = super.createColumnInfo(table, name, query);
             _col.copyTo((ColumnRenderPropertiesImpl) ret);
@@ -1728,7 +1729,8 @@ public class QueryServiceImpl implements QueryService
 
         for (Entry<FieldKey, Map<CustomView.ColumnProperty, String>> entry : fields)
         {
-            ColumnInfo column = columns.get(entry.getKey());
+            FieldKey fieldKey = entry.getKey();
+            ColumnInfo column = columns.get(fieldKey);
 
             if (column == null)
                 continue;
@@ -2809,6 +2811,31 @@ public class QueryServiceImpl implements QueryService
         }
     }
 
+    @Override
+    public MutableColumnInfo createQueryExpressionColumn(TableInfo table, FieldKey key, String labKeySql, ColumnType columnType)
+    {
+        return new CalculatedExpressionColumn(table, key, labKeySql, columnType);
+    }
+
+    @Override
+    public MutableColumnInfo createQueryExpressionColumn(TableInfo table, FieldKey key, FieldKey wrapped, ColumnType columnType)
+    {
+        // TODO short-circuit parsing/binding in this code path
+        var ret = new CalculatedExpressionColumn(table, key, LabKeySql.quoteIdentifier(wrapped.getName()), columnType);
+        return ret;
+    }
+
+     /** Compute and set the metadata for this column based on the source expressoin and the xml override */
+    @Override
+    public void bindQueryExpressionColumn(ColumnInfo col, Map<FieldKey,ColumnInfo> columns, boolean validateOnly, @Nullable Set<FieldKey> referencedKeys) throws QueryParseException
+    {
+        if (!(col instanceof CalculatedExpressionColumn calc))
+            throw new IllegalStateException();
+        if (validateOnly || null != referencedKeys)
+            calc.validate(columns, referencedKeys);
+        if (!validateOnly)
+            calc.computeMetaData(columns);
+    }
 
     @Override
     public void addCompareType(CompareType type)

@@ -298,8 +298,9 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         setAutoIncrement(col.isAutoIncrement());
         setScale(col.getScale());
         setPrecision(col.getPrecision());
-        if (col instanceof BaseColumnInfo baseCol)
+        if (col.getClass() == BaseColumnInfo.class)
         {
+            BaseColumnInfo baseCol = (BaseColumnInfo)col;
             _sqlTypeName = baseCol._sqlTypeName;
             _jdbcType = baseCol._jdbcType;
             _propertyType = baseCol._propertyType;
