@@ -139,7 +139,7 @@ public interface ColumnRenderProperties extends ImportAliasable
         return getFriendlyTypeName(getJavaClass());
     }
 
-    static String getFriendlyTypeName(@NotNull Class javaClass)
+    static String getFriendlyTypeName(@NotNull Class<?> javaClass)
     {
         if (javaClass.equals(String.class))
             return "Text (String)";
@@ -164,12 +164,12 @@ public interface ColumnRenderProperties extends ImportAliasable
     }
 
     /** Don't return TYPEs just real java objects */
-    Class getJavaObjectClass();
+    Class<?> getJavaObjectClass();
 
     /** Return Class or TYPE, based on isNullable */
-    Class getJavaClass();
+    Class<?> getJavaClass();
 
-    Class getJavaClass(boolean isNullable);
+    Class<?> getJavaClass(boolean isNullable);
 
     FacetingBehaviorType getFacetingBehaviorType();
 

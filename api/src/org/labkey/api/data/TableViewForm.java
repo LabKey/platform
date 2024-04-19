@@ -414,7 +414,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
             if (StringUtils.isEmpty(str))
                 str = null;
 
-            Class propType = null;
+            Class<?> propType = null;
 
             try
             {
