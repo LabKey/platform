@@ -1142,6 +1142,9 @@ public class ContainerManager
 
     public static Container getForPath(@NotNull String path)
     {
+        if (GUID.isGUID(path))
+            return getForId(path);
+
         Path p = Path.parse(path);
         return getForPath(p);
     }
