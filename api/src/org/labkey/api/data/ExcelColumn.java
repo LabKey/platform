@@ -335,12 +335,13 @@ public class ExcelColumn extends RenderColumn
     }
 
 
-    public void writeCell(Sheet sheet, int column, int row, RenderContext ctx)
+    public Cell writeCell(Sheet sheet, int column, int row, RenderContext ctx)
     {
         Object o = _dc.getExcelCompatibleValue(ctx);
         ColumnInfo columnInfo = _dc.getColumnInfo();
         Row rowObject = getRow(sheet, row);
 
+        Cell cell = null;
         if (null == o)
         {
             // For null values, don't create the cell unless there's a conditional format that applies
@@ -348,13 +349,13 @@ public class ExcelColumn extends RenderColumn
             if (cellFormat != null)
             {
                 // Set the format but there's no value to set
-                Cell cell = rowObject.getCell(column, MissingCellPolicy.CREATE_NULL_AS_BLANK);
+                cell = rowObject.getCell(column, MissingCellPolicy.CREATE_NULL_AS_BLANK);
                 cell.setCellStyle(cellFormat);
             }
-            return;
+            return cell;
         }
 
-        Cell cell = rowObject.getCell(column, MissingCellPolicy.CREATE_NULL_AS_BLANK);
+        cell = rowObject.getCell(column, MissingCellPolicy.CREATE_NULL_AS_BLANK);
 
         try
         {
@@ -520,6 +521,7 @@ public class ExcelColumn extends RenderColumn
                     }
                 }
             }
+            return cell;
         }
         catch(ClassCastException cce)
         {
