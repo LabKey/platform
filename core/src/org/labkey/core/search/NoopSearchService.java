@@ -276,7 +276,7 @@ public class NoopSearchService implements SearchService
     }
 
     @Override
-    public void deleteIndex()
+    public void deleteIndex(String reason)
     {
     }
 
@@ -294,7 +294,6 @@ public class NoopSearchService implements SearchService
     @Override
     public void addSearchCategory(SearchCategory category)
     {
-
     }
 
     @Override
@@ -391,7 +390,7 @@ public class NoopSearchService implements SearchService
     }
 
     @Override
-    public void indexFull(boolean force)
+    public void indexFull(boolean force, String reason)
     {
     }
 

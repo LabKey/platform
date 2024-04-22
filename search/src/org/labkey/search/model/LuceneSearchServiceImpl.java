@@ -250,8 +250,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
                     // We delete the search index after every major upgrade, but we can still encounter a "future" index format when
                     // developers switch to a previous release branch that uses an older version of Lucene... and then encounter an
                     // "old" index format when they switch back. In either case, just delete the index and retry once.
-                    _log.info("Deleting existing full-text search index due to exception: " + e.getMessage());
-                    deleteIndex();
+                    deleteIndex("an exception occurred, " + e.getMessage());
                     attemptInitialize();
                 }
             }
@@ -395,7 +394,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
     @Override
     public void startCrawler()
     {
-        clearLastIndexedIfEmpty();
+        handleEmptyOrMismatchedIndex();
         super.startCrawler();
     }
 
@@ -406,8 +405,11 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
         initializeIndex();
     }
 
-    // Clear lastIndexed columns if we have no documents in the index. See #25530
-    private void clearLastIndexedIfEmpty()
+    private static final String SERVER_GUID_NAME = "ServerGuid";
+
+    // Clear lastIndexed if index is empty (Issue #25530). Delete index (and clear lastIndexed) if it doesn't match the
+    // current database (server GUID in the index is different from the server GUID in the database, Issue #50201).
+    private void handleEmptyOrMismatchedIndex()
     {
         if (_indexManager.isReal())
         {
@@ -415,9 +417,27 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             {
                 if (getNumDocs() == 0)
                     clearLastIndexed();
+
+                Map<String, String> map = getProperties();
+                @NotNull String serverGuid = AppProps.getInstance().getServerGUID();
+                @Nullable String indexGuid = map.get(SERVER_GUID_NAME);
+                if (!serverGuid.equals(indexGuid))
+                {
+                    // GUIDs don't match; delete the index.
+                    if (indexGuid != null)
+                    {
+                        deleteIndex("the index doesn't appear to match the current database");
+                        attemptInitialize();
+                    }
+
+                    // Write the server GUID if index is empty or mismatched. Reuse map to retain any other global props.
+                    map.put(SERVER_GUID_NAME, serverGuid);
+                    saveProperties(map);
+                }
             }
             catch (IOException x)
             {
+                _log.error("IOException while checking for empty or mismatched index", x);
             }
         }
     }
@@ -462,9 +482,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
 
 
     @Override
-    public void deleteIndex()
+    public void deleteIndex(String reason)
     {
-        _log.info("Deleting Search Index");
+        _log.info("Deleting full-text search index and clearing last indexed because: " + reason);
         if (_indexManager.isReal() && !_indexManager.isClosed())
             closeIndex();
 
@@ -1284,7 +1304,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
         index(GLOBAL_ID, doc);
     }
 
-    // Retrieve map of global properties from the Lucene index
+    // Retrieve map of global properties from the Lucene index. Returned map is a mutable copy.
     private Map<String, String> getProperties() throws IOException
     {
         return find(GLOBAL_ID, (searcher, topDocs) -> {
@@ -2157,20 +2177,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
 
             SearchResult result = _ss.search(options.build());
             return result.hits;
-        }
-
-        @Test
-        public void testProperties() throws IOException
-        {
-            LuceneSearchServiceImpl impl = (LuceneSearchServiceImpl)SearchService.get();
-            assert null != impl;
-            Map<String, String> map = impl.getProperties();
-
-            map = new HashMap<>();
-            map.put("ServerGuid", AppProps.getInstance().getServerGUID());
-            map.put("MyDog", "Carly");
-            map.put("MyAge", "57");
-            impl.saveProperties(map);
         }
     }
 
