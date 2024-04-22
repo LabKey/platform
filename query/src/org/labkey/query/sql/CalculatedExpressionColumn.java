@@ -106,9 +106,12 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
             from = bound.createColumnInfo(getParentTable(), getColumnName(), null);
         FieldKey me = getFieldKey();
         if (null != from)
+        {
             this.copyAttributesFrom(from);
-        setLabel(null);
-        setFieldKey(me);
+            setLabel(null);
+            setFieldKey(me);
+            setPropertyURI(null);
+        }
 
         setShownInUpdateView(false);
         setShownInInsertView(false);
