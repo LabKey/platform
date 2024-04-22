@@ -1421,7 +1421,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
                 // expression column can't hide built-in column
                 if (null != getMutableColumn(xmlColumn.getColumnName()))
                 {
-                    warnings.add(new QueryParseWarning("A wrapped or calculated column cannot hide an existing column.",null,0,0).setFieldName(xmlColumn.getColumnName()));
+                    warnings.add(new QueryParseWarning("Wrapped or calculated column '" + xmlColumn.getColumnName() + "' cannot hide an existing column.",null,0,0).setFieldName(xmlColumn.getColumnName()));
 
                     continue;
                 }
