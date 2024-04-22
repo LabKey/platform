@@ -101,6 +101,11 @@ public interface AuditLogService
     /** If user is null, default to the Guest user */
     <K extends AuditTypeEvent> void addEvents(@Nullable User user, List<K> events);
 
+    default <K extends AuditTypeEvent> void addEvents(@Nullable User user, List<K> events, boolean useTransactionAuditCache)
+    {
+        addEvents(user, events);
+    }
+
     @Nullable
     <K extends AuditTypeEvent> K getAuditEvent(User user, String eventType, int rowId);
 
