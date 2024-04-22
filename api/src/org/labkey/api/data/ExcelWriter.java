@@ -485,6 +485,11 @@ public class ExcelWriter implements ExportWriter
 
     protected Sheet ensureSheet(RenderContext ctx, Workbook workbook, int sheetNumber)
     {
+        return ensureSheet(ctx, workbook, sheetNumber, true);
+    }
+
+    protected Sheet ensureSheet(RenderContext ctx, Workbook workbook, int sheetNumber, boolean withDrawing)
+    {
         if (workbook.getNumberOfSheets() > sheetNumber)
         {
             return workbook.getSheetAt(sheetNumber);
@@ -495,12 +500,15 @@ public class ExcelWriter implements ExportWriter
             if (sheet == null)
             {
                 sheet = workbook.createSheet(getSheetName(sheetNumber));
-                sheet.getPrintSetup().setPaperSize(PrintSetup.LETTER_PAPERSIZE);
+                if (withDrawing)
+                {
+                    sheet.getPrintSetup().setPaperSize(PrintSetup.LETTER_PAPERSIZE);
 
-                Drawing<?> drawing = sheet.createDrawingPatriarch();
-                ctx.put(SHEET_DRAWING, drawing);
-                ctx.put(SHEET_IMAGE_SIZES, new HashMap<>());
-                ctx.put(SHEET_IMAGE_PICTURES, new HashMap<>());
+                    Drawing<?> drawing = sheet.createDrawingPatriarch();
+                    ctx.put(SHEET_DRAWING, drawing);
+                    ctx.put(SHEET_IMAGE_SIZES, new HashMap<>());
+                    ctx.put(SHEET_IMAGE_PICTURES, new HashMap<>());
+                }
             }
             return sheet;
         }
