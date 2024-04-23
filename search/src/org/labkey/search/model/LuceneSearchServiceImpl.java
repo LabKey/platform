@@ -148,11 +148,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-/**
- * User: adam
- * Date: Nov 18, 2009
- * Time: 1:14:44 PM
- */
 public class LuceneSearchServiceImpl extends AbstractSearchService implements SearchMXBean
 {
     private static final Logger _log = LogHelper.getLogger(LuceneSearchServiceImpl.class, "Full-text searching indexing operations");
@@ -255,8 +250,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
                     // We delete the search index after every major upgrade, but we can still encounter a "future" index format when
                     // developers switch to a previous release branch that uses an older version of Lucene... and then encounter an
                     // "old" index format when they switch back. In either case, just delete the index and retry once.
-                    _log.info("Deleting existing full-text search index due to exception: " + e.getMessage());
-                    deleteIndex();
+                    deleteIndex("an exception occurred, " + e.getMessage());
                     attemptInitialize();
                 }
             }
@@ -400,7 +394,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
     @Override
     public void startCrawler()
     {
-        clearLastIndexedIfEmpty();
+        handleEmptyOrMismatchedIndex();
         super.startCrawler();
     }
 
@@ -411,8 +405,18 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
         initializeIndex();
     }
 
-    // Clear lastIndexed columns if we have no documents in the index. See #25530
-    private void clearLastIndexedIfEmpty()
+    private static final String SERVER_GUID_NAME = "ServerGuid";
+
+    // The full-text search index is stored in the file system and the lastIndexed timestamp for most documents is
+    // stored in the database. If the index and database get out-of-sync for any reason then documents will fail to
+    // index and won't show up in searches. This method attempts to keep the index and database in sync, to address
+    // various scenarios that can arise when upgrading or migrating LabKey deployments. If the index in the file system
+    // is empty or doesn't exist (e.g., index files aren't copied or linked to a new deployment), then clear lastIndexed
+    // in the database to ensure all documents are indexed quickly (Issue #25530). If there's a non-empty index that
+    // doesn't match the current database (server GUID in the index is different from the server GUID in the database),
+    // then delete the index and clear lastIndexed. Example: a migration to a new environment that involves a Chef
+    // converge step that leaves a "bootstrap" index behind after replacing the database.
+    private void handleEmptyOrMismatchedIndex()
     {
         if (_indexManager.isReal())
         {
@@ -420,9 +424,27 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             {
                 if (getNumDocs() == 0)
                     clearLastIndexed();
+
+                Map<String, String> map = getProperties();
+                @NotNull String serverGuid = AppProps.getInstance().getServerGUID();
+                @Nullable String indexGuid = map.get(SERVER_GUID_NAME);
+                if (!serverGuid.equals(indexGuid))
+                {
+                    // GUIDs don't match; delete the index.
+                    if (indexGuid != null)
+                    {
+                        deleteIndex("the index doesn't appear to match the current database");
+                        attemptInitialize();
+                    }
+
+                    // Write the server GUID if index is empty or mismatched. Reuse map to retain any other global props.
+                    map.put(SERVER_GUID_NAME, serverGuid);
+                    saveProperties(map);
+                }
             }
             catch (IOException x)
             {
+                _log.error("IOException while checking for empty or mismatched index", x);
             }
         }
     }
@@ -467,9 +489,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
 
 
     @Override
-    public void deleteIndex()
+    public void deleteIndex(String reason)
     {
-        _log.info("Deleting Search Index");
+        _log.info("Deleting full-text search index and clearing last indexed because: " + reason);
         if (_indexManager.isReal() && !_indexManager.isClosed())
             closeIndex();
 
@@ -718,7 +740,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
                 {
                     String stringValue = value.toString().toLowerCase();
 
-                    if (stringValue.length() > 0)
+                    if (!stringValue.isEmpty())
                         doc.add(new TextField(key.toLowerCase(), stringValue, Field.Store.NO));
                 }
             }
@@ -731,7 +753,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
                     _log.debug("indexing docid: " + r.getDocumentId());
             }
 
-            return index(r.getDocumentId(), r, doc);
+            return index(r.getDocumentId(), doc);
         }
         catch (NoClassDefFoundError err)
         {
@@ -1278,11 +1300,39 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
         }
     }
 
-    private boolean index(String id, WebdavResource r, Document doc)
+    private static final String GLOBAL_ID = "LabKeyGlobalProperties";
+
+    // Store a map of global properties in the Lucene index
+    private void saveProperties(Map<String, String> map)
+    {
+        Document doc = new Document();
+        doc.add(new StringField(FIELD_NAME.uniqueId.toString(), GLOBAL_ID, Field.Store.NO));
+        map.forEach((key, value) -> doc.add(new StoredField(key, value)));
+        index(GLOBAL_ID, doc);
+    }
+
+    // Retrieve map of global properties from the Lucene index. Returned map is a mutable copy.
+    private Map<String, String> getProperties() throws IOException
+    {
+        return find(GLOBAL_ID, (searcher, topDocs) -> {
+            Map<String, String> map = new HashMap<>();
+
+            if (topDocs.scoreDocs.length > 0)
+            {
+                StoredFields storedFields = searcher.getIndexReader().storedFields();
+                Document doc = storedFields.document(topDocs.scoreDocs[0].doc);
+                doc.getFields().forEach(field -> map.put(field.name(), field.stringValue()));
+            }
+
+            return map;
+        });
+    }
+
+    private boolean index(String id, Document doc)
     {
         try
         {
-            _indexManager.index(r.getDocumentId(), doc);
+            _indexManager.index(id, doc);
             _countIndexedSinceClearLastIndexed.incrementAndGet();
             return true;
         }
@@ -1377,22 +1427,35 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
     @Nullable
     public SearchHit find(String id) throws IOException
     {
+        return find(id, (searcher, topDocs) -> {
+            SearchResult result = new SearchResult();
+            processSearchResult(0, 1, topDocs, searcher, result);
+            if (result.hits.size() != 1)
+                return null;
+            return result.hits.get(0);
+        });
+    }
+
+    private <R> R find(String id, FindHandler<R> handler) throws IOException
+    {
         IndexSearcher searcher = _indexManager.getSearcher();
 
         try
         {
             TermQuery query = new TermQuery(new Term(FIELD_NAME.uniqueId.toString(), id));
             TopDocs topDocs = searcher.search(query, 1);
-            SearchResult result = new SearchResult();
-            processSearchResult(0, 1, topDocs, searcher, result);
-            if (result.hits.size() != 1)
-                return null;
-            return result.hits.get(0);
+
+            return handler.handle(searcher, topDocs);
         }
         finally
         {
             _indexManager.releaseSearcher(searcher);
         }
+    }
+
+    interface FindHandler<R>
+    {
+        R handle(IndexSearcher searcher, TopDocs topDocs) throws IOException;
     }
 
     private static final String[] standardFields;
