@@ -558,11 +558,12 @@ public class PlateController extends SpringActionController
 
     public static class CreatePlateForm implements ApiJsonForm
     {
+        private String _assayType = TsvPlateLayoutHandler.TYPE;
+        private final List<Map<String, Object>> _data = new ArrayList<>();
         private String _name;
         private Integer _plateType;
         private Integer _plateSetId;
-        private List<Map<String, Object>> _data = new ArrayList<>();
-        private String _assayType = TsvPlateLayoutHandler.TYPE;
+        private boolean _template;
 
         public String getName()
         {
@@ -589,6 +590,11 @@ public class PlateController extends SpringActionController
             return _assayType;
         }
 
+        public Boolean isTemplate()
+        {
+            return _template;
+        }
+
         @Override
         public void bindJson(JSONObject json)
         {
@@ -603,6 +609,9 @@ public class PlateController extends SpringActionController
 
             if (json.has("assayType"))
                 _assayType = json.getString("assayType");
+
+            if (json.has("template"))
+                _template = json.getBoolean("template");
 
             if (json.has("data"))
             {
@@ -644,7 +653,16 @@ public class PlateController extends SpringActionController
         {
             try
             {
-                Plate plate = PlateManager.get().createAndSavePlate(getContainer(), getUser(), _plateType, form.getName(), form.getPlateSetId(), form.getAssayType(), form.getData());
+                Plate plate = PlateManager.get().createAndSavePlate(
+                    getContainer(),
+                    getUser(),
+                    _plateType,
+                    form.getName(),
+                    form.isTemplate(),
+                    form.getPlateSetId(),
+                    form.getAssayType(),
+                    form.getData()
+                );
                 return success(plate);
             }
             catch (Exception e)
@@ -885,8 +903,9 @@ public class PlateController extends SpringActionController
         private String _name;
         private List<PlateManager.CreatePlateSetPlate> _plates = new ArrayList<>();
         private Integer _parentPlateSetId;
-        private PlateSetType _type;
         private String _selectionKey;
+        private Boolean _template;
+        private PlateSetType _type;
 
         public String getDescription()
         {
@@ -973,6 +992,15 @@ public class PlateController extends SpringActionController
             return !_plates.isEmpty() && _selectionKey == null;
         }
 
+        public Boolean getTemplate()
+        {
+            return _template;
+        }
+
+        public void setTemplate(Boolean template)
+        {
+            _template = template;
+        }
     }
 
     @RequiresPermission(InsertPermission.class)
@@ -994,6 +1022,8 @@ public class PlateController extends SpringActionController
                 plateSet.setDescription(form.getDescription());
                 plateSet.setName(form.getName());
                 plateSet.setType(form.getType());
+                if (form.getTemplate() != null)
+                    plateSet.setTemplate(form.getTemplate());
 
                 List<PlateManager.CreatePlateSetPlate> plates = new ArrayList<>();
                 if (form.isStandaloneAssayPlateCase() || form.isRearrayCase())
