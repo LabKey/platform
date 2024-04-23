@@ -162,7 +162,6 @@ public class TSVProtocolSchema extends AssayProtocolSchema
                 Domain plateDataDomain = AssayPlateMetadataService.getService(PlateMetadataDataHandler.DATA_TYPE).getPlateDataDomain(getProtocol());
                 if (plateDataDomain != null)
                 {
-                    List<FieldKey> plateDefaultColumns = new ArrayList<>();
                     ColumnInfo lsidCol = getColumn("Lsid");
                     if (lsidCol != null)
                     {
@@ -175,6 +174,7 @@ public class TSVProtocolSchema extends AssayProtocolSchema
                         col.setCalculated(true);
                         addColumn(col);
 
+                        List<FieldKey> plateDefaultColumns = new ArrayList<>();
                         for (DomainProperty prop : plateDataDomain.getProperties())
                         {
                             plateDefaultColumns.add(FieldKey.fromParts("PlateData", prop.getName()));

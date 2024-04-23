@@ -78,12 +78,13 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.labkey.api.assay.AssayResultDomainKind.WELL_LSID_COLUMN_NAME;
 
 public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 {
     private boolean _domainDirty;
-    private Map<String, Set<Object>> _propValues = new HashMap<>();
+    private final Map<String, Set<Object>> _propValues = new HashMap<>();
 
     @Override
     public void addAssayPlateMetadata(
@@ -116,7 +117,6 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             Map<String, PropertyDescriptor> descriptorMap = new CaseInsensitiveHashMap<>();
             domain.getProperties().forEach(dp -> descriptorMap.put(dp.getName(), dp.getPropertyDescriptor()));
             List<Map<String, Object>> jsonData = new ArrayList<>();
-            Set<PropertyDescriptor> propsToInsert = new HashSet<>();
 
             // merge the plate data with the uploaded result data
             for (Map<String, Object> row : inserted)
@@ -139,10 +139,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                                 if (descriptorMap.containsKey(k))
                                 {
                                     if (v != null)
-                                    {
                                         jsonRow.put(descriptorMap.get(k).getURI(), v);
-                                        propsToInsert.add(descriptorMap.get(k));
-                                    }
                                 }
                             });
                             jsonRow.put("Lsid", rowIdToLsidMap.get(rowId));
@@ -182,12 +179,12 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
      * to metadata properties.
      */
     private Map<Position, Map<String, Object>> prepareMergedPlateData(
-            Container container,
-            User user,
-            Lsid plateLsid,
-            Map<String, MetadataLayer> plateMetadata,
-            ExpProtocol protocol,
-            boolean ensurePlateDomain           // true to create the plate domain and properties if they don't exist
+        Container container,
+        User user,
+        Lsid plateLsid,
+        Map<String, MetadataLayer> plateMetadata,
+        ExpProtocol protocol,
+        boolean ensurePlateDomain           // true to create the plate domain and properties if they don't exist
     ) throws ExperimentException
     {
         _domainDirty = false;
@@ -492,7 +489,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         }
     }
 
-    private Map<String, MetadataLayer> _parsePlateMetadata(JsonNode rootNode) throws ExperimentException
+    private Map<String, MetadataLayer> _parsePlateMetadata(JsonNode rootNode)
     {
         Map<String, MetadataLayer> layers = new CaseInsensitiveHashMap<>();
 
@@ -529,14 +526,14 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 
     @Override
     public List<Map<String, Object>> parsePlateData(
-            Container container,
-            User user,
-            AssayProvider provider,
-            ExpProtocol protocol,
-            Integer plateSetId,
-            File dataFile,
-            List<Map<String, Object>> data,
-            Pair<String, Boolean> plateIdAdded
+        Container container,
+        User user,
+        AssayProvider provider,
+        ExpProtocol protocol,
+        Integer plateSetId,
+        File dataFile,
+        List<Map<String, Object>> data,
+        Pair<String, Boolean> plateIdAdded
     ) throws ExperimentException
     {
         // get the ordered list of plates for the plate set
@@ -544,6 +541,9 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         PlateSet plateSet = PlateManager.get().getPlateSet(cf, plateSetId);
         if (plateSet == null)
             throw new ExperimentException("Plate set " + plateSetId + " not found.");
+        if (plateSet.isTemplate())
+            throw new ExperimentException(String.format("Plate set \"%s\" is a template plate set. Template plate sets do not support associating assay data.", plateSet.getName()));
+
         List<Plate> plates = PlateManager.get().getPlatesForPlateSet(plateSet);
         if (plates.isEmpty())
             throw new ExperimentException("No plates were found for the plate set (" + plateSetId + ").");
@@ -556,10 +556,8 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             // best attempt at returning something we can import
             return (gridRows.isEmpty() && !data.isEmpty()) ? data : gridRows;
         }
-        else
-        {
-            return parsePlateRows(container, user, provider, protocol, plates, data, plateIdAdded);
-        }
+
+        return parsePlateRows(provider, protocol, plates, data, plateIdAdded);
     }
 
     private boolean isGridFormat(List<Map<String, Object>> data)
@@ -573,13 +571,11 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
     }
 
     private List<Map<String, Object>> parsePlateRows(
-            Container container,
-            User user,
-            AssayProvider provider,
-            ExpProtocol protocol,
-            List<Plate> plates,
-            List<Map<String, Object>> data,
-            Pair<String, Boolean> plateIdAdded
+        AssayProvider provider,
+        ExpProtocol protocol,
+        List<Plate> plates,
+        List<Map<String, Object>> data,
+        Pair<String, Boolean> plateIdAdded
     ) throws ExperimentException
     {
         DomainProperty plateProp = provider.getResultsDomain(protocol).getPropertyByName(AssayResultDomainKind.PLATE_COLUMN_NAME);
@@ -590,57 +586,57 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         String plateIdField = data.get(0).keySet().stream().filter(importAliases::contains).findFirst().orElse(null);
         boolean hasPlateIdentifiers = plateIdField != null && (data.stream().filter(row -> row.get(plateIdField) != null).findFirst().orElse(null) != null);
 
-        if (!hasPlateIdentifiers)
+        if (hasPlateIdentifiers)
+            return data;
+
+        final String ERROR_MESSAGE = "Unable to automatically assign plate identifiers to the data rows because %s. Please include plate identifiers for the data rows.";
+        plateIdAdded.second = true;
+
+        // verify all plates in the set have the same shape
+        Set<PlateType> types = plates.stream().map(Plate::getPlateType).collect(Collectors.toSet());
+        if (types.size() > 1)
+            throw new ExperimentException(String.format(ERROR_MESSAGE, "the plate set contains different plate types"));
+
+        PlateType type = types.stream().toList().get(0);
+        int plateSize = type.getRows() * type.getColumns();
+        if ((data.size() % plateSize) != 0)
+            throw new ExperimentException(String.format(ERROR_MESSAGE, "the number of rows in the data (" + data.size() + ") does not fit evenly and would result in a plate with partial wells filled"));
+
+        if (data.size() > (plates.size() * plateSize))
+            throw new ExperimentException(String.format(ERROR_MESSAGE, "the number of rows in the data (" + data.size() + ") exceeds the total number of wells available in the plate set (" + (plates.size() * plateSize) + ")"));
+
+        // attempt to add the plate identifier into the data rows in the order that they appear in the plate set
+        List<Map<String, Object>> newData = new ArrayList<>();
+        int rowCount = 0;
+        int curPlate = 0;
+        Set<Position> positions = new HashSet<>();
+        String plateFieldName = plateIdField != null ? plateIdField : AssayResultDomainKind.PLATE_COLUMN_NAME;
+        for (Map<String, Object> row : data)
         {
-            final String ERROR_MESSAGE = "Unable to automatically assign plate identifiers to the data rows because %s. Please include plate identifiers for the data rows.";
-            plateIdAdded.second = true;
+            // well location field is required, return if not provided or it will fail downstream
+            String well = String.valueOf(row.get(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME));
+            if (well == null)
+                return data;
 
-            // verify all plates in the set have the same shape
-            Set<PlateType> types = plates.stream().map(Plate::getPlateType).collect(Collectors.toSet());
-            if (types.size() > 1)
-                throw new ExperimentException(String.format(ERROR_MESSAGE, "the plate set contains different plate types"));
+            Position position = new PositionImpl(null, well);
+            if (positions.contains(position))
+                throw new ExperimentException(String.format(ERROR_MESSAGE, "there is more than one well referencing the same position in the plate " + position));
 
-            PlateType type = types.stream().toList().get(0);
-            int plateSize = type.getRows() * type.getColumns();
-            if ((data.size() % plateSize) != 0)
-                throw new ExperimentException(String.format(ERROR_MESSAGE, "the number of rows in the data (" + data.size() + ") does not fit evenly and would result in a plate with partial wells filled"));
+            positions.add(position);
+            Map<String, Object> newRow = new HashMap<>(row);
+            newRow.put(plateFieldName, plates.get(curPlate).getPlateId());
+            newData.add(newRow);
 
-            if (data.size() > (plates.size() * plateSize))
-                throw new ExperimentException(String.format(ERROR_MESSAGE, "the number of rows in the data (" + data.size() + ") exceeds the total number of wells available in the plate set (" + (plates.size() * plateSize) + ")"));
-
-            // attempt to add the plate identifier into the data rows in the order that they appear in the plate set
-            List<Map<String, Object>> newData = new ArrayList<>();
-            int rowCount = 0;
-            int curPlate = 0;
-            Set<Position> positions = new HashSet<>();
-            String plateFieldName = plateIdField != null ? plateIdField : AssayResultDomainKind.PLATE_COLUMN_NAME;
-            for (Map<String, Object> row : data)
+            if (++rowCount >= plateSize)
             {
-                // well location field is required, return if not provided or it will fail downstream
-                String well = String.valueOf(row.get(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME));
-                if (well == null)
-                    return data;
-
-                Position position = new PositionImpl(null, well);
-                if (positions.contains(position))
-                    throw new ExperimentException(String.format(ERROR_MESSAGE, "there is more than one well referencing the same position in the plate " + position));
-
-                positions.add(position);
-                Map<String, Object> newRow = new HashMap<>(row);
-                newRow.put(plateFieldName, plates.get(curPlate).getPlateId());
-                newData.add(newRow);
-
-                if (++rowCount >= plateSize)
-                {
-                    // move to the next plate in the set
-                    rowCount = 0;
-                    curPlate++;
-                    positions.clear();
-                }
+                // move to the next plate in the set
+                rowCount = 0;
+                curPlate++;
+                positions.clear();
             }
-            return newData;
         }
-        return data;
+
+        return newData;
     }
 
     /**
@@ -679,7 +675,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             }
         }
 
-        private @Nullable Plate getPlateForId(String annotation, List<Plate> platesetPlates) throws ExperimentException
+        private @NotNull Plate getPlateForId(String annotation, List<Plate> platesetPlates) throws ExperimentException
         {
             Plate plate = platesetPlates.stream().filter(p -> p.isIdentifierMatch(annotation)).findFirst().orElse(null);
             if (plate == null)
@@ -713,13 +709,13 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
     }
 
     private List<Map<String, Object>> parsePlateGrids(
-            Container container,
-            User user,
-            AssayProvider provider,
-            ExpProtocol protocol,
-            PlateSet plateSet,
-            List<Plate> plates,
-            File dataFile
+        Container container,
+        User user,
+        AssayProvider provider,
+        ExpProtocol protocol,
+        PlateSet plateSet,
+        List<Plate> plates,
+        File dataFile
     ) throws ExperimentException
     {
         // parse the data file for each distinct plate type found in the set of plates for the plateSetId
@@ -853,12 +849,13 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
     @Override
     @NotNull
     public OntologyManager.UpdateableTableImportHelper getImportHelper(
-            Container container,
-            User user,
-            ExpRun run,
-            ExpData data,
-            ExpProtocol protocol,
-            AssayProvider provider) throws ExperimentException
+        Container container,
+        User user,
+        ExpRun run,
+        ExpData data,
+        ExpProtocol protocol,
+        AssayProvider provider
+    )
     {
         return new PlateMetadataImportHelper(data, container, user, run, protocol, provider);
     }
@@ -947,8 +944,8 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 
     private static class MetadataLayerImpl implements MetadataLayer
     {
-        private String _name;
-        private Map<String, MetadataWellGroup> _wellGroupMap = new CaseInsensitiveHashMap<>();
+        private final String _name;
+        private final Map<String, MetadataWellGroup> _wellGroupMap = new CaseInsensitiveHashMap<>();
 
         public MetadataLayerImpl(String name)
         {
@@ -975,8 +972,8 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 
     private static class MetadataWellGroupImpl implements MetadataWellGroup
     {
-        private String _name;
-        private Map<String, Object> _properties = new CaseInsensitiveHashMap<>();
+        private final String _name;
+        private final Map<String, Object> _properties = new CaseInsensitiveHashMap<>();
 
         public MetadataWellGroupImpl(String name)
         {
@@ -1007,7 +1004,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         private static User user;
 
         @BeforeClass
-        public static void setupTest() throws Exception
+        public static void setupTest()
         {
             container = JunitUtil.getTestContainer();
             user = TestContext.get().getUser();
@@ -1016,7 +1013,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         }
 
         @After
-        public void cleanupTest() throws Exception
+        public void cleanupTest()
         {
             PlateManager.get().deleteAllPlateData(container);
         }
@@ -1024,7 +1021,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         @Test
         public void testGridAnnotations() throws Exception
         {
-            // create a plateset
+            // create a plate set
             PlateSetImpl plateSet = new PlateSetImpl();
             PlateType plateType = PlateManager.get().getPlateType(8, 12);
             List<PlateManager.CreatePlateSetPlate> plates = List.of(
@@ -1053,14 +1050,14 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             gridInfo = new PlateGridInfo(
                     new PlateUtils.GridInfo(new double[8][12], List.of(platesetPlates.get(0).getPlateId(), "Density")),
                     plateSet);
-            assertEquals("Expected plate to not resolve on annotation without a prefix", null, gridInfo.getPlate());
-            assertEquals("Expected measure to not resolve on annotation without a prefix", null, gridInfo.getMeasureName());
+            assertNull("Expected plate to not resolve on annotation without a prefix", gridInfo.getPlate());
+            assertNull("Expected measure to not resolve on annotation without a prefix", gridInfo.getMeasureName());
 
             gridInfo = new PlateGridInfo(
                     new PlateUtils.GridInfo(new double[8][12], List.of("PLATE:" + platesetPlates.get(0).getPlateId(), "Density")),
                     plateSet);
             assertEquals("Expected plate to resolve on annotation with a prefix", platesetPlates.get(0).getRowId(), gridInfo.getPlate().getRowId());
-            assertEquals("Expected measure to not resolve on annotation without a prefix", null, gridInfo.getMeasureName());
+            assertNull("Expected measure to not resolve on annotation without a prefix", gridInfo.getMeasureName());
 
             gridInfo = new PlateGridInfo(
                     new PlateUtils.GridInfo(new double[8][12], List.of("plate:" + platesetPlates.get(0).getPlateId(), "MEASURE : Density")),
@@ -1071,7 +1068,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             gridInfo = new PlateGridInfo(
                     new PlateUtils.GridInfo(new double[8][12], List.of(platesetPlates.get(0).getPlateId(), "measure : Density")),
                     plateSet);
-            assertEquals("Expected plate to not resolve on annotation without a prefix", null, gridInfo.getPlate());
+            assertNull("Expected plate to not resolve on annotation without a prefix", gridInfo.getPlate());
             assertEquals("Expected measure to resolve on annotation with a prefix", "Density", gridInfo.getMeasureName());
         }
     }

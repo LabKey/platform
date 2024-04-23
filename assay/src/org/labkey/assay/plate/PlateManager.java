@@ -31,6 +31,7 @@ import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.dilution.DilutionCurve;
 import org.labkey.api.assay.plate.AbstractPlateLayoutHandler;
+import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateCustomField;
 import org.labkey.api.assay.plate.PlateLayoutHandler;
@@ -196,6 +197,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             }
 
             @Override
+            @NotNull
             public String getAssayType()
             {
                 return "blank";
@@ -659,8 +661,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         // Identifying the "Biologics" folder type as the logic we pivot this behavior on is not intended to be
         // a long-term solution. We will be looking to introduce plating as a ProductFeature which we can then
         // leverage instead.
-        boolean isBiologicsProject = c.getProject() != null && "Biologics".equals(ContainerManager.getFolderTypeName(c.getProject()));
-        if (isBiologicsProject && plateSet != null)
+        if (plateSet != null && AssayPlateMetadataService.isBiologicsFolder(c))
         {
             for (Plate plate : plateSet.getPlates(user))
             {
@@ -669,11 +670,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             }
             return false;
         }
-        else
-        {
-            Plate plate = getPlateByName(c, name);
-            return plate != null && plate.getName().equals(name);
-        }
+
+        Plate plate = getPlateByName(c, name);
+        return plate != null && plate.getName().equals(name);
     }
 
     private Collection<Plate> getPlates(Container c)
