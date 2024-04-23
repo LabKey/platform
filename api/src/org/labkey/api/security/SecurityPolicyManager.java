@@ -40,7 +40,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.logging.LogHelper;
@@ -140,6 +139,13 @@ public class SecurityPolicyManager
         return policy.getResourceId();
     }
 
+    // Functionally identical to the method below, but tests should call this variant to ease validation of proper
+    // permission checking in non-test code
+    public static boolean savePolicyForTests(@NotNull MutableSecurityPolicy policy, @NotNull User user)
+    {
+        return savePolicy(policy, user);
+    }
+
     // Validates, creates audit events, and returns whether any role assignments were changed
     public static boolean savePolicy(@NotNull MutableSecurityPolicy policy, @NotNull User user)
     {
@@ -150,10 +156,6 @@ public class SecurityPolicyManager
         SecurableResource resource = c.findSecurableResource(policy.getResourceId(), user);
         if (null == resource)
             throw new IllegalStateException("No resource with the id '" + policy.getResourceId() + "' was found in this container!");
-
-        // Ensure that user has admin permission on resource
-        if (!resource.hasPermission(user, AdminPermission.class))
-            throw new IllegalArgumentException("You do not have permission to modify the security policy for this resource!");
 
         // Get the existing policy so we can audit how it's changed and check for unauthorized changes
         SecurityPolicy oldPolicy = SecurityPolicyManager.getPolicy(resource);
