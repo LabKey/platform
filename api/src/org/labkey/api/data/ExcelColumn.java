@@ -335,7 +335,7 @@ public class ExcelColumn extends RenderColumn
     }
 
 
-    public Cell writeCell(Sheet sheet, int column, int row, RenderContext ctx)
+    public void writeCell(Sheet sheet, int column, int row, RenderContext ctx)
     {
         Object o = _dc.getExcelCompatibleValue(ctx);
         ColumnInfo columnInfo = _dc.getColumnInfo();
@@ -352,7 +352,7 @@ public class ExcelColumn extends RenderColumn
                 cell = rowObject.getCell(column, MissingCellPolicy.CREATE_NULL_AS_BLANK);
                 cell.setCellStyle(cellFormat);
             }
-            return cell;
+            return;
         }
 
         cell = rowObject.getCell(column, MissingCellPolicy.CREATE_NULL_AS_BLANK);
@@ -521,7 +521,6 @@ public class ExcelColumn extends RenderColumn
                     }
                 }
             }
-            return cell;
         }
         catch(ClassCastException cce)
         {
