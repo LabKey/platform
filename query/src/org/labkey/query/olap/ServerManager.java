@@ -190,7 +190,7 @@ public class ServerManager
         // crack the schemaId into module and name parts
         CacheId id = OlapSchemaCacheHandler.parseOlapCacheKey(schemaId);
 
-        if (null != id)
+        if (null != id && null != id.getModule())
         {
             // look for descriptor in database cache by container and name
             OlapSchemaDescriptor d = DB_DESCRIPTOR_CACHE.get(c).get(id.getName());
