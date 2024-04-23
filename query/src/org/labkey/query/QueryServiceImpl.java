@@ -3207,21 +3207,28 @@ public class QueryServiceImpl implements QueryService
     public Collection<QueryService.Hierarchy> getOlapHierarchies(String configId, Container c, String cubeName, String dimension)
     {
         OlapSchemaDescriptor descriptor = ServerManager.getDescriptor(c, configId);
+        List<QueryService.Hierarchy> ret = new ArrayList<>();
 
         if (null == descriptor)
-            throw new IllegalArgumentException("OLAP schema descriptor not found: " + configId);
+        {
+            LOG.warn("OLAP schema descriptor not found: " + configId);
+        }
+        else
+        {
+            RolapCubeDef rolap = descriptor.getRolapCubeDefinitionByName(cubeName);
 
-        RolapCubeDef rolap = descriptor.getRolapCubeDefinitionByName(cubeName);
+            if (null == rolap)
+                throw new IllegalArgumentException("Unable to find cube definition for cubeName: " + cubeName);
 
-        if (null == rolap)
-            throw new IllegalArgumentException("Unable to find cube definition for cubeName: " + cubeName);
+            DimensionDef def = rolap.getDimension(dimension);
 
-        DimensionDef def = rolap.getDimension(dimension);
+            if (null == def)
+                throw new IllegalArgumentException("Unable to find dimension " + dimension);
 
-        if (null == def)
-            throw new IllegalArgumentException("Unable to find dimension " + dimension);
+            ret.addAll(def.getHierarchies());
+        }
 
-        return new ArrayList<>(def.getHierarchies());
+        return ret;
     }
 
     @Override
