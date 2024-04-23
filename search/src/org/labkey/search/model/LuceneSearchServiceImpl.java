@@ -407,8 +407,15 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
 
     private static final String SERVER_GUID_NAME = "ServerGuid";
 
-    // Clear lastIndexed if index is empty (Issue #25530). Delete index (and clear lastIndexed) if it doesn't match the
-    // current database (server GUID in the index is different from the server GUID in the database, Issue #50201).
+    // The full-text search index is stored in the file system and the lastIndexed timestamp for most documents is
+    // stored in the database. If the index and database get out-of-sync for any reason then documents will fail to
+    // index and won't show up in searches. This method attempts to keep the index and database in sync, to address
+    // various scenarios that can arise when upgrading or migrating LabKey deployments. If the index in the file system
+    // is empty or doesn't exist (e.g., index files aren't copied or linked to a new deployment), then clear lastIndexed
+    // in the database to ensure all documents are indexed quickly (Issue #25530). If there's a non-empty index that
+    // doesn't match the current database (server GUID in the index is different from the server GUID in the database),
+    // then delete the index and clear lastIndexed. Example: a migration to a new environment that involves a Chef
+    // converge step that leaves a "bootstrap" index behind after replacing the database.
     private void handleEmptyOrMismatchedIndex()
     {
         if (_indexManager.isReal())
