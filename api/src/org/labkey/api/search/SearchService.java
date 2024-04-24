@@ -68,11 +68,6 @@ import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.function.Function;
 
-/**
- * User: matthewb
- * Date: Nov 12, 2009
- * Time: 12:54:01 PM
- */
 public interface SearchService extends SearchMXBean
 {
     // create logger for package which can be set via logger-manage.view
@@ -423,7 +418,7 @@ public interface SearchService extends SearchMXBean
     IndexTask indexContainer(@Nullable IndexTask task, Container c, Date since);
     // TODO: Remove? This is never called
     IndexTask indexProject(@Nullable IndexTask task, Container project /*boolean incremental*/);
-    void indexFull(boolean force);
+    void indexFull(boolean force, String reason);
 
     void waitForIdle() throws InterruptedException;
 
@@ -433,7 +428,7 @@ public interface SearchService extends SearchMXBean
 
     void deleteContainer(String id);
 
-    void deleteIndex();          // close the index if it's been initialized, then delete the index directory and reset lastIndexed values
+    void deleteIndex(String reason);          // close the index if it's been initialized, then delete the index directory and reset lastIndexed values
     void clearLastIndexed();     // reset lastIndexed values and initiate aggressive crawl. must be callable before (and after) start() has been called.
     void maintenance();
 
@@ -464,8 +459,7 @@ public interface SearchService extends SearchMXBean
         void enumerateDocuments(IndexTask task, @NotNull Container c, @Nullable Date modifiedSince);
 
         /**
-         *if the full-text search is deleted, providers may need to clear
-         * any stored lastIndexed values.
+         * if the full-text search index is deleted, providers may need to clear stored lastIndexed values.
          */
         default void indexDeleted() throws SQLException
         {

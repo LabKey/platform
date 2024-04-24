@@ -237,13 +237,11 @@ public class SearchModule extends DefaultModule
         {
             if (_deleteIndex)
             {
-                LOG.info("Deleting full-text search index and clearing last indexed because: " + _deleteIndexReasons);
-                ss.deleteIndex();
+                ss.deleteIndex(_deleteIndexReasons.toString());
             }
             if (_indexFull)
             {
-                LOG.info("Initiating an aggressive full-text search reindex because: " + _indexFullReasons);
-                ss.indexFull(true);
+                ss.indexFull(true, _indexFullReasons.toString());
             }
         }
     };
