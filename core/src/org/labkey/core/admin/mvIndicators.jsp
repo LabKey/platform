@@ -132,7 +132,7 @@
                         <tr id="rowId<%=++rowId%>">
                             <% addHandler("removeRow" + rowId, "click", "return removeRow(" + rowId + ");"); %>
                             <td><img id="removeRow<%=rowId%>" style="margin-right: 8px; cursor: pointer" src="<%=getWebappURL("_images/partdelete.gif")%>" alt="delete"></td>
-                            <td><input name="mvIndicators" type="TEXT" size=3 id="mvIndicators<%=rowId%>" value="<%=h(indicator)%>"></td>
+                            <td><input name="mvIndicators" type="TEXT" id="mvIndicators<%=rowId%>" value="<%=h(indicator)%>"></td>
                             <td><input name="mvLabels" type="TEXT" size=60 value="<%=h(label)%>"></td>
                         </tr>
                         <%
