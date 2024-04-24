@@ -39,6 +39,7 @@ import org.labkey.api.assay.plate.PlateSetType;
 import org.labkey.api.assay.plate.PlateType;
 import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.collections.RowMapFactory;
+import org.labkey.api.data.ArrayExcelWriter;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -1299,9 +1300,9 @@ public class PlateController extends SpringActionController
                 ColumnDescriptor[] destinationXlCols = PlateManager.get().getColumnDescriptors("Destination ", destinationIncludedMetadataCols);
                 ColumnDescriptor[] xlCols = ArrayUtils.addAll(sourceXlCols, destinationXlCols);
 
-                List<Map<String, Object>> plateDataRows = PlateManager.get().getWorklist(form.getSourcePlateSetId(), form.getDestinationPlateSetId(), sourceIncludedMetadataCols, destinationIncludedMetadataCols, getContainer(), getUser());
+                List<List<Object>> plateDataRows = PlateManager.get().getWorklist(form.getSourcePlateSetId(), form.getDestinationPlateSetId(), sourceIncludedMetadataCols, destinationIncludedMetadataCols, getContainer(), getUser());
 
-                MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(plateDataRows, xlCols);
+                ArrayExcelWriter xlWriter = new ArrayExcelWriter(plateDataRows, xlCols);
                 PlateSet plateSetSource = PlateManager.get().getPlateSet(getContainer(), form.getSourcePlateSetId());
                 PlateSet plateSetDestination = PlateManager.get().getPlateSet(getContainer(), form.getDestinationPlateSetId());
 
@@ -1352,9 +1353,9 @@ public class PlateController extends SpringActionController
                 // todo: the correct place for this?
                 Set<FieldKey> includedMetadataCols = PlateManager.get().getMetadataColumns(form.getPlateSetId(), getContainer(), getUser());
                 ColumnDescriptor[] xlCols = PlateManager.get().getColumnDescriptors("", includedMetadataCols);
-                List<Map<String, Object>> plateDataRows = PlateManager.get().getInstrumentInstructions(form.getPlateSetId(), includedMetadataCols, getContainer(), getUser());
+                List<List<Object>> plateDataRows = PlateManager.get().getInstrumentInstructions(form.getPlateSetId(), includedMetadataCols, getContainer(), getUser());
 
-                MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(plateDataRows, xlCols);
+                ArrayExcelWriter xlWriter = new ArrayExcelWriter(plateDataRows, xlCols);
 
                 PlateSet plateSet = PlateManager.get().getPlateSet(getContainer(), form.getPlateSetId());
                 xlWriter.setFullFileName(plateSet.getName() + ".xls");

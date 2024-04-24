@@ -169,6 +169,17 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     private static final String PLATE_SET_NAME_EXPRESSION = "PLS-${now:date('yyyyMMdd')}-${RowId}";
     private static final String PLATE_NAME_EXPRESSION = "${${PlateSet/PlateSetId}-:withCounter}";
 
+    private final Map<String, FieldKey> FKMap = Map.of(
+            "sampleId", FieldKey.fromParts("sampleid", "name"),
+            "position", FieldKey.fromParts("position"),
+            "rowId", FieldKey.fromParts("rowid"),
+            "row", FieldKey.fromParts("plateid", "platetype", "rows"),
+            "col", FieldKey.fromParts("plateid", "platetype", "columns"),
+            "plateId", FieldKey.fromParts("plateid"),
+            "plateSetId", FieldKey.fromParts("plateid", "plateset"),
+            "plateName", FieldKey.fromParts("plateid", "name")
+    );
+
     public SearchService.SearchCategory PLATE_CATEGORY = new SearchService.SearchCategory("plate", "Plate") {
         @Override
         public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
@@ -2600,18 +2611,6 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return plates;
     }
 
-    // todo: kind of weird thing you've done here
-    private final Map<String, FieldKey> FKMap = Map.of(
-            "sampleId", FieldKey.fromParts("sampleid", "name"),
-            "position", FieldKey.fromParts("position"),
-            "rowId", FieldKey.fromParts("rowid"),
-            "row", FieldKey.fromParts("plateid", "platetype", "rows"),
-            "col", FieldKey.fromParts("plateid", "platetype", "columns"),
-            "plateId", FieldKey.fromParts("plateid"),
-            "plateSetId", FieldKey.fromParts("plateid", "plateset"),
-            "plateName", FieldKey.fromParts("plateid", "name")
-    );
-
     public Set<FieldKey> getMetadataColumns(int plateSetId, Container c, User u) throws ValidationException
     {
         PlateSet plateSet = PlateManager.get().getPlateSet(c, plateSetId);
@@ -2638,18 +2637,22 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return QueryService.get().getColumns(wellTable, defaultCols).values();
     }
 
-    private HashMap<String, Object> getDataRow(String prefix, Results rs, Set<FieldKey> includedMetaDataCols) throws SQLException
+    private List<Object> getDataRow(String prefix, Results rs, Set<FieldKey> includedMetaDataCols) throws SQLException
     {
-        return new HashMap<>() {{
-            put(prefix + "Plate ID",rs.getString(FKMap.get("plateName")));
-            put(prefix + "Plate Type", rs.getInt(FKMap.get("row")) * rs.getInt(FKMap.get("col")) + "-well"); // minor optimization: don't * every time
-            put(prefix + "Well", rs.getString(FKMap.get("position")));
-            if (!prefix.equals("Destination "))
-                put("Sample ID", rs.getString(FKMap.get("sampleId")));
+        List<Object> baseColumns = new ArrayList<>(
+                Arrays.asList(
+                        rs.getString(FKMap.get("plateName")),
+                        rs.getInt(FKMap.get("row")) * rs.getInt(FKMap.get("col")) + "-well",
+                        rs.getString(FKMap.get("position"))
+                ));
 
-            for (FieldKey col : includedMetaDataCols)
-                put(prefix + col.getCaption(), rs.getString(col));
-        }};
+        if (!prefix.equals("Destination "))
+            baseColumns.add(rs.getString(FKMap.get("sampleId")));
+
+        for (FieldKey col : includedMetaDataCols)
+            baseColumns.add(rs.getString(col));
+
+        return baseColumns;
     }
 
     public ColumnDescriptor[] getColumnDescriptors(String prefix, Set<FieldKey> includedMetadataCols)
@@ -2667,18 +2670,18 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         List<ColumnDescriptor> metadataColumns = includedMetadataCols
                 .stream()
                 .sorted(Comparator.comparing(FieldKey::getName))
-                .map(fk -> new ColumnDescriptor(prefix + fk.getCaption(), String.class))
+                .map(fk -> new ColumnDescriptor(fk.getCaption(), String.class))
                 .toList();
 
         int baseColumCount = !prefix.equals("Destination ") ? 4 : 3;
         return Stream.concat(baseColumns.stream(), metadataColumns.stream()).toList().toArray(new ColumnDescriptor[baseColumCount + includedMetadataCols.size()]);
     }
 
-    public List<Map<String, Object>> getWorklist(int sourcePlateSetId, int destinationPlateSetId, Set<FieldKey> sourceIncludedMetadataCols, Set<FieldKey> destinationIncludedMetadataCols, Container c, User u) throws RuntimeSQLException, ValidationException
+    public List<List<Object>> getWorklist(int sourcePlateSetId, int destinationPlateSetId, Set<FieldKey> sourceIncludedMetadataCols, Set<FieldKey> destinationIncludedMetadataCols, Container c, User u) throws RuntimeSQLException, ValidationException
     {
         TableInfo wellTable = getWellTable(c, u);
-        List<Map<String, Object>> plateDataRows = new ArrayList<>();
-        Map<String, List<Map<String, Object>>> sampleIdToDestinationRow = new LinkedHashMap<>();
+        List<List<Object>> plateDataRows = new ArrayList<>();
+        Map<String, List<List<Object>>> sampleIdToDestinationRow = new LinkedHashMap<>();
 
         try (Results rs = QueryService.get().select(wellTable, getWellColumns(wellTable, destinationIncludedMetadataCols), new SimpleFilter(FKMap.get("plateSetId"), destinationPlateSetId), new Sort("rowid")))
         {
@@ -2713,14 +2716,11 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                     continue;
 
                 originSamples.add(sampleId);
-                HashMap<String, Object> sourceDataRow = getDataRow("Source ", rs, sourceIncludedMetadataCols);
+                List<Object> sourceDataRow = getDataRow("Source ", rs, sourceIncludedMetadataCols);
 
-                List<Map<String, Object>> destinationDataRows = sampleIdToDestinationRow.get(sampleId);
-                for (Map<String, Object> dataRow : destinationDataRows)
-                {
-                    sourceDataRow.putAll(dataRow);
-                    plateDataRows.add(sourceDataRow);
-                }
+                List<List<Object>> destinationDataRows = sampleIdToDestinationRow.get(sampleId);
+                for (List<Object> dataRow : destinationDataRows)
+                    plateDataRows.add(Stream.concat(sourceDataRow.stream(), dataRow.stream()).toList());
             }
         }
         catch (SQLException e)
@@ -2735,11 +2735,11 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return plateDataRows;
     }
 
-    public List<Map<String, Object>> getInstrumentInstructions(int plateSetId, Set<FieldKey> includedMetadataCols, Container c, User u)
+    public List<List<Object>> getInstrumentInstructions(int plateSetId, Set<FieldKey> includedMetadataCols, Container c, User u)
     {
         TableInfo wellTable = getWellTable(c, u);
 
-        List<Map<String, Object>> plateDataRows = new ArrayList<>();
+        List<List<Object>> plateDataRows = new ArrayList<>();
         try (Results rs = QueryService.get().select(wellTable, getWellColumns(wellTable, includedMetadataCols), new SimpleFilter(FKMap.get("plateSetId"), plateSetId), new Sort("rowid")))
         {
             while (rs.next())
