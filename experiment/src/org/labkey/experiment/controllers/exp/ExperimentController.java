@@ -3481,7 +3481,15 @@ public class ExperimentController extends SpringActionController
 
             Map<String, Collection<Map<String, Object>>> response = ExperimentServiceImpl.partitionRequestedOperationObjects(requestIds, notAllowedIds, allData);
 
-            Collection<Integer> notPermittedIds = service.getIdsNotPermitted(getUser(), requestIds, ExperimentService.get().getTinfoData(), form.getDataOperation().getPermissionClass());
+            TableInfo tableInfo = ExperimentService.get().getTinfoData();
+            Collection<Container> containers = service.getUniqueContainers(requestIds, tableInfo);
+            response.put("containers", containers == null ? Collections.emptyList(): containers.stream().map(c -> Map.of(
+                    "id", c.getEntityId(),
+                    "path", (Object) c.getPath(),
+                    "permitted", c.hasPermission(getUser(), form.getDataOperation().getPermissionClass())
+            )).toList());
+
+            Collection<Integer> notPermittedIds = service.getIdsNotPermitted(getUser(), containers, requestIds, tableInfo, form.getDataOperation().getPermissionClass());
             response.put("notPermitted", notPermittedIds == null ? Collections.emptyList(): notPermittedIds.stream().map(id -> Map.of("RowId", (Object) id)).toList());
 
             return success(response);
@@ -3536,8 +3544,15 @@ public class ExperimentController extends SpringActionController
 
             Map<String, Collection<Map<String, Object>>> response = ExperimentServiceImpl.partitionRequestedOperationObjects(requestIds, notAllowedIds, allMaterials);
 
-            Collection<Integer> notPermittedIds = service.getIdsNotPermitted(getUser(), requestIds, ExperimentService.get().getTinfoMaterial(), form.getSampleOperation().getPermissionClass());
+            TableInfo tableInfo = ExperimentService.get().getTinfoMaterial();
+            Collection<Container> containers = service.getUniqueContainers(requestIds, tableInfo);
+            response.put("containers", containers == null ? Collections.emptyList(): containers.stream().map(c -> Map.of(
+                    "id", c.getEntityId(),
+                    "path", (Object) c.getPath(),
+                    "permitted", c.hasPermission(getUser(), form.getSampleOperation().getPermissionClass())
+            )).toList());
 
+            Collection<Integer> notPermittedIds = service.getIdsNotPermitted(getUser(), containers, requestIds, tableInfo, form.getSampleOperation().getPermissionClass());
             response.put("notPermitted", notPermittedIds == null ? Collections.emptyList() : notPermittedIds.stream().map(id -> Map.of("RowId", (Object) id)).toList());
 
             if (form.getSampleOperation() == SampleTypeService.SampleOperations.Delete)

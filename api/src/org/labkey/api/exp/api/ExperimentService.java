@@ -557,7 +557,15 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * @return null if there is no
      */
     @Nullable
-    Collection<Integer> getIdsNotPermitted(@NotNull User user, Collection<Integer> rowIds, TableInfo tableInfo, @Nullable Class<? extends Permission> permissionClass);
+    Collection<Integer> getIdsNotPermitted(@NotNull User user, Collection<Container> containers, Collection<Integer> rowIds, TableInfo tableInfo, @Nullable Class<? extends Permission> permissionClass);
+
+    /**
+     * Given a set or rowIds and a base schemaName, returns the set of containers for which the rows exist
+     * @param rowIds set of rowIds to check
+     * @param tableInfo table info for the rows being checked
+     * @return Collection of containers
+     */
+    Collection<Container> getUniqueContainers(Collection<Integer> rowIds, TableInfo tableInfo);
 
     /**
      * The following methods return TableInfo's suitable for using in queries.

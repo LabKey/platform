@@ -9119,14 +9119,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     @Override
     @Nullable
-    public Collection<Integer> getIdsNotPermitted(@NotNull User user, @NotNull Collection<Integer> rowIds, @NotNull TableInfo tableInfo, @Nullable Class<? extends Permission> permissionClass)
+    public Collection<Integer> getIdsNotPermitted(@NotNull User user, @Nullable Collection<Container> containers, @NotNull Collection<Integer> rowIds, @NotNull TableInfo tableInfo, @Nullable Class<? extends Permission> permissionClass)
     {
-        if (permissionClass == null)
-            return null;
-
-        // get the set of containers involved and find the ones the user does not have requisite permissions to
-        List<Container> containers = getUniqueContainers(rowIds, tableInfo);
-        if (containers == null)
+        if (permissionClass == null || containers == null)
             return null;
 
         List<Container> notPermittedContainers = containers.stream().filter(container -> !container.hasPermission(user, permissionClass)).toList();
@@ -9148,7 +9143,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return new SqlSelector(expSchema, notPermittedIdsSql).getArrayList(Integer.class);
     }
 
-    private static List<Container> getUniqueContainers(Collection<Integer> rowIds, TableInfo tableInfo)
+    @Override
+    public List<Container> getUniqueContainers(Collection<Integer> rowIds, TableInfo tableInfo)
     {
         DbSchema expSchema = DbSchema.get("exp", DbSchemaType.Module);
         SqlDialect dialect = expSchema.getSqlDialect();

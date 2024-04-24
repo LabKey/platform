@@ -1687,7 +1687,17 @@ public class AssayController extends SpringActionController
 
             Set<Integer> notAllowedIds = new HashSet<>();
             ExperimentService service = ExperimentService.get();
-            Collection<Integer> notPermittedIds = service.getIdsNotPermitted(getUser(), allowedIds, ExperimentService.get().getTinfoExperimentRun(), form.getDataOperation().getPermissionClass());
+            Map<String, Object> response = new HashMap<>();
+
+            TableInfo tableInfo = ExperimentService.get().getTinfoExperimentRun();
+            Collection<Container> containers = service.getUniqueContainers(allowedIds, tableInfo);
+            response.put("containers", containers == null ? Collections.emptyList(): containers.stream().map(c -> Map.of(
+                    "id", c.getEntityId(),
+                    "path", (Object) c.getPath(),
+                    "permitted", c.hasPermission(getUser(), form.getDataOperation().getPermissionClass())
+            )).toList());
+
+            Collection<Integer> notPermittedIds = service.getIdsNotPermitted(getUser(), containers, allowedIds, tableInfo, form.getDataOperation().getPermissionClass());
             List<Map<String, Object>> notPermitted = notPermittedIds == null ? Collections.emptyList() : notPermittedIds.stream().map(id -> Map.of("RowId", (Object) id)).toList();
             if (form.getDataOperation() == AssayRunOperations.Delete)
             {
@@ -1708,20 +1718,16 @@ public class AssayController extends SpringActionController
                         notAllowedRows.add(rowMap);
                 });
 
-                Map<String, Collection<Map<String, Object>>> partitionedIds = new HashMap<>();
-                partitionedIds.put("allowed", allowedRows);
-                partitionedIds.put("notAllowed", notAllowedRows);
-                partitionedIds.put("notPermitted", notPermitted);
-                return success(partitionedIds);
-
+                response.put("allowed", allowedRows);
+                response.put("notAllowed", notAllowedRows);
+                response.put("notPermitted", notPermitted);
+                return success(response);
             }
 
-            return success(Map.of(
-                "allowed", allowedIds.stream().map(id -> Map.of("RowId", id)).toList(),
-                "notAllowed", notAllowedIds,
-                "notPermitted", notPermitted
-            ));
-
+            response.put("allowed", allowedIds.stream().map(id -> Map.of("RowId", id)).toList());
+            response.put("notAllowed", notAllowedIds);
+            response.put("notPermitted", notPermitted);
+            return success(response);
         }
     }
 
@@ -1744,20 +1750,30 @@ public class AssayController extends SpringActionController
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), allowedIds, CompareType.IN);
             Collection<Map<String, Object>> dataRows = new TableSelector(tableInfo, PageFlowUtil.set("rowid", "dataid"), filter, null).getMapCollection();
             List<Integer> permittedRowIds = new ArrayList<>();
+            Set<Container> uniqueContainers = new HashSet<>();
             for (Map<String, Object> dataRow : dataRows)
             {
                 Integer rowId = (Integer) dataRow.get("rowid");
                 ExpData data = ExperimentService.get().getExpData((Integer) dataRow.get("dataid"));
-                if (data != null && data.getRun() != null && data.getRun().getContainer().hasPermission(getUser(), AssayRunOperations.Edit.getPermissionClass()))
+                if (data == null || data.getRun() == null) continue;
+
+                Container c = data.getRun().getContainer();
+                uniqueContainers.add(c);
+                if (c.hasPermission(getUser(), AssayRunOperations.Edit.getPermissionClass()))
                     permittedRowIds.add(rowId);
             }
             List<Map<String, Integer>> notPermitted = allowedIds.stream().filter(id -> !permittedRowIds.contains(id)).map(id -> Map.of("RowId", id)).toList();
 
-            return success(Map.of(
-                "allowed", allowedIds.stream().map(id -> Map.of("RowId", id)).toList(),
-                "notAllowed", new HashSet<>(),
-                "notPermitted", notPermitted
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("containers", uniqueContainers.stream().map(c -> Map.of(
+                    "id", c.getEntityId(),
+                    "path", (Object) c.getPath(),
+                    "permitted", c.hasPermission(getUser(), form.getDataOperation().getPermissionClass())
+            )).toList());
+            response.put("allowed", allowedIds.stream().map(id -> Map.of("RowId", id)).toList());
+            response.put("notAllowed", new HashSet<>());
+            response.put("notPermitted", notPermitted);
+            return success(response);
         }
     }
 
