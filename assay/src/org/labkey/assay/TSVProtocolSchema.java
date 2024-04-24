@@ -23,7 +23,6 @@ import org.labkey.api.assay.AssayResultTable;
 import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.assay.AssayWellExclusionService;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
-import org.labkey.api.assay.plate.PlateMetadataDataHandler;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -159,7 +158,7 @@ public class TSVProtocolSchema extends AssayProtocolSchema
             if (getProvider().isPlateMetadataEnabled(getProtocol()))
             {
                 // legacy standard assay plate metadata support
-                Domain plateDataDomain = AssayPlateMetadataService.getService(PlateMetadataDataHandler.DATA_TYPE).getPlateDataDomain(getProtocol());
+                Domain plateDataDomain = AssayPlateMetadataService.get().getPlateDataDomain(getProtocol());
                 if (plateDataDomain != null)
                 {
                     ColumnInfo lsidCol = getColumn("Lsid");
@@ -234,15 +233,9 @@ public class TSVProtocolSchema extends AssayProtocolSchema
     @Nullable
     private TableInfo createPlateDataTable(ContainerFilter cf)
     {
-        AssayPlateMetadataService svc = AssayPlateMetadataService.getService(PlateMetadataDataHandler.DATA_TYPE);
-        if (svc != null)
-        {
-            Domain domain = svc.getPlateDataDomain(getProtocol());
-            if (domain != null)
-            {
-                return new _AssayPlateDataTable(domain, this, cf);
-            }
-        }
+        Domain domain = AssayPlateMetadataService.get().getPlateDataDomain(getProtocol());
+        if (domain != null)
+            return new _AssayPlateDataTable(domain, this, cf);
         return null;
     }
 

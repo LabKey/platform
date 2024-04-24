@@ -3,7 +3,6 @@ package org.labkey.api.assay.plate;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
-import org.labkey.api.assay.AssayDataType;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -15,11 +14,11 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.util.Pair;
 
 import java.io.File;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -27,17 +26,11 @@ public interface AssayPlateMetadataService
 {
     String PLATE_TEMPLATE_COLUMN_NAME = "PlateTemplate";
     String PLATE_SET_COLUMN_NAME = "PlateSet";
-    Map<AssayDataType, AssayPlateMetadataService> _handlers = new HashMap<>();
     String EXPERIMENTAL_APP_PLATE_SUPPORT = "experimental-app-plate-support";
 
-    static void registerService(AssayDataType dataType, AssayPlateMetadataService handler)
+    static void setInstance(AssayPlateMetadataService serviceImpl)
     {
-        if (dataType != null)
-        {
-            _handlers.put(dataType, handler);
-        }
-        else
-            throw new RuntimeException("The specified assay data type is null");
+        ServiceRegistry.get().registerService(AssayPlateMetadataService.class, serviceImpl);
     }
 
     static boolean isExperimentalAppPlateEnabled()
@@ -53,10 +46,9 @@ public interface AssayPlateMetadataService
         return false;
     }
 
-    @Nullable
-    static AssayPlateMetadataService getService(AssayDataType dataType)
+    static AssayPlateMetadataService get()
     {
-        return _handlers.get(dataType);
+        return ServiceRegistry.get().getService(AssayPlateMetadataService.class);
     }
 
     /**

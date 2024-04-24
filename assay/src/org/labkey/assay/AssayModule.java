@@ -144,6 +144,7 @@ public class AssayModule extends SpringModule
     {
         AssayService.setInstance(new AssayManager());
         PlateService.setInstance(new PlateManager());
+        AssayPlateMetadataService.setInstance(new AssayPlateMetadataServiceImpl());
         addController("assay", AssayController.class);
         addController("plate", PlateController.class);
         PlateSchema.register(this);
@@ -155,7 +156,6 @@ public class AssayModule extends SpringModule
         ExperimentService.get().registerExperimentDataHandler(new TsvDataHandler());
         ExperimentService.get().registerExperimentDataHandler(new FileBasedModuleDataHandler());
         ExperimentService.get().registerExperimentDataHandler(new PlateMetadataDataHandler());
-        AssayPlateMetadataService.registerService(PlateMetadataDataHandler.DATA_TYPE, new AssayPlateMetadataServiceImpl());
         PropertyService.get().registerDomainKind(new AssayPlateDataDomainKind());
         PlateService.get().registerPlateLayoutHandler(new TsvPlateLayoutHandler());
 
