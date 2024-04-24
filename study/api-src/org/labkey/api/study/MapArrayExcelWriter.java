@@ -14,9 +14,14 @@
  * limitations under the License.
  */
 
-package org.labkey.api.data;
+package org.labkey.api.study;
 
 import org.apache.poi.ss.usermodel.Sheet;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.ExcelColumn;
+import org.labkey.api.data.ExcelWriter;
+import org.labkey.api.data.RenderContext;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.view.ActionURL;
 

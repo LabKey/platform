@@ -2640,11 +2640,12 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     private List<Object> getDataRow(String prefix, Results rs, Set<FieldKey> includedMetaDataCols) throws SQLException
     {
         List<Object> baseColumns = new ArrayList<>(
-                Arrays.asList(
-                        rs.getString(FKMap.get("plateName")),
-                        rs.getInt(FKMap.get("row")) * rs.getInt(FKMap.get("col")) + "-well",
-                        rs.getString(FKMap.get("position"))
-                ));
+            Arrays.asList(
+                rs.getString(FKMap.get("plateName")),
+                rs.getInt(FKMap.get("row")) * rs.getInt(FKMap.get("col")) + "-well",
+                rs.getString(FKMap.get("position"))
+            )
+        );
 
         if (!prefix.equals("Destination "))
             baseColumns.add(rs.getString(FKMap.get("sampleId")));
@@ -2657,27 +2658,35 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
     public ColumnDescriptor[] getColumnDescriptors(String prefix, Set<FieldKey> includedMetadataCols)
     {
-        List<ColumnDescriptor> baseColumns = new ArrayList<ColumnDescriptor>(
-                Arrays.asList(
+        List<ColumnDescriptor> baseColumns = new ArrayList<>(
+            Arrays.asList(
                 new ColumnDescriptor(prefix + "Plate ID", String.class),
                 new ColumnDescriptor(prefix + "Well", String.class),
                 new ColumnDescriptor(prefix + "Plate Type", String.class)
-                ));
+            )
+        );
 
         if (!prefix.equals("Destination "))
             baseColumns.add(new ColumnDescriptor("Sample ID", String.class));
 
         List<ColumnDescriptor> metadataColumns = includedMetadataCols
-                .stream()
-                .sorted(Comparator.comparing(FieldKey::getName))
-                .map(fk -> new ColumnDescriptor(fk.getCaption(), String.class))
-                .toList();
+            .stream()
+            .sorted(Comparator.comparing(FieldKey::getName))
+            .map(fk -> new ColumnDescriptor(fk.getCaption(), String.class))
+            .toList();
 
         int baseColumCount = !prefix.equals("Destination ") ? 4 : 3;
         return Stream.concat(baseColumns.stream(), metadataColumns.stream()).toList().toArray(new ColumnDescriptor[baseColumCount + includedMetadataCols.size()]);
     }
 
-    public List<List<Object>> getWorklist(int sourcePlateSetId, int destinationPlateSetId, Set<FieldKey> sourceIncludedMetadataCols, Set<FieldKey> destinationIncludedMetadataCols, Container c, User u) throws RuntimeSQLException, ValidationException
+    public List<List<Object>> getWorklist(
+            int sourcePlateSetId,
+            int destinationPlateSetId,
+            Set<FieldKey> sourceIncludedMetadataCols,
+            Set<FieldKey> destinationIncludedMetadataCols,
+            Container c,
+            User u
+    ) throws RuntimeSQLException, ValidationException
     {
         TableInfo wellTable = getWellTable(c, u);
         List<List<Object>> plateDataRows = new ArrayList<>();

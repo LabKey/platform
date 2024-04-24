@@ -43,10 +43,10 @@ import org.labkey.api.data.ArrayExcelWriter;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.MapArrayExcelWriter;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.security.RequiresAnyOf;
 import org.labkey.api.security.RequiresPermission;
@@ -1280,19 +1280,10 @@ public class PlateController extends SpringActionController
     public static class WorkListAction extends ReadOnlyApiAction<WorklistForm>
     {
         @Override
-        public void validateForm(WorklistForm form, Errors errors)
-        {
-            // validate both are valid plate set ids? Might be better in the manager fn
-            // maybe also validate lineage
-            // will eventually have to validate sample id sets
-        }
-
-        @Override
         public Object execute(WorklistForm form, BindException errors) throws Exception
         {
             try
             {
-                // todo: the correct place for this?
                 Set<FieldKey> sourceIncludedMetadataCols = PlateManager.get().getMetadataColumns(form.getSourcePlateSetId(), getContainer(), getUser());
                 Set<FieldKey> destinationIncludedMetadataCols = PlateManager.get().getMetadataColumns(form.getDestinationPlateSetId(), getContainer(), getUser());
 
@@ -1306,10 +1297,13 @@ public class PlateController extends SpringActionController
                 PlateSet plateSetSource = PlateManager.get().getPlateSet(getContainer(), form.getSourcePlateSetId());
                 PlateSet plateSetDestination = PlateManager.get().getPlateSet(getContainer(), form.getDestinationPlateSetId());
 
+                if (plateSetSource == null || plateSetDestination == null)
+                    throw new NotFoundException("Unable to resolve Plate Set.");
+
                 xlWriter.setFullFileName(plateSetSource.getName() + "To" + plateSetDestination.getName() + ".xls");
                 xlWriter.renderWorkbook(getViewContext().getResponse());
 
-                return null;
+                return null; // Returning anything here will cause error as excel writer will close the response stream
             }
             catch (Exception e)
             {
@@ -1336,21 +1330,13 @@ public class PlateController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public static class InstrumentInstructionAction extends ReadOnlyApiAction<InstrumentInstructionForm> // or ExportAction?
+    public static class InstrumentInstructionAction extends ReadOnlyApiAction<InstrumentInstructionForm>
     {
-        @Override
-        public void validateForm(InstrumentInstructionForm form, Errors errors)
-        {
-            // todo
-            // restricted to assays
-        }
-
         @Override
         public Object execute(InstrumentInstructionForm form, BindException errors) throws Exception
         {
             try
             {
-                // todo: the correct place for this?
                 Set<FieldKey> includedMetadataCols = PlateManager.get().getMetadataColumns(form.getPlateSetId(), getContainer(), getUser());
                 ColumnDescriptor[] xlCols = PlateManager.get().getColumnDescriptors("", includedMetadataCols);
                 List<List<Object>> plateDataRows = PlateManager.get().getInstrumentInstructions(form.getPlateSetId(), includedMetadataCols, getContainer(), getUser());
@@ -1358,10 +1344,15 @@ public class PlateController extends SpringActionController
                 ArrayExcelWriter xlWriter = new ArrayExcelWriter(plateDataRows, xlCols);
 
                 PlateSet plateSet = PlateManager.get().getPlateSet(getContainer(), form.getPlateSetId());
+                if (plateSet == null)
+                    throw new NotFoundException("Unable to resolve Plate Set.");
+                if (plateSet.getType() != PlateSetType.assay)
+                    throw new ValidationException("Instrument Instructions cannot be generated for non-Assay Plate Sets.");
+
                 xlWriter.setFullFileName(plateSet.getName() + ".xls");
                 xlWriter.renderWorkbook(getViewContext().getResponse());
 
-                return null;
+                return null; // Returning anything here will cause error as excel writer will close the response stream
             }
             catch (Exception e)
             {
