@@ -726,7 +726,9 @@ public class SecurityApiActions
             if (null == resource)
                 throw new IllegalArgumentException("No resource with the id '" + resourceId + "' was found in this container!");
 
-            // Note: savePolicy() checks for admin permissions on old policy
+            // Ensure that user has admin permission on resource
+            if (!resource.hasPermission(user, AdminPermission.class))
+                throw new IllegalArgumentException("You do not have permission to modify the security policy for this resource!");
 
             MutableSecurityPolicy policy = null;
 
