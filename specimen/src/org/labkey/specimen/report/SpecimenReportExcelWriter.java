@@ -61,7 +61,7 @@ public class SpecimenReportExcelWriter
             _headerFormat = new WritableCellFormat(boldFont);
             _headerFormat.setWrap(true);
             _headerFormat.setVerticalAlignment(jxl.format.VerticalAlignment.TOP);
-            ostream = ExcelWriter.getOutputStream(response, _parameters.getLabel(), ExcelWriter.ExcelDocumentType.xls);
+            ostream = ExcelWriter.getOutputStream(response, _parameters.getLabel(), null, ExcelWriter.ExcelDocumentType.xls);
 
             WorkbookSettings settings = new WorkbookSettings();
             settings.setArrayGrowSize(300000);

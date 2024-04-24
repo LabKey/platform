@@ -94,6 +94,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -136,6 +137,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -144,6 +146,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
@@ -2595,6 +2598,164 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         }
 
         return plates;
+    }
+
+    // todo: kind of weird thing you've done here
+    private final Map<String, FieldKey> FKMap = Map.of(
+            "sampleId", FieldKey.fromParts("sampleid", "name"),
+            "position", FieldKey.fromParts("position"),
+            "rowId", FieldKey.fromParts("rowid"),
+            "row", FieldKey.fromParts("plateid", "platetype", "rows"),
+            "col", FieldKey.fromParts("plateid", "platetype", "columns"),
+            "plateId", FieldKey.fromParts("plateid"),
+            "plateSetId", FieldKey.fromParts("plateid", "plateset"),
+            "plateName", FieldKey.fromParts("plateid", "name")
+    );
+
+    public Set<FieldKey> getMetadataColumns(int plateSetId, Container c, User u) throws ValidationException
+    {
+        PlateSet plateSet = PlateManager.get().getPlateSet(c, plateSetId);
+        if (plateSet == null)
+            throw new ValidationException("Unable to resolve plate set of id " + plateSetId);
+
+        List<Plate> plates = plateSet.getPlates(u);
+
+        Set<FieldKey> includedMetadataCols = new HashSet<>();
+        for (Plate plate : plates)
+        {
+            List<String> metadataColNames = getFields(c, plate.getRowId()).stream().map(PlateCustomField::getName).collect(Collectors.toCollection(ArrayList::new));
+            for (String name : metadataColNames)
+                includedMetadataCols.add(FieldKey.fromParts("properties", name));
+        }
+
+        return includedMetadataCols;
+    }
+
+    private Collection<ColumnInfo> getWellColumns(TableInfo wellTable, Set<FieldKey> includedMetaDataCols)
+    {
+        List<FieldKey> defaultCols = new ArrayList<>(FKMap.values());
+        defaultCols.addAll(includedMetaDataCols);
+        return QueryService.get().getColumns(wellTable, defaultCols).values();
+    }
+
+    private HashMap<String, Object> getDataRow(String prefix, Results rs, Set<FieldKey> includedMetaDataCols) throws SQLException
+    {
+        return new HashMap<>() {{
+            put(prefix + "Plate ID",rs.getString(FKMap.get("plateName")));
+            put(prefix + "Plate Type", rs.getInt(FKMap.get("row")) * rs.getInt(FKMap.get("col")) + "-well"); // minor optimization: don't * every time
+            put(prefix + "Well", rs.getString(FKMap.get("position")));
+            if (!prefix.equals("Destination "))
+                put("Sample ID", rs.getString(FKMap.get("sampleId")));
+
+            for (FieldKey col : includedMetaDataCols)
+                put(prefix + col.getCaption(), rs.getString(col));
+        }};
+    }
+
+    public ColumnDescriptor[] getColumnDescriptors(String prefix, Set<FieldKey> includedMetadataCols)
+    {
+        List<ColumnDescriptor> baseColumns = new ArrayList<ColumnDescriptor>(
+                Arrays.asList(
+                new ColumnDescriptor(prefix + "Plate ID", String.class),
+                new ColumnDescriptor(prefix + "Well", String.class),
+                new ColumnDescriptor(prefix + "Plate Type", String.class)
+                ));
+
+        if (!prefix.equals("Destination "))
+            baseColumns.add(new ColumnDescriptor("Sample ID", String.class));
+
+        List<ColumnDescriptor> metadataColumns = includedMetadataCols
+                .stream()
+                .sorted(Comparator.comparing(FieldKey::getName))
+                .map(fk -> new ColumnDescriptor(prefix + fk.getCaption(), String.class))
+                .toList();
+
+        int baseColumCount = !prefix.equals("Destination ") ? 4 : 3;
+        return Stream.concat(baseColumns.stream(), metadataColumns.stream()).toList().toArray(new ColumnDescriptor[baseColumCount + includedMetadataCols.size()]);
+    }
+
+    public List<Map<String, Object>> getWorklist(int sourcePlateSetId, int destinationPlateSetId, Set<FieldKey> sourceIncludedMetadataCols, Set<FieldKey> destinationIncludedMetadataCols, Container c, User u) throws RuntimeSQLException, ValidationException
+    {
+        TableInfo wellTable = getWellTable(c, u);
+        List<Map<String, Object>> plateDataRows = new ArrayList<>();
+        Map<String, List<Map<String, Object>>> sampleIdToDestinationRow = new LinkedHashMap<>();
+
+        try (Results rs = QueryService.get().select(wellTable, getWellColumns(wellTable, destinationIncludedMetadataCols), new SimpleFilter(FKMap.get("plateSetId"), destinationPlateSetId), new Sort("rowid")))
+        {
+            while (rs.next())
+            {
+                String sampleId = rs.getString(FKMap.get("sampleId"));
+                if (sampleId == null)
+                    continue;
+
+                if (sampleIdToDestinationRow.containsKey(sampleId))
+                {
+                    sampleIdToDestinationRow.get(sampleId).add(getDataRow("Destination ", rs, destinationIncludedMetadataCols));
+                }
+                else
+                {
+                    sampleIdToDestinationRow.put(sampleId, new ArrayList<>(Arrays.asList(getDataRow("Destination ", rs, destinationIncludedMetadataCols))));
+                }
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeException(e);
+        }
+
+        Set<String> originSamples = new HashSet<>();
+        try (Results rs = QueryService.get().select(wellTable, getWellColumns(wellTable, sourceIncludedMetadataCols), new SimpleFilter(FKMap.get("plateSetId"), sourcePlateSetId), new Sort("rowid")))
+        {
+            while (rs.next())
+            {
+                String sampleId = rs.getString(FKMap.get("sampleId"));
+                if (sampleId == null)
+                    continue;
+
+                originSamples.add(sampleId);
+                HashMap<String, Object> sourceDataRow = getDataRow("Source ", rs, sourceIncludedMetadataCols);
+
+                List<Map<String, Object>> destinationDataRows = sampleIdToDestinationRow.get(sampleId);
+                for (Map<String, Object> dataRow : destinationDataRows)
+                {
+                    sourceDataRow.putAll(dataRow);
+                    plateDataRows.add(sourceDataRow);
+                }
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeException(e);
+        }
+
+        Set<String> destinationSamples = sampleIdToDestinationRow.keySet();
+        if (!destinationSamples.containsAll(originSamples))
+            throw new ValidationException("There are samples plated in the origin Plate Set with no corresponding well in the destination Plate Set.");
+
+        return plateDataRows;
+    }
+
+    public List<Map<String, Object>> getInstrumentInstructions(int plateSetId, Set<FieldKey> includedMetadataCols, Container c, User u)
+    {
+        TableInfo wellTable = getWellTable(c, u);
+
+        List<Map<String, Object>> plateDataRows = new ArrayList<>();
+        try (Results rs = QueryService.get().select(wellTable, getWellColumns(wellTable, includedMetadataCols), new SimpleFilter(FKMap.get("plateSetId"), plateSetId), new Sort("rowid")))
+        {
+            while (rs.next())
+            {
+                if (rs.getString(FKMap.get("sampleId")) == null)
+                    continue;
+
+                plateDataRows.add(getDataRow("", rs, includedMetadataCols));
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeException(e);
+        }
+
+        return plateDataRows;
     }
 
     public static final class TestCase

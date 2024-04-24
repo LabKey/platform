@@ -48,7 +48,7 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.specimen.importer.SimpleSpecimenImporter;
-import org.labkey.api.study.MapArrayExcelWriter;
+import org.labkey.api.data.MapArrayExcelWriter;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;

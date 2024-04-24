@@ -15,6 +15,7 @@
  */
 package org.labkey.assay;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
@@ -33,6 +34,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateCustomField;
 import org.labkey.api.assay.plate.PlateService;
+import org.labkey.api.assay.plate.PlateSet;
 import org.labkey.api.assay.plate.PlateSetType;
 import org.labkey.api.assay.plate.PlateType;
 import org.labkey.api.assay.security.DesignAssayPermission;
@@ -40,8 +42,11 @@ import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.MapArrayExcelWriter;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.security.RequiresAnyOf;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
@@ -1241,6 +1246,128 @@ public class PlateController extends SpringActionController
                 cf = form.getContainerFilter().create(getViewContext());
 
             return PlateManager.get().getPlateSetAssays(getContainer(), getUser(), form.getPlateSetId(), cf);
+        }
+    }
+
+    public static class WorklistForm
+    {
+        private int _sourcePlateSetId;
+        private int _destinationPlateSetId;
+
+        public int getSourcePlateSetId()
+        {
+            return _sourcePlateSetId;
+        }
+
+        public void setSourcePlateSetId(int sourcePlateSetId)
+        {
+            _sourcePlateSetId = sourcePlateSetId;
+        }
+
+        public int getDestinationPlateSetId()
+        {
+            return _destinationPlateSetId;
+        }
+
+        public void setDestinationPlateSetId(int destinationPlateSetId)
+        {
+            _destinationPlateSetId = destinationPlateSetId;
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public static class WorkListAction extends ReadOnlyApiAction<WorklistForm>
+    {
+        @Override
+        public void validateForm(WorklistForm form, Errors errors)
+        {
+            // validate both are valid plate set ids? Might be better in the manager fn
+            // maybe also validate lineage
+            // will eventually have to validate sample id sets
+        }
+
+        @Override
+        public Object execute(WorklistForm form, BindException errors) throws Exception
+        {
+            try
+            {
+                // todo: the correct place for this?
+                Set<FieldKey> sourceIncludedMetadataCols = PlateManager.get().getMetadataColumns(form.getSourcePlateSetId(), getContainer(), getUser());
+                Set<FieldKey> destinationIncludedMetadataCols = PlateManager.get().getMetadataColumns(form.getDestinationPlateSetId(), getContainer(), getUser());
+
+                ColumnDescriptor[] sourceXlCols = PlateManager.get().getColumnDescriptors("Source ", sourceIncludedMetadataCols);
+                ColumnDescriptor[] destinationXlCols = PlateManager.get().getColumnDescriptors("Destination ", destinationIncludedMetadataCols);
+                ColumnDescriptor[] xlCols = ArrayUtils.addAll(sourceXlCols, destinationXlCols);
+
+                List<Map<String, Object>> plateDataRows = PlateManager.get().getWorklist(form.getSourcePlateSetId(), form.getDestinationPlateSetId(), sourceIncludedMetadataCols, destinationIncludedMetadataCols, getContainer(), getUser());
+
+                MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(plateDataRows, xlCols);
+                PlateSet plateSetSource = PlateManager.get().getPlateSet(getContainer(), form.getSourcePlateSetId());
+                PlateSet plateSetDestination = PlateManager.get().getPlateSet(getContainer(), form.getDestinationPlateSetId());
+
+                xlWriter.setFullFileName(plateSetSource.getName() + "To" + plateSetDestination.getName() + ".xls");
+                xlWriter.renderWorkbook(getViewContext().getResponse());
+
+                return null;
+            }
+            catch (Exception e)
+            {
+                errors.reject(ERROR_GENERIC, e.getMessage() != null ? e.getMessage() : "Failed to create Worklist.");
+            }
+
+            return null;
+        }
+    }
+
+    public static class InstrumentInstructionForm
+    {
+        private int _plateSetId;
+
+        public int getPlateSetId()
+        {
+            return _plateSetId;
+        }
+
+        public void setPlateSetId(int plateSetId)
+        {
+            _plateSetId = plateSetId;
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public static class InstrumentInstructionAction extends ReadOnlyApiAction<InstrumentInstructionForm> // or ExportAction?
+    {
+        @Override
+        public void validateForm(InstrumentInstructionForm form, Errors errors)
+        {
+            // todo
+            // restricted to assays
+        }
+
+        @Override
+        public Object execute(InstrumentInstructionForm form, BindException errors) throws Exception
+        {
+            try
+            {
+                // todo: the correct place for this?
+                Set<FieldKey> includedMetadataCols = PlateManager.get().getMetadataColumns(form.getPlateSetId(), getContainer(), getUser());
+                ColumnDescriptor[] xlCols = PlateManager.get().getColumnDescriptors("", includedMetadataCols);
+                List<Map<String, Object>> plateDataRows = PlateManager.get().getInstrumentInstructions(form.getPlateSetId(), includedMetadataCols, getContainer(), getUser());
+
+                MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(plateDataRows, xlCols);
+
+                PlateSet plateSet = PlateManager.get().getPlateSet(getContainer(), form.getPlateSetId());
+                xlWriter.setFullFileName(plateSet.getName() + ".xls");
+                xlWriter.renderWorkbook(getViewContext().getResponse());
+
+                return null;
+            }
+            catch (Exception e)
+            {
+                errors.reject(ERROR_GENERIC, e.getMessage() != null ? e.getMessage() : "Failed to create Instrument Instruction.");
+            }
+
+            return null;
         }
     }
 }

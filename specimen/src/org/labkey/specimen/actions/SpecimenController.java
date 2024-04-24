@@ -75,7 +75,7 @@ import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.specimen.settings.StatusSettings;
 import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.Dataset;
-import org.labkey.api.study.MapArrayExcelWriter;
+import org.labkey.api.data.MapArrayExcelWriter;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.SpecimenTransform;
 import org.labkey.api.study.SpecimenUrls;
