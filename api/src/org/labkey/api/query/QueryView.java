@@ -2191,7 +2191,21 @@ public class QueryView extends WebPartView<Object>
                     getSettings().setFieldKeys(null);
                 }
 
-                if (keys.size() > 0)
+                if (!keys.isEmpty())
+                {
+                    Map<FieldKey, ColumnInfo> selectedCols = QueryService.get().getColumns(table, keys);
+                    for (ColumnInfo col : selectedCols.values())
+                        rgn.addColumn(col);
+                }
+            }
+        }
+        else if (null != getSettings().getExtraFieldKeys())
+        {
+            TableInfo table = getTable();
+            if (table != null)
+            {
+                List<FieldKey> keys = getSettings().getExtraFieldKeys();
+                if (!keys.isEmpty())
                 {
                     Map<FieldKey, ColumnInfo> selectedCols = QueryService.get().getColumns(table, keys);
                     for (ColumnInfo col : selectedCols.values())
