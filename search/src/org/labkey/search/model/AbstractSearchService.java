@@ -1315,8 +1315,9 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     //
 
     @Override
-    public void indexFull(final boolean force)
+    public void indexFull(final boolean force, String reason)
     {
+        _log.info("Initiating an aggressive full-text search reindex because: " + reason);
         // crank crawler into high gear!
         DavCrawler.getInstance().startFull(WebdavService.getPath(), force);
     }
