@@ -483,30 +483,42 @@ public class ExcelWriter implements ExportWriter
         renderSheet(workbook, _currentSheet);
     }
 
-    protected void renderSheet(Workbook workbook, int sheetNumber)
+    protected Sheet ensureSheet(RenderContext ctx, Workbook workbook, int sheetNumber)
     {
-        Sheet sheet;
-        //TODO: Pass render context all the way through Excel writers...
-        RenderContext ctx = new RenderContext(HttpView.currentContext());
+        return ensureSheet(ctx, workbook, sheetNumber, true);
+    }
 
+    protected Sheet ensureSheet(RenderContext ctx, Workbook workbook, int sheetNumber, boolean withDrawing)
+    {
         if (workbook.getNumberOfSheets() > sheetNumber)
         {
-            sheet = workbook.getSheetAt(sheetNumber);
+            return workbook.getSheetAt(sheetNumber);
         }
         else
         {
-            sheet = workbook.getSheet(getSheetName(sheetNumber));
+            Sheet sheet = workbook.getSheet(getSheetName(sheetNumber));
             if (sheet == null)
             {
                 sheet = workbook.createSheet(getSheetName(sheetNumber));
-                sheet.getPrintSetup().setPaperSize(PrintSetup.LETTER_PAPERSIZE);
+                if (withDrawing)
+                {
+                    sheet.getPrintSetup().setPaperSize(PrintSetup.LETTER_PAPERSIZE);
 
-                Drawing<?> drawing = sheet.createDrawingPatriarch();
-                ctx.put(SHEET_DRAWING, drawing);
-                ctx.put(SHEET_IMAGE_SIZES, new HashMap<>());
-                ctx.put(SHEET_IMAGE_PICTURES, new HashMap<>());
+                    Drawing<?> drawing = sheet.createDrawingPatriarch();
+                    ctx.put(SHEET_DRAWING, drawing);
+                    ctx.put(SHEET_IMAGE_SIZES, new HashMap<>());
+                    ctx.put(SHEET_IMAGE_PICTURES, new HashMap<>());
+                }
             }
+            return sheet;
         }
+    }
+
+    protected void renderSheet(Workbook workbook, int sheetNumber)
+    {
+        //TODO: Pass render context all the way through Excel writers...
+        RenderContext ctx = new RenderContext(HttpView.currentContext());
+        Sheet sheet = ensureSheet(ctx, workbook, sheetNumber);
 
         List<ExcelColumn> visibleColumns = getVisibleColumns(workbook, ctx);
 
@@ -541,11 +553,11 @@ public class ExcelWriter implements ExportWriter
         }
     }
 
-    private List<ExcelColumn> getVisibleColumns(Workbook workbook, RenderContext ctx)
+    protected List<ExcelColumn> getVisibleColumns(Workbook workbook, RenderContext ctx, List<DisplayColumn> columns)
     {
-        List<ExcelColumn> visibleColumns = new ArrayList<>(_columns.size());
+        List<ExcelColumn> visibleColumns = new ArrayList<>(columns.size());
 
-        for (DisplayColumn dc : _columns)
+        for (DisplayColumn dc : columns)
         {
             ExcelColumn column = new ExcelColumn(dc, _formatters, workbook);
             if (column.isVisible(ctx))
@@ -562,6 +574,11 @@ public class ExcelWriter implements ExportWriter
         }
 
         return visibleColumns;
+    }
+
+    private List<ExcelColumn> getVisibleColumns(Workbook workbook, RenderContext ctx)
+    {
+        return getVisibleColumns(workbook, ctx, _columns);
     }
 
     // Should be called within a try/catch
@@ -630,6 +647,16 @@ public class ExcelWriter implements ExportWriter
     {
         if (_currentRow > _docType.getMaxRows())
             throw new MaxRowsExceededException();
+    }
+
+    protected Row ensureRow(Sheet sheet, int rowNum)
+    {
+        Row row = sheet.getRow(rowNum);
+        if (row == null)
+        {
+            row = sheet.createRow(rowNum);
+        }
+        return row;
     }
 
     public static class MaxRowsExceededException extends Exception

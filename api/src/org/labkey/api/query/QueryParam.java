@@ -25,6 +25,7 @@ public enum QueryParam implements SafeToRenderEnum
     queryName,
     viewName,
     columns,
+    extraColumns,
     reportId,
 
     offset,
