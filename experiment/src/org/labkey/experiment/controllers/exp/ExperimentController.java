@@ -139,6 +139,7 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.DesignDataClassPermission;
 import org.labkey.api.security.permissions.DesignSampleTypePermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.SampleWorkflowDeletePermission;
 import org.labkey.api.security.permissions.TroubleshooterPermission;
@@ -3482,14 +3483,15 @@ public class ExperimentController extends SpringActionController
             Map<String, Collection<Map<String, Object>>> response = ExperimentServiceImpl.partitionRequestedOperationObjects(requestIds, notAllowedIds, allData);
 
             TableInfo tableInfo = ExperimentService.get().getTinfoData();
+            Class<? extends Permission> permClass = form.getDataOperation().getPermissionClass();
             Collection<Container> containers = service.getUniqueContainers(requestIds, tableInfo);
             response.put("containers", containers == null ? Collections.emptyList(): containers.stream().map(c -> Map.of(
                     "id", c.getEntityId(),
                     "path", (Object) c.getPath(),
-                    "permitted", c.hasPermission(getUser(), form.getDataOperation().getPermissionClass())
+                    "permitted", permClass == null || c.hasPermission(getUser(), permClass)
             )).toList());
 
-            Collection<Integer> notPermittedIds = service.getIdsNotPermitted(getUser(), containers, requestIds, tableInfo, form.getDataOperation().getPermissionClass());
+            Collection<Integer> notPermittedIds = service.getIdsNotPermitted(getUser(), containers, requestIds, tableInfo, permClass);
             response.put("notPermitted", notPermittedIds == null ? Collections.emptyList(): notPermittedIds.stream().map(id -> Map.of("RowId", (Object) id)).toList());
 
             return success(response);
@@ -3545,14 +3547,15 @@ public class ExperimentController extends SpringActionController
             Map<String, Collection<Map<String, Object>>> response = ExperimentServiceImpl.partitionRequestedOperationObjects(requestIds, notAllowedIds, allMaterials);
 
             TableInfo tableInfo = ExperimentService.get().getTinfoMaterial();
+            Class<? extends Permission> permClass = form.getSampleOperation().getPermissionClass();
             Collection<Container> containers = service.getUniqueContainers(requestIds, tableInfo);
             response.put("containers", containers == null ? Collections.emptyList(): containers.stream().map(c -> Map.of(
                     "id", c.getEntityId(),
                     "path", (Object) c.getPath(),
-                    "permitted", c.hasPermission(getUser(), form.getSampleOperation().getPermissionClass())
+                    "permitted", permClass == null || c.hasPermission(getUser(), permClass)
             )).toList());
 
-            Collection<Integer> notPermittedIds = service.getIdsNotPermitted(getUser(), containers, requestIds, tableInfo, form.getSampleOperation().getPermissionClass());
+            Collection<Integer> notPermittedIds = service.getIdsNotPermitted(getUser(), containers, requestIds, tableInfo, permClass);
             response.put("notPermitted", notPermittedIds == null ? Collections.emptyList() : notPermittedIds.stream().map(id -> Map.of("RowId", (Object) id)).toList());
 
             if (form.getSampleOperation() == SampleTypeService.SampleOperations.Delete)

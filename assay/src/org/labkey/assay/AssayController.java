@@ -1690,14 +1690,15 @@ public class AssayController extends SpringActionController
             Map<String, Object> response = new HashMap<>();
 
             TableInfo tableInfo = ExperimentService.get().getTinfoExperimentRun();
+            Class<? extends Permission> permClass = form.getDataOperation().getPermissionClass();
             Collection<Container> containers = service.getUniqueContainers(allowedIds, tableInfo);
             response.put("containers", containers == null ? Collections.emptyList(): containers.stream().map(c -> Map.of(
                     "id", c.getEntityId(),
                     "path", (Object) c.getPath(),
-                    "permitted", c.hasPermission(getUser(), form.getDataOperation().getPermissionClass())
+                    "permitted", permClass == null || c.hasPermission(getUser(), permClass)
             )).toList());
 
-            Collection<Integer> notPermittedIds = service.getIdsNotPermitted(getUser(), containers, allowedIds, tableInfo, form.getDataOperation().getPermissionClass());
+            Collection<Integer> notPermittedIds = service.getIdsNotPermitted(getUser(), containers, allowedIds, tableInfo, permClass);
             List<Map<String, Object>> notPermitted = notPermittedIds == null ? Collections.emptyList() : notPermittedIds.stream().map(id -> Map.of("RowId", (Object) id)).toList();
             if (form.getDataOperation() == AssayRunOperations.Delete)
             {
@@ -1765,10 +1766,11 @@ public class AssayController extends SpringActionController
             List<Map<String, Integer>> notPermitted = allowedIds.stream().filter(id -> !permittedRowIds.contains(id)).map(id -> Map.of("RowId", id)).toList();
 
             Map<String, Object> response = new HashMap<>();
+            Class<? extends Permission> permClass = form.getDataOperation().getPermissionClass();
             response.put("containers", uniqueContainers.stream().map(c -> Map.of(
                     "id", c.getEntityId(),
                     "path", (Object) c.getPath(),
-                    "permitted", c.hasPermission(getUser(), form.getDataOperation().getPermissionClass())
+                    "permitted", permClass == null || c.hasPermission(getUser(), permClass)
             )).toList());
             response.put("allowed", allowedIds.stream().map(id -> Map.of("RowId", id)).toList());
             response.put("notAllowed", new HashSet<>());
