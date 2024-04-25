@@ -1182,9 +1182,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         {
             MarkdownService.setInstance(new MarkdownServiceImpl());
         }
-        catch (Exception e)
+        catch (Error e)
         {
-            LOG.error("Exception registering MarkdownServiceImpl", e);
+            LOG.error("Error registering MarkdownServiceImpl", e);
         }
 
         // initialize email preference service and listeners
