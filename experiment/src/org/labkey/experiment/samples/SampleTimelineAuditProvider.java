@@ -205,6 +205,7 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
             Set<PropertyStorageSpec.Index> indexes = super.getPropertyIndices(domain);
             indexes.add(new PropertyStorageSpec.Index(false, SAMPLE_ID_COLUMN_NAME));
             indexes.add(new PropertyStorageSpec.Index(false, SAMPLE_NAME_COLUMN_NAME));
+            indexes.add(new PropertyStorageSpec.Index(false, COLUMN_NAME_TRANSACTION_ID)); // Issue 50202
             return indexes;
         }
     }
