@@ -8,12 +8,18 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 
+// This class supports generating Excel files with duplicate column names. Consider using MapArrayExcelWriter if
+// multiple identical column names is not an implementation concern.
 public class ArrayExcelWriter extends ExcelWriter
 {
-    private final List<List<Object>> data;
+    private final List<Object[]> data;
     private int currentRow = 0;
 
-    public ArrayExcelWriter(List<List<Object>> data, ColumnDescriptor[] cols)
+    /**
+     * @param data The data rows, in which index position of a value corresponds to the desired respective column index
+     * @param cols The columns, in which ordering determines the left-to-right column ordering in the generated Excel
+     */
+    public ArrayExcelWriter(List<Object[]> data, ColumnDescriptor[] cols)
     {
         super(ExcelDocumentType.xls);
         this.data = data;
@@ -22,7 +28,7 @@ public class ArrayExcelWriter extends ExcelWriter
         for (int i = 0; i < cols.length; i++)
         {
             ColumnDescriptor col = cols[i];
-            xlcols.add(new MapArrayDisplayColumn(col.name, col.clazz, i));
+            xlcols.add(new ArrayDisplayColumn(col.name, col.clazz, i));
         }
 
         setDisplayColumns(xlcols);
@@ -37,17 +43,17 @@ public class ArrayExcelWriter extends ExcelWriter
         }
     }
 
-    public class MapArrayDisplayColumn extends DisplayColumn
+    public class ArrayDisplayColumn extends DisplayColumn
     {
         Class valueClass;
         int position;
 
-        public MapArrayDisplayColumn(String name, Class valueClass, int position)
+        public ArrayDisplayColumn(String name, Class valueClass, int position)
         {
             this(name, name, valueClass, position);
         }
 
-        public MapArrayDisplayColumn(String name, String caption, Class valueClass, int position)
+        public ArrayDisplayColumn(String name, String caption, Class valueClass, int position)
         {
             setName(name);
             setCaption(caption);
@@ -58,7 +64,7 @@ public class ArrayExcelWriter extends ExcelWriter
         @Override
         public Object getValue(RenderContext ctx)
         {
-            return data.get(currentRow).get(position);
+            return data.get(currentRow)[position];
         }
 
         @Override

@@ -70,9 +70,11 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.assay.plate.PlateDataServiceImpl;
 import org.labkey.assay.plate.PlateImpl;
 import org.labkey.assay.plate.PlateManager;
+import org.labkey.assay.plate.PlateSetExport;
 import org.labkey.assay.plate.PlateSetImpl;
 import org.labkey.assay.plate.PlateUrls;
 import org.labkey.assay.plate.TsvPlateLayoutHandler;
+import org.labkey.assay.plate.query.WellTable;
 import org.labkey.assay.view.AssayGWTView;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -1284,22 +1286,21 @@ public class PlateController extends SpringActionController
         {
             try
             {
-                Set<FieldKey> sourceIncludedMetadataCols = PlateManager.get().getMetadataColumns(form.getSourcePlateSetId(), getContainer(), getUser());
-                Set<FieldKey> destinationIncludedMetadataCols = PlateManager.get().getMetadataColumns(form.getDestinationPlateSetId(), getContainer(), getUser());
-
-                ColumnDescriptor[] sourceXlCols = PlateManager.get().getColumnDescriptors("Source ", sourceIncludedMetadataCols);
-                ColumnDescriptor[] destinationXlCols = PlateManager.get().getColumnDescriptors("Destination ", destinationIncludedMetadataCols);
-                ColumnDescriptor[] xlCols = ArrayUtils.addAll(sourceXlCols, destinationXlCols);
-
-                List<List<Object>> plateDataRows = PlateManager.get().getWorklist(form.getSourcePlateSetId(), form.getDestinationPlateSetId(), sourceIncludedMetadataCols, destinationIncludedMetadataCols, getContainer(), getUser());
-
-                ArrayExcelWriter xlWriter = new ArrayExcelWriter(plateDataRows, xlCols);
                 PlateSet plateSetSource = PlateManager.get().getPlateSet(getContainer(), form.getSourcePlateSetId());
                 PlateSet plateSetDestination = PlateManager.get().getPlateSet(getContainer(), form.getDestinationPlateSetId());
-
                 if (plateSetSource == null || plateSetDestination == null)
                     throw new NotFoundException("Unable to resolve Plate Set.");
 
+                Set<FieldKey> sourceIncludedMetadataCols = WellTable.getMetadataColumns(form.getSourcePlateSetId(), getContainer(), getUser());
+                Set<FieldKey> destinationIncludedMetadataCols = WellTable.getMetadataColumns(form.getDestinationPlateSetId(), getContainer(), getUser());
+
+                ColumnDescriptor[] sourceXlCols = PlateSetExport.getColumnDescriptors(PlateSetExport.SOURCE, sourceIncludedMetadataCols);
+                ColumnDescriptor[] destinationXlCols = PlateSetExport.getColumnDescriptors(PlateSetExport.DESTINATION, destinationIncludedMetadataCols);
+                ColumnDescriptor[] xlCols = ArrayUtils.addAll(sourceXlCols, destinationXlCols);
+
+                List<Object[]> plateDataRows = PlateManager.get().getWorklist(form.getSourcePlateSetId(), form.getDestinationPlateSetId(), sourceIncludedMetadataCols, destinationIncludedMetadataCols, getContainer(), getUser());
+
+                ArrayExcelWriter xlWriter = new ArrayExcelWriter(plateDataRows, xlCols);
                 xlWriter.setFullFileName(plateSetSource.getName() + "To" + plateSetDestination.getName() + ".xls");
                 xlWriter.renderWorkbook(getViewContext().getResponse());
 
@@ -1337,18 +1338,17 @@ public class PlateController extends SpringActionController
         {
             try
             {
-                Set<FieldKey> includedMetadataCols = PlateManager.get().getMetadataColumns(form.getPlateSetId(), getContainer(), getUser());
-                ColumnDescriptor[] xlCols = PlateManager.get().getColumnDescriptors("", includedMetadataCols);
-                List<List<Object>> plateDataRows = PlateManager.get().getInstrumentInstructions(form.getPlateSetId(), includedMetadataCols, getContainer(), getUser());
-
-                ArrayExcelWriter xlWriter = new ArrayExcelWriter(plateDataRows, xlCols);
-
                 PlateSet plateSet = PlateManager.get().getPlateSet(getContainer(), form.getPlateSetId());
                 if (plateSet == null)
                     throw new NotFoundException("Unable to resolve Plate Set.");
                 if (plateSet.getType() != PlateSetType.assay)
                     throw new ValidationException("Instrument Instructions cannot be generated for non-Assay Plate Sets.");
 
+                Set<FieldKey> includedMetadataCols = WellTable.getMetadataColumns(form.getPlateSetId(), getContainer(), getUser());
+                ColumnDescriptor[] xlCols = PlateSetExport.getColumnDescriptors("", includedMetadataCols);
+                List<Object[]> plateDataRows = PlateManager.get().getInstrumentInstructions(form.getPlateSetId(), includedMetadataCols, getContainer(), getUser());
+
+                ArrayExcelWriter xlWriter = new ArrayExcelWriter(plateDataRows, xlCols);
                 xlWriter.setFullFileName(plateSet.getName() + ".xls");
                 xlWriter.renderWorkbook(getViewContext().getResponse());
 
