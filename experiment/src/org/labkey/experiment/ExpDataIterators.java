@@ -2181,7 +2181,7 @@ public class ExpDataIterators
             if (null == input)
                 return null;           // Can happen if context has errors
 
-            // skipTransactionAuditCache already set for import and merge in AbstractQueryImportAction.createDataIteratorContext
+            // useTransactionAuditCache already set for import and merge in AbstractQueryImportAction.createDataIteratorContext
             if (context.getInsertOption() == QueryUpdateService.InsertOption.INSERT)
                 context.setUseTransactionAuditCache(true);
 
