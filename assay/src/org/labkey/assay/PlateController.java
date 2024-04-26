@@ -560,10 +560,16 @@ public class PlateController extends SpringActionController
     {
         private String _assayType = TsvPlateLayoutHandler.TYPE;
         private final List<Map<String, Object>> _data = new ArrayList<>();
+        private String _description;
         private String _name;
         private Integer _plateType;
         private Integer _plateSetId;
         private boolean _template;
+
+        public String getDescription()
+        {
+            return _description;
+        }
 
         public String getName()
         {
@@ -610,6 +616,9 @@ public class PlateController extends SpringActionController
             if (json.has("assayType"))
                 _assayType = json.getString("assayType");
 
+            if (json.has("description"))
+                _description = json.getString("description");
+
             if (json.has("template"))
                 _template = json.getBoolean("template");
 
@@ -653,17 +662,13 @@ public class PlateController extends SpringActionController
         {
             try
             {
-                Plate plate = PlateManager.get().createAndSavePlate(
-                    getContainer(),
-                    getUser(),
-                    _plateType,
-                    form.getName(),
-                    form.isTemplate(),
-                    form.getPlateSetId(),
-                    form.getAssayType(),
-                    form.getData()
-                );
-                return success(plate);
+                PlateImpl plate = new PlateImpl(getContainer(), form.getName(), form.getAssayType(), _plateType);
+                if (form.isTemplate() != null)
+                    plate.setTemplate(form.isTemplate());
+                plate.setDescription(form.getDescription());
+
+                Plate newPlate = PlateManager.get().createAndSavePlate(getContainer(), getUser(), plate, form.getPlateSetId(), form.getData());
+                return success(newPlate);
             }
             catch (Exception e)
             {

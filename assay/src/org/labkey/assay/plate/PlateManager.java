@@ -252,20 +252,16 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     public @NotNull Plate createAndSavePlate(
         @NotNull Container container,
         @NotNull User user,
-        @NotNull PlateType plateType,
-        @Nullable String plateName,
-        boolean template,
+        @NotNull Plate plate,
         @Nullable Integer plateSetId,
-        @Nullable String assayType,
         @Nullable List<Map<String, Object>> data
     ) throws Exception
     {
-        Plate plate = null;
+        if (!plate.isNew())
+            throw new ValidationException(String.format("Failed to create plate. The provided plate already exists with rowId (%d).", plate.getRowId()));
+
         try (DbScope.Transaction tx = ensureTransaction())
         {
-            plate = new PlateImpl(container, StringUtils.trimToNull(plateName), assayType, plateType);
-            ((PlateImpl) plate).setTemplate(template);
-
             if (plateSetId != null)
             {
                 PlateSet plateSet = getPlateSet(container, plateSetId);
@@ -2080,8 +2076,11 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                     if (plateType == null)
                         throw new ValidationException("Failed to create plate set. Plate Type (" + plate.plateType + ") is invalid.");
 
+                    var plateImpl = new PlateImpl(container, plate.name, TsvPlateLayoutHandler.TYPE, plateType);
+                    plateImpl.setTemplate(plateSet.isTemplate());
+
                     // TODO: Write a cheaper plate create/save for multiple plates
-                    createAndSavePlate(container, user, plateType, plate.name, plateSet.isTemplate(), plateSetId, TsvPlateLayoutHandler.TYPE, plate.data);
+                    createAndSavePlate(container, user, plateImpl, plateSetId, plate.data);
                 }
             }
 
@@ -2533,7 +2532,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
                 Map<String, Object> wellData = Map.of(
                         "sampleId", sampleIdsSorted[sampleIdsCounter],
-                        "wellLocation", PlateManager.get().createPosition(c, rowIdx, colIdx).getDescription()
+                        "wellLocation", createPosition(c, rowIdx, colIdx).getDescription()
                 );
                 wellSampleDataForPlate.add(wellData);
                 sampleIdsCounter++;
@@ -2567,7 +2566,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             }
             else
             {
-                plateType = PlateManager.get().getPlateType(plateTypeId);
+                plateType = getPlateType(plateTypeId);
                 if (plateType == null)
                     throw new IllegalArgumentException(String.format("The plate type id (%d) is invalid.", plateTypeId));
                 plateTypesHash.put(plateTypeId, plateType);
@@ -2590,7 +2589,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     {
         List<PlateManager.CreatePlateSetPlate> plates = new ArrayList<>();
 
-        PlateSet parentPlateSet = PlateManager.get().getPlateSet(c, plateSetId);
+        PlateSet parentPlateSet = getPlateSet(c, plateSetId);
         if (parentPlateSet == null)
             throw new IllegalArgumentException(String.format("Failed to get plate set. Plate set with rowId (%d) is not available.", plateSetId));
 
@@ -2607,7 +2606,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             for (Map<String, Object> row : ts.getMapArray())
             {
                 Map<String, Object> dataEntry = new HashMap<>();
-                dataEntry.put("wellLocation", PlateManager.get().createPosition(c, (Integer) row.get("row"),(Integer) row.get("col")).getDescription());
+                dataEntry.put("wellLocation", createPosition(c, (Integer) row.get("row"),(Integer) row.get("col")).getDescription());
                 dataEntry.put("sampleId", row.get("sampleid"));
                 data.add(dataEntry);
             }
@@ -2811,7 +2810,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             assertNotNull("96 well plate type was not found", plateType);
 
             // Act
-            Plate plate = PlateManager.get().createAndSavePlate(container, user, plateType, "testCreateAndSavePlate plate", false, null, null, null);
+            PlateImpl plateImpl = new PlateImpl(container, "testCreateAndSavePlate plate", null, plateType);
+            Plate plate = PlateManager.get().createAndSavePlate(container, user, plateImpl, null, null);
 
             // Assert
             assertTrue("Expected plate to have been persisted and provided with a rowId", plate.getRowId() > 0);
@@ -3035,7 +3035,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                             "properties/barcode", "B5678"
                     )
             );
-            Plate plate = PlateManager.get().createAndSavePlate(container, user, plateType, "hit selection plate", false, null, null, rows);
+
+            PlateImpl plateImpl = new PlateImpl(container, "hit selection plate", null, plateType);
+            Plate plate = PlateManager.get().createAndSavePlate(container, user, plateImpl, null, rows);
             assertEquals("Expected 2 plate custom fields", 2, plate.getCustomFields().size());
 
             TableInfo wellTable = QueryService.get().getUserSchema(user, container, PlateSchema.SCHEMA_NAME).getTable(WellTable.NAME);

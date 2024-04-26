@@ -19,6 +19,7 @@ package org.labkey.assay.plate;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Test;
@@ -34,12 +35,16 @@ import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Transient;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryRowReference;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.assay.PlateController;
 import org.labkey.assay.plate.model.PlateBean;
+import org.labkey.assay.plate.query.PlateSchema;
+import org.labkey.assay.plate.query.PlateTable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -90,11 +95,14 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     public PlateImpl(Container container, String name, String assayType, @NotNull PlateType plateType)
     {
         super(container);
-        _name = name;
+        _name = StringUtils.trimToNull(name);
         _assayType = assayType;
         _container = container;
         _dataFileId = GUID.makeGUID();
+        _plateNumber = 1;
         _plateType = plateType;
+        _runId = PlateService.NO_RUNID;
+        _wells = null;
     }
 
     public PlateImpl(PlateImpl plate, double[][] wellValues, boolean[][] excluded, int runId, int plateNumber)
@@ -175,7 +183,9 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     @Override
     public @Nullable QueryRowReference getQueryRowReference()
     {
-        return null;
+        if (isNew())
+            return null;
+        return new QueryRowReference(getContainer(), SchemaKey.fromParts(PlateSchema.SCHEMA_NAME), PlateTable.NAME, FieldKey.fromParts("rowId"), getRowId());
     }
 
     @JsonIgnore
@@ -705,6 +715,12 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     public boolean isIdentifierMatch(String id)
     {
         return id != null && !id.isEmpty() && (id.equals(getRowId() + "") || id.equalsIgnoreCase(getPlateId()) || id.equalsIgnoreCase(getName()));
+    }
+
+    @Override
+    public boolean isNew()
+    {
+        return _rowId == null || _rowId <= 0;
     }
 
     public static final class TestCase

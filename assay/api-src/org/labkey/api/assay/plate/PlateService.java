@@ -80,7 +80,8 @@ public interface PlateService
     @Nullable Plate createPlate(Plate plate, double[][] wellValues, boolean[][] excludedWells);
 
     /**
-     * Creates a new plate
+     * Instantiates a new plate instance.
+     * This plate is not persisted to the database.
      * @param container The template's container.
      * @param templateType The type of plate, if associated with a particular assay.
      * @param plateType Specifies the overall shape of the plate
@@ -90,7 +91,8 @@ public interface PlateService
     @NotNull Plate createPlate(Container container, String templateType, @NotNull PlateType plateType);
 
     /**
-     * Creates a new plate template.
+     * Instantiates a new plate template instance.
+     * This plate template is not persisted to the database.
      * @param container The template's container.
      * @param templateType The type of plate template, if associated with a particular assay.
      * @param plateType Specifies the overall shape of the plate
