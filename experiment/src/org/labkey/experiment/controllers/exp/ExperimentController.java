@@ -3482,17 +3482,24 @@ public class ExperimentController extends SpringActionController
 
             Map<String, Collection<Map<String, Object>>> response = ExperimentServiceImpl.partitionRequestedOperationObjects(requestIds, notAllowedIds, allData);
 
-            TableInfo tableInfo = ExperimentService.get().getTinfoData();
+            Collection<Container> containers = new HashSet<>();
+            Collection<Integer> notPermittedIds = new ArrayList<>();
             Class<? extends Permission> permClass = form.getDataOperation().getPermissionClass();
-            Collection<Container> containers = service.getUniqueContainers(requestIds, tableInfo);
-            response.put("containers", containers == null ? Collections.emptyList(): containers.stream().map(c -> Map.of(
+            for (ExpDataImpl expData : allData)
+            {
+                Container c = expData.getContainer();
+                containers.add(c);
+                if (permClass != null && !c.hasPermission(getUser(), permClass))
+                    notPermittedIds.add(expData.getRowId());
+            }
+
+            response.put("containers", containers.stream().map(c -> Map.of(
                     "id", c.getEntityId(),
                     "path", (Object) c.getPath(),
                     "permitted", permClass == null || c.hasPermission(getUser(), permClass)
             )).toList());
 
-            Collection<Integer> notPermittedIds = service.getIdsNotPermitted(getUser(), containers, requestIds, tableInfo, permClass);
-            response.put("notPermitted", notPermittedIds == null ? Collections.emptyList(): notPermittedIds.stream().map(id -> Map.of("RowId", (Object) id)).toList());
+            response.put("notPermitted", notPermittedIds.stream().map(id -> Map.of("RowId", (Object) id)).toList());
 
             return success(response);
         }
@@ -3546,17 +3553,24 @@ public class ExperimentController extends SpringActionController
 
             Map<String, Collection<Map<String, Object>>> response = ExperimentServiceImpl.partitionRequestedOperationObjects(requestIds, notAllowedIds, allMaterials);
 
-            TableInfo tableInfo = ExperimentService.get().getTinfoMaterial();
+            Collection<Container> containers = new HashSet<>();
+            Collection<Integer> notPermittedIds = new ArrayList<>();
             Class<? extends Permission> permClass = form.getSampleOperation().getPermissionClass();
-            Collection<Container> containers = service.getUniqueContainers(requestIds, tableInfo);
-            response.put("containers", containers == null ? Collections.emptyList(): containers.stream().map(c -> Map.of(
+            for (ExpMaterial material : allMaterials)
+            {
+                Container c = material.getContainer();
+                containers.add(c);
+                if (permClass != null && !c.hasPermission(getUser(), permClass))
+                    notPermittedIds.add(material.getRowId());
+            }
+
+            response.put("containers", containers.stream().map(c -> Map.of(
                     "id", c.getEntityId(),
                     "path", (Object) c.getPath(),
                     "permitted", permClass == null || c.hasPermission(getUser(), permClass)
             )).toList());
 
-            Collection<Integer> notPermittedIds = service.getIdsNotPermitted(getUser(), containers, requestIds, tableInfo, permClass);
-            response.put("notPermitted", notPermittedIds == null ? Collections.emptyList() : notPermittedIds.stream().map(id -> Map.of("RowId", (Object) id)).toList());
+            response.put("notPermitted", notPermittedIds.stream().map(id -> Map.of("RowId", (Object) id)).toList());
 
             if (form.getSampleOperation() == SampleTypeService.SampleOperations.Delete)
                 // String 'associatedDatasets' must be synced to its handling in confirmDelete.js, confirmDelete()

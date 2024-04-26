@@ -72,7 +72,6 @@ import org.labkey.api.query.QueryViewProvider;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.HttpView;
@@ -561,26 +560,6 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     @NotNull
     SQLFragment generateExperimentTreeSQL(SQLFragment lsidsFrag, ExpLineageOptions options);
-
-    /**
-     * Given a set or rowIds and a base schemaName, returns the subset of rowIds for which the given user has
-     * the given permission for the row's container
-     * @param user user in question
-     * @param rowIds set of rowIds to check
-     * @param tableInfo table info for the rows being checked
-     * @param permissionClass the permission to check
-     * @return null if there is no
-     */
-    @Nullable
-    Collection<Integer> getIdsNotPermitted(@NotNull User user, Collection<Container> containers, Collection<Integer> rowIds, TableInfo tableInfo, @Nullable Class<? extends Permission> permissionClass);
-
-    /**
-     * Given a set or rowIds and a base schemaName, returns the set of containers for which the rows exist
-     * @param rowIds set of rowIds to check
-     * @param tableInfo table info for the rows being checked
-     * @return Collection of containers
-     */
-    Collection<Container> getUniqueContainers(Collection<Integer> rowIds, TableInfo tableInfo);
 
     /**
      * The following methods return TableInfo's suitable for using in queries.

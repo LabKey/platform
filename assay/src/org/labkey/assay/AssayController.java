@@ -1683,27 +1683,35 @@ public class AssayController extends SpringActionController
         @Override
         public Object execute(AssayOperationConfirmationForm form, BindException errors) throws Exception
         {
+            ExperimentService service = ExperimentService.get();
+
             Collection<Integer> allowedIds = form.getIds(false);
+            List<? extends ExpRun> allRuns = service.getExpRuns(allowedIds);
 
             Set<Integer> notAllowedIds = new HashSet<>();
-            ExperimentService service = ExperimentService.get();
             Map<String, Object> response = new HashMap<>();
 
-            TableInfo tableInfo = ExperimentService.get().getTinfoExperimentRun();
+            Collection<Container> containers = new HashSet<>();
+            Collection<Integer> notPermittedIds = new ArrayList<>();
             Class<? extends Permission> permClass = form.getDataOperation().getPermissionClass();
-            Collection<Container> containers = service.getUniqueContainers(allowedIds, tableInfo);
-            response.put("containers", containers == null ? Collections.emptyList(): containers.stream().map(c -> Map.of(
+            for (ExpRun expRun : allRuns)
+            {
+                Container c = expRun.getContainer();
+                containers.add(c);
+                if (permClass != null && !c.hasPermission(getUser(), permClass))
+                    notPermittedIds.add(expRun.getRowId());
+            }
+
+            response.put("containers", containers.stream().map(c -> Map.of(
                     "id", c.getEntityId(),
                     "path", (Object) c.getPath(),
                     "permitted", permClass == null || c.hasPermission(getUser(), permClass)
             )).toList());
 
-            Collection<Integer> notPermittedIds = service.getIdsNotPermitted(getUser(), containers, allowedIds, tableInfo, permClass);
-            List<Map<String, Object>> notPermitted = notPermittedIds == null ? Collections.emptyList() : notPermittedIds.stream().map(id -> Map.of("RowId", (Object) id)).toList();
+            response.put("notPermitted", notPermittedIds.stream().map(id -> Map.of("RowId", (Object) id)).toList());
+
             if (form.getDataOperation() == AssayRunOperations.Delete)
             {
-                List<? extends ExpRun> allRuns = service.getExpRuns(allowedIds);
-
                 service.getObjectReferencers().forEach(referencer ->
                         notAllowedIds.addAll(referencer.getItemsWithReferences(allowedIds, "assay")));
                 allowedIds.removeAll(notAllowedIds);
@@ -1721,13 +1729,11 @@ public class AssayController extends SpringActionController
 
                 response.put("allowed", allowedRows);
                 response.put("notAllowed", notAllowedRows);
-                response.put("notPermitted", notPermitted);
                 return success(response);
             }
 
             response.put("allowed", allowedIds.stream().map(id -> Map.of("RowId", id)).toList());
             response.put("notAllowed", notAllowedIds);
-            response.put("notPermitted", notPermitted);
             return success(response);
         }
     }
