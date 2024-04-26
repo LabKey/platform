@@ -75,11 +75,14 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentListener;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
@@ -2604,7 +2607,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             Set<FieldKey> destinationIncludedMetadataCols,
             Container c,
             User u
-    ) throws RuntimeSQLException, ValidationException
+    ) throws RuntimeSQLException
     {
         TableInfo wellTable = getWellTable(c, u);
         return new PlateSetExport().getWorklist(wellTable, sourcePlateSetId, destinationPlateSetId, sourceIncludedMetadataCols, destinationIncludedMetadataCols);
@@ -2620,6 +2623,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     {
         private static Container container;
         private static User user;
+        private static ExpSampleType sampleType;
 
         @BeforeClass
         public static void setupTest() throws Exception
@@ -2639,12 +2643,19 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                     new GWTPropertyDescriptor("negativeControl", "http://www.w3.org/2001/XMLSchema#double"));
 
             PlateManager.get().createPlateMetadataFields(container, user, customFields);
+
+            // create sample type
+            List<GWTPropertyDescriptor> props = new ArrayList<>();
+            props.add(new GWTPropertyDescriptor("col1", "string"));
+            props.add(new GWTPropertyDescriptor("col2", "string"));
+            sampleType = SampleTypeService.get().createSampleType(container, user, "SampleType1", null, props, emptyList(), 0, -1, -1, -1, null, null);
         }
 
         @After
         public void cleanupTest() throws Exception
         {
             PlateManager.get().deleteAllPlateData(container);
+            SampleTypeService.get().deleteSampleType(sampleType.getRowId(), container, user, null);
         }
 
         @Test
@@ -3074,6 +3085,117 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             {
                 assertEquals("Expected validation exception", "No samples are in the current selection.", e.getMessage());
             }
+        }
+
+        @Test
+        public void getInstrumentInstructions() throws Exception
+        {
+            // Arrange
+            final ExpMaterial sample1 = ExperimentService.get().createExpMaterial(container, sampleType.generateNextDBSeqLSID().toString(), "sampleOne");
+            sample1.setCpasType(sampleType.getLSID());
+            sample1.save(user);
+            final ExpMaterial sample2 = ExperimentService.get().createExpMaterial(container, sampleType.generateNextDBSeqLSID().toString(), "sampleTwo");
+            sample2.setCpasType(sampleType.getLSID());
+            sample2.save(user);
+
+            PlateType plateType = PlateManager.get().getPlateType(8, 12);
+            assertNotNull("96 well plate type was not found", plateType);
+
+            PlateSetImpl plateSetImpl = new PlateSetImpl();
+            PlateSet plateSet = PlateManager.get().createPlateSet(container, user, plateSetImpl, null, null);
+
+            List<Map<String, Object>> rows = List.of(
+                    CaseInsensitiveHashMap.of(
+                            "wellLocation", "A1",
+                            "sampleId", sample1.getRowId(),
+                            "properties/concentration", 2.25,
+                            "properties/barcode", "B1234")
+                    ,
+                    CaseInsensitiveHashMap.of(
+                            "wellLocation", "A2",
+                            "sampleId", sample2.getRowId(),
+                            "properties/concentration", 1.25,
+                            "properties/barcode", "B5678"
+                    )
+            );
+            PlateManager.get().createAndSavePlate(container, user, plateType, "myPlate", plateSet.getRowId(), null, rows);
+
+            // Act
+            Set<FieldKey> includedMetadataCols = WellTable.getMetadataColumns(plateSet.getRowId(), container, user);
+            List<Object[]> result = PlateManager.get().getInstrumentInstructions(plateSet.getRowId(), includedMetadataCols, container, user);
+
+            // Assert
+            Object[] row1 = result.get(0);
+            String[] valuesRow1 = new String[]{"myPlate", "A1", "96-well", "sampleOne", "B1234", "2.25"};
+            for (int i = 0; i < row1.length; i++)
+                assertEquals(row1[i].toString(), valuesRow1[i]);
+
+            Object[] row2 = result.get(1);
+            String[] valuesRow2 = new String[]{"myPlate", "A2", "96-well", "sampleTwo", "B5678", "1.25"};
+            for (int i = 0; i < row1.length; i++)
+                assertEquals(row2[i].toString(), valuesRow2[i]);
+        }
+
+        @Test
+        public void getWorklist() throws Exception
+        {
+            // Arrange
+            final ExpMaterial sample1 = ExperimentService.get().createExpMaterial(container, sampleType.generateNextDBSeqLSID().toString(), "sampleA");
+            sample1.setCpasType(sampleType.getLSID());
+            sample1.save(user);
+            final ExpMaterial sample2 = ExperimentService.get().createExpMaterial(container, sampleType.generateNextDBSeqLSID().toString(), "sampleB");
+            sample2.setCpasType(sampleType.getLSID());
+            sample2.save(user);
+
+            PlateType plateType = PlateManager.get().getPlateType(8, 12);
+            assertNotNull("96 well plate type was not found", plateType);
+
+            PlateSetImpl plateSetImpl = new PlateSetImpl();
+            PlateSet plateSetSource = PlateManager.get().createPlateSet(container, user, plateSetImpl, null, null);
+            PlateSet plateSetDestination = PlateManager.get().createPlateSet(container, user, plateSetImpl, null, null);
+
+            List<Map<String, Object>> rows1 = List.of(
+                    CaseInsensitiveHashMap.of(
+                            "wellLocation", "A1",
+                            "sampleId", sample1.getRowId(),
+                            "properties/concentration", 2.25,
+                            "properties/barcode", "B1234")
+                    ,
+                    CaseInsensitiveHashMap.of(
+                            "wellLocation", "A2",
+                            "sampleId", sample2.getRowId(),
+                            "properties/concentration", 1.25,
+                            "properties/barcode", "B5678"
+                    )
+            );
+            PlateManager.get().createAndSavePlate(container, user, plateType, "myPlate1", plateSetSource.getRowId(), null, rows1);
+
+            List<Map<String, Object>> rows2 = List.of(
+                    CaseInsensitiveHashMap.of(
+                            "wellLocation", "A1",
+                            "sampleId", sample2.getRowId())
+                    ,
+                    CaseInsensitiveHashMap.of(
+                            "wellLocation", "A2",
+                            "sampleId", sample1.getRowId())
+            );
+            PlateManager.get().createAndSavePlate(container, user, plateType, "myPlate2", plateSetDestination.getRowId(), null, rows2);
+
+            // Act
+            Set<FieldKey> sourceIncludedMetadataCols = WellTable.getMetadataColumns(plateSetSource.getRowId(), container, user);
+            Set<FieldKey> destinationIncludedMetadataCols = WellTable.getMetadataColumns(plateSetDestination.getRowId(), container, user);
+            List<Object[]> plateDataRows = PlateManager.get().getWorklist(plateSetSource.getRowId(), plateSetDestination.getRowId(), sourceIncludedMetadataCols, destinationIncludedMetadataCols, container, user);
+
+            // Assert
+            Object[] row1 = plateDataRows.get(0);
+            String[] valuesRow1 = new String[]{"myPlate1", "A1", "96-well", "sampleA", "B1234", "2.25", "myPlate2", "A2", "96-well"};
+            for (int i = 0; i < row1.length; i++)
+                assertEquals(row1[i].toString(), valuesRow1[i]);
+
+            Object[] row2 = plateDataRows.get(1);
+            String[] valuesRow2 = new String[]{"myPlate1", "A2", "96-well", "sampleB", "B5678", "1.25", "myPlate2", "A1", "96-well"};
+            for (int i = 0; i < row1.length; i++)
+                assertEquals(row2[i].toString(), valuesRow2[i]);
         }
     }
 }

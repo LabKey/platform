@@ -107,7 +107,7 @@ public class PlateSetExport
             int destinationPlateSetId,
             Set<FieldKey> sourceIncludedMetadataCols,
             Set<FieldKey> destinationIncludedMetadataCols
-    ) throws ValidationException
+    )
     {
         List<Object[]> plateDataRows = new ArrayList<>();
         Map<String, List<Object[]>> sampleIdToDestinationRow = new LinkedHashMap<>();
