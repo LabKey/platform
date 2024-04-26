@@ -155,6 +155,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.labkey.api.assay.plate.PlateSet.MAX_PLATES;
+import static org.labkey.api.util.JunitUtil.deleteTestContainer;
 
 public class PlateManager implements PlateService, AssayListener, ExperimentListener
 {
@@ -2652,10 +2653,11 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         }
 
         @After
-        public void cleanupTest() throws Exception
+        public void cleanupTest()
         {
-            PlateManager.get().deleteAllPlateData(container);
-            SampleTypeService.get().deleteSampleType(sampleType.getRowId(), container, user, null);
+            deleteTestContainer();
+            container = null;
+            user = null;
         }
 
         @Test
@@ -3091,10 +3093,10 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         public void getInstrumentInstructions() throws Exception
         {
             // Arrange
-            final ExpMaterial sample1 = ExperimentService.get().createExpMaterial(container, sampleType.generateNextDBSeqLSID().toString(), "sampleOne");
+            final ExpMaterial sample1 = ExperimentService.get().createExpMaterial(container, sampleType.generateSampleLSID().setObjectId("sampleOne").toString(), "sampleOne");
             sample1.setCpasType(sampleType.getLSID());
             sample1.save(user);
-            final ExpMaterial sample2 = ExperimentService.get().createExpMaterial(container, sampleType.generateNextDBSeqLSID().toString(), "sampleTwo");
+            final ExpMaterial sample2 = ExperimentService.get().createExpMaterial(container, sampleType.generateSampleLSID().setObjectId("sampleTwo").toString(), "sampleTwo");
             sample2.setCpasType(sampleType.getLSID());
             sample2.save(user);
 
@@ -3140,10 +3142,10 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         public void getWorklist() throws Exception
         {
             // Arrange
-            final ExpMaterial sample1 = ExperimentService.get().createExpMaterial(container, sampleType.generateNextDBSeqLSID().toString(), "sampleA");
+            final ExpMaterial sample1 = ExperimentService.get().createExpMaterial(container, sampleType.generateSampleLSID().setObjectId("sampleA").toString(), "sampleA");
             sample1.setCpasType(sampleType.getLSID());
             sample1.save(user);
-            final ExpMaterial sample2 = ExperimentService.get().createExpMaterial(container, sampleType.generateNextDBSeqLSID().toString(), "sampleB");
+            final ExpMaterial sample2 = ExperimentService.get().createExpMaterial(container,  sampleType.generateSampleLSID().setObjectId("sampleB").toString(), "sampleB");
             sample2.setCpasType(sampleType.getLSID());
             sample2.save(user);
 
