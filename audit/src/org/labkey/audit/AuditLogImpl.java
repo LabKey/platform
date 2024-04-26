@@ -74,10 +74,10 @@ public class AuditLogImpl implements AuditLogService, StartupListener
     private static final Object STARTUP_LOCK = new Object();
 
     // Cache the audit events associated with transaction ids. We currently use these for interacting with objects
-    // that were created immediately after they were created, so the cache size does not need to be very large.
+    // that were created immediately after they were created, so the cache size does not need to be very large and the defaultTimeToLive can be small.
     // Use a pair as the cache object to avoid warnings about mutable cache objects (Issue 48779).
     // Since this is all about capturing data from the same transaction, there shouldn't be other threads in the mix.
-    private static final Cache<Long, Pair<Long, List<AuditTypeEvent>>> TRANSACTION_EVENT_CACHE = CacheManager.getBlockingCache(50, CacheManager.DAY,
+    private static final Cache<Long, Pair<Long, List<AuditTypeEvent>>> TRANSACTION_EVENT_CACHE = CacheManager.getBlockingCache(50, CacheManager.HOUR,
             "Transaction Audit Event Cache",
             (key, argument) -> Pair.of(key, new ArrayList<>())
     );
@@ -122,16 +122,22 @@ public class AuditLogImpl implements AuditLogService, StartupListener
     @Override
     public <K extends AuditTypeEvent> K addEvent(User user, K event)
     {
-        return _addEvents(user, List.of(event),true);
+        return _addEvents(user, List.of(event),true, false);
     }
 
     @Override
     public <K extends AuditTypeEvent> void addEvents(@Nullable User user, List<K> events)
     {
-        _addEvents(user, events, false);
+        _addEvents(user, events, false, false);
     }
 
-    private <K extends AuditTypeEvent> K _addEvents(@Nullable User user, List<K> events, boolean reselectEvent)
+    @Override
+    public <K extends AuditTypeEvent> void addEvents(@Nullable User user, List<K> events, boolean useTransactionAuditCache)
+    {
+        _addEvents(user, events, false, useTransactionAuditCache);
+    }
+
+    private <K extends AuditTypeEvent> K _addEvents(@Nullable User user, List<K> events, boolean reselectEvent, boolean useTransactionAuditCache)
     {
         assert !reselectEvent || events.size() == 1;
 
@@ -152,7 +158,7 @@ public class AuditLogImpl implements AuditLogService, StartupListener
                     _log.warn("user was not specified for event type " + event.getEventType() + " in container " + ContainerManager.getForId(event.getContainer()).getPath() + "; defaulting to guest user.");
                 user = UserManager.getGuestUser();
             }
-            if (event.getTransactionId() != null)
+            if (event.getTransactionId() != null && useTransactionAuditCache)
             {
                 List<AuditTypeEvent> transactionEvents = TRANSACTION_EVENT_CACHE.get(event.getTransactionId()).second;
                 transactionEvents.add(event);

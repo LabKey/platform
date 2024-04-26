@@ -154,7 +154,7 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
         }
 
         @Override
-        public void addAuditEvent(User user, Container c, TableInfo table, @Nullable AuditBehaviorType auditType, @Nullable String userComment, QueryService.AuditAction action, List<Map<String, Object>> rows, @Nullable List<Map<String, Object>> updatedRows)
+        public void addAuditEvent(User user, Container c, TableInfo table, @Nullable AuditBehaviorType auditType, @Nullable String userComment, QueryService.AuditAction action, List<Map<String, Object>> rows, @Nullable List<Map<String, Object>> updatedRows, boolean useTransactionAuditCache)
         {
         }
     }
