@@ -2180,6 +2180,10 @@ public class ExpDataIterators
             if (null == input)
                 return null;           // Can happen if context has errors
 
+            // useTransactionAuditCache already set for import and merge in AbstractQueryImportAction.createDataIteratorContext
+            if (context.getInsertOption() == QueryUpdateService.InsertOption.INSERT)
+                context.setUseTransactionAuditCache(true);
+
             // add FileLink DataIterator if any input columns are of type FILE_LINK
             if (null != _fileLinkDirectory)
             {
