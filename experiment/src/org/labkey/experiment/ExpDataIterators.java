@@ -1747,38 +1747,37 @@ public class ExpDataIterators
             String entityColName = pair.first;
             String entityName = pair.second;
             boolean isEmptyEntity = StringUtils.isEmpty(entityName);
+            Pair<String, String> aliasPair = ExperimentService.parseInputOutputAlias(entityColName);
+            String aliasPrefix = aliasPair != null ? aliasPair.first : null;
+            String aliasSuffix = aliasPair != null ? aliasPair.second : null;
 
-            String[] parts = entityColName.split("[./]");
-            if (parts.length == 1)
+            if ("parent".equalsIgnoreCase(entityColName))
             {
-                if ("parent".equalsIgnoreCase(parts[0]))
+                if (!isEmptyEntity)
                 {
-                    if (!isEmptyEntity)
+                    if (isAliquot)
                     {
-                        if (isAliquot)
-                        {
-                            String message = "Sample derivation parent input is not allowed for aliquots.";
-                            throw new ValidationException(message);
-                        }
+                        String message = "Sample derivation parent input is not allowed for aliquots.";
+                        throw new ValidationException(message);
+                    }
 
-                        if (skipExistingAliquotParents)
-                            continue;
+                    if (skipExistingAliquotParents)
+                        continue;
 
-                        ExpMaterial sample = ExperimentService.get().findExpMaterial(c, user, null, null, entityName, cache, materialMap);
-                        if (sample != null)
-                            parentMaterials.put(sample, sampleRole(sample));
-                        else
-                        {
-                            String message = "Sample input '" + entityName + "' not found";
-                            throw new ValidationException(message);
-                        }
+                    ExpMaterial sample = ExperimentService.get().findExpMaterial(c, user, null, null, entityName, cache, materialMap);
+                    if (sample != null)
+                        parentMaterials.put(sample, sampleRole(sample));
+                    else
+                    {
+                        String message = "Sample input '" + entityName + "' not found";
+                        throw new ValidationException(message);
                     }
                 }
             }
-            else if (parts.length == 2)
+            else if (aliasPrefix != null && aliasSuffix != null)
             {
-                String namePart = QueryKey.decodePart(parts[1]);
-                if (MATERIAL_INPUT_PARENT.equalsIgnoreCase(parts[0]))
+                String namePart = QueryKey.decodePart(aliasSuffix);
+                if (MATERIAL_INPUT_PARENT.equalsIgnoreCase(aliasPrefix))
                 {
                     if (isEmptyEntity)
                     {
@@ -1811,7 +1810,7 @@ public class ExpDataIterators
 
                     }
                 }
-                else if (ExpMaterial.MATERIAL_OUTPUT_CHILD.equalsIgnoreCase(parts[0]))
+                else if (ExpMaterial.MATERIAL_OUTPUT_CHILD.equalsIgnoreCase(aliasPrefix))
                 {
                     ExpSampleType sampleType = sampleTypes.computeIfAbsent(namePart, (name) -> SampleTypeService.get().getSampleType(c, user, name));
                     if (sampleType == null)
@@ -1834,7 +1833,7 @@ public class ExpDataIterators
                             throw new ValidationException("Sample output '" + entityName + "' not found in Sample Type '" + namePart + "'.");
                     }
                 }
-                else if (DATA_INPUT_PARENT.equalsIgnoreCase(parts[0]))
+                else if (DATA_INPUT_PARENT.equalsIgnoreCase(aliasPrefix))
                 {
                     if (isEmptyEntity)
                     {
@@ -1869,7 +1868,7 @@ public class ExpDataIterators
                         }
                     }
                 }
-                else if (ExpData.DATA_OUTPUT_CHILD.equalsIgnoreCase(parts[0]))
+                else if (ExpData.DATA_OUTPUT_CHILD.equalsIgnoreCase(aliasPrefix))
                 {
                     ExpDataClass dataClass = dataClasses.computeIfAbsent(namePart, (name) -> ExperimentService.get().getDataClass(c, user, name));
                     if (dataClass == null)

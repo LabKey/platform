@@ -848,6 +848,7 @@ public class ExperimentModule extends SpringModule
             ExpDataTableImpl.TestCase.class,
             ExperimentServiceImpl.TestCase.class,
             ExperimentServiceImpl.LineageQueryTestCase.class,
+            ExperimentServiceImpl.ParseInputOutputAliasTestCase.class,
             ExperimentStressTest.class,
             LineagePerfTest.class,
             LineageTest.class,

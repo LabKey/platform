@@ -460,6 +460,21 @@ public interface ExperimentService extends ExperimentRunTypeSource
                ExpData.DATA_OUTPUT_CHILD.equalsIgnoreCase(prefix) ||
                ExpMaterial.MATERIAL_OUTPUT_CHILD.equalsIgnoreCase(prefix);
     }
+
+    static Pair<String, String> parseInputOutputAlias(String columnName)
+    {
+        if (!isInputOutputColumn(columnName))
+            return null;
+
+        String[] parts = columnName.split("[./]");
+        if (parts.length < 2)
+            return null;
+
+        // Issue 50245: use substring to get second part of the alias instead of relying on parts[]
+        String prefix = parts[0];
+        String suffix = columnName.substring(prefix.length() + 1); // +1 for the separator
+        return Pair.of(prefix, suffix);
+    }
     
     static boolean parentAliasHasCorrectFormat(String parentAlias)
     {

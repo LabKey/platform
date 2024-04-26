@@ -10081,6 +10081,53 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
     }
 
+    public static class ParseInputOutputAliasTestCase extends Assert
+    {
+        @Test
+        public void nullCases()
+        {
+            assertNull(ExperimentService.parseInputOutputAlias(""));
+            assertNull(ExperimentService.parseInputOutputAlias(" "));
+            assertNull(ExperimentService.parseInputOutputAlias("bogus"));
+            assertNull(ExperimentService.parseInputOutputAlias(ExpData.DATA_INPUT_PARENT));
+            assertNull(ExperimentService.parseInputOutputAlias(ExpData.DATA_OUTPUT_CHILD));
+            assertNull(ExperimentService.parseInputOutputAlias(ExpMaterial.MATERIAL_INPUT_PARENT));
+            assertNull(ExperimentService.parseInputOutputAlias(ExpMaterial.MATERIAL_OUTPUT_CHILD));
+        }
+
+        @Test
+        public void nonNullCases()
+        {
+            nonNullCases(ExpData.DATA_INPUT_PARENT);
+            nonNullCases(ExpData.DATA_OUTPUT_CHILD);
+            nonNullCases(ExpMaterial.MATERIAL_INPUT_PARENT);
+            nonNullCases(ExpMaterial.MATERIAL_OUTPUT_CHILD);
+        }
+
+        private void nonNullCases(String prefix)
+        {
+            Pair<String, String> pair = ExperimentService.parseInputOutputAlias(prefix + "/foo");
+            assertEquals(prefix, pair.first);
+            assertEquals("foo", pair.second);
+
+            pair = ExperimentService.parseInputOutputAlias(prefix + "/foo.bar");
+            assertEquals(prefix, pair.first);
+            assertEquals("foo.bar", pair.second);
+
+            pair = ExperimentService.parseInputOutputAlias(prefix + "/foo$Pbar");
+            assertEquals(prefix, pair.first);
+            assertEquals("foo$Pbar", pair.second);
+
+            pair = ExperimentService.parseInputOutputAlias(prefix + "/foo/bar");
+            assertEquals(prefix, pair.first);
+            assertEquals("foo/bar", pair.second);
+
+            pair = ExperimentService.parseInputOutputAlias(prefix + "/foo$Sbar");
+            assertEquals(prefix, pair.first);
+            assertEquals("foo$Sbar", pair.second);
+        }
+    }
+
     private static class _ExpLineageOptions extends ExpLineageOptions
     {
         final String _tableName;
