@@ -137,7 +137,6 @@ public class PlateSetExport
         // 3. Iterate and concatenate all destination rows to origin row, and add result to final data rows list
         // This ensures that in the case a sample has been aliquoted and exists in multiple destination wells, but only
         // one source well, the Excel will still be formed as intended
-        Set<String> originSamples = new HashSet<>();
         try (Results rs = QueryService.get().select(wellTable, getWellColumns(wellTable, sourceIncludedMetadataCols), new SimpleFilter(FKMap.get(PLATE_SET_ID_COL), sourcePlateSetId), new Sort(ROW_ID_COL)))
         {
             while (rs.next())
@@ -146,10 +145,12 @@ public class PlateSetExport
                 if (sampleId == null)
                     continue;
 
-                originSamples.add(sampleId);
                 Object[] sourceDataRow = getDataRow(PlateSetExport.SOURCE, rs, sourceIncludedMetadataCols);
 
                 List<Object[]> destinationDataRows = sampleIdToDestinationRow.get(sampleId);
+                if (destinationDataRows == null)
+                    throw new ValidationException("There are samples plated in the origin Plate Set with no corresponding well in the destination Plate Set.");
+
                 for (Object[] dataRow : destinationDataRows)
                     plateDataRows.add(ArrayUtils.addAll(sourceDataRow, dataRow));
             }
@@ -158,10 +159,6 @@ public class PlateSetExport
         {
             throw UnexpectedException.wrap(e);
         }
-
-        Set<String> destinationSamples = sampleIdToDestinationRow.keySet();
-        if (!destinationSamples.containsAll(originSamples))
-            throw new ValidationException("There are samples plated in the origin Plate Set with no corresponding well in the destination Plate Set.");
 
         return plateDataRows;
     }
