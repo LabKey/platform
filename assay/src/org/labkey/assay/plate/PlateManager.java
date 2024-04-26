@@ -3178,6 +3178,10 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                     CaseInsensitiveHashMap.of(
                             "wellLocation", "A2",
                             "sampleId", sample1.getRowId())
+                    ,
+                    CaseInsensitiveHashMap.of(
+                            "wellLocation", "A3",
+                            "sampleId", sample2.getRowId())
             );
             PlateManager.get().createAndSavePlate(container, user, plateType, "myPlate2", plateSetDestination.getRowId(), null, rows2);
 
@@ -3194,8 +3198,13 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
             Object[] row2 = plateDataRows.get(1);
             String[] valuesRow2 = new String[]{"myPlate1", "A2", "96-well", "sampleB", "B5678", "1.25", "myPlate2", "A1", "96-well"};
-            for (int i = 0; i < row1.length; i++)
+            for (int i = 0; i < row2.length; i++)
                 assertEquals(row2[i].toString(), valuesRow2[i]);
+
+            Object[] row3 = plateDataRows.get(2);
+            String[] valuesRow3 = new String[]{"myPlate1", "A2", "96-well", "sampleB", "B5678", "1.25", "myPlate2", "A3", "96-well"};
+            for (int i = 0; i < row3.length; i++)
+                assertEquals(row3[i].toString(), valuesRow3[i]);
         }
     }
 }
