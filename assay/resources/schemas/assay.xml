@@ -101,6 +101,10 @@
       <column columnName="AssayType">
         <description>A text label of the plate assay type ("NAb", for example).</description>
       </column>
+      <column columnName="Archived">
+        <isHidden>true</isHidden>
+        <isUserEditable>false</isUserEditable>
+      </column>
     </columns>
   </table>
   <table tableName="Well" tableDbType="TABLE">

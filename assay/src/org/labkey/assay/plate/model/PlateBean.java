@@ -1,6 +1,5 @@
 package org.labkey.assay.plate.model;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import org.labkey.api.data.Entity;
 import org.labkey.assay.plate.PlateImpl;
 
@@ -9,6 +8,7 @@ import org.labkey.assay.plate.PlateImpl;
  */
 public class PlateBean extends Entity
 {
+    private Boolean _archived;
     private Integer _rowId;
     private String _lsid;
     private String _name;
@@ -25,6 +25,7 @@ public class PlateBean extends Entity
         PlateBean bean = new PlateBean();
 
         bean.setRowId(plate.getRowId());
+        bean.setArchived(plate.isArchived());
         bean.setLsid(plate.getLSID());
         bean.setName(plate.getName());
         bean.setTemplate(plate.isTemplate());
@@ -36,6 +37,16 @@ public class PlateBean extends Entity
         bean.setDescription(plate.getDescription());
 
         return bean;
+    }
+
+    public Boolean getArchived()
+    {
+        return _archived;
+    }
+
+    public void setArchived(Boolean archived)
+    {
+        _archived = archived;
     }
 
     public Integer getRowId()

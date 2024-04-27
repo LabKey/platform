@@ -38,6 +38,8 @@ public interface Plate extends PropertySet, Identifiable
 
     int getPlateNumber();
 
+    boolean isArchived();
+
     boolean isTemplate();
 
     @NotNull PlateType getPlateType();

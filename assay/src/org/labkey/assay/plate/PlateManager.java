@@ -1487,9 +1487,42 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         PlateCache.uncache(c, plate);
     }
 
-    public void clearCache(Container c)
+    private void clearCache(Container c)
     {
         PlateCache.uncache(c);
+    }
+
+    /**
+     * Clear the plate cache for an arbitrary collection of plates where only the rowIds are known.
+     */
+    private void clearCache(Collection<Integer> plateRowIds)
+    {
+        var table = AssayDbSchema.getInstance().getTableInfoPlate();
+        SQLFragment sql = new SQLFragment("SELECT rowId, container FROM ").append(table, "")
+                .append("WHERE rowId ").appendInClause(plateRowIds, table.getSqlDialect());
+        Collection<Map<String, Object>> plateData = new SqlSelector(table.getSchema(), sql).getMapCollection();
+
+        for (Map<String, Object> data : plateData)
+        {
+            Integer rowId = (Integer) data.get("rowId");
+            String containerId = (String) data.get("container");
+            if (StringUtils.trimToNull(containerId) == null)
+            {
+                LOG.warn(String.format("clearCache: failed to resolve containerId for plate with rowId %d", rowId));
+                continue;
+            }
+
+            Container c = ContainerManager.getForId(containerId);
+            if (c == null)
+            {
+                LOG.warn(String.format("clearCache: failed to resolve container for plate with rowId %d with containerId %s.", rowId, containerId));
+                continue;
+            }
+
+            Plate plate = PlateCache.getPlate(c, rowId);
+            if (plate != null)
+                PlateCache.uncache(c, plate);
+        }
     }
 
     @Override
@@ -2129,41 +2162,66 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         }
     }
 
-    public void archivePlateSets(Container container, User user, List<Integer> plateSetIds, boolean archive) throws Exception
+    private String getArchiveAction(boolean archive)
     {
-        String action = archive ? "archive" : "restore";
-        Class<? extends Permission> perm = UpdatePermission.class;
+        return archive ? "archive" : "restore";
+    }
 
-        if (!container.hasPermission(user, perm))
-            throw new UnauthorizedException("Failed to " + action + " plate sets. Insufficient permissions.");
+    public void archive(Container container, User user, @Nullable List<Integer> plateSetIds, @Nullable List<Integer> plateIds, boolean archive) throws Exception
+    {
+        boolean archivingPlates = plateIds != null && !plateIds.isEmpty();
+        boolean archivingPlateSets = plateSetIds != null && !plateSetIds.isEmpty();
 
-        if (plateSetIds.isEmpty())
-            throw new ValidationException("Failed to " + action + " plate sets. No plate sets specified.");
+        if (!archivingPlates && !archivingPlateSets)
+            throw new ValidationException(String.format("Failed to %s. Neither plates nor plate sets were specified.", getArchiveAction(archive)));
 
         try (DbScope.Transaction tx = ensureTransaction())
         {
-            TableInfo plateSetTable = AssayDbSchema.getInstance().getTableInfoPlateSet();
+            if (archivingPlates)
+            {
+                archive(container, user, AssayDbSchema.getInstance().getTableInfoPlate(), "plates", plateIds, archive);
+                tx.addCommitTask(() -> clearCache(plateIds), DbScope.CommitTaskOption.POSTCOMMIT);
+            }
 
+            if (archivingPlateSets)
+                archive(container, user, AssayDbSchema.getInstance().getTableInfoPlateSet(), "plate sets", plateSetIds, archive);
+
+            tx.commit();
+        }
+    }
+
+    private void archive(Container container, User user, @NotNull TableInfo table, String type, @NotNull List<Integer> rowIds, boolean archive) throws Exception
+    {
+        Class<? extends Permission> perm = UpdatePermission.class;
+
+        if (!container.hasPermission(user, perm))
+            throw new UnauthorizedException(String.format("Failed to %s %s. Insufficient permissions.", getArchiveAction(archive), type));
+
+        if (rowIds.isEmpty())
+            throw new ValidationException(String.format("Failed to %s %s. No %s specified.", getArchiveAction(archive), type, type));
+
+        try (DbScope.Transaction tx = ensureTransaction())
+        {
             // Ensure user has permission in all containers
             {
                 SQLFragment sql = new SQLFragment("SELECT DISTINCT container FROM ")
-                        .append(plateSetTable, "PS")
+                        .append(table, "")
                         .append(" WHERE rowId ")
-                        .appendInClause(plateSetIds, plateSetTable.getSqlDialect());
+                        .appendInClause(rowIds, table.getSqlDialect());
 
-                for (String containerId : new SqlSelector(plateSetTable.getSchema(), sql).getCollection(String.class))
+                for (String containerId : new SqlSelector(table.getSchema(), sql).getCollection(String.class))
                 {
                     Container c = ContainerManager.getForId(containerId);
                     if (c != null && !c.hasPermission(user, perm))
-                        throw new UnauthorizedException("Failed to " + action + " plate sets. Insufficient permissions in " + c.getPath());
+                        throw new UnauthorizedException(String.format("Failed to %s %s. Insufficient permissions in %s.", getArchiveAction(archive), type, c.getPath()));
                 }
             }
 
-            SQLFragment sql = new SQLFragment("UPDATE ").append(plateSetTable)
+            SQLFragment sql = new SQLFragment("UPDATE ").append(table)
                     .append(" SET archived = ?").add(archive)
-                    .append(" WHERE rowId ").appendInClause(plateSetIds, plateSetTable.getSqlDialect());
+                    .append(" WHERE rowId ").appendInClause(rowIds, table.getSqlDialect());
 
-            new SqlExecutor(plateSetTable.getSchema()).execute(sql);
+            new SqlExecutor(table.getSchema()).execute(sql);
 
             tx.commit();
         }

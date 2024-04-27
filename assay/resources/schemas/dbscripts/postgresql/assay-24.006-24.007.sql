@@ -1,3 +1,4 @@
 ALTER TABLE assay.PlateSet ADD COLUMN Template BOOLEAN NOT NULL DEFAULT FALSE;
-
 UPDATE assay.Plate SET Template = False WHERE Template = True;
+
+ALTER TABLE assay.Plate ADD COLUMN Archived BOOLEAN NOT NULL DEFAULT FALSE;

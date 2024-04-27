@@ -61,6 +61,7 @@ import static org.junit.Assert.assertTrue;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
 {
+    private boolean _archived;
     private String _assayType;
     private long _created;
     private int _createdBy;
@@ -146,6 +147,7 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
         plate.setDataFileId(bean.getDataFileId());
         plate.setAssayType(bean.getAssayType());
         plate.setPlateId(bean.getPlateId());
+        plate.setArchived(bean.getArchived());
         plate.setDescription(bean.getDescription());
 
         // entity fields
@@ -338,6 +340,17 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
         }
 
         return wellgroupTypeMap;
+    }
+
+    @Override
+    public boolean isArchived()
+    {
+        return _archived;
+    }
+
+    public void setArchived(boolean archived)
+    {
+        _archived = archived;
     }
 
     @Override

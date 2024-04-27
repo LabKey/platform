@@ -1061,8 +1061,19 @@ public class PlateController extends SpringActionController
 
     public static class ArchiveForm
     {
+        private List<Integer> _plateIds;
         private List<Integer> _plateSetIds;
         private boolean _restore;
+
+        public List<Integer> getPlateIds()
+        {
+            return _plateIds;
+        }
+
+        public void setPlateIds(List<Integer> plateIds)
+        {
+            _plateIds = plateIds;
+        }
 
         public List<Integer> getPlateSetIds()
         {
@@ -1087,13 +1098,13 @@ public class PlateController extends SpringActionController
 
     @Marshal(Marshaller.JSONObject)
     @RequiresPermission(UpdatePermission.class)
-    public static class ArchivePlateSetsAction extends MutatingApiAction<ArchiveForm>
+    public static class ArchiveAction extends MutatingApiAction<ArchiveForm>
     {
         @Override
         public void validateForm(ArchiveForm form, Errors errors)
         {
-            if (form.getPlateSetIds() == null)
-                errors.reject(ERROR_GENERIC, "\"plateSetIds\" is a required field.");
+            if (form.getPlateIds() == null && form.getPlateSetIds() == null)
+                errors.reject(ERROR_GENERIC, "Either \"plateIds\" or \"plateSetIds\" must be specified.");
         }
 
         @Override
@@ -1101,7 +1112,7 @@ public class PlateController extends SpringActionController
         {
             try
             {
-                PlateManager.get().archivePlateSets(getContainer(), getUser(), form.getPlateSetIds(), !form.isRestore());
+                PlateManager.get().archive(getContainer(), getUser(), form.getPlateSetIds(), form.getPlateIds(), !form.isRestore());
                 return success();
             }
             catch (Exception e)
