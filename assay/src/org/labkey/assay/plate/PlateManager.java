@@ -22,6 +22,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.assay.AssayListener;
@@ -2652,8 +2653,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             sampleType = SampleTypeService.get().createSampleType(container, user, "SampleType1", null, props, emptyList(), 0, -1, -1, -1, null, null);
         }
 
-        @After
-        public void cleanupTest()
+        @AfterClass
+        public static void cleanupTest()
         {
             deleteTestContainer();
             container = null;
