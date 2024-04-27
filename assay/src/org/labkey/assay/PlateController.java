@@ -417,7 +417,7 @@ public class PlateController extends SpringActionController
         @Override
         public boolean handlePost(CopyForm form, BindException errors) throws Exception
         {
-            PlateService.get().copyPlate(_plate, getUser(), _destination);
+            PlateManager.get().copyPlateDeprecated(_plate, getUser(), _destination);
             return true;
         }
 
@@ -1251,7 +1251,6 @@ public class PlateController extends SpringActionController
     public static class PlateSetAssaysForm
     {
         private ContainerFilter.Type _containerFilter;
-
         private int _plateSetId;
 
         public ContainerFilter.Type getContainerFilter()
@@ -1406,6 +1405,50 @@ public class PlateController extends SpringActionController
             }
 
             return null;
+        }
+    }
+
+    public static class CopyPlateForm
+    {
+        private String _name;
+        private Integer _sourcePlateRowId;
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public void setName(String name)
+        {
+            _name = name;
+        }
+
+        public Integer getSourcePlateRowId()
+        {
+            return _sourcePlateRowId;
+        }
+
+        public void setSourcePlateRowId(Integer sourcePlateRowId)
+        {
+            _sourcePlateRowId = sourcePlateRowId;
+        }
+    }
+
+    @RequiresPermission(InsertPermission.class)
+    public static class CopyPlateAction extends MutatingApiAction<CopyPlateForm>
+    {
+        @Override
+        public void validateForm(CopyPlateForm form, Errors errors)
+        {
+            if (form.getSourcePlateRowId() == null)
+                errors.reject(ERROR_REQUIRED, "Specifying \"sourcePlateRowId\" is required.");
+        }
+
+        @Override
+        public Object execute(CopyPlateForm form, BindException errors) throws Exception
+        {
+            Plate plate = PlateManager.get().copyPlate(getContainer(), getUser(), form.getSourcePlateRowId(), form.getName());
+            return success(plate);
         }
     }
 }

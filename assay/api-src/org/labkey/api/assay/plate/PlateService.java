@@ -253,17 +253,6 @@ public interface PlateService
     void registerDetailsLinkResolver(PlateDetailsResolver resolver);
 
     /**
-     * Copies a plate from one container to another.
-     * @param source The source plate template
-     * @param user The user performing the copy
-     * @param destination The destination container
-     * @return The copied plate template
-     * @throws SQLException Thrown in the event of a database failure.
-     * @throws NameConflictException Thrown if the destination container already contains a template by the same name.
-     */
-    Plate copyPlate(Plate source, User user, Container destination) throws Exception;
-
-    /**
      * Registers a handler for a particular type of plate
      */
     void registerPlateLayoutHandler(PlateLayoutHandler handler);

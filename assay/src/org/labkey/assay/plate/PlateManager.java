@@ -299,7 +299,12 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         }
     }
 
-    private void saveWellData(@NotNull Container container, @NotNull User user, @NotNull Plate plate, List<Map<String, Object>> data) throws Exception
+    private void saveWellData(
+        @NotNull Container container,
+        @NotNull User user,
+        @NotNull Plate plate,
+        List<Map<String, Object>> data
+    ) throws Exception
     {
         requireActiveTransaction();
 
@@ -995,6 +1000,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 Table.batchExecute(AssayDbSchema.getInstance().getSchema(), insertSql, wellGroupPositions);
             }
 
+            if (!updateExisting && !plate.getCustomFields().isEmpty())
+                setFields(container, user, plate.getRowId(), plate.getCustomFields());
+
             final Integer plateRowId = plateId;
             transaction.addCommitTask(() -> {
                 clearCache(container, plate);
@@ -1449,25 +1457,152 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         _lsidHandlersRegistered = true;
     }
 
-    @Override
-    public Plate copyPlate(Plate source, User user, Container destContainer)
+    private void copyProperties(@NotNull Plate source, @NotNull Plate copy)
+    {
+        for (String property : source.getPropertyNames())
+            copy.setProperty(property, source.getProperty(property));
+    }
+
+    private void copyWellData(User user, @NotNull Plate source, @NotNull Plate copy, boolean copySample) throws Exception
+    {
+        requireActiveTransaction();
+
+        Container container = source.getContainer();
+        TableInfo metadataTable = getPlateMetadataTable(container, user);
+        TableInfo wellTable = getWellTable(container, user);
+
+        var sourceWellData = new TableSelector(wellTable, Set.of("RowId", "LSID", "SampleId"), new SimpleFilter(FieldKey.fromParts("PlateId"), source.getRowId()), new Sort("RowId")).getMapArray();
+        var copyWellData = new TableSelector(wellTable, Set.of("RowId", "LSID"), new SimpleFilter(FieldKey.fromParts("PlateId"), copy.getRowId()), new Sort("RowId")).getMapArray();
+
+        if (sourceWellData.length != copyWellData.length)
+        {
+            String msg = "Failed to copy well data. Source plate \"%s\" contains %d rows of well data which does not match %d in copied plate.";
+            throw new ValidationException(String.format(msg, source.getName(), sourceWellData.length, copyWellData.length));
+        }
+
+        var sourceWellLSIDS = Arrays.stream(sourceWellData).map(data -> data.get("LSID")).toList();
+        var sourceFilter = new SimpleFilter(FieldKey.fromParts("LSID"), sourceWellLSIDS, CompareType.IN);
+
+        var wellMetadataFields = metadataTable.getColumns().stream().map(ColumnInfo::getFieldKey).collect(Collectors.toSet());
+        wellMetadataFields.remove(FieldKey.fromParts("LSID"));
+
+        var metaDataRows = new TableSelector(metadataTable, sourceFilter, null).getMapCollection();
+        var sourceMetaData = metaDataRows.stream().reduce(new CaseInsensitiveHashMap<>(), (data, row) -> {
+            data.put((String) row.get("LSID"), row);
+            return data;
+        });
+
+        List<Map<String, Object>> newWellData = new ArrayList<>();
+
+        for (int i = 0; i < sourceWellData.length; i++)
+        {
+            var sourceRow = sourceWellData[i];
+            String sourceWellLSID = (String) sourceRow.get("LSID");
+            var copyRow = copyWellData[i];
+
+            var updateCopyRow = new CaseInsensitiveHashMap<>();
+            updateCopyRow.put("RowId", copyRow.get("RowId"));
+            if (copySample)
+                updateCopyRow.put("SampleId", sourceRow.get("SampleId"));
+
+            var sourceMetaDataRow = (Map<String, Object>) sourceMetaData.get(sourceWellLSID);
+
+            for (var field : wellMetadataFields)
+            {
+                var value = sourceMetaDataRow.get(field.toString());
+                if (value != null)
+                    updateCopyRow.put(FieldKey.fromParts("properties", field.toString()).toString(), value);
+            }
+
+            newWellData.add(updateCopyRow);
+        }
+
+        var errors = new BatchValidationException();
+        getWellUpdateService(container, user).updateRows(user, container, newWellData, null, errors, null, null);
+        if (errors.hasErrors())
+            throw errors;
+    }
+
+    private void copyWellGroups(@NotNull Plate source, @NotNull Plate copy)
+    {
+        for (WellGroup originalGroup : source.getWellGroups())
+        {
+            List<Position> positions = new ArrayList<>();
+            for (Position position : originalGroup.getPositions())
+                positions.add(copy.getPosition(position.getRow(), position.getColumn()));
+            WellGroup copyGroup = copy.addWellGroup(originalGroup.getName(), originalGroup.getType(), positions);
+            for (String property : originalGroup.getPropertyNames())
+                copyGroup.setProperty(property, originalGroup.getProperty(property));
+        }
+    }
+
+    public Plate copyPlate(Container container, User user, Integer sourcePlateRowId, @Nullable String name) throws Exception
+    {
+        if (!container.hasPermission(user, InsertPermission.class))
+            throw new UnauthorizedException("Failed to copy plate. Insufficient permissions.");
+
+        ContainerFilter cf = QueryService.get().getContainerFilterForLookups(container, user);
+        if (cf == null)
+            cf = ContainerFilter.current(container);
+
+        PlateImpl sourcePlate = (PlateImpl) getPlate(cf, sourcePlateRowId);
+        if (sourcePlate == null)
+            throw new ValidationException(String.format("Failed to copy plate. Unable to resolve source plate with RowId (%d).", sourcePlateRowId));
+
+        PlateSet sourcePlateSet = sourcePlate.getPlateSet();
+        if (sourcePlateSet == null)
+            throw new ValidationException(String.format("Failed to copy plate. Unable to resolve source plate set for plate \"%s\".", sourcePlate.getName()));
+
+        if (!container.equals(sourcePlateSet.getContainer()))
+            throw new ValidationException(String.format("Failed to copy plate. The destination folder \"%s\" does not match the plate set folder \"%s\".", container.getPath(), sourcePlateSet.getContainer().getPath()));
+
+        // TODO: Figure out best place to check for full plate set.
+
+        if (StringUtils.trimToNull(name) != null && isDuplicatePlate(container, user, name, sourcePlateSet))
+            throw new PlateService.NameConflictException(name);
+
+        try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
+        {
+            // Copy the plate
+            PlateImpl newPlate = new PlateImpl(container, name, sourcePlate.getAssayType(), sourcePlate.getPlateType());
+            newPlate.setDescription(sourcePlate.getDescription());
+            newPlate.setPlateSet(sourcePlateSet);
+            newPlate.setTemplate(sourcePlate.isTemplate());
+            newPlate.setCustomFields(sourcePlate.getCustomFields());
+
+            copyProperties(sourcePlate, newPlate);
+            copyWellGroups(sourcePlate, newPlate);
+
+            // Save the plate
+            int plateId = save(container, user, newPlate);
+            newPlate = (PlateImpl) getPlate(container, plateId);
+            if (newPlate == null)
+                throw new IllegalStateException("Unexpected failure. Failed to retrieve plate after save (pre-commit).");
+
+            // Copy plate metadata
+            copyWellData(user, sourcePlate, newPlate, !newPlate.isTemplate());
+
+            tx.commit();
+
+            return newPlate;
+        }
+    }
+
+    /**
+     * @deprecated Use {@link #copyPlate(Container, User, Integer, String)}
+     */
+    @Deprecated 
+    public Plate copyPlateDeprecated(Plate source, User user, Container destContainer)
             throws Exception
     {
         if (isDuplicatePlate(destContainer, user, source.getName(), null))
             throw new PlateService.NameConflictException(source.getName());
         Plate newPlate = createPlateTemplate(destContainer, source.getAssayType(), source.getPlateType());
         newPlate.setName(source.getName());
-        for (String property : source.getPropertyNames())
-            newPlate.setProperty(property, source.getProperty(property));
-        for (WellGroup originalGroup : source.getWellGroups())
-        {
-            List<Position> positions = new ArrayList<>();
-            for (Position position : originalGroup.getPositions())
-                positions.add(newPlate.getPosition(position.getRow(), position.getColumn()));
-            WellGroup copyGroup = newPlate.addWellGroup(originalGroup.getName(), originalGroup.getType(), positions);
-            for (String property : originalGroup.getPropertyNames())
-                copyGroup.setProperty(property, originalGroup.getProperty(property));
-        }
+
+        copyProperties(source, newPlate);
+        copyWellGroups(source, newPlate);
+
         int plateId = save(destContainer, user, newPlate);
         return getPlate(destContainer, plateId);
     }
@@ -1917,32 +2052,31 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             throw new IllegalArgumentException("Failed to get well custom fields. Well id \"" + wellId   + "\" not found.");
 
         List<WellCustomField> fields = _getFields(plate.getContainer(), user, plate.getRowId()).stream().map(WellCustomField::new).toList();
+        if (fields.isEmpty())
+            return Collections.emptyList();
 
         // merge in any well metadata values
-        if (!fields.isEmpty())
-        {
-            Map<FieldKey, WellCustomField> customFieldMap = new HashMap<>();
-            for (WellCustomField customField : fields)
-                customFieldMap.put(FieldKey.fromParts("properties", customField.getName()), customField);
-            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("rowId"), wellId);
+        Map<FieldKey, WellCustomField> customFieldMap = new HashMap<>();
+        for (WellCustomField customField : fields)
+            customFieldMap.put(FieldKey.fromParts("properties", customField.getName()), customField);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("rowId"), wellId);
 
-            TableInfo wellTable = getWellTable(plate.getContainer(), user);
-            Map<FieldKey, ColumnInfo> columnMap = QueryService.get().getColumns(wellTable, customFieldMap.keySet());
-            try (Results r = QueryService.get().select(wellTable, columnMap.values(), filter, null))
+        TableInfo wellTable = getWellTable(plate.getContainer(), user);
+        Map<FieldKey, ColumnInfo> columnMap = QueryService.get().getColumns(wellTable, customFieldMap.keySet());
+        try (Results r = QueryService.get().select(wellTable, columnMap.values(), filter, null))
+        {
+            while (r.next())
             {
-                while (r.next())
+                for (Map.Entry<FieldKey, Object> rowEntry : r.getFieldKeyRowMap().entrySet())
                 {
-                    for (Map.Entry<FieldKey, Object> rowEntry : r.getFieldKeyRowMap().entrySet())
-                    {
-                        if (customFieldMap.containsKey(rowEntry.getKey()))
-                            customFieldMap.get(rowEntry.getKey()).setValue(rowEntry.getValue());
-                    }
+                    if (customFieldMap.containsKey(rowEntry.getKey()))
+                        customFieldMap.get(rowEntry.getKey()).setValue(rowEntry.getValue());
                 }
             }
-            catch (SQLException e)
-            {
-                throw UnexpectedException.wrap(e);
-            }
+        }
+        catch (SQLException e)
+        {
+            throw UnexpectedException.wrap(e);
         }
 
         return fields.stream().sorted(Comparator.comparing(PlateCustomField::getName)).toList();

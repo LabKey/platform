@@ -275,14 +275,15 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 
     @Override
     public List<Map<String, Object>> mergePlateMetadata(
-            Container container,
-            User user,
-            Lsid plateLsid,
-            Integer plateSetId,
-            List<Map<String, Object>> rows,
-            @Nullable Map<String, MetadataLayer> plateMetadata,
-            AssayProvider provider,
-            ExpProtocol protocol) throws ExperimentException
+        Container container,
+        User user,
+        Lsid plateLsid,
+        Integer plateSetId,
+        List<Map<String, Object>> rows,
+        @Nullable Map<String, MetadataLayer> plateMetadata,
+        AssayProvider provider,
+        ExpProtocol protocol
+    ) throws ExperimentException
     {
         Domain resultDomain = provider.getResultsDomain(protocol);
         DomainProperty plateProperty = resultDomain.getPropertyByName(AssayResultDomainKind.PLATE_COLUMN_NAME);
