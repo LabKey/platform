@@ -260,6 +260,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         if (!plate.isNew())
             throw new ValidationException(String.format("Failed to create plate. The provided plate already exists with rowId (%d).", plate.getRowId()));
 
+        if (plate.isTemplate() && isDuplicatePlateTemplateName(container, plate.getName()))
+            throw new ValidationException(String.format("Failed to create plate template. A plate template already exists with the name \"%s\".", plate.getName()));
+
         try (DbScope.Transaction tx = ensureTransaction())
         {
             if (plateSetId != null)
@@ -657,7 +660,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
      * Issue 49665 : Checks to see if there is a plate with the same name in the folder, or for
      * Biologics folders if there is a duplicate plate name in the plate set.
      */
-    public boolean isDuplicatePlate(Container c, User user, String name, @Nullable PlateSet plateSet)
+    public boolean isDuplicatePlateName(Container c, User user, String name, @Nullable PlateSet plateSet)
     {
         // Identifying the "Biologics" folder type as the logic we pivot this behavior on is not intended to be
         // a long-term solution. We will be looking to introduce plating as a ProductFeature which we can then
@@ -674,6 +677,22 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         Plate plate = getPlateByName(c, name);
         return plate != null && plate.getName().equals(name);
+    }
+
+    public boolean isDuplicatePlateTemplateName(Container container, String name)
+    {
+        if (StringUtils.trimToNull(name) == null)
+            return false;
+
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Name"), name);
+        filter.addCondition(FieldKey.fromParts("Template"), true);
+
+        ContainerFilter cf = QueryService.get().getContainerFilterForLookups(container, User.getAdminServiceUser());
+        if (cf == null)
+            cf = ContainerFilter.current(container);
+        filter.addCondition(cf.createFilterClause(AssayDbSchema.getInstance().getSchema(), FieldKey.fromParts("Container")));
+
+        return new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate(), Set.of("RowId"), filter, null).exists();
     }
 
     private Collection<Plate> getPlates(Container c)
@@ -1536,7 +1555,14 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         }
     }
 
-    public Plate copyPlate(Container container, User user, Integer sourcePlateRowId, @Nullable String name) throws Exception
+    public Plate copyPlate(
+        Container container,
+        User user,
+        Integer sourcePlateRowId,
+        boolean copyAsTemplate,
+        @Nullable String name,
+        @Nullable String description
+    ) throws Exception
     {
         if (!container.hasPermission(user, InsertPermission.class))
             throw new UnauthorizedException("Failed to copy plate. Insufficient permissions.");
@@ -1556,19 +1582,37 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         if (!container.equals(sourcePlateSet.getContainer()))
             throw new ValidationException(String.format("Failed to copy plate. The destination folder \"%s\" does not match the plate set folder \"%s\".", container.getPath(), sourcePlateSet.getContainer().getPath()));
 
-        // TODO: Figure out best place to check for full plate set.
+        boolean isTemplate = copyAsTemplate || sourcePlate.isTemplate();
+        boolean hasName = StringUtils.trimToNull(name) != null;
 
-        if (StringUtils.trimToNull(name) != null && isDuplicatePlate(container, user, name, sourcePlateSet))
-            throw new PlateService.NameConflictException(name);
+        if (isTemplate && !hasName)
+            throw new ValidationException("Failed to copy plate template. A \"name\" is required.");
+
+        if (!isTemplate && ((PlateSetImpl) sourcePlateSet).isFull())
+            throw new ValidationException("Failed to copy plate. The plate set \"%s\" is full.", sourcePlateSet.getName());
+
+        if (hasName)
+        {
+            if (isTemplate)
+            {
+                if (isDuplicatePlateTemplateName(container, name))
+                    throw new ValidationException(String.format("Failed to copy plate template. A plate template already exists with the name \"%s\".", name));
+            }
+            else if (isDuplicatePlateName(container, user, name, sourcePlateSet))
+                throw new ValidationException(String.format("Failed to copy plate. A plate already exists with the name \"%s\".", name));
+        }
 
         try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
         {
             // Copy the plate
             PlateImpl newPlate = new PlateImpl(container, name, sourcePlate.getAssayType(), sourcePlate.getPlateType());
-            newPlate.setDescription(sourcePlate.getDescription());
-            newPlate.setPlateSet(sourcePlateSet);
-            newPlate.setTemplate(sourcePlate.isTemplate());
             newPlate.setCustomFields(sourcePlate.getCustomFields());
+            newPlate.setDescription(description);
+
+            if (isTemplate)
+                newPlate.setTemplate(true);
+            else
+                newPlate.setPlateSet(sourcePlateSet);
 
             copyProperties(sourcePlate, newPlate);
             copyWellGroups(sourcePlate, newPlate);
@@ -1589,13 +1633,13 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     }
 
     /**
-     * @deprecated Use {@link #copyPlate(Container, User, Integer, String)}
+     * @deprecated Use {@link #copyPlate(Container, User, Integer, boolean, String, String)}
      */
     @Deprecated 
     public Plate copyPlateDeprecated(Plate source, User user, Container destContainer)
             throws Exception
     {
-        if (isDuplicatePlate(destContainer, user, source.getName(), null))
+        if (isDuplicatePlateName(destContainer, user, source.getName(), null))
             throw new PlateService.NameConflictException(source.getName());
         Plate newPlate = createPlateTemplate(destContainer, source.getAssayType(), source.getPlateType());
         newPlate.setName(source.getName());

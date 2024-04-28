@@ -161,7 +161,7 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
                     throw new Exception("Plate template not found: " + gwtPlate.getRowId());
 
                 // check another plate of the same name doesn't already exist
-                if (PlateManager.get().isDuplicatePlate(getContainer(), getUser(), gwtPlate.getName(), null) && !replaceIfExisting)
+                if (PlateManager.get().isDuplicatePlateName(getContainer(), getUser(), gwtPlate.getName(), null) && !replaceIfExisting)
                     throw new Exception("A plate template with name '" + gwtPlate.getName() + "' already exists.");
 
                 if (!template.getAssayType().equals(gwtPlate.getType()))

@@ -150,6 +150,12 @@ public class PlateSetImpl extends Entity implements PlateSet
         return new SqlSelector(table.getSchema(), sql).getObject(Integer.class);
     }
 
+    @JsonIgnore
+    public boolean isFull()
+    {
+        return getPlateCount() >= MAX_PLATES;
+    }
+
     public String getDescription()
     {
         return _description;

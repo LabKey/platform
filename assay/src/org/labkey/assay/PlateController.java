@@ -410,7 +410,7 @@ public class PlateController extends SpringActionController
             if (_plate == null)
                 errors.reject(ERROR_REQUIRED, "Unable to retrieve source plate with ID : " + form.getPlateId());
 
-            if (PlateManager.get().isDuplicatePlate(_destination, getUser(), _plate.getName(), null))
+            if (PlateManager.get().isDuplicatePlateName(_destination, getUser(), _plate.getName(), null))
                 errors.reject("copyForm", "A plate template with the same name already exists in the destination folder.");
         }
 
@@ -1410,8 +1410,30 @@ public class PlateController extends SpringActionController
 
     public static class CopyPlateForm
     {
+        private boolean _copyAsTemplate;
+        private String _description;
         private String _name;
         private Integer _sourcePlateRowId;
+
+        public boolean isCopyAsTemplate()
+        {
+            return _copyAsTemplate;
+        }
+
+        public void setCopyAsTemplate(boolean copyAsTemplate)
+        {
+            _copyAsTemplate = copyAsTemplate;
+        }
+
+        public String getDescription()
+        {
+            return _description;
+        }
+
+        public void setDescription(String description)
+        {
+            _description = description;
+        }
 
         public String getName()
         {
@@ -1447,7 +1469,7 @@ public class PlateController extends SpringActionController
         @Override
         public Object execute(CopyPlateForm form, BindException errors) throws Exception
         {
-            Plate plate = PlateManager.get().copyPlate(getContainer(), getUser(), form.getSourcePlateRowId(), form.getName());
+            Plate plate = PlateManager.get().copyPlate(getContainer(), getUser(), form.getSourcePlateRowId(), form.isCopyAsTemplate(), form.getName(), form.getDescription());
             return success(plate);
         }
     }
