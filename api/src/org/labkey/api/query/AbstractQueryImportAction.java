@@ -811,7 +811,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             context.setSupportAutoIncrementKey(true);
         }
         context.setCrossTypeImport(crossTypeImport);
-        context.setCrossFolderImport(crossFolderImport && QueryService.get().isCrossProjectsImportEnabled(container));
+        context.setCrossFolderImport(crossFolderImport && QueryService.get().isProductProjectsEnabled(container));
         context.setAllowCreateStorage(allowCreateStorage);
         context.setUseTransactionAuditCache(useTransactionAuditCache);
         context.setLogger(logger);

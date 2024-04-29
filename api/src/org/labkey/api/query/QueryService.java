@@ -74,7 +74,6 @@ public interface QueryService
     String PRODUCT_PROJECTS_ENABLED = "isProductProjectsEnabled";
     String PRODUCT_PROJECTS_EXIST = "hasProductProjects";
     String USE_ROW_BY_ROW_UPDATE = "useLegacyUpdateRows";
-    String CROSS_PROJECT_IMPORT_ENABLED = "isCrossProjectImportEnabled";
 
     String MODULE_QUERIES_DIRECTORY = "queries";
     Path MODULE_QUERIES_PATH = Path.parse(MODULE_QUERIES_DIRECTORY);
@@ -691,5 +690,5 @@ public interface QueryService
      */
     boolean isProductProjectsDataListingScopedToProject();
 
-    boolean isCrossProjectsImportEnabled(Container container);
+    boolean isProductProjectsEnabled(Container container);
 }

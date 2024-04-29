@@ -3389,7 +3389,7 @@ public class QueryServiceImpl implements QueryService
     @Nullable
     public ContainerFilter.Type getContainerFilterTypeForLookups(Container container)
     {
-        if (container != null && container.isProductProjectsEnabled())
+        if (isProductProjectsEnabled(container))
         {
             if (isProductProjectsAllFolderScopeEnabled())
                 return ContainerFilter.Type.AllInProjectPlusShared;
@@ -3413,9 +3413,9 @@ public class QueryServiceImpl implements QueryService
     }
 
     @Override
-    public boolean isCrossProjectsImportEnabled(@Nullable Container container)
+    public boolean isProductProjectsEnabled(@Nullable Container container)
     {
-        return container != null && container.isProductProjectsEnabled() && AppProps.getInstance().isExperimentalFeatureEnabled(CROSS_PROJECT_IMPORT_ENABLED);
+        return container != null && container.isProductProjectsEnabled();
     }
 
     public static class TestCase extends Assert
