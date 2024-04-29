@@ -92,7 +92,7 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
         _parent = new AtomicReference<>();
         _isAbsolute = abs;
         _isDirectory = dir;
-        _hash = computeHash(_path);
+        _hash = computeHash(_path, _length);
     }
 
     // Create an instance from a java.nio.file.Path
@@ -145,13 +145,13 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
             _path[i] = names[i].toString();
         _isAbsolute = false;
         _isDirectory = false;
-        _hash = computeHash(_path);
+        _hash = computeHash(_path, _length);
     }
 
-    private static int computeHash(String[] names)
+    private static int computeHash(String[] names, int length)
     {
         int hash = 0;
-        for (int i=0 ; i < names.length ; i++)
+        for (int i=0 ; i < length ; i++)
             hash = hash * 37 + names[i].toLowerCase().hashCode();
         return hash;
     }
