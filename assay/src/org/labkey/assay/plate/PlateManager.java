@@ -2654,13 +2654,13 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         }
 
         @After
-        public void onComplete()
+        public void cleanupTest()
         {
             PlateManager.get().deleteAllPlateData(container);
         }
 
         @AfterClass
-        public static void cleanupTest()
+        public static void onComplete()
         {
             deleteTestContainer();
             container = null;
