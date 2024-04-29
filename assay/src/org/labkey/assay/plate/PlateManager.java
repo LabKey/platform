@@ -2653,6 +2653,12 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             sampleType = SampleTypeService.get().createSampleType(container, user, "SampleType1", null, props, emptyList(), 0, -1, -1, -1, null, null);
         }
 
+        @After
+        public void onComplete()
+        {
+            PlateManager.get().deleteAllPlateData(container);
+        }
+
         @AfterClass
         public static void cleanupTest()
         {
