@@ -24,6 +24,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.FilterInfo;
 import org.labkey.api.data.Sort;
 import org.labkey.api.security.User;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
 import org.labkey.data.xml.queryCustomView.PropertyName;
 
@@ -31,6 +33,7 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -160,6 +163,39 @@ public interface CustomViewInfo
     static String getAnalyticsProviderParamKey(String dataRegionName, String colName)
     {
         return dataRegionName + "." + ANALYTICSPROVIDER_PARAM_PREFIX + "." + colName;
+    }
+
+    static List<Map.Entry<FieldKey, Map<ColumnProperty, String>>> decodeProperties(String value)
+    {
+        if (value == null)
+        {
+            return Collections.emptyList();
+        }
+        String[] values = StringUtils.split(value, "&");
+        List<Map.Entry<FieldKey, Map<ColumnProperty, String>>> ret = new ArrayList<>();
+        for (String entry : values)
+        {
+            int ichEquals = entry.indexOf("=");
+            Map<ColumnProperty,String> properties;
+            FieldKey field;
+            if (ichEquals < 0)
+            {
+                field = FieldKey.fromString(PageFlowUtil.decode(entry));
+                properties = Collections.emptyMap();
+            }
+            else
+            {
+                properties = new EnumMap<>(ColumnProperty.class);
+                field = FieldKey.fromString(PageFlowUtil.decode(entry.substring(0, ichEquals)));
+                for (Map.Entry<String, String> e : PageFlowUtil.fromQueryString(PageFlowUtil.decode(entry.substring(ichEquals + 1))))
+                {
+                    properties.put(ColumnProperty.valueOf(e.getKey()), e.getValue());
+                }
+
+            }
+            ret.add(Pair.of(field, properties));
+        }
+        return Collections.unmodifiableList(ret);
     }
 
     /** Get the name of the custom view or null if this is the default view. */

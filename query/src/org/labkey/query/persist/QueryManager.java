@@ -36,12 +36,14 @@ import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.FilterInfo;
 import org.labkey.api.data.JsonWriter;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.ontology.Concept;
 import org.labkey.api.ontology.OntologyService;
 import org.labkey.api.query.AliasedColumn;
@@ -997,17 +999,18 @@ public class QueryManager
                 return Map.of("externalDatasources", statsMap,
                         "customViewCounts",
                         Map.of(
-                                "DataClasses", getCustomViewCounts("exp.data"),
-                                "SampleTypes", getCustomViewCounts("samples"),
-                                "Assays", getCustomViewCounts("assay"),
-                                "Inventory", getCustomViewCounts("inventory")
-                        )
+                                "DataClasses", getSchemaCustomViewCounts("exp.data"),
+                                "SampleTypes", getSchemaCustomViewCounts("samples"),
+                                "Assays", getSchemaCustomViewCounts("assay"),
+                                "Inventory", getSchemaCustomViewCounts("inventory")
+                        ),
+                        "customViewWithLineageColumn", getLineageCustomViewMetrics()
                 );
             });
         }
     }
 
-    private static Map<String, Object> getCustomViewCounts(String schema)
+    private static Map<String, Object> getSchemaCustomViewCounts(String schema)
     {
         DbSchema dbSchema = CoreSchema.getInstance().getSchema();
         String schemaField = dbSchema.getSqlDialect().getColumnSelectName("schema");
@@ -1023,4 +1026,108 @@ public class QueryManager
                         "SELECT COUNT(*) FROM query.customview C WHERE " + schemaClause + " AND C.customviewowner IS NULL").getObject(Long.class)
         );
     }
+
+
+    private static Long percentile(double percentile, List<Long> sortedCounts) {
+        if (percentile <= 0.01)
+            return sortedCounts.get(0);
+        if (percentile >= 99.99)
+            return sortedCounts.get(sortedCounts.size() - 1);
+        return sortedCounts.get((int) Math.round(percentile / 100.0 * (sortedCounts.size() - 1)));
+    }
+
+    /**
+     * customViewsCountWithLineageCol: total number of non-hidden saved custom views that has at least one input/output/ancestor column
+     * customViewsCountWithAncestorCol: total number of non-hidden saved custom views that has at least one ancestor column
+     * totalLineageColumnsInAllViews: total number of input/output/ancestor columns defined for all saved non-hidden custom views
+     * totalAncestorColumnsInAllViews: total number of ancestor columns defined for all saved non-hidden custom views
+     * lineageColumnsCountMin: the minimum count of input/output/ancestor columns in any view with such column
+     * lineageColumnsCount25: the 25 percentile count of input/output/ancestor columns in all views with such column
+     * lineageColumnsCount50: the 50 percentile / median count of input/output/ancestor columns in all views with such column
+     * lineageColumnsCount75: the 75 percentile count of input/output/ancestor columns in all views with such column
+     * lineageColumnsCountMax: the maximum count of input/output/ancestor columns in any view with such column
+     * lineageColumnsCountAvg: the average count of input/output/ancestor columns in any view with such column
+     * ancestorColumnsCountMin: the minimum count of ancestor columns in any view with ancestor columns
+     * ancestorColumnsCount25: the 25 percentile count of ancestor columns in all views with ancestor columns
+     * ancestorColumnsCount50: the 50 percentile / median count of ancestor columns in all views with ancestor columns
+     * ancestorColumnsCount75: the 75 percentile count of ancestor columns in all views with ancestor columns
+     * ancestorColumnsCountMax: the maximum count of ancestor columns in any view with ancestor columns
+     * ancestorColumnsCountAvg: the average count of ancestor columns in any view with ancestor columns
+     */
+    private static Map<String, Object> getLineageCustomViewMetrics()
+    {
+        List<Long> ancestorColCounts = new ArrayList<>();
+        List<Long> lineageColCounts = new ArrayList<>();
+        final String ANCESTOR_PREFIX = "ancestors/";
+        final String INPUT_PREFIX = "inputs/";
+        final String OUTPUT_PREFIX = "outputs/";
+
+        Map<String, Object> metrics = new HashMap<>();
+
+        DbSchema schema = DbSchema.get("query", DbSchemaType.Module);
+        SqlDialect sqlDialect = schema.getSqlDialect();
+        SQLFragment sql = new SQLFragment()
+                .append("SELECT columns FROM query.customview WHERE flags < 2 AND (columns LIKE ? OR columns LIKE ? OR columns LIKE ?)")
+                .add("%" + sqlDialect.encodeLikeOpSearchString("Ancestors%2F") + "%")
+                .add("%" + sqlDialect.encodeLikeOpSearchString("Inputs%2F") + "%")
+                .add("%" + sqlDialect.encodeLikeOpSearchString("Outputs%2F") + "%");
+        List<String> viewsColumnStrs = new SqlSelector(schema, sql).getArrayList(String.class);
+
+        for (String columnStr : viewsColumnStrs)
+        {
+            Long lineageColCount = 0L;
+            Long ancestorColCount = 0L;
+            for (Map.Entry<FieldKey, Map<CustomViewInfo.ColumnProperty, String>> entry : CustomViewInfo.decodeProperties(columnStr))
+            {
+                String fieldName = entry.getKey().toString().toLowerCase();
+                if (fieldName.startsWith(ANCESTOR_PREFIX))
+                {
+                    ancestorColCount++;
+                    lineageColCount++;
+                }
+                else if (fieldName.startsWith(INPUT_PREFIX) || fieldName.startsWith(OUTPUT_PREFIX))
+                {
+                    lineageColCount++;
+                }
+            }
+            if (ancestorColCount > 0)
+                ancestorColCounts.add(ancestorColCount);
+            if (lineageColCount > 0)
+                lineageColCounts.add(lineageColCount);
+        }
+
+        Collections.sort(lineageColCounts);
+        int lineageViewCount = lineageColCounts.size();
+        metrics.put("customViewsCountWithLineageColumnsCount", lineageViewCount);
+        if (lineageViewCount != 0)
+        {
+            long totalLineageCols = lineageColCounts.stream().mapToLong(Long::longValue).sum();
+            metrics.put("totalLineageColumnsInAllViews", totalLineageCols);
+            metrics.put("lineageColumnsCountMin", percentile(0, lineageColCounts));
+            metrics.put("lineageColumnsCount25", percentile(25, lineageColCounts));
+            metrics.put("lineageColumnsCount50", percentile(50, lineageColCounts));
+            metrics.put("lineageColumnsCount75", percentile(75, lineageColCounts));
+            metrics.put("lineageColumnsCountMax", percentile(100, lineageColCounts));
+            metrics.put("lineageColumnsCountAvg", Math.round((float) totalLineageCols / lineageViewCount));
+        }
+
+        Collections.sort(ancestorColCounts);
+        int ancestorViewCount = ancestorColCounts.size();
+        metrics.put("customViewsWithAncestorColumnsCounts", ancestorViewCount);
+        if (ancestorViewCount != 0)
+        {
+            long totalAncestorCols = ancestorColCounts.stream().mapToLong(Long::longValue).sum();
+            metrics.put("totalAncestorColumnsInAllViews", totalAncestorCols);
+            metrics.put("ancestorColumnsCountMin", percentile(0, ancestorColCounts));
+            metrics.put("ancestorColumnsCount25", percentile(25, ancestorColCounts));
+            metrics.put("ancestorColumnsCount50", percentile(50, ancestorColCounts));
+            metrics.put("ancestorColumnsCount75", percentile(75, ancestorColCounts));
+            metrics.put("ancestorColumnsCountMax", percentile(100, ancestorColCounts));
+            metrics.put("ancestorColumnsCountAvg", Math.round((float) totalAncestorCols / ancestorViewCount));
+        }
+
+        return metrics;
+    }
+
+
 }

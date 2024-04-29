@@ -135,44 +135,12 @@ public class CustomViewInfoImpl implements CustomViewInfo
         return ret;
     }
 
-    static List<Map.Entry<FieldKey, Map<ColumnProperty, String>>> decodeProperties(String value)
-    {
-        if (value == null)
-        {
-            return Collections.emptyList();
-        }
-        String[] values = StringUtils.split(value, "&");
-        List<Map.Entry<FieldKey, Map<ColumnProperty, String>>> ret = new ArrayList<>();
-        for (String entry : values)
-        {
-            int ichEquals = entry.indexOf("=");
-            Map<ColumnProperty,String> properties;
-            FieldKey field;
-            if (ichEquals < 0)
-            {
-                field = FieldKey.fromString(PageFlowUtil.decode(entry));
-                properties = Collections.emptyMap();
-            }
-            else
-            {
-                properties = new EnumMap<>(ColumnProperty.class);
-                field = FieldKey.fromString(PageFlowUtil.decode(entry.substring(0, ichEquals)));
-                for (Map.Entry<String, String> e : PageFlowUtil.fromQueryString(PageFlowUtil.decode(entry.substring(ichEquals + 1))))
-                {
-                    properties.put(ColumnProperty.valueOf(e.getKey()), e.getValue());
-                }
-
-            }
-            ret.add(Pair.of(field, properties));
-        }
-        return Collections.unmodifiableList(ret);
-    }
 
     @Override
     @NotNull
     public List<Map.Entry<FieldKey, Map<ColumnProperty, String>>> getColumnProperties()
     {
-        return decodeProperties(_cstmView.getColumns());
+        return CustomViewInfo.decodeProperties(_cstmView.getColumns());
     }
 
     @Override
