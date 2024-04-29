@@ -689,6 +689,4 @@ public interface QueryService
      * Returns true if the "Product projects display project-specific data" experimental feature is enabled.
      */
     boolean isProductProjectsDataListingScopedToProject();
-
-    boolean isProductProjectsEnabled(Container container);
 }
