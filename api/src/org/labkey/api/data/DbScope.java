@@ -481,7 +481,7 @@ public class DbScope
             Map<String, String> dsProperties = new HashMap<>();
             ServletContext ctx = ModuleLoader.getServletContext();
             IteratorUtils.asIterator(ctx.getInitParameterNames()).forEachRemaining(name -> {
-                if (name.startsWith(getDsName() + ":"))
+                if (name.startsWith("jdbc/" + getDsName() + ":"))
                     dsProperties.put(name.substring(name.indexOf(':') + 1), ctx.getInitParameter(name));
             });
             if (!dsProperties.isEmpty())

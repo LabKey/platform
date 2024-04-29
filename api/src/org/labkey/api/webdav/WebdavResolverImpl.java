@@ -263,7 +263,7 @@ public class WebdavResolverImpl extends AbstractWebdavResolver
             MutableSecurityPolicy policyNone = new MutableSecurityPolicy(cTest);
             policyNone.addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), NoPermissionsRole.class);
             policyNone.addRoleAssignment(user, ReaderRole.class);
-            SecurityPolicyManager.savePolicy(policyNone, TestContext.get().getUser());
+            SecurityPolicyManager.savePolicyForTests(policyNone, TestContext.get().getUser());
 
             WebdavResource rTest = resolver.lookup(rootPath.append(pathTest));
             assertNotNull(rTest);
@@ -279,7 +279,7 @@ public class WebdavResolverImpl extends AbstractWebdavResolver
 
             MutableSecurityPolicy policyRead = new MutableSecurityPolicy(cTest);
             policyRead.addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), ReaderRole.class);
-            SecurityPolicyManager.savePolicy(policyRead, TestContext.get().getUser());
+            SecurityPolicyManager.savePolicyForTests(policyRead, TestContext.get().getUser());
             rTest = resolver.lookup(rootPath.append(pathTest));
             assertTrue(rTest.canRead(guest,true));
 

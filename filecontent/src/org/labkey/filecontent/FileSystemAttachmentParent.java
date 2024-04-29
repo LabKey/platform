@@ -129,7 +129,7 @@ public class FileSystemAttachmentParent implements AttachmentDirectory
                 Path root = dir.resolve(svc.getFolderName(_contentType));
 
                 // Issue 49963: avoid FileAlreadyExistsExceptions on certain file systems
-                if (!Files.exists(root))
+                if (!Files.exists(root) && Files.isWritable(dir))
                 {
                     FileUtil.createDirectories(root);
                 }
