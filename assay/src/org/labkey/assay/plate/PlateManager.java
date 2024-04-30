@@ -1486,9 +1486,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     {
         requireActiveTransaction();
 
-        Container container = source.getContainer();
-        TableInfo metadataTable = getPlateMetadataTable(container, user);
-        TableInfo wellTable = getWellTable(container, user);
+        var container = source.getContainer();
+        var wellTable = getWellTable(container, user);
 
         var sourceWellData = new TableSelector(wellTable, Set.of("RowId", "LSID", "SampleId"), new SimpleFilter(FieldKey.fromParts("PlateId"), source.getRowId()), new Sort("RowId")).getMapArray();
         var copyWellData = new TableSelector(wellTable, Set.of("RowId", "LSID"), new SimpleFilter(FieldKey.fromParts("PlateId"), copy.getRowId()), new Sort("RowId")).getMapArray();
@@ -1502,14 +1501,25 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         var sourceWellLSIDS = Arrays.stream(sourceWellData).map(data -> data.get("LSID")).toList();
         var sourceFilter = new SimpleFilter(FieldKey.fromParts("LSID"), sourceWellLSIDS, CompareType.IN);
 
-        var wellMetadataFields = metadataTable.getColumns().stream().map(ColumnInfo::getFieldKey).collect(Collectors.toSet());
-        wellMetadataFields.remove(FieldKey.fromParts("LSID"));
+        final Set<FieldKey> wellMetadataFields;
+        final Map<String, Map<String, Object>> sourceMetaData;
 
-        var metaDataRows = new TableSelector(metadataTable, sourceFilter, null).getMapCollection();
-        var sourceMetaData = metaDataRows.stream().reduce(new CaseInsensitiveHashMap<>(), (data, row) -> {
-            data.put((String) row.get("LSID"), row);
-            return data;
-        });
+        var metadataTable = getPlateMetadataTable(container, user);
+        if (metadataTable != null)
+        {
+            wellMetadataFields = metadataTable.getColumns().stream().map(ColumnInfo::getFieldKey).collect(Collectors.toSet());
+            wellMetadataFields.remove(FieldKey.fromParts("LSID"));
+
+            var metaDataRows = new TableSelector(metadataTable, sourceFilter, null).getMapCollection();
+            sourceMetaData = new CaseInsensitiveHashMap<>();
+            for (var row : metaDataRows)
+                sourceMetaData.put((String) row.get("LSID"), row);
+        }
+        else
+        {
+            wellMetadataFields = Collections.emptySet();
+            sourceMetaData = Collections.emptyMap();
+        }
 
         List<Map<String, Object>> newWellData = new ArrayList<>();
 
@@ -1524,13 +1534,16 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             if (copySample)
                 updateCopyRow.put("SampleId", sourceRow.get("SampleId"));
 
-            var sourceMetaDataRow = (Map<String, Object>) sourceMetaData.get(sourceWellLSID);
-
-            for (var field : wellMetadataFields)
+            if (sourceMetaData.containsKey(sourceWellLSID))
             {
-                var value = sourceMetaDataRow.get(field.toString());
-                if (value != null)
-                    updateCopyRow.put(FieldKey.fromParts("properties", field.toString()).toString(), value);
+                var sourceMetaDataRow = (Map<String, Object>) sourceMetaData.get(sourceWellLSID);
+
+                for (var field : wellMetadataFields)
+                {
+                    var value = sourceMetaDataRow.get(field.toString());
+                    if (value != null)
+                        updateCopyRow.put(FieldKey.fromParts("properties", field.toString()).toString(), value);
+                }
             }
 
             newWellData.add(updateCopyRow);
@@ -1589,7 +1602,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             throw new ValidationException("Failed to copy plate template. A \"name\" is required.");
 
         if (!isTemplate && ((PlateSetImpl) sourcePlateSet).isFull())
-            throw new ValidationException("Failed to copy plate. The plate set \"%s\" is full.", sourcePlateSet.getName());
+            throw new ValidationException(String.format("Failed to copy plate. The plate set \"%s\" is full.", sourcePlateSet.getName()));
 
         if (hasName)
         {
@@ -1884,9 +1897,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     {
         Domain domain = getPlateMetadataDomain(container, user);
         if (domain != null)
-        {
             return StorageProvisioner.createTableInfo(domain);
-        }
         return null;
     }
 
