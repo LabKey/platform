@@ -74,23 +74,20 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     private int _modifiedBy;
     private String _name;
     private String _plateId;
-    private int _plateNumber;
+    private int _plateNumber = 1;
     private PlateSet _plateSet;
     private PlateType _plateType;
     private Integer _rowId;
     private Integer _runCount;
-    private int _runId; // NO_RUNID means no run yet, well data comes from file, dilution data must be calculated
+    private int _runId = PlateService.NO_RUNID; // NO_RUNID means no run yet, well data comes from file, dilution data must be calculated
     private boolean _template;
-    private WellImpl[][] _wells;
+    private WellImpl[][] _wells = null;
     private Map<Integer, Well> _wellMap;
     private Integer _metadataDomainId;
 
+    // no-param constructor for reflection
     public PlateImpl()
     {
-        // no-param constructor for reflection
-        _wells = null;
-        _runId = PlateService.NO_RUNID;
-        _plateNumber = 1;
     }
 
     public PlateImpl(Container container, String name, String assayType, @NotNull PlateType plateType)
@@ -98,15 +95,16 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
         super(container);
         _name = StringUtils.trimToNull(name);
         _assayType = assayType;
-        _container = container;
         _dataFileId = GUID.makeGUID();
-        _plateNumber = 1;
         _plateType = plateType;
-        _runId = PlateService.NO_RUNID;
-        _wells = null;
     }
 
-    public PlateImpl(PlateImpl plate, double[][] wellValues, boolean[][] excluded, int runId, int plateNumber)
+    public PlateImpl(Container container, String name, @NotNull PlateType plateType)
+    {
+        this(container, name, TsvPlateLayoutHandler.TYPE, plateType);
+    }
+
+    public PlateImpl(@NotNull PlateImpl plate, double[][] wellValues, boolean[][] excluded, int runId, int plateNumber)
     {
         this(plate.getContainer(), plate.getName(), plate.getAssayType(), plate.getPlateType());
 
@@ -131,8 +129,6 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
 
         for (WellGroup group : plate.getWellGroups())
             addWellGroup(new WellGroupImpl(this, (WellGroupImpl) group));
-
-        setContainer(plate.getContainer());
     }
 
     public static PlateImpl from(PlateBean bean)

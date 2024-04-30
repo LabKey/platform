@@ -2298,7 +2298,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                     if (plateType == null)
                         throw new ValidationException("Failed to create plate set. Plate Type (" + plate.plateType + ") is invalid.");
 
-                    var plateImpl = new PlateImpl(container, plate.name, TsvPlateLayoutHandler.TYPE, plateType);
+                    var plateImpl = new PlateImpl(container, plate.name, plateType);
                     plateImpl.setTemplate(plateSet.isTemplate());
 
                     // TODO: Write a cheaper plate create/save for multiple plates
@@ -3057,24 +3057,24 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             assertNotNull("96 well plate type was not found", plateType);
 
             // Act
-            PlateImpl plateImpl = new PlateImpl(container, "testCreateAndSavePlate plate", null, plateType);
+            PlateImpl plateImpl = new PlateImpl(container, "testCreateAndSavePlate plate", plateType);
             Plate plate = PlateManager.get().createAndSavePlate(container, user, plateImpl, null, null);
 
             // Assert
             assertTrue("Expected plate to have been persisted and provided with a rowId", plate.getRowId() > 0);
-            assertTrue("Expected plate to have been persisted and provided with a plateId", plate.getPlateId() != null);
+            assertNotNull("Expected plate to have been persisted and provided with a plateId", plate.getPlateId());
 
             // verify access via plate ID
             Plate savedPlate = PlateService.get().getPlate(container, plate.getPlateId());
-            assertTrue("Expected plate to be accessible via it's plate ID", savedPlate != null);
-            assertTrue("Plate retrieved by plate ID doesn't match the original plate.", savedPlate.getRowId().equals(plate.getRowId()));
+            assertNotNull("Expected plate to be accessible via it's plate ID", savedPlate);
+            assertEquals("Plate retrieved by plate ID doesn't match the original plate.", savedPlate.getRowId(), plate.getRowId());
 
             // verify container filter access
             savedPlate = PlateService.get().getPlate(ContainerManager.getSharedContainer(), plate.getRowId());
-            assertTrue("Saved plate should not exist in the shared container", savedPlate == null);
+            assertNull("Saved plate should not exist in the shared container", savedPlate);
 
             savedPlate = PlateService.get().getPlate(ContainerFilter.Type.CurrentAndSubfolders.create(ContainerManager.getSharedContainer(), user), plate.getRowId());
-            assertTrue("Expected plate to be accessible via a container filter", plate.getRowId().equals(savedPlate.getRowId()));
+            assertEquals("Expected plate to be accessible via a container filter", plate.getRowId(), savedPlate.getRowId());
         }
 
         @Test
@@ -3283,7 +3283,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                     )
             );
 
-            PlateImpl plateImpl = new PlateImpl(container, "hit selection plate", null, plateType);
+            PlateImpl plateImpl = new PlateImpl(container, "hit selection plate", plateType);
             Plate plate = PlateManager.get().createAndSavePlate(container, user, plateImpl, null, rows);
             assertEquals("Expected 2 plate custom fields", 2, plate.getCustomFields().size());
 
@@ -3328,8 +3328,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             // Act
             int[] sampleIdsSorted = new int[]{0, 3, 5, 8, 10, 11, 12, 13, 15, 17, 19};
             Pair<Integer, List<Map<String, Object>>> wellSampleDataFilledFull = PlateManager.get().getWellSampleData(sampleIdsSorted, 2, 3, 0, container);
-
-            Pair<Integer, List<Map<String, Object>>> wellSampleDataFilledParital = PlateManager.get().getWellSampleData(sampleIdsSorted, 2, 3, 6, container);
+            Pair<Integer, List<Map<String, Object>>> wellSampleDataFilledPartial = PlateManager.get().getWellSampleData(sampleIdsSorted, 2, 3, 6, container);
 
             // Assert
             assertEquals(wellSampleDataFilledFull.first, 6, 0);
@@ -3341,10 +3340,10 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 assertEquals(well.get("wellLocation"), wellLocations.get(i));
             }
 
-            assertEquals(wellSampleDataFilledParital.first, 11, 0);
-            for (int i = 0; i < wellSampleDataFilledParital.second.size(); i++)
+            assertEquals(wellSampleDataFilledPartial.first, 11, 0);
+            for (int i = 0; i < wellSampleDataFilledPartial.second.size(); i++)
             {
-                Map<String, Object> well = wellSampleDataFilledParital.second.get(i);
+                Map<String, Object> well = wellSampleDataFilledPartial.second.get(i);
                 assertEquals(well.get("sampleId"), sampleIdsSorted[i + 6]);
                 assertEquals(well.get("wellLocation"), wellLocations.get(i));
             }
@@ -3389,11 +3388,12 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                             "properties/barcode", "B5678"
                     )
             );
-            Plate p = PlateManager.get().createAndSavePlate(container, user, plateType, "myPlate", null, null, rows);
+            Plate plate = new PlateImpl(container, "myPlate", plateType);
+            plate = PlateManager.get().createAndSavePlate(container, user, plate, null, rows);
 
             // Act
-            Set<FieldKey> includedMetadataCols = WellTable.getMetadataColumns(p.getPlateSet().getRowId(), container, user);
-            List<Object[]> result = PlateManager.get().getInstrumentInstructions(p.getPlateSet().getRowId(), includedMetadataCols, container, user);
+            Set<FieldKey> includedMetadataCols = WellTable.getMetadataColumns(plate.getPlateSet().getRowId(), container, user);
+            List<Object[]> result = PlateManager.get().getInstrumentInstructions(plate.getPlateSet().getRowId(), includedMetadataCols, container, user);
 
             // Assert
             Object[] row1 = result.get(0);
@@ -3414,7 +3414,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             final ExpMaterial sample1 = ExperimentService.get().createExpMaterial(container, sampleType.generateSampleLSID().setObjectId("sampleA").toString(), "sampleA");
             sample1.setCpasType(sampleType.getLSID());
             sample1.save(user);
-            final ExpMaterial sample2 = ExperimentService.get().createExpMaterial(container,  sampleType.generateSampleLSID().setObjectId("sampleB").toString(), "sampleB");
+            final ExpMaterial sample2 = ExperimentService.get().createExpMaterial(container, sampleType.generateSampleLSID().setObjectId("sampleB").toString(), "sampleB");
             sample2.setCpasType(sampleType.getLSID());
             sample2.save(user);
 
@@ -3435,7 +3435,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                             "properties/barcode", "B5678"
                     )
             );
-            Plate plateSource = PlateManager.get().createAndSavePlate(container, user, plateType, "myPlate1", null, null, rows1);
+            Plate plateSource = PlateManager.get().createAndSavePlate(container, user, new PlateImpl(container, "myPlate1", plateType), null, rows1);
 
             List<Map<String, Object>> rows2 = List.of(
                     CaseInsensitiveHashMap.of(
@@ -3450,7 +3450,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                             "wellLocation", "A3",
                             "sampleId", sample2.getRowId())
             );
-            Plate plateDestination =PlateManager.get().createAndSavePlate(container, user, plateType, "myPlate2", null, null, rows2);
+            Plate plateDestination = PlateManager.get().createAndSavePlate(container, user, new PlateImpl(container, "myPlate2", plateType), null, rows2);
 
             // Act
             Set<FieldKey> sourceIncludedMetadataCols = WellTable.getMetadataColumns(plateSource.getPlateSet().getRowId(), container, user);
