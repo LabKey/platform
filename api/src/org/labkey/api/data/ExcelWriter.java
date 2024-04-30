@@ -184,6 +184,7 @@ public class ExcelWriter implements ExportWriter
     private String _sheetName;
     private String _footer;
     private String _filenamePrefix;
+    private String _fullFileName;
     @NotNull
     private List<String> _headers = Collections.emptyList();
     @NotNull
@@ -341,6 +342,16 @@ public class ExcelWriter implements ExportWriter
         _filenamePrefix = filenamePrefix;
     }
 
+    public String getFullFileName()
+    {
+        return _fullFileName;
+    }
+
+    public void setFullFileName(String fullFileName)
+    {
+        _fullFileName = fullFileName;
+    }
+
     public void setHeaders(@NotNull List<String> headers)
     {
         _headers = List.copyOf(headers);
@@ -447,7 +458,7 @@ public class ExcelWriter implements ExportWriter
      */
     public void renderWorkbook(HttpServletResponse response)
     {
-        try (ServletOutputStream outputStream = getOutputStream(response, getFilenamePrefix(), _docType))
+        try (ServletOutputStream outputStream = getOutputStream(response, getFilenamePrefix(), getFullFileName(), _docType))
         {
             renderWorkbook(outputStream);
         }
@@ -592,7 +603,7 @@ public class ExcelWriter implements ExportWriter
     // Create a ServletOutputStream to stream an Excel workbook to the browser.
     // This streaming code is adapted from Guillaume Laforge's sample posted to the JExcelApi Yahoo!
     // group: http://groups.yahoo.com/group/JExcelApi/message/1692
-    public static ServletOutputStream getOutputStream(HttpServletResponse response, String filenamePrefix, ExcelDocumentType docType)
+    public static ServletOutputStream getOutputStream(HttpServletResponse response, String filenamePrefix, String fullFileName, ExcelDocumentType docType)
     {
         // Flush any extraneous output (e.g., <CR><LF> from JSPs)
         response.reset();
@@ -609,7 +620,8 @@ public class ExcelWriter implements ExportWriter
         // 2) Specify the file name of the workbook with a different file name each time
         // so that your browser doesn't put the generated file into its cache
 
-        String filename = FileUtil.makeFileNameWithTimestamp(filenamePrefix, docType.name());
+
+        String filename = fullFileName == null ? FileUtil.makeFileNameWithTimestamp(filenamePrefix, docType.name()) : FileUtil.makeLegalName(fullFileName);
         ResponseHelper.setContentDisposition(response, ResponseHelper.ContentDispositionType.attachment, filename);
 
         try

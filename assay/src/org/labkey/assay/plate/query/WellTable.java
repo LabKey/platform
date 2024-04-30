@@ -4,6 +4,8 @@ import org.apache.logging.log4j.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.plate.Plate;
+import org.labkey.api.assay.plate.PlateCustomField;
+import org.labkey.api.assay.plate.PlateSet;
 import org.labkey.api.assay.plate.PositionImpl;
 import org.labkey.api.assay.plate.Well;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -57,11 +59,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
 {
     public static final String NAME = "Well";
     public static final String WELL_PROPERTIES_TABLE = "WellProperties";
+
+    public static final String PLATEID_COL = "PlateId";
+    public static final String ROW_COL = "Row";
+    public static final String COL_COL = "Col";
+    public static final String POSITION_COL = "Position";
+
     private static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
     private static final Set<String> ignoredColumns = new CaseInsensitiveHashSet();
     private final Map<FieldKey, ColumnInfo> _provisionedFieldMap = new HashMap<>();
@@ -221,6 +230,25 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
     public List<FieldKey> getDefaultVisibleColumns()
     {
         return defaultVisibleColumns;
+    }
+
+    public static Set<FieldKey> getMetadataColumns(int plateSetId, Container c, User u) throws ValidationException
+    {
+        PlateSet plateSet = PlateManager.get().getPlateSet(c, plateSetId);
+        if (plateSet == null)
+            throw new ValidationException("Unable to resolve plate set of id " + plateSetId);
+
+        List<Plate> plates = plateSet.getPlates(u);
+
+        Set<FieldKey> includedMetadataCols = new HashSet<>();
+        for (Plate plate : plates)
+        {
+            List<String> metadataColNames = PlateManager.get().getFields(c, plate.getRowId()).stream().map(PlateCustomField::getName).collect(Collectors.toCollection(ArrayList::new));
+            for (String name : metadataColNames)
+                includedMetadataCols.add(FieldKey.fromParts("properties", name));
+        }
+
+        return includedMetadataCols;
     }
 
 /*

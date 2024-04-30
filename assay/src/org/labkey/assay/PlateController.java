@@ -15,6 +15,7 @@
  */
 package org.labkey.assay;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
@@ -33,15 +34,20 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateCustomField;
 import org.labkey.api.assay.plate.PlateService;
+import org.labkey.api.assay.plate.PlateSet;
 import org.labkey.api.assay.plate.PlateSetType;
 import org.labkey.api.assay.plate.PlateType;
 import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.collections.RowMapFactory;
+import org.labkey.api.data.ArrayExcelWriter;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.ValidationException;
+import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.security.RequiresAnyOf;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
@@ -64,9 +70,11 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.assay.plate.PlateDataServiceImpl;
 import org.labkey.assay.plate.PlateImpl;
 import org.labkey.assay.plate.PlateManager;
+import org.labkey.assay.plate.PlateSetExport;
 import org.labkey.assay.plate.PlateSetImpl;
 import org.labkey.assay.plate.PlateUrls;
 import org.labkey.assay.plate.TsvPlateLayoutHandler;
+import org.labkey.assay.plate.query.WellTable;
 import org.labkey.assay.view.AssayGWTView;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -1241,6 +1249,117 @@ public class PlateController extends SpringActionController
                 cf = form.getContainerFilter().create(getViewContext());
 
             return PlateManager.get().getPlateSetAssays(getContainer(), getUser(), form.getPlateSetId(), cf);
+        }
+    }
+
+    public static class WorklistForm
+    {
+        private int _sourcePlateSetId;
+        private int _destinationPlateSetId;
+
+        public int getSourcePlateSetId()
+        {
+            return _sourcePlateSetId;
+        }
+
+        public void setSourcePlateSetId(int sourcePlateSetId)
+        {
+            _sourcePlateSetId = sourcePlateSetId;
+        }
+
+        public int getDestinationPlateSetId()
+        {
+            return _destinationPlateSetId;
+        }
+
+        public void setDestinationPlateSetId(int destinationPlateSetId)
+        {
+            _destinationPlateSetId = destinationPlateSetId;
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public static class WorkListAction extends ReadOnlyApiAction<WorklistForm>
+    {
+        @Override
+        public Object execute(WorklistForm form, BindException errors) throws Exception
+        {
+            try
+            {
+                PlateSet plateSetSource = PlateManager.get().getPlateSet(getContainer(), form.getSourcePlateSetId());
+                PlateSet plateSetDestination = PlateManager.get().getPlateSet(getContainer(), form.getDestinationPlateSetId());
+                if (plateSetSource == null || plateSetDestination == null)
+                    throw new NotFoundException("Unable to resolve Plate Set.");
+
+                Set<FieldKey> sourceIncludedMetadataCols = WellTable.getMetadataColumns(form.getSourcePlateSetId(), getContainer(), getUser());
+                Set<FieldKey> destinationIncludedMetadataCols = WellTable.getMetadataColumns(form.getDestinationPlateSetId(), getContainer(), getUser());
+
+                ColumnDescriptor[] sourceXlCols = PlateSetExport.getColumnDescriptors(PlateSetExport.SOURCE, sourceIncludedMetadataCols);
+                ColumnDescriptor[] destinationXlCols = PlateSetExport.getColumnDescriptors(PlateSetExport.DESTINATION, destinationIncludedMetadataCols);
+                ColumnDescriptor[] xlCols = ArrayUtils.addAll(sourceXlCols, destinationXlCols);
+
+                List<Object[]> plateDataRows = PlateManager.get().getWorklist(form.getSourcePlateSetId(), form.getDestinationPlateSetId(), sourceIncludedMetadataCols, destinationIncludedMetadataCols, getContainer(), getUser());
+
+                ArrayExcelWriter xlWriter = new ArrayExcelWriter(plateDataRows, xlCols);
+                xlWriter.setFullFileName(plateSetSource.getName() + "To" + plateSetDestination.getName() + ".xls");
+                xlWriter.renderWorkbook(getViewContext().getResponse());
+
+                return null; // Returning anything here will cause error as excel writer will close the response stream
+            }
+            catch (Exception e)
+            {
+                errors.reject(ERROR_GENERIC, e.getMessage() != null ? e.getMessage() : "Failed to create Worklist.");
+            }
+
+            return null;
+        }
+    }
+
+    public static class InstrumentInstructionForm
+    {
+        private int _plateSetId;
+
+        public int getPlateSetId()
+        {
+            return _plateSetId;
+        }
+
+        public void setPlateSetId(int plateSetId)
+        {
+            _plateSetId = plateSetId;
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public static class InstrumentInstructionAction extends ReadOnlyApiAction<InstrumentInstructionForm>
+    {
+        @Override
+        public Object execute(InstrumentInstructionForm form, BindException errors) throws Exception
+        {
+            try
+            {
+                PlateSet plateSet = PlateManager.get().getPlateSet(getContainer(), form.getPlateSetId());
+                if (plateSet == null)
+                    throw new NotFoundException("Unable to resolve Plate Set.");
+                if (plateSet.getType() != PlateSetType.assay)
+                    throw new ValidationException("Instrument Instructions cannot be generated for non-Assay Plate Sets.");
+
+                Set<FieldKey> includedMetadataCols = WellTable.getMetadataColumns(form.getPlateSetId(), getContainer(), getUser());
+                ColumnDescriptor[] xlCols = PlateSetExport.getColumnDescriptors("", includedMetadataCols);
+                List<Object[]> plateDataRows = PlateManager.get().getInstrumentInstructions(form.getPlateSetId(), includedMetadataCols, getContainer(), getUser());
+
+                ArrayExcelWriter xlWriter = new ArrayExcelWriter(plateDataRows, xlCols);
+                xlWriter.setFullFileName(plateSet.getName() + ".xls");
+                xlWriter.renderWorkbook(getViewContext().getResponse());
+
+                return null; // Returning anything here will cause error as excel writer will close the response stream
+            }
+            catch (Exception e)
+            {
+                errors.reject(ERROR_GENERIC, e.getMessage() != null ? e.getMessage() : "Failed to create Instrument Instruction.");
+            }
+
+            return null;
         }
     }
 }
