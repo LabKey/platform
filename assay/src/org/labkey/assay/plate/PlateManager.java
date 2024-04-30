@@ -2486,7 +2486,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 .append(" INNER JOIN ").append(plateSetTable, "PS").append(" ON PS.RowId = P.PlateSet")
                 .append(" LEFT JOIN ").append(ExperimentService.get().getTinfoMaterial(), "M").append(" ON M.RowId = W.SampleId")
                 .append(" WHERE W.SampleId IS NOT NULL AND PS.RowId IN (").append(primaryPlateSetsFromWellRowIdsSQL).append(")")
-                .append(" GROUP BY PS.RowId, PS.Name, M.Name, W.SampleId HAVING COUNT(W.SampleId) > 1");
+                .append(" GROUP BY PS.RowId, M.Name, W.SampleId, PS.Name HAVING COUNT(W.SampleId) > 1");
 
         var duplicates = new SqlSelector(dbSchema.getSchema(), nonUniqueSamplesPerPrimaryPlateSetSQL).getMapCollection();
 
