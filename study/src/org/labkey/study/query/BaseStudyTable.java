@@ -880,7 +880,16 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
 
     protected ColumnInfo addStudyColumn()
     {
-        var study = new AliasedColumn(this, "Study", _rootTable.getColumn("Container"));
+        // Don't copy the container concepturi, we don't want a ContainerDisplayFactory
+        // NOTE: we can't just setConcentURI(null) because AliasedColumn will just ask the wrapped column
+        var study = new AliasedColumn(this, "Study", _rootTable.getColumn("Container"))
+        {
+            @Override
+            public String getConceptURI()
+            {
+                return null;
+            }
+        };
 
 //      NOTE: QFK doesn't seem to support container joins
 //      study.setFk(new QueryForeignKey("study", getUserSchema().getContainer(), null, getUserSchema().getUser(), "studyproperties", "Container", "Label", false));
