@@ -20,7 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.Constants;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.Pair;
@@ -32,9 +32,6 @@ import java.util.Set;
 
 /**
  * Utility class for dealing with Missing Value Indicators
- *
- * User: jgarms
- * Date: Jan 14, 2009
  */
 public class MvUtil
 {
@@ -53,7 +50,7 @@ public class MvUtil
      */
     public static boolean isValidMvIndicator(String indicator, @NotNull Container c)
     {
-        if (indicator == null || "".equals(indicator))
+        if (indicator == null || indicator.isEmpty())
             return true;
         return isMvIndicator(indicator, c);
     }
@@ -155,7 +152,7 @@ public class MvUtil
         Filter filter = new SimpleFilter(FieldKey.fromParts("container"), c.getId());
         Map<String, String> indicatorsAndLabels = new TableSelector(mvTable, selectColumns, filter, null).getValueMap();
 
-        return indicatorsAndLabels.isEmpty() ? null : Collections.unmodifiableMap(new CaseInsensitiveHashMap<>(indicatorsAndLabels));
+        return indicatorsAndLabels.isEmpty() ? null : Collections.unmodifiableMap(new CaseInsensitiveTreeMap<>(indicatorsAndLabels));
     }
 
     public static void containerDeleted(@NotNull Container c)
@@ -170,9 +167,7 @@ public class MvUtil
 
     /**
      * Returns the default indicators as originally implemented: "Q" and "N",
-     * mapped to their labels.
-     *
-     * This should only be necessary at bootstrap time.
+     * mapped to their labels. This should only be necessary at bootstrap time.
      */
     public static Map<String, String> getDefaultMvIndicators()
     {
