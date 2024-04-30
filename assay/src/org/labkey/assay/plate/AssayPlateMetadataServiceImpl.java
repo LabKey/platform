@@ -364,8 +364,12 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 
                     if (positionToWell.containsKey(well))
                     {
-                        for (WellCustomField customField : PlateManager.get().getWellCustomFields(user, plate, positionToWell.get(well).getRowId()))
+                        WellBean wellBean = positionToWell.get(well);
+                        for (WellCustomField customField : PlateManager.get().getWellCustomFields(user, plate, wellBean.getRowId()))
                             row.put(customField.getName(), customField.getValue());
+
+                        // include the sample ID field from the well
+                        row.put("SampleID", wellBean.getSampleId());
                     }
                     else
                         throw new ExperimentException("Unable to resolve well \"" + wellLocation + "\" for plate \"" + plate.getName() + "\".");
