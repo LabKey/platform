@@ -3412,12 +3412,6 @@ public class QueryServiceImpl implements QueryService
         return AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED);
     }
 
-    @Override
-    public boolean isCrossProjectsImportEnabled(@Nullable Container container)
-    {
-        return container != null && container.isProductProjectsEnabled() && AppProps.getInstance().isExperimentalFeatureEnabled(CROSS_PROJECT_IMPORT_ENABLED);
-    }
-
     public static class TestCase extends Assert
     {
         @Test
