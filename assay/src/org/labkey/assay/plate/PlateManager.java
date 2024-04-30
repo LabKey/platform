@@ -3110,9 +3110,6 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             PlateType plateType = PlateManager.get().getPlateType(8, 12);
             assertNotNull("96 well plate type was not found", plateType);
 
-            PlateSetImpl plateSetImpl = new PlateSetImpl();
-            PlateSet plateSet = PlateManager.get().createPlateSet(container, user, plateSetImpl, null, null);
-
             List<Map<String, Object>> rows = List.of(
                     CaseInsensitiveHashMap.of(
                             "wellLocation", "A1",
@@ -3127,11 +3124,11 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                             "properties/barcode", "B5678"
                     )
             );
-            PlateManager.get().createAndSavePlate(container, user, plateType, "myPlate", plateSet.getRowId(), null, rows);
+            Plate p = PlateManager.get().createAndSavePlate(container, user, plateType, "myPlate", null, null, rows);
 
             // Act
-            Set<FieldKey> includedMetadataCols = WellTable.getMetadataColumns(plateSet.getRowId(), container, user);
-            List<Object[]> result = PlateManager.get().getInstrumentInstructions(plateSet.getRowId(), includedMetadataCols, container, user);
+            Set<FieldKey> includedMetadataCols = WellTable.getMetadataColumns(p.getPlateSet().getRowId(), container, user);
+            List<Object[]> result = PlateManager.get().getInstrumentInstructions(p.getPlateSet().getRowId(), includedMetadataCols, container, user);
 
             // Assert
             Object[] row1 = result.get(0);
@@ -3159,10 +3156,6 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             PlateType plateType = PlateManager.get().getPlateType(8, 12);
             assertNotNull("96 well plate type was not found", plateType);
 
-            PlateSetImpl plateSetImpl = new PlateSetImpl();
-            PlateSet plateSetSource = PlateManager.get().createPlateSet(container, user, plateSetImpl, null, null);
-            PlateSet plateSetDestination = PlateManager.get().createPlateSet(container, user, plateSetImpl, null, null);
-
             List<Map<String, Object>> rows1 = List.of(
                     CaseInsensitiveHashMap.of(
                             "wellLocation", "A1",
@@ -3177,7 +3170,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                             "properties/barcode", "B5678"
                     )
             );
-            PlateManager.get().createAndSavePlate(container, user, plateType, "myPlate1", plateSetSource.getRowId(), null, rows1);
+            Plate plateSource = PlateManager.get().createAndSavePlate(container, user, plateType, "myPlate1", null, null, rows1);
 
             List<Map<String, Object>> rows2 = List.of(
                     CaseInsensitiveHashMap.of(
@@ -3192,12 +3185,12 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                             "wellLocation", "A3",
                             "sampleId", sample2.getRowId())
             );
-            PlateManager.get().createAndSavePlate(container, user, plateType, "myPlate2", plateSetDestination.getRowId(), null, rows2);
+            Plate plateDestination =PlateManager.get().createAndSavePlate(container, user, plateType, "myPlate2", null, null, rows2);
 
             // Act
-            Set<FieldKey> sourceIncludedMetadataCols = WellTable.getMetadataColumns(plateSetSource.getRowId(), container, user);
-            Set<FieldKey> destinationIncludedMetadataCols = WellTable.getMetadataColumns(plateSetDestination.getRowId(), container, user);
-            List<Object[]> plateDataRows = PlateManager.get().getWorklist(plateSetSource.getRowId(), plateSetDestination.getRowId(), sourceIncludedMetadataCols, destinationIncludedMetadataCols, container, user);
+            Set<FieldKey> sourceIncludedMetadataCols = WellTable.getMetadataColumns(plateSource.getPlateSet().getRowId(), container, user);
+            Set<FieldKey> destinationIncludedMetadataCols = WellTable.getMetadataColumns(plateDestination.getPlateSet().getRowId(), container, user);
+            List<Object[]> plateDataRows = PlateManager.get().getWorklist(plateSource.getPlateSet().getRowId(), plateDestination.getPlateSet().getRowId(), sourceIncludedMetadataCols, destinationIncludedMetadataCols, container, user);
 
             // Assert
             Object[] row1 = plateDataRows.get(0);
