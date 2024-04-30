@@ -1,6 +1,7 @@
 package org.labkey.api.view;
 
 import java.io.IOException;
+import java.net.URL;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
@@ -27,11 +28,20 @@ public class RedirectorServlet extends HttpServlet
         if ("get".equalsIgnoreCase(request.getMethod()))
         {
             // Send a redirect to let the client know there's a new preferred URL
-            String originalUrl = request.getRequestURL().toString();
-            String redirectUrl = originalUrl.replaceFirst(_legacyContextPath, "");
+            StringBuffer rawUrl = request.getRequestURL();
+            // getRequestURL() doesn't include GET parameters, so append them if needed
+            if (request.getQueryString() != null)
+            {
+                rawUrl.append("?").append(request.getQueryString());
+            }
+            URL originalUrl = new URL(rawUrl.toString());
+            URL redirectUrl = new URL(originalUrl.getProtocol(),
+                    originalUrl.getHost(),
+                    originalUrl.getPort(),
+                    originalUrl.getFile().replaceFirst(_legacyContextPath, ""));
 
             response.setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);
-            response.setHeader("Location", redirectUrl);
+            response.setHeader("Location", redirectUrl.toString());
         }
         else
         {
