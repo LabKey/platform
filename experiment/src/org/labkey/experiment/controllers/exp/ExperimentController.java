@@ -6111,21 +6111,23 @@ public class ExperimentController extends SpringActionController
                 @Override
                 protected void renderCellContents(StringBuilder html, Container c, ActionURL url, boolean hasRoot)
                 {
-                    if (hasRoot && !c.equals(getContainer()))
+                    boolean renderLink = hasRoot && !c.equals(getContainer());
+
+                    if (renderLink)
                     {
                         html.append("<a class=\"move-target-container\" data-objectid=\"");
                         html.append(PageFlowUtil.filter(c.getId()));
                         html.append("\">");
                     }
                     html.append(PageFlowUtil.filter(c.getName()));
-                    if (hasRoot && !c.equals(getContainer()))
+                    if (renderLink)
                     {
                         html.append("</a>");
                     }
 
                     if (!_clickHandlerRegistered)
                     {
-                        HttpView.currentPageConfig().addHandlerForQuerySelector("a.move-target-container", "click", "moveTo(this.attributes.getNamedItem('data-objectid').value);;" );
+                        HttpView.currentPageConfig().addHandlerForQuerySelector("a.move-target-container", "click", "moveTo(this.attributes.getNamedItem('data-objectid').value);" );
                         _clickHandlerRegistered = true;
                     }
                 }
