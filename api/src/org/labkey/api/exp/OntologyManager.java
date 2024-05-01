@@ -98,8 +98,6 @@ public class OntologyManager
     private static final Logger _log = LogManager.getLogger(OntologyManager.class);
     private static final Cache<Pair<Container, String>, Map<String, ObjectProperty>> PROPERTY_MAP_CACHE = DatabaseCache.get(getExpSchema().getScope(), 100000, "Property maps", new PropertyMapCacheLoader());
     private static final BlockingCache<String, Integer> OBJECT_ID_CACHE = DatabaseCache.get(getExpSchema().getScope(), 2000, "ObjectIds", new ObjectIdCacheLoader());
-    // Note: Converting the below to a BlockingDatabaseCache resulted in a couple failures in the Daily suite. The
-    // explicit put() operations may be the problem. Leave it as an old school wrapped DatabaseCache for now.
     private static final Cache<Pair<String, GUID>, PropertyDescriptor> PROP_DESCRIPTOR_CACHE = DatabaseCache.get(getExpSchema().getScope(), 40000, "Property descriptors", new CacheLoader<>()
     {
         @Override
@@ -190,11 +188,11 @@ public class OntologyManager
             Container c = ContainerManager.getForId(key.second);
             if (null == c)
                 return Collections.emptyList();
-            SQLFragment sql = new SQLFragment(" SELECT PD.*,Required " +
-                " FROM " + getTinfoPropertyDescriptor() + " PD " +
-                "   INNER JOIN " + getTinfoPropertyDomain() + " PDM ON (PD.PropertyId = PDM.PropertyId) " +
-                "   INNER JOIN " + getTinfoDomainDescriptor() + " DD ON (DD.DomainId = PDM.DomainId) " +
-                "  WHERE DD.DomainURI = ?  AND DD.Project IN (?,?) ORDER BY PDM.SortOrder, PD.PropertyId");
+            SQLFragment sql = new SQLFragment("SELECT PropertyURI, Required " +
+                "FROM " + getTinfoPropertyDescriptor() + " PD\n" +
+                "   INNER JOIN " + getTinfoPropertyDomain() + " PDM ON (PD.PropertyId = PDM.PropertyId)\n" +
+                "   INNER JOIN " + getTinfoDomainDescriptor() + " DD ON (DD.DomainId = PDM.DomainId)\n" +
+                "WHERE DD.DomainURI = ? AND DD.Project IN (?, ?) ORDER BY PDM.SortOrder, PD.PropertyId");
 
             sql.addAll(
                 typeURI,
@@ -203,9 +201,8 @@ public class OntologyManager
                 _sharedContainer.getProject().getId()
             );
 
-            // TODO: Simplify query to select only URI and required
-            return new SqlSelector(getExpSchema(), sql).stream(PropertyDescriptor.class)
-                .map(pd -> new Pair<>(pd.getPropertyURI(), pd.isRequired()))
+            return new SqlSelector(getExpSchema(), sql).mapStream()
+                .map(map -> Pair.of((String)map.get("PropertyURI"), (Boolean)map.get("Required")))
                 .toList();
         }
     });
@@ -227,7 +224,7 @@ public class OntologyManager
 
     static public String PropertyOrderURI = "urn:exp.labkey.org/#PropertyOrder";
     /**
-     * An comma-separated list of propertyID that indicates the sort order of the properties attached to an object.
+     * A comma-separated list of propertyID that indicates the sort order of the properties attached to an object.
      */
     static public SystemProperty PropertyOrder = new SystemProperty(PropertyOrderURI, PropertyType.STRING);
 
@@ -236,11 +233,9 @@ public class OntologyManager
         BeanObjectFactory.Registry.register(ObjectProperty.class, new ObjectProperty.ObjectPropertyObjectFactory());
     }
 
-
     private OntologyManager()
     {
     }
-
 
     /**
      * @return map from PropertyURI to value
@@ -1394,10 +1389,10 @@ public class OntologyManager
                     {
                         uncache(dd);
                         dd = dd.edit()
-                                .setContainer(project)
-                                .setProject(project)
-                                .setDomainId(0)
-                                .build();
+                            .setContainer(project)
+                            .setProject(project)
+                            .setDomainId(0)
+                            .build();
                         dd = ensureDomainDescriptor(dd);
                         ensurePropertyDomain(pd, dd);
                     }
