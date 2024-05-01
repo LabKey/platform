@@ -731,8 +731,8 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         {
             if (!plateTypeGrids.containsKey(plate.getPlateType()))
             {
-                Plate template = PlateService.get().createPlateTemplate(container, TsvPlateLayoutHandler.TYPE, plate.getPlateType());
-                for (PlateUtils.GridInfo gridInfo : plateReader.loadMultiGridFile(template, dataFile))
+                Plate p = PlateService.get().createPlate(container, TsvPlateLayoutHandler.TYPE, plate.getPlateType());
+                for (PlateUtils.GridInfo gridInfo : plateReader.loadMultiGridFile(p, dataFile))
                 {
                     PlateGridInfo plateInfo = new PlateGridInfo(gridInfo, plateSet);
                     plateTypeGrids.put(plate.getPlateType(), plateInfo);

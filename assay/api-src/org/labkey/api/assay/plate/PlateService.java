@@ -33,6 +33,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ActionURL;
 
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.List;
 
 public interface PlateService
@@ -89,17 +90,6 @@ public interface PlateService
      * @throws IllegalArgumentException Thrown if a template of the specified name already exists in the container.
      */
     @NotNull Plate createPlate(Container container, String templateType, @NotNull PlateType plateType);
-
-    /**
-     * Instantiates a new plate template instance.
-     * This plate template is not persisted to the database.
-     * @param container The template's container.
-     * @param templateType The type of plate template, if associated with a particular assay.
-     * @param plateType Specifies the overall shape of the plate
-     * @return A newly created plate template instance.
-     * @throws IllegalArgumentException Thrown if a template of the specified name already exists in the container.
-     */
-    @NotNull Plate createPlateTemplate(Container container, String templateType, @NotNull PlateType plateType);
 
     /**
      * Adds a new well group to the plate
@@ -166,6 +156,8 @@ public interface PlateService
      * @return The requested plate, or null if no plate exists with the specified plate identifier.
      */
     @Nullable Plate getPlate(ContainerFilter cf, Integer plateSetId, Object plateIdentifier);
+
+    @NotNull List<Plate> getPlates(Container c);
 
     /**
      * Gets all plate templates for the specified container. Plate templates are Plate instances

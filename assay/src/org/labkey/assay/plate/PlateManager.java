@@ -190,10 +190,10 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         registerPlateLayoutHandler(new AbstractPlateLayoutHandler()
         {
             @Override
-            public Plate createTemplate(@Nullable String templateTypeName, Container container, @NotNull PlateType plateType)
+            public Plate createPlate(@Nullable String plateName, Container container, @NotNull PlateType plateType)
             {
                 validatePlateType(plateType);
-                return createPlateTemplate(container, getAssayType(), plateType);
+                return PlateManager.get().createPlate(container, getAssayType(), plateType);
             }
 
             @Override
@@ -244,9 +244,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     }
 
     @Override
-    public @NotNull Plate createPlate(Container container, String templateType, @NotNull PlateType plateType)
+    public @NotNull Plate createPlate(Container container, String assayType, @NotNull PlateType plateType)
     {
-        return new PlateImpl(container, null, templateType, plateType);
+        return new PlateImpl(container, null, assayType, plateType);
     }
 
     public @NotNull Plate createAndSavePlate(
@@ -447,7 +447,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(c, provider)
                 .stream().filter(provider::isPlateMetadataEnabled).toList();
 
-        // get the runIds for each protocol, query against its assayresults table
+        // get the runIds for each protocol, query against its assay results table
         List<Integer> runIds = new ArrayList<>();
         for (ExpProtocol protocol : protocols)
         {
@@ -517,11 +517,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return new SqlSelector(ExperimentService.get().getSchema(), sql);
     }
 
-    @Override
-    @NotNull
-    public Plate createPlateTemplate(Container container, String templateType, @NotNull PlateType plateType)
+    private @NotNull Plate createPlateTemplate(Container container, String assayType, @NotNull PlateType plateType)
     {
-        Plate plate = createPlate(container, templateType, plateType);
+        Plate plate = createPlate(container, assayType, plateType);
         ((PlateImpl)plate).setTemplate(true);
 
         return plate;
@@ -695,7 +693,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate(), Set.of("RowId"), filter, null).exists();
     }
 
-    private Collection<Plate> getPlates(Container c)
+    @Override
+    public @NotNull List<Plate> getPlates(Container c)
     {
         return PlateCache.getPlates(c);
     }
@@ -1654,7 +1653,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     {
         if (isDuplicatePlateName(destContainer, user, source.getName(), null))
             throw new PlateService.NameConflictException(source.getName());
-        Plate newPlate = createPlateTemplate(destContainer, source.getAssayType(), source.getPlateType());
+        Plate newPlate = createPlate(destContainer, source.getAssayType(), source.getPlateType());
         newPlate.setName(source.getName());
 
         copyProperties(source, newPlate);
@@ -1748,6 +1747,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         List<PlateLayout> layouts = new ArrayList<>();
         for (PlateLayoutHandler handler : getPlateLayoutHandlers())
         {
+            if (TsvPlateLayoutHandler.TYPE.equalsIgnoreCase(handler.getAssayType()))
+                continue;
+
             for (PlateType type : handler.getSupportedPlateTypes())
             {
                 int wellCount = type.getRows() * type.getColumns();
@@ -2895,7 +2897,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             container = JunitUtil.getTestContainer();
             user = TestContext.get().getUser();
 
-            PlateService.get().deleteAllPlateData(container);
+            PlateManager.get().deleteAllPlateData(container);
             Domain domain = PlateManager.get().getPlateMetadataDomain(container ,user);
             if (domain != null)
                 domain.delete(user);
@@ -2940,20 +2942,20 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             PlateType plateType = PlateManager.get().getPlateType(8, 12);
             assertNotNull("96 well plate type was not found", plateType);
 
-            Plate template = handler.createTemplate("UNUSED", container, plateType);
+            Plate template = handler.createPlate("UNUSED", container, plateType);
             template.setName("bob");
             template.setProperty("friendly", "yes");
             assertNull(template.getRowId());
             assertNull(template.getLSID());
 
             WellGroup wg1 = template.addWellGroup("wg1", WellGroup.Type.SAMPLE,
-                    PlateService.get().createPosition(container, 0, 0),
-                    PlateService.get().createPosition(container, 0, 11));
+                    PlateManager.get().createPosition(container, 0, 0),
+                    PlateManager.get().createPosition(container, 0, 11));
             wg1.setProperty("score", "100");
             assertNull(wg1.getRowId());
             assertNull(wg1.getLSID());
 
-            int plateId = PlateService.get().save(container, user, template);
+            int plateId = PlateManager.get().save(container, user, template);
 
             //
             // VERIFY INSERT
@@ -2992,21 +2994,21 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
             // add well group
             WellGroup wg2 = savedTemplate.addWellGroup("wg2", WellGroup.Type.SAMPLE,
-                    PlateService.get().createPosition(container, 1, 0),
-                    PlateService.get().createPosition(container, 1, 11));
+                    PlateManager.get().createPosition(container, 1, 0),
+                    PlateManager.get().createPosition(container, 1, 11));
 
             // rename existing well group
             ((WellGroupImpl)savedWg1).setName("wg1_renamed");
 
             // add positions
             controlWellGroups.get(0).setPositions(List.of(
-                    PlateService.get().createPosition(container, 0, 0),
-                    PlateService.get().createPosition(container, 0, 1)));
+                    PlateManager.get().createPosition(container, 0, 0),
+                    PlateManager.get().createPosition(container, 0, 1)));
 
             // delete well group
             ((PlateImpl)savedTemplate).markWellGroupForDeletion(controlWellGroups.get(1));
 
-            int newPlateId = PlateService.get().save(container, user, savedTemplate);
+            int newPlateId = PlateManager.get().save(container, user, savedTemplate);
             assertEquals(savedTemplate.getRowId().intValue(), newPlateId);
 
             //
@@ -3014,7 +3016,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             //
 
             // verify plate
-            Plate updatedTemplate = PlateService.get().getPlate(container, plateId);
+            Plate updatedTemplate = PlateManager.get().getPlate(container, plateId);
             assertEquals("sally", updatedTemplate.getName());
             assertEquals(savedTemplate.getLSID(), updatedTemplate.getLSID());
 
@@ -3043,9 +3045,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             // DELETE
             //
 
-            PlateService.get().deletePlate(container, user, updatedTemplate.getRowId());
+            PlateManager.get().deletePlate(container, user, updatedTemplate.getRowId());
 
-            assertNull(PlateService.get().getPlate(container, updatedTemplate.getRowId()));
+            assertNull(PlateManager.get().getPlate(container, updatedTemplate.getRowId()));
             assertEquals(0, PlateManager.get().getPlateTemplates(container).size());
         }
 
@@ -3065,15 +3067,15 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             assertNotNull("Expected plate to have been persisted and provided with a plateId", plate.getPlateId());
 
             // verify access via plate ID
-            Plate savedPlate = PlateService.get().getPlate(container, plate.getPlateId());
+            Plate savedPlate = PlateManager.get().getPlate(container, plate.getPlateId());
             assertNotNull("Expected plate to be accessible via it's plate ID", savedPlate);
             assertEquals("Plate retrieved by plate ID doesn't match the original plate.", savedPlate.getRowId(), plate.getRowId());
 
             // verify container filter access
-            savedPlate = PlateService.get().getPlate(ContainerManager.getSharedContainer(), plate.getRowId());
+            savedPlate = PlateManager.get().getPlate(ContainerManager.getSharedContainer(), plate.getRowId());
             assertNull("Saved plate should not exist in the shared container", savedPlate);
 
-            savedPlate = PlateService.get().getPlate(ContainerFilter.Type.CurrentAndSubfolders.create(ContainerManager.getSharedContainer(), user), plate.getRowId());
+            savedPlate = PlateManager.get().getPlate(ContainerFilter.Type.CurrentAndSubfolders.create(ContainerManager.getSharedContainer(), user), plate.getRowId());
             assertEquals("Expected plate to be accessible via a container filter", plate.getRowId(), savedPlate.getRowId());
         }
 
@@ -3100,21 +3102,21 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             assertEquals("Expected plateSet to have 3 plates", 3, plates.size());
 
             // verify access via plate rowId
-            assertNotNull("Expected plate to be accessible via it's rowId", PlateService.get().getPlate(cf, plateSet.getRowId(), plates.get(0).getRowId()));
-            assertNotNull("Expected plate to be accessible via it's rowId", PlateService.get().getPlate(cf, plateSet.getRowId(), plates.get(1).getRowId()));
-            assertNotNull("Expected plate to be accessible via it's rowId", PlateService.get().getPlate(cf, plateSet.getRowId(), plates.get(2).getRowId()));
+            assertNotNull("Expected plate to be accessible via it's rowId", PlateManager.get().getPlate(cf, plateSet.getRowId(), plates.get(0).getRowId()));
+            assertNotNull("Expected plate to be accessible via it's rowId", PlateManager.get().getPlate(cf, plateSet.getRowId(), plates.get(1).getRowId()));
+            assertNotNull("Expected plate to be accessible via it's rowId", PlateManager.get().getPlate(cf, plateSet.getRowId(), plates.get(2).getRowId()));
 
             // verify access via plate ID
-            assertNotNull("Expected plate to be accessible via it's plate ID", PlateService.get().getPlate(cf, plateSet.getRowId(), plates.get(0).getPlateId()));
-            assertNotNull("Expected plate to be accessible via it's plate ID", PlateService.get().getPlate(cf, plateSet.getRowId(), plates.get(1).getPlateId()));
-            assertNotNull("Expected plate to be accessible via it's plate ID", PlateService.get().getPlate(cf, plateSet.getRowId(), plates.get(2).getPlateId()));
+            assertNotNull("Expected plate to be accessible via it's plate ID", PlateManager.get().getPlate(cf, plateSet.getRowId(), plates.get(0).getPlateId()));
+            assertNotNull("Expected plate to be accessible via it's plate ID", PlateManager.get().getPlate(cf, plateSet.getRowId(), plates.get(1).getPlateId()));
+            assertNotNull("Expected plate to be accessible via it's plate ID", PlateManager.get().getPlate(cf, plateSet.getRowId(), plates.get(2).getPlateId()));
 
             // verify access via plate name
-            assertNotNull("Expected plate to be accessible via it's name", PlateService.get().getPlate(cf, plateSet.getRowId(), "testAccessPlateByIdentifiersFirst"));
+            assertNotNull("Expected plate to be accessible via it's name", PlateManager.get().getPlate(cf, plateSet.getRowId(), "testAccessPlateByIdentifiersFirst"));
             // verify error when trying to access non-existing plate name
             try
             {
-                PlateService.get().getPlate(cf, plateSet.getRowId(), "testAccessPlateByIdentifiersBogus");
+                PlateManager.get().getPlate(cf, plateSet.getRowId(), "testAccessPlateByIdentifiersBogus");
                 fail("Expected a validation error when accessing plates by non-existing name");
             }
             catch (IllegalArgumentException e)
@@ -3129,23 +3131,23 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             // Verify plate service assumptions about plate templates
             PlateType plateType = PlateManager.get().getPlateType(16, 24);
             assertNotNull("384 well plate type was not found", plateType);
-            Plate plate = PlateService.get().createPlateTemplate(container, TsvPlateLayoutHandler.TYPE, plateType);
+            Plate plate = PlateManager.get().createPlateTemplate(container, TsvPlateLayoutHandler.TYPE, plateType);
             plate.setName("my plate template");
-            int plateId = PlateService.get().save(container, user, plate);
+            int plateId = PlateManager.get().save(container, user, plate);
 
             // Assert
             assertTrue("Expected saved plateId to be returned", plateId != 0);
-            assertTrue("Expected saved plate to have the template field set to true", PlateService.get().getPlate(container, plateId).isTemplate());
+            assertTrue("Expected saved plate to have the template field set to true", PlateManager.get().getPlate(container, plateId).isTemplate());
 
             // Verify only plate templates are returned
             plateType = PlateManager.get().getPlateType(8, 12);
             assertNotNull("96 well plate type was not found", plateType);
 
-            plate = PlateService.get().createPlate(container, TsvPlateLayoutHandler.TYPE, plateType);
+            plate = PlateManager.get().createPlate(container, TsvPlateLayoutHandler.TYPE, plateType);
             plate.setName("non plate template");
-            PlateService.get().save(container, user, plate);
+            PlateManager.get().save(container, user, plate);
 
-            List<Plate> plates = PlateService.get().getPlateTemplates(container);
+            List<Plate> plates = PlateManager.get().getPlateTemplates(container);
             assertEquals("Expected only a single plate to be returned", 1, plates.size());
             for (Plate template : plates)
             {
@@ -3159,9 +3161,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             PlateType plateType = PlateManager.get().getPlateType(16, 24);
             assertNotNull("384 well plate type was not found", plateType);
 
-            Plate plate = PlateService.get().createPlateTemplate(container, TsvPlateLayoutHandler.TYPE, plateType);
+            Plate plate = PlateManager.get().createPlateTemplate(container, TsvPlateLayoutHandler.TYPE, plateType);
             plate.setName("new plate with metadata");
-            int plateId = PlateService.get().save(container, user, plate);
+            int plateId = PlateManager.get().save(container, user, plate);
 
             // Assert
             assertTrue("Expected saved plateId to be returned", plateId != 0);

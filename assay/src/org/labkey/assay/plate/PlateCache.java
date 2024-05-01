@@ -132,7 +132,7 @@ public class PlateCache
         return plate != null ? plate.copy() : null;
     }
 
-    public static @NotNull Collection<Plate> getPlates(Container c)
+    public static @NotNull List<Plate> getPlates(Container c)
     {
         List<Plate> plates = new ArrayList<>();
         List<Integer> ids = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate(),

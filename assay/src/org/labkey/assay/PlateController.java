@@ -48,6 +48,7 @@ import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
+import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresAnyOf;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
@@ -101,9 +102,9 @@ public class PlateController extends SpringActionController
     public static class PlateUrlsImpl implements PlateUrls
     {
         @Override
-        public ActionURL getPlateTemplateListURL(Container c)
+        public ActionURL getPlateListURL(Container c)
         {
-            return new ActionURL(PlateTemplateListAction.class, c);
+            return new ActionURL(PlateListAction.class, c);
         }
 
         @Override
@@ -119,7 +120,7 @@ public class PlateController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            return HttpView.redirect(new ActionURL(PlateTemplateListAction.class, getContainer()));
+            return HttpView.redirect(new ActionURL(PlateListAction.class, getContainer()));
         }
 
         @Override
@@ -128,10 +129,10 @@ public class PlateController extends SpringActionController
         }
     }
 
-
     public static class PlateTemplateListBean
     {
-        private List<? extends Plate> _templates;
+        private final List<? extends Plate> _templates;
+
         public PlateTemplateListBean(List<? extends Plate> templates)
         {
             _templates = templates;
@@ -144,21 +145,25 @@ public class PlateController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public static class PlateTemplateListAction extends SimpleViewAction<ReturnUrlForm>
+    @ActionNames("plateList, plateTemplateList")
+    public static class PlateListAction extends SimpleViewAction<ReturnUrlForm>
     {
         @Override
-        public ModelAndView getView(ReturnUrlForm plateTemplateListForm, BindException errors)
+        public ModelAndView getView(ReturnUrlForm form, BindException errors)
         {
             setHelpTopic("editPlateTemplate");
-            List<Plate> plateTemplates = PlateService.get().getPlateTemplates(getContainer());
-            return new JspView<>("/org/labkey/assay/plate/view/plateTemplateList.jsp",
+            List<Plate> plateTemplates = PlateService.get().getPlates(getContainer())
+                    .stream()
+                    .filter(p -> !TsvPlateLayoutHandler.TYPE.equalsIgnoreCase(p.getAssayType()))
+                    .toList();
+            return new JspView<>("/org/labkey/assay/plate/view/plateList.jsp",
                     new PlateTemplateListBean(plateTemplates));
         }
 
         @Override
         public void addNavTrail(NavTree root)
         {
-            root.addChild("Plate Templates");
+            root.addChild("Plates");
         }           
     }
 
@@ -424,7 +429,7 @@ public class PlateController extends SpringActionController
         @Override
         public ActionURL getSuccessURL(CopyForm copyForm)
         {
-            return new ActionURL(PlateTemplateListAction.class, getContainer());
+            return new ActionURL(PlateListAction.class, getContainer());
         }
     }
 

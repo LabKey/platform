@@ -31,16 +31,15 @@ import java.util.Map;
  */
 public interface PlateLayoutHandler
 {
-    @NotNull
-    String getAssayType();
+    @NotNull String getAssayType();
 
     @NotNull List<String> getLayoutTypes(PlateType plateType);
 
     /**
-     * createTemplate will be given a null value for templateTypeName when it is creating a new template which is a
+     * createPlate will be given a null value for plateName when it is creating a new plate which is a
      * default for that assay type.
      */
-    Plate createTemplate(@Nullable String templateTypeName, Container container, @NotNull PlateType plateType) throws SQLException;
+    Plate createPlate(@Nullable String plateName, Container container, @NotNull PlateType plateType) throws SQLException;
 
     List<PlateType> getSupportedPlateTypes();
 
@@ -52,9 +51,9 @@ public interface PlateLayoutHandler
     boolean canCreateNewGroups(WellGroup.Type type);
 
     /**
-     * Validate a new or edited plate template for handler specific errors.
+     * Validate a new or edited plate for handler specific errors.
      */
-    void validateTemplate(Container container, User user, Plate template) throws ValidationException;
+    void validatePlate(Container container, User user, Plate plate) throws ValidationException;
 
     Map<String, List<String>> getDefaultGroupsForTypes();
 
