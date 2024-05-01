@@ -45,8 +45,10 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
@@ -324,6 +326,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             Map<Object, Pair<Plate, Map<Position, WellBean>>> plateIdentifierMap = new HashMap<>();
             ContainerFilter cf = PlateManager.get().getPlateContainerFilter(protocol, container, user);
             int rowCounter = 0;
+            Map<Integer, ExpMaterial> plateSamples = new HashMap<>();
 
             // include metadata that may have been applied directly to the plate
             for (Map<String, Object> row : mergedRows)
@@ -351,8 +354,20 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 {
                     SimpleFilter filter = SimpleFilter.createContainerFilter(plate.getContainer());
                     filter.addCondition(FieldKey.fromParts("PlateId"), plate.getRowId());
+                    Set<Integer> wellSamples = new HashSet<>();
                     for (WellBean well : new TableSelector(AssayDbSchema.getInstance().getTableInfoWell(), filter, null).getArrayList(WellBean.class))
+                    {
                         positionToWell.put(new PositionImpl(plate.getContainer(), well.getRow(), well.getCol()), well);
+                        if (well.getSampleId() != null && !plateSamples.containsKey(well.getSampleId()))
+                            wellSamples.add(well.getSampleId());
+                    }
+
+                    if (!wellSamples.isEmpty())
+                    {
+                        // stash away any samples associated with the plate
+                        for (ExpMaterial sample : ExperimentService.get().getExpMaterials(wellSamples))
+                            plateSamples.put(sample.getRowId(), sample);
+                    }
                 }
 
                 Object wellLocation = PropertyService.get().getDomainPropertyValueFromRow(wellLocationProperty, row);
@@ -369,7 +384,12 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                             row.put(customField.getName(), customField.getValue());
 
                         // include the sample ID field from the well
-                        row.put("SampleID", wellBean.getSampleId());
+                        if (plateSamples.containsKey(wellBean.getSampleId()))
+                        {
+                            ExpMaterial sample = plateSamples.get(wellBean.getSampleId());
+                            row.put("SampleID", sample.getRowId());
+                            row.put("SampleName", sample.getName());
+                        }
                     }
                     else
                         throw new ExperimentException("Unable to resolve well \"" + wellLocation + "\" for plate \"" + plate.getName() + "\".");
