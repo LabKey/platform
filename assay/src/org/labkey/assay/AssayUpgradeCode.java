@@ -152,7 +152,6 @@ public class AssayUpgradeCode implements UpgradeCode
 
     private static void _ensureColumn(String colName, Domain domain, ExpProtocol protocol, SchemaTableInfo provisionedTable, AssayResultDomainKind kind)
     {
-
         ColumnInfo col = provisionedTable.getColumn(colName);
         if (col != null)
             _log.error("Column '" + colName + "' is already defined in result table for '" + protocol.getName() + "'.");
@@ -160,7 +159,6 @@ public class AssayUpgradeCode implements UpgradeCode
         PropertyStorageSpec colProp = kind.getBaseProperties(domain).stream().filter(p -> colName.equalsIgnoreCase(p.getName())).findFirst().orElseThrow();
         StorageProvisioner.get().addStorageProperties(domain, Arrays.asList(colProp), true);
         _log.info("Added '" + colName + "' column to '" + protocol.getName() + " provisioned result table.");
-
     }
 
     /**
@@ -169,7 +167,8 @@ public class AssayUpgradeCode implements UpgradeCode
      * Switch from storing the protocol plate template by name to the plate lsid.
      */
     @DeferredUpgrade
-    public static void updateProtocolPlateTemplate(ModuleContext ctx) throws Exception
+    @SuppressWarnings({"UnusedDeclaration"})
+    public static void updateProtocolPlateTemplate(ModuleContext ctx)
     {
         if (ctx.isNewInstall())
             return;
@@ -221,6 +220,7 @@ public class AssayUpgradeCode implements UpgradeCode
      * The referenced upgrade script creates a new plate set for every plate in the system. We now
      * want to iterate over each plate set to set the name using the configured name expression.
      */
+    @SuppressWarnings({"UnusedDeclaration"})
     public static void updatePlateSetNames(ModuleContext ctx) throws Exception
     {
         if (ctx.isNewInstall())
@@ -269,6 +269,7 @@ public class AssayUpgradeCode implements UpgradeCode
      * Iterate over each plate and plate set to generate a Plate ID and PlateSet ID based on the
      * configured name expression for each.
      */
+    @SuppressWarnings({"UnusedDeclaration"})
     public static void initializePlateAndPlateSetIDs(ModuleContext ctx) throws Exception
     {
         if (ctx.isNewInstall())
@@ -364,6 +365,7 @@ public class AssayUpgradeCode implements UpgradeCode
      * plate metadata. This upgrade transitions to using a provisioned table approach. Since the plate features are
      * still under an experimental flag we won't worry about upgrading the domains.
      */
+    @SuppressWarnings({"UnusedDeclaration"})
     public static void deletePlateVocabDomains(ModuleContext ctx) throws Exception
     {
         if (ctx.isNewInstall())
@@ -425,6 +427,7 @@ public class AssayUpgradeCode implements UpgradeCode
     /**
      * Called from assay-24.005-24.006.sql
      */
+    @SuppressWarnings({"UnusedDeclaration"})
     public static void populatePlateSetPaths(ModuleContext ctx) throws Exception
     {
         if (ctx.isNewInstall())
