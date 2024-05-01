@@ -43,6 +43,7 @@ import org.labkey.api.data.ArrayExcelWriter;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.TSVWriter;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.query.FieldKey;
@@ -57,6 +58,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.ContainerTree;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -68,6 +70,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.writer.ZipFile;
 import org.labkey.assay.plate.PlateDataServiceImpl;
 import org.labkey.assay.plate.PlateImpl;
 import org.labkey.assay.plate.PlateManager;
@@ -81,6 +84,12 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -1408,6 +1417,154 @@ public class PlateController extends SpringActionController
             catch (Exception e)
             {
                 errors.reject(ERROR_GENERIC, e.getMessage() != null ? e.getMessage() : "Failed to create Instrument Instruction.");
+            }
+
+            return null;
+        }
+    }
+
+    public enum PlateExportType
+    {
+        CSV,
+        TSV,
+        Map,
+    }
+
+    public static class PlateExportForm
+    {
+        private ContainerFilter.Type _containerFilter;
+
+        private List<Integer> _plateIds;
+
+        private PlateExportType _exportType;
+
+        private String _filename;
+
+        public ContainerFilter.Type getContainerFilter()
+        {
+            return _containerFilter;
+        }
+
+        public void setContainerFilter(ContainerFilter.Type containerFilter)
+        {
+            _containerFilter = containerFilter;
+        }
+
+        public List<Integer> getPlateIds()
+        {
+            return _plateIds;
+        }
+
+        public void setPlateIds(List<Integer> plateIds)
+        {
+            _plateIds = plateIds;
+        }
+
+        public PlateExportType getExportType()
+        {
+            return _exportType;
+        }
+
+        public void setExportType(PlateExportType exportType)
+        {
+            _exportType = exportType;
+        }
+
+        public String getFilename()
+        {
+            return _filename;
+        }
+
+        public void setFilename(String filename)
+        {
+            _filename = filename;
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public static class PlateExportAction extends ReadOnlyApiAction<PlateExportForm>
+    {
+        @Override
+        public void validateForm(PlateExportForm form, Errors errors)
+        {
+            if (form.getPlateIds() == null)
+                errors.reject(ERROR_REQUIRED, "\"plateIds\" is required");
+
+            if (form.getExportType() == null)
+                errors.reject(ERROR_REQUIRED, "\"exportType\" is required");
+        }
+
+        @Override
+        public Object execute(PlateExportForm form, BindException errors) throws Exception
+        {
+            ContainerFilter cf = ContainerFilter.Type.Current.create(getViewContext());
+            // if an optional container filter is specified
+            if (form.getContainerFilter() != null)
+                cf = form.getContainerFilter().create(getViewContext());
+
+            List<File> files;
+
+            if (form.getExportType() == PlateExportType.CSV)
+                files = PlateManager.get().exportPlateData(getContainer(), getUser(), cf, form.getPlateIds(), TSVWriter.DELIM.COMMA);
+            else if (form.getExportType() == PlateExportType.TSV)
+                files = PlateManager.get().exportPlateData(getContainer(), getUser(), cf, form.getPlateIds(), TSVWriter.DELIM.TAB);
+            else
+                files = PlateManager.get().exportPlateMaps(getContainer(), getUser(), cf, form.getPlateIds(), getViewContext());
+
+            if (files.isEmpty())
+            {
+                // TODO: what does the empty response look like? Should it be an error?
+                return null;
+            }
+            else if (files.size() == 1)
+            {
+                File file = files.get(0);
+                PageFlowUtil.streamFile(getViewContext().getResponse(), file, true, true);
+                Files.deleteIfExists(file.toPath());
+                return null;
+            }
+
+            String filename = form.getFilename();
+
+            if (filename == null)
+                filename = "plates.zip";
+            else
+                filename = filename + ".zip";
+
+            // Export to a temporary file first so exceptions are displayed by the standard error page
+            Path tempDir = FileUtil.getTempDirectory().toPath();
+            Path tempZipFile = tempDir.resolve(filename);
+
+            try (ZipFile zip = new ZipFile(tempDir, filename))
+            {
+                for (File file : files)
+                {
+                    try (
+                        InputStream is = new FileInputStream(file);
+                        OutputStream os = zip.getOutputStream(file.getName())
+                    )
+                    {
+                        FileUtil.copyData(is, os);
+                    }
+                    finally
+                    {
+                        Files.deleteIfExists(file.toPath());
+                    }
+                }
+            }
+            catch (Throwable t)
+            {
+                Files.deleteIfExists(tempZipFile);
+                throw t;
+            }
+
+            try (OutputStream os = ZipFile.getOutputStream(getViewContext().getResponse(), tempZipFile.getFileName().toString()))
+            {
+                Files.copy(tempZipFile, os);
+            }
+            finally
+            {
+                Files.delete(tempZipFile);
             }
 
             return null;
