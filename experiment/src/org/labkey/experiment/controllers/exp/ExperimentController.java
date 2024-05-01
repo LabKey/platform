@@ -180,6 +180,7 @@ import org.labkey.api.view.DataViewSnapshotSelectionForm;
 import org.labkey.api.view.DetailsView;
 import org.labkey.api.view.HBox;
 import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.InsertView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -6105,19 +6106,29 @@ public class ExperimentController extends SpringActionController
             ActionURL moveURL = new ActionURL(MoveRunsAction.class, getContainer());
             PipelineRootContainerTree ct = new PipelineRootContainerTree(getUser(), moveURL)
             {
+                private boolean _clickHandlerRegistered = false;
+
                 @Override
                 protected void renderCellContents(StringBuilder html, Container c, ActionURL url, boolean hasRoot)
                 {
-                    if (hasRoot && !c.equals(getContainer()))
+                    boolean renderLink = hasRoot && !c.equals(getContainer());
+
+                    if (renderLink)
                     {
-                        html.append("<a href=\"javascript:moveTo('");
-                        html.append(c.getId());
-                        html.append("')\">");
+                        html.append("<a class=\"move-target-container\" data-objectid=\"");
+                        html.append(PageFlowUtil.filter(c.getId()));
+                        html.append("\">");
                     }
                     html.append(PageFlowUtil.filter(c.getName()));
-                    if (hasRoot)
+                    if (renderLink)
                     {
                         html.append("</a>");
+                    }
+
+                    if (!_clickHandlerRegistered)
+                    {
+                        HttpView.currentPageConfig().addHandlerForQuerySelector("a.move-target-container", "click", "moveTo(this.attributes.getNamedItem('data-objectid').value);" );
+                        _clickHandlerRegistered = true;
                     }
                 }
             };
