@@ -326,7 +326,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             Map<Object, Pair<Plate, Map<Position, WellBean>>> plateIdentifierMap = new HashMap<>();
             ContainerFilter cf = PlateManager.get().getPlateContainerFilter(protocol, container, user);
             int rowCounter = 0;
-            Map<Integer, ExpMaterial> plateSamples = new HashMap<>();
+            Map<Integer, ExpMaterial> sampleMap = new HashMap<>();
 
             // include metadata that may have been applied directly to the plate
             for (Map<String, Object> row : mergedRows)
@@ -358,16 +358,13 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                     for (WellBean well : new TableSelector(AssayDbSchema.getInstance().getTableInfoWell(), filter, null).getArrayList(WellBean.class))
                     {
                         positionToWell.put(new PositionImpl(plate.getContainer(), well.getRow(), well.getCol()), well);
-                        if (well.getSampleId() != null && !plateSamples.containsKey(well.getSampleId()))
+                        if (well.getSampleId() != null && !sampleMap.containsKey(well.getSampleId()))
                             wellSamples.add(well.getSampleId());
                     }
 
                     if (!wellSamples.isEmpty())
-                    {
                         // stash away any samples associated with the plate
-                        for (ExpMaterial sample : ExperimentService.get().getExpMaterials(wellSamples))
-                            plateSamples.put(sample.getRowId(), sample);
-                    }
+                        ExperimentService.get().getExpMaterials(wellSamples).forEach(s -> sampleMap.put(s.getRowId(), s));
                 }
 
                 Object wellLocation = PropertyService.get().getDomainPropertyValueFromRow(wellLocationProperty, row);
@@ -383,10 +380,10 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                         for (WellCustomField customField : PlateManager.get().getWellCustomFields(user, plate, wellBean.getRowId()))
                             row.put(customField.getName(), customField.getValue());
 
-                        // include the sample ID field from the well
-                        if (plateSamples.containsKey(wellBean.getSampleId()))
+                        // include the sample information from the well
+                        if (sampleMap.containsKey(wellBean.getSampleId()))
                         {
-                            ExpMaterial sample = plateSamples.get(wellBean.getSampleId());
+                            ExpMaterial sample = sampleMap.get(wellBean.getSampleId());
                             row.put("SampleID", sample.getRowId());
                             row.put("SampleName", sample.getName());
                         }
