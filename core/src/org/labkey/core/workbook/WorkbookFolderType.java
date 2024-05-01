@@ -74,7 +74,7 @@ public class WorkbookFolderType extends DefaultFolderType
         if (null == wpf)
             return null;
         Portal.WebPart result = wpf.createWebPart(HttpView.BODY);
-        result.setProperty("fileSet", FileContentService.PIPELINE_LINK.toString());
+        result.setProperty("fileSet", FileContentService.PIPELINE_LINK);
         result.setProperty("webpart.title", "Files");
         return result;
     }

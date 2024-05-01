@@ -41,7 +41,7 @@ public class ScriptsResourceProvider implements WebdavService.Provider
         {
             if (!FileUtil.hasCloudScheme(root) && NetworkDrive.exists(root.toFile()))
             {
-                result.add(FileContentService.SCRIPTS_LINK.toString());
+                result.add(FileContentService.SCRIPTS_LINK);
             }
         }
 
@@ -51,7 +51,7 @@ public class ScriptsResourceProvider implements WebdavService.Provider
     @Override
     public WebdavResource resolve(@NotNull WebdavResource parent, @NotNull String name)
     {
-        if (!FileContentService.SCRIPTS_LINK.toString().equalsIgnoreCase(name))
+        if (!FileContentService.SCRIPTS_LINK.equalsIgnoreCase(name))
             return null;
         if (!(parent instanceof WebdavResolverImpl.WebFolderResource folder))
             return null;

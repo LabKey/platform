@@ -63,7 +63,7 @@ public class PipelineWebdavProvider implements WebdavService.Provider
 
         String webdavURL = root.getWebdavURL();
         if (null != webdavURL && webdavURL.contains(FileContentService.PIPELINE_LINK) && root.getContainer().equals(c))
-            return PageFlowUtil.set(FileContentService.PIPELINE_LINK.toString());
+            return PageFlowUtil.set(FileContentService.PIPELINE_LINK);
 
         return null;
     }
@@ -72,7 +72,7 @@ public class PipelineWebdavProvider implements WebdavService.Provider
     @Override
     public WebdavResource resolve(@NotNull WebdavResource parent, @NotNull String name)
     {
-        if (!FileContentService.PIPELINE_LINK.toString().equalsIgnoreCase(name))
+        if (!FileContentService.PIPELINE_LINK.equalsIgnoreCase(name))
             return null;
         if (!(parent instanceof WebdavResolverImpl.WebFolderResource))
             return null;
