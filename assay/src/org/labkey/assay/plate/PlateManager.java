@@ -1879,22 +1879,6 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return PropertyService.get().getDomain(container, domainURI);
     }
 
-    /**
-     * Well metadata has transitioned to a provisioned architecture.
-     */
-    @Deprecated
-    public @Nullable Domain getPlateMetadataVocabDomain(Container container, User user)
-    {
-        DomainKind<?> vocabDomainKind = PropertyService.get().getDomainKindByName("Vocabulary");
-
-        if (vocabDomainKind == null)
-            return null;
-
-        // the domain is scoped at the project level (project and subfolder scoping)
-        String domainURI = vocabDomainKind.generateDomainURI(null, "PlateMetadataDomain", getPlateMetadataDomainContainer(container), user);
-        return PropertyService.get().getDomain(container, domainURI);
-    }
-
     public @Nullable TableInfo getPlateMetadataTable(Container container, User user)
     {
         Domain domain = getPlateMetadataDomain(container, user);
@@ -1903,7 +1887,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return null;
     }
 
-    private Container getPlateMetadataDomainContainer(Container container)
+    public Container getPlateMetadataDomainContainer(Container container)
     {
         // scope the metadata container to the project
         if (container.isRoot())

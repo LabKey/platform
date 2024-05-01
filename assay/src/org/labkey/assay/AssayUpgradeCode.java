@@ -38,6 +38,8 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.User;
@@ -342,6 +344,22 @@ public class AssayUpgradeCode implements UpgradeCode
     }
 
     /**
+     * Well metadata has transitioned to a provisioned architecture.
+     */
+    private static @Nullable Domain getPlateMetadataVocabDomain(Container container, User user)
+    {
+        DomainKind<?> vocabDomainKind = PropertyService.get().getDomainKindByName("Vocabulary");
+
+        if (vocabDomainKind == null)
+            return null;
+
+        // the domain is scoped at the project level (project and subfolder scoping)
+        Container domainContainer = PlateManager.get().getPlateMetadataDomainContainer(container);
+        String domainURI = vocabDomainKind.generateDomainURI(null, "PlateMetadataDomain", domainContainer, user);
+        return PropertyService.get().getDomain(container, domainURI);
+    }
+
+    /**
      * Called from assay-24.002-24.003.sql to delete the vocabulary domains associated with
      * plate metadata. This upgrade transitions to using a provisioned table approach. Since the plate features are
      * still under an experimental flag we won't worry about upgrading the domains.
@@ -362,7 +380,7 @@ public class AssayUpgradeCode implements UpgradeCode
             {
                 if (container != null)
                 {
-                    Domain domain = PlateManager.get().getPlateMetadataVocabDomain(container, User.getAdminServiceUser());
+                    Domain domain = getPlateMetadataVocabDomain(container, User.getAdminServiceUser());
                     if (domain != null)
                     {
                         // delete the plate metadata values
