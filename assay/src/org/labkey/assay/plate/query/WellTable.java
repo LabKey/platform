@@ -112,6 +112,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         }
         positionSql.append(" END)");
         var positionCol = new ExprColumn(this, "Position", positionSql, JdbcType.VARCHAR);
+        positionCol.setSortFieldKeys(List.of(FieldKey.fromParts("RowId")));
         positionCol.setUserEditable(false);
         addColumn(positionCol);
 
