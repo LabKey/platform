@@ -2182,7 +2182,8 @@ public class ExpDataIterators
             if (null != _fileLinkDirectory)
             {
                 boolean hasFileLink = false;
-                for (int i = 0; i < input.getColumnCount(); i++)
+                // Issue 50299: getColumnCount() is 1-based, so we need <= (see comment at top of DataIterator.java re: 1-based and _rowNumber column)
+                for (int i = 0; i <= input.getColumnCount(); i++)
                     hasFileLink |= PropertyType.FILE_LINK == input.getColumnInfo(i).getPropertyType();
                 if (hasFileLink)
                     input = LoggingDataIterator.wrap(new FileLinkDataIterator(input, context, _container, _fileLinkDirectory));
