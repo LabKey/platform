@@ -56,8 +56,6 @@ import static org.labkey.api.exp.api.ExperimentJSONConverter.VOCABULARY_DOMAIN;
  * Bean class for property types managed via the ontology system and stored in exp.PropertyDescriptor.
  * Most code should not reference PropertyDescriptors
  * directly but should instead use the wrapper {@link org.labkey.api.exp.property.DomainProperty}.
- * User: migra
- * Date: Aug 15, 2005
  */
 public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements ParameterDescription, Serializable, Cloneable
 {                           

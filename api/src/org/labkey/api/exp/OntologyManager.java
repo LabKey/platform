@@ -98,9 +98,7 @@ public class OntologyManager
     private static final Logger _log = LogManager.getLogger(OntologyManager.class);
     private static final Cache<Pair<Container, String>, Map<String, ObjectProperty>> PROPERTY_MAP_CACHE = DatabaseCache.get(getExpSchema().getScope(), 100000, "Property maps", new PropertyMapCacheLoader());
     private static final BlockingCache<String, Integer> OBJECT_ID_CACHE = DatabaseCache.get(getExpSchema().getScope(), 2000, "ObjectIds", new ObjectIdCacheLoader());
-    // Note: Converting the below to a BlockingDatabaseCache resulted in a couple failures in the Daily suite. The
-    // explicit put() operations may be the problem. Leave it as an old school wrapped DatabaseCache for now.
-    private static final Cache<Pair<String, GUID>, PropertyDescriptor> propDescCache = new BlockingCache<>(new DatabaseCache<>(getExpSchema().getScope(), 40000, CacheManager.UNLIMITED, "Property descriptors"), new CacheLoader<>()
+    private static final Cache<Pair<String, GUID>, PropertyDescriptor> PROP_DESCRIPTOR_CACHE = DatabaseCache.get(getExpSchema().getScope(), 40000, "Property descriptors", new CacheLoader<>()
     {
         @Override
         public PropertyDescriptor load(@NotNull Pair<String, GUID> key, @Nullable Object argument)
@@ -190,11 +188,11 @@ public class OntologyManager
             Container c = ContainerManager.getForId(key.second);
             if (null == c)
                 return Collections.emptyList();
-            SQLFragment sql = new SQLFragment(" SELECT PD.*,Required " +
-                " FROM " + getTinfoPropertyDescriptor() + " PD " +
-                "   INNER JOIN " + getTinfoPropertyDomain() + " PDM ON (PD.PropertyId = PDM.PropertyId) " +
-                "   INNER JOIN " + getTinfoDomainDescriptor() + " DD ON (DD.DomainId = PDM.DomainId) " +
-                "  WHERE DD.DomainURI = ?  AND DD.Project IN (?,?) ORDER BY PDM.SortOrder, PD.PropertyId");
+            SQLFragment sql = new SQLFragment("SELECT PropertyURI, Required " +
+                "FROM " + getTinfoPropertyDescriptor() + " PD\n" +
+                "   INNER JOIN " + getTinfoPropertyDomain() + " PDM ON (PD.PropertyId = PDM.PropertyId)\n" +
+                "   INNER JOIN " + getTinfoDomainDescriptor() + " DD ON (DD.DomainId = PDM.DomainId)\n" +
+                "WHERE DD.DomainURI = ? AND DD.Project IN (?, ?) ORDER BY PDM.SortOrder, PD.PropertyId");
 
             sql.addAll(
                 typeURI,
@@ -202,25 +200,10 @@ public class OntologyManager
                 c.isRoot() ? c.getId() : (c.getProject() == null ? _sharedContainer.getProject().getId() : c.getProject().getId()),
                 _sharedContainer.getProject().getId()
             );
-            List<PropertyDescriptor> pds = unmodifiableList(new SqlSelector(getExpSchema(), sql).getArrayList(PropertyDescriptor.class));
-            //NOTE: cached descriptors may have differing values of isRequired() as that is a per-domain setting
-            //Descriptors returned from this method come direct from DB and have correct values.
-            List<Pair<String, Boolean>> propertyURIs = new ArrayList<>(pds.size());
-            for (PropertyDescriptor pd : pds)
-            {
-                // Be sure to stash the property in the cache in case it hadn't already been loaded
-                // Note that this can skew the cache stats, because it will count as a remove, a miss, and a get
-                _log.debug("Putting descriptor in cache with key " + getCacheKey(pd) + ": " + pd);
-                propDescCache.put(getCacheKey(pd), pd);
-                if (!pd.getContainer().equals(c))
-                {
-                    // Also cache the property in its home container
-                    _log.debug("Putting descriptor in cache with key " + getCacheKey(pd.getPropertyURI(), c) + ": " + pd);
-                    propDescCache.put(getCacheKey(pd.getPropertyURI(), c), pd);
-                }
-                propertyURIs.add(new Pair<>(pd.getPropertyURI(), pd.isRequired()));
-            }
-            return Collections.unmodifiableList(propertyURIs);
+
+            return new SqlSelector(getExpSchema(), sql).mapStream()
+                .map(map -> Pair.of((String)map.get("PropertyURI"), (Boolean)map.get("Required")))
+                .toList();
         }
     });
     private static final Cache<Container, Map<String, DomainDescriptor>> DOMAIN_DESCRIPTORS_BY_CONTAINER_CACHE = DatabaseCache.get(getExpSchema().getScope(), 2000, "Domain descriptors by container", (c, argument) -> {
@@ -241,7 +224,7 @@ public class OntologyManager
 
     static public String PropertyOrderURI = "urn:exp.labkey.org/#PropertyOrder";
     /**
-     * An comma-separated list of propertyID that indicates the sort order of the properties attached to an object.
+     * A comma-separated list of propertyID that indicates the sort order of the properties attached to an object.
      */
     static public SystemProperty PropertyOrder = new SystemProperty(PropertyOrderURI, PropertyType.STRING);
 
@@ -250,11 +233,9 @@ public class OntologyManager
         BeanObjectFactory.Registry.register(ObjectProperty.class, new ObjectProperty.ObjectPropertyObjectFactory());
     }
 
-
     private OntologyManager()
     {
     }
-
 
     /**
      * @return map from PropertyURI to value
@@ -1393,7 +1374,7 @@ public class OntologyManager
                 if (pd.getContainer().getId().equals(c.getId()))
                 {
                     _log.debug("Removing property descriptor from cache. Key: " + getCacheKey(pd) + " descriptor: " + pd);
-                    propDescCache.remove(getCacheKey(pd));
+                    PROP_DESCRIPTOR_CACHE.remove(getCacheKey(pd));
                     DOMAIN_PROPERTIES_CACHE.clear();
                     pd.setContainer(project);
                     pd.setProject(project);
@@ -1408,10 +1389,10 @@ public class OntologyManager
                     {
                         uncache(dd);
                         dd = dd.edit()
-                                .setContainer(project)
-                                .setProject(project)
-                                .setDomainId(0)
-                                .build();
+                            .setContainer(project)
+                            .setProject(project)
+                            .setDomainId(0)
+                            .build();
                         dd = ensureDomainDescriptor(dd);
                         ensurePropertyDomain(pd, dd);
                     }
@@ -1649,8 +1630,8 @@ public class OntologyManager
             pd = out[0];
             if (1 == rowcount && null != pd)
             {
-                _log.debug("Putting property descriptor into cache. Key: " + getCacheKey(pd) + " descriptor: " + pd);
-                propDescCache.put(getCacheKey(pd), pd);
+                _log.debug("Removing property descriptor from cache. Key: " + getCacheKey(pd) + " descriptor: " + pd);
+                PROP_DESCRIPTOR_CACHE.remove(getCacheKey(pd));
                 return pd;
             }
             if (null == pd)
@@ -2101,7 +2082,6 @@ public class OntologyManager
     public static void deletePropertyDescriptor(PropertyDescriptor pd)
     {
         int propId = pd.getPropertyId();
-        Pair<String, GUID> key = getCacheKey(pd);
 
         SQLFragment deleteObjPropSql = new SQLFragment("DELETE FROM " + getTinfoObjectProperty() + " WHERE PropertyId = ?", propId);
         SQLFragment deletePropDomSql = new SQLFragment("DELETE FROM " + getTinfoPropertyDomain() + " WHERE PropertyId = ?", propId);
@@ -2114,8 +2094,9 @@ public class OntologyManager
             executor.execute(deleteObjPropSql);
             executor.execute(deletePropDomSql);
             executor.execute(deletePropSql);
+            Pair<String, GUID> key = getCacheKey(pd);
             _log.debug("Removing property descriptor from cache. Key: " + key + " descriptor: " + pd);
-            propDescCache.remove(key);
+            PROP_DESCRIPTOR_CACHE.remove(key);
             DOMAIN_PROPERTIES_CACHE.clear();
             transaction.commit();
         }
@@ -2221,12 +2202,12 @@ public class OntologyManager
     {
         // cache lookup by project. if not found at project level, check to see if global
         Pair<String, GUID> key = getCacheKey(propertyURI, c);
-        PropertyDescriptor pd = propDescCache.get(key);
+        PropertyDescriptor pd = PROP_DESCRIPTOR_CACHE.get(key);
         if (null != pd)
             return pd;
 
         key = getCacheKey(propertyURI, _sharedContainer);
-        return propDescCache.get(key);
+        return PROP_DESCRIPTOR_CACHE.get(key);
     }
 
     private static TableSelector getPropertyDescriptorTableSelector(
@@ -2499,7 +2480,7 @@ public class OntologyManager
             List<PropertyDescriptor> result = new ArrayList<>(propertyURIs.size());
             for (Pair<String, Boolean> propertyURI : propertyURIs)
             {
-                PropertyDescriptor pd = propDescCache.get(getCacheKey(propertyURI.getKey(), c));
+                PropertyDescriptor pd = PROP_DESCRIPTOR_CACHE.get(getCacheKey(propertyURI.getKey(), c));
                 if (pd == null)
                 {
                     return null;
@@ -2684,7 +2665,7 @@ public class OntologyManager
         validatePropertyDescriptor(pd);
         pd = Table.insert(null, getTinfoPropertyDescriptor(), pd);
         _log.debug("Adding property descriptor to cache. Key: " + getCacheKey(pd) + " descriptor: " + pd);
-        propDescCache.put(getCacheKey(pd), pd);
+        PROP_DESCRIPTOR_CACHE.remove(getCacheKey(pd));
         return pd;
     }
 
@@ -2695,7 +2676,7 @@ public class OntologyManager
         assert pd.getPropertyId() != 0;
         pd = Table.update(null, getTinfoPropertyDescriptor(), pd, pd.getPropertyId());
         _log.debug("Updating property descriptor in cache. Key: " + getCacheKey(pd) + " descriptor: " + pd);
-        propDescCache.put(getCacheKey(pd), pd);
+        PROP_DESCRIPTOR_CACHE.remove(getCacheKey(pd));
         // It's possible that the propertyURI has changed, thus breaking our reference
         DOMAIN_PROPERTIES_CACHE.clear();
         return pd;
@@ -2881,7 +2862,7 @@ public class OntologyManager
         DOMAIN_DESCRIPTORS_BY_URI_CACHE.clear();
         DOMAIN_DESC_BY_ID_CACHE.clear();
         DOMAIN_PROPERTIES_CACHE.clear();
-        propDescCache.clear();
+        PROP_DESCRIPTOR_CACHE.clear();
         PROPERTY_MAP_CACHE.clear();
         OBJECT_ID_CACHE.clear();
         DOMAIN_DESCRIPTORS_BY_CONTAINER_CACHE.clear();
