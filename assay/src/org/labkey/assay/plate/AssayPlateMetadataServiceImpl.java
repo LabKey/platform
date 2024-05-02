@@ -380,12 +380,12 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                         for (WellCustomField customField : PlateManager.get().getWellCustomFields(user, plate, wellBean.getRowId()))
                             row.put(customField.getName(), customField.getValue());
 
-                        // include the sample information from the well
-                        if (sampleMap.containsKey(wellBean.getSampleId()))
+                        // include the sample information from the well (Issue 50276)
+                        if (!sampleMap.isEmpty())
                         {
                             ExpMaterial sample = sampleMap.get(wellBean.getSampleId());
-                            row.put("SampleID", sample.getRowId());
-                            row.put("SampleName", sample.getName());
+                            row.put("SampleID", sample != null ? sample.getRowId() : null);
+                            row.put("SampleName", sample != null ? sample.getName() : null);
                         }
                     }
                     else
