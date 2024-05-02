@@ -27,6 +27,7 @@ public class CachingTestCase extends Assert
 
         assertNotNull(testTable);
         DbCache.clear(testTable);
+        DbCache.trackRemove(testTable);
 
         Map<String, Object> mm = new HashMap<>();                  // Modifiable map
         Map<String, Object> umm = Collections.unmodifiableMap(mm); // Unmodifiable map
@@ -36,6 +37,7 @@ public class CachingTestCase extends Assert
         mm.put("IntNotNull", 0);
         mm.put("Container", JunitUtil.getTestContainer());
         mm = Table.insert(ctx.getUser(), testTable, mm);
+        DbCache.trackRemove(testTable);
         Integer rowId1 = ((Integer) mm.get("RowId"));
 
         String key = "RowId" + rowId1;
@@ -45,17 +47,20 @@ public class CachingTestCase extends Assert
 
         //Does cache get cleared on delete
         Table.delete(testTable, rowId1);
+        DbCache.trackRemove(testTable);
         m2 = (Map) DbCache.get(testTable, key);
         assertNull(m2);
 
         //Does cache get cleared on insert
         mm.remove("RowId");
         mm = Table.insert(ctx.getUser(), testTable, mm);
+        DbCache.trackRemove(testTable);
         int rowId2 = ((Integer) mm.get("RowId"));
         key = "RowId" + rowId2;
         DbCache.put(testTable, key, umm);
         mm.remove("RowId");
         mm = Table.insert(ctx.getUser(), testTable, mm);
+        DbCache.trackRemove(testTable);
         int rowId3 = ((Integer) mm.get("RowId"));
         m2 = (Map) DbCache.get(testTable, key);
         assertNull(m2);
@@ -66,6 +71,7 @@ public class CachingTestCase extends Assert
         try (DbScope.Transaction ignored = testSchema.getScope().beginTransaction())
         {
             mm = Table.insert(ctx.getUser(), testTable, mm);
+            DbCache.trackRemove(testTable);
             int rowId4 = ((Integer) mm.get("RowId"));
             key2 = "RowId" + rowId4;
             DbCache.put(testTable, key2, umm);
@@ -75,6 +81,10 @@ public class CachingTestCase extends Assert
 
         // Clean up
         Table.delete(testTable, rowId2);
+        DbCache.trackRemove(testTable);
         Table.delete(testTable, rowId3);
+        DbCache.trackRemove(testTable);
+
+        DbCache.logUnmatched();
     }
 }

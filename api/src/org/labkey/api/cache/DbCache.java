@@ -16,9 +16,14 @@
 
 package org.labkey.api.cache;
 
+import org.apache.commons.collections4.Bag;
+import org.apache.commons.collections4.bag.HashBag;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -33,7 +38,8 @@ import java.util.Map;
 @Deprecated
 public class DbCache
 {
-    private static final Map<Path, DatabaseCache<String, Object>> CACHES = new HashMap<>(100);
+    private static final Logger LOG = LogHelper.getLogger(DbCache.class, "DbCache invalidations");
+    private static final Map<Path, DatabaseCache<String, Object>> CACHES = new HashMap<>(10);
 
     public static DatabaseCache<String, Object> getCache(TableInfo tinfo, boolean create)
     {
@@ -84,14 +90,20 @@ public class DbCache
     {
         DatabaseCache<String, Object> cache = CACHES.get(tinfo.getNotificationKey());
         if (null != cache)
+        {
+            trackInvalidate(tinfo);
             cache.clear();
+        }
     }
 
     public static void clear(TableInfo tinfo)
     {
         DatabaseCache<String, Object> cache = getCache(tinfo, false);
         if (null != cache)
+        {
+            trackInvalidate(tinfo);
             cache.clear();
+        }
     }
 
     public static void removeUsingPrefix(TableInfo tinfo, String name)
@@ -99,5 +111,67 @@ public class DbCache
         DatabaseCache<String, Object> cache = getCache(tinfo, false);
         if (null != cache)
             cache.removeUsingFilter(new Cache.StringPrefixFilter(name));
+    }
+
+    /**
+     * Everything below is temporary, meant to help irradicate the use of DbCache. If a TableInfo is deemed interesting:
+     * - Each call to invalidateAll() or clear() causes its stack trace to be added to the tracking bag
+     * - Each call to trackRemove() causes its stack trace to be removed from the tracking bag
+     * A remove that's unsuccessful indicates no corresponding invalidateAll(), so log that. Anything left in the bag
+     * indicates invalidateAll()/clear() calls with no corresponding remove. Use this to migrate a DbCache to our normal
+     * DatabaseCache pattern, with explicit removes for invalidation. Leave the DbCache in place (until migration is
+     * complete) and add calls to trackRemove() immediately after Table.insert(), Table.update(), and Table.delete()
+     * calls. Ensure that nothing is left in the bag, meaning all Table-initiated invalidateAll() calls have
+     * corresponding removes on the new cache. See CachingTestCase as an example.
+     */
+
+    private static final Bag<String> TRACKING_BAG = new HashBag<>();
+
+    private static boolean isInteresting(TableInfo tinfo)
+    {
+        return getCache(tinfo, false) != null;
+    }
+
+    public static void trackInvalidate(TableInfo tinfo)
+    {
+        if (isInteresting(tinfo))
+        {
+            StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+            int linesToTrim = 2;
+
+            // Trim all Table lines, if present
+            for (int i = 2; i < stackTrace.length; i++)
+            {
+                if ("Table.java".equals(stackTrace[i].getFileName()))
+                    linesToTrim = i;
+                else if (linesToTrim > 2)
+                    break;
+            }
+
+            String key = tinfo.getName() + ExceptionUtil.renderStackTrace(stackTrace, linesToTrim + 1);
+            TRACKING_BAG.add(key);
+        }
+    }
+
+    public static void trackRemove(TableInfo tinfo)
+    {
+        if (isInteresting(tinfo))
+        {
+            StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+            String trimmed = ExceptionUtil.renderStackTrace(stackTrace, 2);
+
+            // Subtract one from the first line number so it matches the Table.* line (so the stack traces match exactly)
+            int from = trimmed.indexOf(':') + 1;
+            int to = trimmed.indexOf(')', from);
+            String lineNumber = trimmed.substring(from, to);
+            String key = tinfo.getName() + trimmed.replaceFirst(lineNumber, String.valueOf(Integer.valueOf(lineNumber) - 1));
+            if (!TRACKING_BAG.remove(key, 1))
+                LOG.info("Failed to remove " + key);
+        }
+    }
+
+    public static void logUnmatched()
+    {
+        TRACKING_BAG.uniqueSet().forEach(key -> LOG.error("Unmatched " + key));
     }
 }
