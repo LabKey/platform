@@ -3,6 +3,7 @@ package org.labkey.assay.plate.query;
 import org.apache.logging.log4j.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateCustomField;
 import org.labkey.api.assay.plate.PlateSet;
@@ -48,6 +49,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.query.AssayDbSchema;
 
@@ -112,6 +114,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         }
         positionSql.append(" END)");
         var positionCol = new ExprColumn(this, "Position", positionSql, JdbcType.VARCHAR);
+        positionCol.setSortFieldKeys(List.of(FieldKey.fromParts("RowId")));
         positionCol.setUserEditable(false);
         addColumn(positionCol);
 
@@ -307,7 +310,23 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
     public QueryUpdateService getUpdateService()
     {
         TableInfo provisionedTable = null;
-        Domain domain = PlateManager.get().getPlateMetadataDomain(getContainer(), getUserSchema().getUser());
+        final Container container = getContainer();
+        final User user = getUserSchema().getUser();
+
+        // Ensure the plate metadata domain exists for Biologics folders before creating a plate.
+        Domain domain = PlateManager.get().getPlateMetadataDomain(container, user);
+        if (domain == null && AssayPlateMetadataService.isBiologicsFolder(container))
+        {
+            try
+            {
+                domain = PlateManager.get().ensurePlateMetadataDomain(container, user);
+            }
+            catch (ValidationException e)
+            {
+                throw UnexpectedException.wrap(e);
+            }
+        }
+
         if (domain != null)
             provisionedTable = StorageProvisioner.createTableInfo(domain);
 
