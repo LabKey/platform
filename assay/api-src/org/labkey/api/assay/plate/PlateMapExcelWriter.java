@@ -2,6 +2,7 @@ package org.labkey.api.assay.plate;
 
 import org.apache.logging.log4j.Logger;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -10,6 +11,7 @@ import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.collections.RowMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.ExcelCellUtils;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.Results;
@@ -36,6 +38,8 @@ public class PlateMapExcelWriter extends ExcelWriter
     private final QueryView _queryView;
 
     private final List<DisplayColumn> _displayColumns;
+
+    private final Map<String, CellStyle> _cellStyleMap = new HashMap<>();
 
     // Map of Row label (A, B, etc.) to Column Data, which is a Map of Column Label (1, 2, etc.) to Well Data (Sample
     // ID, metadata column values)
@@ -98,9 +102,27 @@ public class PlateMapExcelWriter extends ExcelWriter
         incrementRow();
     }
 
+    protected CellStyle getCellStyle(Workbook workbook, DisplayColumn dc) {
+        CellStyle cellStyle = _cellStyleMap.get(dc.getName());
+
+        if (cellStyle == null)
+        {
+            String formatString = dc.getExcelFormatString();
+
+            if (formatString == null)
+                formatString = dc.getFormatString();
+
+            cellStyle = ExcelCellUtils.createCellStyle(workbook, ExcelCellUtils.getSimpleType(dc), formatString);
+            _cellStyleMap.put(dc.getName(), cellStyle);
+        }
+
+        return cellStyle;
+    }
+
     protected void renderGridRow(Sheet sheet, List<DisplayColumn> displayColumns)
     {
         Row excelRow = getOrCreateRow(sheet);
+
         for (int colIdx = 0; colIdx <= _plate.getColumns(); colIdx++)
         {
             Cell cell = excelRow.getCell(colIdx, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
@@ -128,24 +150,30 @@ public class PlateMapExcelWriter extends ExcelWriter
                 if (displayColumns.size() == 1)
                 {
                     DisplayColumn displayColumn = displayColumns.get(0);
-//                    displayColumn.getExcelFormatString();
-//                    displayColumn.getExcelCompatibleValue()
                     Object value = well.get(displayColumn.getColumnInfo().getAlias());
-                    if (value != null)
-                    {
-                        // TODO: is there a better way to render the value other than callin to string? Surely we should
-                        //  be able to render based on information we have in the DisplayColumn
-                        cell.setCellValue(value.toString());
-                    }
+                    ExcelCellUtils.writeCell(sheet.getWorkbook(), cell, displayColumn, value);
                 }
                 else
                 {
+                    // Note: Doing a simple string concat of all values and joining them by "\n" is sure to cause some
+                    // values to render differently than when we render them individually in the non-summary sheets.
+                    // There doesn't seem to be an obviously better solution, so we should find a way to communicate
+                    // this to users.
                     List<String> values = displayColumns.stream()
-                            .map(dc -> well.get(dc.getColumnInfo().getAlias()))
-                            .filter(Objects::nonNull)
+                            .map(dc -> {
+                                var value = well.get(dc.getColumnInfo().getAlias());
+
+                                if (value == null)
+                                    value = "";
+
+                                return value;
+                            })
                             .map(Object::toString)
                             .toList();
                     cell.setCellValue(String.join("\n", values));
+                    CellStyle style = sheet.getWorkbook().createCellStyle();
+                    style.setWrapText(true);
+                    cell.setCellStyle(style);
                 }
             }
         }
