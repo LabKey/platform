@@ -56,7 +56,7 @@ public class DefaultAssayProgressSource implements AssayProgressReport.AssayData
     {
         SQLFragment sql = new SQLFragment();
 
-        sql.append("SELECT DISTINCT(ParticipantId) FROM study.").append(StudyService.get().getSubjectTableName(context.getContainer()));
+        sql.append("SELECT DISTINCT ParticipantId FROM study.").append(StudyService.get().getSubjectTableName(context.getContainer()));
         sql.append(" WHERE ParticipantId IS NOT NULL AND Container = ?");
         sql.add(context.getContainer());
 

@@ -1403,19 +1403,19 @@ public class SpecimenImporter extends SpecimenTableManager
             {
                 // gross nested calls to cast the boolean to an int, get its min, then cast back to a boolean.
                 // this is needed because most aggregates don't work on boolean values.
-                sql.append(" COUNT(DISTINCT(").append(selectCol).append(")) = 1 THEN ");
+                sql.append(" COUNT(DISTINCT ").append(selectCol).append(") = 1 THEN ");
                 sql.append("CAST(MIN(CAST(").append(selectCol).append(" AS INTEGER)) AS ").append(dialect.getBooleanDataType()).append(")");
             }
             else
             {
                 if (null != castColumn)
                 {
-                    sql.append(" COUNT(DISTINCT(").append(tempTableName).append(".").append(castColumn.getLegalDbColumnName(getSqlDialect())).append(")) = 1 THEN ");
+                    sql.append(" COUNT(DISTINCT ").append(tempTableName).append(".").append(castColumn.getLegalDbColumnName(getSqlDialect())).append(") = 1 THEN ");
                     sql.append("CAST(MIN(").append(selectCol).append(") AS ").append(castColumn.getDbType()).append(")");
                 }
                 else
                 {
-                    sql.append(" COUNT(DISTINCT(").append(selectCol).append(")) = 1 THEN ");
+                    sql.append(" COUNT(DISTINCT ").append(selectCol).append(") = 1 THEN ");
                     sql.append("MIN(").append(selectCol).append(")");
                 }
             }
@@ -2597,7 +2597,7 @@ public class SpecimenImporter extends SpecimenTableManager
                         singletonAggregate = "MIN(" + selectCol + ")";
                     }
                     conflictResolvingSubselect.append("CASE WHEN");
-                    conflictResolvingSubselect.append(" COUNT(DISTINCT(").append(selectCol).append(")) = 1 THEN ");
+                    conflictResolvingSubselect.append(" COUNT(DISTINCT ").append(selectCol).append(") = 1 THEN ");
                     conflictResolvingSubselect.append(singletonAggregate);
                     conflictResolvingSubselect.append(" ELSE NULL END");
                 }

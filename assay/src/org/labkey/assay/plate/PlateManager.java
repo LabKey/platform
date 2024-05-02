@@ -1748,7 +1748,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             }
 
             // validate in use fields
-            SQLFragment sql = new SQLFragment("SELECT COUNT(DISTINCT(PlateId)) FROM ").append(AssayDbSchema.getInstance().getTableInfoPlateProperty(), "PP")
+            SQLFragment sql = new SQLFragment("SELECT COUNT(DISTINCT PlateId) FROM ").append(AssayDbSchema.getInstance().getTableInfoPlateProperty(), "PP")
                     .append(" WHERE PropertyURI ").appendInClause(propertyURIs, AssayDbSchema.getInstance().getSchema().getSqlDialect());
             int inUsePlates = new SqlSelector(AssayDbSchema.getInstance().getSchema(), sql).getObject(Integer.class);
             if (inUsePlates > 0)

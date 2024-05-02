@@ -155,7 +155,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
 
         TableInfo tableInfo = ExperimentService.get().getTinfoMaterial();
 
-        SQLFragment inner = new SQLFragment("SELECT DISTINCT(rootmateriallsid) FROM ").append(tableInfo, "ali")
+        SQLFragment inner = new SQLFragment("SELECT DISTINCT rootmateriallsid FROM ").append(tableInfo, "ali")
                 .append(" WHERE ali.cpastype = ").appendValue(sampleTypeLsid)
                 .append(" AND ali.rootmateriallsid <> ali.lsid ")
                 .append(" AND ali.container = ").appendValue(container)

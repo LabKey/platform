@@ -69,18 +69,18 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
             "\t(\n" +
             "\tSELECT Thread, MIN(Approved) AS Earliest FROM\n" +
             "\t\t(SELECT Approved, CASE WHEN Parent IS NULL THEN EntityId ELSE Parent END AS Thread FROM " + _comm.getTableInfoAnnouncements() + " annModel LEFT OUTER JOIN\n" +
-            "\t\t\t(SELECT DISTINCT(Parent) AS DocParent FROM " + _core.getTableInfoDocuments() + ") doc ON annModel.EntityId = DocParent\n" +
+            "\t\t\t(SELECT DISTINCT Parent AS DocParent FROM " + _core.getTableInfoDocuments() + ") doc ON annModel.EntityId = DocParent\n" +
             "\t\t\tWHERE Container = ? AND Approved >= ? AND Approved < ? AND (Body IS NOT NULL OR DocParent IS NOT NULL)) x\n" +
             "\tGROUP BY Thread\n" +
             "\t) X LEFT OUTER JOIN " + _comm.getTableInfoAnnouncements() + " annModel ON Parent = Thread OR EntityId = Thread LEFT OUTER JOIN\n" +
-            "\t\t(SELECT DISTINCT(Parent) AS DocParent FROM " + _core.getTableInfoDocuments() + ") doc ON annModel.EntityId = DocParent\n" +
+            "\t\t(SELECT DISTINCT Parent AS DocParent FROM " + _core.getTableInfoDocuments() + ") doc ON annModel.EntityId = DocParent\n" +
             "WHERE Container = ? AND Approved >= ? AND Approved < ? AND (Body IS NOT NULL OR DocParent IS NOT NULL)\n" +
             "ORDER BY Earliest, Thread, Approved";
 
     @Override
     public void sendDigestForAllContainers(Date start, Date end) throws Exception
     {
-        SQLFragment sql = new SQLFragment("SELECT DISTINCT(Container) FROM " + _comm.getTableInfoAnnouncements() + " WHERE Approved >= ? and Approved < ?", start, end);
+        SQLFragment sql = new SQLFragment("SELECT DISTINCT Container FROM " + _comm.getTableInfoAnnouncements() + " WHERE Approved >= ? and Approved < ?", start, end);
         Collection<String> containerIds = new SqlSelector(_comm.getSchema(), sql).getCollection(String.class);
 
         for (String id : containerIds)
