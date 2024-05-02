@@ -46,7 +46,7 @@ public abstract class AbstractDocumentResource extends AbstractWebdavResource
 	}
 
 	@Override
-    public WebdavResource find(String name)
+    public WebdavResource find(Path.Part name)
 	{
 		return null;
 	}

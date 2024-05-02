@@ -136,9 +136,9 @@ public class DirectoryResource extends AbstractResourceCollection implements Sup
     }
 
     @Override
-    public Resource find(String name)
+    public Resource find(Path.Part name)
     {
-        return getChildren().get(name);
+        return getChildren().get(name.toString());
     }
 
     @Override

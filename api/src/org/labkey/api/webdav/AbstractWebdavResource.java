@@ -138,7 +138,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     }
 
     @Override
-    public WebdavResource find(String name)
+    public WebdavResource find(Path.Part name)
     {
         return null;
     }
