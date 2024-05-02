@@ -76,7 +76,7 @@ public abstract class AbstractResourceCollection extends AbstractResource
         Collection<Resource> list = new ArrayList<>(names.size());
         for (String name : names)
         {
-            Resource r = find(name);
+            Resource r = find(Path.toPathPart(name));
             if (r != null)
                 list.add(r);
         }

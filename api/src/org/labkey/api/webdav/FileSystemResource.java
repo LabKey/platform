@@ -106,29 +106,29 @@ public class FileSystemResource extends AbstractWebdavResource
         setSearchProperty(SearchService.PROPERTY.keywordsMed, FileUtil.getSearchKeywords(path.getName()));
     }
 
-    protected FileSystemResource(Path folder, String name)
+    protected FileSystemResource(Path folder, Path.Part name)
     {
         this(folder.append(name));
     }
 
-    public FileSystemResource(WebdavResource folder, String name, File file, SecurityPolicy policy)
+    public FileSystemResource(WebdavResource folder, Path.Part name, File file, SecurityPolicy policy)
     {
         this(folder.getPath(), name);
         _folder = folder;
-        _name = name;
+        _name = name.toString();
         setPolicy(policy);
         _files = Collections.singletonList(new FileInfo(FileUtil.getAbsoluteCaseSensitiveFile(file)));
     }
 
-    public FileSystemResource(FileSystemResource folder, String relativePath)
+    public FileSystemResource(FileSystemResource folder, Path.Part name)
     {
-        this(folder.getPath(), relativePath);
+        this(folder.getPath(), name);
         _folder = folder;
         setPolicy(folder.getPolicy());
 
         _files = new ArrayList<>(folder._files.size());
         _files.addAll(folder._files.stream()
-                .map(file -> new FileInfo(new File(file.getFile(), relativePath)))
+                .map(file -> new FileInfo(FileUtil.appendName(file.getFile(), name)))
                 .collect(Collectors.toList()));
     }
 
@@ -364,7 +364,7 @@ public class FileSystemResource extends AbstractWebdavResource
         ArrayList<WebdavResource> resources = new ArrayList<>(names.size());
         for (String name : names)
         {
-            WebdavResource r = find(name);
+            WebdavResource r = find(Path.toPathPart(name));
             if (null != r && !(r instanceof WebdavResolverImpl.UnboundResource))
                 resources.add(r);
         }
@@ -373,7 +373,7 @@ public class FileSystemResource extends AbstractWebdavResource
 
 
     @Override
-    public WebdavResource find(String name)
+    public WebdavResource find(Path.Part name)
     {
         return new FileSystemResource(this, name);
     }
