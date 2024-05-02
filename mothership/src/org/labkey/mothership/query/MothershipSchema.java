@@ -295,7 +295,7 @@ public class MothershipSchema extends UserSchema
         daysActiveColumn.setFormat("#,###");
         result.addColumn(daysActiveColumn);
 
-        SQLFragment versionCount = new SQLFragment("(SELECT COUNT(DISTINCT(softwarereleaseid)) FROM ");
+        SQLFragment versionCount = new SQLFragment("(SELECT COUNT(DISTINCT softwarereleaseid) FROM ");
         versionCount.append(MothershipManager.get().getTableInfoServerSession(), "ss");
         versionCount.append(" WHERE ss.ServerInstallationId = ");
         versionCount.append(STR_TABLE_ALIAS);
