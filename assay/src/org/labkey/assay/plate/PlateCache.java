@@ -21,7 +21,6 @@ import org.labkey.assay.plate.model.PlateBean;
 import org.labkey.assay.query.AssayDbSchema;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;

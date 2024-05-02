@@ -77,6 +77,7 @@ import org.labkey.assay.plate.PlateCache;
 import org.labkey.assay.plate.PlateDocumentProvider;
 import org.labkey.assay.plate.PlateImpl;
 import org.labkey.assay.plate.PlateManager;
+import org.labkey.assay.plate.PlateManagerTest;
 import org.labkey.assay.plate.PlateMetadataDomainKind;
 import org.labkey.assay.plate.PlateMetricsProvider;
 import org.labkey.assay.plate.TsvPlateLayoutHandler;
@@ -331,7 +332,7 @@ public class AssayModule extends SpringModule
             TsvAssayProvider.TestCase.class,
             AssaySchemaImpl.TestCase.class,
             AssayProviderSchema.TestCase.class,
-            PlateManager.TestCase.class,
+            PlateManagerTest.class,
             PositionImpl.TestCase.class,
             PlateImpl.TestCase.class,
             PlateUtils.TestCase.class,
