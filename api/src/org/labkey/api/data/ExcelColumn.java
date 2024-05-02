@@ -363,33 +363,44 @@ public class ExcelColumn extends RenderColumn
                 case(TYPE_DATE):
                     // Careful here... need to make sure we adjust dates for GMT.  This constructor automatically does the conversion, but there seem to be
                     // bugs in other jxl 2.5.7 constructors: DateTime(c, r, d) forces the date to time-only, DateTime(c, r, d, gmt) doesn't adjust for gmt
-                    Date dateVal = (Date) o;
-                    if (dateVal.compareTo(EXCEL_DATE_0) < 0)
+                    if (o instanceof Date dateVal)
                     {
-                        String format = getFormatString();
-                        if (StringUtils.isEmpty(format))
-                            cell.setCellValue(o.toString());
-                        else
+                        if (dateVal.compareTo(EXCEL_DATE_0) < 0)
                         {
-                            // date is invalid for excel, export as formatted string instead
-                            format = format.replaceAll("AM/PM", "a");
-                            Format formatter = FastDateFormat.getInstance(format);
-                            cell.setCellValue(formatter.format(dateVal));
+                            String format = getFormatString();
+                            if (StringUtils.isEmpty(format))
+                                cell.setCellValue(o.toString());
+                            else
+                            {
+                                // date is invalid for excel, export as formatted string instead
+                                format = format.replaceAll("AM/PM", "a");
+                                Format formatter = FastDateFormat.getInstance(format);
+                                cell.setCellValue(formatter.format(dateVal));
+                            }
                         }
+                        else
+                            cell.setCellValue((Date) o);
+                        cell.setCellStyle(_style);
                     }
                     else
-                        cell.setCellValue((Date) o);
-                    cell.setCellStyle(_style);
+                    {
+                        cell.setCellValue(o.toString());
+                    }
                     break;
                 case(TYPE_TIME):
-                    cell.setCellValue((Time) o);
-                    cell.setCellStyle(_style);
+                    if (o instanceof Time t)
+                    {
+                        cell.setCellValue(t);
+                        cell.setCellStyle(_style);
+                    }
+                    else
+                        cell.setCellValue(o.toString());
                     break;
                 case(TYPE_INT):
                 case(TYPE_DOUBLE):
-                    if (o instanceof Number)
+                    if (o instanceof Number n)
                     {
-                        cell.setCellValue(((java.lang.Number) o).doubleValue());
+                        cell.setCellValue(n.doubleValue());
                         cell.setCellStyle(_style);
                     }
                     //Issue 47268: Export Does Not Include Failed Lookup Values
@@ -439,7 +450,7 @@ public class ExcelColumn extends RenderColumn
                             {
                                 int height = img.getHeight();
                                 int width = img.getWidth();
-//
+
                                 double ratio = (double) width/height;
                                 if (ratio >= MAX_IMAGE_RATIO)
                                 {
@@ -512,8 +523,7 @@ public class ExcelColumn extends RenderColumn
         }
         catch(ClassCastException cce)
         {
-            _log.error("Can't cast \'" + o.toString() + "\', class \'" + o.getClass().getName() + "\', to class corresponding to simple type \'" + _simpleType + "\'");
-            _log.error("DisplayColumn.getCaption(): " + _dc.getCaption());
+            _log.error("Can't cast '" + o.toString() + "', class '" + o.getClass().getName() + "', to class corresponding to simple type '" + _simpleType + "'");            _log.error("DisplayColumn.getCaption(): " + _dc.getCaption());
             _log.error("DisplayColumn.getClass().getName(): " + _dc.getClass().getName());
             _log.error("DisplayColumn.getDisplayValueClass(): " + _dc.getDisplayValueClass());
             _log.error("DisplayColumn.getValueClass(): " + _dc.getValueClass());
