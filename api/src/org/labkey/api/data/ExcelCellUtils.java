@@ -15,6 +15,11 @@ import java.text.Format;
 import java.util.Date;
 import java.util.GregorianCalendar;
 
+/**
+ * This is a utility class that contains the necessary methods for writing properly formatted values to Excel cells.
+ * This logic was previously housed directly in ExcelColumn, however with the introduction of PlateMapExcelWriter we
+ * needed a shared location for rendering formatted values to Excel cells.
+ */
 public class ExcelCellUtils
 {
     public static final int TYPE_UNKNOWN = 0;

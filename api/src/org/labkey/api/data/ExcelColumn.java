@@ -18,7 +18,6 @@ package org.labkey.api.data;
 
 import jxl.format.Colour;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.apache.logging.log4j.Logger;
 import org.apache.poi.hssf.usermodel.HSSFClientAnchor;
@@ -60,7 +59,6 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
-import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.logging.LogHelper;
@@ -71,11 +69,9 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
-import java.math.BigDecimal;
 import java.sql.Time;
 import java.text.DecimalFormat;
 import java.text.Format;
@@ -97,16 +93,6 @@ public class ExcelColumn extends RenderColumn
 {
     private static final Logger _log = LogHelper.getLogger(ExcelColumn.class, "Excel column rendering");
 
-    private static final int TYPE_UNKNOWN = 0;
-    private static final int TYPE_INT = 1;
-    private static final int TYPE_DOUBLE = 2;
-    private static final int TYPE_STRING = 3;
-    private static final int TYPE_MULTILINE_STRING = 4;
-    private static final int TYPE_DATE = 5;
-    private static final int TYPE_BOOLEAN = 6;
-    private static final int TYPE_FILE = 7;
-    private static final int TYPE_TIME = 8;
-
 
     /**
      * 256 is one full character, one character has 7 pixels.
@@ -120,7 +106,7 @@ public class ExcelColumn extends RenderColumn
     private static final Date EXCEL_DATE_0 = (new GregorianCalendar(1900, 1, 1)).getTime();
 
     // CONSIDER: Add support for left/right/center alignment (from DisplayColumn)
-    private int _simpleType = TYPE_UNKNOWN;
+    private int _simpleType = ExcelCellUtils.TYPE_UNKNOWN;
     private CellStyle _style = null;
     private boolean _autoSize = false;
     private int _autoSizeWidth = 0;
@@ -222,23 +208,23 @@ public class ExcelColumn extends RenderColumn
 
         switch (_simpleType)
         {
-            case(TYPE_INT):
-            case(TYPE_DOUBLE):
+            case(ExcelCellUtils.TYPE_INT):
+            case(ExcelCellUtils.TYPE_DOUBLE):
             {
                 formatDescriptor = new ExcelFormatDescriptor(Number.class, getFormatString());
                 break;
             }
-            case(TYPE_DATE):
+            case(ExcelCellUtils.TYPE_DATE):
             {
                 formatDescriptor = new ExcelFormatDescriptor(Date.class, getFormatString());
                 break;
             }
-            case(TYPE_TIME):
+            case(ExcelCellUtils.TYPE_TIME):
             {
                 formatDescriptor = new ExcelFormatDescriptor(Time.class, getFormatString());
                 break;
             }
-            case(TYPE_MULTILINE_STRING):
+            case(ExcelCellUtils.TYPE_MULTILINE_STRING):
             {
                 formatDescriptor = new ExcelFormatDescriptor(String.class, getFormatString());
                 break;
@@ -301,7 +287,7 @@ public class ExcelColumn extends RenderColumn
 
         try
         {
-            if (_simpleType == TYPE_FILE)
+            if (_simpleType == ExcelCellUtils.TYPE_FILE)
             {
                 String filePath = o.toString().toLowerCase().replaceAll("\r\n", "\n");
                 cell.setCellValue(filePath);
@@ -376,7 +362,7 @@ public class ExcelColumn extends RenderColumn
                     }
                 }
             }
-            else if (_simpleType == TYPE_BOOLEAN)
+            else if (_simpleType == ExcelCellUtils.TYPE_BOOLEAN)
             {
                 String s = _dc.getTsvFormattedValue(ctx);
                 cell.setCellValue(s);
@@ -510,12 +496,12 @@ public class ExcelColumn extends RenderColumn
                         font.setColor(findBestColour(textColor));
                     }
                     excelFormat = _workbook.createCellStyle();
-                    if (_simpleType == TYPE_INT || _simpleType == TYPE_DOUBLE || _simpleType == TYPE_DATE || _simpleType == TYPE_TIME)
+                    if (_simpleType == ExcelCellUtils.TYPE_INT || _simpleType == ExcelCellUtils.TYPE_DOUBLE || _simpleType == ExcelCellUtils.TYPE_DATE || _simpleType == ExcelCellUtils.TYPE_TIME)
                     {
                         short formatIndex = _workbook.createDataFormat().getFormat(getFormatString());
                         excelFormat.setDataFormat(formatIndex);
                     }
-                    if (_simpleType == TYPE_MULTILINE_STRING)
+                    if (_simpleType == ExcelCellUtils.TYPE_MULTILINE_STRING)
                     {
                         excelFormat.setWrapText(true);
                     }
@@ -695,11 +681,11 @@ public class ExcelColumn extends RenderColumn
 
         switch (_simpleType)
         {
-            case(TYPE_DATE):
+            case(ExcelCellUtils.TYPE_DATE):
                 format = FastDateFormat.getInstance(getFormatString());
                 break;
-            case(TYPE_INT):
-            case(TYPE_DOUBLE):
+            case(ExcelCellUtils.TYPE_INT):
+            case(ExcelCellUtils.TYPE_DOUBLE):
                 format = new DecimalFormat(getFormatString());
                 break;
         }
@@ -724,12 +710,12 @@ public class ExcelColumn extends RenderColumn
                     case NUMERIC:
                         switch (_simpleType)
                         {
-                            case(TYPE_DATE):
+                            case(ExcelCellUtils.TYPE_DATE):
                                 if (org.apache.poi.ss.usermodel.DateUtil.isCellDateFormatted(cell))
                                     formatted = format.format(cell.getDateCellValue());
                                 break;
-                            case(TYPE_INT):
-                            case(TYPE_DOUBLE):
+                            case(ExcelCellUtils.TYPE_INT):
+                            case(ExcelCellUtils.TYPE_DOUBLE):
                                 formatted = format.format(cell.getNumericCellValue());
                                 break;
                         }
@@ -740,7 +726,7 @@ public class ExcelColumn extends RenderColumn
                         break;
 
                     case BLANK:
-                        if (_simpleType == TYPE_FILE) {
+                        if (_simpleType == ExcelCellUtils.TYPE_FILE) {
                             Pair<Integer, Integer> size = getImageSize(ctx, row, column);
                             if (size != null)
                             {
