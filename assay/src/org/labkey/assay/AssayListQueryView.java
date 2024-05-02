@@ -86,9 +86,9 @@ public class AssayListQueryView extends QueryView
 
         if (getContainer().hasPermission(getUser(), DesignAssayPermission.class))
         {
-            ActionURL plateURL = PageFlowUtil.urlProvider(PlateUrls.class).getPlateTemplateListURL(getContainer());
+            ActionURL plateURL = PageFlowUtil.urlProvider(PlateUrls.class).getPlateListURL(getContainer());
             plateURL.addReturnURL(getViewContext().getActionURL());
-            ActionButton insert = new ActionButton("Configure Plate Templates", plateURL);
+            ActionButton insert = new ActionButton("Configure Plates", plateURL);
             insert.setActionType(ActionButton.Action.LINK);
             insert.setDisplayPermission(DesignAssayPermission.class);
             bar.add(insert);

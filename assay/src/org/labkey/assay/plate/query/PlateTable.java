@@ -276,7 +276,9 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
                 String newName = (String) row.get("Name");
                 if (newName != null && !newName.equals(oldName))
                 {
-                    if (PlateManager.get().isDuplicatePlate(container, user, newName, plate.getPlateSet()))
+                    if (plate.isTemplate() && PlateManager.get().isDuplicatePlateTemplateName(container, newName))
+                        throw new QueryUpdateServiceException(String.format("Plate template with name \"%s\" already exists.", newName));
+                    if (PlateManager.get().isDuplicatePlateName(container, user, newName, plate.getPlateSet()))
                         throw new QueryUpdateServiceException("Plate with name : " + newName + " already exists.");
                 }
             }

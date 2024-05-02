@@ -3,7 +3,6 @@ package org.labkey.api.assay.plate;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
-import org.labkey.api.assay.AssayDataType;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -15,11 +14,11 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.util.Pair;
 
 import java.io.File;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -27,17 +26,11 @@ public interface AssayPlateMetadataService
 {
     String PLATE_TEMPLATE_COLUMN_NAME = "PlateTemplate";
     String PLATE_SET_COLUMN_NAME = "PlateSet";
-    Map<AssayDataType, AssayPlateMetadataService> _handlers = new HashMap<>();
     String EXPERIMENTAL_APP_PLATE_SUPPORT = "experimental-app-plate-support";
 
-    static void registerService(AssayDataType dataType, AssayPlateMetadataService handler)
+    static void setInstance(AssayPlateMetadataService serviceImpl)
     {
-        if (dataType != null)
-        {
-            _handlers.put(dataType, handler);
-        }
-        else
-            throw new RuntimeException("The specified assay data type is null");
+        ServiceRegistry.get().registerService(AssayPlateMetadataService.class, serviceImpl);
     }
 
     static boolean isExperimentalAppPlateEnabled()
@@ -53,10 +46,9 @@ public interface AssayPlateMetadataService
         return false;
     }
 
-    @Nullable
-    static AssayPlateMetadataService getService(AssayDataType dataType)
+    static AssayPlateMetadataService get()
     {
-        return _handlers.get(dataType);
+        return ServiceRegistry.get().getService(AssayPlateMetadataService.class);
     }
 
     /**
@@ -75,17 +67,33 @@ public interface AssayPlateMetadataService
      * @param inserted the inserted result data
      * @param rowIdToLsidMap a map of result data rowIds to result data lsids
      */
-    void addAssayPlateMetadata(ExpData resultData, Map<String, MetadataLayer> plateMetadata, Container container, User user, ExpRun run, AssayProvider provider,
-                               ExpProtocol protocol, List<Map<String, Object>> inserted, Map<Integer, String> rowIdToLsidMap) throws ExperimentException;
+    void addAssayPlateMetadata(
+        ExpData resultData,
+        Map<String, MetadataLayer> plateMetadata,
+        Container container,
+        User user,
+        ExpRun run,
+        AssayProvider provider,
+        ExpProtocol protocol,
+        List<Map<String, Object>> inserted,
+        Map<Integer, String> rowIdToLsidMap
+    ) throws ExperimentException;
 
     /**
      * Merges the results data with the plate metadata to produce a single row map
      *
      * @return the merged rows
      */
-    List<Map<String, Object>> mergePlateMetadata(Container container, User user, Lsid plateLsid, Integer plateSetId,
-                                                 List<Map<String, Object>> rows, @Nullable Map<String, MetadataLayer> plateMetadata,
-                                                 AssayProvider provider, ExpProtocol protocol) throws ExperimentException;
+    List<Map<String, Object>> mergePlateMetadata(
+        Container container,
+        User user,
+        Lsid plateLsid,
+        Integer plateSetId,
+        List<Map<String, Object>> rows,
+        @Nullable Map<String, MetadataLayer> plateMetadata,
+        AssayProvider provider,
+        ExpProtocol protocol
+    ) throws ExperimentException;
 
     /**
      * Methods to create the metadata model from either a JSON object or a file object
@@ -98,14 +106,14 @@ public interface AssayPlateMetadataService
      * well as cases where plate identifiers have not been supplied.
      */
     List<Map<String, Object>> parsePlateData(
-            Container container,
-            User user,
-            AssayProvider provider,
-            ExpProtocol protocol,
-            Integer plateSetId,
-            File dataFile,
-            List<Map<String, Object>> data,
-            Pair<String, Boolean> plateIdAdded
+        Container container,
+        User user,
+        AssayProvider provider,
+        ExpProtocol protocol,
+        Integer plateSetId,
+        File dataFile,
+        List<Map<String, Object>> data,
+        Pair<String, Boolean> plateIdAdded
     ) throws ExperimentException;
 
     /**
@@ -113,7 +121,14 @@ public interface AssayPlateMetadataService
      * with the plate used in the assay run import
      */
     @NotNull
-    OntologyManager.UpdateableTableImportHelper getImportHelper(Container container, User user, ExpRun run, ExpData data, ExpProtocol protocol, AssayProvider provider) throws ExperimentException;
+    OntologyManager.UpdateableTableImportHelper getImportHelper(
+        Container container,
+        User user,
+        ExpRun run,
+        ExpData data,
+        ExpProtocol protocol,
+        AssayProvider provider
+    ) throws ExperimentException;
 
     interface MetadataLayer
     {

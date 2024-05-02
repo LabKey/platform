@@ -78,10 +78,6 @@ import java.util.stream.Collectors;
 import static org.labkey.api.assay.AssayDataCollector.PRIMARY_FILE;
 import static org.labkey.api.assay.AssayFileWriter.createFile;
 
-/**
- * User: kevink
- * Date: 8/26/12
- */
 @ActionNames("importRun")
 @RequiresPermission(InsertPermission.class)
 @ApiVersion(12.3)
@@ -193,10 +189,10 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
 
         // Import the file at runFilePath if it is available, otherwise AssayRunUploadContextImpl.getUploadedData() will use the multi-part form POSTed file
         File file = null;
-        if (runFilePath != null && runFilePath.length() > 0)
+        if (runFilePath != null && !runFilePath.isEmpty())
         {
             // Resolve file under module resources
-            if (moduleName != null && moduleName.length() > 0)
+            if (moduleName != null && !moduleName.isEmpty())
             {
                 Module m = ModuleLoader.getInstance().getModule(moduleName);
                 if (m == null)
@@ -223,7 +219,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
                 if (!root.isUnderRoot(f))
                     f = root.resolvePath(runFilePath);
 
-                if (f == null || !NetworkDrive.exists(f) || !root.isUnderRoot(f))
+                if (!NetworkDrive.exists(f) || !root.isUnderRoot(f))
                     throw new NotFoundException("File not found: " + runFilePath);
 
                 file = f;
@@ -291,15 +287,10 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
 
         if (form.getPlateMetadata() != null)
         {
-            AssayPlateMetadataService svc = AssayPlateMetadataService.getService(PlateMetadataDataHandler.DATA_TYPE);
-            if (svc != null)
-            {
-                ExpData plateData = DefaultAssayRunCreator.createData(getContainer(), "Plate Metadata", PlateMetadataDataHandler.DATA_TYPE, null);
-                plateData.save(getUser());
-                outputData.put(plateData, ExpDataRunInput.DEFAULT_ROLE);
-
-                factory.setRawPlateMetadata(svc.parsePlateMetadata(form.getPlateMetadata()));
-            }
+            ExpData plateData = DefaultAssayRunCreator.createData(getContainer(), "Plate Metadata", PlateMetadataDataHandler.DATA_TYPE, null);
+            plateData.save(getUser());
+            outputData.put(plateData, ExpDataRunInput.DEFAULT_ROLE);
+            factory.setRawPlateMetadata(AssayPlateMetadataService.get().parsePlateMetadata(form.getPlateMetadata()));
         }
 
         factory.setInputDatas(inputData)
