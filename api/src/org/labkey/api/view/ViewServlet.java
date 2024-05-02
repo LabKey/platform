@@ -563,7 +563,8 @@ public class ViewServlet extends HttpServlet
 
         public void setActionURL(ActionURL actionURL)
         {
-            setRequestURI(actionURL.getPath());
+            if (null != actionURL && null != actionURL.getPath())
+                setRequestURI(actionURL.getPath());
             _actionURL = actionURL;
         }
 
