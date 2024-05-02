@@ -21,6 +21,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -702,14 +704,16 @@ public class Query
      * resolveTable() catches most cases of recursion.  However, some indirect forms of recursion will show themselves in getSql().
      * This can happen if a Filter tries to compile a query. For instance, see the custom Filter code in {@link DatasetTableCustomizer.addRestrictedReadFilter()}
      */
-    QueryRecursionReturn queryRecursionCheck(String message, @Nullable QNode node) throws QueryParseException
+    static QueryRecursionReturn queryRecursionCheck(String message, @Nullable QNode node) throws QueryParseException
     {
-        if (resolveDepth.get().incrementAndGet() > MAX_RESOLVE_DEPTH)
+        AtomicInteger ai = resolveDepth.get();
+        if (ai.get() >= MAX_RESOLVE_DEPTH)
         {
             ArrayList<QueryException> list = new ArrayList<>();
             parseError(list, message, node);
             throw list.get(0);
         }
+        ai.incrementAndGet();
         return new QueryRecursionReturn();
     }
 
@@ -1085,5 +1089,46 @@ public class Query
     public TableType lookupMetadataTable(String tableName)
     {
         return null != _metadataTableMap ? _metadataTableMap.get(tableName) : null;
+    }
+
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testQueryRecursionCheck()
+        {
+            assertEquals(0, resolveDepth.get().get());
+            try (var unused1 = queryRecursionCheck("test", null))
+            {
+                assertEquals(1, resolveDepth.get().get());
+                try (var unused2 = queryRecursionCheck("test", null))
+                {
+                    assertEquals(2, resolveDepth.get().get());
+                }
+                assertEquals(1, resolveDepth.get().get());
+            }
+            assertEquals(0, resolveDepth.get().get());
+        }
+
+        private void recurseToFailure()
+        {
+            try (var unused2 = queryRecursionCheck("test", null))
+            {
+                recurseToFailure();
+            }
+        }
+
+        @Test
+        public void testQueryRecursionCheckFail()
+        {
+            try
+            {
+                recurseToFailure();
+            }
+            catch (Exception e)
+            {
+                assertEquals(0, resolveDepth.get().get());
+            }
+        }
     }
 }
