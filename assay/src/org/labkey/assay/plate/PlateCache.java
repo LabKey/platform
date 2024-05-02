@@ -135,13 +135,15 @@ public class PlateCache
     public static @NotNull List<Plate> getPlates(Container c)
     {
         List<Plate> plates = new ArrayList<>();
-        List<Integer> ids = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate(),
-                Collections.singleton("RowId"),
-                SimpleFilter.createContainerFilter(c), null).getArrayList(Integer.class);
+        List<Integer> ids = new TableSelector(
+            AssayDbSchema.getInstance().getTableInfoPlate(),
+            Collections.singleton("RowId"),
+            SimpleFilter.createContainerFilter(c),
+            new Sort("RowId")
+        ).getArrayList(Integer.class);
+
         for (Integer id : ids)
-        {
             plates.add(PLATE_CACHE.get(PlateCacheKey.getCacheKey(c, id)));
-        }
         return plates;
     }
 

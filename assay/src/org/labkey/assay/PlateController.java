@@ -245,11 +245,11 @@ public class PlateController extends SpringActionController
             properties.put("templateRowCount", "" + form.getRowCount());
             properties.put("templateColumnCount", "" + form.getColCount());
 
-            List<Plate> templates = PlateService.get().getPlateTemplates(getContainer());
-            for (int i = 0; i < templates.size(); i++)
+            List<Plate> plates = PlateService.get().getPlates(getContainer());
+            for (int i = 0; i < plates.size(); i++)
             {
-                Plate template = templates.get(i);
-                properties.put("templateName[" + i + "]", template.getName());
+                Plate plate = plates.get(i);
+                properties.put("templateName[" + i + "]", plate.getName());
             }
             return new AssayGWTView(gwt.client.org.labkey.plate.designer.client.TemplateDesigner.class, properties);
         }
@@ -258,7 +258,7 @@ public class PlateController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             setHelpTopic("editPlateTemplate");
-            root.addChild("Plate Template Editor");
+            root.addChild("Plate Editor");
         }
     }
 
@@ -329,7 +329,7 @@ public class PlateController extends SpringActionController
                         Container dest = ContainerManager.getForPath(_selectedDestination);
                         if (dest != null)
                         {
-                            _destinationTemplates = PlateService.get().getPlateTemplates(dest);
+                            _destinationTemplates = PlateService.get().getPlates(dest);
                         }
                     }
 
@@ -436,8 +436,8 @@ public class PlateController extends SpringActionController
     private String getUniqueName(Container container, String originalName)
     {
         Set<String> existing = new HashSet<>();
-        for (Plate template : PlateService.get().getPlateTemplates(container))
-            existing.add(template.getName());
+        for (Plate plate : PlateService.get().getPlates(container))
+            existing.add(plate.getName());
         String baseUniqueName;
         if (!originalName.startsWith("Copy of "))
             baseUniqueName = "Copy of " + originalName;

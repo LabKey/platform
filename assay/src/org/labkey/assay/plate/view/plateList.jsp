@@ -123,13 +123,12 @@
                     .build());
         }
 %>
-<br/>
 <h4>Create New Plate</h4>
 <labkey:form method="POST" layout="inline" id="qc_form">
     <%= new Select.SelectBuilder()
             .name("template")
             .id("plate_template")
-            .layout(Input.Layout.HORIZONTAL)
+            .layout(Input.Layout.INLINE)
             .required(true)
             .formGroup(true)
             .addOptions(options)
@@ -139,7 +138,7 @@
 <%
     }
 %>
-
+<br/>
 <h4>Available Plates</h4>
 <table class="labkey-data-region-legacy labkey-show-borders">
     <tr>

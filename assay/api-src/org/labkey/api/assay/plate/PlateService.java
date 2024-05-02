@@ -33,7 +33,6 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ActionURL;
 
 import java.sql.SQLException;
-import java.util.Collection;
 import java.util.List;
 
 public interface PlateService
@@ -157,16 +156,7 @@ public interface PlateService
      */
     @Nullable Plate getPlate(ContainerFilter cf, Integer plateSetId, Object plateIdentifier);
 
-    @NotNull List<Plate> getPlates(Container c);
-
-    /**
-     * Gets all plate templates for the specified container. Plate templates are Plate instances
-     * which have their template field set to TRUE.
-     *
-     * @return An array of all plates that are configured as templates from the specified container.
-     */
-    @NotNull
-    List<Plate> getPlateTemplates(Container container);
+    @NotNull List<Plate> getPlates(Container container);
 
     /**
      * Gets the plate set by ID
@@ -225,8 +215,8 @@ public interface PlateService
     Position createPosition(Container container, int row, int column);
 
     /**
-     * Deletes all plate and template data from the specified container.  Typically used
-     * only when a container is deleted.
+     * Deletes all plate and template data from the specified container.
+     * Typically used only when a container is deleted.
      * @param container The container from which to delete all plate data.
      */
     void deleteAllPlateData(Container container);
