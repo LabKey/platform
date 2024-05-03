@@ -3130,7 +3130,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             Plate p = PlateManager.get().createAndSavePlate(container, user, plateType, "myPlate", null, null, rows);
 
             // Act
-            List<FieldKey> includedMetadataCols = WellTable.getMetadataColumns(p.getPlateSet().getRowId(), container, user).stream().sorted(Comparator.comparing(FieldKey::getName)).toList();
+            List<FieldKey> includedMetadataCols = WellTable.getMetadataColumns(p.getPlateSet(), user);
             List<Object[]> result = PlateManager.get().getInstrumentInstructions(p.getPlateSet().getRowId(), includedMetadataCols, container, user);
 
             // Assert
@@ -3175,6 +3175,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                     )
             );
             Plate plateSource = PlateManager.get().createAndSavePlate(container, user, plateType, "myPlate1", null, null, rows1);
+            assertNotNull("Expected plate set to be specified on plate", plateSource.getPlateSet());
 
             List<Map<String, Object>> rows2 = List.of(
                     CaseInsensitiveHashMap.of(
@@ -3189,11 +3190,12 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                             "wellLocation", "A3",
                             "sampleId", sample2.getRowId())
             );
-            Plate plateDestination =PlateManager.get().createAndSavePlate(container, user, plateType, "myPlate2", null, null, rows2);
+            Plate plateDestination = PlateManager.get().createAndSavePlate(container, user, plateType, "myPlate2", null, null, rows2);
+            assertNotNull("Expected plate set to be specified on plate", plateDestination.getPlateSet());
 
             // Act
-            List<FieldKey> sourceIncludedMetadataCols = WellTable.getMetadataColumns(plateSource.getPlateSet().getRowId(), container, user).stream().sorted(Comparator.comparing(FieldKey::getName)).toList();
-            List<FieldKey> destinationIncludedMetadataCols = WellTable.getMetadataColumns(plateDestination.getPlateSet().getRowId(), container, user).stream().sorted(Comparator.comparing(FieldKey::getName)).toList();
+            List<FieldKey> sourceIncludedMetadataCols = WellTable.getMetadataColumns(plateSource.getPlateSet(), user);
+            List<FieldKey> destinationIncludedMetadataCols = WellTable.getMetadataColumns(plateDestination.getPlateSet(), user);
             List<Object[]> plateDataRows = PlateManager.get().getWorklist(plateSource.getPlateSet().getRowId(), plateDestination.getPlateSet().getRowId(), sourceIncludedMetadataCols, destinationIncludedMetadataCols, container, user);
 
             // Assert

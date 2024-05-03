@@ -1292,8 +1292,8 @@ public class PlateController extends SpringActionController
                 if (plateSetSource == null || plateSetDestination == null)
                     throw new NotFoundException("Unable to resolve Plate Set.");
 
-                List<FieldKey> sourceIncludedMetadataCols = WellTable.getMetadataColumns(form.getSourcePlateSetId(), getContainer(), getUser()).stream().sorted(Comparator.comparing(FieldKey::getName)).toList();
-                List<FieldKey> destinationIncludedMetadataCols = WellTable.getMetadataColumns(form.getDestinationPlateSetId(), getContainer(), getUser()).stream().sorted(Comparator.comparing(FieldKey::getName)).toList();
+                List<FieldKey> sourceIncludedMetadataCols = WellTable.getMetadataColumns(plateSetSource, getUser());
+                List<FieldKey> destinationIncludedMetadataCols = WellTable.getMetadataColumns(plateSetDestination, getUser());
 
                 ColumnDescriptor[] sourceXlCols = PlateSetExport.getColumnDescriptors(PlateSetExport.SOURCE, sourceIncludedMetadataCols);
                 ColumnDescriptor[] destinationXlCols = PlateSetExport.getColumnDescriptors(PlateSetExport.DESTINATION, destinationIncludedMetadataCols);
@@ -1345,7 +1345,7 @@ public class PlateController extends SpringActionController
                 if (plateSet.getType() != PlateSetType.assay)
                     throw new ValidationException("Instrument Instructions cannot be generated for non-Assay Plate Sets.");
 
-                List<FieldKey> includedMetadataCols = WellTable.getMetadataColumns(form.getPlateSetId(), getContainer(), getUser()).stream().sorted(Comparator.comparing(FieldKey::getName)).toList();
+                List<FieldKey> includedMetadataCols = WellTable.getMetadataColumns(plateSet, getUser());
                 ColumnDescriptor[] xlCols = PlateSetExport.getColumnDescriptors("", includedMetadataCols);
                 List<Object[]> plateDataRows = PlateManager.get().getInstrumentInstructions(form.getPlateSetId(), includedMetadataCols, getContainer(), getUser());
 

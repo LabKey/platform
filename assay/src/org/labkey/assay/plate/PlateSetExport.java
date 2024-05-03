@@ -17,11 +17,9 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 
 public class PlateSetExport
 {
@@ -78,24 +76,23 @@ public class PlateSetExport
     public static ColumnDescriptor[] getColumnDescriptors(String prefix, List<FieldKey> includedMetadataCols)
     {
         List<ColumnDescriptor> baseColumns = new ArrayList<>(
-                Arrays.asList(
-                        new ColumnDescriptor(prefix + "Plate ID", String.class),
-                        new ColumnDescriptor(prefix + "Well", String.class),
-                        new ColumnDescriptor(prefix + "Plate Type", String.class)
-                )
+            Arrays.asList(
+                new ColumnDescriptor(prefix + "Plate ID"),
+                new ColumnDescriptor(prefix + "Well"),
+                new ColumnDescriptor(prefix + "Plate Type")
+            )
         );
 
-        if (!prefix.equals(PlateSetExport.DESTINATION))
-            baseColumns.add(new ColumnDescriptor("Sample ID", String.class));
+        if (!PlateSetExport.DESTINATION.equals(prefix))
+            baseColumns.add(new ColumnDescriptor("Sample ID"));
 
         List<ColumnDescriptor> metadataColumns = includedMetadataCols
                 .stream()
-                .sorted(Comparator.comparing(FieldKey::getName))
-                .map(fk -> new ColumnDescriptor(fk.getCaption(), String.class))
+                .map(fk -> new ColumnDescriptor(fk.getCaption()))
                 .toList();
 
-        int baseColumCount = !prefix.equals(PlateSetExport.DESTINATION) ? 4 : 3;
-        return Stream.concat(baseColumns.stream(), metadataColumns.stream()).toList().toArray(new ColumnDescriptor[baseColumCount + includedMetadataCols.size()]);
+        baseColumns.addAll(metadataColumns);
+        return baseColumns.toArray(new ColumnDescriptor[0]);
     }
 
     public List<Object[]> getWorklist(
