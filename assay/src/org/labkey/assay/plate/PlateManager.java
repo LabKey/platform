@@ -2642,7 +2642,10 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             List<GWTPropertyDescriptor> customFields = List.of(
                     new GWTPropertyDescriptor("barcode", "http://www.w3.org/2001/XMLSchema#string"),
                     new GWTPropertyDescriptor("concentration", "http://www.w3.org/2001/XMLSchema#double"),
-                    new GWTPropertyDescriptor("negativeControl", "http://www.w3.org/2001/XMLSchema#double"));
+                    new GWTPropertyDescriptor("negativeControl", "http://www.w3.org/2001/XMLSchema#double"),
+                    new GWTPropertyDescriptor("Z", "http://www.w3.org/2001/XMLSchema#string"),
+                    new GWTPropertyDescriptor("a", "http://www.w3.org/2001/XMLSchema#string")
+            );
 
             PlateManager.get().createPlateMetadataFields(container, user, customFields);
 
@@ -3156,18 +3159,19 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             PlateType plateType = PlateManager.get().getPlateType(8, 12);
             assertNotNull("96 well plate type was not found", plateType);
 
+            // Test sorting
             List<Map<String, Object>> rows1 = List.of(
                     CaseInsensitiveHashMap.of(
                             "wellLocation", "A1",
                             "sampleId", sample1.getRowId(),
-                            "properties/concentration", 2.25,
-                            "properties/barcode", "B1234")
+                            "properties/a", 2.25,
+                            "properties/Z", "B1234")
                     ,
                     CaseInsensitiveHashMap.of(
                             "wellLocation", "A2",
                             "sampleId", sample2.getRowId(),
-                            "properties/concentration", 1.25,
-                            "properties/barcode", "B5678"
+                            "properties/a", 1.25,
+                            "properties/Z", "B5678"
                     )
             );
             Plate plateSource = PlateManager.get().createAndSavePlate(container, user, plateType, "myPlate1", null, null, rows1);
