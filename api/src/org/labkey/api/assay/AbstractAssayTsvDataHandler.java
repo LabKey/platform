@@ -553,7 +553,17 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             final ContainerFilter cf = QueryService.get().getContainerFilterForLookups(container, user);
             final TableInfo dataTable = provider.createProtocolSchema(user, container, protocol, null).createDataTable(cf);
 
-            Map<ExpMaterial, String> inputMaterials = checkData(container, user, dataTable, dataDomain, rawData, settings, resolver, cf);
+            Map<String, ExpMaterial> protocolInputMaterials = new HashMap<>();
+            List<? extends ExpProtocolApplication> protocolApplications = run.getProtocolApplications();
+            if (protocolApplications != null)
+            {
+                for (ExpProtocolApplication protocolApplication : protocolApplications)
+                {
+                    for (ExpMaterial material : protocolApplication.getInputMaterials())
+                        protocolInputMaterials.put(material.getName(), material);
+                }
+            }
+            Map<ExpMaterial, String> inputMaterials = checkData(container, user, dataTable, dataDomain, rawData, settings, resolver, protocolInputMaterials, cf);
 
             List<Map<String, Object>> fileData = convertPropertyNamesToURIs(rawData, dataDomain);
 
@@ -841,6 +851,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                                                List<Map<String, Object>> rawData,
                                                DataLoaderSettings settings,
                                                ParticipantVisitResolver resolver,
+                                               Map<String, ExpMaterial> inputMaterials,
                                                ContainerFilter containerFilter)
             throws ValidationException, ExperimentException
     {
@@ -1161,9 +1172,15 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     // Issue 47509: When samples have names that are numbers, they can be incorrectly interpreted as rowIds during the insert.
                     // If allowLookupByAlternateKey is true or the sample lookup is by name, we call findExpMaterial which will attempt to resolve by name first and then rowId.
                     // If allowLookupByAlternateKey is false, we will only try resolving by the rowId.
-                    ExpMaterial material;
+                    ExpMaterial material = null;
                     if (settings.isAllowLookupByAlternateKey() || isSampleLookupByName)
-                        material = exp.findExpMaterial(lookupContainer, user, byNameSS, ssName, o.toString(), cache, materialCache);
+                    {
+                        String materialName = o.toString();
+                        if (inputMaterials.containsKey(materialName))
+                            material = inputMaterials.get(materialName);
+                        if (material == null)
+                            material = exp.findExpMaterial(lookupContainer, user, byNameSS, ssName, materialName, cache, materialCache);
+                    }
                     else
                         material = materialCache.computeIfAbsent((Integer)o, (id) -> exp.getExpMaterial(id, containerFilter));
 
