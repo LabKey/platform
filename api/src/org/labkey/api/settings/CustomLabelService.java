@@ -19,6 +19,8 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.services.ServiceRegistry;
 
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -37,6 +39,8 @@ public interface CustomLabelService
     void registerProvider(CustomLabelProvider customLabelProvider);
     CustomLabelProvider getCustomLabelProvider(@NotNull String name);
     Collection<CustomLabelProvider> getCustomLabelProviders();
+
+    Map<String, Map<String, Integer>> getCustomLabelMetrics();
 
     class CustomLabelServiceImpl implements CustomLabelService
     {
@@ -59,6 +63,17 @@ public interface CustomLabelService
         public Collection<CustomLabelProvider> getCustomLabelProviders()
         {
             return REGISTERED_PROVIDERS.values();
+        }
+
+        @Override
+        public Map<String, Map<String, Integer>> getCustomLabelMetrics()
+        {
+            Map<String, Map<String, Integer>> labelCounts = new HashMap<>();
+            for (CustomLabelProvider provider : getCustomLabelProviders())
+            {
+                labelCounts.put(provider.getName(), provider.getMetrics());
+            }
+            return labelCounts;
         }
     }
 }

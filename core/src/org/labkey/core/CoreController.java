@@ -122,6 +122,8 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.CustomLabelProvider;
+import org.labkey.api.settings.CustomLabelService;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -131,6 +133,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
+import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.PageFlowUtil.Content;
@@ -2813,4 +2816,86 @@ public class CoreController extends SpringActionController
             _moduleName = moduleName;
         }
     }
+
+    @RequiresPermission(AdminPermission.class)
+    public class CustomLabelsAction extends MutatingApiAction<CustomLabelForm>
+    {
+        CustomLabelProvider _customLabelProvider;
+        @Override
+        public void validateForm(CustomLabelForm form, Errors errors)
+        {
+            if (StringUtils.isEmpty(form.getProvider()))
+                errors.reject(ERROR_MSG, "Label provider cannot be empty");
+
+            _customLabelProvider = CustomLabelService.get().getCustomLabelProvider(form.getProvider());
+            if (_customLabelProvider == null)
+                errors.reject(ERROR_MSG, "Label provider not found for: " + form.getProvider());
+        }
+
+        @Override
+        public Object execute(CustomLabelForm form, BindException errors)
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            String mode = form.getMode();
+            boolean isReset = "reset".equalsIgnoreCase(mode);
+            if (isReset)
+                _customLabelProvider.resetLabels(getContainer());
+            else
+            {
+                try
+                {
+                    HashMap<String, String> labels =
+                            JsonUtil.DEFAULT_MAPPER.readValue(form.getLabelsJson(), HashMap.class);
+                    _customLabelProvider.saveLabels(labels, getContainer());
+                }
+                catch (Exception e)
+                {
+                    errors.reject(ERROR_GENERIC, e.getMessage());
+                    return null;
+                }
+            }
+
+            response.put("success", true);
+            return response;
+        }
+    }
+
+    public static class CustomLabelForm
+    {
+        private String _mode;
+        private String _provider;
+        private String _labelsJson;
+
+        public String getMode()
+        {
+            return _mode;
+        }
+
+        public void setMode(String mode)
+        {
+            _mode = mode;
+        }
+
+        public String getLabelsJson()
+        {
+            return _labelsJson;
+        }
+
+        public void setLabelsJson(String labelsJson)
+        {
+            _labelsJson = labelsJson;
+        }
+
+        public String getProvider()
+        {
+            return _provider;
+        }
+
+        public void setProvider(String provider)
+        {
+            _provider = provider;
+        }
+
+    }
+
 }
