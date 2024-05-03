@@ -523,7 +523,8 @@ public class ExcelColumn extends RenderColumn
         }
         catch(ClassCastException cce)
         {
-            _log.error("Can't cast '" + o.toString() + "', class '" + o.getClass().getName() + "', to class corresponding to simple type '" + _simpleType + "'");            _log.error("DisplayColumn.getCaption(): " + _dc.getCaption());
+            _log.error("Can't cast '" + o.toString() + "', class '" + o.getClass().getName() + "', to class corresponding to simple type '" + _simpleType + "'");            
+            _log.error("DisplayColumn.getCaption(): " + _dc.getCaption());
             _log.error("DisplayColumn.getClass().getName(): " + _dc.getClass().getName());
             _log.error("DisplayColumn.getDisplayValueClass(): " + _dc.getDisplayValueClass());
             _log.error("DisplayColumn.getValueClass(): " + _dc.getValueClass());
