@@ -33,6 +33,7 @@ public class PlateSetImpl extends Entity implements PlateSet
     private Integer _primaryPlateSetId;
     private Integer _rootPlateSetId;
     private Integer _rowId;
+    private boolean _template;
     private PlateSetType _type;
 
     @Override
@@ -149,6 +150,12 @@ public class PlateSetImpl extends Entity implements PlateSet
         return new SqlSelector(table.getSchema(), sql).getObject(Integer.class);
     }
 
+    @JsonIgnore
+    public boolean isFull()
+    {
+        return getPlateCount() >= MAX_PLATES;
+    }
+
     public String getDescription()
     {
         return _description;
@@ -177,6 +184,17 @@ public class PlateSetImpl extends Entity implements PlateSet
     public void setRootPlateSetId(Integer rootPlateSetId)
     {
         _rootPlateSetId = rootPlateSetId;
+    }
+
+    @Override
+    public boolean isTemplate()
+    {
+        return _template;
+    }
+
+    public void setTemplate(boolean template)
+    {
+        _template = template;
     }
 
     @Override

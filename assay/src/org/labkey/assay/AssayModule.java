@@ -59,6 +59,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
+import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.JspTestCase;
 import org.labkey.api.util.PageFlowUtil;
@@ -68,6 +69,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.assay.data.generator.AssayDesignGenerator;
 import org.labkey.assay.data.generator.AssayRunDataGenerator;
+import org.labkey.assay.data.generator.PlateSetDataGenerator;
 import org.labkey.assay.pipeline.AssayImportRunTask;
 import org.labkey.assay.plate.AssayPlateDataDomainKind;
 import org.labkey.assay.plate.AssayPlateMetadataServiceImpl;
@@ -75,7 +77,9 @@ import org.labkey.assay.plate.PlateCache;
 import org.labkey.assay.plate.PlateDocumentProvider;
 import org.labkey.assay.plate.PlateImpl;
 import org.labkey.assay.plate.PlateManager;
+import org.labkey.assay.plate.PlateManagerTest;
 import org.labkey.assay.plate.PlateMetadataDomainKind;
+import org.labkey.assay.plate.PlateMetricsProvider;
 import org.labkey.assay.plate.TsvPlateLayoutHandler;
 import org.labkey.assay.plate.query.PlateSchema;
 import org.labkey.assay.query.AssayDbSchema;
@@ -112,7 +116,7 @@ public class AssayModule extends SpringModule
     @Override
     public Double getSchemaVersion()
     {
-        return 24.005;
+        return 24.007;
     }
 
     @Override
@@ -141,6 +145,7 @@ public class AssayModule extends SpringModule
     {
         AssayService.setInstance(new AssayManager());
         PlateService.setInstance(new PlateManager());
+        AssayPlateMetadataService.setInstance(new AssayPlateMetadataServiceImpl());
         addController("assay", AssayController.class);
         addController("plate", PlateController.class);
         PlateSchema.register(this);
@@ -152,7 +157,6 @@ public class AssayModule extends SpringModule
         ExperimentService.get().registerExperimentDataHandler(new TsvDataHandler());
         ExperimentService.get().registerExperimentDataHandler(new FileBasedModuleDataHandler());
         ExperimentService.get().registerExperimentDataHandler(new PlateMetadataDataHandler());
-        AssayPlateMetadataService.registerService(PlateMetadataDataHandler.DATA_TYPE, new AssayPlateMetadataServiceImpl());
         PropertyService.get().registerDomainKind(new AssayPlateDataDomainKind());
         PlateService.get().registerPlateLayoutHandler(new TsvPlateLayoutHandler());
 
@@ -168,6 +172,7 @@ public class AssayModule extends SpringModule
 
         DataGeneratorRegistry.registerGenerator(DataGeneratorRegistry.DataType.AssayDesigns, new AssayDesignGenerator.Driver());
         DataGeneratorRegistry.registerGenerator(DataGeneratorRegistry.DataType.AssayRunData, new AssayRunDataGenerator.Driver());
+        DataGeneratorRegistry.registerGenerator(DataGeneratorRegistry.DataType.PlateSets, new PlateSetDataGenerator.Driver());
 
         PropertyService.get().registerDomainKind(new PlateMetadataDomainKind());
         CacheManager.addListener(PlateCache::clearCache);
@@ -265,6 +270,12 @@ public class AssayModule extends SpringModule
 
         AdminConsole.addExperimentalFeatureFlag(EXPERIMENTAL_APP_PLATE_SUPPORT,
                 "Plate samples in Biologics", "Plate samples in Biologics for import and analysis.", false);
+
+        UsageMetricsService svc = UsageMetricsService.get();
+        if (null != svc)
+        {
+            svc.registerUsageMetrics(getName(), new PlateMetricsProvider());
+        }
     }
 
     @Override
@@ -321,10 +332,11 @@ public class AssayModule extends SpringModule
             TsvAssayProvider.TestCase.class,
             AssaySchemaImpl.TestCase.class,
             AssayProviderSchema.TestCase.class,
-            PlateManager.TestCase.class,
+            PlateManagerTest.class,
             PositionImpl.TestCase.class,
             PlateImpl.TestCase.class,
-            PlateUtils.TestCase.class
+            PlateUtils.TestCase.class,
+            AssayPlateMetadataServiceImpl.TestCase.class
         );
     }
 

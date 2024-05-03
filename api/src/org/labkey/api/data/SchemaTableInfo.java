@@ -181,6 +181,9 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
                     m.setHidden(true);
             }
         }
+
+        for (var c : getColumns())
+            ((MutableColumnInfo)c).afterConstruct();
     }
 
     TableType getXmlTable()

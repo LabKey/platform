@@ -30,6 +30,7 @@ import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.DbLoginService;
 import org.labkey.api.security.impersonation.AbstractImpersonationContextFactory;
+import org.labkey.api.security.permissions.SiteAdminPermission;
 import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HelpTopic;
@@ -47,7 +48,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.WarningProvider;
 import org.labkey.api.view.template.Warnings;
 import org.labkey.core.admin.AdminController;
-import org.labkey.core.login.DbLoginManager;
 import org.labkey.core.metrics.WebSocketConnectionManager;
 import org.labkey.core.user.LimitActiveUsersSettings;
 
@@ -124,7 +124,7 @@ public class CoreWarningProvider implements WarningProvider
 
         if (context == null || context.getUser().hasRootPermission(TroubleshooterPermission.class))
         {
-            getUserRequestedAdminOnlyModeWarnings(warnings, showAllWarnings, context.getUser().hasSiteAdminPermission());
+            getUserRequestedAdminOnlyModeWarnings(warnings, showAllWarnings, context == null || context.getUser().hasSiteAdminPermission());
 
             getModuleErrorWarnings(warnings, showAllWarnings);
 
@@ -135,8 +135,11 @@ public class CoreWarningProvider implements WarningProvider
             getDbSchemaWarnings(warnings, showAllWarnings);
 
             getPasswordRuleWarnings(warnings, showAllWarnings);
+        }
 
-            //upgrade message--show to admins
+        // Issue 50015 - only show upgrade message to full site admins
+        if (context == null || context.getUser().hasRootPermission(SiteAdminPermission.class))
+        {
             HtmlString upgradeMessage = UsageReportingLevel.getUpgradeMessage();
 
             if (null == upgradeMessage && showAllWarnings)

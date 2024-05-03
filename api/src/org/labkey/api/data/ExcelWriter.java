@@ -184,6 +184,7 @@ public class ExcelWriter implements ExportWriter
     private String _sheetName;
     private String _footer;
     private String _filenamePrefix;
+    private String _fullFileName;
     @NotNull
     private List<String> _headers = Collections.emptyList();
     @NotNull
@@ -341,6 +342,16 @@ public class ExcelWriter implements ExportWriter
         _filenamePrefix = filenamePrefix;
     }
 
+    public String getFullFileName()
+    {
+        return _fullFileName;
+    }
+
+    public void setFullFileName(String fullFileName)
+    {
+        _fullFileName = fullFileName;
+    }
+
     public void setHeaders(@NotNull List<String> headers)
     {
         _headers = List.copyOf(headers);
@@ -447,7 +458,7 @@ public class ExcelWriter implements ExportWriter
      */
     public void renderWorkbook(HttpServletResponse response)
     {
-        try (ServletOutputStream outputStream = getOutputStream(response, getFilenamePrefix(), _docType))
+        try (ServletOutputStream outputStream = getOutputStream(response, getFilenamePrefix(), getFullFileName(), _docType))
         {
             renderWorkbook(outputStream);
         }
@@ -483,30 +494,42 @@ public class ExcelWriter implements ExportWriter
         renderSheet(workbook, _currentSheet);
     }
 
-    protected void renderSheet(Workbook workbook, int sheetNumber)
+    protected Sheet ensureSheet(RenderContext ctx, Workbook workbook, int sheetNumber)
     {
-        Sheet sheet;
-        //TODO: Pass render context all the way through Excel writers...
-        RenderContext ctx = new RenderContext(HttpView.currentContext());
+        return ensureSheet(ctx, workbook, sheetNumber, true);
+    }
 
+    protected Sheet ensureSheet(RenderContext ctx, Workbook workbook, int sheetNumber, boolean withDrawing)
+    {
         if (workbook.getNumberOfSheets() > sheetNumber)
         {
-            sheet = workbook.getSheetAt(sheetNumber);
+            return workbook.getSheetAt(sheetNumber);
         }
         else
         {
-            sheet = workbook.getSheet(getSheetName(sheetNumber));
+            Sheet sheet = workbook.getSheet(getSheetName(sheetNumber));
             if (sheet == null)
             {
                 sheet = workbook.createSheet(getSheetName(sheetNumber));
-                sheet.getPrintSetup().setPaperSize(PrintSetup.LETTER_PAPERSIZE);
+                if (withDrawing)
+                {
+                    sheet.getPrintSetup().setPaperSize(PrintSetup.LETTER_PAPERSIZE);
 
-                Drawing<?> drawing = sheet.createDrawingPatriarch();
-                ctx.put(SHEET_DRAWING, drawing);
-                ctx.put(SHEET_IMAGE_SIZES, new HashMap<>());
-                ctx.put(SHEET_IMAGE_PICTURES, new HashMap<>());
+                    Drawing<?> drawing = sheet.createDrawingPatriarch();
+                    ctx.put(SHEET_DRAWING, drawing);
+                    ctx.put(SHEET_IMAGE_SIZES, new HashMap<>());
+                    ctx.put(SHEET_IMAGE_PICTURES, new HashMap<>());
+                }
             }
+            return sheet;
         }
+    }
+
+    protected void renderSheet(Workbook workbook, int sheetNumber)
+    {
+        //TODO: Pass render context all the way through Excel writers...
+        RenderContext ctx = new RenderContext(HttpView.currentContext());
+        Sheet sheet = ensureSheet(ctx, workbook, sheetNumber);
 
         List<ExcelColumn> visibleColumns = getVisibleColumns(workbook, ctx);
 
@@ -541,11 +564,11 @@ public class ExcelWriter implements ExportWriter
         }
     }
 
-    private List<ExcelColumn> getVisibleColumns(Workbook workbook, RenderContext ctx)
+    protected List<ExcelColumn> getVisibleColumns(Workbook workbook, RenderContext ctx, List<DisplayColumn> columns)
     {
-        List<ExcelColumn> visibleColumns = new ArrayList<>(_columns.size());
+        List<ExcelColumn> visibleColumns = new ArrayList<>(columns.size());
 
-        for (DisplayColumn dc : _columns)
+        for (DisplayColumn dc : columns)
         {
             ExcelColumn column = new ExcelColumn(dc, _formatters, workbook);
             if (column.isVisible(ctx))
@@ -564,6 +587,11 @@ public class ExcelWriter implements ExportWriter
         return visibleColumns;
     }
 
+    private List<ExcelColumn> getVisibleColumns(Workbook workbook, RenderContext ctx)
+    {
+        return getVisibleColumns(workbook, ctx, _columns);
+    }
+
     // Should be called within a try/catch
     private void _write(Workbook workbook, OutputStream stream) throws IOException
     {
@@ -575,7 +603,7 @@ public class ExcelWriter implements ExportWriter
     // Create a ServletOutputStream to stream an Excel workbook to the browser.
     // This streaming code is adapted from Guillaume Laforge's sample posted to the JExcelApi Yahoo!
     // group: http://groups.yahoo.com/group/JExcelApi/message/1692
-    public static ServletOutputStream getOutputStream(HttpServletResponse response, String filenamePrefix, ExcelDocumentType docType)
+    public static ServletOutputStream getOutputStream(HttpServletResponse response, String filenamePrefix, String fullFileName, ExcelDocumentType docType)
     {
         // Flush any extraneous output (e.g., <CR><LF> from JSPs)
         response.reset();
@@ -592,7 +620,8 @@ public class ExcelWriter implements ExportWriter
         // 2) Specify the file name of the workbook with a different file name each time
         // so that your browser doesn't put the generated file into its cache
 
-        String filename = FileUtil.makeFileNameWithTimestamp(filenamePrefix, docType.name());
+
+        String filename = fullFileName == null ? FileUtil.makeFileNameWithTimestamp(filenamePrefix, docType.name()) : FileUtil.makeLegalName(fullFileName);
         ResponseHelper.setContentDisposition(response, ResponseHelper.ContentDispositionType.attachment, filename);
 
         try
@@ -630,6 +659,16 @@ public class ExcelWriter implements ExportWriter
     {
         if (_currentRow > _docType.getMaxRows())
             throw new MaxRowsExceededException();
+    }
+
+    protected Row ensureRow(Sheet sheet, int rowNum)
+    {
+        Row row = sheet.getRow(rowNum);
+        if (row == null)
+        {
+            row = sheet.createRow(rowNum);
+        }
+        return row;
     }
 
     public static class MaxRowsExceededException extends Exception

@@ -399,12 +399,12 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 if (_allowBulkLoads && _bulkLoads.add(Pair.of(pkCol, pkCol)))
                 {
                     TableSelector ts = createSelector(pkCol, pkCol);
-                    ts.forEach(pkCol.getJavaObjectClass(), (Object pk) -> map.put(pk, pk));
+                    ts.forEach((Class)pkCol.getJavaObjectClass(), (Object pk) -> map.put(pk, pk));
                 }
                 else
                 {
                     TableSelector ts = createSelector(pkCol, pkCol, k);
-                    ts.forEach(pkCol.getJavaObjectClass(), (Object pk) -> map.put(pk, pk));
+                    ts.forEach((Class)pkCol.getJavaObjectClass(), (Object pk) -> map.put(pk, pk));
                 }
 
                 if (map.containsKey(k))
@@ -1741,14 +1741,16 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
     protected class FileColumn implements Supplier<Object>
     {
+        private final User _user;
         private final Container _container;
         private final String _name;
         private final int _index;
         private final String _dirName;
         private Map<Object, String> _savedFiles = new HashMap<>();
 
-        public FileColumn(Container c, String name, int idx, String dirName)
+        public FileColumn(User user, Container c, String name, int idx, String dirName)
         {
+            _user = user;
             _container = c;
             _name = name;
             _dirName = dirName;
@@ -1770,7 +1772,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
                 try
                 {
-                    Object file = AbstractQueryUpdateService.saveFile(_container, _name, value, _dirName);
+                    Object file = AbstractQueryUpdateService.saveFile(_user, _container, _name, value, _dirName);
                     assert file instanceof File;
                     value = ((File)file).getPath();
                     _savedFiles.put(origFileName, (String)value);
@@ -1960,13 +1962,9 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             _data.debugLogInfo(sb);
     }
 
-
     /*
     * Tests
     */
-
-
-
     private static String[] as(String... arr)
     {
         return arr;

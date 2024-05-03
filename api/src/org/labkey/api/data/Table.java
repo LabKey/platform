@@ -951,10 +951,8 @@ public class Table
 
         // _executeTriggers(table, previous, fields);
 
-        StringBuilder setSQL = new StringBuilder();
-        StringBuilder whereSQL = new StringBuilder();
-        ArrayList<Object> parametersSet = new ArrayList<>();
-        ArrayList<Object> parametersWhere = new ArrayList<>();
+        SQLFragment setSQL = new SQLFragment();
+        SQLFragment whereSQL = new SQLFragment();
         String comma = "";
 
         // UNDONE -- rowVersion
@@ -996,17 +994,16 @@ public class Table
         if (null != filter)
         {
             SQLFragment fragment = filter.getSQLFragment(table.getSqlDialect(), null, createColumnMap(table,null));
-            whereSQL.append(fragment.getSQL());
-            parametersWhere.addAll(fragment.getParams());
+            whereSQL.append(fragment);
             whereAND = " AND ";
         }
 
         for (ColumnInfo col : columnPK)
         {
             whereSQL.append(whereAND);
-            whereSQL.append(col.getSelectName());
+            whereSQL.appendIdentifier(col.getSelectName());
             whereSQL.append("=?");
-            parametersWhere.add(keys.get(col.getName()));
+            whereSQL.add(keys.get(col.getName()));
             whereAND = " AND ";
         }
 
@@ -1030,7 +1027,7 @@ public class Table
                 if (null != expr)
                 {
                     setSQL.append(comma);
-                    setSQL.append(column.getSelectName());
+                    setSQL.appendIdentifier(column.getSelectName());
                     setSQL.append("=");
                     setSQL.append(expr);
                     comma = ", ";
@@ -1045,7 +1042,7 @@ public class Table
                 if (DataIntegrationService.Columns.TransformImportHash.getColumnName().equals(column.getName()))
                 {
                     setSQL.append(comma);
-                    setSQL.append(column.getSelectName());
+                    setSQL.appendIdentifier(column.getSelectName());
                     setSQL.append("=NULL");
                     comma = ", ";
                 }
@@ -1054,7 +1051,7 @@ public class Table
 
             Object value = fields.get(column.getName());
             setSQL.append(comma);
-            setSQL.append(column.getSelectName());
+            setSQL.appendIdentifier(column.getSelectName());
 
             if (null == value || value instanceof String && 0 == ((String) value).length())
             {
@@ -1073,9 +1070,9 @@ public class Table
 
                 setSQL.append("=?");
                 if (value instanceof Parameter.JdbcParameterValue)
-                    parametersSet.add(value);
+                    setSQL.add(value);
                 else
-                    parametersSet.add(new Parameter.TypedValue(value, column.getJdbcType()));
+                    setSQL.add(new Parameter.TypedValue(value, column.getJdbcType()));
             }
 
             comma = ", ";
@@ -1085,12 +1082,10 @@ public class Table
         if (hasFieldsToSet)
         {
             // UNDONE: reselect
-            SQLFragment updateSQL = new SQLFragment("UPDATE " + table.getSelectName() + "\n\t" +
-                                                    "SET " + setSQL + "\n\t" +
-                                                    whereSQL);
-
-            updateSQL.addAll(parametersSet);
-            updateSQL.addAll(parametersWhere);
+            SQLFragment updateSQL = new SQLFragment()
+                    .append("UPDATE ").append(table.getSQLName()).append("\n\t")
+                    .append("SET ").append(setSQL).append("\n\t")
+                    .append(whereSQL);
 
             try
             {

@@ -17,10 +17,6 @@ package org.labkey.api.admin.sitevalidation;
 
 import org.jetbrains.annotations.NotNull;
 
-/**
- * User: tgaluhn
- * Date: 10/30/2016
- */
 public interface SiteValidatorDescriptor extends Comparable<SiteValidatorDescriptor>
 {
     String getName();

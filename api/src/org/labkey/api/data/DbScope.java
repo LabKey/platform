@@ -16,6 +16,8 @@
 package org.labkey.api.data;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletException;
 import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
@@ -61,8 +63,6 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
-import jakarta.servlet.ServletContext;
-import jakarta.servlet.ServletException;
 import javax.sql.DataSource;
 import java.io.File;
 import java.io.IOException;
@@ -76,7 +76,26 @@ import java.sql.Driver;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Properties;
+import java.util.Random;
+import java.util.RandomAccess;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
@@ -462,7 +481,7 @@ public class DbScope
             Map<String, String> dsProperties = new HashMap<>();
             ServletContext ctx = ModuleLoader.getServletContext();
             IteratorUtils.asIterator(ctx.getInitParameterNames()).forEachRemaining(name -> {
-                if (name.startsWith(getDsName() + ":"))
+                if (name.startsWith("jdbc/" + getDsName() + ":"))
                     dsProperties.put(name.substring(name.indexOf(':') + 1), ctx.getInitParameter(name));
             });
             if (!dsProperties.isEmpty())
@@ -1275,7 +1294,7 @@ public class DbScope
 
     private static final int spidUnknown = -1;
 
-    protected ConnectionWrapper getPooledConnection(ConnectionType type, @Nullable Logger log) throws SQLException
+    public ConnectionWrapper getPooledConnection(ConnectionType type, @Nullable Logger log) throws SQLException
     {
         Connection conn;
 
@@ -2601,6 +2620,7 @@ public class DbScope
                 getConnection().commit();
                 _caches.clear();
                 CommitTaskOption.POSTCOMMIT.run(this);
+                clearCommitTasks();
             }
             catch (SQLException e)
             {

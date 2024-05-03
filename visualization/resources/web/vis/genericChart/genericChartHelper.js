@@ -23,8 +23,8 @@ LABKEY.vis.GenericChartHelper = new function(){
                 title: 'Bar',
                 imgUrl: LABKEY.contextPath + '/visualization/images/barchart.png',
                 fields: [
-                    {name: 'x', label: 'X Axis Categories', required: true, nonNumericOnly: true},
-                    {name: 'xSub', label: 'Split Categories By', required: false, nonNumericOnly: true},
+                    {name: 'x', label: 'X Axis', required: true, nonNumericOnly: true},
+                    {name: 'xSub', label: 'Group By', required: false, nonNumericOnly: true},
                     {name: 'y', label: 'Y Axis', numericOnly: true}
                 ],
                 layoutOptions: {line: true, opacity: true, axisBased: true}
@@ -34,7 +34,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                 title: 'Box',
                 imgUrl: LABKEY.contextPath + '/visualization/images/boxplot.png',
                 fields: [
-                    {name: 'x', label: 'X Axis Categories'},
+                    {name: 'x', label: 'X Axis'},
                     {name: 'y', label: 'Y Axis', required: true, numericOnly: true},
                     {name: 'color', label: 'Color', nonNumericOnly: true},
                     {name: 'shape', label: 'Shape', nonNumericOnly: true}
@@ -562,19 +562,19 @@ LABKEY.vis.GenericChartHelper = new function(){
      */
     var generateAes = function(chartType, measures, schemaName, queryName) {
         var aes = {}, xMeasureType = getMeasureType(measures.x);
+        var xMeasureName = !measures.x ? undefined : (measures.x.converted ? measures.x.convertedName : measures.x.name);
 
-        if (chartType == "box_plot" && !measures.x)
-        {
-            aes.x = generateMeasurelessAcc(queryName);
-        }
-        else if (isNumericType(xMeasureType) || (chartType == 'scatter_plot' && measures.x.measure))
-        {
-            var xMeasureName = measures.x.converted ? measures.x.convertedName : measures.x.name;
+        if (chartType === "box_plot") {
+            if (!measures.x) {
+                aes.x = generateMeasurelessAcc(queryName);
+            } else {
+                // Issue 50074: box plots with numeric x-axis to support null values
+                var nullValueLabel = isNumericType(xMeasureType) ? "[Blank]" : undefined;
+                aes.x = generateDiscreteAcc(xMeasureName, measures.x.label, nullValueLabel);
+            }
+        } else if (isNumericType(xMeasureType) || (chartType === 'scatter_plot' && measures.x.measure)) {
             aes.x = generateContinuousAcc(xMeasureName);
-        }
-        else
-        {
-            var xMeasureName = measures.x.converted ? measures.x.convertedName : measures.x.name;
+        } else {
             aes.x = generateDiscreteAcc(xMeasureName, measures.x.label);
         }
 
@@ -719,15 +719,16 @@ LABKEY.vis.GenericChartHelper = new function(){
      * Used when an axis has a discrete measure (i.e. string).
      * @param {String} measureName The name of the measure.
      * @param {String} measureLabel The label of the measure.
+     * @param {String} nullValueLabel The label value to use for null values
      * @returns {Function}
      */
-    var generateDiscreteAcc = function(measureName, measureLabel)
+    var generateDiscreteAcc = function(measureName, measureLabel, nullValueLabel)
     {
         return function(row)
         {
             var value = _getRowValue(row, measureName);
             if (value === null)
-                value = "Not in " + measureLabel;
+                value = nullValueLabel !== undefined ? nullValueLabel : "Not in " + measureLabel;
 
             return value;
         };
@@ -1027,6 +1028,11 @@ LABKEY.vis.GenericChartHelper = new function(){
 
         clipRect = (scales.x && LABKEY.Utils.isArray(scales.x.domain)) || (scales.y && LABKEY.Utils.isArray(scales.y.domain));
 
+        // account for line chart hiding points
+        if (chartConfig.geomOptions.hideDataPoints) {
+            geom = null;
+        }
+
         // account for one or many y-measures by ensuring that we have an array of y-measures
         var yMeasures = ensureMeasuresAsArray(chartConfig.measures.y);
 
@@ -1267,7 +1273,7 @@ LABKEY.vis.GenericChartHelper = new function(){
      */
     var validateResponseHasData = function(measureStore, includeFilterMsg)
     {
-        var dataArray = LABKEY.Utils.isDefined(measureStore) ? measureStore.rows || measureStore.records() : [];
+        var dataArray = getMeasureStoreRecords(measureStore);
         if (dataArray.length == 0)
         {
             return 'The response returned 0 rows of data. The query may be empty or the applied filters may be too strict.'
@@ -1276,6 +1282,10 @@ LABKEY.vis.GenericChartHelper = new function(){
 
         return null;
     };
+
+    var getMeasureStoreRecords = function(measureStore) {
+        return LABKEY.Utils.isDefined(measureStore) ? measureStore.rows || measureStore.records() : [];
+    }
 
     /**
      * Verifies that the axis measure is actually present and has data. Also checks to make sure that data can be used in a log
@@ -1330,7 +1340,7 @@ LABKEY.vis.GenericChartHelper = new function(){
 
         if ((chartType == 'scatter_plot' || chartType == 'line_plot' || measureName == 'y') && dataIsNull && !dataConversionHappened)
         {
-            message = 'All data values for ' + measure.label + ' are null. Please choose a different measure.';
+            message = 'All data values for ' + measure.label + ' are null. Please choose a different measure or review/remove data filters.';
             return {success: false, message: message};
         }
 
@@ -1381,6 +1391,49 @@ LABKEY.vis.GenericChartHelper = new function(){
         var t = LABKEY.Utils.isString(type) ? type.toLowerCase() : null;
         return t == 'date';
     };
+
+    var getAllowableTypes = function(field) {
+        var numericTypes = ['int', 'float', 'double', 'INTEGER', 'DOUBLE'],
+                nonNumericTypes = ['string', 'date', 'boolean', 'STRING', 'TEXT', 'DATE', 'BOOLEAN'],
+                numericAndDateTypes = numericTypes.concat(['date','DATE']);
+
+        if (field.altSelectionOnly)
+            return [];
+        else if (field.numericOnly)
+            return numericTypes;
+        else if (field.nonNumericOnly)
+            return nonNumericTypes;
+        else if (field.numericOrDateOnly)
+            return numericAndDateTypes;
+        else
+            return numericTypes.concat(nonNumericTypes);
+    }
+
+    var isMeasureDimensionMatch = function(chartType, field, isMeasure, isDimension) {
+        if ((chartType === 'box_plot' || chartType === 'bar_chart')) {
+            //x-axis does not support 'measure' column types for these plot types
+            if (field.name === 'x' || field.name === 'xSub')
+                return isDimension;
+            else
+                return isMeasure;
+        }
+
+        return (field.numericOnly && isMeasure) || (field.nonNumericOnly && isDimension);
+    }
+
+    var getQueryConfigSortKey = function(measures) {
+        var sortKey = 'lsid'; // needed to keep expected ordering for legend data
+
+        // Issue 38105: For plots with study visit labels on the x-axis, sort by visit display order and then sequenceNum
+        var visitTableName = LABKEY.vis.GenericChartHelper.getStudySubjectInfo().tableName + 'Visit';
+        if (measures.x && measures.x.fieldKey === visitTableName + '/Visit') {
+            var displayOrderColName = visitTableName + '/Visit/DisplayOrder';
+            var seqNumColName = visitTableName + '/SequenceNum';
+            sortKey = displayOrderColName + ', ' + seqNumColName;
+        }
+
+        return sortKey;
+    }
 
     var getStudySubjectInfo = function()
     {
@@ -1569,6 +1622,12 @@ LABKEY.vis.GenericChartHelper = new function(){
     };
 
     var renderChartSVG = function(renderTo, queryConfig, chartConfig) {
+        queryChartData(renderTo, queryConfig, function(measureStore) {
+            generateChartSVG(renderTo, chartConfig, measureStore);
+        });
+    };
+
+    var queryChartData = function(renderTo, queryConfig, callback) {
         queryConfig.containerPath = LABKEY.container.path;
 
         if (queryConfig.filterArray && queryConfig.filterArray.length > 0) {
@@ -1589,13 +1648,13 @@ LABKEY.vis.GenericChartHelper = new function(){
         }
 
         queryConfig.success = function(measureStore) {
-            _renderChartSVG(renderTo, chartConfig, measureStore);
+            callback.call(this, measureStore);
         };
 
         LABKEY.Query.MeasureStore.selectRows(queryConfig);
     };
 
-    var _renderChartSVG = function(renderTo, chartConfig, measureStore) {
+    var generateChartSVG = function(renderTo, chartConfig, measureStore) {
         var responseMetaData = measureStore.getResponseMetadata();
 
         // explicitly set the chart width/height if not set in the config
@@ -1661,8 +1720,7 @@ LABKEY.vis.GenericChartHelper = new function(){
     var _renderMessages = function(divId, messages) {
         if (messages && messages.length > 0) {
             var errorDiv = document.createElement('div');
-            errorDiv.setAttribute('style', 'padding: 10px; background-color: #ffe5e5; color: #d83f48; font-weight: bold;');
-            errorDiv.innerHTML = messages.join('<br/>');
+            errorDiv.innerHTML = '<h3 style="color:red;">Error rendering chart:</h3><div>' + messages.join('<br/>') + '</div>';
             document.getElementById(divId).appendChild(errorDiv);
         }
     };
@@ -1715,14 +1773,17 @@ LABKEY.vis.GenericChartHelper = new function(){
         getSelectedMeasureLabel: getSelectedMeasureLabel,
         getTitleFromMeasures: getTitleFromMeasures,
         getMeasureType: getMeasureType,
+        getAllowableTypes: getAllowableTypes,
         getQueryColumns : getQueryColumns,
         getChartTypeBasedWidth : getChartTypeBasedWidth,
         getDistinctYAxisSides : getDistinctYAxisSides,
         getYMeasureAes : getYMeasureAes,
         getDefaultMeasuresLabel: getDefaultMeasuresLabel,
         getStudySubjectInfo: getStudySubjectInfo,
+        getQueryConfigSortKey: getQueryConfigSortKey,
         ensureMeasuresAsArray: ensureMeasuresAsArray,
         isNumericType: isNumericType,
+        isMeasureDimensionMatch: isMeasureDimensionMatch,
         generateLabels: generateLabels,
         generateScales: generateScales,
         generateAes: generateAes,
@@ -1745,6 +1806,9 @@ LABKEY.vis.GenericChartHelper = new function(){
         validateXAxis: validateXAxis,
         validateYAxis: validateYAxis,
         renderChartSVG: renderChartSVG,
+        queryChartData: queryChartData,
+        generateChartSVG: generateChartSVG,
+        getMeasureStoreRecords: getMeasureStoreRecords,
         /**
          * Loads all of the required dependencies for a Generic Chart.
          * @param {Function} callback The callback to be executed when all of the visualization dependencies have been loaded.

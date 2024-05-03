@@ -72,7 +72,6 @@ import org.labkey.api.query.QueryViewProvider;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.HttpView;
@@ -460,6 +459,21 @@ public interface ExperimentService extends ExperimentRunTypeSource
                ExpData.DATA_OUTPUT_CHILD.equalsIgnoreCase(prefix) ||
                ExpMaterial.MATERIAL_OUTPUT_CHILD.equalsIgnoreCase(prefix);
     }
+
+    static Pair<String, String> parseInputOutputAlias(String columnName)
+    {
+        if (!isInputOutputColumn(columnName))
+            return null;
+
+        String[] parts = columnName.split("[./]");
+        if (parts.length < 2)
+            return null;
+
+        // Issue 50245: use substring to get second part of the alias instead of relying on parts[]
+        String prefix = parts[0];
+        String suffix = columnName.substring(prefix.length() + 1); // +1 for the separator
+        return Pair.of(prefix, suffix);
+    }
     
     static boolean parentAliasHasCorrectFormat(String parentAlias)
     {
@@ -546,18 +560,6 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     @NotNull
     SQLFragment generateExperimentTreeSQL(SQLFragment lsidsFrag, ExpLineageOptions options);
-
-    /**
-     * Given a set or rowIds and a base schemaName, returns the subset of rowIds for which the given user has
-     * the given permission for the row's container
-     * @param user user in question
-     * @param rowIds set of rowIds to check
-     * @param schemaName one of 'samples', 'exp.data', and 'assay' (for assay runs)
-     * @param permissionClass the permission to check
-     * @return null if there is no
-     */
-    @Nullable
-    Collection<Integer> getIdsNotPermitted(@NotNull User user, Collection<Integer> rowIds, String schemaName, @Nullable Class<? extends Permission> permissionClass);
 
     /**
      * The following methods return TableInfo's suitable for using in queries.
@@ -1077,6 +1079,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
     @NotNull Map<String, List<String>> getUniqueIdLsids(List<String> uniqueIds, User user, Container container);
 
     void handleAssayNameChange(String newAssayName, String oldAssayName, AssayProvider provider, ExpProtocol protocol, User user, Container container);
+
+    boolean useStrictCounter();
 
     class XarExportOptions
     {

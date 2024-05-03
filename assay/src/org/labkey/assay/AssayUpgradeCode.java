@@ -12,6 +12,7 @@ import org.labkey.api.assay.plate.PlateBasedAssayProvider;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
@@ -37,6 +38,8 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.User;
@@ -45,10 +48,12 @@ import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.util.Pair;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.PlateSetImpl;
+import org.labkey.assay.plate.model.PlateSetLineage;
 import org.labkey.assay.query.AssayDbSchema;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -147,7 +152,6 @@ public class AssayUpgradeCode implements UpgradeCode
 
     private static void _ensureColumn(String colName, Domain domain, ExpProtocol protocol, SchemaTableInfo provisionedTable, AssayResultDomainKind kind)
     {
-
         ColumnInfo col = provisionedTable.getColumn(colName);
         if (col != null)
             _log.error("Column '" + colName + "' is already defined in result table for '" + protocol.getName() + "'.");
@@ -155,7 +159,6 @@ public class AssayUpgradeCode implements UpgradeCode
         PropertyStorageSpec colProp = kind.getBaseProperties(domain).stream().filter(p -> colName.equalsIgnoreCase(p.getName())).findFirst().orElseThrow();
         StorageProvisioner.get().addStorageProperties(domain, Arrays.asList(colProp), true);
         _log.info("Added '" + colName + "' column to '" + protocol.getName() + " provisioned result table.");
-
     }
 
     /**
@@ -164,7 +167,8 @@ public class AssayUpgradeCode implements UpgradeCode
      * Switch from storing the protocol plate template by name to the plate lsid.
      */
     @DeferredUpgrade
-    public static void updateProtocolPlateTemplate(ModuleContext ctx) throws Exception
+    @SuppressWarnings({"UnusedDeclaration"})
+    public static void updateProtocolPlateTemplate(ModuleContext ctx)
     {
         if (ctx.isNewInstall())
             return;
@@ -216,6 +220,7 @@ public class AssayUpgradeCode implements UpgradeCode
      * The referenced upgrade script creates a new plate set for every plate in the system. We now
      * want to iterate over each plate set to set the name using the configured name expression.
      */
+    @SuppressWarnings({"UnusedDeclaration"})
     public static void updatePlateSetNames(ModuleContext ctx) throws Exception
     {
         if (ctx.isNewInstall())
@@ -264,6 +269,7 @@ public class AssayUpgradeCode implements UpgradeCode
      * Iterate over each plate and plate set to generate a Plate ID and PlateSet ID based on the
      * configured name expression for each.
      */
+    @SuppressWarnings({"UnusedDeclaration"})
     public static void initializePlateAndPlateSetIDs(ModuleContext ctx) throws Exception
     {
         if (ctx.isNewInstall())
@@ -339,10 +345,27 @@ public class AssayUpgradeCode implements UpgradeCode
     }
 
     /**
+     * Well metadata has transitioned to a provisioned architecture.
+     */
+    private static @Nullable Domain getPlateMetadataVocabDomain(Container container, User user)
+    {
+        DomainKind<?> vocabDomainKind = PropertyService.get().getDomainKindByName("Vocabulary");
+
+        if (vocabDomainKind == null)
+            return null;
+
+        // the domain is scoped at the project level (project and subfolder scoping)
+        Container domainContainer = PlateManager.get().getPlateMetadataDomainContainer(container);
+        String domainURI = vocabDomainKind.generateDomainURI(null, "PlateMetadataDomain", domainContainer, user);
+        return PropertyService.get().getDomain(container, domainURI);
+    }
+
+    /**
      * Called from assay-24.002-24.003.sql to delete the vocabulary domains associated with
      * plate metadata. This upgrade transitions to using a provisioned table approach. Since the plate features are
      * still under an experimental flag we won't worry about upgrading the domains.
      */
+    @SuppressWarnings({"UnusedDeclaration"})
     public static void deletePlateVocabDomains(ModuleContext ctx) throws Exception
     {
         if (ctx.isNewInstall())
@@ -359,7 +382,7 @@ public class AssayUpgradeCode implements UpgradeCode
             {
                 if (container != null)
                 {
-                    Domain domain = PlateManager.get().getPlateMetadataVocabDomain(container, User.getAdminServiceUser());
+                    Domain domain = getPlateMetadataVocabDomain(container, User.getAdminServiceUser());
                     if (domain != null)
                     {
                         // delete the plate metadata values
@@ -397,6 +420,67 @@ public class AssayUpgradeCode implements UpgradeCode
                     new SqlExecutor(AssayDbSchema.getInstance().getScope()).execute(sql);
                 }
             }
+            tx.commit();
+        }
+    }
+
+    /**
+     * Called from assay-24.005-24.006.sql
+     */
+    @SuppressWarnings({"UnusedDeclaration"})
+    public static void populatePlateSetPaths(ModuleContext ctx) throws Exception
+    {
+        if (ctx.isNewInstall())
+            return;
+
+        DbScope scope = AssayDbSchema.getInstance().getSchema().getScope();
+        try (DbScope.Transaction tx = scope.ensureTransaction())
+        {
+            Map<Integer, String> plateSetPaths = new HashMap<>();
+            Map<Integer, List<Integer>> plateSetsToHits = new HashMap<>();
+
+            SQLFragment sql = new SQLFragment("SELECT Hit.RowId AS HitRowId, PlateSet.RowId AS PlateSetRowId")
+                    .append(" FROM assay.PlateSet")
+                    .append(" INNER JOIN assay.Plate ON Plate.PlateSet = PlateSet.RowId")
+                    .append(" INNER JOIN assay.Well ON Well.PlateId = Plate.RowId")
+                    .append(" INNER JOIN assay.Hit ON Hit.WellLsid = Well.Lsid")
+                    .appendEOS();
+            Collection<Map<String, Object>> rows = new SqlSelector(scope, sql).getMapCollection();
+
+            for (Map<String, Object> row : rows)
+            {
+                Integer plateSetRowId = (Integer) row.get("PlateSetRowId");
+                Integer hitRowId = (Integer) row.get("HitRowId");
+
+                if (!plateSetsToHits.containsKey(plateSetRowId))
+                {
+                    PlateSetLineage lineage = PlateManager.get().getPlateSetLineage(
+                        ContainerManager.getRoot(),
+                        User.getAdminServiceUser(),
+                        plateSetRowId,
+                        ContainerFilter.EVERYTHING
+                    );
+                    String lineagePath = lineage.getSeedPath();
+
+                    plateSetPaths.put(plateSetRowId, lineagePath);
+                    plateSetsToHits.put(plateSetRowId, new ArrayList<>());
+                }
+
+                plateSetsToHits.get(plateSetRowId).add(hitRowId);
+            }
+
+            for (Map.Entry<Integer, List<Integer>> entry : plateSetsToHits.entrySet())
+            {
+                String plateSetPath = plateSetPaths.get(entry.getKey());
+
+                SQLFragment updateSql = new SQLFragment("UPDATE assay.Hit")
+                        .append(" SET PlateSetPath = ? ").add(plateSetPath)
+                        .append(" WHERE RowId ").appendInClause(entry.getValue(), scope.getSqlDialect())
+                        .appendEOS();
+
+                new SqlExecutor(scope).execute(updateSql);
+            }
+
             tx.commit();
         }
     }

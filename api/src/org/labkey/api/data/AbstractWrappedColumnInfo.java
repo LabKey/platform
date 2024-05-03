@@ -704,19 +704,19 @@ public abstract class AbstractWrappedColumnInfo implements ColumnInfo
     }
 
     @Override
-    public Class getJavaObjectClass()
+    public Class<?> getJavaObjectClass()
     {
         return delegate.getJavaObjectClass();
     }
 
     @Override
-    public Class getJavaClass()
+    public Class<?> getJavaClass()
     {
         return delegate.getJavaClass();
     }
 
     @Override
-    public Class getJavaClass(boolean isNullable)
+    public Class<?> getJavaClass(boolean isNullable)
     {
         return delegate.getJavaClass(isNullable);
     }

@@ -304,7 +304,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         aliasColumns(_columnMapping, row);
-        convertTypes(container, row);
+        convertTypes(user, container, row);
         setSpecialColumns(container, row, user, InsertPermission.class);
         validateInsertRow(row);
         return _insert(user, container, row);
@@ -422,7 +422,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             }
         }
 
-        convertTypes(container, rowStripped);
+        convertTypes(user, container, rowStripped);
         validateUpdateRow(rowStripped);
 
         if (row.get("container") != null)
@@ -724,12 +724,12 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
     }
 
 
-    final protected void convertTypes(Container c, Map<String,Object> row) throws ValidationException
+    final protected void convertTypes(User user, Container c, Map<String,Object> row) throws ValidationException
     {
-        convertTypes(c, row,  getDbTable(), null);
+        convertTypes(user, c, row,  getDbTable(), null);
     }
 
-    protected void convertTypes(Container c, Map<String,Object> row, TableInfo t, @Nullable String file_link_dir_name) throws ValidationException
+    protected void convertTypes(User user, Container c, Map<String,Object> row, TableInfo t, @Nullable String file_link_dir_name) throws ValidationException
     {
         for (ColumnInfo col : t.getColumns())
         {
@@ -746,7 +746,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                         default -> {
                             if (PropertyType.FILE_LINK == col.getPropertyType() && (value instanceof MultipartFile || value instanceof AttachmentFile))
                             {
-                                value = saveFile(c, col.getName(), value, file_link_dir_name);
+                                value = saveFile(user, c, col.getName(), value, file_link_dir_name);
                             }
                             row.put(col.getName(), ConvertUtils.convert(value.toString(), col.getJdbcType().getJavaClass()));
                         }

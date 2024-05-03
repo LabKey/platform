@@ -566,7 +566,6 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
                 }
 
                 if (null == table || (null != errors && !errors.isEmpty() && !errors.stream().allMatch(error -> error instanceof QueryParseException && ((QueryParseException)error).isWarning())))
-
                     return null;
 
                 log.debug("Caching table " + schema.getName() + "." + table.getName());
@@ -617,7 +616,9 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
                 ret = applyQueryMetadata(schema, metadataErrors, query, (AbstractTableInfo) ret);
                 for (QueryException qe : metadataErrors)
                 {
-                    if (!(qe instanceof QueryParseWarning))
+                    if (qe instanceof QueryParseWarning qpw)
+                        queryTable.addWarning(qpw);
+                    else
                         errors.add(qe);
                 }
             }

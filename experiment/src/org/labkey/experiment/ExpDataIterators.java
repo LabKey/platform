@@ -96,6 +96,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
@@ -115,11 +116,13 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.sql.Time;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -136,6 +139,8 @@ import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.labkey.api.data.CompareType.IN;
+import static org.labkey.api.dataiterator.ExistingRecordDataIterator.EXISTING_RECORD_COLUMN_NAME;
+import static org.labkey.api.dataiterator.SampleUpdateAddColumnsDataIterator.CURRENT_SAMPLE_STATUS_COLUMN_NAME;
 import static org.labkey.api.exp.api.ExpData.DATA_INPUTS_PREFIX_LC;
 import static org.labkey.api.exp.api.ExpData.DATA_INPUT_PARENT;
 import static org.labkey.api.exp.api.ExpMaterial.ALIQUOTED_FROM_INPUT;
@@ -145,14 +150,19 @@ import static org.labkey.api.exp.api.ExpRunItem.INPUTS_PREFIX_LC;
 import static org.labkey.api.exp.api.ExperimentService.ALIASCOLUMNALIAS;
 import static org.labkey.api.exp.api.ExperimentService.QueryOptions.SkipBulkRemapCache;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotedFromLSID;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.Folder;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.MaterialSourceId;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.Name;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.RootMaterialRowId;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.RowId;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.SampleState;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.StoredAmount;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Units;
 import static org.labkey.api.query.AbstractQueryImportAction.configureLoader;
+import static org.labkey.experiment.api.SampleTypeUpdateServiceDI.PARENT_RECOMPUTE_NAME_SET;
 import static org.labkey.experiment.api.SampleTypeUpdateServiceDI.ROOT_RECOMPUTE_ROWID_COL;
 import static org.labkey.experiment.api.SampleTypeUpdateServiceDI.PARENT_RECOMPUTE_NAME_COL;
+import static org.labkey.experiment.api.SampleTypeUpdateServiceDI.ROOT_RECOMPUTE_ROWID_SET;
 
 
 public class ExpDataIterators
@@ -1737,38 +1747,37 @@ public class ExpDataIterators
             String entityColName = pair.first;
             String entityName = pair.second;
             boolean isEmptyEntity = StringUtils.isEmpty(entityName);
+            Pair<String, String> aliasPair = ExperimentService.parseInputOutputAlias(entityColName);
+            String aliasPrefix = aliasPair != null ? aliasPair.first : null;
+            String aliasSuffix = aliasPair != null ? aliasPair.second : null;
 
-            String[] parts = entityColName.split("[./]");
-            if (parts.length == 1)
+            if ("parent".equalsIgnoreCase(entityColName))
             {
-                if ("parent".equalsIgnoreCase(parts[0]))
+                if (!isEmptyEntity)
                 {
-                    if (!isEmptyEntity)
+                    if (isAliquot)
                     {
-                        if (isAliquot)
-                        {
-                            String message = "Sample derivation parent input is not allowed for aliquots.";
-                            throw new ValidationException(message);
-                        }
+                        String message = "Sample derivation parent input is not allowed for aliquots.";
+                        throw new ValidationException(message);
+                    }
 
-                        if (skipExistingAliquotParents)
-                            continue;
+                    if (skipExistingAliquotParents)
+                        continue;
 
-                        ExpMaterial sample = ExperimentService.get().findExpMaterial(c, user, null, null, entityName, cache, materialMap);
-                        if (sample != null)
-                            parentMaterials.put(sample, sampleRole(sample));
-                        else
-                        {
-                            String message = "Sample input '" + entityName + "' not found";
-                            throw new ValidationException(message);
-                        }
+                    ExpMaterial sample = ExperimentService.get().findExpMaterial(c, user, null, null, entityName, cache, materialMap);
+                    if (sample != null)
+                        parentMaterials.put(sample, sampleRole(sample));
+                    else
+                    {
+                        String message = "Sample input '" + entityName + "' not found";
+                        throw new ValidationException(message);
                     }
                 }
             }
-            else if (parts.length == 2)
+            else if (aliasPrefix != null && aliasSuffix != null)
             {
-                String namePart = QueryKey.decodePart(parts[1]);
-                if (MATERIAL_INPUT_PARENT.equalsIgnoreCase(parts[0]))
+                String namePart = QueryKey.decodePart(aliasSuffix);
+                if (MATERIAL_INPUT_PARENT.equalsIgnoreCase(aliasPrefix))
                 {
                     if (isEmptyEntity)
                     {
@@ -1801,7 +1810,7 @@ public class ExpDataIterators
 
                     }
                 }
-                else if (ExpMaterial.MATERIAL_OUTPUT_CHILD.equalsIgnoreCase(parts[0]))
+                else if (ExpMaterial.MATERIAL_OUTPUT_CHILD.equalsIgnoreCase(aliasPrefix))
                 {
                     ExpSampleType sampleType = sampleTypes.computeIfAbsent(namePart, (name) -> SampleTypeService.get().getSampleType(c, user, name));
                     if (sampleType == null)
@@ -1824,7 +1833,7 @@ public class ExpDataIterators
                             throw new ValidationException("Sample output '" + entityName + "' not found in Sample Type '" + namePart + "'.");
                     }
                 }
-                else if (DATA_INPUT_PARENT.equalsIgnoreCase(parts[0]))
+                else if (DATA_INPUT_PARENT.equalsIgnoreCase(aliasPrefix))
                 {
                     if (isEmptyEntity)
                     {
@@ -1859,7 +1868,7 @@ public class ExpDataIterators
                         }
                     }
                 }
-                else if (ExpData.DATA_OUTPUT_CHILD.equalsIgnoreCase(parts[0]))
+                else if (ExpData.DATA_OUTPUT_CHILD.equalsIgnoreCase(aliasPrefix))
                 {
                     ExpDataClass dataClass = dataClasses.computeIfAbsent(namePart, (name) -> ExperimentService.get().getDataClass(c, user, name));
                     if (dataClass == null)
@@ -2052,7 +2061,7 @@ public class ExpDataIterators
         Supplier<Object>[] suppliers;
         String[] savedFileName;
 
-        FileLinkDataIterator(final DataIterator in, final DataIteratorContext context, Container c, String file_link_dir_name)
+        FileLinkDataIterator(final DataIterator in, final DataIteratorContext context, Container c, User user, String file_link_dir_name)
         {
             super(in);
             suppliers = new Supplier[in.getColumnCount() + 1];
@@ -2076,7 +2085,7 @@ public class ExpDataIterators
                         {
                             try
                             {
-                                Object file = AbstractQueryUpdateService.saveFile(c, col.getName(), value, file_link_dir_name);
+                                Object file = AbstractQueryUpdateService.saveFile(user, c, col.getName(), value, file_link_dir_name);
                                 assert file instanceof File;
                                 value = ((File)file).getPath();
                                 savedFileName[index] = (String)value;
@@ -2171,6 +2180,10 @@ public class ExpDataIterators
             if (null == input)
                 return null;           // Can happen if context has errors
 
+            // useTransactionAuditCache already set for import and merge in AbstractQueryImportAction.createDataIteratorContext
+            if (context.getInsertOption() == QueryUpdateService.InsertOption.INSERT)
+                context.setUseTransactionAuditCache(true);
+
             // add FileLink DataIterator if any input columns are of type FILE_LINK
             if (null != _fileLinkDirectory)
             {
@@ -2178,7 +2191,7 @@ public class ExpDataIterators
                 for (int i = 0; i < input.getColumnCount(); i++)
                     hasFileLink |= PropertyType.FILE_LINK == input.getColumnInfo(i).getPropertyType();
                 if (hasFileLink)
-                    input = LoggingDataIterator.wrap(new FileLinkDataIterator(input, context, _container, _fileLinkDirectory));
+                    input = LoggingDataIterator.wrap(new FileLinkDataIterator(input, context, _container, _user, _fileLinkDirectory));
             }
 
             final Map<String, Integer> colNameMap = DataIteratorUtil.createColumnNameMap(input);
@@ -2260,9 +2273,15 @@ public class ExpDataIterators
                 return ret;
             };
 
+            DataIteratorBuilder step2c = step2b;
+            if (isSample && isMergeOrUpdate)
+            {
+                step2c = LoggingDataIterator.wrap(new ExpDataIterators.SampleStatusCheckIteratorBuilder(step2b, _container));
+            }
+
             // Insert into exp.data then the provisioned table
             // Use embargo data iterator to ensure rows are committed before being sent along Issue 26082 (row at a time, reselect rowid)
-            DataIteratorBuilder step3 = LoggingDataIterator.wrap(new TableInsertDataIteratorBuilder(step2b, _expTable, _container)
+            DataIteratorBuilder step3 = LoggingDataIterator.wrap(new TableInsertDataIteratorBuilder(step2c, _expTable, _container)
                     .setKeyColumns(keyColumns)
                     .setDontUpdate(dontUpdate)
                     .setAddlSkipColumns(_excludedColumns)
@@ -2852,6 +2871,13 @@ public class ExpDataIterators
             return new TypeData(container, sampleType, samplesTable, dataFile, fieldIndexes, dependencyIndexes, dataRows, new ArrayList<>());
         }
 
+        private Object getSerializingObject(Object data)
+        {
+            if (data instanceof Date d && !(data instanceof Time))
+                return DateUtil.formatIsoDateLongTime(d, true);
+            return data;
+        }
+
         private void addDataRow(TypeData typeData)
         {
             if (typeData.dataRows.size() == BATCH_SIZE)
@@ -2860,7 +2886,7 @@ public class ExpDataIterators
             List<Object> dataRow = new ArrayList<>();
             typeData.fieldIndexes.forEach(index -> {
                 Object data = get(index);
-                dataRow.add(data);
+                dataRow.add(getSerializingObject(data));
                 if (data != null)
                 {
                     if (index == _dataIdIndex)
@@ -2885,7 +2911,7 @@ public class ExpDataIterators
 
         private void writeRowsToFile(TypeData typeData)
         {
-            if (typeData.dataRows.size() == 0)
+            if (typeData.dataRows.isEmpty())
                 return;
 
             try (FileWriter writer = new FileWriter(typeData.dataFile, true))
@@ -2938,4 +2964,129 @@ public class ExpDataIterators
             currentCounts.put(key, currentCount + increments.get(key));
         });
     }
+
+    public static class SampleStatusCheckIteratorBuilder implements DataIteratorBuilder
+    {
+        private final DataIteratorBuilder _in;
+        private final Container _container;
+
+        public SampleStatusCheckIteratorBuilder(@NotNull DataIteratorBuilder in, Container container)
+        {
+            _in = in;
+            _container = container;
+        }
+
+        @Override
+        public DataIterator getDataIterator(DataIteratorContext context)
+        {
+            DataIterator pre = _in.getDataIterator(context);
+            return LoggingDataIterator.wrap(new SampleStatusCheckDataIterator(pre, context, _container));
+        }
+    }
+
+    public static class SampleStatusCheckDataIterator extends WrapperDataIterator
+    {
+        private final Set<String> SAMPLE_IMPORT_BASE_FIELDS = new CaseInsensitiveHashSet(
+                "LSID",
+                "CreatedBy",
+                "Modified",
+                "ModifiedBy",
+                "Created",
+                "_rowNumber",
+                RowId.name(),
+                "genId",
+                AliquotedFromLSID.name(),
+                ALIQUOTED_FROM_INPUT,
+                ROOT_RECOMPUTE_ROWID_COL,
+                PARENT_RECOMPUTE_NAME_COL,
+                ROOT_RECOMPUTE_ROWID_SET,
+                PARENT_RECOMPUTE_NAME_SET,
+                "cpasType",
+                Folder.name(),
+                Name.name(),
+                "EntityId",
+                EXISTING_RECORD_COLUMN_NAME,
+                CURRENT_SAMPLE_STATUS_COLUMN_NAME,
+                MaterialSourceId.name(),
+                RootMaterialRowId.name()
+        );
+
+        final DataIteratorContext _context;
+        private final Integer _sampleStateCol;
+        private final Integer _oldSampleStateCol;
+        private Map<Integer, DataState> _allStates;
+        private final boolean _noStatusChangeCol;
+        private final boolean _hasNonStatusChangeCol;
+
+        protected SampleStatusCheckDataIterator(DataIterator di, DataIteratorContext context, Container container)
+        {
+            super(di);
+            _context = context;
+            Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
+            _sampleStateCol = map.get(SampleState.name());
+            _noStatusChangeCol = _sampleStateCol == null;
+            _oldSampleStateCol = map.get(CURRENT_SAMPLE_STATUS_COLUMN_NAME);
+
+            _allStates = SampleStatusService.get()
+                    .getAllProjectStates(container)
+                    .stream().collect(Collectors.toMap(DataState::getRowId, data -> data));
+
+            boolean hasNonStatusChangeCol = false;
+            for (String col : map.keySet())
+            {
+                if (SampleState.name().equalsIgnoreCase(col))
+                    continue;
+                if (!SAMPLE_IMPORT_BASE_FIELDS.contains(col))
+                {
+                    hasNonStatusChangeCol = true;
+                    break;
+                }
+            }
+            _hasNonStatusChangeCol = hasNonStatusChangeCol;
+        }
+
+        @Override
+        public boolean next() throws BatchValidationException
+        {
+            boolean hasNext = super.next();
+            if (!hasNext)
+                return false;
+
+            if (_context.getErrors().hasErrors())
+                return true;
+
+            if (_oldSampleStateCol == null && getExistingRecord() == null)
+                return true;
+
+            Integer oldState;
+            if (_oldSampleStateCol != null)
+                oldState = (Integer) get(_oldSampleStateCol);
+            else
+                oldState = (Integer) getExistingRecord().get(SampleState.name());
+
+            if (oldState == null)
+                return true;
+
+            DataState oldStatus = _allStates.get(oldState);
+            boolean oldAllowsOp = SampleStatusService.get().isOperationPermitted(oldStatus, SampleTypeService.SampleOperations.EditMetadata);
+            if (oldAllowsOp)
+                return true;
+
+            if (_noStatusChangeCol)
+            {
+                _context.getErrors().addRowError(new ValidationException(String.format("Updating sample data when status is %s is not allowed.", oldStatus.getLabel())));
+                return true;
+            }
+
+            Integer newState = (Integer) get(_sampleStateCol);
+            DataState newStatus = _allStates.get(newState);
+            boolean newAllowsOp = SampleStatusService.get().isOperationPermitted(newStatus, SampleTypeService.SampleOperations.EditMetadata);
+
+            if (!newAllowsOp && _hasNonStatusChangeCol)
+                _context.getErrors().addRowError(new ValidationException(String.format("Updating sample data when status is %s is not allowed.", oldStatus.getLabel())));
+
+            return true;
+        }
+    }
+
 }

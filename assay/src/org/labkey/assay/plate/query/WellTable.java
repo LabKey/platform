@@ -4,6 +4,8 @@ import org.apache.logging.log4j.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.plate.Plate;
+import org.labkey.api.assay.plate.PlateCustomField;
+import org.labkey.api.assay.plate.PlateSet;
 import org.labkey.api.assay.plate.PositionImpl;
 import org.labkey.api.assay.plate.Well;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -17,6 +19,7 @@ import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.triggers.Trigger;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
@@ -51,15 +54,23 @@ import org.labkey.assay.query.AssayDbSchema;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
 {
     public static final String NAME = "Well";
     public static final String WELL_PROPERTIES_TABLE = "WellProperties";
+
+    public static final String PLATEID_COL = "PlateId";
+    public static final String ROW_COL = "Row";
+    public static final String COL_COL = "Col";
+    public static final String POSITION_COL = "Position";
+
     private static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
     private static final Set<String> ignoredColumns = new CaseInsensitiveHashSet();
     private final Map<FieldKey, ColumnInfo> _provisionedFieldMap = new HashMap<>();
@@ -80,6 +91,8 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
     public WellTable(PlateSchema schema, @Nullable ContainerFilter cf)
     {
         super(schema, AssayDbSchema.getInstance().getTableInfoWell(), cf);
+
+        addTriggerFactory((c, self, extraContext) -> List.of(new WellTableTrigger()));
     }
 
     @Override
@@ -217,6 +230,25 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
     public List<FieldKey> getDefaultVisibleColumns()
     {
         return defaultVisibleColumns;
+    }
+
+    public static Set<FieldKey> getMetadataColumns(int plateSetId, Container c, User u) throws ValidationException
+    {
+        PlateSet plateSet = PlateManager.get().getPlateSet(c, plateSetId);
+        if (plateSet == null)
+            throw new ValidationException("Unable to resolve plate set of id " + plateSetId);
+
+        List<Plate> plates = plateSet.getPlates(u);
+
+        Set<FieldKey> includedMetadataCols = new HashSet<>();
+        for (Plate plate : plates)
+        {
+            List<String> metadataColNames = PlateManager.get().getFields(c, plate.getRowId()).stream().map(PlateCustomField::getName).collect(Collectors.toCollection(ArrayList::new));
+            for (String name : metadataColNames)
+                includedMetadataCols.add(FieldKey.fromParts("properties", name));
+        }
+
+        return includedMetadataCols;
     }
 
 /*
@@ -437,6 +469,63 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
             // delete the provisioned table row
             if (_provisionedTable != null)
                 Table.delete(_provisionedTable, keys);
+        }
+    }
+
+    protected class WellTableTrigger implements Trigger
+    {
+        private final HashSet<Integer> mutatedWellRowIds = new HashSet<>();
+
+        private void addWellId(@Nullable Map<String, Object> newRow)
+        {
+            if (newRow != null && newRow.containsKey("RowId") && newRow.getOrDefault("SampleId", null) != null)
+            {
+                Integer wellRowId = (Integer) newRow.get("RowId");
+                if (wellRowId != null)
+                    mutatedWellRowIds.add(wellRowId);
+            }
+        }
+
+        @Override
+        public void complete(
+            TableInfo table,
+            Container c,
+            User user,
+            TriggerType event,
+            BatchValidationException errors,
+            Map<String, Object> extraContext
+        )
+        {
+            if (errors.hasErrors())
+                return;
+            PlateManager.get().validatePrimaryPlateSetUniqueSamples(mutatedWellRowIds, errors);
+        }
+
+        @Override
+        public void afterInsert(
+            TableInfo table,
+            Container c,
+            User user,
+            @Nullable Map<String, Object> newRow,
+            ValidationException errors,
+            Map<String, Object> extraContext
+        )
+        {
+            addWellId(newRow);
+        }
+
+        @Override
+        public void afterUpdate(
+            TableInfo table,
+            Container c,
+            User user,
+            @Nullable Map<String, Object> newRow,
+            @Nullable Map<String, Object> oldRow,
+            ValidationException errors,
+            Map<String, Object> extraContext
+        )
+        {
+            addWellId(newRow);
         }
     }
 }

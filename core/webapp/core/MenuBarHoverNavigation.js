@@ -131,7 +131,11 @@ Ext4.define('HoverNavigation', {
                 failure  : function(response) {
                     if (response.status == 401) {
                         document.getElementById(targetId).innerHTML = '<div style="padding: 5px">You do not have permission to view this data. You have likely been logged out.'
-                                + (this.loginUrl != null ? ' Please <a href="' + this.loginUrl + '">log in</a> again.' : ' Please <a href="#" onclick="location.reload();">reload</a> the page.') + "</div>";
+                                + (this.loginUrl != null ? ' Please <a href="' + this.loginUrl + '">log in</a> again.' : ' Please <a href="#" id="' + targetId + '-reload">reload</a> the page.') + "</div>";
+
+                        document.getElementById(targetId + '-reload').addEventListener('click', function() {
+                            location.reload();
+                        });
                     }
                     else {
                         if (window.console && window.console.log) {

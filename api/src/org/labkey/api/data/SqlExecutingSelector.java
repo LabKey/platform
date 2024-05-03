@@ -72,7 +72,7 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
         _queryLogging = queryLogging;
     }
 
-    private interface ConnectionFactory
+    public interface ConnectionFactory
     {
         Connection get() throws SQLException;
     }
@@ -107,21 +107,9 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
         if (null != _conn)
             throw new IllegalStateException("Calling setJdbcCaching() is not valid when a Connection has already been provided");
 
-        if (!cache && getScope().getSqlDialect().isJdbcCachingEnabledByDefault())
-        {
-            // Get a fresh read-only connection directly from the pool... not part of the current transaction, not shared
-            // with the thread, etc. This connection shouldn't cache ResultSet data in the JDBC driver, making it suitable
-            // for streaming very large ResultSets. See #39753 and #39888.
-            _connectionFactory = () -> {
-                ConnectionWrapper conn = getScope().getPooledConnection(DbScope.ConnectionType.Pooled, null);
-                conn.configureToDisableJdbcCaching(new SQLFragment("SELECT FakeColumn FROM FakeTable"));
-                return conn;
-            };
-        }
-        else
-        {
-            _connectionFactory = super::getConnection;
-        }
+        ConnectionFactory factory = getScope().getSqlDialect().getConnectionFactory(cache, getScope(),
+            new SQLFragment("SELECT FakeColumn FROM FakeTable") /* SqlExecutingSelector always generates SELECT statements */);
+        _connectionFactory = null != factory ? factory : super::getConnection;
 
         return getThis();
     }

@@ -67,6 +67,7 @@ public class QuerySettings
     private String _viewName;
     private String _dataRegionName;
     private List<FieldKey> _fieldKeys;
+    private List<FieldKey> _extraFieldKeys;
     private ReportIdentifier _reportId;
     private boolean _allowChooseQuery = false;
     private boolean _allowChooseView = true;
@@ -345,6 +346,20 @@ public class QuerySettings
             }
         }
 
+        String extraColumns = StringUtils.trimToNull(_getParameter(param(QueryParam.extraColumns)));
+        if (null != extraColumns)
+        {
+            String[] colArray = extraColumns.split(",");
+            _extraFieldKeys = new ArrayList<>();
+            for (String key : colArray)
+            {
+                if (!(StringUtils.isEmpty(key)))
+                {
+                    _extraFieldKeys.add(FieldKey.fromString(StringUtils.trim(key)));
+                }
+            }
+        }
+
         String selectionKey = StringUtils.trimToNull(_getParameter(param(QueryParam.selectionKey)));
         if (null != selectionKey)
             setSelectionKey(selectionKey);
@@ -381,7 +396,7 @@ public class QuerySettings
         }
     }
 
-    void setQueryParameter(String name, Object value)
+    public void setQueryParameter(String name, Object value)
     {
         _queryParameters.put(name,value);
     }
@@ -802,6 +817,16 @@ public class QuerySettings
     public void setFieldKeys(List<FieldKey> keys)
     {
         _fieldKeys = keys;
+    }
+
+    public List<FieldKey> getExtraFieldKeys()
+    {
+        return _extraFieldKeys;
+    }
+
+    public void setExtraFieldKeys(List<FieldKey> keys)
+    {
+        _extraFieldKeys = keys;
     }
 
     /** Optional scoping, beyond the folder itself, for .lastFilter */

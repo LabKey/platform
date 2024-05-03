@@ -424,13 +424,9 @@ public class DOM
         width,
         wrap,
 
-        /* ON attributes are deprecated and will go away */
+        /* Delete once 24.3 is merged to develop (panoramapublic/ExperimentAnnotationsTableInfo.java) */
         @Deprecated
         onclick,
-        @Deprecated
-        onmouseout,
-        @Deprecated
-        onmouseover
         ;
 
         Appendable render(Appendable builder, Object value) throws IOException

@@ -21,7 +21,6 @@ import org.labkey.assay.plate.model.PlateBean;
 import org.labkey.assay.query.AssayDbSchema;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -132,16 +131,18 @@ public class PlateCache
         return plate != null ? plate.copy() : null;
     }
 
-    public static @NotNull Collection<Plate> getPlates(Container c)
+    public static @NotNull List<Plate> getPlates(Container c)
     {
         List<Plate> plates = new ArrayList<>();
-        List<Integer> ids = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate(),
-                Collections.singleton("RowId"),
-                SimpleFilter.createContainerFilter(c), null).getArrayList(Integer.class);
+        List<Integer> ids = new TableSelector(
+            AssayDbSchema.getInstance().getTableInfoPlate(),
+            Collections.singleton("RowId"),
+            SimpleFilter.createContainerFilter(c),
+            new Sort("RowId")
+        ).getArrayList(Integer.class);
+
         for (Integer id : ids)
-        {
             plates.add(PLATE_CACHE.get(PlateCacheKey.getCacheKey(c, id)));
-        }
         return plates;
     }
 

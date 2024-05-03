@@ -210,7 +210,6 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
                     catch (ValidationException e)
                     {
                         setupError(e.getMessage());
-                        return it;
                     }
                 }
 
@@ -587,7 +586,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
         int addFileColumn(String name, int index)
         {
             var col = new BaseColumnInfo(name, JdbcType.VARCHAR);
-            return addColumn(col, new FileColumn(_datasetDefinition.getContainer(), name, index, "datasetdata"));
+            return addColumn(col, new FileColumn(user, _datasetDefinition.getContainer(), name, index, "datasetdata"));
         }
 
     //        int addSequenceNumFromDateColumn()

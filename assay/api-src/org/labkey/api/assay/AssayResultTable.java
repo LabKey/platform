@@ -273,6 +273,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
             // for places like multi valued columns
             folderCol.setSqlTypeName("entityid");
             folderCol.setConceptURI(BuiltInColumnTypes.CONTAINERID_CONCEPT_URI);
+            folderCol.setRequired(true);
             addColumn(folderCol);
         }
 
@@ -427,7 +428,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
 
     @NotNull
     @Override
-    public SQLFragment getFromSQL(String alias, Set<FieldKey> selectedColumns)
+    public SQLFragment getFromSQLExpanded(String alias, Set<FieldKey> selectedColumns)
     {
         checkReadBeforeExecute();
         boolean includeCreatedModified = shouldIncludeCreatedModified(selectedColumns);

@@ -71,7 +71,7 @@ public class BeanViewForm<K> extends TableViewForm implements DynaBean
         else
         {
             ObjectFactory<K> factory = ObjectFactory.Registry.getFactory(_wrappedClass);
-            return factory.fromMap(this.getStrings());
+            return factory.fromMap(getStrings());
         }
     }
 
@@ -79,7 +79,7 @@ public class BeanViewForm<K> extends TableViewForm implements DynaBean
     public void setBean(K bean)
     {
         ObjectFactory<K> factory = ObjectFactory.Registry.getFactory(_wrappedClass);
-        this.setTypedValues(factory.toMap(bean, null), false);
+        setTypedValues(factory.toMap(bean, null), false);
     }
 
     @Override

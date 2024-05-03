@@ -73,6 +73,7 @@ import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.DataType;
@@ -1676,22 +1677,41 @@ public class AssayController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
-    public static class GetAssayRunOperationConfirmationDataAction extends ReadOnlyApiAction<AssayRunOperationConfirmationForm>
+    public static class GetAssayRunOperationConfirmationDataAction extends ReadOnlyApiAction<AssayOperationConfirmationForm>
     {
 
         @Override
-        public Object execute(AssayRunOperationConfirmationForm form, BindException errors) throws Exception
+        public Object execute(AssayOperationConfirmationForm form, BindException errors) throws Exception
         {
+            ExperimentService service = ExperimentService.get();
+
             Collection<Integer> allowedIds = form.getIds(false);
+            List<? extends ExpRun> allRuns = service.getExpRuns(allowedIds);
 
             Set<Integer> notAllowedIds = new HashSet<>();
-            ExperimentService service = ExperimentService.get();
-            Collection<Integer> notPermittedIds = service.getIdsNotPermitted(getUser(), allowedIds, "assay", form.getDataOperation().getPermissionClass());
-            List<Map<String, Object>> notPermitted = notPermittedIds == null ? Collections.emptyList() : notPermittedIds.stream().map(id -> Map.of("RowId", (Object) id)).toList();
+            Map<String, Object> response = new HashMap<>();
+
+            Collection<Container> containers = new HashSet<>();
+            Collection<Integer> notPermittedIds = new ArrayList<>();
+            Class<? extends Permission> permClass = form.getDataOperation().getPermissionClass();
+            for (ExpRun expRun : allRuns)
+            {
+                Container c = expRun.getContainer();
+                containers.add(c);
+                if (permClass != null && !c.hasPermission(getUser(), permClass))
+                    notPermittedIds.add(expRun.getRowId());
+            }
+
+            response.put("containers", containers.stream().map(c -> Map.of(
+                    "id", c.getEntityId(),
+                    "path", (Object) c.getPath(),
+                    "permitted", permClass == null || c.hasPermission(getUser(), permClass)
+            )).toList());
+
+            response.put("notPermitted", notPermittedIds.stream().map(id -> Map.of("RowId", (Object) id)).toList());
+
             if (form.getDataOperation() == AssayRunOperations.Delete)
             {
-                List<? extends ExpRun> allRuns = service.getExpRuns(allowedIds);
-
                 service.getObjectReferencers().forEach(referencer ->
                         notAllowedIds.addAll(referencer.getItemsWithReferences(allowedIds, "assay")));
                 allowedIds.removeAll(notAllowedIds);
@@ -1707,25 +1727,67 @@ public class AssayController extends SpringActionController
                         notAllowedRows.add(rowMap);
                 });
 
-                Map<String, Collection<Map<String, Object>>> partitionedIds = new HashMap<>();
-                partitionedIds.put("allowed", allowedRows);
-                partitionedIds.put("notAllowed", notAllowedRows);
-                partitionedIds.put("notPermitted", notPermitted);
-                return success(partitionedIds);
-
+                response.put("allowed", allowedRows);
+                response.put("notAllowed", notAllowedRows);
+                return success(response);
             }
 
-            return success(Map.of(
-                "allowed", allowedIds.stream().map(id -> Map.of("RowId", id)).toList(),
-                "notAllowed", notAllowedIds,
-                "notPermitted", notPermitted
-            ));
+            response.put("allowed", allowedIds.stream().map(id -> Map.of("RowId", id)).toList());
+            response.put("notAllowed", notAllowedIds);
+            return success(response);
+        }
+    }
 
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(ReadPermission.class)
+    public static class GetAssayResultsOperationConfirmationDataAction extends ReadOnlyApiAction<AssayOperationConfirmationForm>
+    {
+        @Override
+        public Object execute(AssayOperationConfirmationForm form, BindException errors) throws Exception
+        {
+            Collection<Integer> allowedIds = form.getIds(false);
+
+            ExperimentService service = ExperimentService.get();
+            ExpProtocol protocol = service.getExpProtocol(form.getProtocolId());
+            AssayProvider provider = AssayService.get().getProvider(protocol);
+            AssaySchema schema = provider.createProtocolSchema(getUser(), getContainer(), protocol, null);
+            TableInfo tableInfo = schema.getTableOrThrow(AssayProtocolSchema.DATA_TABLE_NAME, ContainerFilter.EVERYTHING);
+
+            // need to query to get the dataIds for the data rowIds so that we can check container permissions on that exp.data table
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), allowedIds, CompareType.IN);
+            Collection<Map<String, Object>> dataRows = new TableSelector(tableInfo, PageFlowUtil.set("rowid", "dataid"), filter, null).getMapCollection();
+            List<Integer> permittedRowIds = new ArrayList<>();
+            Set<Container> uniqueContainers = new HashSet<>();
+            for (Map<String, Object> dataRow : dataRows)
+            {
+                Integer rowId = (Integer) dataRow.get("rowid");
+                ExpData data = ExperimentService.get().getExpData((Integer) dataRow.get("dataid"));
+                if (data == null || data.getRun() == null) continue;
+
+                Container c = data.getRun().getContainer();
+                uniqueContainers.add(c);
+                if (c.hasPermission(getUser(), AssayRunOperations.Edit.getPermissionClass()))
+                    permittedRowIds.add(rowId);
+            }
+            List<Map<String, Integer>> notPermitted = allowedIds.stream().filter(id -> !permittedRowIds.contains(id)).map(id -> Map.of("RowId", id)).toList();
+
+            Map<String, Object> response = new HashMap<>();
+            Class<? extends Permission> permClass = form.getDataOperation().getPermissionClass();
+            response.put("containers", uniqueContainers.stream().map(c -> Map.of(
+                    "id", c.getEntityId(),
+                    "path", (Object) c.getPath(),
+                    "permitted", permClass == null || c.hasPermission(getUser(), permClass)
+            )).toList());
+            response.put("allowed", allowedIds.stream().map(id -> Map.of("RowId", id)).toList());
+            response.put("notAllowed", new HashSet<>());
+            response.put("notPermitted", notPermitted);
+            return success(response);
         }
     }
 
     public enum AssayRunOperations {
         Delete("deleting", DeletePermission.class),
+        Edit("editing", UpdatePermission.class),
         Move("moving", MoveEntitiesPermission.class);
 
         private final String _description; // used as a suffix in messaging users about what is not allowed
@@ -1748,9 +1810,10 @@ public class AssayController extends SpringActionController
         }
     }
 
-    public static class AssayRunOperationConfirmationForm extends DataViewSnapshotSelectionForm
+    public static class AssayOperationConfirmationForm extends DataViewSnapshotSelectionForm
     {
         private AssayRunOperations _dataOperation;
+        private Integer _protocolId;
 
         public AssayRunOperations getDataOperation()
         {
@@ -1762,5 +1825,14 @@ public class AssayController extends SpringActionController
             _dataOperation = dataOperation;
         }
 
+        public Integer getProtocolId()
+        {
+            return _protocolId;
+        }
+
+        public void setProtocolId(Integer protocolId)
+        {
+            _protocolId = protocolId;
+        }
     }
 }

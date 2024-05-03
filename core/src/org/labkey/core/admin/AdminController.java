@@ -19,6 +19,9 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.util.concurrent.UncheckedExecutionException;
+import jakarta.mail.MessagingException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.map.LRUMap;
 import org.apache.commons.io.FileUtils;
@@ -40,7 +43,27 @@ import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.Constants;
-import org.labkey.api.action.*;
+import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ApiUsageException;
+import org.labkey.api.action.BaseApiAction;
+import org.labkey.api.action.ConfirmAction;
+import org.labkey.api.action.ExportAction;
+import org.labkey.api.action.FormHandlerAction;
+import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.HasViewContext;
+import org.labkey.api.action.IgnoresAllocationTracking;
+import org.labkey.api.action.LabKeyError;
+import org.labkey.api.action.Marshal;
+import org.labkey.api.action.Marshaller;
+import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.ReadOnlyApiAction;
+import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.action.SimpleApiJsonForm;
+import org.labkey.api.action.SimpleErrorView;
+import org.labkey.api.action.SimpleRedirectAction;
+import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AbstractFolderContext.ExportType;
 import org.labkey.api.admin.AdminBean;
 import org.labkey.api.admin.AdminUrls;
@@ -65,9 +88,35 @@ import org.labkey.api.cache.TrackingCache;
 import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.compliance.ComplianceService;
+import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.*;
 import org.labkey.api.data.Container.ContainerException;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ContainerType;
+import org.labkey.api.data.ConvertHelper;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.data.DatabaseTableType;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MenuButton;
+import org.labkey.api.data.MvUtil;
+import org.labkey.api.data.NormalContainerType;
+import org.labkey.api.data.PHI;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect.ExecutionPlanType;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.data.queryprofiler.QueryProfiler.QueryStatTsvWriter;
@@ -89,6 +138,7 @@ import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.IgnoresForbiddenProjectCheck;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SimpleModule;
 import org.labkey.api.moduleeditor.api.ModuleEditorService;
@@ -114,8 +164,27 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.security.ActionNames;
+import org.labkey.api.security.AdminConsoleAction;
+import org.labkey.api.security.CSRF;
+import org.labkey.api.security.Group;
+import org.labkey.api.security.GroupManager;
+import org.labkey.api.security.IgnoresTermsOfUse;
+import org.labkey.api.security.LoginUrls;
+import org.labkey.api.security.MutableSecurityPolicy;
+import org.labkey.api.security.RequiresLogin;
+import org.labkey.api.security.RequiresNoPermission;
+import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.RequiresSiteAdmin;
+import org.labkey.api.security.RoleAssignment;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.*;
+import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.SecurityPolicyManager;
+import org.labkey.api.security.SecurityUrls;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
+import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.impersonation.GroupImpersonationContextFactory;
 import org.labkey.api.security.impersonation.ImpersonationContext;
 import org.labkey.api.security.impersonation.RoleImpersonationContextFactory;
@@ -150,20 +219,70 @@ import org.labkey.api.settings.ProductConfiguration;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableFolderLookAndFeelProperties;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
-import org.labkey.api.util.*;
 import org.labkey.api.util.Button;
+import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.util.DOM;
+import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.DebugInfoDumper;
+import org.labkey.api.util.ExceptionReportingLevel;
+import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.FolderDisplayMode;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
+import org.labkey.api.util.HttpsUtil;
+import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.Link.LinkBuilder;
+import org.labkey.api.util.MailHelper;
+import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MemTracker.HeldReference;
+import org.labkey.api.util.MothershipReport;
+import org.labkey.api.util.NetworkDrive;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
+import org.labkey.api.util.ResponseHelper;
+import org.labkey.api.util.SafeToRenderEnum;
+import org.labkey.api.util.SessionAppender;
+import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.SystemMaintenance.SystemMaintenanceProperties;
+import org.labkey.api.util.SystemMaintenanceJob;
+import org.labkey.api.util.TestContext;
+import org.labkey.api.util.Tuple3;
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.UniqueID;
+import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.util.logging.LogHelper;
-import org.labkey.api.view.*;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.DataView;
 import org.labkey.api.view.FolderManagement.FolderManagementViewAction;
 import org.labkey.api.view.FolderManagement.FolderManagementViewPostAction;
 import org.labkey.api.view.FolderManagement.ProjectSettingsViewAction;
 import org.labkey.api.view.FolderManagement.ProjectSettingsViewPostAction;
 import org.labkey.api.view.FolderManagement.TYPE;
+import org.labkey.api.view.FolderTab;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.Portal;
+import org.labkey.api.view.RedirectException;
+import org.labkey.api.view.ShortURLRecord;
+import org.labkey.api.view.ShortURLService;
+import org.labkey.api.view.TabStripView;
+import org.labkey.api.view.URLException;
+import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.VBox;
+import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ViewServlet;
+import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.EmptyView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PageConfig.Template;
@@ -189,9 +308,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
-import jakarta.mail.MessagingException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.awt.*;
 import java.beans.Introspector;
 import java.io.File;
@@ -268,7 +384,6 @@ import static org.labkey.api.util.DOM.at;
 import static org.labkey.api.util.DOM.cl;
 import static org.labkey.api.util.DOM.createHtmlFragment;
 import static org.labkey.api.util.HtmlString.NBSP;
-import static org.labkey.api.util.HtmlString.unsafe;
 import static org.labkey.api.util.logging.LogHelper.getLabKeyLogDir;
 import static org.labkey.api.view.FolderManagement.EVERY_CONTAINER;
 import static org.labkey.api.view.FolderManagement.FOLDERS_AND_PROJECTS;
@@ -317,16 +432,6 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(Configuration, "system maintenance", new ActionURL(ConfigureSystemMaintenanceAction.class, root));
         AdminConsole.addLink(Configuration, "External Redirect Hosts", new ActionURL(ExternalRedirectAdminAction.class, root));
 
-/*
-        // Management
-        // note these should match (link and permissions) with SiteAdminMenu.getNavTree()
-        AdminConsole.addLink(Management, "site admins", urlProvider(SecurityUrls.class).getManageGroupURL(root, "Administrators"), AdminOperationsPermission.class);
-        AdminConsole.addLink(Management, "site developers", urlProvider(SecurityUrls.class).getManageGroupURL(root, "Developers"), AdminOperationsPermission.class);
-        AdminConsole.addLink(Management, "site users", urlProvider(UserUrls.class).getSiteUsersURL(), UserManagementPermission.class);
-        AdminConsole.addLink(Management, "site groups", urlProvider(SecurityUrls.class).getSiteGroupsURL(root, null), UserManagementPermission.class);
-        AdminConsole.addLink(Management, "site permissions", urlProvider(SecurityUrls.class).getPermissionsURL(root), UserManagementPermission.class);
-*/
-
         // Diagnostics
         AdminConsole.addLink(Diagnostics, "actions", new ActionURL(ActionsAction.class, root));
         AdminConsole.addLink(Diagnostics, "attachments", new ActionURL(AttachmentsAction.class, root));
@@ -340,7 +445,7 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(Diagnostics, "queries", getQueriesURL(null));
         AdminConsole.addLink(Diagnostics, "reset site errors", new ActionURL(ResetErrorMarkAction.class, root), AdminPermission.class);
         AdminConsole.addLink(Diagnostics, "running threads", new ActionURL(ShowThreadsAction.class, root));
-        AdminConsole.addLink(Diagnostics, "site validation", new ActionURL(SiteValidationAction.class, root), AdminPermission.class);
+        AdminConsole.addLink(Diagnostics, "site validation", new ActionURL(ConfigureSiteValidationAction.class, root), AdminPermission.class);
         AdminConsole.addLink(Diagnostics, "sql scripts", new ActionURL(SqlScriptController.ScriptsAction.class, root), AdminOperationsPermission.class);
         AdminConsole.addLink(Diagnostics, "suspicious activity", new ActionURL(SuspiciousAction.class,root));
         AdminConsole.addLink(Diagnostics, "system properties", new ActionURL(SystemPropertiesAction.class, root), SiteAdminPermission.class);
@@ -377,6 +482,7 @@ public class AdminController extends SpringActionController
         addTab(TYPE.FolderManagement,"Files", "files", FOLDERS_AND_PROJECTS, FileRootsAction.class);
         addTab(TYPE.FolderManagement,"Formats", "settings", FOLDERS_ONLY, FolderSettingsAction.class);
         addTab(TYPE.FolderManagement,"Information", "info", NOT_ROOT, FolderInformationAction.class);
+        addTab(TYPE.FolderManagement,"Validate", "validate", EVERY_CONTAINER, ConfigureSiteValidationAction.class);
         addTab(TYPE.FolderManagement,"R Config", "rConfig", NOT_ROOT, RConfigurationAction.class);
 
         addTab(TYPE.ProjectSettings, "Properties", "properties", PROJECTS_ONLY, ProjectSettingsAction.class);
@@ -714,6 +820,12 @@ public class AdminController extends SpringActionController
         public ActionURL getTrackedAllocationsViewerURL()
         {
             return new ActionURL(TrackedAllocationsViewerAction.class, ContainerManager.getRoot());
+        }
+
+        @Override
+        public ActionURL getSystemMaintenanceURL()
+        {
+            return new ActionURL(ConfigureSystemMaintenanceAction.class, ContainerManager.getRoot());
         }
     }
 
@@ -1383,19 +1495,62 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class SiteValidationAction extends SimpleViewAction<Object>
+    public class ConfigureSiteValidationAction extends FolderManagementViewAction
     {
         @Override
-        public ModelAndView getView(Object o, BindException errors)
+        protected JspView<?> getTabView()
         {
-            return new JspView<>("/org/labkey/core/admin/sitevalidation/siteValidation.jsp");
+            return new JspView<>("/org/labkey/core/admin/sitevalidation/configureSiteValidation.jsp");
         }
 
         @Override
         public void addNavTrail(NavTree root)
         {
             setHelpTopic("siteValidation");
-            addAdminNavTrail(root, "Site Validation", this.getClass());
+            addAdminNavTrail(root, "Configure " + (getContainer().isRoot() ? "Site" : "Folder") + " Validation", getClass());
+        }
+    }
+
+    public static class SiteValidationForm
+    {
+        private boolean _includeSubfolders = false;
+        private List<String> _providers;
+
+        public boolean isIncludeSubfolders()
+        {
+            return _includeSubfolders;
+        }
+
+        public void setIncludeSubfolders(boolean includeSubfolders)
+        {
+            _includeSubfolders = includeSubfolders;
+        }
+
+        public List<String> getProviders()
+        {
+            return _providers;
+        }
+
+        public void setProviders(List<String> providers)
+        {
+            _providers = providers;
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public class SiteValidationAction extends SimpleViewAction<SiteValidationForm>
+    {
+        @Override
+        public ModelAndView getView(SiteValidationForm form, BindException errors)
+        {
+            return new JspView<>("/org/labkey/core/admin/sitevalidation/siteValidation.jsp", form);
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            setHelpTopic("siteValidation");
+            addAdminNavTrail(root, (getContainer().isRoot() ? "Site" : "Folder") + " Validation", getClass());
         }
     }
 
@@ -3016,7 +3171,6 @@ public class AdminController extends SpringActionController
             _enableSystemMaintenance = enableSystemMaintenance;
         }
     }
-
 
     @AdminConsoleAction(AdminOperationsPermission.class)
     public class ConfigureSystemMaintenanceAction extends FormViewAction<ConfigureSystemMaintenanceForm>
@@ -6661,8 +6815,8 @@ public class AdminController extends SpringActionController
         private String templateSourceId;
         private String[] templateWriterTypes;
         private boolean templateIncludeSubfolders = false;
-
         private String[] targets;
+        private PHI _exportPhiLevel = PHI.NotPHI;
 
         public boolean getHasLoaded()
         {
@@ -6828,6 +6982,16 @@ public class AdminController extends SpringActionController
         public void setTargets(String[] targets)
         {
             this.targets = targets;
+        }
+
+        public PHI getExportPhiLevel()
+        {
+            return _exportPhiLevel;
+        }
+
+        public void setExportPhiLevel(PHI exportPhiLevel)
+        {
+            _exportPhiLevel = exportPhiLevel;
         }
 
         /**
@@ -7164,6 +7328,7 @@ public class AdminController extends SpringActionController
                     // If a default folder type has been configured by a site admin set that as the default folder type choice
                     form.setFolderType(folderType.getName());
                 }
+                form.setExportPhiLevel(ComplianceService.get().getMaxAllowedPhi(getContainer(), getUser()));
             }
             JspView<FORM> statusView = new JspView<>("/org/labkey/core/admin/createFolder.jsp", form, errors);
             vbox.addView(statusView);
@@ -7246,7 +7411,7 @@ public class AdminController extends SpringActionController
                         }
 
                         FolderExportContext exportCtx = new FolderExportContext(getUser(), sourceContainer, PageFlowUtil.set(form.getTemplateWriterTypes()), "new",
-                                form.getTemplateIncludeSubfolders(), PHI.NotPHI, false, false, false,
+                                form.getTemplateIncludeSubfolders(), form.getExportPhiLevel(), false, false, false,
                                 new StaticLoggerGetter(LogManager.getLogger(FolderWriterImpl.class)));
 
                         container = ContainerManager.createContainerFromTemplate(parent, folderName, folderTitle, sourceContainer, getUser(), exportCtx, afterCreateHandler);
@@ -8809,7 +8974,7 @@ public class AdminController extends SpringActionController
                     ),
                 BR(),
                 "Are you sure you want to remove the ", description, "? ",
-                (!hasFiles && !hasSchemas && isSimple) ?  "This operation cannot be undone!" : "This operation may render the server unusable and cannot be undone!",
+                "This operation cannot be undone!",
                 BR(),
                 !hasFiles ? null : "Deleting modules on a running server could leave it in an unpredictable state; be sure to restart your server."
             ));
@@ -11172,6 +11337,22 @@ public class AdminController extends SpringActionController
         public void setHourDelta(Integer hourDelta)
         {
             this.hourDelta = hourDelta;
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public class ViewUsageStatistics extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors)
+        {
+            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("core"), ModuleHtmlView.getGeneratedViewPath("ViewUsageStatistics"));
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            addAdminNavTrail(root, "Usage Statistics", this.getClass());
         }
     }
 

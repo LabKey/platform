@@ -16,7 +16,6 @@
 
 package org.labkey.api.assay;
 
-import org.labkey.api.data.Parameter;
 import org.labkey.api.data.ParameterMapStatement;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExpData;
@@ -24,10 +23,6 @@ import org.labkey.api.query.ValidationException;
 
 import java.util.Map;
 
-/**
- * User: jeckels
- * Date: Jul 23, 2007
- */
 public class SimpleAssayDataImportHelper implements OntologyManager.ImportHelper, OntologyManager.UpdateableTableImportHelper
 {
     private int _id = 0;

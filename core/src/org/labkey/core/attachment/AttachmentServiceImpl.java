@@ -918,6 +918,10 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
     public Map<String, Attachment> getAttachments(AttachmentParent parent, Collection<String> names)
     {
         checkSecurityPolicy(parent);
+
+        if (names == null || names.isEmpty())
+            return Collections.emptyMap();
+
         Map<String, Attachment> attachments = new HashMap<>();
 
         if (parent instanceof AttachmentDirectory)

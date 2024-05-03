@@ -52,6 +52,7 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
     final String _userComment;
     final QueryService.AuditAction _auditAction;
     final AuditHandler _auditHandler;
+    final boolean _useTransactionAuditCache;
 
     // for batching
     final ArrayList<Map<String,Object>> _updatedRows = new ArrayList<>();
@@ -65,6 +66,7 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
         _user = user;
         _container = c;
         _userComment = (String) _context.getConfigParameter(AuditConfigs.AuditUserComment);
+        _useTransactionAuditCache = !context.getInsertOption().updateOnly && context.isUseTransactionAuditCache();
         _auditAction = auditAction;
         _auditHandler = table.getAuditHandler(DETAILED);
 
@@ -95,7 +97,7 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
         if (!hasNext || _updatedRows.size() > 1000)
         {
             if (!_updatedRows.isEmpty())
-                _auditHandler.addAuditEvent(_user, _container, _table, DETAILED, _userComment, _auditAction, _updatedRows, _existingRows);
+                _auditHandler.addAuditEvent(_user, _container, _table, DETAILED, _userComment, _auditAction, _updatedRows, _existingRows, _useTransactionAuditCache);
             _updatedRows.clear();
             if (null != _existingRows)
                 _existingRows.clear();

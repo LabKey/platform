@@ -30,11 +30,14 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.URIUtil;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
@@ -53,11 +56,11 @@ public class ExpDataFileConverter implements Converter
 {
     private static final Converter FILE_CONVERTER = new FileConverter();
 
-    public static ExpData resolveExpData(JSONObject dataObject, Container container, User user, @NotNull Collection<AssayDataType> knownTypes)
+    public static ExpData resolveExpData(JSONObject dataObject, @NotNull Container container, @NotNull User user, @NotNull Collection<AssayDataType> knownTypes)
     {
         ExperimentService expSvc = ExperimentService.get();
 
-        PipeRoot pipelineRoot = container == null ? null : PipelineService.get().getPipelineRootSetting(container);
+        PipeRoot pipelineRoot = PipelineService.get().getPipelineRootSetting(container);
 
         // First look it up by rowId
         if (dataObject.has(ExperimentJSONConverter.ID))
@@ -69,7 +72,7 @@ public class ExpDataFileConverter implements Converter
             {
                 throw new NotFoundException("Could not find data with id " + dataId);
             }
-            if (container != null && !data.getContainer().equals(container))
+            if (!data.getContainer().equals(container))
             {
                 throw new NotFoundException("Data with row id " + dataId + " is not in folder " + container);
             }
@@ -85,7 +88,7 @@ public class ExpDataFileConverter implements Converter
             {
                 throw new NotFoundException("Could not find data with LSID " + lsid);
             }
-            if (container != null && !data.getContainer().equals(container))
+            if (!data.getContainer().equals(container))
             {
                 throw new NotFoundException("Data with LSID " + lsid + " is not in folder " + container);
             }
@@ -102,7 +105,7 @@ public class ExpDataFileConverter implements Converter
 
             if (null == data)
             {
-                if (null == file || !NetworkDrive.exists(file))
+                if (!NetworkDrive.exists(file))
                 {
                     throw new IllegalArgumentException("No file with relative pipeline path '" + pipelinePath + "' was found");
                 }
@@ -124,22 +127,20 @@ public class ExpDataFileConverter implements Converter
             //check to see if this is already an ExpData
             ExpData data = expSvc.getExpDataByURL(dataFileURL, container);
 
-            if (null == data)
+            FileContentService fileContent = FileContentService.get();
+            if (null == data && fileContent != null)
             {
-                if (null != container)
+                // Check for file at file root
+                URI dataFileUri = fileContent.getFileRootUri(container, FileContentService.ContentType.files, dataFileURL);
+                if (dataFileUri == null) {
+                    throw new IllegalArgumentException("Could not resolve file at file root: " + dataFileURL);
+                }
+
+                data = expSvc.getExpDataByURL(dataFileUri.toString(), container);
+
+                if (null == data)
                 {
-                    // Check for file at file root
-                    URI dataFileUri = FileContentService.get().getFileRootUri(container, FileContentService.ContentType.files, dataFileURL);
-                    if (dataFileUri == null) {
-                        throw new IllegalArgumentException("Could not resolve file at file root: " + dataFileURL);
-                    }
-
-                    data = expSvc.getExpDataByURL(dataFileUri.toString(), container);
-
-                    if (null == data)
-                    {
-                        throw new IllegalArgumentException("Could not find a file for dataFileURL " + dataFileURL);
-                    }
+                    throw new IllegalArgumentException("Could not find a file for dataFileURL " + dataFileURL);
                 }
             }
             return data;
@@ -149,14 +150,14 @@ public class ExpDataFileConverter implements Converter
         {
             String absolutePath = dataObject.getString(ExperimentJSONConverter.ABSOLUTE_PATH);
             File f = FileUtil.getAbsoluteCaseSensitiveFile(new File(absolutePath));
-            if (container != null && pipelineRoot != null && !pipelineRoot.isUnderRoot(f))
+            if (pipelineRoot != null && !pipelineRoot.isUnderRoot(f))
             {
                 throw new IllegalArgumentException("File with path " + absolutePath + " is not under the pipeline root for this folder");
             }
             //check to see if this is already an ExpData
             ExpData data = expSvc.getExpDataByURL(f, container);
 
-            if (null == data && container != null)
+            if (null == data)
             {
                 String name = dataObject.optString(ExperimentJSONConverter.NAME, f.getName());
                 DataType type = getDataType(f, knownTypes);
@@ -210,78 +211,72 @@ public class ExpDataFileConverter implements Converter
             return null;
         }
 
-        if (type.isAssignableFrom(File.class))
+        Container container = (Container) QueryService.get().getEnvironment(QueryService.Environment.CONTAINER);
+        User user = (User) QueryService.get().getEnvironment(QueryService.Environment.USER);
+
+        // Don't bother resolving if we don't know the container, or we don't know the user has permission to the container
+        if (type.isAssignableFrom(File.class) && container != null && user != null && container.hasPermission(user, ReadPermission.class))
         {
-            if (value instanceof File)
-            {
-                return value;
-            }
+            File f = convertToFile(value, container, user);
 
-            if (value instanceof JSONObject json)
+            // If we have a file path, make sure it's supposed to be visible in the current container
+            if (f != null)
             {
-                // Assume the same structure as the saveBatch and getBatch APIs work with
-                ExpData data = resolveExpData(json, null, null, Collections.emptyList());
-                if (data != null && data.getFile() != null)
+                // Strip out ".." and "."
+                f = FileUtil.resolveFile(f);
+                PipeRoot root = PipelineService.get().getPipelineRootSetting(container);
+                if (root != null)
                 {
-                    return data.getFile();
-                }
-            }
-
-            // Value specified as simple property, so we have to guess what it might be
-            // First, try looking it up as a RowId
-            try
-            {
-                int dataRowId = Integer.parseInt(value.toString());
-                ExpData data = ExperimentService.get().getExpData(dataRowId);
-                if (data != null)
-                {
-                    File result = data.getFile();
-                    if (result != null)
+                    if (!f.isAbsolute())
                     {
-                        return result;
+                        // Interpret relative paths based on the file root
+                        f = new File(root.getRootPath(), f.getPath());
+                    }
+
+                    if (root.isUnderRoot(f))
+                    {
+                        return f;
+                    }
+                }
+
+                // It's possible to have the file root and pipeline root pointed at different paths
+                FileContentService fileContent = FileContentService.get();
+                if (fileContent != null)
+                {
+                    File fileRoot = fileContent.getFileRoot(container);
+                    if (fileRoot != null && URIUtil.isDescendant(fileRoot.toURI(), f.toURI()))
+                    {
+                        return f;
                     }
                 }
             }
-            catch (NumberFormatException ignored)
+        }
+        return null;
+    }
+
+    private File convertToFile(Object value, @NotNull Container container, @NotNull User user)
+    {
+        if (value instanceof File f)
+        {
+            return f;
+        }
+
+        if (value instanceof JSONObject json)
+        {
+            // Assume the same structure as the saveBatch and getBatch APIs work with
+            ExpData data = resolveExpData(json, container, user, Collections.emptyList());
+            if (data != null && data.getFile() != null)
             {
+                return data.getFile();
             }
+        }
 
-            // toss in here an additional check, if starts with HTTP then try to use _webdav to resolve it
-            // MAKE sure that the security is in place - figure out what container it is in
-            String webdav = value.toString();
-            if (null != StringUtils.trimToNull(webdav))
-            {
-                Path path = Path.decode(webdav.replace(AppProps.getInstance().getBaseServerUrl() + AppProps.getInstance().getContextPath(), ""));
-                WebdavResource resource = WebdavService.get().getResolver().lookup(path);
-                if (resource != null && resource.isFile())
-                {
-                    File result = resource.getFile();
-                    if (result != null)
-                    {
-                        return result;
-                    }
-                }
-                else
-                {
-                    if (path.isDirectory())
-                    {
-                        try
-                        {
-                            resource = WebdavService.get().lookupHref(path.toString());
-                            if (null != resource && !resource.isFile())
-                                return resource.getFile();
-                        }
-                        catch(URISyntaxException ignored)
-                        {
-                        }
-                    }
-                }
-            }
-
-
-            // Then, see if we can find it as an LSID
-            String lsid = value.toString();
-            ExpData data = ExperimentService.get().getExpData(lsid);
+        // Value specified as simple property, so we have to guess what it might be
+        // First, try looking it up as a RowId
+        try
+        {
+            int dataRowId = Integer.parseInt(value.toString());
+            ExpData data = ExperimentService.get().getExpData(dataRowId);
             if (data != null)
             {
                 File result = data.getFile();
@@ -291,8 +286,55 @@ public class ExpDataFileConverter implements Converter
                 }
             }
         }
+        catch (NumberFormatException ignored)
+        {
+        }
 
+        // toss in here an additional check, if starts with HTTP then try to use _webdav to resolve it
+        // MAKE sure that the security is in place - figure out what container it is in
+        String webdav = value.toString();
+        if (null != StringUtils.trimToNull(webdav))
+        {
+            Path path = Path.decode(webdav.replace(AppProps.getInstance().getBaseServerUrl() + AppProps.getInstance().getContextPath(), ""));
+            WebdavResource resource = WebdavService.get().getResolver().lookup(path);
+            if (resource != null && resource.isFile())
+            {
+                File result = resource.getFile();
+                if (result != null)
+                {
+                    return result;
+                }
+            }
+            else
+            {
+                if (path.isDirectory())
+                {
+                    try
+                    {
+                        resource = WebdavService.get().lookupHref(path.toString());
+                        if (null != resource && !resource.isFile())
+                            return resource.getFile();
+                    }
+                    catch(URISyntaxException ignored)
+                    {
+                    }
+                }
+            }
+        }
+
+
+        // Then, see if we can find it as an LSID
+        String lsid = value.toString();
+        ExpData data = ExperimentService.get().getExpData(lsid);
+        if (data != null)
+        {
+            File result = data.getFile();
+            if (result != null)
+            {
+                return result;
+            }
+        }
         // Otherwise, treat it as a plain path
-        return FILE_CONVERTER.convert(type, value);
+        return FILE_CONVERTER.convert(File.class, value);
     }
 }

@@ -8016,6 +8016,177 @@ public class QueryController extends SpringActionController
         }
     }
 
+    @RequiresPermission(ReadPermission.class)
+    public static class GetDefaultVisibleColumnsAction extends ReadOnlyApiAction<GetQueryDetailsAction.Form>
+    {
+        @Override
+        public Object execute(GetQueryDetailsAction.Form form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+
+            Container container = getContainer();
+            User user = getUser();
+
+            if (StringUtils.isEmpty(form.getSchemaName()))
+                throw new NotFoundException("SchemaName not specified");
+
+            QuerySchema querySchema = DefaultSchema.get(user, container, form.getSchemaName());
+            if (!(querySchema instanceof UserSchema schema))
+                throw new NotFoundException("Could not find the specified schema in the folder '" + container.getPath() + "'");
+
+            QuerySettings settings = schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, form.getQueryName());
+            QueryDefinition queryDef = settings.getQueryDef(schema);
+            if (null == queryDef)
+                // Don't echo the provided query name, but schema name is legit since it was found. See #44528.
+                throw new NotFoundException("Could not find the specified query in the schema '" + form.getSchemaName() + "'");
+
+            TableInfo tinfo = queryDef.getTable(null, true);
+            if (null == tinfo)
+                throw new NotFoundException("Could not find the specified query '" + form.getQueryName() + "' in the schema '" + form.getSchemaName() + "'");
+
+            List<FieldKey> fields = tinfo.getDefaultVisibleColumns();
+
+            List<DisplayColumn> displayColumns = QueryService.get().getColumns(tinfo, fields)
+                    .values()
+                    .stream()
+                    .filter(cinfo -> fields.contains(cinfo.getFieldKey()))
+                    .map(cinfo -> cinfo.getDisplayColumnFactory().createRenderer(cinfo))
+                    .collect(Collectors.toList());
+
+            resp.put("columns", JsonWriter.getNativeColProps(displayColumns, null, false));
+
+            return resp;
+        }
+    }
+
+    public static class ParseForm implements ApiJsonForm
+    {
+        String expression = "";
+        Map<FieldKey,JdbcType> columnMap = new HashMap<>();
+
+        Map<FieldKey, JdbcType> getColumnMap()
+        {
+            return columnMap;
+        }
+
+        public String getExpression()
+        {
+            return expression;
+        }
+
+        public void setExpression(String expression)
+        {
+            this.expression = expression;
+        }
+
+        @Override
+        public void bindJson(JSONObject json)
+        {
+            if (json.has("expression"))
+                setExpression(json.getString("expression"));
+            if (json.has("columnMap"))
+            {
+                JSONObject columnMap = json.getJSONObject("columnMap");
+                for (String key : columnMap.keySet())
+                {
+                    try
+                    {
+                        getColumnMap().put(FieldKey.fromString(key), JdbcType.valueOf(String.valueOf(columnMap.get(key))));
+                    }
+                    catch (IllegalArgumentException iae)
+                    {
+                        getColumnMap().put(FieldKey.fromString(key), JdbcType.OTHER);
+                    }
+                }
+            }
+        }
+    }
+
+
+    /**
+     * Since this api purpose is to return parse errors, it does not generally return success:false.
+     * <br>
+     * The API expects JSON like this, note that column names should be in FieldKey.toString() encoded to match the response JSON format.
+     * <pre>
+     *     { "expression": "A$ + B", "columnMap":{"A$D":"VARCHAR", "X":"VARCHAR"}}
+     * </pre>
+     * and returns a response like this
+     * <pre>
+     *     {
+     *       "jdbcType" : "OTHER",
+     *       "success" : true,
+     *       "columnMap" : {"A$D":"VARCHAR", "B":"OTHER"}
+     *       "errors" : [ { "msg" : "\"B\" not found.", "type" : "sql" } ]
+     *     }
+     * </pre>
+     * The columnMap object keys are the names of columns found in the expression.  Names are returned
+     * in FieldKey.toString() formatting e.g. dollar-sign encoded.  The object structure
+     * is compatible with the columnMap input parameter, so it can be used as a template to make a second request
+     * with types filled in.  If provided, the type will be copied from the input columnMap, otherwise it will be "OTHER".
+     * <br>
+     * Parse exceptions may contain a line (usually 1) and col location e.g.
+     * <pre>
+     * {
+     *     "msg" : "Error on line 1: Syntax error near 'error', expected 'EOF'
+     *     "col" : 2,
+     *     "line" : 1,
+     *     "type" : "sql",
+     *     "errorStr" : "A error B"
+     *   }
+     * </pre>
+     */
+    @RequiresNoPermission
+    @CSRF(CSRF.Method.NONE)
+    public class ParseCalculatedColumnAction extends ReadOnlyApiAction<ParseForm>
+    {
+        @Override
+        public Object execute(ParseForm form, BindException errors) throws Exception
+        {
+            if (errors.hasErrors())
+                return errors;
+            JSONObject result = new JSONObject(Map.of("success",true));
+            var requiredColumns = new HashSet<FieldKey>();
+            JdbcType jdbcType = JdbcType.OTHER;
+            try
+            {
+                var schema = DefaultSchema.get(getViewContext().getUser(), getViewContext().getContainer()).getUserSchema("core");
+                var table = new VirtualTable(schema.getDbSchema(), "EXPR", schema){};
+                ColumnInfo calculatedCol = QueryServiceImpl.get().createQueryExpressionColumn(table, new FieldKey(null, "expr"), form.getExpression(), null);
+                Map<FieldKey,ColumnInfo> columns = new HashMap<>();
+                for (var entry : form.getColumnMap().entrySet())
+                {
+                    BaseColumnInfo entryCol = new BaseColumnInfo(entry.getKey(), entry.getValue());
+                    columns.put(entry.getKey(), entryCol);
+                    table.addColumn(entryCol);
+                }
+                // TODO: calculating jdbcType still uses calculatedCol.getParentTable().getColumns()
+                QueryServiceImpl.get().bindQueryExpressionColumn(calculatedCol, columns, false, requiredColumns);
+                jdbcType = calculatedCol.getJdbcType();
+            }
+            catch (QueryException x)
+            {
+                JSONArray parseErrors = new JSONArray();
+                parseErrors.put(x.toJSON(form.getExpression()));
+                result.put("errors", parseErrors);
+            }
+            finally
+            {
+                if (!requiredColumns.isEmpty())
+                {
+                    JSONObject columnMap = new JSONObject();
+                    for (FieldKey fk : requiredColumns)
+                    {
+                        JdbcType type = Objects.requireNonNullElse(form.getColumnMap().get(fk), JdbcType.OTHER);
+                        columnMap.put(fk.toString(), type);
+                    }
+                    result.put("columnMap", columnMap);
+                }
+            }
+            result.put("jdbcType", jdbcType.name());
+            return result;
+        }
+    }
+
     public static class TestCase extends AbstractActionPermissionTest
     {
         @Override
@@ -8065,7 +8236,8 @@ public class QueryController extends SpringActionController
                 new ExportTablesAction(),
                 new SaveNamedSetAction(),
                 new DeleteNamedSetAction(),
-                new ApiTestAction()
+                new ApiTestAction(),
+                new GetDefaultVisibleColumnsAction()
             );
 
 
@@ -8262,7 +8434,7 @@ public class QueryController extends SpringActionController
 
             MutableSecurityPolicy securityPolicy = new MutableSecurityPolicy(SecurityPolicyManager.getPolicy(project1));
             securityPolicy.addRoleAssignment(withoutPermissions, EditorRole.class);
-            SecurityPolicyManager.savePolicy(securityPolicy, TestContext.get().getUser());
+            SecurityPolicyManager.savePolicyForTests(securityPolicy, TestContext.get().getUser());
 
             assertTrue("Should have insert permission", project1.hasPermission(withoutPermissions, InsertPermission.class));
             assertFalse("Should not have insert permission", project2.hasPermission(withoutPermissions, InsertPermission.class));

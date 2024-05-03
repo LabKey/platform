@@ -3090,6 +3090,14 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                     if (d.showValue) {
                         return geom.yAes.getValue(d) + d.y0;
                     }
+                }).append('title').text(function(d) {
+                    if (d.showValue) {
+                        // Issue 50054: stacked bar title value should be the total value
+                        return hoverFn({
+                            subLabel: d.subLabel,
+                            value: geom.yAes.getValue(d) + d.y0
+                        });
+                    }
                 });
 
         if (geom.clickFn) {

@@ -73,6 +73,7 @@ import org.labkey.api.settings.Theme;
 import org.labkey.api.stats.AnalyticsProvider;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.util.Button.ButtonBuilder;
+import org.labkey.api.util.DOM.Renderable;
 import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
@@ -149,10 +150,6 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.startsWith;
 import static org.labkey.api.util.DOM.A;
 import static org.labkey.api.util.DOM.Attribute.height;
-import static org.labkey.api.util.DOM.Attribute.href;
-import static org.labkey.api.util.DOM.Attribute.onclick;
-import static org.labkey.api.util.DOM.Attribute.onmouseout;
-import static org.labkey.api.util.DOM.Attribute.onmouseover;
 import static org.labkey.api.util.DOM.Attribute.style;
 import static org.labkey.api.util.DOM.Attribute.tabindex;
 import static org.labkey.api.util.DOM.Attribute.title;
@@ -421,6 +418,7 @@ public class PageFlowUtil
         StringBuilder js = new StringBuilder(s.length() + 10);
         js.append("'");
         int len = s.length();
+        char prev = 0;
         for (int i = 0 ; i<len ; i++)
         {
             char c = s.charAt(i);
@@ -430,7 +428,10 @@ public class PageFlowUtil
                     js.append("\\\\");
                     break;
                 case '/':
-                    js.append("\\/"); // JSONObject.toString() escapes '/'
+                    if (prev == '<')
+                        js.append("\\/"); // JSONObject.toString() escapes '/'
+                    else
+                        js.append('/');
                     break;
                 case '\n':
                     js.append("\\n");
@@ -454,6 +455,7 @@ public class PageFlowUtil
                     js.append(c);
                     break;
             }
+            prev = c;
         }
         js.append("'");
         return js.toString();
@@ -1438,7 +1440,7 @@ public class PageFlowUtil
         return new HelpPopupBuilder(helpText);
     }
 
-    public static HelpPopupBuilder popupHelp(@NotNull HtmlString helpHtml, String titleText)
+    public static HelpPopupBuilder popupHelp(@NotNull Renderable helpHtml, String titleText)
     {
         return new HelpPopupBuilder(helpHtml, titleText);
     }
@@ -1451,11 +1453,10 @@ public class PageFlowUtil
     {
         final String helpText;
         final String titleText;
-        final HtmlString helpHtml;
-        HtmlString linkHtml = HtmlString.unsafe("<span class=\"labkey-help-pop-up\">?</span>");
+        final Renderable helpHtml;
+        Renderable linkHtml = HtmlString.unsafe("<span class=\"labkey-help-pop-up\">?</span>");
         int width = 0;
         String onClickScript = null;
-        boolean inlineScript = false;
 
         HelpPopupBuilder(@NotNull String helpText)
         {
@@ -1464,14 +1465,14 @@ public class PageFlowUtil
             this.titleText = null;
         }
 
-        HelpPopupBuilder(@NotNull HtmlString helpHtml, String titleText)
+        HelpPopupBuilder(@NotNull Renderable helpHtml, String titleText)
         {
             this.helpHtml = helpHtml;
             this.helpText = null;
             this.titleText = titleText;
         }
 
-        public HelpPopupBuilder link(HtmlString linkHtml)
+        public HelpPopupBuilder link(Renderable linkHtml)
         {
             this.linkHtml = linkHtml;
             return this;
@@ -1486,13 +1487,6 @@ public class PageFlowUtil
         public HelpPopupBuilder script(String onClickScript)
         {
             this.onClickScript = onClickScript;
-            return this;
-        }
-
-        /* ONLY USE TO RENDER INTO JAVASCRIPT CODE */
-        public HelpPopupBuilder inlineScript()
-        {
-            this.inlineScript = true;
             return this;
         }
 
@@ -1516,17 +1510,14 @@ public class PageFlowUtil
         {
             Objects.requireNonNull(helpText);
 
-            String id = null;
             if (onClickScript == null)
                 onClickScript = popupShowScript;
 
-            if (!inlineScript)
-            {
-                var config = HttpView.currentPageConfig();
-                id = config.makeId("helpPopup");
-                config.addHandler(id, "click", onClickScript);
-            }
-            return DOM.createHtml(A(id(id).at(tabindex,"-1", title, helpText, style, "pointer: help").at(inlineScript, onclick, onClickScript), linkHtml));
+            var config = HttpView.currentPageConfig();
+            String id = config.makeId("helpPopup");
+            config.addHandler(id, "click", onClickScript);
+
+            return DOM.createHtml(A(id(id).at(tabindex,"-1", title, helpText, style, "pointer: help"), linkHtml));
         }
 
         private HtmlString htmlPopup()
@@ -1535,25 +1526,19 @@ public class PageFlowUtil
 
             String id = null;
 
-            if (!inlineScript)
+            var config = HttpView.currentPageConfig();
+            config.addHandlerForQuerySelector("A._helpPopup", "mouseout", popupHideScript);
+            config.addHandlerForQuerySelector("A._helpPopup", "mouseover", popupShowScript);
+            if (null == onClickScript)
             {
-                var config = HttpView.currentPageConfig();
-                config.addHandlerForQuerySelector("A._helpPopup", "mouseout", popupHideScript);
-                config.addHandlerForQuerySelector("A._helpPopup", "mouseover", popupShowScript);
-                if (null == onClickScript)
-                {
-                    config.addHandlerForQuerySelector("A._helpPopup", "click", popupShowScript);
-                }
-                else
-                {
-                    id = config.makeId("helpPopup");
-                    config.addHandler(id, "click", onClickScript);
-                }
+                config.addHandlerForQuerySelector("A._helpPopup", "click", popupShowScript);
+            }
+            else
+            {
+                id = config.makeId("helpPopup");
+                config.addHandler(id, "click", onClickScript);
             }
             return DOM.createHtml(A(id(id).cl("_helpPopup").at(tabindex,"-1", style, "cursor: help")
-                .at(inlineScript, onclick, null==onClickScript ? popupShowScript : onClickScript)
-                .at(inlineScript, onmouseout, popupHideScript)
-                .at(inlineScript, onmouseover, popupShowScript)
                 .data(width != 0, "popupwidth", width)
                 .data(isNotBlank(titleText),"popuptitle", titleText)
                 .data("popupcontent", helpHtml.toString()),

@@ -28,16 +28,14 @@ public abstract class StringWrapperDynaClass implements DynaClass
 {
     protected DynaProperty[] _dynaProps;
     protected Map<String, DynaProperty> _dynaPropMap;
-    protected Map<String, Class> _propTypes;
+    protected Map<String, Class<?>> _propTypes;
     protected String _name;
 
     /**
-     * Creates a basic wrapper dynaclass where all of the properties
-     * are strings. WARNING: currently does not deal with nested classes,
-     * mapped classes or arrays. Just simple property types.
+     * Creates a basic wrapper dynaclass where all the properties are strings.
+     * WARNING: currently does not deal with nested classes, mapped classes or arrays. Just simple property types.
      * <p/>
-     * NOTE: Extended classes MUST call init before returning from
-     * their constructor
+     * NOTE: Extended classes MUST call init before returning from their constructor
      */
     protected StringWrapperDynaClass()
     {
@@ -49,7 +47,7 @@ public abstract class StringWrapperDynaClass implements DynaClass
      * @param className Class name for this dynaClass
      * @param propTypes Maps prop names to Class objects for the true class of each object.
      */
-    protected void init(String className, Map<String, Class> propTypes)
+    protected void init(String className, Map<String, Class<?>> propTypes)
     {
         _propTypes = propTypes;
         _name = className;
@@ -60,7 +58,7 @@ public abstract class StringWrapperDynaClass implements DynaClass
         {
             if ("class".equals(key))
                 continue;
-            Class propClass = propTypes.get(key);
+            Class<?> propClass = propTypes.get(key);
 
             DynaProperty dynaProp = new DynaProperty(key, String.class);
             dynaPropList.add(dynaProp);
@@ -81,7 +79,7 @@ public abstract class StringWrapperDynaClass implements DynaClass
         return _dynaPropMap.get(arg0);
     }
 
-    public Class getTruePropType(String propName)
+    public Class<?> getTruePropType(String propName)
     {
         return _propTypes.get(propName);
     }
@@ -100,5 +98,4 @@ public abstract class StringWrapperDynaClass implements DynaClass
     {
         return propName;
     }
-
-} 
+}

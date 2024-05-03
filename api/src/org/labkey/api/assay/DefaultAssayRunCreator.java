@@ -99,10 +99,6 @@ import java.util.stream.Collectors;
 
 import static java.util.Collections.unmodifiableCollection;
 
-/**
- * User: jeckels
- * Date: Oct 12, 2011
- */
 public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> implements AssayRunCreator<ProviderType>
 {
     private static final Logger LOG = LogManager.getLogger(DefaultAssayRunCreator.class);
@@ -164,7 +160,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             exp = saveExperimentRun(context, exp, run, false);
 
-            // re-fetch the run after is has been fully constructed
+            // re-fetch the run after it has been fully constructed
             run = ExperimentService.get().getExpRun(run.getRowId());
 
             context.uploadComplete(run);

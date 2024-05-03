@@ -341,7 +341,7 @@ public class SearchController extends SpringActionController
             }
             else if (form.isDelete())
             {
-                ss.deleteIndex();
+                ss.deleteIndex("a site admin requested it");
                 ss.start();
                 SearchPropertyManager.audit(getUser(), "Index Deleted");
                 _msgid = 1;
@@ -553,7 +553,7 @@ public class SearchController extends SpringActionController
             {
                 if (form.isFull())
                 {
-                    ss.indexFull(true);
+                    ss.indexFull(true, "a site admin requested it");
                 }
                 else if (form.isSince())
                 {

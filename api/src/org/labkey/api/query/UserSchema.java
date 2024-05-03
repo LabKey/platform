@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.BoundMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
+import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -200,9 +201,17 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
             // throw if there are any non-warning errors
             for (QueryException ex : errors)
             {
+                // I'm not sure what errors get put in this list.  However, a better (more expected) pattern would be either
+                // a) throw errors and collect warnings or b) collect them separately.  Anyway...
                 if (ex instanceof QueryParseException qpe && qpe.isWarning())
-                    continue;
-                throw ex;
+                {
+                    if (table instanceof AbstractTableInfo ati)
+                        ati.addWarning(qpe);
+                }
+                else
+                {
+                    throw ex;
+                }
             }
             if (null != table && !forWrite)
                 table.setLocked(true);

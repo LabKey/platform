@@ -25,11 +25,6 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 
-/*
-* User: adam
-* Date: Mar 9, 2011
-* Time: 10:26:44 PM
-*/
 public interface WritableIndexManager
 {
     void deleteDocument(String id);

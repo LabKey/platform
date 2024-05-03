@@ -20,6 +20,7 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.query.ValidationException;
 
 import java.io.File;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -56,7 +57,7 @@ public interface PlateReader
      * @return
      * @throws ExperimentException
      */
-    Map<String, double[][]> loadMultiGridFile(Plate template, File dataFile) throws ExperimentException;
+    List<PlateUtils.GridInfo> loadMultiGridFile(Plate template, File dataFile) throws ExperimentException;
 
     /**
      * Determines whether the specified well value should be used in any analytical calculations

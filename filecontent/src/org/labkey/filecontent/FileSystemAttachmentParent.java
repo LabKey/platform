@@ -127,7 +127,12 @@ public class FileSystemAttachmentParent implements AttachmentDirectory
             if (_contentType != null && !svc.isCloudRoot(container))    // don't need @files in cloud
             {
                 Path root = dir.resolve(svc.getFolderName(_contentType));
-                FileUtil.createDirectories(root);
+
+                // Issue 49963: avoid FileAlreadyExistsExceptions on certain file systems
+                if (!Files.exists(root) && Files.isWritable(dir))
+                {
+                    FileUtil.createDirectories(root);
+                }
                 return root;
             }
             return dir;

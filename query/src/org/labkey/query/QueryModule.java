@@ -72,7 +72,6 @@ import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.SummaryStatisticRegistry;
 import org.labkey.api.util.JspTestCase;
@@ -134,7 +133,6 @@ import java.util.List;
 import java.util.Set;
 
 import static org.labkey.api.query.QueryService.USE_ROW_BY_ROW_UPDATE;
-
 
 public class QueryModule extends DefaultModule
 {
@@ -233,8 +231,6 @@ public class QueryModule extends DefaultModule
                 "Allow for lookup fields in product projects to query across all folders within the top-level folder.", false);
         AdminConsole.addExperimentalFeatureFlag(QueryServiceImpl.EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED, "Product projects display project-specific data",
                 "Only list project-specific data within product projects.", false);
-        AdminConsole.addExperimentalFeatureFlag(QueryServiceImpl.CROSS_PROJECT_IMPORT_ENABLED, "Cross project file import",
-                "Allow import of sample data across projects", false);
     }
 
 
@@ -326,6 +322,7 @@ public class QueryModule extends DefaultModule
         }
 
         QueryManager.registerUsageMetrics(getName());
+        ReportServiceImpl.registerUsageMetrics(getName());
 
         // Administrators, Platform Developers, and Trusted Analysts can edit queries, if they also have edit permissions in the current folder
         RoleManager.registerPermission(new EditQueriesPermission());
@@ -367,6 +364,8 @@ public class QueryModule extends DefaultModule
         ret.add(new JspTestCase("/org/labkey/query/olap/OlapTestCase.jsp"));
         ret.add(new JspTestCase("/org/labkey/query/QueryServiceImplTestCase.jsp"));
         ret.add(new JspTestCase("/org/labkey/query/QueryTestCase.jsp"));
+        ret.add(new JspTestCase("/org/labkey/query/sql/CalculatedColumnTestCase.jsp"));
+
         return ret;
     }
 
@@ -410,12 +409,10 @@ public class QueryModule extends DefaultModule
         json.put("hasEditQueriesPermission", hasEditQueriesPermission);
         Container container = context.getContainer();
         boolean isProductProjectsEnabled = container != null && container.isProductProjectsEnabled();  // TODO: should these be moved to CoreModule?
-        json.put(QueryService.PRODUCT_PROJECTS_ENABLED, container != null && container.isProductProjectsEnabled());
+        json.put(QueryService.PRODUCT_PROJECTS_ENABLED, isProductProjectsEnabled);
         json.put(QueryService.PRODUCT_PROJECTS_EXIST, isProductProjectsEnabled && container.hasProductProjects());
         json.put(QueryService.EXPERIMENTAL_PRODUCT_ALL_FOLDER_LOOKUPS, QueryService.get().isProductProjectsAllFolderScopeEnabled());
         json.put(QueryService.EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED, QueryService.get().isProductProjectsDataListingScopedToProject());
-        json.put(QueryService.CROSS_PROJECT_IMPORT_ENABLED, QueryService.get().isCrossProjectsImportEnabled(container));
-
         return json;
     }
 }

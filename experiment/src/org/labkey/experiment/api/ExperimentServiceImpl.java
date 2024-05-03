@@ -64,6 +64,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ConvertHelper;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
@@ -199,7 +200,6 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
-import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Dataset;
@@ -278,6 +278,8 @@ import static java.util.stream.Collectors.toSet;
 import static org.labkey.api.data.CompareType.IN;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTROLLBACK;
+import static org.labkey.api.data.NameGenerator.EXPERIMENTAL_ALLOW_GAP_COUNTER;
+import static org.labkey.api.data.NameGenerator.EXPERIMENTAL_WITH_COUNTER;
 import static org.labkey.api.exp.OntologyManager.getTinfoObject;
 import static org.labkey.api.exp.XarContext.XAR_JOB_ID_NAME;
 import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ExperimentRun;
@@ -4751,15 +4753,15 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         new SqlExecutor(getSchema()).execute(deleteSql);
     }
 
-    public static Map<String, Collection<Map<String, Object>>> partitionRequestedOperationObjects(Collection<Integer> requestIds, Collection<Integer> notPermittedIds, List<? extends ExpRunItem> allData)
+    public static Map<String, Collection<Map<String, Object>>> partitionRequestedOperationObjects(Collection<Integer> requestIds, Collection<Integer> notAllowedIds, List<? extends ExpRunItem> allData)
     {
-        List<Integer> permittedIds = new ArrayList<>(requestIds);
-        permittedIds.removeAll(notPermittedIds);
+        List<Integer> allowedIds = new ArrayList<>(requestIds);
+        allowedIds.removeAll(notAllowedIds);
         List<Map<String, Object>> allowedRows = new ArrayList<>();
         List<Map<String, Object>> notAllowedRows = new ArrayList<>();
         allData.forEach((dataObject) -> {
             Map<String, Object> rowMap = Map.of("RowId", dataObject.getRowId(), "Name", dataObject.getName(), "ContainerPath", dataObject.getContainer().getPath());
-            if (permittedIds.contains(dataObject.getRowId()))
+            if (allowedIds.contains(dataObject.getRowId()))
                 allowedRows.add(rowMap);
             else
                 notAllowedRows.add(rowMap);
@@ -9114,63 +9116,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             return null;
     }
 
-    @Override
-    @Nullable
-    public Collection<Integer> getIdsNotPermitted(@NotNull User user, @NotNull Collection<Integer> rowIds, @NotNull String schemaName, @Nullable Class<? extends Permission> permissionClass)
-    {
-        if (permissionClass == null)
-            return null;
-
-        // get the set of containers involved and find the ones the user does not have requisite permissions to
-        List<Container> containers = getUniqueContainers(rowIds, schemaName);
-        if (containers == null)
-            return null;
-
-        List<Container> notPermittedContainers = containers.stream().filter(container -> !container.hasPermission(user, permissionClass)).toList();
-        if (notPermittedContainers.isEmpty())
-            return Collections.emptyList();
-
-        // select the data where the containers are in the notPermitted set
-        TableInfo tableInfo = getTableInfo(schemaName);
-        if (tableInfo == null)
-            return null;
-
-        DbSchema expSchema = DbSchema.get("exp", DbSchemaType.Module);
-        SqlDialect dialect = expSchema.getSqlDialect();
-
-        SQLFragment notPermittedIdsSql = new SQLFragment()
-                .append(" SELECT RowId FROM ")
-                .append(tableInfo, "t")
-                .append("\nWHERE Container  ");
-        dialect.appendInClauseSql(notPermittedIdsSql, notPermittedContainers.stream().map(Container::getEntityId).toList());
-        notPermittedIdsSql
-                .append("\nAND RowId ");
-        dialect.appendInClauseSql(notPermittedIdsSql, rowIds);
-        return new SqlSelector(expSchema, notPermittedIdsSql).getArrayList(Integer.class);
-    }
-
-    public static List<Container> getUniqueContainers(Collection<Integer> rowIds, String schemaName)
-    {
-        DbSchema expSchema = DbSchema.get("exp", DbSchemaType.Module);
-        SqlDialect dialect = expSchema.getSqlDialect();
-
-        TableInfo tableInfo = getTableInfo(schemaName);
-        if (tableInfo == null)
-            return null;
-
-        SQLFragment containerSql = new SQLFragment()
-                .append(" SELECT c.EntityId FROM\n")
-                .append("  (SELECT DISTINCT container FROM ")
-                .append(tableInfo, "t")
-                .append("\nWHERE RowId ");
-        dialect.appendInClauseSql(containerSql, rowIds);
-        containerSql.append(") t1\n")
-                .append("  JOIN core.containers c ON t1.container = c.entityId");
-        List<String> containerIds = new SqlSelector(expSchema, containerSql).getArrayList(String.class);
-        return containerIds.stream().map(ContainerManager::getForId).toList();
-    }
-
-
     public static Pair<Integer, Integer> getCurrentAndCrossFolderDataCount(Collection<Integer> rowIds, String dataType, Container container)
     {
         DbSchema expSchema = DbSchema.get("exp", DbSchemaType.Module);
@@ -9712,6 +9657,19 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         QueryChangeListener.QueryPropertyChange.handleSchemaNameChange(oldSchema.toString(), newSchema.toString(), newSchema, user, container);
     }
 
+    @Override
+    public boolean useStrictCounter()
+    {
+        if (CoreSchema.getInstance().getSqlDialect().isSqlServer())
+        {
+            return AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_WITH_COUNTER);
+        }
+        else
+        {
+            return !AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_ALLOW_GAP_COUNTER);
+        }
+    }
+
     public static class TestCase extends Assert
     {
         final Logger log = LogManager.getLogger(ExperimentServiceImpl.class);
@@ -10071,6 +10029,53 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 new SqlExecutor(getExpSchema()).execute(new SQLFragment(
                         "DELETE FROM " + tableName + " WHERE fromObjectId=? AND toObjectId=?", AZ, QQ));
             }
+        }
+    }
+
+    public static class ParseInputOutputAliasTestCase extends Assert
+    {
+        @Test
+        public void nullCases()
+        {
+            assertNull(ExperimentService.parseInputOutputAlias(""));
+            assertNull(ExperimentService.parseInputOutputAlias(" "));
+            assertNull(ExperimentService.parseInputOutputAlias("bogus"));
+            assertNull(ExperimentService.parseInputOutputAlias(ExpData.DATA_INPUT_PARENT));
+            assertNull(ExperimentService.parseInputOutputAlias(ExpData.DATA_OUTPUT_CHILD));
+            assertNull(ExperimentService.parseInputOutputAlias(ExpMaterial.MATERIAL_INPUT_PARENT));
+            assertNull(ExperimentService.parseInputOutputAlias(ExpMaterial.MATERIAL_OUTPUT_CHILD));
+        }
+
+        @Test
+        public void nonNullCases()
+        {
+            nonNullCases(ExpData.DATA_INPUT_PARENT);
+            nonNullCases(ExpData.DATA_OUTPUT_CHILD);
+            nonNullCases(ExpMaterial.MATERIAL_INPUT_PARENT);
+            nonNullCases(ExpMaterial.MATERIAL_OUTPUT_CHILD);
+        }
+
+        private void nonNullCases(String prefix)
+        {
+            Pair<String, String> pair = ExperimentService.parseInputOutputAlias(prefix + "/foo");
+            assertEquals(prefix, pair.first);
+            assertEquals("foo", pair.second);
+
+            pair = ExperimentService.parseInputOutputAlias(prefix + "/foo.bar");
+            assertEquals(prefix, pair.first);
+            assertEquals("foo.bar", pair.second);
+
+            pair = ExperimentService.parseInputOutputAlias(prefix + "/foo$Pbar");
+            assertEquals(prefix, pair.first);
+            assertEquals("foo$Pbar", pair.second);
+
+            pair = ExperimentService.parseInputOutputAlias(prefix + "/foo/bar");
+            assertEquals(prefix, pair.first);
+            assertEquals("foo/bar", pair.second);
+
+            pair = ExperimentService.parseInputOutputAlias(prefix + "/foo$Sbar");
+            assertEquals(prefix, pair.first);
+            assertEquals("foo$Sbar", pair.second);
         }
     }
 

@@ -280,7 +280,7 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
         }
 
         @Override
-        public @NotNull SQLFragment getFromSQL(String alias, Set<FieldKey> fieldKeys)
+        public @NotNull SQLFragment getFromSQLExpanded(String alias, Set<FieldKey> fieldKeys)
         {
             if (null == fieldKeys)
                 getFromSQL(alias);

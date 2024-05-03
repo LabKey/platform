@@ -7,7 +7,6 @@ import java.util.Arrays;
 
 import static org.labkey.api.util.DOM.Attribute.id;
 import static org.labkey.api.util.DOM.Attribute.method;
-import static org.labkey.api.util.DOM.Attribute.onclick;
 import static org.labkey.api.util.DOM.Attribute.selected;
 import static org.labkey.api.util.DOM.DIV;
 import static org.labkey.api.util.DOM.Element;
@@ -44,11 +43,6 @@ public class DomTestCase extends Assert
                             "Hello Seattle"),
                     "A&B"));
         assertEquals("<div><h1 id=\"header1\">Hello&nbsp;World</h1><h2 id=\"header2\">Hello Seattle</h2>A&amp;B</div>", h.toString());
-
-        h = createHtml(
-                SPAN(at(onclick, "alert('hello world')"),
-                        HtmlString.unsafe(">>here&lt;&lt")));
-        assertEquals("<span onclick=\"alert(&#039;hello world&#039;)\">>>here&lt;&lt</span>", h.toString());
 
         h = createHtml(
                 SPAN(cl("a","b","c"),

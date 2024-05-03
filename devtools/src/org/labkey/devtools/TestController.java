@@ -63,7 +63,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import static org.labkey.api.util.DOM.Attribute.*;
+import static org.labkey.api.util.DOM.Attribute.name;
+import static org.labkey.api.util.DOM.Attribute.src;
+import static org.labkey.api.util.DOM.Attribute.style;
+import static org.labkey.api.util.DOM.Attribute.type;
+import static org.labkey.api.util.DOM.Attribute.value;
 import static org.labkey.api.util.DOM.BR;
 import static org.labkey.api.util.DOM.DIV;
 import static org.labkey.api.util.DOM.IFRAME;
@@ -806,11 +810,11 @@ public class TestController extends SpringActionController
             if (isPost())
             {
                 Button.ButtonBuilder button = PageFlowUtil.button(form.getText())
-                        .href(form.getHref())
-                        .enabled(form.isEnabled())
-                        .disableOnClick(form.isDisableonclick())
-                        .submit(form.isButtonsubmit())
-                        .onClick(form.getOnclick());
+                    .href(form.getHref())
+                    .enabled(form.isEnabled())
+                    .disableOnClick(form.isDisableonclick())
+                    .submit(form.isButtonsubmit())
+                    .onClick(form.getOnclick());
 
                 Map<String, String> map = new LinkedHashMap<>();
                 // test that the attribute looks like an attribute (e.g. no special chars)

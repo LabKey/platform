@@ -112,7 +112,8 @@ public class NameGenerator
     public static final Pattern WITH_COUNTER_PATTERN = Pattern.compile(WITH_COUNTER_REGEX, Pattern.CASE_INSENSITIVE);
     public static final String WITH_COUNTER_NO_GAP_PARAM = "NoGap"; // named parameter to enforce continuity in sequence
 
-    public static final String EXPERIMENTAL_WITH_COUNTER = "UseStrictIncrementCounter";
+    public static final String EXPERIMENTAL_WITH_COUNTER = "UseStrictIncrementCounter"; // sql server
+    public static final String EXPERIMENTAL_ALLOW_GAP_COUNTER = "AllowCounterGap"; // postgres
 
     /**
      * Examples:
@@ -345,7 +346,7 @@ public class NameGenerator
         _previewName = previewName;
     }
 
-    public static NameExpressionValidationResult getValidationMessages(@Nullable String currentDataTypeName, @NotNull String nameExpression, @Nullable List<? extends GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, @NotNull Container container)
+    public static NameExpressionValidationResult getValidationMessages(@Nullable TableInfo tableInfo, @Nullable String currentDataTypeName, @NotNull String nameExpression, @Nullable List<? extends GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, @NotNull Container container)
     {
         List<String> errorMessages = getMismatchedTagErrors(nameExpression);
         Pair<List<String>, List<String>> reservedFieldResults = getReservedFieldValidationResults(nameExpression);
@@ -356,15 +357,15 @@ public class NameGenerator
 
         warningMessages.addAll(getFieldMissingBracesWarnings(nameExpression, properties, importAliases));
 
-        NameExpressionValidationResult fieldMessages = getSubstitutionPartValidationResults(nameExpression, properties, importAliases, container, currentDataTypeName);
+        NameExpressionValidationResult fieldMessages = getSubstitutionPartValidationResults(nameExpression, tableInfo, properties, importAliases, container, currentDataTypeName);
         errorMessages.addAll(fieldMessages.errors());
         warningMessages.addAll(fieldMessages.warnings());
         return new NameExpressionValidationResult(errorMessages, warningMessages, fieldMessages.previews());
     }
 
-    static NameExpressionValidationResult getSubstitutionPartValidationResults(@NotNull String nameExpression, @Nullable List<? extends GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, @NotNull Container container, @Nullable String currentDataTypeName)
+    static NameExpressionValidationResult getSubstitutionPartValidationResults(@NotNull String nameExpression, @Nullable TableInfo tableInfo, @Nullable List<? extends GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, @NotNull Container container, @Nullable String currentDataTypeName)
     {
-        NameGenerator generator = new NameGenerator(nameExpression, null,true, importAliases, container, null, null, true, properties, currentDataTypeName);
+        NameGenerator generator = new NameGenerator(nameExpression, tableInfo,true, importAliases, container, null, null, true, properties, currentDataTypeName);
         return new NameExpressionValidationResult(generator.getSyntaxErrors(), generator.getSyntaxWarnings(), generator.getPreviewName() != null ? Collections.singletonList(generator.getPreviewName()) : null);
     }
 
@@ -997,9 +998,13 @@ public class NameGenerator
                                     ColumnInfo col = _parentTable.getColumn(fieldName);
                                     isColPresent = col != null;
                                     if (isColPresent)
+                                    {
                                         pt = col.getPropertyType();
+                                        if (pt == null)
+                                            pt = PropertyType.getFromJdbcType(col.getJdbcType());
+                                    }
                                 }
-                                else if (!domainFields.isEmpty())
+                                if (!isColPresent && !domainFields.isEmpty())
                                 {
                                     GWTPropertyDescriptor col = domainFields.get(fieldName);
                                     isColPresent = col != null;
@@ -1162,11 +1167,13 @@ public class NameGenerator
                         {
                             lookupExist = true;
                             pt = lookupCol.getPropertyType();
+                            if (pt == null)
+                                pt = PropertyType.getFromJdbcType(lookupCol.getJdbcType());
                         }
 
                     }
                 }
-                else if (_validateSyntax && !domainFields.isEmpty())
+                if (!lookupExist && _validateSyntax && !domainFields.isEmpty())
                 {
                     GWTPropertyDescriptor col = domainFields.get(root);
                     if (col != null)
@@ -2395,11 +2402,11 @@ public class NameGenerator
         {
             String prefix = prefixRaw.trim().toLowerCase(); // Issue 49338: withCounter should be case-insensitive
             DbSequence counterSeq = null;
-            if (noCache || !counterSequences.containsKey(prefix) || _strictIncremental)
+            if (noCache || !counterSequences.containsKey(prefix))
             {
                 long existingCount = -1;
 
-                if (_strictIncremental || AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_WITH_COUNTER))
+                if (_strictIncremental || ExperimentService.get().useStrictCounter())
                 {
                     counterSeq = DbSequenceManager.getReclaimable(_container, _counterSeqPrefix + prefix, 0);
                 }
@@ -2446,7 +2453,7 @@ public class NameGenerator
                 boolean noCache = counterSequences == null;
                 DbSequence counterSeq = null;
 
-                if (_strictIncremental || AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_WITH_COUNTER))
+                if (_strictIncremental || ExperimentService.get().useStrictCounter())
                 {
                     synchronized (this)
                     {
@@ -2935,7 +2942,7 @@ public class NameGenerator
         private void validateNameResult(String expression, NameExpressionValidationResult expectedResult, @Nullable Map<String, String> importAliases, @Nullable List<GWTPropertyDescriptor> fields)
         {
             Container c = JunitUtil.getTestContainer();
-            NameExpressionValidationResult results = getValidationMessages("SampleTypeBeingCreated", expression, fields, importAliases, c);
+            NameExpressionValidationResult results = getValidationMessages(ExperimentService.get().getTinfoMaterial(), "SampleTypeBeingCreated", expression, fields, importAliases, c);
             assertEquals(expectedResult, results);
         }
 
@@ -2978,7 +2985,7 @@ public class NameGenerator
         @Test
         public void testNameExpressionLookupFieldErrors()
         {
-            validateNameResult("One-${A/B/C}", withErrors("Only one level of lookup is supported: A/B/C.", "Parent table is required for name expressions with lookups: A/B/C."));
+            validateNameResult("One-${A/B/C}", withErrors("Only one level of lookup is supported: A/B/C."));
 
             validateNameResult("S-${parentAlias/a/b}", withErrors("Only one level of lookup is supported for lineage input: parentAlias/a/b."), Collections.singletonMap("parentAlias", "MaterialInputs/SampleTypeA"));
 
@@ -3100,6 +3107,11 @@ public class NameGenerator
             verifyPreview("S-${sampleCount}", "S-240");
             verifyPreview("S-${sampleCount:minValue(500)}", "S-500");
             verifyPreview("S-${rootSampleCount:minValue(800)}", "S-800");
+
+            // Issue 49855: with exp.material built-in fields
+            verifyPreview("S-${MaterialExpDate}", "S-2021-04-28 08:30:00");
+            verifyPreview("S-${SampleState}", "S-3");
+            verifyPreview("S-${SampleState/Label}", "S-LabelValue");
 
             // withCounter
             verifyPreview("${${AliquotedFrom}-:withCounter}", "Sample112-1");

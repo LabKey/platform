@@ -115,7 +115,7 @@ public class Query
     /* Whenever a RelationColumn with a new unique name is created, add it should be added to this map */
     final public Map<String, AbstractQueryRelation.RelationColumn> _mapUniqueNamesToRelationColumn = new HashMap<>();
 
-    public Query(@NotNull QuerySchema schema)
+    public Query(QuerySchema schema)
     {
         _schema = schema;
         _queryName = null;

@@ -15,6 +15,8 @@
  */
 package org.labkey.api.view;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.security.permissions.Permission;
@@ -26,8 +28,6 @@ import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.springframework.web.servlet.View;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
@@ -36,9 +36,8 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * An element that can be displayed within a page. Handles showing/hiding based
- * on the permissions of the current user, so that the same element can be reused
- * and rendered appropriately for different users.
+ * An element that can be displayed within a page. Handles showing/hiding based on the permissions of the current user,
+ * so that the same element can be reused and rendered appropriately for different users.
  */
 public abstract class DisplayElement implements View, Cloneable
 {
@@ -85,7 +84,6 @@ public abstract class DisplayElement implements View, Cloneable
         return _visible;
     }
 
-
     public void setVisible(boolean visible)
     {
         checkLocked();
@@ -112,12 +110,10 @@ public abstract class DisplayElement implements View, Cloneable
         return writer.toString();
     }
 
-
     public String getCaption(RenderContext ctx)
     {
         return null == _caption ? null : _caption.eval(ctx);
     }
-
 
     @Nullable
     public String getCaption()
@@ -125,14 +121,12 @@ public abstract class DisplayElement implements View, Cloneable
         return null == _caption ? null : _caption.getSource();
     }
 
-
     public void setCaption(String caption)
     {
         checkLocked();
         _caption = caption == null ? null : StringExpressionFactory.create(caption);
         assert (_caption == null && caption == null) || (_caption != null && _caption.toString().equals(caption)) : "Caption expression '" + _caption + "' doesn't match caption '" + caption + "'";
     }
-
 
     public String getCaptionExpr()
     {
@@ -149,7 +143,6 @@ public abstract class DisplayElement implements View, Cloneable
         render((RenderContext)map, request, response);
     }
 
-    
     /**
      * org.springframework.framework.web.View
      */
@@ -157,7 +150,6 @@ public abstract class DisplayElement implements View, Cloneable
     {
         render(ctx, response.getWriter());
     }
-
 
     // This is not WebPartView.renderView() */
     public void renderView(Map model, Writer out) throws IOException
@@ -173,9 +165,7 @@ public abstract class DisplayElement implements View, Cloneable
         render(ctx, out);
     }
 
-
     public abstract void render(RenderContext ctx, Writer out) throws IOException;
-
 
     public void lock()
     {

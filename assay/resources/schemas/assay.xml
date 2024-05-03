@@ -90,6 +90,8 @@
       </column>
       <column columnName="Template">
         <description>Boolean indicating whether each plate is a template versus an uploaded instance of a plate template.</description>
+        <isHidden>true</isHidden>
+        <isUserEditable>false</isUserEditable>
         <shownInUpdateView>false</shownInUpdateView>
       </column>
       <column columnName="DataFileId">
@@ -98,6 +100,10 @@
       </column>
       <column columnName="AssayType">
         <description>A text label of the plate assay type ("NAb", for example).</description>
+      </column>
+      <column columnName="Archived">
+        <isHidden>true</isHidden>
+        <isUserEditable>false</isUserEditable>
       </column>
     </columns>
   </table>
@@ -210,6 +216,10 @@
         </description>
         <isHidden>true</isHidden>
       </column>
+      <column columnName="Template">
+        <isHidden>true</isHidden>
+        <isUserEditable>false</isUserEditable>
+      </column>
     </columns>
   </table>
   <table tableName="PlateType" tableDbType="TABLE">
@@ -241,6 +251,9 @@
       <column columnName="RowId"/>
       <column columnName="RunId"/>
       <column columnName="WellLsid"/>
+      <column columnName="PlateSetPath">
+        <isHidden>true</isHidden>
+      </column>
     </columns>
   </table>
 </tables>

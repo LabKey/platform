@@ -63,7 +63,7 @@ public abstract class AbstractAuditHandler implements AuditHandler
     }
 
     @Override
-    public void addAuditEvent(User user, Container c, TableInfo table, @Nullable AuditBehaviorType auditType, @Nullable String userComment, QueryService.AuditAction action, List<Map<String, Object>> rows, @Nullable List<Map<String, Object>> existingRows)
+    public void addAuditEvent(User user, Container c, TableInfo table, @Nullable AuditBehaviorType auditType, @Nullable String userComment, QueryService.AuditAction action, List<Map<String, Object>> rows, @Nullable List<Map<String, Object>> existingRows, boolean useTransactionAuditCache)
     {
         if (table.supportsAuditTracking())
         {
@@ -152,13 +152,13 @@ public abstract class AbstractAuditHandler implements AuditHandler
                         batch.add(event);
                         if (batch.size() > 1000)
                         {
-                            auditLog.addEvents(user, batch);
+                            auditLog.addEvents(user, batch, useTransactionAuditCache);
                             batch.clear();
                         }
                     }
                     if (batch.size() > 0)
                     {
-                        auditLog.addEvents(user, batch);
+                        auditLog.addEvents(user, batch, useTransactionAuditCache);
                         batch.clear();
                     }
                     break;

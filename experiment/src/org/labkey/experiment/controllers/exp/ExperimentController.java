@@ -139,6 +139,7 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.DesignDataClassPermission;
 import org.labkey.api.security.permissions.DesignSampleTypePermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.SampleWorkflowDeletePermission;
 import org.labkey.api.security.permissions.TroubleshooterPermission;
@@ -179,6 +180,7 @@ import org.labkey.api.view.DataViewSnapshotSelectionForm;
 import org.labkey.api.view.DetailsView;
 import org.labkey.api.view.HBox;
 import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.InsertView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -3481,8 +3483,24 @@ public class ExperimentController extends SpringActionController
 
             Map<String, Collection<Map<String, Object>>> response = ExperimentServiceImpl.partitionRequestedOperationObjects(requestIds, notAllowedIds, allData);
 
-            Collection<Integer> notPermittedIds = service.getIdsNotPermitted(getUser(), requestIds, "exp.data", form.getDataOperation().getPermissionClass());
-            response.put("notPermitted", notPermittedIds == null ? Collections.emptyList(): notPermittedIds.stream().map(id -> Map.of("RowId", (Object) id)).toList());
+            Collection<Container> containers = new HashSet<>();
+            Collection<Integer> notPermittedIds = new ArrayList<>();
+            Class<? extends Permission> permClass = form.getDataOperation().getPermissionClass();
+            for (ExpDataImpl expData : allData)
+            {
+                Container c = expData.getContainer();
+                containers.add(c);
+                if (permClass != null && !c.hasPermission(getUser(), permClass))
+                    notPermittedIds.add(expData.getRowId());
+            }
+
+            response.put("containers", containers.stream().map(c -> Map.of(
+                    "id", c.getEntityId(),
+                    "path", (Object) c.getPath(),
+                    "permitted", permClass == null || c.hasPermission(getUser(), permClass)
+            )).toList());
+
+            response.put("notPermitted", notPermittedIds.stream().map(id -> Map.of("RowId", (Object) id)).toList());
 
             return success(response);
         }
@@ -3536,9 +3554,24 @@ public class ExperimentController extends SpringActionController
 
             Map<String, Collection<Map<String, Object>>> response = ExperimentServiceImpl.partitionRequestedOperationObjects(requestIds, notAllowedIds, allMaterials);
 
-            Collection<Integer> notPermittedIds = service.getIdsNotPermitted(getUser(), requestIds, SamplesSchema.SCHEMA_NAME, form.getSampleOperation().getPermissionClass());
+            Collection<Container> containers = new HashSet<>();
+            Collection<Integer> notPermittedIds = new ArrayList<>();
+            Class<? extends Permission> permClass = form.getSampleOperation().getPermissionClass();
+            for (ExpMaterial material : allMaterials)
+            {
+                Container c = material.getContainer();
+                containers.add(c);
+                if (permClass != null && !c.hasPermission(getUser(), permClass))
+                    notPermittedIds.add(material.getRowId());
+            }
 
-            response.put("notPermitted", notPermittedIds == null ? Collections.emptyList() : notPermittedIds.stream().map(id -> Map.of("RowId", (Object) id)).toList());
+            response.put("containers", containers.stream().map(c -> Map.of(
+                    "id", c.getEntityId(),
+                    "path", (Object) c.getPath(),
+                    "permitted", permClass == null || c.hasPermission(getUser(), permClass)
+            )).toList());
+
+            response.put("notPermitted", notPermittedIds.stream().map(id -> Map.of("RowId", (Object) id)).toList());
 
             if (form.getSampleOperation() == SampleTypeService.SampleOperations.Delete)
                 // String 'associatedDatasets' must be synced to its handling in confirmDelete.js, confirmDelete()
@@ -6073,19 +6106,29 @@ public class ExperimentController extends SpringActionController
             ActionURL moveURL = new ActionURL(MoveRunsAction.class, getContainer());
             PipelineRootContainerTree ct = new PipelineRootContainerTree(getUser(), moveURL)
             {
+                private boolean _clickHandlerRegistered = false;
+
                 @Override
                 protected void renderCellContents(StringBuilder html, Container c, ActionURL url, boolean hasRoot)
                 {
-                    if (hasRoot && !c.equals(getContainer()))
+                    boolean renderLink = hasRoot && !c.equals(getContainer());
+
+                    if (renderLink)
                     {
-                        html.append("<a href=\"javascript:moveTo('");
-                        html.append(c.getId());
-                        html.append("')\">");
+                        html.append("<a class=\"move-target-container\" data-objectid=\"");
+                        html.append(PageFlowUtil.filter(c.getId()));
+                        html.append("\">");
                     }
                     html.append(PageFlowUtil.filter(c.getName()));
-                    if (hasRoot)
+                    if (renderLink)
                     {
                         html.append("</a>");
+                    }
+
+                    if (!_clickHandlerRegistered)
+                    {
+                        HttpView.currentPageConfig().addHandlerForQuerySelector("a.move-target-container", "click", "moveTo(this.attributes.getNamedItem('data-objectid').value);" );
+                        _clickHandlerRegistered = true;
                     }
                 }
             };

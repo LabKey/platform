@@ -31,7 +31,6 @@ import org.labkey.api.assay.TsvDataHandler;
 import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.assay.actions.ProtocolIdForm;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
-import org.labkey.api.assay.plate.PlateMetadataDataHandler;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.exp.ExperimentDataHandler;
@@ -307,7 +306,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             File runData = new File(scriptDir, RUN_DATA_FILE);
             result.add(runData);
 
-            AssayPlateMetadataService svc = AssayPlateMetadataService.getService(PlateMetadataDataHandler.DATA_TYPE);
+            AssayPlateMetadataService svc = AssayPlateMetadataService.get();
             if (svc != null)
             {
                 ExpProtocol protocol = run.getProtocol();
@@ -610,8 +609,12 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 throw exception;
             }
 
-            if(null != warning)
-                result.setWarnings(HtmlString.unsafe(warning)); // Issue 49370
+            if (null != warning)
+            {
+                // Issue 49370: we expect the warning to be in HTML format (reading from errors.html). Note that users
+                // must have the Platform Developer or Site Administrator role to attach transform scripts to assay designs.
+                result.setWarnings(HtmlString.unsafe(warning));
+            }
             else
                 result.setWarnings(HtmlString.unsafe("Warnings found in transform script!"));
 

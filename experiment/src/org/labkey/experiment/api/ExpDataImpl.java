@@ -109,6 +109,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     private static final Logger LOG = LogManager.getLogger(ExpDataImpl.class);
 
     public enum DataOperations {
+        Edit("editing", UpdatePermission.class),
         EditLineage("editing lineage", UpdatePermission.class),
         Delete("deleting", DeletePermission.class),
         Move("moving", MoveEntitiesPermission.class);

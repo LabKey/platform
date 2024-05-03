@@ -388,7 +388,7 @@ public class ReportViewProvider implements DataViewProvider
                     if (!errors.isEmpty())
                         throw new ValidationException(errors);
 
-                    ReportService.get().saveReport(new DefaultContainerUser(context.getContainer(), context.getUser()), descriptor.getReportKey(), report);
+                    ReportService.get().saveReportEx(new DefaultContainerUser(context.getContainer(), context.getUser()), descriptor.getReportKey(), report);
                     ThumbnailService svc1 = ThumbnailService.get();
 
                     boolean isDeleteThumbnail = props.containsKey(Property.deleteCustomThumbnail.name()) &&
@@ -474,6 +474,8 @@ public class ReportViewProvider implements DataViewProvider
                     throw new ValidationException(e.getMessage());
                 }
             }
+            else
+                throw new ValidationException("Report not found: " + id + ".");
         }
     }
 }

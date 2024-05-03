@@ -100,6 +100,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static org.labkey.api.security.SecurityManager.USER_ID_KEY;
 import static org.labkey.api.security.permissions.AbstractActionPermissionTest.APPLICATION_ADMIN_EMAIL;
 import static org.labkey.api.security.permissions.AbstractActionPermissionTest.SITE_ADMIN_EMAIL;
 
@@ -118,13 +119,6 @@ public class UserManager
 
     public static final Comparator<User> USER_DISPLAY_NAME_COMPARATOR = Comparator.comparing(User::getFriendlyName, String.CASE_INSENSITIVE_ORDER);
 
-    public static void ensureSessionTracked(HttpSession s)
-    {
-        if (s != null)
-        {
-            _activeSessions.put(s.getId(), s);
-        }
-    }
 
     /**
      * Listener for user account related notifications. Typically registered during a module's startup via a call to
@@ -506,14 +500,24 @@ public class UserManager
     /** In minutes */
     private static final AtomicLong _totalSessionDuration = new AtomicLong();
 
-    private static final Map<String, HttpSession> _activeSessions = Collections.synchronizedMap(new HashMap<>());
+    private static final Set<String> _activeSessions = Collections.synchronizedSet(new HashSet<>());
+
+    public static void ensureSessionTracked(HttpSession s)
+    {
+        if (s != null)
+        {
+            Integer userId = (Integer)s.getAttribute(USER_ID_KEY);
+            if (null != userId && getGuestUser().getUserId() != userId)
+               _activeSessions.add(s.getId());
+        }
+    }
 
     public static class SessionListener implements HttpSessionListener
     {
         @Override
         public void sessionCreated(HttpSessionEvent event)
         {
-            _activeSessions.put(event.getSession().getId(), event.getSession());
+            // We don't do anything with guest users, and we can rely on AuthFilter to call ensureSessionTracked().
         }
 
         @Override
@@ -535,18 +539,7 @@ public class UserManager
 
     public static int getActiveUserSessionCount()
     {
-        int users = 0;
-        synchronized (_activeSessions)
-        {
-            for (HttpSession session : _activeSessions.values())
-            {
-                if (!AuthenticatedRequest.isGuestSession(session))
-                {
-                    users++;
-                }
-            }
-        }
-        return users;
+        return _activeSessions.size();
     }
 
     public static Integer getAverageSessionDuration()
@@ -1315,7 +1308,7 @@ public class UserManager
             MutableSecurityPolicy policy = new MutableSecurityPolicy(root, root.getPolicy());
             policy.addRoleAssignment(_users.get(APPLICATION_ADMIN_EMAIL), ApplicationAdminRole.class);
             policy.addRoleAssignment(_users.get(SITE_ADMIN_EMAIL), SiteAdminRole.class);
-            SecurityPolicyManager.savePolicy(policy, TestContext.get().getUser());
+            SecurityPolicyManager.savePolicyForTests(policy, TestContext.get().getUser());
         }
 
         @Test

@@ -52,6 +52,7 @@ import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -73,7 +74,6 @@ public interface QueryService
     String PRODUCT_PROJECTS_ENABLED = "isProductProjectsEnabled";
     String PRODUCT_PROJECTS_EXIST = "hasProductProjects";
     String USE_ROW_BY_ROW_UPDATE = "useLegacyUpdateRows";
-    String CROSS_PROJECT_IMPORT_ENABLED = "isCrossProjectImportEnabled";
 
     String MODULE_QUERIES_DIRECTORY = "queries";
     Path MODULE_QUERIES_PATH = Path.parse(MODULE_QUERIES_DIRECTORY);
@@ -264,6 +264,9 @@ public interface QueryService
     SelectBuilder getSelectBuilder(TableInfo table);
     SelectBuilder getSelectBuilder(QuerySchema schema, String sql);
 
+    MutableColumnInfo createQueryExpressionColumn(TableInfo table, FieldKey key, String labKeySql, ColumnType columnType);
+    MutableColumnInfo createQueryExpressionColumn(TableInfo table, FieldKey key, FieldKey wrapped, ColumnType columnType);
+    void bindQueryExpressionColumn(ColumnInfo col, Map<FieldKey,ColumnInfo> columns, boolean validateOnly, @Nullable Set<FieldKey> referencedKeys) throws QueryParseException;
 
     void addCompareType(CompareType type);
 
@@ -686,6 +689,4 @@ public interface QueryService
      * Returns true if the "Product projects display project-specific data" experimental feature is enabled.
      */
     boolean isProductProjectsDataListingScopedToProject();
-
-    boolean isCrossProjectsImportEnabled(Container container);
 }

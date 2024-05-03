@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.api.security.UserManager"%>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
+<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.MothershipReport" %>
 <%@ page import="org.labkey.api.util.UsageReportingLevel" %>
@@ -27,18 +28,14 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="java.io.File" %>
+<%@ page import="java.util.Comparator" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.util.Map" %>
 <%@ page import="java.util.Objects" %>
+<%@ page import="java.util.TreeMap" %>
 <%@ page import="static org.labkey.api.security.SecurityManager.SECONDS_PER_DAY" %>
 <%@ page import="static org.labkey.api.util.ExceptionReportingLevel.*" %>
 <%@ page import="static org.labkey.api.settings.SiteSettingsProperties.*" %>
-<%@ page import="org.labkey.api.util.Pair" %>
-<%@ page import="java.util.Set" %>
-<%@ page import="java.util.Map" %>
-<%@ page import="java.util.HashMap" %>
-<%@ page import="java.util.TreeMap" %>
-<%@ page import="java.util.Comparator" %>
-<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%=formatMissedErrors("form")%>
@@ -76,8 +73,8 @@ var enableTestButton = function(el, level) {
     }
 };
 
-var testUsageReport = function(download) {
-    testMothershipReport('CheckForUpdates', '<%=UsageReportingLevel.ON%>', download);
+var testUsageReport = function() {
+    testMothershipReport('CheckForUpdates', '<%=UsageReportingLevel.ON%>', true);
 };
 
 var testExceptionReport = function(download) {
@@ -222,8 +219,8 @@ Click the Save button at any time to accept the current settings and continue.</
 %>
             <tr>
                 <td style="padding: 5px 0 5px;" colspan="2">
-                            <%=button("View").id("testUsageReport").onClick("testUsageReport(false); return false;")%>
-                            <%=button("Download").id("testUsageReportDownload").onClick("testUsageReport(true); return false;")%>
+                            <%=link("View", AdminController.ViewUsageStatistics.class)%>
+                            <%=button("Download").id("testUsageReportDownload").onClick("testUsageReport(); return false;")%>
                     Generate an example usage report. <strong>No data will be submitted.</strong></td>
             </tr>
         </table>

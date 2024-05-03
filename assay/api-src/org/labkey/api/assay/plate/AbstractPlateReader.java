@@ -20,7 +20,7 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.query.ValidationException;
 
 import java.io.File;
-import java.util.Map;
+import java.util.List;
 
 /**
  * Created by klum on 12/14/14.
@@ -51,7 +51,7 @@ public abstract class AbstractPlateReader implements PlateReader
     }
 
     @Override
-    public Map<String, double[][]> loadMultiGridFile(Plate template, File dataFile) throws ExperimentException
+    public List<PlateUtils.GridInfo> loadMultiGridFile(Plate template, File dataFile) throws ExperimentException
     {
         throw new UnsupportedOperationException("loading multiple grids for this reader implementation is not supported");
     }

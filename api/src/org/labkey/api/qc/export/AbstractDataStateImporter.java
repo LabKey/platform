@@ -45,6 +45,7 @@ public abstract class AbstractDataStateImporter
                         state.setDescription(xmlState.getDescription());
                         state.setPublicData(xmlState.getPublic());
                         state.setStateType(xmlState.getType() == null ? null : xmlState.getType().toString());
+                        state.setColor(xmlState.getColor());
 
                         helper.insertDataState(ctx.getUser(), state);
                     }
@@ -53,6 +54,7 @@ public abstract class AbstractDataStateImporter
                         // Update the existing QCState row in-place
                         state.setDescription(xmlState.getDescription());
                         state.setPublicData(xmlState.getPublic());
+                        state.setColor(xmlState.getColor());
                         String updatedType = xmlState.getType() == null ? null : xmlState.getType().toString();
                         if ((state.getStateType() == null && updatedType != null) ||
                                 (state.getStateType() != null && updatedType == null) ||
