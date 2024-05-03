@@ -51,14 +51,14 @@ public class PlateSetExport
     public PlateSetExport(){};
 
     // Returns the base set of columns as well as the metadata columns included on default plate view
-    private Collection<ColumnInfo> getWellColumns(TableInfo wellTable, Set<FieldKey> includedMetaDataCols)
+    private Collection<ColumnInfo> getWellColumns(TableInfo wellTable, List<FieldKey> includedMetaDataCols)
     {
         List<FieldKey> defaultCols = new ArrayList<>(FKMap.values());
         defaultCols.addAll(includedMetaDataCols);
         return QueryService.get().getColumns(wellTable, defaultCols).values();
     }
 
-    private Object[] getDataRow(String prefix, Results rs, Set<FieldKey> includedMetaDataCols) throws SQLException
+    private Object[] getDataRow(String prefix, Results rs, List<FieldKey> includedMetaDataCols) throws SQLException
     {
         List<Object> baseColumns = new ArrayList<>(
                 Arrays.asList(
@@ -78,7 +78,7 @@ public class PlateSetExport
     }
 
     // Returns array of ColumnDescriptors used as column layout once fed to an ArrayExcelWriter
-    public static ColumnDescriptor[] getColumnDescriptors(String prefix, Set<FieldKey> includedMetadataCols)
+    public static ColumnDescriptor[] getColumnDescriptors(String prefix, List<FieldKey> includedMetadataCols)
     {
         List<ColumnDescriptor> baseColumns = new ArrayList<>(
                 Arrays.asList(
@@ -105,8 +105,8 @@ public class PlateSetExport
             TableInfo wellTable,
             int sourcePlateSetId,
             int destinationPlateSetId,
-            Set<FieldKey> sourceIncludedMetadataCols,
-            Set<FieldKey> destinationIncludedMetadataCols
+            List<FieldKey> sourceIncludedMetadataCols,
+            List<FieldKey> destinationIncludedMetadataCols
     )
     {
         List<Object[]> plateDataRows = new ArrayList<>();
@@ -163,7 +163,7 @@ public class PlateSetExport
         return plateDataRows;
     }
 
-    public List<Object[]> getInstrumentInstructions(TableInfo wellTable, int plateSetId, Set<FieldKey> includedMetadataCols)
+    public List<Object[]> getInstrumentInstructions(TableInfo wellTable, int plateSetId, List<FieldKey> includedMetadataCols)
     {
         List<Object[]> plateDataRows = new ArrayList<>();
         try (Results rs = QueryService.get().select(wellTable, getWellColumns(wellTable, includedMetadataCols), new SimpleFilter(FKMap.get(PLATE_SET_ID_COL), plateSetId), new Sort(ROW_ID_COL)))
