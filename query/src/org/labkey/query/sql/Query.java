@@ -1123,7 +1123,13 @@ public class Query
         {
             try
             {
+                assertEquals(0, resolveDepth.get().get());
                 recurseToFailure();
+                fail("should have thrown");
+            }
+            catch (StackOverflowError e)
+            {
+                fail("definitely shouldn't be here");
             }
             catch (Exception e)
             {
