@@ -16,6 +16,7 @@
 package org.labkey.api.util;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.collections4.iterators.ArrayIterator;
 import org.apache.commons.lang3.StringUtils;
@@ -308,6 +309,7 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
     }
 
     // caller is responsible for calling normalize and other validation to avoid an exception when using this method
+    @JsonIgnore
     public Path.Part getNamePart() // throws ArrayIndexOutOfBoundsException, IllegalArgumentException
     {
         return new Path.Part(_path[_length-1]);
