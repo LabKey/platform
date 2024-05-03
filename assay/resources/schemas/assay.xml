@@ -90,6 +90,8 @@
       </column>
       <column columnName="Template">
         <description>Boolean indicating whether each plate is a template versus an uploaded instance of a plate template.</description>
+        <isHidden>true</isHidden>
+        <isUserEditable>false</isUserEditable>
         <shownInUpdateView>false</shownInUpdateView>
       </column>
       <column columnName="DataFileId">
@@ -98,6 +100,10 @@
       </column>
       <column columnName="AssayType">
         <description>A text label of the plate assay type ("NAb", for example).</description>
+      </column>
+      <column columnName="Archived">
+        <isHidden>true</isHidden>
+        <isUserEditable>false</isUserEditable>
       </column>
     </columns>
   </table>
@@ -209,6 +215,10 @@
           (a.k.a stand-alone plate set). For top-level "primary" plate sets this will always refer to itself.
         </description>
         <isHidden>true</isHidden>
+      </column>
+      <column columnName="Template">
+        <isHidden>true</isHidden>
+        <isUserEditable>false</isUserEditable>
       </column>
     </columns>
   </table>

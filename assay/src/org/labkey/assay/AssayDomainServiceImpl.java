@@ -85,11 +85,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * User: brittp
- * Date: Jun 22, 2007
- * Time: 10:01:10 AM
- */
 public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDomainService
 {
     public static final Logger LOG = LogManager.getLogger(AssayDomainServiceImpl.class);
@@ -332,7 +327,7 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
         if (provider instanceof PlateBasedAssayProvider)
         {
             List<String> plateTemplates = new ArrayList<>();
-            for (Plate template : PlateService.get().getPlateTemplates(getContainer()))
+            for (Plate template : PlateService.get().getPlates(getContainer()))
                 plateTemplates.add(template.getName());
             protocol.setAvailablePlateTemplates(plateTemplates);
         }
@@ -378,232 +373,225 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
         // time, which will lead to a SQLException on the UNIQUE constraint on protocol LSIDs
         synchronized (AssayDomainServiceImpl.class)
         {
-            if (replaceIfExisting)
-            {
-                DbSchema schema = AssayDbSchema.getInstance().getSchema();
-                try (DbScope.Transaction transaction = schema.getScope().ensureTransaction())
-                {
-                    if (assay.getAutoLinkCategory() != null && assay.getAutoLinkCategory().length() > 200)
-                        throw new AssayException("Linked Dataset Category name must be shorter than 200 characters.");
-
-                    ExpProtocol protocol;
-                    boolean isNew = assay.getProtocolId() == null;
-                    boolean hasNameChange = false;
-                    AssayProvider assayProvider = AssayService.get().getProvider(assay.getProviderName());
-                    String oldAssayName = null;
-                    if (isNew)
-                    {
-                        // check for existing assay protocol with the given name before creating
-                        if (AssayManager.get().getAssayProtocolByName(getContainer(), assay.getName()) != null)
-                            throw new AssayException("Assay protocol already exists for this name.");
-
-                        XarContext context = new XarContext("Domains", getContainer(), getUser());
-                        context.addSubstitution("AssayName", PageFlowUtil.encode(assay.getName()));
-
-                        protocol = AssayManager.get().createAssayDefinition(getUser(), getContainer(), assay, context);
-                        assay.setProtocolId(protocol.getRowId());
-
-                        Set<String> domainURIs = new HashSet<>();
-                        for (GWTDomain domain : assay.getDomains())
-                        {
-                            domain.setDomainURI(LsidUtils.resolveLsidFromTemplate(domain.getDomainURI(), context));
-                            domain.setName(assay.getName() + " " + domain.getName());
-                            GWTDomain<GWTPropertyDescriptor> gwtDomain = DomainUtil.getDomainDescriptor(getUser(), domain.getDomainURI(), getContainer());
-                            if (gwtDomain == null)
-                            {
-                                Domain newDomain = DomainUtil.createDomain(PropertyService.get().getDomainKind(domain.getDomainURI()).getKindName(), domain, null, getContainer(), getUser(), domain.getName(), null);
-                                domainURIs.add(newDomain.getTypeURI());
-                            }
-                            else
-                            {
-                                ValidationException domainErrors = updateDomainDescriptor(domain, protocol, assayProvider, false);
-                                if (domainErrors.hasErrors())
-                                {
-                                    throw domainErrors;
-                                }
-                                domainURIs.add(domain.getDomainURI());
-                            }
-
-                        }
-                        setPropertyDomainURIs(protocol, domainURIs, assayProvider);
-                    }
-                    else
-                    {
-                        protocol = ExperimentService.get().getExpProtocol(assay.getProtocolId().intValue());
-
-                        if (protocol == null)
-                        {
-                            throw new AssayException("Assay design has been deleted");
-                        }
-
-                        //ensure that the user has edit perms in this container
-                        if (!canUpdateProtocols())
-                            throw new AssayException("You do not have sufficient permissions to update this Assay");
-
-                        if (!protocol.getContainer().equals(getContainer()))
-                            throw new AssayException("Assays can only be edited in the folder where they were created.  " +
-                                    "This assay was created in folder " + protocol.getContainer().getPath());
-                        oldAssayName = protocol.getName();
-                        hasNameChange = !assay.getName().equals(oldAssayName);
-                        protocol.setName(assay.getName());
-                        protocol.setProtocolDescription(assay.getDescription());
-                        if (assay.getStatus() != null)
-                            protocol.setStatus(ExpProtocol.Status.valueOf(assay.getStatus()));
-                    }
-
-                    Map<String, ProtocolParameter> newParams = new HashMap<>(protocol.getProtocolParameters());
-                    if (assay.getProtocolParameters() != null)
-                    {
-                        for (Map.Entry<String, String> entry : assay.getProtocolParameters().entrySet())
-                        {
-                            ProtocolParameter param = new ProtocolParameter();
-                            String uri = entry.getKey();
-                            param.setOntologyEntryURI(uri);
-                            param.setValue(SimpleTypeNames.STRING, entry.getValue());
-                            if (hasNameChange && assayProvider.canRename() && XarConstants.APPLICATION_NAME_TEMPLATE_URI.equals(uri) && entry.getValue() != null)
-                            {
-                                String updatedName = entry.getValue().replace(oldAssayName, assay.getName());
-                                param.setValue(SimpleTypeNames.STRING, updatedName);
-                            }
-                            param.setName(uri.contains("#") ? uri.substring(uri.indexOf("#") + 1) : uri);
-                            newParams.put(uri, param);
-                        }
-                    }
-                    protocol.setProtocolParameters(newParams.values());
-
-                    if (hasNameChange)
-                    {
-                        if (AssayManager.get().getAssayProtocolByName(getContainer(), assay.getName()) != null)
-                            throw new ValidationException("Another assay protocol already exists for this name.");
-                        ExperimentService.get().handleAssayNameChange(assay.getName(), oldAssayName, assayProvider,  protocol,getUser(), getContainer());
-                    }
-
-                    AssayProvider provider = AssayService.get().getProvider(protocol);
-                    if (provider instanceof PlateBasedAssayProvider && assay.getSelectedPlateTemplate() != null)
-                    {
-                        PlateBasedAssayProvider plateProvider = (PlateBasedAssayProvider)provider;
-                        Plate plate = PlateManager.get().getPlateByName(getContainer(), assay.getSelectedPlateTemplate());
-                        if (plate != null)
-                            plateProvider.setPlate(getContainer(), protocol, plate);
-                        else
-                            throw new AssayException("The selected plate could not be found.  Perhaps it was deleted by another user?");
-
-                        String selectedFormat = assay.getSelectedMetadataInputFormat();
-                        SampleMetadataInputFormat inputFormat = SampleMetadataInputFormat.valueOf(selectedFormat);
-                        if (inputFormat != null)
-                            ((PlateBasedAssayProvider)provider).setMetadataInputFormat(protocol, inputFormat);
-                    }
-
-                    // data transform scripts
-                    List<File> transformScripts = new ArrayList<>();
-                    List<String> submittedScripts = assay.getProtocolTransformScripts();
-                    if (!submittedScripts.isEmpty() && !canUpdateTransformationScript())
-                        throw new AssayException("You must be a platform developer or site admin to configure assay transformation scripts.");
-                    for (String script : assay.getProtocolTransformScripts())
-                    {
-                        if (!StringUtils.isBlank(script))
-                        {
-                            transformScripts.add(new File(script));
-                        }
-                    }
-
-                    if (provider instanceof DetectionMethodAssayProvider && assay.getSelectedDetectionMethod() != null)
-                    {
-                        DetectionMethodAssayProvider dmProvider = (DetectionMethodAssayProvider)provider;
-                        String detectionMethod = assay.getSelectedDetectionMethod();
-                        if (detectionMethod != null)
-                            dmProvider.setSelectedDetectionMethod(getContainer(), protocol, detectionMethod);
-                        else
-                            throw new AssayException("The selected detection method could not be found.");
-                    }
-
-                    ValidationException scriptValidation = provider.setValidationAndAnalysisScripts(protocol, transformScripts);
-                    if (scriptValidation.hasErrors())
-                    {
-                        for (var error : scriptValidation.getErrors())
-                        {
-                            if (error.getSeverity() == ValidationException.SEVERITY.ERROR)
-                                throw scriptValidation;
-
-                            // TODO: return warnings back to client
-                            HelpTopic help = error.getHelp();
-                            LOG.log(error.getSeverity().getLevel(), error.getMessage()
-                                    + (help != null ? "\n  For more information: " + help.getHelpTopicHref() : ""));
-                        }
-                    }
-//
-//                    provider.setDetectionMethods(protocol, assay.getAvailableDetectionMethods());
-
-                    provider.setSaveScriptFiles(protocol, assay.isSaveScriptFiles());
-                    provider.setEditableResults(protocol, assay.isEditableResults());
-                    provider.setEditableRuns(protocol, assay.isEditableRuns());
-                    provider.setBackgroundUpload(protocol, assay.isBackgroundUpload());
-                    provider.setQCEnabled(protocol, assay.isQcEnabled());
-                    provider.setPlateMetadataEnabled(protocol, assay.isPlateMetadata());
-
-                    Map<String, ObjectProperty> props = new HashMap<>(protocol.getObjectProperties());
-                    // get the autoLinkTargetContainer from either the id on the assay object entityId
-                    String autoLinkTargetContainerId = assay.getAutoCopyTargetContainer() != null ? assay.getAutoCopyTargetContainer().getEntityId() : assay.getAutoCopyTargetContainerId();
-                    // verify that the autoLinkTargetContainerId is valid
-                    if (autoLinkTargetContainerId != null && ContainerManager.getForId(autoLinkTargetContainerId) == null)
-                    {
-                        throw new AssayException("No such auto-link target container id: " + autoLinkTargetContainerId);
-                    }
-
-                    if (autoLinkTargetContainerId != null)
-                    {
-                        props.put(StudyPublishService.AUTO_LINK_TARGET_PROPERTY_URI, new ObjectProperty(protocol.getLSID(), protocol.getContainer(), StudyPublishService.AUTO_LINK_TARGET_PROPERTY_URI, autoLinkTargetContainerId));
-                    }
-                    else
-                    {
-                        props.remove(StudyPublishService.AUTO_LINK_TARGET_PROPERTY_URI);
-                    }
-
-                    String autoLinkCategory = assay.getAutoLinkCategory();
-                    if (autoLinkCategory != null)
-                    {
-                        props.put(StudyPublishService.AUTO_LINK_CATEGORY_PROPERTY_URI, new ObjectProperty(protocol.getLSID(), protocol.getContainer(), StudyPublishService.AUTO_LINK_CATEGORY_PROPERTY_URI, autoLinkCategory));
-                    }
-                    else
-                    {
-                        props.remove(StudyPublishService.AUTO_LINK_CATEGORY_PROPERTY_URI);
-                    }
-
-                    protocol.setObjectProperties(props);
-
-                    protocol.save(getUser());
-
-                    StringBuilder errors = new StringBuilder();
-                    for (GWTDomain<GWTPropertyDescriptor> domain : assay.getDomains())
-                    {
-                        ValidationException domainErrors = updateDomainDescriptor(domain, protocol, provider, hasNameChange);
-
-                        // Need to bail out inside of the loop because some errors may have left the DB connection in
-                        // an unusable state.
-                        if (domainErrors.hasErrors())
-                            throw domainErrors;
-                    }
-
-                    if (assay.getExcludedContainerIds() != null && (!isNew || !assay.getExcludedContainerIds().isEmpty()))
-                        ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.AssayDesign, assay.getExcludedContainerIds(), protocol.getRowId(), getUser());
-
-                    QueryService.get().updateLastModified();
-                    transaction.commit();
-                    AssayManager.get().clearProtocolCache();
-                    return getAssayDefinition(assay.getProtocolId(), false);
-                }
-                catch (UnexpectedException e)
-                {
-                    Throwable cause = e.getCause();
-                    throw new ValidationException(cause.getMessage());
-                }
-                catch (ExperimentException e)
-                {
-                    throw new ValidationException(e.getMessage());
-                }
-            }
-            else
+            if (!replaceIfExisting)
                 throw new AssayException("Only replaceIfExisting == true is supported.");
+
+            DbSchema schema = AssayDbSchema.getInstance().getSchema();
+            try (DbScope.Transaction transaction = schema.getScope().ensureTransaction())
+            {
+                if (assay.getAutoLinkCategory() != null && assay.getAutoLinkCategory().length() > 200)
+                    throw new AssayException("Linked Dataset Category name must be shorter than 200 characters.");
+
+                ExpProtocol protocol;
+                boolean isNew = assay.getProtocolId() == null;
+                boolean hasNameChange = false;
+                AssayProvider assayProvider = AssayService.get().getProvider(assay.getProviderName());
+                String oldAssayName = null;
+                if (isNew)
+                {
+                    // check for existing assay protocol with the given name before creating
+                    if (AssayManager.get().getAssayProtocolByName(getContainer(), assay.getName()) != null)
+                        throw new AssayException("Assay protocol already exists for this name.");
+
+                    XarContext context = new XarContext("Domains", getContainer(), getUser());
+                    context.addSubstitution("AssayName", PageFlowUtil.encode(assay.getName()));
+
+                    protocol = AssayManager.get().createAssayDefinition(getUser(), getContainer(), assay, context);
+                    assay.setProtocolId(protocol.getRowId());
+
+                    Set<String> domainURIs = new HashSet<>();
+                    for (GWTDomain domain : assay.getDomains())
+                    {
+                        domain.setDomainURI(LsidUtils.resolveLsidFromTemplate(domain.getDomainURI(), context));
+                        domain.setName(assay.getName() + " " + domain.getName());
+                        GWTDomain<GWTPropertyDescriptor> gwtDomain = DomainUtil.getDomainDescriptor(getUser(), domain.getDomainURI(), getContainer());
+                        if (gwtDomain == null)
+                        {
+                            Domain newDomain = DomainUtil.createDomain(PropertyService.get().getDomainKind(domain.getDomainURI()).getKindName(), domain, null, getContainer(), getUser(), domain.getName(), null);
+                            domainURIs.add(newDomain.getTypeURI());
+                        }
+                        else
+                        {
+                            ValidationException domainErrors = updateDomainDescriptor(domain, protocol, assayProvider, false);
+                            if (domainErrors.hasErrors())
+                            {
+                                throw domainErrors;
+                            }
+                            domainURIs.add(domain.getDomainURI());
+                        }
+
+                    }
+                    setPropertyDomainURIs(protocol, domainURIs, assayProvider);
+                }
+                else
+                {
+                    protocol = ExperimentService.get().getExpProtocol(assay.getProtocolId().intValue());
+
+                    if (protocol == null)
+                    {
+                        throw new AssayException("Assay design has been deleted");
+                    }
+
+                    //ensure that the user has edit perms in this container
+                    if (!canUpdateProtocols())
+                        throw new AssayException("You do not have sufficient permissions to update this Assay");
+
+                    if (!protocol.getContainer().equals(getContainer()))
+                        throw new AssayException("Assays can only be edited in the folder where they were created.  " +
+                                "This assay was created in folder " + protocol.getContainer().getPath());
+                    oldAssayName = protocol.getName();
+                    hasNameChange = !assay.getName().equals(oldAssayName);
+                    protocol.setName(assay.getName());
+                    protocol.setProtocolDescription(assay.getDescription());
+                    if (assay.getStatus() != null)
+                        protocol.setStatus(ExpProtocol.Status.valueOf(assay.getStatus()));
+                }
+
+                Map<String, ProtocolParameter> newParams = new HashMap<>(protocol.getProtocolParameters());
+                if (assay.getProtocolParameters() != null)
+                {
+                    for (Map.Entry<String, String> entry : assay.getProtocolParameters().entrySet())
+                    {
+                        ProtocolParameter param = new ProtocolParameter();
+                        String uri = entry.getKey();
+                        param.setOntologyEntryURI(uri);
+                        param.setValue(SimpleTypeNames.STRING, entry.getValue());
+                        if (hasNameChange && assayProvider.canRename() && XarConstants.APPLICATION_NAME_TEMPLATE_URI.equals(uri) && entry.getValue() != null)
+                        {
+                            String updatedName = entry.getValue().replace(oldAssayName, assay.getName());
+                            param.setValue(SimpleTypeNames.STRING, updatedName);
+                        }
+                        param.setName(uri.contains("#") ? uri.substring(uri.indexOf("#") + 1) : uri);
+                        newParams.put(uri, param);
+                    }
+                }
+                protocol.setProtocolParameters(newParams.values());
+
+                if (hasNameChange)
+                {
+                    if (AssayManager.get().getAssayProtocolByName(getContainer(), assay.getName()) != null)
+                        throw new ValidationException("Another assay protocol already exists for this name.");
+                    ExperimentService.get().handleAssayNameChange(assay.getName(), oldAssayName, assayProvider,  protocol,getUser(), getContainer());
+                }
+
+                AssayProvider provider = AssayService.get().getProvider(protocol);
+                if (provider instanceof PlateBasedAssayProvider plateProvider && assay.getSelectedPlateTemplate() != null)
+                {
+                    Plate plate = PlateManager.get().getPlateByName(getContainer(), assay.getSelectedPlateTemplate());
+                    if (plate != null)
+                        plateProvider.setPlate(getContainer(), protocol, plate);
+                    else
+                        throw new AssayException("The selected plate could not be found.  Perhaps it was deleted by another user?");
+
+                    String selectedFormat = assay.getSelectedMetadataInputFormat();
+                    SampleMetadataInputFormat inputFormat = SampleMetadataInputFormat.valueOf(selectedFormat);
+                    if (inputFormat != null)
+                        plateProvider.setMetadataInputFormat(protocol, inputFormat);
+                }
+
+                // data transform scripts
+                List<File> transformScripts = new ArrayList<>();
+                List<String> submittedScripts = assay.getProtocolTransformScripts();
+                if (!submittedScripts.isEmpty() && !canUpdateTransformationScript())
+                    throw new AssayException("You must be a platform developer or site admin to configure assay transformation scripts.");
+                for (String script : assay.getProtocolTransformScripts())
+                {
+                    if (!StringUtils.isBlank(script))
+                    {
+                        transformScripts.add(new File(script));
+                    }
+                }
+
+                if (provider instanceof DetectionMethodAssayProvider dmProvider && assay.getSelectedDetectionMethod() != null)
+                {
+                    String detectionMethod = assay.getSelectedDetectionMethod();
+                    if (detectionMethod != null)
+                        dmProvider.setSelectedDetectionMethod(getContainer(), protocol, detectionMethod);
+                    else
+                        throw new AssayException("The selected detection method could not be found.");
+                }
+
+                ValidationException scriptValidation = provider.setValidationAndAnalysisScripts(protocol, transformScripts);
+                if (scriptValidation.hasErrors())
+                {
+                    for (var error : scriptValidation.getErrors())
+                    {
+                        if (error.getSeverity() == ValidationException.SEVERITY.ERROR)
+                            throw scriptValidation;
+
+                        // TODO: return warnings back to client
+                        HelpTopic help = error.getHelp();
+                        LOG.log(error.getSeverity().getLevel(), error.getMessage()
+                                + (help != null ? "\n  For more information: " + help.getHelpTopicHref() : ""));
+                    }
+                }
+
+                provider.setSaveScriptFiles(protocol, assay.isSaveScriptFiles());
+                provider.setEditableResults(protocol, assay.isEditableResults());
+                provider.setEditableRuns(protocol, assay.isEditableRuns());
+                provider.setBackgroundUpload(protocol, assay.isBackgroundUpload());
+                provider.setQCEnabled(protocol, assay.isQcEnabled());
+                provider.setPlateMetadataEnabled(protocol, assay.isPlateMetadata());
+
+                Map<String, ObjectProperty> props = new HashMap<>(protocol.getObjectProperties());
+                // get the autoLinkTargetContainer from either the id on the assay object entityId
+                String autoLinkTargetContainerId = assay.getAutoCopyTargetContainer() != null ? assay.getAutoCopyTargetContainer().getEntityId() : assay.getAutoCopyTargetContainerId();
+                // verify that the autoLinkTargetContainerId is valid
+                if (autoLinkTargetContainerId != null && ContainerManager.getForId(autoLinkTargetContainerId) == null)
+                {
+                    throw new AssayException("No such auto-link target container id: " + autoLinkTargetContainerId);
+                }
+
+                if (autoLinkTargetContainerId != null)
+                {
+                    props.put(StudyPublishService.AUTO_LINK_TARGET_PROPERTY_URI, new ObjectProperty(protocol.getLSID(), protocol.getContainer(), StudyPublishService.AUTO_LINK_TARGET_PROPERTY_URI, autoLinkTargetContainerId));
+                }
+                else
+                {
+                    props.remove(StudyPublishService.AUTO_LINK_TARGET_PROPERTY_URI);
+                }
+
+                String autoLinkCategory = assay.getAutoLinkCategory();
+                if (autoLinkCategory != null)
+                {
+                    props.put(StudyPublishService.AUTO_LINK_CATEGORY_PROPERTY_URI, new ObjectProperty(protocol.getLSID(), protocol.getContainer(), StudyPublishService.AUTO_LINK_CATEGORY_PROPERTY_URI, autoLinkCategory));
+                }
+                else
+                {
+                    props.remove(StudyPublishService.AUTO_LINK_CATEGORY_PROPERTY_URI);
+                }
+
+                protocol.setObjectProperties(props);
+
+                protocol.save(getUser());
+
+                for (GWTDomain<GWTPropertyDescriptor> domain : assay.getDomains())
+                {
+                    ValidationException domainErrors = updateDomainDescriptor(domain, protocol, provider, hasNameChange);
+
+                    // Need to bail out inside of the loop because some errors may have left the DB connection in
+                    // an unusable state.
+                    if (domainErrors.hasErrors())
+                        throw domainErrors;
+                }
+
+                if (assay.getExcludedContainerIds() != null && (!isNew || !assay.getExcludedContainerIds().isEmpty()))
+                    ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.AssayDesign, assay.getExcludedContainerIds(), protocol.getRowId(), getUser());
+
+                QueryService.get().updateLastModified();
+                transaction.commit();
+                AssayManager.get().clearProtocolCache();
+                return getAssayDefinition(assay.getProtocolId(), false);
+            }
+            catch (UnexpectedException e)
+            {
+                Throwable cause = e.getCause();
+                throw new ValidationException(cause.getMessage());
+            }
+            catch (ExperimentException e)
+            {
+                throw new ValidationException(e.getMessage());
+            }
         }
     }
 

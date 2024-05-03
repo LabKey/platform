@@ -77,6 +77,7 @@ import org.labkey.assay.plate.PlateCache;
 import org.labkey.assay.plate.PlateDocumentProvider;
 import org.labkey.assay.plate.PlateImpl;
 import org.labkey.assay.plate.PlateManager;
+import org.labkey.assay.plate.PlateManagerTest;
 import org.labkey.assay.plate.PlateMetadataDomainKind;
 import org.labkey.assay.plate.PlateMetricsProvider;
 import org.labkey.assay.plate.TsvPlateLayoutHandler;
@@ -115,7 +116,7 @@ public class AssayModule extends SpringModule
     @Override
     public Double getSchemaVersion()
     {
-        return 24.006;
+        return 24.007;
     }
 
     @Override
@@ -144,6 +145,7 @@ public class AssayModule extends SpringModule
     {
         AssayService.setInstance(new AssayManager());
         PlateService.setInstance(new PlateManager());
+        AssayPlateMetadataService.setInstance(new AssayPlateMetadataServiceImpl());
         addController("assay", AssayController.class);
         addController("plate", PlateController.class);
         PlateSchema.register(this);
@@ -155,7 +157,6 @@ public class AssayModule extends SpringModule
         ExperimentService.get().registerExperimentDataHandler(new TsvDataHandler());
         ExperimentService.get().registerExperimentDataHandler(new FileBasedModuleDataHandler());
         ExperimentService.get().registerExperimentDataHandler(new PlateMetadataDataHandler());
-        AssayPlateMetadataService.registerService(PlateMetadataDataHandler.DATA_TYPE, new AssayPlateMetadataServiceImpl());
         PropertyService.get().registerDomainKind(new AssayPlateDataDomainKind());
         PlateService.get().registerPlateLayoutHandler(new TsvPlateLayoutHandler());
 
@@ -331,7 +332,7 @@ public class AssayModule extends SpringModule
             TsvAssayProvider.TestCase.class,
             AssaySchemaImpl.TestCase.class,
             AssayProviderSchema.TestCase.class,
-            PlateManager.TestCase.class,
+            PlateManagerTest.class,
             PositionImpl.TestCase.class,
             PlateImpl.TestCase.class,
             PlateUtils.TestCase.class,

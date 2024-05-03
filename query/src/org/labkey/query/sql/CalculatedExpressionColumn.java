@@ -51,8 +51,6 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
     // wouldn't materially affect the result of the expression, but they do affect metadata (DisplayColumnFactory, etc.)
     private QExpr _boundExpr;
 
-    private JdbcType expressionJdbcType = null;
-
 
     public CalculatedExpressionColumn(TableInfo parent, FieldKey key, String labKeySql, ColumnType columnType)
     {
@@ -104,7 +102,7 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
             from = columns.get(bound.getFieldKey());
         else
             from = bound.createColumnInfo(getParentTable(), getColumnName(), null);
-        FieldKey me = getFieldKey();
+
         if (null != from)
         {
             var label = getLabel();

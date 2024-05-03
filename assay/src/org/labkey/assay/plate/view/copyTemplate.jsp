@@ -20,7 +20,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.assay.PlateController.CopyTemplateBean" %>
 <%@ page import="org.labkey.assay.PlateController.HandleCopyAction" %>
-<%@ page import="org.labkey.assay.PlateController.PlateTemplateListAction" %>
+<%@ page import="org.labkey.assay.PlateController.PlateListAction" %>
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -41,7 +41,7 @@
             <labkey:form action="<%=urlFor(HandleCopyAction.class)%>" method="POST">
                 <input type="hidden" name="destination" value="<%= h(bean.getSelectedDestination()) %>">
                 <input type="hidden" name="plateId" value="<%= bean.getPlate().getRowId() %>">
-                <%= button("Cancel").href(PlateTemplateListAction.class, getContainer()) %>
+                <%= button("Cancel").href(PlateListAction.class, getContainer()) %>
                 <%= bean.getSelectedDestination() != null ? button("Copy").submit(true) : button("Copy").submit(true).onClick("alert('Please select a destination folder.'); return false;") %>
             </labkey:form>
         </td>

@@ -20,13 +20,8 @@ import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.view.ActionURL;
 
-/*
-* User: adam
-* Date: Aug 30, 2009
-* Time: 9:10:07 PM
-*/
 public interface PlateUrls extends UrlProvider
 {
-    ActionURL getPlateTemplateListURL(Container c);
+    ActionURL getPlateListURL(Container c);
     ActionURL getPlateDetailsURL(Container c);
 }

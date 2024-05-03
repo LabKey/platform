@@ -41,12 +41,13 @@
 <%
     JspView<PlateController.PlateTemplateListBean> me = (JspView<PlateController.PlateTemplateListBean>) HttpView.currentView();
     Container c = getContainer();
-    List<? extends Plate> plateTemplates = me.getModelBean().getTemplates();
-    Map<Plate, Integer> plateTemplateRunCount = new HashMap<>();
-    for (Plate template : plateTemplates)
+    List<? extends Plate> plates = me.getModelBean().getTemplates();
+    Map<Plate, Integer> plateRunCount = new HashMap<>();
+    boolean isAssayDesigner = c.hasPermission(getUser(), DesignAssayPermission.class);
+    for (Plate plate : plates)
     {
-        int count = PlateService.get().getRunCountUsingPlate(c, getUser(), template);
-        plateTemplateRunCount.put(template, count);
+        int count = PlateService.get().getRunCountUsingPlate(c, getUser(), plate);
+        plateRunCount.put(plate, count);
     }
 %>
 
@@ -102,7 +103,43 @@
     <input type="hidden" name="plateId" id="plateId" value="">
 </labkey:form>
 
-<h4>Available Plate Templates</h4>
+<%
+    if (isAssayDesigner || c.hasPermission(getUser(), InsertPermission.class))
+    {
+        List<Option> options = new ArrayList<>();
+        for (PlateManager.PlateLayout layout : PlateManager.get().getPlateLayouts())
+        {
+            ActionURL designerURL = new ActionURL(PlateController.DesignerAction.class, c);
+            designerURL.addParameter("rowCount", layout.type().getRows());
+            designerURL.addParameter("colCount", layout.type().getColumns());
+            designerURL.addParameter("assayType", layout.assayType());
+
+            if (layout.name() != null)
+                designerURL.replaceParameter("templateType", layout.name());
+
+            options.add(new Option.OptionBuilder()
+                    .label("new " + layout.description() + " template")
+                    .value(designerURL.toString())
+                    .build());
+        }
+%>
+<h4>Create New Plate</h4>
+<labkey:form method="POST" layout="inline" id="qc_form">
+    <%= new Select.SelectBuilder()
+            .name("template")
+            .id("plate_template")
+            .layout(Input.Layout.INLINE)
+            .required(true)
+            .formGroup(true)
+            .addOptions(options)
+    %>
+    <labkey:button text="create" submit="false" onclick="createPlateTemplate();" id="create-btn"/>
+</labkey:form>
+<%
+    }
+%>
+<br/>
+<h4>Available Plates</h4>
 <table class="labkey-data-region-legacy labkey-show-borders">
     <tr>
         <td class="labkey-column-header">Name</td>
@@ -112,10 +149,9 @@
     </tr>
 <%
     int index = 0;
-    boolean isAssayDesigner = c.hasPermission(getUser(), DesignAssayPermission.class);
-    for (Plate template : plateTemplates)
+    for (Plate plate : plates)
     {
-        Integer runCount = plateTemplateRunCount.get(template);
+        Integer runCount = plateRunCount.get(plate);
 
         Link.LinkBuilder editLink = new Link.LinkBuilder("edit");
         if (runCount > 0)
@@ -126,12 +162,12 @@
         }
         else
         {
-            editLink.href(template.detailsURL());
+            editLink.href(plate.detailsURL());
         }
 %>
     <tr class="<%=getShadeRowClass(index)%>">
-        <td><%= h(template.getName()) %></td>
-        <td><%= h(template.getAssayType()) %></td>
+        <td><%= h(plate.getName()) %></td>
+        <td><%= h(plate.getAssayType()) %></td>
         <td><%= h(runCount) %></td>
         <td>
         <%
@@ -146,20 +182,20 @@
         %>
             <%= link("edit a copy", new ActionURL(PlateController.DesignerAction.class, getContainer()).
                 addParameter("copy", true).
-                addParameter("templateName", template.getName()).
-                addParameter("plateId", template.getRowId())) %>
+                addParameter("templateName", plate.getName()).
+                addParameter("plateId", plate.getRowId())) %>
         <%
             }
             if (c.hasPermission(getUser(), InsertPermission.class))
             {
         %>
             <%= link("copy to another folder", new ActionURL(PlateController.CopyTemplateAction.class, getContainer()).
-                addParameter("plateId", template.getRowId())) %>
+                addParameter("plateId", plate.getRowId())) %>
         <%
             }
             if (isAssayDesigner || c.hasPermission(getUser(), DeletePermission.class))
             {
-                if (plateTemplates.size() > 1)
+                if (plates.size() > 1)
                 {
                     Link.LinkBuilder deleteLink = new Link.LinkBuilder("delete");
                     if (runCount > 0)
@@ -170,7 +206,7 @@
                     }
                     else
                     {
-                        deleteLink.onClick("deletePlate(" + q(template.getName()) + "," + template.getRowId() + ")");
+                        deleteLink.onClick("deletePlate(" + q(plate.getName()) + "," + plate.getRowId() + ")");
                     }
         %>
                     <%= deleteLink %>
@@ -190,46 +226,11 @@
         index++;
     }
 
-    if (plateTemplates == null || plateTemplates.isEmpty())
+    if (plates == null || plates.isEmpty())
     {
 %>
-        <tr><td colspan="2" style="padding: 3px;">No plate templates available.</td></tr>
+        <tr><td colspan="2" style="padding: 3px;">No plates available.</td></tr>
 <%
     }
 %>
 </table>
-
-<%
-    if (isAssayDesigner || c.hasPermission(getUser(), InsertPermission.class))
-    {
-        List<Option> templates = new ArrayList<>();
-        for (PlateManager.PlateLayout layout : PlateManager.get().getPlateLayouts())
-        {
-            ActionURL designerURL = new ActionURL(PlateController.DesignerAction.class, c);
-            designerURL.addParameter("rowCount", layout.type().getRows());
-            designerURL.addParameter("colCount", layout.type().getColumns());
-            designerURL.addParameter("assayType", layout.assayType());
-
-            if (layout.name() != null)
-                designerURL.replaceParameter("templateType", layout.name());
-
-            templates.add(new Option.OptionBuilder()
-                    .label("new " + layout.description() + " template")
-                    .value(designerURL.toString())
-                    .build());
-        }
-%>
-        <br/>
-        <h4>Create New Plate Template</h4>
-        <labkey:form method="POST" layout="inline" id="qc_form">
-            <%= new Select.SelectBuilder().name("template").id("plate_template")
-                    .layout(Input.Layout.HORIZONTAL)
-                    .required(true)
-                    .formGroup(true)
-                    .addOptions(templates)
-            %>
-            <labkey:button text="create" submit="false" onclick="createPlateTemplate();" id="create-btn"/>
-        </labkey:form>
-<%
-    }
-%>
