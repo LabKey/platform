@@ -883,19 +883,17 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 continue;
             }
 
-            // TODO this seems bad to me, why isn't this done in ss.getTinfo()
-            if (dbColumn.getName().equalsIgnoreCase("genid"))
-            {
-                ((BaseColumnInfo)dbColumn).setHidden(true);
-                ((BaseColumnInfo)dbColumn).setUserEditable(false);
-                ((BaseColumnInfo)dbColumn).setShownInDetailsView(false);
-                ((BaseColumnInfo)dbColumn).setShownInInsertView(false);
-                ((BaseColumnInfo)dbColumn).setShownInUpdateView(false);
-            }
-
             // TODO missing values? comments? flags?
             DomainProperty dp = domain.getPropertyByURI(dbColumn.getPropertyURI());
             var propColumn = copyColumnFromJoinedTable(null==dp?dbColumn.getName():dp.getName(), dbColumn);
+            if (propColumn.getName().equalsIgnoreCase("genid"))
+            {
+                propColumn.setHidden(true);
+                propColumn.setUserEditable(false);
+                propColumn.setShownInDetailsView(false);
+                propColumn.setShownInInsertView(false);
+                propColumn.setShownInUpdateView(false);
+            }
             if (null != dp)
             {
                 PropertyColumn.copyAttributes(schema.getUser(), propColumn, dp.getPropertyDescriptor(), schema.getContainer(),
