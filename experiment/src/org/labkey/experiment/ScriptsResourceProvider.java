@@ -17,6 +17,7 @@ import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 
 import java.io.File;
+import java.nio.file.AccessDeniedException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -74,6 +75,12 @@ public class ScriptsResourceProvider implements WebdavService.Provider
         catch (MissingRootDirectoryException e)
         {
             // Don't complain here, just hide the @scripts subfolder
+        }
+        catch (RuntimeException e)
+        {
+            // Don't complain here if AccessDeniedException, just hide the @scripts subfolder (Issue 50212)
+            if (!(e.getCause() instanceof AccessDeniedException))
+                throw e;
         }
 
         return null;
