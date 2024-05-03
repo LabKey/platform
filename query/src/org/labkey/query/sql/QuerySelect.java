@@ -1323,7 +1323,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
             @Override
             public SQLFragment getFromSQL(String alias)
             {
-                try (var recursion = _query.queryRecursionCheck("Too many tables used in this query.  Query may be recursive.", null))
+                try (var recursion = Query.queryRecursionCheck("Too many tables used in this query.  Query may be recursive.", null))
                 {
                     SQLFragment f = new SQLFragment();
                     if (_sqlAllColumns == null)
