@@ -3,7 +3,6 @@ package org.labkey.assay.plate;
 import org.apache.commons.lang3.ArrayUtils;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Results;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
@@ -19,11 +18,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Stream;
 
 public class PlateSetExport
