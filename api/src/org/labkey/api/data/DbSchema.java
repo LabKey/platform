@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -564,6 +565,7 @@ public class DbSchema
             {
                 assertTrue("Not in transaction when should be.", testSchema.getScope().isTransactionActive());
                 m = Table.insert(ctx.getUser(), testTable, m);
+                DbCache.trackRemove(testTable);
                 rowId = ((Integer) m.get("RowId"));
                 assertNotNull("Inserted Row doesn't have Id", rowId);
                 assertTrue(rowId != 0);
@@ -583,6 +585,7 @@ public class DbSchema
             {
                 m.put("IntNotNull", 1);
                 m = Table.update(ctx.getUser(), testTable, m, rowId);
+                DbCache.trackRemove(testTable);
                 assertEquals("Update is consistent in transaction?", 1, (int)m.get("IntNotNull"));
             }
 
@@ -594,6 +597,7 @@ public class DbSchema
             assertEquals("Rollback did not appear to work.", 0, (int)m.get("IntNotNull"));
 
             Table.delete(testTable, rowId);
+            DbCache.trackRemove(testTable);
         }
     }
 

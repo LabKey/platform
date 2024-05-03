@@ -20,6 +20,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.labkey.api.cache.DbCache;
 import org.labkey.api.security.User;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
@@ -144,6 +145,7 @@ public class AtomicDatabaseInteger
             map.put("BitNotNull", true);
 
             map = Table.insert(user, table, map);
+            DbCache.trackRemove(table);
 
             _rowId = (Integer)map.get("RowId");
             _adi = new AtomicDatabaseInteger(table.getColumn("IntNotNull"), c, _rowId);
@@ -207,6 +209,7 @@ public class AtomicDatabaseInteger
             {
                 TableInfo table = TestSchema.getInstance().getTableInfoTestTable();
                 Table.delete(table, _rowId);
+                DbCache.trackRemove(table);
             }
         }
     }

@@ -19,6 +19,7 @@ package org.labkey.core.view;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.NullSafeBindException;
+import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableViewForm;
 import org.labkey.api.data.TestSchema;

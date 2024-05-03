@@ -328,6 +328,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     {
         assert ensureObject;
         super.save(user, table, true);
+        ExperimentServiceImpl.EXPERIMENT_RUN_CACHE.remove(getLSID());
     }
 
     @Override

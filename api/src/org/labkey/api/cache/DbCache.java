@@ -27,9 +27,9 @@ import org.labkey.api.util.logging.LogHelper;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
- *
  * Don't use this! Use CacheManager.getCache() or DatabaseCache instead. DbCache associates a DatabaseCache with each
  * participating TableInfo. The Table layer then invalidates the entire cache anytime it touches (insert, update, delete)
  * that TableInfo. This is easy, but very inefficient. Managers should use DatabaseCaches directly and handle
@@ -126,10 +126,11 @@ public class DbCache
      */
 
     private static final Bag<String> TRACKING_BAG = new HashBag<>();
+    private static final Set<String> INTERESTING = Set.of("TestTable", "ExperimentRun");
 
     private static boolean isInteresting(TableInfo tinfo)
     {
-        return getCache(tinfo, false) != null;
+        return getCache(tinfo, false) != null && INTERESTING.contains(tinfo.getName());
     }
 
     public static void trackInvalidate(TableInfo tinfo)

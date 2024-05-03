@@ -131,7 +131,7 @@ public class LimitedUser extends ClonedUser
             int roleCount = user.getAssignedRoles(c.getPolicy()).size();
             int siteRolesCount = user.getSiteRoles().size();
             User elevated = ElevatedUser.getElevatedUser(user);
-            assertEquals(groupCount, elevated.getGroups().stream().count());
+            assertEquals(user.getGroups() + " vs. " + elevated.getGroups(), groupCount, elevated.getGroups().stream().count());
             assertEquals(roleCount, elevated.getAssignedRoles(c.getPolicy()).size());
             assertEquals(siteRolesCount, elevated.getSiteRoles().size());
         }

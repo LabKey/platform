@@ -746,6 +746,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     void clearCaches();
 
+    void clearExperimentRunCache();
+
     List<ProtocolApplicationParameter> getProtocolApplicationParameters(int rowId);
 
     void moveContainer(Container c, Container cOldParent, Container cNewParent) throws ExperimentException;

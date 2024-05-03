@@ -52,6 +52,7 @@ import org.labkey.api.audit.ExperimentAuditEvent;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.audit.provider.ContainerAuditProvider;
 import org.labkey.api.cache.Cache;
+import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -298,6 +299,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     private final Cache<String, ExpProtocolImpl> PROTOCOL_LSID_CACHE = DatabaseCache.get(getExpSchema().getScope(), CacheManager.UNLIMITED, CacheManager.HOUR, "Protocol by LSID",
         (key, argument) -> toExpProtocol(new TableSelector(getTinfoProtocol(), new SimpleFilter(FieldKey.fromParts("LSID"), key), null).getObject(Protocol.class)));
+    static final Cache<String, ExperimentRun> EXPERIMENT_RUN_CACHE = DatabaseCache.get(getExpSchema().getScope(), CacheManager.UNLIMITED, "Experiment Runs", new ExperimentRunCacheLoader());
 
     private final Cache<String, SortedSet<DataClass>> dataClassCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Data classes", (containerId, argument) ->
     {
@@ -3881,6 +3883,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public TableInfo getTinfoExperimentRun()
     {
+        return getTableInfoExperimentRun();
+    }
+
+    private static TableInfo getTableInfoExperimentRun()
+    {
         return getExpSchema().getTable("ExperimentRun");
     }
 
@@ -4142,6 +4149,31 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     public ExperimentRun getExperimentRun(String LSID)
     {
+        ExperimentRun runOld = getExperimentRunOld(LSID);
+        ExperimentRun runNew = getExperimentRunNew(LSID);
+
+        if (null != runOld)
+        {
+            assert runOld.equals(runNew) : "Experiment runs are not equal!";
+
+            assert Objects.equals(runOld.getComments(), runNew.getComments());
+            assert Objects.equals(runOld.getBatchId(), runNew.getBatchId());
+            assert Objects.equals(runOld.getJobId(), runNew.getJobId());
+            assert Objects.equals(runOld.getFilePathRoot(), runNew.getFilePathRoot());
+            assert Objects.equals(runOld.getName(), runNew.getName());
+            assert Objects.equals(runOld.getWorkflowTask(), runNew.getWorkflowTask());
+            assert Objects.equals(runOld.getModified(), runNew.getModified());
+        }
+        else
+        {
+            assert null == runNew;
+        }
+
+        return runOld;
+    }
+
+    private ExperimentRun getExperimentRunOld(String LSID)
+    {
         //Use main cache so updates/deletes through table layer get handled
         String cacheKey = getCacheKey(LSID);
         ExperimentRun run = (ExperimentRun) DbCache.get(getTinfoExperimentRun(), cacheKey);
@@ -4155,6 +4187,21 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return run;
     }
 
+    private ExperimentRun getExperimentRunNew(String LSID)
+    {
+        return EXPERIMENT_RUN_CACHE.get(LSID);
+    }
+
+    private static class ExperimentRunCacheLoader implements CacheLoader<String, ExperimentRun>
+    {
+        @Override
+        public ExperimentRun load(@NotNull String lsid, @Nullable Object argument)
+        {
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("LSID"), lsid);
+            return new TableSelector(getTableInfoExperimentRun(), filter, null).getObject(ExperimentRun.class);
+        }
+    }
+
     @Override
     public void clearCaches()
     {
@@ -4163,6 +4210,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         PROTOCOL_ROW_ID_CACHE.clear();
         PROTOCOL_LSID_CACHE.clear();
         DomainPropertyManager.clearCaches();
+        clearExperimentRunCache();
+    }
+
+    @Override
+    public void clearExperimentRunCache()
+    {
+        EXPERIMENT_RUN_CACHE.clear();
     }
 
     @Override
@@ -6802,12 +6856,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     public ExpRun saveSimpleExperimentRun(
         ExpRun run,
         Map<? extends ExpMaterial, String> inputMaterials,
-        Map<? extends ExpData, String> inputDatas, 
+        Map<? extends ExpData, String> inputDatas,
         Map<ExpMaterial, String> outputMaterials,
-        Map<ExpData, String> outputDatas, 
-        Map<ExpData, String> transformedDatas, 
-        ViewBackgroundInfo info, 
-        Logger log, 
+        Map<ExpData, String> outputDatas,
+        Map<ExpData, String> transformedDatas,
+        ViewBackgroundInfo info,
+        Logger log,
         boolean loadDataFiles
     ) throws ExperimentException
     {
@@ -9859,10 +9913,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         static public final int A11 = startId+8;
         static public final int AZ = startId+9;
         static public final int Z21 = startId+10;
-        
+
         static edge e(int a,int b) {return new edge(a,b);};
         static public final List<edge> edges = List.of(
-                e(Q,QQ), 
+                e(Q,QQ),
                 e(A1,A), e(A2,A), e(A2, Q), e(Z1, Q), e(Z1, Z), e(Z2, Z),
                 e(A11, A1), e(AZ,A2), e(AZ, Z1), e(Z21, Z2)
         );

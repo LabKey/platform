@@ -17,6 +17,7 @@
 package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
@@ -131,12 +132,13 @@ public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> ext
         {
             if (ensureObject)
             {
-                assert !(_object instanceof IdentifiableEntity) || null == ((IdentifiableEntity)_object).getObjectId();
+                assert !(_object instanceof IdentifiableEntity) || null == _object.getObjectId();
                 _objectId = OntologyManager.ensureObject(getContainer(), getLSID(), getParentObjectId());
                 _object.setObjectId(_objectId);
             }
             _object = Table.insert(user, table, _object);
-            assert !ensureObject || !(_object instanceof IdentifiableEntity) || _objectId == ((IdentifiableEntity)_object).getObjectId();
+            if (this instanceof ExpRunImpl) DbCache.trackRemove(table);
+            assert !ensureObject || !(_object instanceof IdentifiableEntity) || _objectId == _object.getObjectId();
         }
         else
         {

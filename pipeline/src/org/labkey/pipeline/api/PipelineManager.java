@@ -28,6 +28,7 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchemaCache;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.ObjectFactory;
@@ -221,8 +222,10 @@ public class PipelineManager
 
         try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
         {
-            DbCache.clear(ExperimentService.get().getTinfoExperimentRun());
             new SqlExecutor(PipelineSchema.getInstance().getSchema()).execute(sql);
+            DbCache.clear(ExperimentService.get().getTinfoExperimentRun());
+            DbCache.trackRemove(ExperimentService.get().getTinfoExperimentRun());
+            ExperimentService.get().clearCaches();
 
             ContainerUtil.purgeTable(pipeline.getTableInfoStatusFiles(), container, "Container");
 

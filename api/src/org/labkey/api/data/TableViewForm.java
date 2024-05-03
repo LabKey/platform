@@ -33,6 +33,7 @@ import org.labkey.api.action.HasBindParameters;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -162,6 +163,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
             set("container", _c.getId());
 
         Map<String, Object> newMap = Table.insert(_user, _tinfo, getTypedValues());
+        if (_tinfo.getName().equals("TestTable")) DbCache.trackRemove(_tinfo); // Temporary hack
         setTypedValues(newMap, false);
     }
 
@@ -187,6 +189,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
 
         Object[] pkVal = getPkVals();
         Map<String, Object> newMap = Table.update(_user, _tinfo, getTypedValues(), pkVal);
+        if (_tinfo.getName().equals("TestTable")) DbCache.trackRemove(_tinfo);
         setTypedValues(newMap, true);
     }
 
@@ -215,7 +218,10 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         {
             Object[] pkVal = getPkVals();
             if (null != pkVal && null != pkVal[0])
+            {
                 Table.delete(_tinfo, pkVal);
+                if (_tinfo.getName().equals("TestTable")) DbCache.trackRemove(_tinfo);
+            }
             else //Hmm, throw an exception here????
                 _log.warn("Nothing to delete for table " + _tinfo.getName() + " on request " + _request.getRequestURI());
         }
