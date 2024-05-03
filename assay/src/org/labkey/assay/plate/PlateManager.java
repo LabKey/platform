@@ -2642,10 +2642,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             List<GWTPropertyDescriptor> customFields = List.of(
                     new GWTPropertyDescriptor("barcode", "http://www.w3.org/2001/XMLSchema#string"),
                     new GWTPropertyDescriptor("concentration", "http://www.w3.org/2001/XMLSchema#double"),
-                    new GWTPropertyDescriptor("negativeControl", "http://www.w3.org/2001/XMLSchema#double"),
-                    new GWTPropertyDescriptor("Z", "http://www.w3.org/2001/XMLSchema#string"),
-                    new GWTPropertyDescriptor("a", "http://www.w3.org/2001/XMLSchema#string")
-            );
+                    new GWTPropertyDescriptor("negativeControl", "http://www.w3.org/2001/XMLSchema#double"));
 
             PlateManager.get().createPlateMetadataFields(container, user, customFields);
 
@@ -2909,13 +2906,13 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             List<PlateCustomField> fields = PlateManager.get().getPlateMetadataFields(container, user);
 
             // Verify returned sorted by name
-            assertEquals("Expected plate custom fields", 5, fields.size());
-            assertEquals("Expected barcode custom field", "barcode", fields.get(2).getName());
-            assertEquals("Expected concentration custom field", "concentration", fields.get(3).getName());
-            assertEquals("Expected negativeControl custom field", "negativeControl", fields.get(4).getName());
+            assertEquals("Expected plate custom fields", 3, fields.size());
+            assertEquals("Expected barcode custom field", "barcode", fields.get(0).getName());
+            assertEquals("Expected concentration custom field", "concentration", fields.get(1).getName());
+            assertEquals("Expected negativeControl custom field", "negativeControl", fields.get(2).getName());
 
             // assign custom fields to the plate
-            assertEquals("Expected custom fields to be added to the plate", 5, PlateManager.get().addFields(container, user, plateId, fields).size());
+            assertEquals("Expected custom fields to be added to the plate", 3, PlateManager.get().addFields(container, user, plateId, fields).size());
 
             // verification when adding custom fields to the plate
             try
@@ -2925,14 +2922,14 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             }
             catch (IllegalArgumentException e)
             {
-                assertEquals("Expected validation exception", "Failed to add plate custom fields. Custom field \"Z\" already is associated with this plate.", e.getMessage());
+                assertEquals("Expected validation exception", "Failed to add plate custom fields. Custom field \"barcode\" already is associated with this plate.", e.getMessage());
             }
 
             // remove a plate custom field
             fields = PlateManager.get().removeFields(container, user, plateId, List.of(fields.get(0)));
-            assertEquals("Expected 4 plate custom fields", 4, fields.size());
-            assertEquals("Expected concentration custom field", "concentration", fields.get(2).getName());
-            assertEquals("Expected negativeControl custom field", "negativeControl", fields.get(3).getName());
+            assertEquals("Expected 2 plate custom fields", 2, fields.size());
+            assertEquals("Expected concentration custom field", "concentration", fields.get(0).getName());
+            assertEquals("Expected negativeControl custom field", "negativeControl", fields.get(1).getName());
 
             // select wells
             SimpleFilter filter = SimpleFilter.createContainerFilter(container);
@@ -3156,6 +3153,13 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             sample2.setCpasType(sampleType.getLSID());
             sample2.save(user);
 
+            List<GWTPropertyDescriptor> customFields = List.of(
+                    new GWTPropertyDescriptor("Z", "http://www.w3.org/2001/XMLSchema#string"),
+                    new GWTPropertyDescriptor("a", "http://www.w3.org/2001/XMLSchema#string")
+            );
+
+            PlateManager.get().createPlateMetadataFields(container, user, customFields);
+
             PlateType plateType = PlateManager.get().getPlateType(8, 12);
             assertNotNull("96 well plate type was not found", plateType);
 
@@ -3213,6 +3217,12 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             String[] valuesRow3 = new String[]{"myPlate1", "A2", "96-well", "sampleB", "B5678", "1.25", "myPlate2", "A3", "96-well"};
             for (int i = 0; i < row3.length; i++)
                 assertEquals(row3[i].toString(), valuesRow3[i]);
+
+            // Clean Up
+            List<PlateCustomField> fields = PlateManager.get().getPlateMetadataFields(container, user);
+            List<PlateCustomField> fieldsToRemove = List.of(fields.get(0), fields.get(1));
+            PlateManager.get().removeFields(container, user, plateSource.getRowId(), fieldsToRemove);
+            PlateManager.get().deletePlateMetadataFields(container, user, fieldsToRemove);
         }
     }
 }
