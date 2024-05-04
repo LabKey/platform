@@ -332,7 +332,7 @@ public class StudyManager
             @Override
             public void clearCache(StudyImpl obj)
             {
-                super.clearCache(obj);
+                clearCache(obj.getContainer()); // Need to clear <cid>/~ALL plus <cid>/<filter> entries
                 clearCachedStudies();
             }
         };
@@ -400,13 +400,13 @@ public class StudyManager
             @Override
             public void clearCache(Container c)
             {
-                super.clearCache(c);
+                super.clearCache(); // Big hammer, but we're caching datasets in multiple containers
             }
 
             @Override
             public void clearCache(DatasetDefinition obj)
             {
-                super.clearCache(obj.getContainer());
+                super.clearCache(); // Big hammer, but we're caching datasets in multiple containers
             }
         };
 
@@ -514,7 +514,7 @@ public class StudyManager
         while (true)
         {
             List<StudyImpl> studies = _studyHelper.get(c);
-            if (studies == null || studies.size() == 0)
+            if (studies == null || studies.isEmpty())
                 return null;
             else if (studies.size() > 1)
                 throw new IllegalStateException("Only one study is allowed per container");
@@ -2805,10 +2805,16 @@ public class StudyManager
             Table.delete(StudySchema.getInstance().getTableInfoUploadLog(), containerFilter);
             assert deletedTables.add(StudySchema.getInstance().getTableInfoUploadLog());
             Table.delete(_datasetHelper.getTableInfo(), containerFilter);
+            DbCache.trackRemove(_datasetHelper.getTableInfo());
+            _datasetHelper.clearCache(c);
             assert deletedTables.add(_datasetHelper.getTableInfo());
             Table.delete(_visitHelper.getTableInfo(), containerFilter);
+            DbCache.trackRemove(_visitHelper.getTableInfo());
+            _visitHelper.clearCache(c);
             assert deletedTables.add(_visitHelper.getTableInfo());
             Table.delete(_studyHelper.getTableInfo(), containerFilter);
+            DbCache.trackRemove(_studyHelper.getTableInfo());
+            _studyHelper.clearCache(c);
             assert deletedTables.add(_studyHelper.getTableInfo());
 
             // participant lists
@@ -2831,7 +2837,9 @@ public class StudyManager
             assert deletedTables.add(StudySchema.getInstance().getTableInfoVisitAliases());
             Table.delete(SCHEMA.getTableInfoParticipant(), containerFilter);
             assert deletedTables.add(SCHEMA.getTableInfoParticipant());
-            Table.delete(StudySchema.getInstance().getTableInfoCohort(), containerFilter);
+            Table.delete(_cohortHelper.getTableInfo(), containerFilter);
+            DbCache.trackRemove(_cohortHelper.getTableInfo());
+            _cohortHelper.clearCache(c);
             assert deletedTables.add(StudySchema.getInstance().getTableInfoCohort());
             Table.delete(StudySchema.getInstance().getTableInfoParticipantView(), containerFilter);
             assert deletedTables.add(StudySchema.getInstance().getTableInfoParticipantView());
@@ -4148,7 +4156,7 @@ public class StudyManager
         TableInfo table = StudySchema.getInstance().getTableInfoParticipant();
         ArrayList<String> containers = new SqlSelector(table.getSchema(), new SQLFragment("SELECT container FROM study.participant WHERE participantid=?",ptid))
                 .getArrayList(String.class);
-        if (containers.size() == 0)
+        if (containers.isEmpty())
             return null;
         else if (containers.size() == 1)
             return ContainerManager.getForId(containers.get(0));
@@ -4432,7 +4440,7 @@ public class StudyManager
 
     public static void indexParticipants(final IndexTask task, @NotNull final Container c, @Nullable List<String> ptids, @Nullable Date modifiedSince)
     {
-        if (null != ptids && ptids.size() == 0)
+        if (null != ptids && ptids.isEmpty())
             return;
 
         final StudyImpl study = StudyManager.getInstance().getStudy(c);

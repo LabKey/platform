@@ -18,6 +18,7 @@ package org.labkey.api.study;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheLoader;
+import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.SimpleFilter;
@@ -32,11 +33,6 @@ import org.labkey.api.security.User;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * User: brittp
- * Date: Feb 24, 2006
- * Time: 2:04:14 PM
- */
 public class QueryHelper<K extends StudyCachable>
 {
     private final Class<K> _objectClass;
@@ -133,8 +129,10 @@ public class QueryHelper<K extends StudyCachable>
 
     public K create(User user, K obj)
     {
+        K ret = Table.insert(user, getTableInfo(), obj);
+        DbCache.trackRemove(getTableInfo());
         clearCache(obj);
-        return Table.insert(user, getTableInfo(), obj);
+        return ret;
     }
 
     public K update(User user, K obj)
@@ -144,14 +142,17 @@ public class QueryHelper<K extends StudyCachable>
 
     public K update(User user, K obj, Object... pk)
     {
+        K ret = Table.update(user, getTableInfo(), obj, pk);
+        DbCache.trackRemove(getTableInfo());
         clearCache(obj);
-        return Table.update(user, getTableInfo(), obj, pk);
+        return ret;
     }
 
     public void delete(K obj)
     {
-        clearCache(obj);
         Table.delete(getTableInfo(), obj.getPrimaryKey());
+        DbCache.trackRemove(getTableInfo());
+        clearCache(obj);
     }
 
     public TableInfo getTableInfo()
@@ -167,6 +168,11 @@ public class QueryHelper<K extends StudyCachable>
     public void clearCache(K obj)
     {
         StudyCache.uncache(getTableInfo(), obj.getContainer(), obj.getPrimaryKey().toString());
+    }
+
+    public void clearCache()
+    {
+        StudyCache.clearCache(getTableInfo());
     }
 
     protected String getCacheId(Filter filter)

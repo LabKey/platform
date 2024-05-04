@@ -114,7 +114,8 @@ public class DbCache
     }
 
     /**
-     * Everything below is temporary, meant to help irradicate the use of DbCache. If a TableInfo is deemed interesting:
+     * Everything below is temporary, meant to help irradicate the use of DbCache. If a TableInfo is deemed
+     * "interesting" (it's in the process of being migrated):
      * - Each call to invalidateAll() or clear() causes its stack trace to be added to the tracking bag
      * - Each call to trackRemove() causes its stack trace to be removed from the tracking bag
      * A remove that's unsuccessful indicates no corresponding invalidateAll(), so log that. Anything left in the bag
@@ -126,11 +127,11 @@ public class DbCache
      */
 
     private static final Bag<String> TRACKING_BAG = new HashBag<>();
-    private static final Set<String> INTERESTING = Set.of("TestTable", "ExperimentRun");
+    private static final Set<String> INTERESTING = Set.of("TestTable", "ExperimentRun", "Study");
 
     private static boolean isInteresting(TableInfo tinfo)
     {
-        return getCache(tinfo, false) != null && INTERESTING.contains(tinfo.getName());
+        return getCache(tinfo, false) != null;
     }
 
     public static void trackInvalidate(TableInfo tinfo)
@@ -173,6 +174,6 @@ public class DbCache
 
     public static void logUnmatched()
     {
-        TRACKING_BAG.uniqueSet().forEach(key -> LOG.error("Unmatched " + key));
+        TRACKING_BAG.uniqueSet().forEach(key -> LOG.error("Unmatched {}", key));
     }
 }
