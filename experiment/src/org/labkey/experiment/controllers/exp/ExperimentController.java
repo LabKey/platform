@@ -725,9 +725,8 @@ public class ExperimentController extends SpringActionController
                     {
                         String editLink = updateURL.toString();
                         ActionButton updateButton = new ActionButton("Edit Type");
-                        updateButton.setURL("javascript:void(0)");
                         updateButton.setActionType(ActionButton.Action.SCRIPT);
-                        updateButton.setScript("javascript: if (window.confirm('This sample type is defined in the " + _sampleType.getContainer().getPath() + " folder. Would you still like to edit it?')) { window.location = '" + editLink + "' }");
+                        updateButton.setScript("if (window.confirm('This sample type is defined in the " + _sampleType.getContainer().getPath() + " folder. Would you still like to edit it?')) { window.location = '" + editLink + "' }");
                         detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(updateButton);
                     }
                     else
@@ -1088,9 +1087,8 @@ public class ExperimentController extends SpringActionController
                 else if (_dataClass.getContainer().hasPermission(getUser(), DesignDataClassPermission.class))
                 {
                     ActionButton updateButton = new ActionButton("Edit Data Class");
-                    updateButton.setURL("javascript:void(0)");
                     updateButton.setActionType(ActionButton.Action.SCRIPT);
-                    updateButton.setScript("javascript: if (window.confirm('This data class is defined in the " + _dataClass.getContainer().getPath() + " folder. Would you still like to edit it?')) { window.location = '" + updateURL + "' }");
+                    updateButton.setScript("if (window.confirm('This data class is defined in the " + _dataClass.getContainer().getPath() + " folder. Would you still like to edit it?')) { window.location = '" + updateURL + "' }");
                     updateButton.setPrimary(true);
                     bb.add(updateButton);
                 }
