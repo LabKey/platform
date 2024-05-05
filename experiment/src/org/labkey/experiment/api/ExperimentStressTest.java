@@ -18,6 +18,7 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
+import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
 
@@ -31,6 +32,7 @@ import java.util.stream.Collectors;
 
 import static org.labkey.api.exp.api.ExperimentService.QueryOptions.SkipBulkRemapCache;
 
+@TestWhen(TestWhen.When.BVT)
 public class ExperimentStressTest
 {
     private static final Logger LOG = LogManager.getLogger(ExperimentStressTest.class);

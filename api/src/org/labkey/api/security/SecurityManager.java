@@ -16,6 +16,12 @@
 
 package org.labkey.api.security;
 
+import jakarta.mail.Message;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+import jakarta.websocket.server.HandshakeRequest;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
@@ -119,12 +125,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
-import jakarta.mail.Message;
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
-import jakarta.websocket.server.HandshakeRequest;
 import java.beans.PropertyChangeListener;
 import java.io.Closeable;
 import java.io.UnsupportedEncodingException;
@@ -1463,9 +1463,6 @@ public class SecurityManager
 
         try (Transaction transaction = core.getScope().ensureTransaction())
         {
-            // Need to invalidate all computed group lists. This isn't quite right, but it gets the job done.
-            GroupMembershipCache.handleGroupChange(group, group);
-
             // NOTE: Most code can not tell the difference between a non-existent SecurityPolicy and an empty SecurityPolicy
             // NOTE: Both are treated as meaning "inherit", we don't want to accidentally create an empty security policy
             // TODO: create an explicit inherit bit on policy (or distinguish undefined/empty)
@@ -1503,6 +1500,8 @@ public class SecurityManager
                 ProjectAndSiteGroupsCache.uncache(c);
                 // 20329 SecurityPolicy cache still has the role assignments for deleted groups.
                 SecurityPolicyManager.notifyPolicyChanges(resources);
+                // Need to invalidate all computed group lists. This isn't quite right, but it gets the job done.
+                GroupMembershipCache.handleGroupChange(group, group);
             }, CommitTaskOption.IMMEDIATE, CommitTaskOption.POSTCOMMIT, CommitTaskOption.POSTROLLBACK);
 
             if (!group.isProjectGroup())
@@ -1536,7 +1535,6 @@ public class SecurityManager
         GroupCache.uncacheAll();
         ProjectAndSiteGroupsCache.uncache(c);
     }
-
 
     public static void deleteMembers(Group group, Collection<UserPrincipal> membersToDelete)
     {

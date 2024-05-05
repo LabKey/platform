@@ -96,7 +96,10 @@ public class GroupMembershipCache
 
         // invalidate all computed group lists (getAllGroups())
         if (principal instanceof Group)
+        {
             CACHE.removeUsingFilter(new Cache.StringPrefixFilter(ALL_GROUP_MEMBERSHIPS_PREFIX));
+            CACHE.removeUsingFilter(new Cache.StringPrefixFilter(IMMEDIATE_GROUP_MEMBERSHIPS_PREFIX));
+        }
     }
 
     private static void uncache(UserPrincipal principal)
