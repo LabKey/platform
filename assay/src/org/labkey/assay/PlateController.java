@@ -1302,7 +1302,7 @@ public class PlateController extends SpringActionController
                 List<Object[]> plateDataRows = PlateManager.get().getWorklist(form.getSourcePlateSetId(), form.getDestinationPlateSetId(), sourceIncludedMetadataCols, destinationIncludedMetadataCols, getContainer(), getUser());
 
                 ArrayExcelWriter xlWriter = new ArrayExcelWriter(plateDataRows, xlCols);
-                xlWriter.setFullFileName(plateSetSource.getName() + "To" + plateSetDestination.getName() + ".xls");
+                xlWriter.setFullFileName(plateSetSource.getName() + " - " + plateSetDestination.getName());
                 xlWriter.renderWorkbook(getViewContext().getResponse());
 
                 return null; // Returning anything here will cause error as excel writer will close the response stream
@@ -1350,7 +1350,7 @@ public class PlateController extends SpringActionController
                 List<Object[]> plateDataRows = PlateManager.get().getInstrumentInstructions(form.getPlateSetId(), includedMetadataCols, getContainer(), getUser());
 
                 ArrayExcelWriter xlWriter = new ArrayExcelWriter(plateDataRows, xlCols);
-                xlWriter.setFullFileName(plateSet.getName() + ".xls");
+                xlWriter.setFullFileName(plateSet.getName());
                 xlWriter.renderWorkbook(getViewContext().getResponse());
 
                 return null; // Returning anything here will cause error as excel writer will close the response stream
