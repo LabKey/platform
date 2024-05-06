@@ -868,21 +868,6 @@ public class SpecimenController extends SpringActionController
         }
     }
 
-    @RequiresSiteAdmin
-    public static class PivotAction extends SimpleViewAction<Object>
-    {
-        @Override
-        public ModelAndView getView(Object o, BindException errors)
-        {
-            return new JspView<>("/org/labkey/specimen/view/pivot.jsp");
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-        }
-    }
-
     public static class PipelineForm extends PipelinePathForm
     {
         private String replaceOrMerge = "replace";
