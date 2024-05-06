@@ -1744,6 +1744,8 @@ boxPlot.render();
                 config.properties.lowerBound = -3;
             }
         }
+        // default to true
+        config.properties.showBoundLines = config.properties.showBoundLines ?? true;
 
         // get a sorted array of the unique x-axis labels
         var uniqueXAxisKeys = {}, uniqueXAxisLabels = [];
