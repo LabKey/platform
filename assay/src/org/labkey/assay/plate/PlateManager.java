@@ -2605,8 +2605,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     public List<Object[]> getWorklist(
             int sourcePlateSetId,
             int destinationPlateSetId,
-            Set<FieldKey> sourceIncludedMetadataCols,
-            Set<FieldKey> destinationIncludedMetadataCols,
+            List<FieldKey> sourceIncludedMetadataCols,
+            List<FieldKey> destinationIncludedMetadataCols,
             Container c,
             User u
     ) throws RuntimeSQLException
@@ -2615,7 +2615,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return new PlateSetExport().getWorklist(wellTable, sourcePlateSetId, destinationPlateSetId, sourceIncludedMetadataCols, destinationIncludedMetadataCols);
     }
 
-    public List<Object[]> getInstrumentInstructions(int plateSetId, Set<FieldKey> includedMetadataCols, Container c, User u)
+    public List<Object[]> getInstrumentInstructions(int plateSetId, List<FieldKey> includedMetadataCols, Container c, User u)
     {
         TableInfo wellTable = getWellTable(c, u);
         return new PlateSetExport().getInstrumentInstructions(wellTable, plateSetId, includedMetadataCols);
@@ -3127,7 +3127,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             Plate p = PlateManager.get().createAndSavePlate(container, user, plateType, "myPlate", null, null, rows);
 
             // Act
-            Set<FieldKey> includedMetadataCols = WellTable.getMetadataColumns(p.getPlateSet().getRowId(), container, user);
+            List<FieldKey> includedMetadataCols = WellTable.getMetadataColumns(p.getPlateSet(), user);
             List<Object[]> result = PlateManager.get().getInstrumentInstructions(p.getPlateSet().getRowId(), includedMetadataCols, container, user);
 
             // Assert
@@ -3153,24 +3153,33 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             sample2.setCpasType(sampleType.getLSID());
             sample2.save(user);
 
+            List<GWTPropertyDescriptor> customFields = List.of(
+                    new GWTPropertyDescriptor("Z", "http://www.w3.org/2001/XMLSchema#string"),
+                    new GWTPropertyDescriptor("a", "http://www.w3.org/2001/XMLSchema#string")
+            );
+
+            PlateManager.get().createPlateMetadataFields(container, user, customFields);
+
             PlateType plateType = PlateManager.get().getPlateType(8, 12);
             assertNotNull("96 well plate type was not found", plateType);
 
+            // Test sorting
             List<Map<String, Object>> rows1 = List.of(
                     CaseInsensitiveHashMap.of(
                             "wellLocation", "A1",
                             "sampleId", sample1.getRowId(),
-                            "properties/concentration", 2.25,
-                            "properties/barcode", "B1234")
+                            "properties/a", 2.25,
+                            "properties/Z", "B1234")
                     ,
                     CaseInsensitiveHashMap.of(
                             "wellLocation", "A2",
                             "sampleId", sample2.getRowId(),
-                            "properties/concentration", 1.25,
-                            "properties/barcode", "B5678"
+                            "properties/a", 1.25,
+                            "properties/Z", "B5678"
                     )
             );
             Plate plateSource = PlateManager.get().createAndSavePlate(container, user, plateType, "myPlate1", null, null, rows1);
+            assertNotNull("Expected plate set to be specified on plate", plateSource.getPlateSet());
 
             List<Map<String, Object>> rows2 = List.of(
                     CaseInsensitiveHashMap.of(
@@ -3185,11 +3194,12 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                             "wellLocation", "A3",
                             "sampleId", sample2.getRowId())
             );
-            Plate plateDestination =PlateManager.get().createAndSavePlate(container, user, plateType, "myPlate2", null, null, rows2);
+            Plate plateDestination = PlateManager.get().createAndSavePlate(container, user, plateType, "myPlate2", null, null, rows2);
+            assertNotNull("Expected plate set to be specified on plate", plateDestination.getPlateSet());
 
             // Act
-            Set<FieldKey> sourceIncludedMetadataCols = WellTable.getMetadataColumns(plateSource.getPlateSet().getRowId(), container, user);
-            Set<FieldKey> destinationIncludedMetadataCols = WellTable.getMetadataColumns(plateDestination.getPlateSet().getRowId(), container, user);
+            List<FieldKey> sourceIncludedMetadataCols = WellTable.getMetadataColumns(plateSource.getPlateSet(), user);
+            List<FieldKey> destinationIncludedMetadataCols = WellTable.getMetadataColumns(plateDestination.getPlateSet(), user);
             List<Object[]> plateDataRows = PlateManager.get().getWorklist(plateSource.getPlateSet().getRowId(), plateDestination.getPlateSet().getRowId(), sourceIncludedMetadataCols, destinationIncludedMetadataCols, container, user);
 
             // Assert
@@ -3207,6 +3217,12 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             String[] valuesRow3 = new String[]{"myPlate1", "A2", "96-well", "sampleB", "B5678", "1.25", "myPlate2", "A3", "96-well"};
             for (int i = 0; i < row3.length; i++)
                 assertEquals(row3[i].toString(), valuesRow3[i]);
+
+            // Clean Up
+            List<PlateCustomField> fields = PlateManager.get().getPlateMetadataFields(container, user);
+            List<PlateCustomField> fieldsToRemove = List.of(fields.get(0), fields.get(1));
+            PlateManager.get().removeFields(container, user, plateSource.getRowId(), fieldsToRemove);
+            PlateManager.get().deletePlateMetadataFields(container, user, fieldsToRemove);
         }
     }
 }

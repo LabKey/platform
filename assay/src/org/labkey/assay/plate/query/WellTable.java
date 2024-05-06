@@ -55,13 +55,13 @@ import org.labkey.assay.query.AssayDbSchema;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
 {
@@ -235,23 +235,16 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         return defaultVisibleColumns;
     }
 
-    public static Set<FieldKey> getMetadataColumns(int plateSetId, Container c, User u) throws ValidationException
+    public static List<FieldKey> getMetadataColumns(@NotNull PlateSet plateSet, User user)
     {
-        PlateSet plateSet = PlateManager.get().getPlateSet(c, plateSetId);
-        if (plateSet == null)
-            throw new ValidationException("Unable to resolve plate set of id " + plateSetId);
-
-        List<Plate> plates = plateSet.getPlates(u);
-
         Set<FieldKey> includedMetadataCols = new HashSet<>();
-        for (Plate plate : plates)
+        for (Plate plate : plateSet.getPlates(user))
         {
-            List<String> metadataColNames = PlateManager.get().getFields(c, plate.getRowId()).stream().map(PlateCustomField::getName).collect(Collectors.toCollection(ArrayList::new));
-            for (String name : metadataColNames)
-                includedMetadataCols.add(FieldKey.fromParts("properties", name));
+            for (PlateCustomField field : plate.getCustomFields())
+                includedMetadataCols.add(FieldKey.fromParts("properties", field.getName()));
         }
 
-        return includedMetadataCols;
+        return includedMetadataCols.stream().sorted(Comparator.comparing(FieldKey::getName)).toList();
     }
 
 /*
