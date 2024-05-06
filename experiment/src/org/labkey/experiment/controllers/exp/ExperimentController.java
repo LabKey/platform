@@ -89,6 +89,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpDataProtocolInputTable;
 import org.labkey.api.exp.query.ExpInputTable;
 import org.labkey.api.exp.query.ExpMaterialProtocolInputTable;
+import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.exp.xar.LSIDRelativizer;
@@ -4059,6 +4060,14 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
+        protected Map<String, String> getRenamedColumns()
+        {
+            Map<String, String> renamedColumns = super.getRenamedColumns();
+            renamedColumns.putAll(SampleTypeUpdateServiceDI.SAMPLE_ALT_IMPORT_NAME_COLS);
+            return renamedColumns;
+        }
+
+        @Override
         protected int importData(
             DataLoader dl,
             FileStream file,
@@ -4171,7 +4180,6 @@ public class ExperimentController extends SpringActionController
 
                 renameColumns.put(paramName.substring(renameParamPrefix.length()), (String) pv.getValue());
             }
-
             return renameColumns;
         }
 
