@@ -16,6 +16,7 @@
 package org.labkey.api.settings;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.Container;
 import org.labkey.api.services.ServiceRegistry;
 
 import java.util.Collection;
@@ -41,6 +42,8 @@ public interface CustomLabelService
     Collection<CustomLabelProvider> getCustomLabelProviders();
 
     Map<String, Map<String, Integer>> getCustomLabelMetrics();
+
+    Map<String, Map<String, String>> getCustomLabels(Container container);
 
     class CustomLabelServiceImpl implements CustomLabelService
     {
@@ -74,6 +77,19 @@ public interface CustomLabelService
                 labelCounts.put(provider.getName(), provider.getMetrics());
             }
             return labelCounts;
+        }
+
+        @Override
+        public Map<String, Map<String, String>> getCustomLabels(Container container)
+        {
+            Map<String, Map<String, String>> moduleLabels = new HashMap<>();
+            for (CustomLabelProvider provider : getCustomLabelProviders())
+            {
+                Map<String, String> labels = provider.getCustomLabels(container);
+                if (labels != null)
+                    moduleLabels.put(provider.getName(), labels);
+            }
+            return moduleLabels;
         }
     }
 }

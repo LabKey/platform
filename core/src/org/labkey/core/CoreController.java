@@ -2817,6 +2817,19 @@ public class CoreController extends SpringActionController
         }
     }
 
+    @RequiresPermission(ReadPermission.class)
+    public class GetCustomLabelsAction extends ReadOnlyApiAction<CustomLabelForm>
+    {
+        @Override
+        public Object execute(CustomLabelForm form, BindException errors)
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            response.put("labels", CustomLabelService.get().getCustomLabels(getContainer()));
+            response.put("success", true);
+            return response;
+        }
+    }
+
     @RequiresPermission(AdminPermission.class)
     public class CustomLabelsAction extends MutatingApiAction<CustomLabelForm>
     {
