@@ -20,7 +20,6 @@ import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.triggers.Trigger;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
@@ -34,6 +33,7 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
@@ -51,6 +51,8 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.assay.plate.PlateManager;
+import org.labkey.assay.plate.TsvPlateLayoutHandler;
+import org.labkey.assay.plate.data.WellTriggerFactory;
 import org.labkey.assay.query.AssayDbSchema;
 
 import java.sql.SQLException;
@@ -63,15 +65,29 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import static org.labkey.api.query.ExprColumn.STR_TABLE_ALIAS;
+
 public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
 {
     public static final String NAME = "Well";
     public static final String WELL_PROPERTIES_TABLE = "WellProperties";
 
-    public static final String PLATEID_COL = "PlateId";
-    public static final String ROW_COL = "Row";
-    public static final String COL_COL = "Col";
-    public static final String POSITION_COL = "Position";
+    public enum Column
+    {
+        Col,
+        Container,
+        Dilution,
+        Lsid,
+        Placeholder,
+        PlateId,
+        Position,
+        Properties,
+        Row,
+        RowId,
+        SampleId,
+        Type,
+        Value,
+    }
 
     private static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
     private static final Set<String> ignoredColumns = new CaseInsensitiveHashSet();
@@ -79,29 +95,55 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
 
     static
     {
-        defaultVisibleColumns.add(FieldKey.fromParts("PlateId"));
-        defaultVisibleColumns.add(FieldKey.fromParts("Row"));
-        defaultVisibleColumns.add(FieldKey.fromParts("Col"));
-        defaultVisibleColumns.add(FieldKey.fromParts("Position"));
+        defaultVisibleColumns.add(FieldKey.fromParts(Column.PlateId.name()));
+        defaultVisibleColumns.add(FieldKey.fromParts(Column.Row.name()));
+        defaultVisibleColumns.add(FieldKey.fromParts(Column.Col.name()));
+        defaultVisibleColumns.add(FieldKey.fromParts(Column.Position.name()));
 
         // for now don't surface value and dilution, we may choose to drop these fields from the
         // db schema at some point
-        ignoredColumns.add("value");
-        ignoredColumns.add("dilution");
+        ignoredColumns.add(Column.Value.name());
+        ignoredColumns.add(Column.Dilution.name());
     }
 
     public WellTable(PlateSchema schema, @Nullable ContainerFilter cf)
     {
         super(schema, AssayDbSchema.getInstance().getTableInfoWell(), cf);
-
-        addTriggerFactory((c, self, extraContext) -> List.of(new WellTableTrigger()));
+        addTriggerFactory(new WellTriggerFactory());
     }
 
     @Override
     public void addColumns()
     {
         super.addColumns();
+        addGroupColumn();
+        addPositionColumn();
+        addPropertiesColumn();
+        addTypeColumn();
+    }
 
+    private void addGroupColumn()
+    {
+        SQLFragment groupSql = new SQLFragment("(SELECT WG.Name FROM ")
+                .append(AssayDbSchema.getInstance().getTableInfoWellGroupPositions(), "WGP")
+                .append(" INNER JOIN ")
+                .append(AssayDbSchema.getInstance().getTableInfoWellGroup(), "WG")
+                .append(" ON WG.RowId = WGP.WellGroupId ")
+                .append(" INNER JOIN ")
+                .append(AssayDbSchema.getInstance().getTableInfoPlate(), "P")
+                .append(" ON P.RowId = WG.PlateId ")
+                .append(" WHERE P.AssayType = ? AND WGP.WellId = " + STR_TABLE_ALIAS + ".RowId")
+                .add(TsvPlateLayoutHandler.TYPE)
+                .append(")");
+
+        var column = new ExprColumn(this, Column.Placeholder.name(), groupSql, JdbcType.VARCHAR);
+        column.setUserEditable(true);
+        column.setShownInInsertView(true);
+        addColumn(column);
+    }
+
+    private void addPositionColumn()
+    {
         SQLFragment positionSql = new SQLFragment();
         positionSql.append("(CASE");
         for (int i=0; i < PositionImpl.ALPHABET.length; i++)
@@ -113,25 +155,23 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
                     .add(PositionImpl.ALPHABET[i]);
         }
         positionSql.append(" END)");
-        var positionCol = new ExprColumn(this, "Position", positionSql, JdbcType.VARCHAR);
-        positionCol.setSortFieldKeys(List.of(FieldKey.fromParts("RowId")));
+        var positionCol = new ExprColumn(this, Column.Position.name(), positionSql, JdbcType.VARCHAR);
+        positionCol.setSortFieldKeys(List.of(FieldKey.fromParts(Column.RowId.name())));
         positionCol.setUserEditable(false);
         addColumn(positionCol);
-
-        addWellProperties();
     }
 
     /**
      * Adds a FK to the provisioned properties table, this is done in order to expose the fields in a similar
      * way that vocabulary domain properties were exposed in the table.
      */
-    private void addWellProperties()
+    private void addPropertiesColumn()
     {
         Domain domain = PlateManager.get().getPlateMetadataDomain(getContainer(), getUserSchema().getUser());
-        ColumnInfo lsidCol = getColumn("Lsid");
+        ColumnInfo lsidCol = getColumn(Column.Lsid.name());
         if (domain != null && lsidCol != null)
         {
-            BaseColumnInfo col = new AliasedColumn("Properties", lsidCol);
+            BaseColumnInfo col = new AliasedColumn(Column.Properties.name(), lsidCol);
             col.setFk(QueryForeignKey
                     .from(getUserSchema(), getContainerFilter())
                     .to(WELL_PROPERTIES_TABLE, "Lsid", null)
@@ -148,15 +188,37 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
             {
                 for (var column : tableInfo.getColumns())
                 {
-                    if (column.getName().equalsIgnoreCase("lsid"))
+                    if (column.getName().equalsIgnoreCase(Column.Lsid.name()))
                         continue;
 
-                    FieldKey fieldKey = FieldKey.fromParts("Properties", column.getName());
+                    FieldKey fieldKey = FieldKey.fromParts(Column.Properties.name(), column.getName());
                     defaultVisibleColumns.add(fieldKey);
                     _provisionedFieldMap.put(fieldKey, column);
                 }
             }
         }
+    }
+
+    private void addTypeColumn()
+    {
+        // TODO: Shutdown adding well rows via LKS UI
+        SQLFragment wellTypeSql = new SQLFragment("(SELECT DISTINCT WG.TypeName FROM ")
+                .append(AssayDbSchema.getInstance().getTableInfoWellGroupPositions(), "WGP")
+                .append(" INNER JOIN ")
+                .append(AssayDbSchema.getInstance().getTableInfoWellGroup(), "WG")
+                .append(" ON WG.RowId = WGP.WellGroupId ")
+                .append(" INNER JOIN ")
+                .append(AssayDbSchema.getInstance().getTableInfoPlate(), "P")
+                .append(" ON P.RowId = WG.PlateId ")
+                .append(" WHERE P.AssayType = ? AND WGP.WellId = " + STR_TABLE_ALIAS + ".RowId")
+                .add(TsvPlateLayoutHandler.TYPE)
+                .append(")");
+
+        var column = new ExprColumn(this, Column.Type.name(), wellTypeSql, JdbcType.VARCHAR);
+        column.setFk(new QueryForeignKey(getUserSchema().getTable("WellType"), "Value", "Value"));
+        column.setUserEditable(true);
+        column.setShownInInsertView(true);
+        addColumn(column);
     }
 
     /**
@@ -220,10 +282,10 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         var columnInfo = super.wrapColumn(col);
 
         // workaround for sample lookup not resolving correctly
-        if (columnInfo.getName().equalsIgnoreCase("SampleId"))
+        if (columnInfo.getName().equalsIgnoreCase(Column.SampleId.name()))
         {
             columnInfo.setFk(QueryForeignKey.from(getUserSchema(), getContainerFilter())
-                    .schema("exp", getContainer())
+                    .schema(ExpSchema.SCHEMA_NAME, getContainer())
                     .to("Materials", "RowId", "Name"));
         }
         return columnInfo;
@@ -241,7 +303,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         for (Plate plate : plateSet.getPlates(user))
         {
             for (PlateCustomField field : plate.getCustomFields())
-                includedMetadataCols.add(FieldKey.fromParts("properties", field.getName()));
+                includedMetadataCols.add(FieldKey.fromParts(Column.Properties.name(), field.getName()));
         }
 
         return includedMetadataCols.stream().sorted(Comparator.comparing(FieldKey::getName)).toList();
@@ -340,7 +402,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
             for (ColumnInfo col : getRealTable().getColumns())
             {
                 var wrappedCol = wrapColumn(col);
-                if (col.getName().equals("Lsid"))
+                if (col.getName().equals(Column.Lsid.name()))
                 {
                     wrappedCol.setHidden(true);
                     wrappedCol.setKeyField(true);
@@ -385,10 +447,10 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
 
             SimpleTranslator lsidRemover = new SimpleTranslator(data.getDataIterator(context), context);
             lsidRemover.selectAll();
-            if (lsidRemover.getColumnNameMap().containsKey("lsid"))
+            if (lsidRemover.getColumnNameMap().containsKey(Column.Lsid.name()))
             {
                 // remove any furnished lsid since we will be computing one
-                lsidRemover.removeColumn(lsidRemover.getColumnNameMap().get("lsid"));
+                lsidRemover.removeColumn(lsidRemover.getColumnNameMap().get(Column.Lsid.name()));
             }
 
             SimpleTranslator lsidGenerator = new SimpleTranslator(lsidRemover, context);
@@ -397,14 +459,14 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
             final Map<String, Integer> nameMap = lsidGenerator.getColumnNameMap();
 
             // consider enforcing this in the schema
-            if (!nameMap.containsKey("row") || !nameMap.containsKey("col"))
+            if (!nameMap.containsKey(Column.Row.name()) || !nameMap.containsKey(Column.Col.name()))
             {
                 context.getErrors().addRowError(new ValidationException("Row and Col are required fields"));
                 return data;
             }
 
             // generate a value for the lsid
-            lsidGenerator.addColumn(wellTable.getColumn("lsid"),
+            lsidGenerator.addColumn(wellTable.getColumn(Column.Lsid.name()),
                     (Supplier) () -> {
                         Object row = lsidGenerator.get(nameMap.get("row"));
                         Object col = lsidGenerator.get(nameMap.get("col"));
@@ -415,11 +477,11 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
 
             DataIteratorBuilder dib = StandardDataIteratorBuilder.forInsert(wellTable, lsidGenerator, container, user, context);
             dib = new TableInsertDataIteratorBuilder(dib, wellTable, container)
-                    .setKeyColumns(new CaseInsensitiveHashSet("RowId", "Lsid"));
+                    .setKeyColumns(new CaseInsensitiveHashSet(Column.RowId.name(), Column.Lsid.name()));
             if (_provisionedTable != null)
             {
                 dib = new TableInsertDataIteratorBuilder(dib, _provisionedTable, container)
-                        .setKeyColumns(new CaseInsensitiveHashSet("Lsid"));
+                        .setKeyColumns(new CaseInsensitiveHashSet(Column.Lsid.name()));
             }
             dib = LoggingDataIterator.wrap(dib);
             dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(wellTable, dib, context.getInsertOption(), user, container);
@@ -428,18 +490,31 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         }
 
         @Override
-        public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
+        public List<Map<String, Object>> insertRows(
+            User user,
+            Container container,
+            List<Map<String, Object>> rows,
+            BatchValidationException errors,
+            @Nullable Map<Enum, Object> configParameters,
+            Map<String, Object> extraScriptContext
+        )
         {
             return super._insertRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
         }
 
         @Override
-        protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, @Nullable Map<Enum, Object> configParameters) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+        protected Map<String, Object> updateRow(
+            User user,
+            Container container,
+            Map<String, Object> row,
+            @NotNull Map<String, Object> oldRow,
+            @Nullable Map<Enum, Object> configParameters
+        ) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
             // enforce no updates if the plate has been imported in an assay run
-            if (oldRow.containsKey("plateId"))
+            if (oldRow.containsKey(Column.PlateId.name()))
             {
-                Plate plate = PlateManager.get().getPlate(container, (Integer)oldRow.get("plateId"));
+                Plate plate = PlateManager.get().getPlate(container, (Integer) oldRow.get(Column.PlateId.name()));
                 if (plate != null)
                 {
                     int runsInUse = PlateManager.get().getRunCountUsingPlate(container, user, plate);
@@ -451,10 +526,16 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         }
 
         @Override
-        protected Map<String, Object> _update(User user, Container c, Map<String, Object> row, Map<String, Object> oldRow, Object[] keys) throws SQLException, ValidationException
+        protected Map<String, Object> _update(
+            User user,
+            Container c,
+            Map<String, Object> row,
+            Map<String, Object> oldRow,
+            Object[] keys
+        ) throws SQLException, ValidationException
         {
             // LSID was stripped by super.updateRows() and is needed to insert into the well provisioned table
-            String lsid = (String)oldRow.get("lsid");
+            String lsid = (String) oldRow.get(Column.Lsid.name());
             if (lsid == null)
                 throw new ValidationException("lsid required to update row");
 
@@ -465,10 +546,10 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
             if (_provisionedTable != null)
             {
                 keys = new Object[] {lsid};
-                ret.putAll(Table.update(user, _provisionedTable, row, _provisionedTable.getColumn("lsid"), keys, null, Level.DEBUG));
+                ret.putAll(Table.update(user, _provisionedTable, row, _provisionedTable.getColumn(Column.Lsid.name()), keys, null, Level.DEBUG));
             }
 
-            ret.put("lsid", lsid);
+            ret.put(Column.Lsid.name(), lsid);
             return ret;
         }
 
@@ -481,63 +562,6 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
             // delete the provisioned table row
             if (_provisionedTable != null)
                 Table.delete(_provisionedTable, keys);
-        }
-    }
-
-    protected class WellTableTrigger implements Trigger
-    {
-        private final HashSet<Integer> mutatedWellRowIds = new HashSet<>();
-
-        private void addWellId(@Nullable Map<String, Object> newRow)
-        {
-            if (newRow != null && newRow.containsKey("RowId") && newRow.getOrDefault("SampleId", null) != null)
-            {
-                Integer wellRowId = (Integer) newRow.get("RowId");
-                if (wellRowId != null)
-                    mutatedWellRowIds.add(wellRowId);
-            }
-        }
-
-        @Override
-        public void complete(
-            TableInfo table,
-            Container c,
-            User user,
-            TriggerType event,
-            BatchValidationException errors,
-            Map<String, Object> extraContext
-        )
-        {
-            if (errors.hasErrors())
-                return;
-            PlateManager.get().validatePrimaryPlateSetUniqueSamples(mutatedWellRowIds, errors);
-        }
-
-        @Override
-        public void afterInsert(
-            TableInfo table,
-            Container c,
-            User user,
-            @Nullable Map<String, Object> newRow,
-            ValidationException errors,
-            Map<String, Object> extraContext
-        )
-        {
-            addWellId(newRow);
-        }
-
-        @Override
-        public void afterUpdate(
-            TableInfo table,
-            Container c,
-            User user,
-            @Nullable Map<String, Object> newRow,
-            @Nullable Map<String, Object> oldRow,
-            ValidationException errors,
-            Map<String, Object> extraContext
-        )
-        {
-            addWellId(newRow);
         }
     }
 }

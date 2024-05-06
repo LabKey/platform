@@ -28,13 +28,15 @@ public interface WellGroup extends PropertySet, Identifiable, WellData
 {
     enum Type
     {
-        CONTROL,
-        SPECIMEN,
-        REPLICATE,
         ANTIGEN,
+        CONTROL,
         OTHER,
+        NEGATIVE_CONTROL,
+        POSITIVE_CONTROL,
+        REPLICATE,
+        SAMPLE,
+        SPECIMEN,
         VIRUS,
-        SAMPLE
     }
 
     Integer getRowId();
