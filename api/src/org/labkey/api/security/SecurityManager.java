@@ -1676,9 +1676,8 @@ public class SecurityManager
         {
             int id = recurse.removeFirst();
             groupSet.add(id);
-            int[] groups = GroupMembershipCache.getGroupMemberships(id).getPrincipals();
 
-            for (int g : groups)
+            for (int g : GroupMembershipCache.getGroupMemberships(id))
             {
                 if (g == root.getUserId())
                     return true;
@@ -1828,26 +1827,13 @@ public class SecurityManager
      */
     public static List<Group> getGroups(@NotNull Container c, User u)
     {
-        Container proj = c.getProject();
-        if (null == proj)
-            proj = c;
-        int[] groupIds = u.getGroups().getPrincipals();
-        List<Group> groupList = new ArrayList<>();
+        final Container proj = c.isRoot() ? c : c.getProject();
 
-        for (int groupId : groupIds)
-        {
-            //ignore user as group
-            if (groupId != u.getUserId())
-            {
-                Group g = SecurityManager.getGroup(groupId);
-
-                // Only global groups or groups in this project
-                if (null != g && (null == g.getContainer() || g.getContainer().equals(proj.getId())))
-                    groupList.add(g);
-            }
-        }
-
-        return groupList;
+        return u.getGroups().stream()
+            .filter(id -> id != u.getUserId()) //ignore user as group
+            .map(SecurityManager::getGroup)
+            .filter(g -> null != g && (null == g.getContainer() || g.getContainer().equals(proj.getId()))) // Only global groups or groups in this project
+            .toList();
     }
 
     // Returns comma-separated list of group names this user belongs to in this container
@@ -1858,12 +1844,10 @@ public class SecurityManager
         if (null == proj || u == null)
             return HtmlString.EMPTY_STRING;
 
-        int[] groupIds = u.getGroups().getPrincipals();
-
         StringBuilder groupList = new StringBuilder();
         String sep = "";
 
-        for (int groupId : groupIds)
+        for (int groupId : u.getGroups())
         {
             // Ignore Guest, Users, Admins, and user's own id
             if (groupId > 0 && groupId != u.getUserId())

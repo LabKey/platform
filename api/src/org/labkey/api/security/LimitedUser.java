@@ -127,11 +127,11 @@ public class LimitedUser extends ClonedUser
             testPermissions(ElevatedUser.ensureCanSeeAuditLogRole(c, new LimitedUser(user, ReaderRole.class)), 2, true, false, false, false, true);
             testPermissions(ElevatedUser.ensureCanSeeAuditLogRole(c, ElevatedUser.getElevatedUser(new LimitedUser(user, ReaderRole.class), EditorRole.class)), 3, true, true, true, false, true);
 
-            int groupCount = (int)user.getGroups().stream().count();
+            int groupCount = user.getGroups().size();
             int roleCount = user.getAssignedRoles(c.getPolicy()).size();
             int siteRolesCount = user.getSiteRoles().size();
             User elevated = ElevatedUser.getElevatedUser(user);
-            assertEquals(groupCount, elevated.getGroups().stream().count());
+            assertEquals(groupCount, elevated.getGroups().size());
             assertEquals(roleCount, elevated.getAssignedRoles(c.getPolicy()).size());
             assertEquals(siteRolesCount, elevated.getSiteRoles().size());
         }

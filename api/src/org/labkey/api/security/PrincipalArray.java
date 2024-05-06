@@ -1,15 +1,21 @@
 package org.labkey.api.security;
 
+import com.google.common.primitives.Ints;
+import org.apache.commons.collections4.iterators.ArrayIterator;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 import java.util.stream.Stream;
 
 /*
     Simple wrapper that limits the ability to mutate the int[] and ensures it's sorted, searched efficiently, etc.
     Can represent a group's membership list OR user's list of group memberships.
  */
-public class PrincipalArray
+public class PrincipalArray implements Iterable<Integer>
 {
     private static final PrincipalArray EMPTY_PRINCIPAL_ARRAY = new PrincipalArray(Collections.emptyList());
 
@@ -47,14 +53,32 @@ public class PrincipalArray
         return Arrays.stream(_principals).boxed();
     }
 
-    public static PrincipalArray getEmptyPrincipalArray()
-    {
-        return EMPTY_PRINCIPAL_ARRAY;
-    }
-
     @Override
     public String toString()
     {
         return "PrincipalArray" + Arrays.toString(_principals);
+    }
+
+    public int size()
+    {
+        return _principals.length;
+    }
+
+    @NotNull
+    @Override
+    public Iterator<Integer> iterator()
+    {
+        return new ArrayIterator<>(_principals);
+    }
+
+    // Returns an immutable list that wraps the principals array
+    public List<Integer> getList()
+    {
+        return Ints.asList(_principals);
+    }
+
+    public static PrincipalArray getEmptyPrincipalArray()
+    {
+        return EMPTY_PRINCIPAL_ARRAY;
     }
 }
