@@ -544,22 +544,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
         @Override
         public WebdavResource find(Path.Part name)
         {
-            WebdavResource r = getChildren().get(name.toString());
-            if (r == null && AppProps.getInstance().isDevMode())
-            {
-                for (File dir : _files)
-                {
-                    // might not be case-sensitive, but this is just devmode
-                    File f = FileUtil.appendName(dir, name);
-                    if (f.exists())
-                    {
-                        // newFile() checks isDescendant()
-                        assert URIUtil.isDescendant(dir.toURI(), FileUtil.getAbsoluteCaseSensitiveFile(f).toURI());
-                        return new StaticResource(this, getPath().append(f.getName()), new ArrayList<>(Collections.singletonList(f)), null);
-                    }
-                }
-            }
-            return r;
+            return getChildren().get(name.toString());
         }
 
         @Override
