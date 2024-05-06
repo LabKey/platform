@@ -4060,6 +4060,14 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
+        protected Map<String, String> getRenamedColumns()
+        {
+            Map<String, String> renamedColumns = super.getRenamedColumns();
+            renamedColumns.putAll(SampleTypeUpdateServiceDI.SAMPLE_ALT_IMPORT_NAME_COLS);
+            return renamedColumns;
+        }
+
+        @Override
         protected int importData(
             DataLoader dl,
             FileStream file,
@@ -4172,9 +4180,6 @@ public class ExperimentController extends SpringActionController
 
                 renameColumns.put(paramName.substring(renameParamPrefix.length()), (String) pv.getValue());
             }
-            if (_target instanceof ExpMaterialTable)
-                renameColumns.putAll(SampleTypeUpdateServiceDI.SAMPLE_ALT_IMPORT_NAME_COLS);
-
             return renameColumns;
         }
 
