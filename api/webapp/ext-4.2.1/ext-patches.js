@@ -217,7 +217,9 @@ Ext4.override(Ext4.form.field.Base, {
         var data = this.callOverridden();
 
         //support a tooltip
-        data.helpPopupHtml = LABKEY.Utils.helpPopup(data.fieldLabel, this.helpPopup, true, 1, 50000).html;
+        if (this.helpPopup) {
+            data.helpPopupHtml = LABKEY.Utils.helpPopup(data.fieldLabel, this.helpPopup, true, 1, 50000).html;
+        }
 
         return data;
     }
