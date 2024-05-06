@@ -2981,7 +2981,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return files;
     }
 
-    public List<File> exportPlateMaps(Container c, User user, ContainerFilter cf, List<Integer> plateIds, ViewContext viewContext)  throws Exception
+    public List<File> exportPlateMaps(Container c, User user, ContainerFilter cf, List<Integer> plateIds)  throws Exception
     {
         if (plateIds.isEmpty()) return emptyList();
 

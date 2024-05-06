@@ -78,7 +78,6 @@ import java.text.Format;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -102,8 +101,6 @@ public class ExcelColumn extends RenderColumn
     private static final double MAX_IMAGE_RATIO = 0.75;
     private static final double MAX_IMAGE_HEIGHT = 400.0;
     private static final double MAX_IMAGE_WIDTH = 300.0;
-
-    private static final Date EXCEL_DATE_0 = (new GregorianCalendar(1900, 1, 1)).getTime();
 
     // CONSIDER: Add support for left/right/center alignment (from DisplayColumn)
     private int _simpleType = ExcelCellUtils.TYPE_UNKNOWN;

@@ -1509,11 +1509,10 @@ public class PlateController extends SpringActionController
             else if (form.getExportType() == PlateExportType.TSV)
                 files = PlateManager.get().exportPlateData(getContainer(), getUser(), cf, form.getPlateIds(), TSVWriter.DELIM.TAB);
             else
-                files = PlateManager.get().exportPlateMaps(getContainer(), getUser(), cf, form.getPlateIds(), getViewContext());
+                files = PlateManager.get().exportPlateMaps(getContainer(), getUser(), cf, form.getPlateIds());
 
             if (files.isEmpty())
             {
-                // TODO: what does the empty response look like? Should it be an error?
                 return null;
             }
             else if (files.size() == 1)
@@ -1530,6 +1529,8 @@ public class PlateController extends SpringActionController
                 filename = "plates.zip";
             else
                 filename = filename + ".zip";
+
+            filename = FileUtil.makeLegalName(filename + ".zip");
 
             // Export to a temporary file first so exceptions are displayed by the standard error page
             Path tempDir = FileUtil.getTempDirectory().toPath();

@@ -12,6 +12,7 @@ import java.io.File;
 import java.math.BigDecimal;
 import java.sql.Time;
 import java.text.Format;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 
@@ -32,7 +33,7 @@ public class ExcelCellUtils
     public static final int TYPE_FILE = 7;
     public static final int TYPE_TIME = 8;
 
-    private static final Date EXCEL_DATE_0 = (new GregorianCalendar(1900, 1, 1)).getTime();
+    private static final Date EXCEL_DATE_0 = (new GregorianCalendar(1900, Calendar.JANUARY, 1)).getTime();
 
     public static int getSimpleType(DisplayColumn dc)
     {
@@ -78,7 +79,8 @@ public class ExcelCellUtils
             if (simpleType == TYPE_DATE || simpleType == TYPE_TIME)
             {
                 formatString = formatString.replaceAll("aa", "a").replaceAll("a", "AM/PM");
-            } else if (simpleType == TYPE_INT || simpleType == TYPE_DOUBLE)
+            }
+            else if (simpleType == TYPE_INT || simpleType == TYPE_DOUBLE)
             {
                 // Excel has a different idea of how to represent scientific notation, so be sure that we
                 // transform the Java format if needed.
@@ -89,19 +91,14 @@ public class ExcelCellUtils
             return formatString;
         }
 
-        switch (simpleType)
+        return switch (simpleType)
         {
-            case(TYPE_DATE):
-                return DateUtil.getStandardDateFormatString();
-            case(TYPE_TIME):
-                return DateUtil.getStandardTimeFormatString();
-            case(TYPE_INT):
-                return "0";
-            case(TYPE_DOUBLE):
-                return "0.0000";
-            default:
-                return null;
-        }
+            case (TYPE_DATE) -> DateUtil.getStandardDateFormatString();
+            case (TYPE_TIME) -> DateUtil.getStandardTimeFormatString();
+            case (TYPE_INT) -> "0";
+            case (TYPE_DOUBLE) -> "0.0000";
+            default -> null;
+        };
     }
 
     public static CellStyle createCellStyle(Workbook workbook, int simpleType, @Nullable String formatString)
@@ -111,25 +108,21 @@ public class ExcelCellUtils
 
         CellStyle style = workbook.createCellStyle();
 
-        switch (simpleType)
+        return switch (simpleType)
         {
-            case(TYPE_INT):
-            case(TYPE_DOUBLE):
-            case(TYPE_DATE):
-            case(TYPE_TIME):
+            case (TYPE_INT), (TYPE_DOUBLE), (TYPE_DATE), (TYPE_TIME) ->
             {
                 short formatIndex = workbook.createDataFormat().getFormat(formatString);
                 style.setDataFormat(formatIndex);
-                return style;
+                yield style;
             }
-            case(TYPE_MULTILINE_STRING):
+            case (TYPE_MULTILINE_STRING) ->
             {
                 style.setWrapText(true);
-                return style;
+                yield style;
             }
-            default:
-                return null;
-        }
+            default -> null;
+        };
     }
 
     public static void writeCell(Cell cell, CellStyle style, int simpleType, String formatString, ColumnInfo columnInfo, Object value)
