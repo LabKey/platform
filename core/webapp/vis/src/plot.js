@@ -2215,7 +2215,9 @@ boxPlot.render();
                 config.layers = [];
 
                 if (config.properties.mean !== undefined) {
-                    if (config.properties.stdDev !== undefined && config.properties.boundType === LABKEY.vis.PlotProperties.BoundType.StandardDeviation) {
+                    if (config.properties.stdDev !== undefined &&
+                            config.properties.boundType === LABKEY.vis.PlotProperties.BoundType.StandardDeviation &&
+                            config.properties.showBoundLines) {
 
                         config.layers.push(new LABKEY.vis.Layer({
                             geom: new LABKEY.vis.Geom.ErrorBar({size: 1, color: 'red', dashed: true, width: barWidth, topOnly: true}),
