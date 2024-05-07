@@ -52,6 +52,7 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
@@ -2929,25 +2930,13 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return null;
     }
 
-    private List<DisplayColumn> getPlateDisplayColumns(Plate plate, QueryView queryView, boolean isMapView)
+    private List<DisplayColumn> getPlateDisplayColumns(QueryView queryView)
     {
-        List<FieldKey> fieldKeys = getPlateExportFieldKeys(plate, isMapView);
-        List<DisplayColumn> viewColumns = queryView.getDisplayColumns();
-        List<DisplayColumn> displayColumns = new ArrayList<>();
-
-        // We iterate through the fieldKeys instead of streaming/filtering the viewColumns because we want to retain
-        // the order.
-        for (FieldKey fieldKey : fieldKeys)
-        {
-            DisplayColumn displayColumn = getDisplayColumnForFieldKey(viewColumns, fieldKey);
-
-            if (displayColumn != null)
-            {
-                displayColumns.add(displayColumn);
-            }
-        }
-
-        return displayColumns;
+        // We have to use the display columns from the DataRegion returned from createDataView in order to get the
+        // correct columns that we set via QuerySettings in getPlateQueryView, if we don't then we'll only get the
+        // columns from the default view of the Well table, which could be anything.
+        DataRegion dataRegion = queryView.createDataView().getDataRegion();
+        return dataRegion.getDisplayColumns().stream().filter(DisplayColumn::isQueryColumn).toList();
     }
 
     public List<File> exportPlateData(Container c, User user, ContainerFilter cf, List<Integer> plateIds, TSVWriter.DELIM delim) throws Exception
@@ -2961,10 +2950,10 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             Plate plate = getPlate(cf, plateId);
             if (plate != null)
             {
-                QueryView plateQueryView = getPlateQueryView(c, user, cf, plate, false);
                 String filename = FileUtil.makeLegalName(plate.getName());
                 File tempFile = FileUtil.createTempFile(FileUtil.getBaseName(FileUtil.getFileName(tempDir.resolve(filename))), "." + delim.extension);
-                List<DisplayColumn> displayColumns = getPlateDisplayColumns(plate, plateQueryView, false);
+                QueryView plateQueryView = getPlateQueryView(c, user, cf, plate, false);
+                List<DisplayColumn> displayColumns = getPlateDisplayColumns(plateQueryView);
                 Map<String, String> renameColumnMap = getPlateRenameColumnMap(plate);
 
                 try (TSVGridWriter writer = new TSVGridWriter(plateQueryView::getResults, displayColumns, renameColumnMap))
@@ -2994,7 +2983,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             if (plate != null)
             {
                 QueryView plateQueryView = getPlateQueryView(c, user, cf, plate, true);
-                List<DisplayColumn> displayColumns = getPlateDisplayColumns(plate, plateQueryView, true);
+                List<DisplayColumn> displayColumns = getPlateDisplayColumns(plateQueryView);
                 PlateMapExcelWriter writer = new PlateMapExcelWriter(plate, displayColumns, plateQueryView);
                 String filename = FileUtil.makeLegalName(plate.getName());
                 File tempFile = FileUtil.createTempFile(FileUtil.getBaseName(FileUtil.getFileName(tempDir.resolve(filename))), ".xlsx");
