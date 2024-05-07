@@ -16,6 +16,7 @@
 package org.labkey.assay;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
@@ -1050,14 +1051,17 @@ public class PlateController extends SpringActionController
                 List<PlateManager.CreatePlateSetPlate> plates = new ArrayList<>();
                 if (form.isStandaloneAssayPlateCase() || form.isRearrayCase())
                 {
-                    plates = PlateManager.get().getPlateData(getViewContext(), form.getSelectionKey(), form.getPlates(), getContainer());
+                    String selectionKey = StringUtils.trimToNull(form.getSelectionKey());
+                    if (selectionKey == null)
+                    {
+                        errors.reject(ERROR_REQUIRED, "Specifying a \"selectionKey\" is required for this configuration.");
+                        return null;
+                    }
+                    plates = PlateManager.get().getPlateData(getContainer(), selectionKey, form.getPlates());
                 }
                 else if (form.isReplateCase())
                 {
-                    // When replating, we want the new plate names to be auto-generated
-                    plates = PlateManager.get()
-                            .getPlates(form.getParentPlateSetId(), getContainer(), getUser()).stream()
-                            .map(p -> new PlateManager.CreatePlateSetPlate(null, p.plateType(), p.data())).toList();
+                    plates = PlateManager.get().getPlateData(getContainer(), getUser(), form.getParentPlateSetId());
                 }
                 else if (form.isDefaultCase())
                 {

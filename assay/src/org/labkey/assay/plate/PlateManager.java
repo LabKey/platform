@@ -213,7 +213,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             @Override
             protected List<Pair<Integer, Integer>> getSupportedPlateSizes()
             {
-                return List.of(new Pair<>(8, 12));
+                return List.of(Pair.of(8, 12));
             }
 
             @Override
@@ -638,19 +638,27 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return null;
     }
 
-    private @NotNull Plate requirePlate(Container container, int plateRowId, @Nullable String errorPrefix)
+    private Object require(Object object, @NotNull String error, @Nullable String errorPrefix) throws ValidationException
     {
-        Plate plate = getPlate(container, plateRowId);
-        if (plate == null)
-        {
-            String error = "Plate id \"" + plateRowId + "\" not found.";
-            String errorPrefix_ = StringUtils.trimToEmpty(errorPrefix);
-            if (!errorPrefix_.isEmpty())
-                error = errorPrefix_ + " " + error;
-            throw new IllegalArgumentException(error);
-        }
+        if (object != null) return object;
+        String errorPrefix_ = StringUtils.trimToEmpty(errorPrefix);
+        if (!errorPrefix_.isEmpty())
+            error = errorPrefix_ + " " + error;
+        throw new ValidationException(error);
+    }
 
-        return plate;
+    private @NotNull Plate requirePlate(Container container, int plateRowId, @Nullable String errorPrefix) throws ValidationException
+    {
+        return (Plate) require(getPlate(container, plateRowId), "Plate id \"" + plateRowId + "\" not found.", errorPrefix);
+    }
+
+    private @NotNull PlateSet requirePlateSet(Container container, int plateSetRowId, @Nullable String errorPrefix) throws ValidationException
+    {
+        return (PlateSet) require(
+            getPlateSet(container, plateSetRowId),
+            String.format("Plate set with rowId (%d) is not available in %s.", plateSetRowId, container.getPath()),
+            errorPrefix
+        );
     }
 
     /**
@@ -2001,7 +2009,12 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 .toList();
     }
 
-    public @NotNull List<PlateCustomField> addFields(Container container, User user, Integer plateId, List<PlateCustomField> fields) throws SQLException
+    public @NotNull List<PlateCustomField> addFields(
+        Container container,
+        User user,
+        Integer plateId,
+        List<PlateCustomField> fields
+    ) throws SQLException, ValidationException
     {
         if (plateId == null)
             throw new IllegalArgumentException("Failed to add plate custom fields. Invalid plateId provided.");
@@ -2055,7 +2068,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return getFields(container, plateId);
     }
 
-    public @NotNull List<PlateCustomField> getFields(Container container, Integer plateId)
+    public @NotNull List<PlateCustomField> getFields(Container container, Integer plateId) throws ValidationException
     {
         Plate plate = requirePlate(container, plateId, "Failed to get plate custom fields.");
         return plate.getCustomFields();
@@ -2122,7 +2135,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return fields.stream().sorted(Comparator.comparing(PlateCustomField::getName)).toList();
     }
 
-    public List<PlateCustomField> removeFields(Container container, User user, Integer plateId, List<PlateCustomField> fields)
+    public List<PlateCustomField> removeFields(Container container, User user, Integer plateId, List<PlateCustomField> fields) throws ValidationException
     {
         Plate plate = requirePlate(container, plateId, "Failed to remove plate custom fields.");
 
@@ -2166,7 +2179,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return getFields(container, plateId);
     }
 
-    public List<PlateCustomField> setFields(Container container, User user, Integer plateRowId, List<PlateCustomField> fields) throws SQLException
+    public List<PlateCustomField> setFields(Container container, User user, Integer plateRowId, List<PlateCustomField> fields) throws SQLException, ValidationException
     {
         requirePlate(container, plateRowId, "Failed to set plate custom fields.");
 
@@ -2497,15 +2510,18 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         if (resultRowIds != null && !resultRowIds.isEmpty())
             return new ArrayList<>(new HashSet<>(resultRowIds));
         if (StringUtils.trimToNull(resultSelectionKey) != null)
-        {
-            ViewContext viewContext = HttpView.currentContext();
-            if (viewContext == null)
-                throw new IllegalStateException("Unable to resolve ViewContext for assay result hits.");
-
-            return DataRegionSelection.getSelectedIntegers(viewContext, resultSelectionKey, false);
-        }
+            return getSelection(resultSelectionKey);
 
         return Collections.emptyList();
+    }
+
+    private Collection<Integer> getSelection(@NotNull String selectionKey)
+    {
+        ViewContext viewContext = HttpView.currentContext();
+        if (viewContext == null)
+            throw new IllegalStateException("Unable to resolve ViewContext to acquire selection key.");
+
+        return DataRegionSelection.getSelectedIntegers(viewContext, selectionKey, false);
     }
 
     public void markHits(
@@ -2760,36 +2776,38 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             for (int colIdx = 0; colIdx < columnCount; colIdx++)
             {
                 if (sampleIdsCounter >= sampleIdsSorted.length)
-                    return new Pair<>(sampleIdsCounter, wellSampleDataForPlate);
+                    return Pair.of(sampleIdsCounter, wellSampleDataForPlate);
 
-                Map<String, Object> wellData = Map.of(
-                        "sampleId", sampleIdsSorted[sampleIdsCounter],
-                        "wellLocation", createPosition(c, rowIdx, colIdx).getDescription()
-                );
-                wellSampleDataForPlate.add(wellData);
+                wellSampleDataForPlate.add(CaseInsensitiveHashMap.of(
+                    "sampleId", sampleIdsSorted[sampleIdsCounter],
+                    "wellLocation", createPosition(c, rowIdx, colIdx).getDescription()
+                ));
                 sampleIdsCounter++;
             }
         }
 
-        return new Pair<>(sampleIdsCounter, wellSampleDataForPlate);
+        return Pair.of(sampleIdsCounter, wellSampleDataForPlate);
     }
 
-    public List<PlateManager.CreatePlateSetPlate> getPlateData(ViewContext viewContext, String selectionKey, List<PlateManager.CreatePlateSetPlate> platesModel, Container c)
+    public List<CreatePlateSetPlate> getPlateData(
+        Container c,
+        @NotNull String selectionKey,
+        List<CreatePlateSetPlate> platesModel
+    ) throws ValidationException
     {
-        int[] sampleIdsSorted = DataRegionSelection.getSelectedIntegers(viewContext, selectionKey, false)
+        int[] sampleIdsSorted = getSelection(selectionKey)
                 .stream()
                 .mapToInt(Integer::intValue)
                 .sorted()
                 .toArray();
         int sampleIdsCounter = 0;
 
-        List<PlateManager.CreatePlateSetPlate> platesData = new ArrayList<>();
+        List<CreatePlateSetPlate> platesData = new ArrayList<>();
         Map<Integer, PlateType> plateTypesHash = new HashMap<>();
 
-        for (PlateManager.CreatePlateSetPlate plate : platesModel)
+        for (CreatePlateSetPlate plate : platesModel)
         {
             int plateTypeId = plate.plateType;
-            String plateName = plate.name;
 
             PlateType plateType;
             if (plateTypesHash.get(plateTypeId) != null)
@@ -2800,50 +2818,41 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             {
                 plateType = getPlateType(plateTypeId);
                 if (plateType == null)
-                    throw new IllegalArgumentException(String.format("The plate type id (%d) is invalid.", plateTypeId));
+                    throw new ValidationException(String.format("Failed to generate plate data. The plate type id (%d) is invalid.", plateTypeId));
                 plateTypesHash.put(plateTypeId, plateType);
             }
 
             // Iterate through sorted samples array and place them in ascending order in each plate's wells
             Pair<Integer, List<Map<String, Object>>> pair = getWellSampleData(sampleIdsSorted, plateType.getRows(), plateType.getColumns(), sampleIdsCounter, c);
-            platesData.add(new PlateManager.CreatePlateSetPlate(plateName, plateTypeId, pair.second));
+            platesData.add(new CreatePlateSetPlate(plate.name, plateTypeId, pair.second));
 
             sampleIdsCounter = pair.first;
         }
 
         if (sampleIdsSorted.length != sampleIdsCounter)
-            throw new IllegalArgumentException("Plate dimensions are incompatible with selected sample count.");
+            throw new ValidationException("Failed to generate plate data. Plate dimensions are incompatible with selected sample count.");
 
         return platesData;
     }
 
-    public List<PlateManager.CreatePlateSetPlate> getPlates(Integer plateSetId, Container c, User u)
+    public List<CreatePlateSetPlate> getPlateData(Container c, User u, Integer plateSetId) throws ValidationException
     {
-        List<PlateManager.CreatePlateSetPlate> plates = new ArrayList<>();
+        PlateSet plateSet = requirePlateSet(c, plateSetId, "Failed to generate plate data.");
+        List<CreatePlateSetPlate> plates = new ArrayList<>();
 
-        PlateSet parentPlateSet = getPlateSet(c, plateSetId);
-        if (parentPlateSet == null)
-            throw new IllegalArgumentException(String.format("Failed to get plate set. Plate set with rowId (%d) is not available.", plateSetId));
-
-        List<Plate> platesList = parentPlateSet.getPlates(u);
-
-        for (Plate p : platesList)
+        for (Plate p : plateSet.getPlates(u))
         {
-            String name = p.getName();
-            Integer plateTypeId = p.getPlateType().getRowId();
-
-            TableSelector ts = new TableSelector(AssayDbSchema.getInstance().getTableInfoWell(), Set.of("SampleId", "Row", "Col"), new SimpleFilter(FieldKey.fromParts("PlateId"), p.getRowId()), null);
-
             List<Map<String, Object>> data = new ArrayList<>();
-            for (Map<String, Object> row : ts.getMapArray())
+
+            for (WellImpl well : getWells(p))
             {
-                Map<String, Object> dataEntry = new HashMap<>();
-                dataEntry.put("wellLocation", createPosition(c, (Integer) row.get("row"),(Integer) row.get("col")).getDescription());
-                dataEntry.put("sampleId", row.get("sampleid"));
-                data.add(dataEntry);
+                data.add(CaseInsensitiveHashMap.of(
+                    "sampleId", well.getSampleId(),
+                    "wellLocation", createPosition(c, well.getRow(), well.getColumn()).getDescription()
+                ));
             }
 
-            plates.add(new PlateManager.CreatePlateSetPlate(name, plateTypeId, data));
+            plates.add(new CreatePlateSetPlate(null, p.getPlateType().getRowId(), data));
         }
 
         return plates;
