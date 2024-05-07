@@ -74,12 +74,15 @@ public abstract class AbstractCustomLabelProvider implements CustomLabelProvider
         for (Map.Entry<String, String> labelEntry: updatedLabels.entrySet())
         {
             String rawLabel = labelEntry.getValue();
-            if (rawLabel == null || StringUtils.isEmpty(rawLabel.trim()))
-                continue;
-            String label = rawLabel.trim();
-            if (label.length() > 400)
-                throw new ValidationException("Label cannot be longer than 400 characters.");
-            sanitizedLabels.put(labelEntry.getKey(), label);
+            if (rawLabel == null)
+                sanitizedLabels.put(labelEntry.getKey(), "");
+            else
+            {
+                String label = rawLabel.trim();
+                if (label.length() > 400)
+                    throw new ValidationException("Label cannot be longer than 400 characters.");
+                sanitizedLabels.put(labelEntry.getKey(), label);
+            }
         }
         if (sanitizedLabels.isEmpty())
             return;
