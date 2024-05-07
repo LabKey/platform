@@ -2936,6 +2936,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         // correct columns that we set via QuerySettings in getPlateQueryView, if we don't then we'll only get the
         // columns from the default view of the Well table, which could be anything.
         DataRegion dataRegion = queryView.createDataView().getDataRegion();
+
+        // Filter on isQueryColumn so we don't get the details or update columns
         return dataRegion.getDisplayColumns().stream().filter(DisplayColumn::isQueryColumn).toList();
     }
 
