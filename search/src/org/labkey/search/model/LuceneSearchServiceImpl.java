@@ -1913,7 +1913,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             for (File file : sampledata.listFiles(File::isFile))
             {
                 String docId = "testtika";
-                SimpleDocumentResource resource = new SimpleDocumentResource(new Path(file.getAbsolutePath()), docId, null, "text/plain", null, new URLHelper(false), null);
+                SimpleDocumentResource resource = new SimpleDocumentResource(Path.parse(file.getAbsolutePath()), docId, null, "text/plain", null, new URLHelper(false), null);
                 ContentHandler handler = new BodyContentHandler(-1);
                 Metadata metadata = new Metadata();
 

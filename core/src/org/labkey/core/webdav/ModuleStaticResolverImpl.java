@@ -184,8 +184,8 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
         WebdavResource r = _root;
         for (int i=0 ; i<path.size() ; i++)
         {
-            String p = path.get(i);
-            if (null == p || p.equalsIgnoreCase("META-INF") || p.equalsIgnoreCase("WEB-INF") || p.startsWith("."))
+            Path.Part p = path.getPart(i);
+            if (null == p || p.toString().equalsIgnoreCase("META-INF") || p.toString().equalsIgnoreCase("WEB-INF") || p.toString().startsWith("."))
                 return null;
             r = r.find(p);
             if (null == r)
@@ -542,20 +542,9 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
         }
 
         @Override
-        public WebdavResource find(String name)
+        public WebdavResource find(Path.Part name)
         {
-            WebdavResource r = getChildren().get(name);
-            if (r == null && AppProps.getInstance().isDevMode())
-            {
-                for (File dir : _files)
-                {
-                    // might not be case-sensitive, but this is just devmode
-                    File f = new File(dir, name);
-                    if (f.exists() && URIUtil.isDescendant(dir.toURI(), FileUtil.getAbsoluteCaseSensitiveFile(f).toURI()))
-                        return new StaticResource(this, getPath().append(f.getName()), new ArrayList<>(Collections.singletonList(f)), null);
-                }
-            }
-            return r;
+            return getChildren().get(name.toString());
         }
 
         @Override
@@ -653,7 +642,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
     public class SymbolicLink extends AbstractWebdavResourceCollection implements WebdavResolver
     {
         final Path _target;
-        final String _indexPage;
+        final Path.Part _indexPage;
         final boolean _readOnly;
 
         SymbolicLink(Path path, WebdavResolver resolver)
@@ -668,12 +657,12 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
         {
             super(path, (WebdavResolver)null);
             _target = target;
-            _indexPage = indexPage;
+            _indexPage = null==indexPage ? null :  Path.toPathPart(indexPage);
             _readOnly = ro;
         }
 
         @Override
-        public WebdavResource find(String name)
+        public WebdavResource find(Path.Part name)
         {
             LookupResult res = lookupEx(new Path(name));
             return null == res ? null : res.resource;
@@ -744,11 +733,11 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
 
         @Nullable
         @Override
-        public String defaultWelcomePage()
+        public Path.Part defaultWelcomePage()
         {
             if (null != _indexPage)
                 return _indexPage;
-            return "index.html";
+            return INDEX_HTML;
         }
 
         @Override
