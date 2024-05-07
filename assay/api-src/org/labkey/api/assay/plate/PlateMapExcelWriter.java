@@ -150,7 +150,8 @@ public class PlateMapExcelWriter extends ExcelWriter
                 {
                     DisplayColumn displayColumn = displayColumns.get(0);
                     Object value = well.get(displayColumn.getColumnInfo().getAlias());
-                    ExcelCellUtils.writeCell(sheet.getWorkbook(), cell, displayColumn, value);
+                    if (value != null)
+                        ExcelCellUtils.writeCell(sheet.getWorkbook(), cell, displayColumn, value);
                 }
                 else
                 {
