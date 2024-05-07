@@ -55,8 +55,6 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * Convenience base class for {@link ForeignKey} implementors.
- * User: kevink
- * Date: Nov 29, 2007 5:30:26 PM
  */
 public abstract class AbstractForeignKey implements ForeignKey, Cloneable
 {

@@ -1428,7 +1428,7 @@ public class SecurityManager
         return null != getGroupId(c, groupName, ownerId, false);
     }
 
-    public static Group renameGroup(Group group, String newName, User currentUser)
+    public static void renameGroup(Group group, String newName, User currentUser)
     {
         if (group.isSystemGroup())
             throw new IllegalArgumentException("System groups may not be renamed!");
@@ -1443,8 +1443,6 @@ public class SecurityManager
 
         Table.update(currentUser, core.getTableInfoPrincipals(), Collections.singletonMap("name", newName), group.getUserId());
         GroupCache.uncache(group.getUserId());
-
-        return getGroup(getGroupId(c, newName));
     }
 
     public static void deleteGroup(Group group)
@@ -1520,20 +1518,9 @@ public class SecurityManager
             throw new IllegalArgumentException("Should not call deleteGroups() on the root");
 
         String typeString = (null == type ? "%" : String.valueOf(type.getTypeChar()));
-
-        SqlExecutor executor = new SqlExecutor(core.getSchema());
-        executor.execute("DELETE FROM " + core.getTableInfoRoleAssignments() + "\n"+
-                "WHERE UserId in (SELECT UserId FROM " + core.getTableInfoPrincipals() +
-                "\tWHERE Container=? and Type LIKE ?)", c, typeString);
-        executor.execute("DELETE FROM " + core.getTableInfoMembers() + "\n"+
-                "WHERE GroupId in (SELECT UserId FROM " + core.getTableInfoPrincipals() +
-                "\tWHERE Container=? and Type LIKE ?)", c, typeString);
-        executor.execute("DELETE FROM " + core.getTableInfoPrincipals() +
-                "\tWHERE Container=? AND Type LIKE ?", c, typeString);
-
-        // Consider: query for groups in this container and uncache just those.
-        GroupCache.uncacheAll();
-        ProjectAndSiteGroupsCache.uncache(c);
+        new SqlSelector(core.getSchema(), "SELECT UserId FROM " + core.getTableInfoPrincipals() +
+            "\tWHERE Container=? AND Type LIKE ?", c, typeString).stream(Integer.class)
+            .forEach(SecurityManager::deleteGroup);
     }
 
     public static void deleteMembers(Group group, Collection<UserPrincipal> membersToDelete)

@@ -92,7 +92,8 @@ public class GroupMembershipCache
     {
         // very slight overkill
         uncache(group);
-        uncache(principal);
+        if (!group.equals(principal))
+            uncache(principal);
 
         // invalidate all computed group lists (getAllGroups())
         if (principal instanceof Group)
