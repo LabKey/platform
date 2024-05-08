@@ -44,7 +44,7 @@ public class PlateSchema extends SimpleUserSchema
         PlateTypeTable.NAME,
         WellTable.NAME,
         WellGroupTable.NAME,
-        WellTypeTable.NAME
+        WellGroupTypeTable.NAME
     ));
 
     public PlateSchema(User user, Container container)
@@ -80,8 +80,8 @@ public class PlateSchema extends SimpleUserSchema
             if (domain != null)
                 return new WellTable.WellPropertiesTable(domain,this, cf);
         }
-        if (WellTypeTable.NAME.equalsIgnoreCase(name))
-            return new WellTypeTable(this);
+        if (WellGroupTypeTable.NAME.equalsIgnoreCase(name))
+            return new WellGroupTypeTable(this);
 
         return null;
     }

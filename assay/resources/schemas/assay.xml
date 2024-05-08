@@ -244,7 +244,7 @@
         <description>The type of each well group.  For example, "CONTROL", "REPLICATE", or "SAMPLE".</description>
         <fk>
           <fkDbSchema>plate</fkDbSchema>
-          <fkTable>WellType</fkTable>
+          <fkTable>WellGroupType</fkTable>
           <fkColumnName>Value</fkColumnName>
         </fk>
       </column>

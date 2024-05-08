@@ -215,7 +215,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
                 .append(")");
 
         var column = new ExprColumn(this, Column.Type.name(), wellTypeSql, JdbcType.VARCHAR);
-        column.setFk(new QueryForeignKey(getUserSchema().getTable("WellType"), "Value", "Value"));
+        column.setFk(new QueryForeignKey(getUserSchema().getTable(WellGroupTypeTable.NAME), "Value", "Value"));
         column.setUserEditable(true);
         column.setShownInInsertView(true);
         addColumn(column);
