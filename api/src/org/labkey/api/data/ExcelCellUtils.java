@@ -1,6 +1,6 @@
 package org.labkey.api.data;
 
-import jakarta.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.apache.poi.ss.usermodel.Cell;
