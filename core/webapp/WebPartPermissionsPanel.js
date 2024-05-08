@@ -268,33 +268,14 @@ Ext4.define('LABKEY.Portal.WebPartPermissionsPanel', {
                 jsonData: requestObj,
                 scope: this,
                 success: function(response){
-                    var json = Ext4.JSON.decode(response.responseText);
-                    this.replaceHREF(json.permission, requestObj.containerPath);
                     this.close();
+                    location.reload();
                 },
                 failure: function(response){
                     var json = Ext4.JSON.decode(response.responseText);
                 }
             });
 
-        },
-
-        replaceHREF: function(perm, path){
-            // Only wrap in quotes if not null
-            if(path != null){
-                path = "'" + Ext4.htmlEncode(path) + "'";
-            }
-
-            var query = Ext4.query('#permissions_'+this.webPartId),
-                href =  "javascript:(function(){Ext4.create('LABKEY.Portal.WebPartPermissionsPanel', {" +
-                        "webPartId: '" + this.webPartId + "'," +
-                        "permission: '" + perm + "'," +
-                        "containerPath: " + path +
-                        "}).show();}())";
-
-            if(query.length > 0){
-                query[0].setAttribute('href', href);
-            }
         },
 
         handleCancel: function(){

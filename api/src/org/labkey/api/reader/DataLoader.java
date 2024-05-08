@@ -336,7 +336,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                             //preferentially use this class if it matches
                             classesToTest.add(0, _columnInfoMap.get(name).getJavaClass());
                         }
-                        else if (renamedColumns.containsKey(name))
+                        else if (renamedColumns.containsKey(name) && _columnInfoMap.containsKey(renamedColumns.get(name)))
                         {
                             classesToTest.add(0, _columnInfoMap.get(renamedColumns.get(name)).getJavaClass());
                         }

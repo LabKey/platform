@@ -21,7 +21,7 @@ public class ArrayExcelWriter extends ExcelWriter
      */
     public ArrayExcelWriter(List<Object[]> data, ColumnDescriptor[] cols)
     {
-        super(ExcelDocumentType.xls);
+        super(ExcelDocumentType.xlsx);
         this.data = data;
         List<DisplayColumn> xlcols = new ArrayList<>();
 
