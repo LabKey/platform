@@ -1498,7 +1498,7 @@ public class SecurityManager
                 ProjectAndSiteGroupsCache.uncache(c);
                 // 20329 SecurityPolicy cache still has the role assignments for deleted groups.
                 SecurityPolicyManager.notifyPolicyChanges(resources);
-                // Need to invalidate all computed group lists. This isn't quite right, but it gets the job done.
+                // Invalidate all computed group lists
                 GroupMembershipCache.handleGroupChange(group, group);
             }, CommitTaskOption.IMMEDIATE, CommitTaskOption.POSTCOMMIT, CommitTaskOption.POSTROLLBACK);
 

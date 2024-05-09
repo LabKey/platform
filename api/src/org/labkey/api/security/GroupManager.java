@@ -439,7 +439,7 @@ public class GroupManager
                 SecurityManager.deleteGroup(groupId);
                 assertNull(SecurityManager.getGroupId(project, name, false));
 
-                // Test that delete and cache clearing is correct
+                // Test that cache clearing after group delete is correct
                 PrincipalArray memberships = GroupManager.getAllGroupsForPrincipal(TestContext.get().getUser());
                 assertFalse("getAllGroupsForPrincipal() returned " + memberships + ", which contains the just-deleted group: " + groupId + "!", memberships.contains(groupId));
                 List<UserPrincipal> unknownPrincipals = memberships.stream()
