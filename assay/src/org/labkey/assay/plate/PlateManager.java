@@ -133,6 +133,7 @@ import org.labkey.assay.plate.query.WellGroupTable;
 import org.labkey.assay.plate.query.WellTable;
 import org.labkey.assay.query.AssayDbSchema;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
@@ -2941,43 +2942,43 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return dataRegion.getDisplayColumns().stream().filter(DisplayColumn::isQueryColumn).toList();
     }
 
-    public List<File> exportPlateData(Container c, User user, ContainerFilter cf, List<Integer> plateIds, TSVWriter.DELIM delim) throws Exception
+    public record PlateFileBytes(String plateName, ByteArrayOutputStream bytes) {}
+
+    public List<PlateFileBytes> exportPlateData(Container c, User user, ContainerFilter cf, List<Integer> plateIds, TSVWriter.DELIM delim) throws Exception
     {
         if (plateIds.isEmpty()) return emptyList();
 
-        Path tempDir = FileUtil.getTempDirectory().toPath();
-        List<File> files = new ArrayList<>();
+        List<PlateFileBytes> fileBytes = new ArrayList<>();
+
         for (Integer plateId : plateIds)
         {
             Plate plate = getPlate(cf, plateId);
             if (plate != null)
             {
-                String filename = FileUtil.makeLegalName(plate.getName());
-                File tempFile = FileUtil.createTempFile(FileUtil.getBaseName(FileUtil.getFileName(tempDir.resolve(filename))), "." + delim.extension);
                 QueryView plateQueryView = getPlateQueryView(c, user, cf, plate, false);
                 List<DisplayColumn> displayColumns = getPlateDisplayColumns(plateQueryView);
                 Map<String, String> renameColumnMap = getPlateRenameColumnMap(plate);
+                PlateFileBytes plateFileBytes = new PlateFileBytes(plate.getName(), new ByteArrayOutputStream());
 
                 try (TSVGridWriter writer = new TSVGridWriter(plateQueryView::getResults, displayColumns, renameColumnMap))
                 {
                     writer.setDelimiterCharacter(delim);
                     writer.setColumnHeaderType(ColumnHeaderType.FieldKey);
-                    writer.write(tempFile);
+                    writer.write(plateFileBytes.bytes);
                 }
 
-                files.add(tempFile);
+                fileBytes.add(plateFileBytes);
             }
         }
 
-        return files;
+        return fileBytes;
     }
 
-    public List<File> exportPlateMaps(Container c, User user, ContainerFilter cf, List<Integer> plateIds)  throws Exception
+    public List<PlateFileBytes> exportPlateMaps(Container c, User user, ContainerFilter cf, List<Integer> plateIds)  throws Exception
     {
         if (plateIds.isEmpty()) return emptyList();
 
-        Path tempDir = FileUtil.getTempDirectory().toPath();
-        List<File> files = new ArrayList<>();
+        List<PlateFileBytes> fileBytes = new ArrayList<>();
 
         for (Integer plateId : plateIds)
         {
@@ -2986,14 +2987,13 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             {
                 QueryView plateQueryView = getPlateQueryView(c, user, cf, plate, true);
                 List<DisplayColumn> displayColumns = getPlateDisplayColumns(plateQueryView);
+                PlateFileBytes plateFileBytes = new PlateFileBytes(plate.getName(), new ByteArrayOutputStream());
                 PlateMapExcelWriter writer = new PlateMapExcelWriter(plate, displayColumns, plateQueryView);
-                String filename = FileUtil.makeLegalName(plate.getName());
-                File tempFile = FileUtil.createTempFile(FileUtil.getBaseName(FileUtil.getFileName(tempDir.resolve(filename))), ".xlsx");
-                writer.renderWorkbook(new FileOutputStream(tempFile));
-                files.add(tempFile);
+                writer.renderWorkbook(plateFileBytes.bytes);
+                fileBytes.add(plateFileBytes);
             }
         }
 
-        return files;
+        return fileBytes;
     }
 }

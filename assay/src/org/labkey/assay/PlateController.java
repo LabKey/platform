@@ -84,6 +84,8 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -1505,54 +1507,61 @@ public class PlateController extends SpringActionController
             if (form.getContainerFilter() != null)
                 cf = form.getContainerFilter().create(getViewContext());
 
-            List<File> files;
+            List<PlateManager.PlateFileBytes> fileBytes;
+            String fileExtension;
 
             if (form.getExportType() == PlateExportType.CSV)
-                files = PlateManager.get().exportPlateData(getContainer(), getUser(), cf, form.getPlateIds(), TSVWriter.DELIM.COMMA);
+            {
+                fileBytes = PlateManager.get().exportPlateData(getContainer(), getUser(), cf, form.getPlateIds(), TSVWriter.DELIM.COMMA);
+                fileExtension = TSVWriter.DELIM.COMMA.extension;
+            }
             else if (form.getExportType() == PlateExportType.TSV)
-                files = PlateManager.get().exportPlateData(getContainer(), getUser(), cf, form.getPlateIds(), TSVWriter.DELIM.TAB);
+            {
+                fileBytes = PlateManager.get().exportPlateData(getContainer(), getUser(), cf, form.getPlateIds(), TSVWriter.DELIM.TAB);
+                fileExtension = TSVWriter.DELIM.TAB.extension;
+            }
             else
-                files = PlateManager.get().exportPlateMaps(getContainer(), getUser(), cf, form.getPlateIds());
+            {
+                fileBytes = PlateManager.get().exportPlateMaps(getContainer(), getUser(), cf, form.getPlateIds());
+                fileExtension = "xlsx";
+            }
 
-            if (files.isEmpty())
+            if (fileBytes.isEmpty())
             {
                 return null;
             }
-            else if (files.size() == 1)
+            else if (fileBytes.size() == 1)
             {
-                File file = files.get(0);
-                PageFlowUtil.streamFile(getViewContext().getResponse(), file, true, true);
-                Files.deleteIfExists(file.toPath());
+                PlateManager.PlateFileBytes plateFileBytes = fileBytes.get(0);
+                String fileName = FileUtil.makeLegalName(plateFileBytes.plateName() + "." + fileExtension);
+                PageFlowUtil.streamFileBytes(getViewContext().getResponse(), fileName, plateFileBytes.bytes().toByteArray(), true);
                 return null;
             }
 
-            String filename = form.getFilename();
+            String zipFileName = form.getFilename();
 
-            if (filename == null)
-                filename = "plates.zip";
+            if (zipFileName == null)
+                zipFileName = "plates.zip";
             else
-                filename = filename + ".zip";
+                zipFileName = zipFileName + ".zip";
 
-            filename = FileUtil.makeLegalName(filename + ".zip");
+            zipFileName = FileUtil.makeLegalName(zipFileName);
 
             // Export to a temporary file first so exceptions are displayed by the standard error page
             Path tempDir = FileUtil.getTempDirectory().toPath();
-            Path tempZipFile = tempDir.resolve(filename);
+            Path tempZipFile = tempDir.resolve(zipFileName);
 
-            try (ZipFile zip = new ZipFile(tempDir, filename))
+            try (ZipFile zip = new ZipFile(tempDir, zipFileName))
             {
-                for (File file : files)
+                for (PlateManager.PlateFileBytes plateFileBytes : fileBytes)
                 {
+                    String fileName = FileUtil.makeLegalName(plateFileBytes.plateName() + "." + fileExtension);
                     try (
-                        InputStream is = new FileInputStream(file);
-                        OutputStream os = zip.getOutputStream(file.getName())
+                        InputStream is = new ByteArrayInputStream(plateFileBytes.bytes().toByteArray());
+                        OutputStream os = zip.getOutputStream(fileName)
                     )
                     {
                         FileUtil.copyData(is, os);
-                    }
-                    finally
-                    {
-                        Files.deleteIfExists(file.toPath());
                     }
                 }
             }
@@ -1562,7 +1571,7 @@ public class PlateController extends SpringActionController
                 throw t;
             }
 
-            try (OutputStream os = ZipFile.getOutputStream(getViewContext().getResponse(), tempZipFile.getFileName().toString()))
+            try (OutputStream os = ZipFile.getOutputStream(getViewContext().getResponse(), zipFileName))
             {
                 Files.copy(tempZipFile, os);
             }
