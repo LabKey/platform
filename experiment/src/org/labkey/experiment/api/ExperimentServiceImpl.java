@@ -3921,6 +3921,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return getExpSchema().getTable("Material");
     }
 
+    @Override
+    public TableInfo getTinfoMaterialAncestors()
+    {
+        return getExpSchema().getTable("MaterialAncestors");
+    }
+
     public TableInfo getTinfoMaterialIndexed()
     {
         return getExpSchema().getTable("MaterialIndexed");
@@ -3960,6 +3966,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     {
         return getExpSchema().getTable("DataInput");
     }
+
+    @Override
+    public TableInfo getTinfoDataAncestors() { return getExpSchema().getTable("DataAncestors"); }
 
     @Override
     public TableInfo getTinfoProtocolInput()

@@ -144,9 +144,7 @@ public class ClosureQueryHelper
             """;
 
 
-
-
-    static SQLFragment selectIntoSql(SqlDialect d, SQLFragment from, @Nullable String tempTable)
+    public static SQLFragment selectAndInsertSql(SqlDialect d, SQLFragment from, @Nullable String into, @Nullable String insert)
     {
         String cte = d.isPostgreSQL() ? pgClosureCTE : mssqlClosureCTE;
         String select = d.isPostgreSQL() ? pgClosureSql : mssqlClosureSql;
@@ -154,15 +152,26 @@ public class ClosureQueryHelper
         String[] cteParts = StringUtils.splitByWholeSeparator(cte,"/*FROM*/");
         assert cteParts.length == 2;
 
-        String into = " INTO temp.${NAME} ";
-        if (null != tempTable)
-            into = " INTO temp." + tempTable + " ";
         String[] selectIntoParts = StringUtils.splitByWholeSeparator(select,"/*INTO*/");
         assert selectIntoParts.length == 2;
 
-        return new SQLFragment()
-                .append(cteParts[0]).append(" ").append(from).append(" ").append(cteParts[1])
-                .append(selectIntoParts[0]).append(into).append(selectIntoParts[1]);
+        SQLFragment sql = new SQLFragment()
+                .append(cteParts[0]).append(" ").append(from).append(" ").append(cteParts[1]);
+        if (insert != null)
+            sql.append(insert);
+        sql.append(selectIntoParts[0]);
+        if (into != null)
+            sql.append(into);
+        sql.append(selectIntoParts[1]);
+        return sql;
+    }
+
+    public static SQLFragment selectIntoTempTableSql(SqlDialect d, SQLFragment from, @Nullable String tempTable)
+    {
+        String into = " INTO temp.${NAME} ";
+        if (null != tempTable)
+            into = " INTO temp." + tempTable + " ";
+        return selectAndInsertSql(d, from, into, null);
     }
 
 
@@ -295,7 +304,7 @@ public class ClosureQueryHelper
             Object ref = new Object();
             String tempTableName = "closinc_"+temptableNumber.incrementAndGet();
             ttt = TempTableTracker.track(tempTableName, ref);
-            SQLFragment selectInto = selectIntoSql(getScope().getSqlDialect(), from, tempTableName);
+            SQLFragment selectInto = selectIntoTempTableSql(getScope().getSqlDialect(), from, tempTableName);
             new SqlExecutor(getScope()).execute(selectInto);
 
             SQLFragment upsert;
@@ -400,7 +409,7 @@ public class ClosureQueryHelper
             String tableName = type.getDbTableName();
             SQLFragment from = new SQLFragment(" FROM exp." + tableName + " WHERE " + tableName + ".cpasType = ? ")
                     .add(cpasType);
-            SQLFragment selectInto = selectIntoSql(getScope().getSqlDialect(), from, null);
+            SQLFragment selectInto = selectIntoTempTableSql(getScope().getSqlDialect(), from, null);
 
             var helper =  new MaterializedQueryHelper.Builder("closure", DbSchema.getTemp().getScope(), selectInto)
                     .setIsSelectInto(true)

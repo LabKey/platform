@@ -34,6 +34,7 @@ import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.StorageProvisioner;
+import org.labkey.experiment.api.ClosureQueryHelper;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpSchema;
@@ -303,7 +304,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
     }
 
     /**
-     * Called from exp-23.010-23.011.sql
+     * Called from exp-23.011-23.012.sql
      */
     public static void addRowIdToMaterializedSampleTypes(ModuleContext context)
     {
@@ -320,5 +321,56 @@ public class ExperimentUpgradeCode implements UpgradeCode
 
             tx.commit();
         }
+    }
+
+    /**
+     * Called from exp-24.001-24.002.sql
+     */
+    public static void populateMaterialAncestors(ModuleContext context)
+    {
+        if (context.isNewInstall())
+            return;
+
+        DbSchema schema = ExperimentService.get().getSchema();
+
+        ContainerManager.getAllChildren(ContainerManager.getRoot()).forEach(
+            container -> {
+                LOG.info("Adding rows to exp.materialAncestors from samples in container " + container.getPath());
+                SampleTypeService.get().getSampleTypes(container, null, false).forEach(
+                    sampleType -> {
+                        // TODO should we eliminate samples where materialSourceId is null?
+                        SQLFragment from = new SQLFragment(" FROM exp.material WHERE container = ?").add(container.getEntityId());
+                        SQLFragment sql = ClosureQueryHelper.selectAndInsertSql(schema.getSqlDialect(), from, null, "INSERT INTO exp.materialAncestors (RowId, AncestorRowId, AncestorTypeId) ");
+                        new SqlExecutor(schema.getScope()).execute(sql);
+                    }
+                );
+            }
+        );
+    }
+
+    /**
+     * Called from exp-24.001-24.002.sql
+     */
+    public static void populateDataAncestors(ModuleContext context)
+    {
+        if (context.isNewInstall())
+            return;
+
+        DbSchema schema = ExperimentService.get().getSchema();
+
+        ContainerManager.getAllChildren(ContainerManager.getRoot()).forEach(
+            container -> {
+                LOG.info("Adding rows to exp.dataAncestors from data objects in container " + container.getPath());
+                SampleTypeService.get().getSampleTypes(container, null, false).forEach(
+                        sampleType -> {
+                            SQLFragment from = new SQLFragment(" FROM exp.data WHERE container = ?").add(container.getEntityId());
+
+                            SQLFragment sql = ClosureQueryHelper.selectAndInsertSql(schema.getSqlDialect(), from, null,
+                                    "INSERT INTO exp.dataAncestors (RowId, AncestorRowId, AncestorTypeId) ");
+                            new SqlExecutor(schema.getScope()).execute(sql);
+                        }
+                );
+            }
+        );
     }
 }
