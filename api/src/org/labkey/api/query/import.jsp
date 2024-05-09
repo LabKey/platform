@@ -345,12 +345,14 @@
                 preventMark: true,
                 fieldLabel: 'Import Options',
                 columns: 1,
-                helpPopup: LABKEY.Utils.encodeHtml(
+                helpPopup:
                         '<p>By default, import will insert new rows based on the data/file provided. The operation will fail ' +
                         'if there are existing row identifiers that match those being imported.</p>' +
-                        '<p>When \'Update ' + type + '\' is selected, data will be updated for matching row identifiers. When \'Allow new ' + type + ' during update\' is checked, new ' + type + ' will be created for any that do not match.' +
-                        ' Data will not be changed for any columns not in the imported data/file.</p>'
-                ),
+                        '<p>When \'Update ' + LABKEY.Utils.encodeHtml(type) +
+                        '\' is selected, data will be updated for matching row identifiers. When \'Allow new ' +
+                        LABKEY.Utils.encodeHtml(type) + ' during update\' is checked, new ' + LABKEY.Utils.encodeHtml(type) +
+                        ' will be created for any that do not match.' +
+                        ' Data will not be changed for any columns not in the imported data/file.</p>',
                 defaults: {
                     name: 'insertOptionUI'
                 },

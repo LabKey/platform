@@ -2836,8 +2836,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     public List<Object[]> getWorklist(
         int sourcePlateSetId,
         int destinationPlateSetId,
-        Set<FieldKey> sourceIncludedMetadataCols,
-        Set<FieldKey> destinationIncludedMetadataCols,
+        List<FieldKey> sourceIncludedMetadataCols,
+        List<FieldKey> destinationIncludedMetadataCols,
         Container c,
         User u
     ) throws RuntimeSQLException
@@ -2846,7 +2846,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return new PlateSetExport().getWorklist(wellTable, sourcePlateSetId, destinationPlateSetId, sourceIncludedMetadataCols, destinationIncludedMetadataCols);
     }
 
-    public List<Object[]> getInstrumentInstructions(int plateSetId, Set<FieldKey> includedMetadataCols, Container c, User u)
+    public List<Object[]> getInstrumentInstructions(int plateSetId, List<FieldKey> includedMetadataCols, Container c, User u)
     {
         TableInfo wellTable = getWellTable(c, u);
         return new PlateSetExport().getInstrumentInstructions(wellTable, plateSetId, includedMetadataCols);

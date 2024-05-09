@@ -47,13 +47,13 @@ function getHelpDiv()
     return _helpDiv;
 }
 
-function showHelpDivDelay(elem, titleText, bodyText, width, delay)
+function showHelpDivDelay(elem, titleText, bodyText, width, delay, zIndex)
 {
     // IE support
-    _showTimer = setTimeout(function() { showHelpDiv(elem, titleText, bodyText, width); }, delay ? delay : 400);
+    _showTimer = setTimeout(function() { showHelpDiv(elem, titleText, bodyText, width, zIndex); }, delay ? delay : 400);
 }
 
-function showHelpDiv(elem, titleText, bodyHtml, width)
+function showHelpDiv(elem, titleText, bodyHtml, width, zIndex)
 {
     var posLeft = 12;
     var posTop = 8;
@@ -88,7 +88,7 @@ function showHelpDiv(elem, titleText, bodyHtml, width)
     var pos = { left: bd.scrollLeft(), top: bd.scrollTop() };
     div.style.top = posTop + "px";
     div.style.display = "block";
-    div.style.zIndex = "1050";
+    div.style.zIndex = zIndex ? zIndex : "1050";
 
     var table = document.getElementById("helpDivTable");
 

@@ -82,6 +82,7 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -1341,8 +1342,8 @@ public class PlateController extends SpringActionController
                 if (plateSetSource == null || plateSetDestination == null)
                     throw new NotFoundException("Unable to resolve Plate Set.");
 
-                Set<FieldKey> sourceIncludedMetadataCols = WellTable.getMetadataColumns(form.getSourcePlateSetId(), getContainer(), getUser());
-                Set<FieldKey> destinationIncludedMetadataCols = WellTable.getMetadataColumns(form.getDestinationPlateSetId(), getContainer(), getUser());
+                List<FieldKey> sourceIncludedMetadataCols = WellTable.getMetadataColumns(plateSetSource, getUser());
+                List<FieldKey> destinationIncludedMetadataCols = WellTable.getMetadataColumns(plateSetDestination, getUser());
 
                 ColumnDescriptor[] sourceXlCols = PlateSetExport.getColumnDescriptors(PlateSetExport.SOURCE, sourceIncludedMetadataCols);
                 ColumnDescriptor[] destinationXlCols = PlateSetExport.getColumnDescriptors(PlateSetExport.DESTINATION, destinationIncludedMetadataCols);
@@ -1351,7 +1352,7 @@ public class PlateController extends SpringActionController
                 List<Object[]> plateDataRows = PlateManager.get().getWorklist(form.getSourcePlateSetId(), form.getDestinationPlateSetId(), sourceIncludedMetadataCols, destinationIncludedMetadataCols, getContainer(), getUser());
 
                 ArrayExcelWriter xlWriter = new ArrayExcelWriter(plateDataRows, xlCols);
-                xlWriter.setFullFileName(plateSetSource.getName() + "To" + plateSetDestination.getName() + ".xls");
+                xlWriter.setFullFileName(plateSetSource.getName() + " - " + plateSetDestination.getName());
                 xlWriter.renderWorkbook(getViewContext().getResponse());
 
                 return null; // Returning anything here will cause error as excel writer will close the response stream
@@ -1394,12 +1395,12 @@ public class PlateController extends SpringActionController
                 if (plateSet.getType() != PlateSetType.assay)
                     throw new ValidationException("Instrument Instructions cannot be generated for non-Assay Plate Sets.");
 
-                Set<FieldKey> includedMetadataCols = WellTable.getMetadataColumns(form.getPlateSetId(), getContainer(), getUser());
+                List<FieldKey> includedMetadataCols = WellTable.getMetadataColumns(plateSet, getUser());
                 ColumnDescriptor[] xlCols = PlateSetExport.getColumnDescriptors("", includedMetadataCols);
                 List<Object[]> plateDataRows = PlateManager.get().getInstrumentInstructions(form.getPlateSetId(), includedMetadataCols, getContainer(), getUser());
 
                 ArrayExcelWriter xlWriter = new ArrayExcelWriter(plateDataRows, xlCols);
-                xlWriter.setFullFileName(plateSet.getName() + ".xls");
+                xlWriter.setFullFileName(plateSet.getName());
                 xlWriter.renderWorkbook(getViewContext().getResponse());
 
                 return null; // Returning anything here will cause error as excel writer will close the response stream

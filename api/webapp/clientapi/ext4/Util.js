@@ -324,7 +324,7 @@
 
                 if (meta.friendlyType)
                     if (!(meta.lookup && meta.lookup['public'] !== false && meta.lookups !== false))
-                        array.push(meta.friendlyType);
+                        array.push(Ext4.util.Format.htmlEncode(meta.friendlyType));
 
                 if (meta.description)
                     array.push(Ext4.util.Format.htmlEncode(meta.description));
