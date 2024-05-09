@@ -1162,6 +1162,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             cal.set(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), 1, 0, 0, 0);
             results.put("uniqueUserCountThisMonth", UserManager.getUniqueUsersCount(cal.getTime()));
             results.put("scriptEngines", LabKeyScriptEngineManager.get().getScriptEngineMetrics());
+            results.put("customLabels", CustomLabelService.get().getCustomLabelMetrics());
             return results;
         });
 

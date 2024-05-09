@@ -650,7 +650,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         if (loader != null && target != null)
             loader.setKnownColumns(target.getColumns());
 
-        if (loader != null && renamedColumns != null)
+        if (loader != null && renamedColumns != null && !renamedColumns.isEmpty())
         {
             ColumnDescriptor[]  columnDescriptors = loader.getColumns(renamedColumns);
             for (ColumnDescriptor columnDescriptor : columnDescriptors)
