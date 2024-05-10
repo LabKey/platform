@@ -29,15 +29,27 @@ public interface WellGroup extends PropertySet, Identifiable, WellData
 {
     enum Type
     {
-        ANTIGEN,
-        CONTROL,
-        OTHER,
-        NEGATIVE_CONTROL,
-        POSITIVE_CONTROL,
-        REPLICATE,
-        SAMPLE,
-        SPECIMEN,
-        VIRUS,
+        ANTIGEN("Antigen"),
+        CONTROL("Control"),
+        OTHER("Other"),
+        NEGATIVE_CONTROL("Negative Control"),
+        POSITIVE_CONTROL("Positive Control"),
+        REPLICATE("Replicate"),
+        SAMPLE("Sample"),
+        SPECIMEN("Specimen"),
+        VIRUS("Virus");
+
+        private final String _label;
+
+        Type(String label)
+        {
+            _label = label;
+        }
+
+        public String getLabel()
+        {
+            return _label;
+        }
     }
 
     Integer getRowId();

@@ -246,6 +246,7 @@
           <fkDbSchema>plate</fkDbSchema>
           <fkTable>WellGroupType</fkTable>
           <fkColumnName>Value</fkColumnName>
+          <fkDisplayColumnName>Label</fkDisplayColumnName>
         </fk>
       </column>
       <column columnName="Template">
