@@ -3106,6 +3106,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         if (wellGroup.isZone())
             return;
 
+        // TODO: Hanle the warning "Attempt to update table 'Well' with no valid fields." when only editing type.
         // TODO: Validate that each well has only one well group assignment
 
         Integer sampleId = null;
