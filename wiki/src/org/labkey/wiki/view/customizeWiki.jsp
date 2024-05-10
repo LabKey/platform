@@ -110,7 +110,7 @@ function disableSubmit()
     var btn = document.getElementById("btnSubmit");
     btn.disabled = true;
     btn.className = "labkey-disabled-button primary";
-    btn.href = "javascript:return false;";
+    btn.href = "#";
 }
 
 function onSuccess(containerId, response)

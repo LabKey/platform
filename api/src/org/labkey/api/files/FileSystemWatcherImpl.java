@@ -26,6 +26,7 @@ import org.junit.Test;
 import org.labkey.api.cloud.CloudWatchService;
 import org.labkey.api.cloud.CloudWatcherConfig;
 import org.labkey.api.collections.ConcurrentHashSet;
+import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
@@ -70,10 +71,6 @@ import static java.nio.file.StandardWatchEventKinds.OVERFLOW;
  *
  * This class is thread-safe, for both listener registration and event invocation. Implementations of FileSystemDirectoryListener
  * must be thread-safe. Listener methods must return quickly since they are all invoked by a single thread.
- *
- * User: adam
- * Date: 9/14/13
- * Time: 11:07 AM
  */
 public class FileSystemWatcherImpl implements FileSystemWatcher
 {
@@ -469,6 +466,7 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         }
     }
 
+    @TestWhen(TestWhen.When.BVT)
     public static class TestCase extends Assert
     {
         @Test

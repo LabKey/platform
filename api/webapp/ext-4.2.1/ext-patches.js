@@ -166,8 +166,8 @@ Ext4.override(Ext4.form.field.Base, {
         '>',
         '{beforeLabelTextTpl}',
         '<tpl if="fieldLabel">{fieldLabel}{labelSeparator}</tpl>',
-        //NOTE: this line added.  this is sub-optimal, but afterLabelTpl uses a different path to populate tpl values
-        '<tpl if="helpPopup"><a tabindex="-1" href="javascript:void(0);" data-qtip="{helpPopup}"><span class="labkey-help-pop-up">?</span></a></tpl>',
+        // Use a very large zIndex so that the popup will render on top of any ExtJS windows/dialogs that may be open
+        '<tpl if="helpPopupHtml">{helpPopupHtml}</tpl>',
         '{afterLabelTextTpl}',
         '</label>',
         '{afterLabelTpl}',
@@ -217,7 +217,9 @@ Ext4.override(Ext4.form.field.Base, {
         var data = this.callOverridden();
 
         //support a tooltip
-        data.helpPopup = this.helpPopup;
+        if (this.helpPopup) {
+            data.helpPopupHtml = LABKEY.Utils.helpPopup(data.fieldLabel, this.helpPopup, true, 1, 50000).html;
+        }
 
         return data;
     }

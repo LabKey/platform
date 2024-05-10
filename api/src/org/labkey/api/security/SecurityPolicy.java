@@ -201,7 +201,6 @@ public class SecurityPolicy
     /**
      * Callers outside this package should use SecurityManager.hasAllPermissions() or Container.hasPermission[s]() or SecurableResource.hasPermission().
      * If you are modifying a SecurityPolicy you should use getOwnPermissions() or getAssignments()
-     *
      */
     @Deprecated
     public boolean hasPermission(@NotNull UserPrincipal principal, @NotNull Class<? extends Permission> permission)

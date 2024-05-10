@@ -2261,13 +2261,7 @@ public class PageFlowUtil
         CustomLabelService customLabelService = CustomLabelService.get();
         if (customLabelService != null)
         {
-            Map<String, Map<String, String>> moduleLabels = new HashMap<>();
-            for (CustomLabelProvider provider : customLabelService.getCustomLabelProviders())
-            {
-                Map<String, String> labels = provider.getCustomLabels(container);
-                if (labels != null)
-                    moduleLabels.put(provider.getName(), labels);
-            }
+            Map<String, Map<String, String>> moduleLabels = customLabelService.getCustomLabels(container);
             if (!moduleLabels.isEmpty())
                 json.put("labels", moduleLabels);
         }

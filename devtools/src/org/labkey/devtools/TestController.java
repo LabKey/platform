@@ -1112,4 +1112,24 @@ public class TestController extends SpringActionController
         {
         }
     }
+
+
+    /* This action is broken at the moment.  However, pivot.jsp and resources/olap/specimen.xml
+     * show how the olap APIs should work on the client side.
+     */
+    @RequiresSiteAdmin
+    public static class PivotAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors)
+        {
+            return new JspView<>("/org/labkey/devtools/view/pivot.jsp");
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+        }
+    }
+
 }

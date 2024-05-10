@@ -66,6 +66,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 public class GroupManager
@@ -426,10 +427,27 @@ public class GroupManager
 
             Container project = JunitUtil.getTestContainer().getProject();
 
-            if (null != SecurityManager.getGroupId(project, "a", false))
-                SecurityManager.deleteGroup(SecurityManager.getGroupId(project, "a"));
-            if (null != SecurityManager.getGroupId(project, "b", false))
-                SecurityManager.deleteGroup(SecurityManager.getGroupId(project, "b"));
+            deleteGroup(project, "a");
+            deleteGroup(project, "b");
+        }
+
+        private void deleteGroup(Container project, String name)
+        {
+            Integer groupId = SecurityManager.getGroupId(project, name, false);
+            if (null != groupId)
+            {
+                SecurityManager.deleteGroup(groupId);
+                assertNull(SecurityManager.getGroupId(project, name, false));
+
+                // Test that cache clearing after group delete is correct
+                PrincipalArray memberships = GroupManager.getAllGroupsForPrincipal(TestContext.get().getUser());
+                assertFalse("getAllGroupsForPrincipal() returned " + memberships + ", which contains the just-deleted group: " + groupId + "!", memberships.contains(groupId));
+                List<UserPrincipal> unknownPrincipals = memberships.stream()
+                    .map(SecurityManager::getPrincipal)
+                    .filter(Objects::isNull)
+                    .toList();
+                assertTrue("getAllGroupsForPrincipal() returned " + memberships + ", which contains unknown principal(s): " + unknownPrincipals, unknownPrincipals.isEmpty());
+            }
         }
 
         @Test

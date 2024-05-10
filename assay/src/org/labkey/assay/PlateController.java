@@ -43,6 +43,7 @@ import org.labkey.api.data.ArrayExcelWriter;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.TSVWriter;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.query.FieldKey;
@@ -57,6 +58,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.ContainerTree;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -68,6 +70,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.writer.ZipFile;
 import org.labkey.assay.plate.PlateDataServiceImpl;
 import org.labkey.assay.plate.PlateImpl;
 import org.labkey.assay.plate.PlateManager;
@@ -81,7 +84,16 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -1341,8 +1353,8 @@ public class PlateController extends SpringActionController
                 if (plateSetSource == null || plateSetDestination == null)
                     throw new NotFoundException("Unable to resolve Plate Set.");
 
-                Set<FieldKey> sourceIncludedMetadataCols = WellTable.getMetadataColumns(form.getSourcePlateSetId(), getContainer(), getUser());
-                Set<FieldKey> destinationIncludedMetadataCols = WellTable.getMetadataColumns(form.getDestinationPlateSetId(), getContainer(), getUser());
+                List<FieldKey> sourceIncludedMetadataCols = WellTable.getMetadataColumns(plateSetSource, getUser());
+                List<FieldKey> destinationIncludedMetadataCols = WellTable.getMetadataColumns(plateSetDestination, getUser());
 
                 ColumnDescriptor[] sourceXlCols = PlateSetExport.getColumnDescriptors(PlateSetExport.SOURCE, sourceIncludedMetadataCols);
                 ColumnDescriptor[] destinationXlCols = PlateSetExport.getColumnDescriptors(PlateSetExport.DESTINATION, destinationIncludedMetadataCols);
@@ -1351,7 +1363,7 @@ public class PlateController extends SpringActionController
                 List<Object[]> plateDataRows = PlateManager.get().getWorklist(form.getSourcePlateSetId(), form.getDestinationPlateSetId(), sourceIncludedMetadataCols, destinationIncludedMetadataCols, getContainer(), getUser());
 
                 ArrayExcelWriter xlWriter = new ArrayExcelWriter(plateDataRows, xlCols);
-                xlWriter.setFullFileName(plateSetSource.getName() + "To" + plateSetDestination.getName() + ".xls");
+                xlWriter.setFullFileName(plateSetSource.getName() + " - " + plateSetDestination.getName());
                 xlWriter.renderWorkbook(getViewContext().getResponse());
 
                 return null; // Returning anything here will cause error as excel writer will close the response stream
@@ -1394,12 +1406,12 @@ public class PlateController extends SpringActionController
                 if (plateSet.getType() != PlateSetType.assay)
                     throw new ValidationException("Instrument Instructions cannot be generated for non-Assay Plate Sets.");
 
-                Set<FieldKey> includedMetadataCols = WellTable.getMetadataColumns(form.getPlateSetId(), getContainer(), getUser());
+                List<FieldKey> includedMetadataCols = WellTable.getMetadataColumns(plateSet, getUser());
                 ColumnDescriptor[] xlCols = PlateSetExport.getColumnDescriptors("", includedMetadataCols);
                 List<Object[]> plateDataRows = PlateManager.get().getInstrumentInstructions(form.getPlateSetId(), includedMetadataCols, getContainer(), getUser());
 
                 ArrayExcelWriter xlWriter = new ArrayExcelWriter(plateDataRows, xlCols);
-                xlWriter.setFullFileName(plateSet.getName() + ".xls");
+                xlWriter.setFullFileName(plateSet.getName());
                 xlWriter.renderWorkbook(getViewContext().getResponse());
 
                 return null; // Returning anything here will cause error as excel writer will close the response stream
@@ -1407,6 +1419,165 @@ public class PlateController extends SpringActionController
             catch (Exception e)
             {
                 errors.reject(ERROR_GENERIC, e.getMessage() != null ? e.getMessage() : "Failed to create Instrument Instruction.");
+            }
+
+            return null;
+        }
+    }
+
+    public enum PlateExportType
+    {
+        CSV,
+        TSV,
+        Map,
+    }
+
+    public static class PlateExportForm
+    {
+        private ContainerFilter.Type _containerFilter;
+
+        private List<Integer> _plateIds;
+
+        private PlateExportType _exportType;
+
+        private String _filename;
+
+        public ContainerFilter.Type getContainerFilter()
+        {
+            return _containerFilter;
+        }
+
+        public void setContainerFilter(ContainerFilter.Type containerFilter)
+        {
+            _containerFilter = containerFilter;
+        }
+
+        public List<Integer> getPlateIds()
+        {
+            return _plateIds;
+        }
+
+        public void setPlateIds(List<Integer> plateIds)
+        {
+            _plateIds = plateIds;
+        }
+
+        public PlateExportType getExportType()
+        {
+            return _exportType;
+        }
+
+        public void setExportType(PlateExportType exportType)
+        {
+            _exportType = exportType;
+        }
+
+        public String getFilename()
+        {
+            return _filename;
+        }
+
+        public void setFilename(String filename)
+        {
+            _filename = filename;
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public static class PlateExportAction extends ReadOnlyApiAction<PlateExportForm>
+    {
+        @Override
+        public void validateForm(PlateExportForm form, Errors errors)
+        {
+            if (form.getPlateIds() == null)
+                errors.reject(ERROR_REQUIRED, "\"plateIds\" is required");
+
+            if (form.getPlateIds().size() >= PlateSet.MAX_PLATES)
+                errors.reject(ERROR_GENERIC, "Too many \"plateIds\", maximum of " + PlateSet.MAX_PLATES + " can be exported at a time");
+
+            if (form.getExportType() == null)
+                errors.reject(ERROR_REQUIRED, "\"exportType\" is required");
+        }
+
+        @Override
+        public Object execute(PlateExportForm form, BindException errors) throws Exception
+        {
+            ContainerFilter cf = ContainerFilter.Type.Current.create(getViewContext());
+            // if an optional container filter is specified
+            if (form.getContainerFilter() != null)
+                cf = form.getContainerFilter().create(getViewContext());
+
+            List<PlateManager.PlateFileBytes> fileBytes;
+            String fileExtension;
+
+            if (form.getExportType() == PlateExportType.CSV)
+            {
+                fileBytes = PlateManager.get().exportPlateData(getContainer(), getUser(), cf, form.getPlateIds(), TSVWriter.DELIM.COMMA);
+                fileExtension = TSVWriter.DELIM.COMMA.extension;
+            }
+            else if (form.getExportType() == PlateExportType.TSV)
+            {
+                fileBytes = PlateManager.get().exportPlateData(getContainer(), getUser(), cf, form.getPlateIds(), TSVWriter.DELIM.TAB);
+                fileExtension = TSVWriter.DELIM.TAB.extension;
+            }
+            else
+            {
+                fileBytes = PlateManager.get().exportPlateMaps(getContainer(), getUser(), cf, form.getPlateIds());
+                fileExtension = "xlsx";
+            }
+
+            if (fileBytes.isEmpty())
+            {
+                return null;
+            }
+            else if (fileBytes.size() == 1)
+            {
+                PlateManager.PlateFileBytes plateFileBytes = fileBytes.get(0);
+                String fileName = FileUtil.makeLegalName(plateFileBytes.plateName() + "." + fileExtension);
+                PageFlowUtil.streamFileBytes(getViewContext().getResponse(), fileName, plateFileBytes.bytes().toByteArray(), true);
+                return null;
+            }
+
+            String zipFileName = form.getFilename();
+
+            if (zipFileName == null)
+                zipFileName = "plates.zip";
+            else
+                zipFileName = zipFileName + ".zip";
+
+            zipFileName = FileUtil.makeLegalName(zipFileName);
+
+            // Export to a temporary file first so exceptions are displayed by the standard error page
+            Path tempDir = FileUtil.getTempDirectory().toPath();
+            Path tempZipFile = tempDir.resolve(zipFileName);
+
+            try (ZipFile zip = new ZipFile(tempDir, zipFileName))
+            {
+                for (PlateManager.PlateFileBytes plateFileBytes : fileBytes)
+                {
+                    String fileName = FileUtil.makeLegalName(plateFileBytes.plateName() + "." + fileExtension);
+                    try (
+                        InputStream is = new ByteArrayInputStream(plateFileBytes.bytes().toByteArray());
+                        OutputStream os = zip.getOutputStream(fileName)
+                    )
+                    {
+                        FileUtil.copyData(is, os);
+                    }
+                }
+            }
+            catch (Throwable t)
+            {
+                Files.deleteIfExists(tempZipFile);
+                throw t;
+            }
+
+            try (OutputStream os = ZipFile.getOutputStream(getViewContext().getResponse(), zipFileName))
+            {
+                Files.copy(tempZipFile, os);
+            }
+            finally
+            {
+                Files.delete(tempZipFile);
             }
 
             return null;
