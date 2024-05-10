@@ -16,6 +16,7 @@
 
 package org.labkey.assay.plate;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -31,6 +32,7 @@ import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateCustomField;
 import org.labkey.api.assay.plate.PlateLayoutHandler;
+import org.labkey.api.assay.plate.PlateMapExcelWriter;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.plate.PlateSet;
 import org.labkey.api.assay.plate.PlateSetEdge;
@@ -44,13 +46,16 @@ import org.labkey.api.assay.plate.WellCustomField;
 import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.Results;
@@ -60,6 +65,8 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TSVGridWriter;
+import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -89,7 +96,10 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
@@ -98,6 +108,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -122,6 +133,11 @@ import org.labkey.assay.plate.query.WellGroupTable;
 import org.labkey.assay.plate.query.WellTable;
 import org.labkey.assay.query.AssayDbSchema;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1630,7 +1646,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     /**
      * @deprecated Use {@link #copyPlate(Container, User, Integer, boolean, String, String)}
      */
-    @Deprecated 
+    @Deprecated
     public Plate copyPlateDeprecated(Plate source, User user, Container destContainer)
             throws Exception
     {
@@ -2850,5 +2866,134 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     {
         TableInfo wellTable = getWellTable(c, u);
         return new PlateSetExport().getInstrumentInstructions(wellTable, plateSetId, includedMetadataCols);
+    }
+
+    private List<FieldKey> getPlateExportFieldKeys(Plate plate, boolean isMapView)
+    {
+        List<FieldKey> fieldKeys = new ArrayList<>(List.of(
+                FieldKey.fromParts("SampleId", "Name")
+        ));
+
+        if (isMapView)
+        {
+            fieldKeys.add(FieldKey.fromParts("Row"));
+            fieldKeys.add(FieldKey.fromParts("Col"));
+        }
+        else
+        {
+            // For non-map export view we always want the position FieldKey first
+            fieldKeys.add(0, FieldKey.fromParts("Position"));
+        }
+        for (PlateCustomField customField : plate.getCustomFields())
+        {
+            fieldKeys.add(FieldKey.fromParts("Properties", customField.getName()));
+        }
+
+        return fieldKeys;
+    }
+
+    private QueryView getPlateQueryView(Container container, User user, ContainerFilter cf, Plate plate, boolean isMapView)
+    {
+        UserSchema userSchema = QueryService.get().getUserSchema(user, container, PlateSchema.SCHEMA_NAME);
+        List<FieldKey> fieldKeys = getPlateExportFieldKeys(plate, isMapView);
+        ViewContext viewContext = new ViewContext();
+        viewContext.setUser(user);
+        QuerySettings settings = new QuerySettings(viewContext, plate.getName());
+        settings.setFieldKeys(fieldKeys);
+        settings.setContainerFilterName(cf.getType().name());
+        settings.setSchemaName(userSchema.getSchemaName());
+        settings.setQueryName(WellTable.NAME);
+        settings.getBaseFilter().addCondition(FieldKey.fromParts("PlateId"), plate.getRowId());
+        return new QueryView(userSchema, settings, null);
+    }
+
+    private Map<String, String> getPlateRenameColumnMap(Plate plate)
+    {
+        Map<String, String> renameColumnMap = new HashMap<>(Collections.singletonMap("SampleId/Name", "Sample Id"));
+
+        for (PlateCustomField customField : plate.getCustomFields())
+        {
+            renameColumnMap.put(FieldKey.fromParts("Properties", customField.getName()).toString(), customField.getName());
+        }
+
+        return renameColumnMap;
+    }
+
+    private DisplayColumn getDisplayColumnForFieldKey(List<DisplayColumn> displayColumns, FieldKey fieldKey)
+    {
+        for (DisplayColumn displayColumn : displayColumns)
+        {
+            ColumnInfo ci = displayColumn.getColumnInfo();
+            if (ci != null && ci.getFieldKey().equals(fieldKey))
+                return displayColumn;
+        }
+
+        return null;
+    }
+
+    private List<DisplayColumn> getPlateDisplayColumns(QueryView queryView)
+    {
+        // We have to use the display columns from the DataRegion returned from createDataView in order to get the
+        // correct columns that we set via QuerySettings in getPlateQueryView, if we don't then we'll only get the
+        // columns from the default view of the Well table, which could be anything.
+        DataRegion dataRegion = queryView.createDataView().getDataRegion();
+
+        // Filter on isQueryColumn so we don't get the details or update columns
+        return dataRegion.getDisplayColumns().stream().filter(DisplayColumn::isQueryColumn).toList();
+    }
+
+    public record PlateFileBytes(String plateName, ByteArrayOutputStream bytes) {}
+
+    public List<PlateFileBytes> exportPlateData(Container c, User user, ContainerFilter cf, List<Integer> plateIds, TSVWriter.DELIM delim) throws Exception
+    {
+        if (plateIds.isEmpty()) return emptyList();
+
+        List<PlateFileBytes> fileBytes = new ArrayList<>();
+
+        for (Integer plateId : plateIds)
+        {
+            Plate plate = getPlate(cf, plateId);
+            if (plate != null)
+            {
+                QueryView plateQueryView = getPlateQueryView(c, user, cf, plate, false);
+                List<DisplayColumn> displayColumns = getPlateDisplayColumns(plateQueryView);
+                Map<String, String> renameColumnMap = getPlateRenameColumnMap(plate);
+                PlateFileBytes plateFileBytes = new PlateFileBytes(plate.getName(), new ByteArrayOutputStream());
+
+                try (TSVGridWriter writer = new TSVGridWriter(plateQueryView::getResults, displayColumns, renameColumnMap))
+                {
+                    writer.setDelimiterCharacter(delim);
+                    writer.setColumnHeaderType(ColumnHeaderType.FieldKey);
+                    writer.write(plateFileBytes.bytes);
+                }
+
+                fileBytes.add(plateFileBytes);
+            }
+        }
+
+        return fileBytes;
+    }
+
+    public List<PlateFileBytes> exportPlateMaps(Container c, User user, ContainerFilter cf, List<Integer> plateIds)  throws Exception
+    {
+        if (plateIds.isEmpty()) return emptyList();
+
+        List<PlateFileBytes> fileBytes = new ArrayList<>();
+
+        for (Integer plateId : plateIds)
+        {
+            Plate plate = getPlate(cf, plateId);
+            if (plate != null)
+            {
+                QueryView plateQueryView = getPlateQueryView(c, user, cf, plate, true);
+                List<DisplayColumn> displayColumns = getPlateDisplayColumns(plateQueryView);
+                PlateFileBytes plateFileBytes = new PlateFileBytes(plate.getName(), new ByteArrayOutputStream());
+                PlateMapExcelWriter writer = new PlateMapExcelWriter(plate, displayColumns, plateQueryView);
+                writer.renderWorkbook(plateFileBytes.bytes);
+                fileBytes.add(plateFileBytes);
+            }
+        }
+
+        return fileBytes;
     }
 }
