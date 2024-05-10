@@ -77,8 +77,8 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         Col,
         Container,
         Dilution,
+        Group,
         Lsid,
-        Placeholder,
         PlateId,
         Position,
         Properties,
@@ -136,7 +136,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
                 .add(TsvPlateLayoutHandler.TYPE)
                 .append(")");
 
-        var column = new ExprColumn(this, Column.Placeholder.name(), groupSql, JdbcType.VARCHAR);
+        var column = new ExprColumn(this, FieldKey.fromParts(Column.Group.name()), groupSql, JdbcType.VARCHAR);
         column.setUserEditable(true);
         column.setShownInInsertView(true);
         addColumn(column);
@@ -214,7 +214,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
                 .add(TsvPlateLayoutHandler.TYPE)
                 .append(")");
 
-        var column = new ExprColumn(this, Column.Type.name(), wellTypeSql, JdbcType.VARCHAR);
+        var column = new ExprColumn(this, FieldKey.fromParts(Column.Type.name()), wellTypeSql, JdbcType.VARCHAR);
         column.setFk(new QueryForeignKey(getUserSchema().getTable(WellGroupTypeTable.NAME), "Value", "Value"));
         column.setUserEditable(true);
         column.setShownInInsertView(true);

@@ -712,35 +712,41 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     }
 
     @Override
-    public WellGroup getWellGroup(Container container, int rowid)
+    public WellGroup getWellGroup(Container container, int rowId)
     {
-        WellGroupImpl unboundWellgroup = new TableSelector(AssayDbSchema.getInstance().getTableInfoWellGroup()).getObject(rowid, WellGroupImpl.class);
-        if (unboundWellgroup == null || !unboundWellgroup.getContainer().equals(container))
+        WellGroupImpl unboundWellGroup = new TableSelector(AssayDbSchema.getInstance().getTableInfoWellGroup()).getObject(rowId, WellGroupImpl.class);
+        if (unboundWellGroup == null || !unboundWellGroup.getContainer().equals(container))
             return null;
-        Plate plate = getPlate(container, unboundWellgroup.getPlateId());
+        Plate plate = getPlate(container, unboundWellGroup.getPlateId());
         for (WellGroup wellgroup : plate.getWellGroups())
         {
-            if (wellgroup.getRowId().intValue() == rowid)
+            if (wellgroup.getRowId().intValue() == rowId)
                 return wellgroup;
         }
         assert false : "Unbound well group was found: bound group should always be present.";
         return null;
     }
 
-    public WellGroup getWellGroup(String lsid)
+    private WellGroup getWellGroup(String lsid)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("lsid"), lsid);
-        WellGroupImpl unboundWellgroup = new TableSelector(AssayDbSchema.getInstance().getTableInfoWellGroup(), filter, null).getObject(WellGroupImpl.class);
-        if (unboundWellgroup == null)
+        WellGroupImpl unboundWellGroup = new TableSelector(AssayDbSchema.getInstance().getTableInfoWellGroup(), filter, null).getObject(WellGroupImpl.class);
+        if (unboundWellGroup == null)
             return null;
-        Plate plate = getPlate(unboundWellgroup.getContainer(), unboundWellgroup.getPlateId());
+        Plate plate = getPlate(unboundWellGroup.getContainer(), unboundWellGroup.getPlateId());
         for (WellGroup wellgroup : plate.getWellGroups())
         {
-            if (wellgroup.getRowId().intValue() == unboundWellgroup.getRowId().intValue())
+            if (wellgroup.getRowId().intValue() == unboundWellGroup.getRowId().intValue())
                 return wellgroup;
         }
         assert false : "Unbound well group was not found: bound group should always be present.";
         return null;
+    }
+
+    private WellGroupImpl[] getWellGroups(Plate plate)
+    {
+        SimpleFilter plateFilter = new SimpleFilter(FieldKey.fromParts("PlateId"), plate.getRowId());
+        return new TableSelector(AssayDbSchema.getInstance().getTableInfoWellGroup(), plateFilter, null).getArray(WellGroupImpl.class);
     }
 
     private void setProperties(Container container, PropertySetImpl propertySet)
@@ -812,15 +818,15 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         plate.setWells(wellArray);
 
         // populate well groups: assign all positions to the well group object
-        WellGroupImpl[] wellgroups = getWellGroups(plate);
+        WellGroupImpl[] wellGroups = getWellGroups(plate);
         List<WellGroupImpl> sortedGroups = new ArrayList<>();
-        for (WellGroupImpl wellgroup : wellgroups)
+        for (WellGroupImpl wellGroup : wellGroups)
         {
-            setProperties(plate.getContainer(), wellgroup);
-            List<PositionImpl> groupPositions = groupIdToPositions.get(wellgroup.getRowId());
+            setProperties(plate.getContainer(), wellGroup);
+            List<PositionImpl> groupPositions = groupIdToPositions.get(wellGroup.getRowId());
 
-            wellgroup.setPositions(groupPositions != null ? groupPositions : emptyList());
-            sortedGroups.add(wellgroup);
+            wellGroup.setPositions(groupPositions != null ? groupPositions : emptyList());
+            sortedGroups.add(wellGroup);
         }
 
         sortedGroups.sort(new WellGroupComparator());
@@ -861,12 +867,6 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         SimpleFilter plateFilter = new SimpleFilter(FieldKey.fromParts("PlateId"), plate.getRowId());
         Sort sort = new Sort("Col,Row");
         return new TableSelector(AssayDbSchema.getInstance().getTableInfoWell(), plateFilter, sort).getArray(WellImpl.class);
-    }
-
-    private WellGroupImpl[] getWellGroups(Plate plate)
-    {
-        SimpleFilter plateFilter = new SimpleFilter(FieldKey.fromParts("PlateId"), plate.getRowId());
-        return new TableSelector(AssayDbSchema.getInstance().getTableInfoWellGroup(), plateFilter, null).getArray(WellGroupImpl.class);
     }
 
     public Lsid getLsid(Class<?> type, Container container)
@@ -931,12 +931,15 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
             // delete well groups first
             List<WellGroupImpl> deletedWellGroups = plate.getDeletedWellGroups();
+            List<Integer> deletedWellGroupIds = new ArrayList<>();
             for (WellGroupImpl deletedWellGroup : deletedWellGroups)
             {
                 assert deletedWellGroup.getRowId() != null && deletedWellGroup.getRowId() > 0;
-                LOG.debug("Deleting well group: name=" + deletedWellGroup.getName() + ", rowId=" + deletedWellGroup.getRowId());
-                deleteWellGroup(container, user, deletedWellGroup.getRowId());
+                deletedWellGroupIds.add(deletedWellGroup.getRowId());
             }
+
+            if (!deletedWellGroupIds.isEmpty())
+                deleteWellGroups(container, user, deletedWellGroupIds);
 
             // create/update well groups
             QueryUpdateService wellGroupQus = getWellGroupUpdateService(container, user);
@@ -1112,9 +1115,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     }
 
     @Override
-    public void deletePlate(Container container, User user, int rowid) throws Exception
+    public void deletePlate(Container container, User user, int rowId) throws Exception
     {
-        Map<String, Object> key = Collections.singletonMap("RowId", rowid);
+        Map<String, Object> key = Collections.singletonMap("RowId", rowId);
         QueryUpdateService qus = getPlateUpdateService(container, user);
         qus.deleteRows(user, container, Collections.singletonList(key), null, null);
     }
@@ -1197,15 +1200,19 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         new SqlExecutor(schema.getSchema()).execute(rootPlateSetSql);
     }
 
-    private void deleteWellGroup(Container container, User user, int wellGroupId) throws Exception
+    private void deleteWellGroups(Container container, User user, List<Integer> wellGroupRowIds) throws Exception
     {
-        final AssayDbSchema schema = AssayDbSchema.getInstance();
-        DbScope scope = schema.getSchema().getScope();
-        assert scope.isTransactionActive();
+        List<Map<String, Object>> rows = new ArrayList<>();
 
-        Map<String, Object> key = Collections.singletonMap("RowId", wellGroupId);
-        QueryUpdateService qus = getWellGroupUpdateService(container, user);
-        qus.deleteRows(user, container, Collections.singletonList(key), null, null);
+        wellGroupRowIds.forEach(rowId -> {
+            if (rowId != null)
+                rows.add(CaseInsensitiveHashMap.of("RowId", rowId));
+        });
+
+        if (rows.isEmpty())
+            return;
+
+        getWellGroupUpdateService(container, user).deleteRows(user, container, rows, null, null);
     }
 
     // Called by the WellGroup Query Update Service prior to deleting a well group
@@ -3004,5 +3011,140 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         }
 
         return fileBytes;
+    }
+
+
+    public record WellGroupChange(Integer plateRowId, Integer wellRowId, String type, String group) {}
+
+    /**
+     * Computes the well groups based on changes (updates) made to the well "Type" and "Group".
+     * This is invoked whenever rows are inserted or updated in the assay.Well table.
+     */
+    public void computeWellGroups(
+        Container container,
+        User user,
+        Map<Integer, Map<Integer, WellGroupChange>> wellGroupChanges
+    ) throws ValidationException
+    {
+        if (wellGroupChanges.isEmpty())
+            return;
+
+        Map<Pair<WellGroup.Type, String>, List<Position>> wellGroupings = new HashMap<>();
+        var wellTable = getWellTable(container, user);
+        var groupColumnName = wellTable.getColumn(WellTable.Column.Group.name()).getAlias();
+
+        for (var entry : wellGroupChanges.entrySet())
+        {
+            var plate = (PlateImpl) requirePlate(container, entry.getKey(), "Failed to compute well group.");
+            if (!TsvPlateLayoutHandler.TYPE.equalsIgnoreCase(plate.getAssayType()))
+                continue;
+
+            var wellChanges = entry.getValue();
+            var filter = new SimpleFilter(FieldKey.fromParts(WellTable.Column.PlateId.name()), plate.getRowId());
+            var wellGroupData = new TableSelector(wellTable, filter, new Sort(WellTable.Column.RowId.name())).getMapCollection();
+
+            for (var wellData : wellGroupData)
+            {
+                String type = StringUtils.trimToNull((String) wellData.get(WellTable.Column.Type.name()));
+                String group = StringUtils.trimToNull((String) wellData.get(groupColumnName));
+
+                var wellRowId = (Integer) wellData.get(WellTable.Column.RowId.name());
+                var wellChange = wellChanges.get(wellRowId);
+                if (wellChange != null)
+                {
+                    if (wellChange.type != null)
+                        type = StringUtils.trimToNull(wellChange.type);
+                    if (wellChange.group != null)
+                        group = StringUtils.trimToNull(wellChange.group);
+                }
+
+                // Type/Group are not set and are not being updated
+                if (type == null && group == null)
+                    continue;
+
+                var wellGroupKey = Pair.of(WellGroup.Type.valueOf(type), group);
+                if (!wellGroupings.containsKey(wellGroupKey))
+                    wellGroupings.put(wellGroupKey, new ArrayList<>());
+
+                var wellCol = (Integer) wellData.get(WellTable.Column.Col.name());
+                var wellRow = (Integer) wellData.get(WellTable.Column.Row.name());
+                wellGroupings.get(wellGroupKey).add(plate.getPosition(wellRow, wellCol));
+            }
+
+            // Mark pre-existing well groups on this plate for deletion
+            for (WellGroup existingWellGroup : plate.getWellGroups())
+                plate.markWellGroupForDeletion(existingWellGroup);
+
+            // Create new well groups for this plate
+            for (var wellGrouping : wellGroupings.entrySet())
+            {
+                var typeGroup = wellGrouping.getKey();
+                plate.addWellGroup(typeGroup.second, typeGroup.first, wellGrouping.getValue());
+            }
+
+            try
+            {
+                savePlateImpl(container, user, plate);
+            }
+            catch (Exception e)
+            {
+                throw UnexpectedException.wrap(e);
+            }
+        }
+    }
+
+    public void validateWellGroups(Container container, Collection<Integer> plateRowIds) throws ValidationException
+    {
+        clearCache(plateRowIds);
+
+        for (var plateRowId : plateRowIds)
+        {
+            var plate = requirePlate(container, plateRowId, "Failed to validate well groups.");
+            if (!TsvPlateLayoutHandler.TYPE.equalsIgnoreCase(plate.getAssayType()))
+                continue;
+
+            for (var wellGroup : plate.getWellGroups())
+            {
+                switch (wellGroup.getType())
+                {
+                    case NEGATIVE_CONTROL, POSITIVE_CONTROL, SAMPLE -> validateWellGroup(plate, wellGroup);
+                    default -> throw new ValidationException(
+                        String.format(
+                            "Well Group Type \"%s\" is not supported for assay type \"%s\" plates.",
+                            wellGroup.getType(),
+                            TsvPlateLayoutHandler.TYPE
+                        )
+                    );
+                }
+            }
+        }
+    }
+
+    private void validateWellGroup(Plate plate, WellGroup wellGroup) throws ValidationException
+    {
+        if (wellGroup.isZone())
+            return;
+
+        // TODO: Validate that each well has only one well group assignment
+
+        Integer sampleId = null;
+        for (var position : wellGroup.getPositions())
+        {
+            var well = (WellImpl) plate.getWell(position.getRow(), position.getColumn());
+            if (well.getSampleId() != null)
+            {
+                if (sampleId == null)
+                    sampleId = well.getSampleId();
+                else if (!well.getSampleId().equals(sampleId))
+                {
+                    throw new ValidationException(
+                        String.format(
+                            "Group \"%s\" refers to multiple samples. Choose the same sample for all wells in this group.",
+                            wellGroup.getName()
+                        )
+                    );
+                }
+            }
+        }
     }
 }
