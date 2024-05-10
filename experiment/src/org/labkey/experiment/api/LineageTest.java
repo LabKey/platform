@@ -53,6 +53,7 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reader.MapLoader;
 import org.labkey.api.security.User;
+import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
@@ -82,6 +83,7 @@ import static org.junit.Assert.fail;
 import static org.labkey.api.exp.api.ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_NAME;
 import static org.labkey.api.exp.api.ExperimentService.SAMPLE_DERIVATION_PROTOCOL_NAME;
 
+@TestWhen(TestWhen.When.BVT)
 public class LineageTest extends ExpProvisionedTableTestHelper
 {
     Container c;

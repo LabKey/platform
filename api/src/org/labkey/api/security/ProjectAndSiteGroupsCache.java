@@ -31,12 +31,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * User: adam
- * Date: 3/27/12
- * Time: 4:45 PM
- */
-
 // Caches the list of groups in each project plus the site group list
 public class ProjectAndSiteGroupsCache
 {
@@ -56,7 +50,6 @@ public class ProjectAndSiteGroupsCache
 
         return Collections.unmodifiableCollection(new SqlSelector(CORE.getSchema(), sql).getCollection(Integer.class));
     };
-
 
     static @NotNull List<Group> getProjectGroups(Container project, boolean includeSiteGroups)
     {
@@ -79,7 +72,6 @@ public class ProjectAndSiteGroupsCache
         return Collections.unmodifiableList(groups);
     }
 
-
     static @NotNull List<Group> getSiteGroups()
     {
         Collection<Integer> siteGroupIds = getSiteGroupIds();
@@ -88,7 +80,6 @@ public class ProjectAndSiteGroupsCache
 
         return Collections.unmodifiableList(groups);
     }
-
 
     private static void addAll(List<Group> groups, Collection<Integer> ids)
     {
@@ -101,12 +92,10 @@ public class ProjectAndSiteGroupsCache
         }
     }
 
-
     private static @NotNull Collection<Integer> getSiteGroupIds()
     {
         return CACHE.get(ContainerManager.getRoot(), null, GROUP_LIST_LOADER);
     }
-
 
     static void uncache(Container c)
     {

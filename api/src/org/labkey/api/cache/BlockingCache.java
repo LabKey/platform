@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.DeadlockPreventingException;
 import org.labkey.api.util.DebugInfoDumper;
 import org.labkey.api.util.Filter;
@@ -270,6 +271,7 @@ public class BlockingCache<K, V> implements Cache<K, V>
         return new BlockingCache<>(_cache.createTemporaryCache(), _loader, _timeout);
     }
 
+    @TestWhen(TestWhen.When.BVT)
     public static class BlockingCacheTest extends Assert
     {
         private Cache<Integer, Wrapper<Integer>> _cache;
