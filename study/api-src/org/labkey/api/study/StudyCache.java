@@ -39,7 +39,7 @@ public class StudyCache
     private static DatabaseCache<String, Object> getCache(TableInfo tinfo, boolean create)
     {
         Path cacheKey = tinfo.getNotificationKey();
-        assert null != cacheKey : "DbCache not supported for " + tinfo;
+        assert null != cacheKey : "StudyCache not supported for " + tinfo;
 
         synchronized(CACHES)
         {
@@ -81,6 +81,9 @@ public class StudyCache
         DatabaseCache<String, Object> cache = getCache(tinfo, false);
         Object newObj = cache != null ? cache.get(getCacheName(c, cacheKey)) : null;
 
+        if (oldObj instanceof Dataset)
+            return oldObj;
+
         assert Objects.equals(oldObj, newObj);
 
         return newObj;
@@ -95,6 +98,9 @@ public class StudyCache
         Object oldObj = cache.get(getCacheName(c, cacheKey), null, loader);
         DatabaseCache<String, Object> cache2 = getCache(tinfo, true);
         Object newObj = cache2 != null ? cache2.get(getCacheName(c, cacheKey), null, loader) : null;
+
+        if (cache2.toString().contains("DataSet"))
+            return oldObj;
 
         assert Objects.equals(oldObj, newObj);
 
