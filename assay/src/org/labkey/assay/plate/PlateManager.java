@@ -3043,12 +3043,24 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 if (type == null && group == null)
                     continue;
 
+                var wellCol = (Integer) wellData.get(WellTable.Column.Col.name());
+                var wellRow = (Integer) wellData.get(WellTable.Column.Row.name());
+                var position = plate.getPosition(wellRow, wellCol);
+
+                // Specifying a group requires that a type is also specified
+                if (type == null)
+                {
+                    throw new ValidationException(String.format(
+                        "Well %s must specify a \"%s\" when a \"%s\" is specified.",
+                        position.getDescription(),
+                        WellTable.Column.Type.name(),
+                        WellTable.Column.Group.name()
+                    ));
+                }
+
                 var wellGroupKey = Pair.of(WellGroup.Type.valueOf(type), group);
                 if (!wellGroupings.containsKey(wellGroupKey))
                     wellGroupings.put(wellGroupKey, new ArrayList<>());
-
-                var wellCol = (Integer) wellData.get(WellTable.Column.Col.name());
-                var wellRow = (Integer) wellData.get(WellTable.Column.Row.name());
                 wellGroupings.get(wellGroupKey).add(plate.getPosition(wellRow, wellCol));
             }
 
@@ -3106,7 +3118,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         if (wellGroup.isZone())
             return;
 
-        // TODO: Hanle the warning "Attempt to update table 'Well' with no valid fields." when only editing type.
+        // TODO: Handle the warning "Attempt to update table 'Well' with no valid fields." when only editing type.
         // TODO: Validate that each well has only one well group assignment
 
         Integer sampleId = null;

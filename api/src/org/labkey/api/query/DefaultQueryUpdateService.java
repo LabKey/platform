@@ -69,10 +69,6 @@ import java.util.function.Supplier;
  * QueryUpdateService implementation that supports Query TableInfos that are backed by both a hard table and a Domain.
  * To update the Domain, a DomainUpdateHelper is required, otherwise the DefaultQueryUpdateService will only update the
  * hard table columns.
- *
- * User: Dave
- * Date: Jun 18, 2008
- * Time: 11:17:16 AM
  */
 public class DefaultQueryUpdateService extends AbstractQueryUpdateService
 {
@@ -234,13 +230,12 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         return row;
     }
 
-    protected Map<String, Object> _select(Container container, Object[] keys) throws SQLException, ConversionException
+    protected Map<String, Object> _select(Container container, Object[] keys) throws ConversionException
     {
         TableInfo table = getDbTable();
         Object[] typedParameters = convertToTypedValues(keys, table.getPkColumns());
 
         Map<String, Object> row = new TableSelector(table).getMap(typedParameters);
-
 
         ColumnInfo objectUriCol = getObjectUriColumn();
         Domain domain = getDomain();
@@ -250,7 +245,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             if (lsid != null)
             {
                 Map<String, Object> propertyValues = OntologyManager.getProperties(getDomainObjContainer(container), lsid);
-                if (propertyValues.size() > 0)
+                if (!propertyValues.isEmpty())
                 {
                     // convert PropertyURI->value map into "Property name"->value map
                     Map<String, DomainProperty> propertyMap = domain.createImportMap(false);
@@ -541,9 +536,9 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
 
         // Get lsid value if it hasn't been set.
         // This should only happen if the QueryUpdateService doesn't have a DomainUpdateHelper (DataClass and SampleType)
-        if (lsid == null && getQueryTable() instanceof UpdateableTableInfo)
+        if (lsid == null && getQueryTable() instanceof UpdateableTableInfo updateableTableInfo)
         {
-            String objectUriColName = ((UpdateableTableInfo)getQueryTable()).getObjectURIColumnName();
+            String objectUriColName = updateableTableInfo.getObjectURIColumnName();
             if (objectUriColName != null)
                 lsid = (String)row.getOrDefault(objectUriColName, oldRow.get(objectUriColName));
         }
@@ -580,14 +575,10 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         if (row.containsKey(pd.getLabel()))
             return row.get(pd.getLabel());
 
-        Set<String> aliases = pd.getImportAliasSet();
-        if (aliases.size() > 0)
+        for (String alias : pd.getImportAliasSet())
         {
-            for (String alias : aliases)
-            {
-                if (row.containsKey(alias))
-                    return row.get(alias);
-            }
+            if (row.containsKey(alias))
+                return row.get(alias);
         }
 
         return null;
@@ -602,14 +593,10 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         if (row.containsKey(pd.getLabel()))
             return true;
 
-        Set<String> aliases = pd.getImportAliasSet();
-        if (aliases.size() > 0)
+        for (String alias : pd.getImportAliasSet())
         {
-            for (String alias : aliases)
-            {
-                if (row.containsKey(alias))
-                    return true;
-            }
+            if (row.containsKey(alias))
+                return true;
         }
 
         return false;
@@ -765,7 +752,6 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         }
     }
 
-
     /**
      * Override this method to alter the row before insert or update.
      * For example, you can automatically adjust certain column values based on context.
@@ -817,5 +803,4 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             return isAttachmentProperty(dp);
         return false;
     }
-
 }
