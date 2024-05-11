@@ -400,12 +400,14 @@ public class StudyManager
             @Override
             public void clearCache(Container c)
             {
+                super.clearCache(c);
                 super.clearCache(); // Big hammer, but we're caching datasets in multiple containers
             }
 
             @Override
             public void clearCache(DatasetDefinition obj)
             {
+                super.clearCache(obj);
                 super.clearCache(); // Big hammer, but we're caching datasets in multiple containers
             }
         };
