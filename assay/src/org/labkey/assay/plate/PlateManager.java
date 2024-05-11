@@ -165,6 +165,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     private static final String PLATE_SET_NAME_EXPRESSION = "PLS-${now:date('yyyyMMdd')}-${RowId}";
     private static final String PLATE_NAME_EXPRESSION = "${${PlateSet/PlateSetId}-:withCounter}";
 
+    public static final String PLATE_COPY_FLAG = ".plateCopy";
+
     public SearchService.SearchCategory PLATE_CATEGORY = new SearchService.SearchCategory("plate", "Plate") {
         @Override
         public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
@@ -884,6 +886,11 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
     private int savePlateImpl(Container container, User user, PlateImpl plate) throws Exception
     {
+        return savePlateImpl(container, user, plate, false);
+    }
+
+    private int savePlateImpl(Container container, User user, PlateImpl plate, boolean isCopy) throws Exception
+    {
         boolean updateExisting = plate.getRowId() != null;
 
         try (DbScope.Transaction transaction = ensureTransaction())
@@ -903,15 +910,17 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             QueryUpdateService qus = getPlateUpdateService(container, user);
             BatchValidationException errors = new BatchValidationException();
 
+            Map<String, Object> extraScriptContext = CaseInsensitiveHashMap.of(PLATE_COPY_FLAG, true);
+
             if (updateExisting)
             {
-                qus.updateRows(user, container, Collections.singletonList(plateRow), null, errors, null, null);
+                qus.updateRows(user, container, Collections.singletonList(plateRow), null, errors, null, extraScriptContext);
                 if (errors.hasErrors())
                     throw errors;
             }
             else
             {
-                List<Map<String, Object>> insertedRows = qus.insertRows(user, container, Collections.singletonList(plateRow), errors, null, null);
+                List<Map<String, Object>> insertedRows = qus.insertRows(user, container, Collections.singletonList(plateRow), errors, null, extraScriptContext);
                 if (errors.hasErrors())
                     throw errors;
                 Map<String, Object> row = insertedRows.get(0);
@@ -947,7 +956,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 if (wellgroup.getRowId() != null && wellgroup.getRowId() > 0)
                 {
                     wellGroupRow = ObjectFactory.Registry.getFactory(WellGroupBean.class).toMap(WellGroupBean.from(wellgroup), new ArrayListMap<>());
-                    wellGroupQus.updateRows(user, container, Collections.singletonList(wellGroupRow), null, wellGroupErrors, null, null);
+                    wellGroupQus.updateRows(user, container, Collections.singletonList(wellGroupRow), null, wellGroupErrors, null, extraScriptContext);
                     if (wellGroupErrors.hasErrors())
                         throw wellGroupErrors;
 
@@ -958,7 +967,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                     wellgroup.setPlateId(plateId);
                     wellGroupRow = ObjectFactory.Registry.getFactory(WellGroupBean.class).toMap(WellGroupBean.from(wellgroup), new ArrayListMap<>());
 
-                    List<Map<String, Object>> insertedRows = wellGroupQus.insertRows(user, container, Collections.singletonList(wellGroupRow), wellGroupErrors, null, null);
+                    List<Map<String, Object>> insertedRows = wellGroupQus.insertRows(user, container, Collections.singletonList(wellGroupRow), wellGroupErrors, null, extraScriptContext);
                     if (wellGroupErrors.hasErrors())
                         throw wellGroupErrors;
 
@@ -990,7 +999,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                     }
                 }
                 BatchValidationException wellErrors = new BatchValidationException();
-                insertedRows = wellQus.insertRows(user, container, wellRows, wellErrors, null, null);
+                insertedRows = wellQus.insertRows(user, container, wellRows, wellErrors, null, extraScriptContext);
                 if (wellErrors.hasErrors())
                     throw wellErrors;
             }
@@ -1556,7 +1565,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         }
 
         var errors = new BatchValidationException();
-        getWellUpdateService(container, user).updateRows(user, container, newWellData, null, errors, null, null);
+        Map<String, Object> extraScriptContext = CaseInsensitiveHashMap.of(PLATE_COPY_FLAG, true);
+        getWellUpdateService(container, user).updateRows(user, container, newWellData, null, errors, null, extraScriptContext);
         if (errors.hasErrors())
             throw errors;
     }
@@ -1637,7 +1647,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             copyWellGroups(sourcePlate, newPlate);
 
             // Save the plate
-            int plateId = save(container, user, newPlate);
+            int plateId = savePlateImpl(container, user, newPlate, true);
             newPlate = (PlateImpl) getPlate(container, plateId);
             if (newPlate == null)
                 throw new IllegalStateException("Unexpected failure. Failed to retrieve plate after save (pre-commit).");
