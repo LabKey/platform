@@ -19,7 +19,6 @@ package org.labkey.core.view;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.NullSafeBindException;
-import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableViewForm;
 import org.labkey.api.data.TestSchema;
@@ -91,7 +90,6 @@ public class TableViewFormTestCase extends Assert
         tf.setTypedValue("datetimeNull", new Date("6/20/2004"));
         Assert.assertTrue("Final form should be valid", tf.isValid());
     }
-
 
     @Test
     public void testDbOperations() throws SQLException

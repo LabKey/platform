@@ -25,6 +25,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.util.Path;
+import org.springframework.jdbc.core.metadata.Db2CallMetaDataProvider;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -81,7 +82,11 @@ public class StudyCache
         DatabaseCache<String, Object> cache = getCache(tinfo, false);
         Object newObj = cache != null ? cache.get(getCacheName(c, cacheKey)) : null;
 
-        assert Objects.equals(oldObj, newObj);
+        if (!Objects.equals(oldObj, newObj))
+        {
+            DbCache.logUnmatched();
+            throw new IllegalStateException(oldObj + " != " + newObj);
+        }
 
         return newObj;
     }
@@ -96,7 +101,11 @@ public class StudyCache
         DatabaseCache<String, Object> cache2 = getCache(tinfo, true);
         Object newObj = cache2 != null ? cache2.get(getCacheName(c, cacheKey), null, loader) : null;
 
-        assert Objects.equals(oldObj, newObj);
+        if (!Objects.equals(oldObj, newObj))
+        {
+            DbCache.logUnmatched();
+            throw new IllegalStateException(oldObj + " != " + newObj);
+        }
 
         return newObj;
     }
