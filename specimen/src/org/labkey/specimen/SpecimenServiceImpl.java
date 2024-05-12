@@ -43,7 +43,6 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.specimen.DefaultSpecimenTablesTemplate;
 import org.labkey.api.specimen.SpecimenColumns;
-import org.labkey.api.specimen.SpecimenManagerNew;
 import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
@@ -482,6 +481,8 @@ public class SpecimenServiceImpl implements SpecimenService
         Table.delete(SpecimenSchema.get().getTableInfoSampleRequestEvent(), containerFilter);
         assert set.add(SpecimenSchema.get().getTableInfoSampleRequestEvent());
         Table.delete(SpecimenSchema.get().getTableInfoSampleRequest(), containerFilter);
+        DbCache.trackRemove(SpecimenSchema.get().getTableInfoSampleRequest());
+        SpecimenRequestManager.get().clearRequestHelper(c);
         assert set.add(SpecimenSchema.get().getTableInfoSampleRequest());
         Table.delete(SpecimenSchema.get().getTableInfoSampleRequestStatus(), containerFilter);
         DbCache.trackRemove(SpecimenSchema.get().getTableInfoSampleRequestStatus());

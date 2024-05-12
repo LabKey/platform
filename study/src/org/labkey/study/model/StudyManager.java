@@ -1883,6 +1883,8 @@ public class StudyManager
             _visitHelper.clearCache(visitStudy.getContainer());
 
         DbCache.clear(StudySchema.getInstance().getTableInfoParticipant());
+        DbCache.trackRemove(StudySchema.getInstance().getTableInfoParticipant());
+        _participantCache.remove(study.getContainer());
         for (StudyImpl substudy : StudyManager.getInstance().getAncillaryStudies(study.getContainer()))
             clearParticipantVisitCaches(substudy);
     }
