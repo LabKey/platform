@@ -22,7 +22,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.provider.ContainerAuditProvider;
-import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
@@ -66,7 +65,6 @@ public class CoreContainerListener implements ContainerManager.ContainerListener
         // Delete any rows in test.TestTable associated with this container
         SimpleFilter containerFilter = SimpleFilter.createContainerFilter(c);
         Table.delete(TestSchema.getInstance().getTableInfoTestTable(), containerFilter);
-        DbCache.trackRemove(TestSchema.getInstance().getTableInfoTestTable());
 
         // Data States
         Table.delete(CoreSchema.getInstance().getTableInfoDataStates(), containerFilter);

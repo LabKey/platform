@@ -220,7 +220,7 @@ public class SpecimenServiceImpl implements SpecimenService
     @Override
     public ParticipantVisit getSampleInfo(Container studyContainer, User user, String sampleId)
     {
-        Vial match = SpecimenManagerNew.get().getVial(studyContainer, user, sampleId);
+        Vial match = SpecimenManager.get().getVial(studyContainer, user, sampleId);
         if (match != null)
             return new StudyParticipantVisit(studyContainer, sampleId, match.getPtid(), match.getVisitValue(), match.getDrawTimestamp());
         else
@@ -233,7 +233,7 @@ public class SpecimenServiceImpl implements SpecimenService
         if (null != studyContainer && null != StringUtils.trimToNull(participantId) && null != date)
         {
             List<Vial> matches = SpecimenManager.get().getVials(studyContainer, user, participantId, date);
-            if (matches.size() > 0)
+            if (!matches.isEmpty())
             {
                 Set<ParticipantVisit> result = new HashSet<>();
                 for (Vial match : matches)

@@ -36,6 +36,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.DetailsURL;
@@ -544,19 +545,19 @@ public class SpecimenQueryView extends BaseSpecimenQueryView
                         specimenHashes.add(rs.getString("SpecimenHash"));
                         if (specimenHashes.size() > 150)
                         {
-                            _availableSpecimenCounts.putAll(SpecimenManager.get().getSpecimenCounts(ctx.getContainer(), specimenHashes));
+                            _availableSpecimenCounts.putAll(getSpecimenCounts(ctx.getContainer(), specimenHashes));
                             specimenHashes = new HashSet<>();
                         }
                     }
                     while (rs.next());
                     if (!specimenHashes.isEmpty())
                     {
-                        _availableSpecimenCounts.putAll(SpecimenManager.get().getSpecimenCounts(ctx.getContainer(), specimenHashes));
+                        _availableSpecimenCounts.putAll(getSpecimenCounts(ctx.getContainer(), specimenHashes));
                     }
                 }
                 else
                 {
-                    _availableSpecimenCounts.putAll(SpecimenManager.get().getSpecimenCounts(ctx.getContainer(), null));
+                    _availableSpecimenCounts.putAll(getSpecimenCounts(ctx.getContainer(), null));
                 }
                 rs.absolute(originalRow);
             }
@@ -566,6 +567,33 @@ public class SpecimenQueryView extends BaseSpecimenQueryView
             }
 
         return _availableSpecimenCounts;
+    }
+
+    private Map<String, Integer> getSpecimenCounts(Container container, Collection<String> specimenHashes)
+    {
+        TableInfo tableInfoSpecimen = SpecimenSchema.get().getTableInfoSpecimen(container);
+
+        SQLFragment extraClause = null;
+        if (specimenHashes != null)
+        {
+            extraClause = new SQLFragment(" WHERE SpecimenHash ");
+            tableInfoSpecimen.getSqlDialect().appendInClauseSql(extraClause, specimenHashes);
+        }
+
+        final Map<String, Integer> map = new HashMap<>();
+
+        SQLFragment sql = new SQLFragment("SELECT SpecimenHash, CAST(AvailableCount AS Integer) AS AvailableCount FROM ");
+        sql.append(tableInfoSpecimen.getFromSQL(""));
+        if (extraClause != null)
+        {
+            sql.append(extraClause);
+        }
+        new SqlSelector(SpecimenSchema.get().getSchema(), sql).forEach(rs -> {
+            String specimenHash = rs.getString("SpecimenHash");
+            map.put(specimenHash, rs.getInt("AvailableCount"));
+        });
+
+        return map;
     }
 
     private static Sort createDefaultSort(ViewType viewType)

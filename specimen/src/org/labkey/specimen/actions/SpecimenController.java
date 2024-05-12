@@ -1071,7 +1071,7 @@ public class SpecimenController extends SpringActionController
             }
 
             ImportSpecimensBean bean = new ImportSpecimensBean(getContainer(), archives, form.getPath(), form.getFile(), errors);
-            boolean isEmpty = SpecimenManagerNew.get().isSpecimensEmpty(getContainer(), getUser());
+            boolean isEmpty = SpecimenManager.get().isSpecimensEmpty(getContainer(), getUser());
             if (isEmpty)
             {
                 bean.setNoSpecimens(true);
@@ -1157,7 +1157,7 @@ public class SpecimenController extends SpringActionController
         {
             if (form.getId() != null && form.getTargetStudy() != null)
             {
-                Vial vial = SpecimenManagerNew.get().getVial(form.getTargetStudy(), getUser(), form.getId());
+                Vial vial = SpecimenManager.get().getVial(form.getTargetStudy(), getUser(), form.getId());
                 if (vial != null)
                 {
                     ActionURL url = new ActionURL(SpecimenEventsAction.class, form.getTargetStudy()).addParameter("id", vial.getRowId());
@@ -2007,7 +2007,7 @@ public class SpecimenController extends SpringActionController
         if (fromGroupedView)
         {
             Map<String, List<Vial>> keyToVialMap =
-                    SpecimenManagerNew.get().getVialsForSpecimenHashes(getContainer(), getUser(),  formValues, onlyAvailable);
+                    SpecimenManager.get().getVialsForSpecimenHashes(getContainer(), getUser(),  formValues, onlyAvailable);
             List<Vial> vials = new ArrayList<>();
             for (List<Vial> vialList : keyToVialMap.values())
                 vials.addAll(vialList);
@@ -2216,7 +2216,7 @@ public class SpecimenController extends SpringActionController
         {
             Set<Long> ids = new HashSet<>();
             Arrays.stream(toLongArray(rowIds)).forEach(ids::add);
-            List<Vial> requestedSpecimens = SpecimenManagerNew.get().getRequestableVials(container, user, ids);
+            List<Vial> requestedSpecimens = SpecimenManager.get().getRequestableVials(container, user, ids);
             return new RequestedSpecimens(requestedSpecimens);
         }
 
@@ -2229,7 +2229,7 @@ public class SpecimenController extends SpringActionController
                 List<Vial> vials = new ArrayList<>();
                 for (String globalUniqueId : globalUniqueIds)
                 {
-                    Vial match = SpecimenManagerNew.get().getVial(container, user, globalUniqueId);
+                    Vial match = SpecimenManager.get().getVial(container, user, globalUniqueId);
                     if (match != null)
                         vials.add(match);
                 }
@@ -3561,7 +3561,7 @@ public class SpecimenController extends SpringActionController
                     boolean hasSpecimenError = false;
                     for (String id : globalIds)
                     {
-                        Vial vial = SpecimenManagerNew.get().getVial(getContainer(), getUser(), id);
+                        Vial vial = SpecimenManager.get().getVial(getContainer(), getUser(), id);
                         if (vial == null)
                         {
                             errorList.add("Specimen " + id + " not found.");

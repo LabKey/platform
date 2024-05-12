@@ -26,6 +26,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.Constants;
 import org.labkey.api.annotations.Migrate;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.attachments.Attachment;
@@ -48,6 +49,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbScope.CommitTaskOption;
@@ -215,6 +217,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.WeakHashMap;
+import java.util.stream.Collectors;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 import static org.labkey.study.query.StudyQuerySchema.PERSONNEL_TABLE_NAME;
@@ -238,6 +241,20 @@ public class StudyManager
     private final DatasetHelper _datasetHelper;
     private final QueryHelper<CohortImpl> _cohortHelper;
     private final BlockingCache<Container, Set<PropertyDescriptor>> _sharedProperties;
+
+    private final BlockingCache<Container, Map<String, Participant>> _participantCache = DatabaseCache.get(StudySchema.getInstance().getScope(), Constants.getMaxContainers(), "Participants", new CacheLoader<Container, Map<String, Participant>>()
+    {
+        @Override
+        public Map<String, Participant> load(@NotNull Container c, @Nullable Object argument)
+        {
+            SimpleFilter filter = SimpleFilter.createContainerFilter(c);
+            return Collections.unmodifiableMap(
+                new TableSelector(StudySchema.getInstance().getTableInfoParticipant(), filter, new Sort("ParticipantId"))
+                    .stream(Participant.class)
+                    .collect(Collectors.toMap(Participant::getParticipantId, participant -> participant))
+            );
+        }
+    });
 
     private static final String LSID_REQUIRED = "LSID_REQUIRED";
 
@@ -2748,6 +2765,7 @@ public class StudyManager
         _datasetHelper.clearCache(c);
 
         DbCache.clear(StudySchema.getInstance().getTableInfoParticipant());
+        DbCache.trackRemove(StudySchema.getInstance().getTableInfoParticipant());
 
         for (StudyImpl substudy : StudyManager.getInstance().getAncillaryStudies(c))
             clearCaches(substudy.getContainer(), unmaterializeDatasets);
@@ -4123,12 +4141,23 @@ public class StudyManager
             participantMap = Collections.unmodifiableMap(participantMap);
             DbCache.put(StudySchema.getInstance().getTableInfoParticipant(), getParticipantCacheKey(study.getContainer()), participantMap, CacheManager.HOUR);
         }
+        Map<String, Participant> participantMapNew = _participantCache.get(study.getContainer());
+
+        assert participantMap.equals(participantMapNew);
+
         return participantMap;
     }
 
     public void clearParticipantCache(Container container)
     {
         DbCache.remove(StudySchema.getInstance().getTableInfoParticipant(), getParticipantCacheKey(container));
+        DbCache.trackRemove(StudySchema.getInstance().getTableInfoParticipant());
+        _participantCache.remove(container);
+    }
+
+    public void clearAssaySpecimenCache(Container container)
+    {
+        _assaySpecimenHelper.clearCache(container);
     }
 
     public Collection<Participant> getParticipants(Study study)
@@ -4848,6 +4877,7 @@ public class StudyManager
          * Issue : 46986. Move the study design domains to the project folder (if not already there), since
          * their URI references the project folder already.
          */
+        @SuppressWarnings("unused")
         public static void moveDesignDomains(ModuleContext ctx)
         {
             if (ctx.isNewInstall())

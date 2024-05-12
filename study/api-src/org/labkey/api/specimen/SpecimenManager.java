@@ -40,9 +40,7 @@ import org.labkey.api.study.Visit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class SpecimenManager
 {
@@ -69,33 +67,6 @@ public class SpecimenManager
         SQLFragment sql = new SQLFragment("SELECT MAX(ExternalId) FROM ");
         sql.append(tableInfo);
         return new SqlSelector(tableInfo.getSchema(), sql).getArrayList(Long.class).get(0);
-    }
-
-    public Map<String, Integer> getSpecimenCounts(Container container, Collection<String> specimenHashes)
-    {
-        TableInfo tableInfoSpecimen = SpecimenSchema.get().getTableInfoSpecimen(container);
-
-        SQLFragment extraClause = null;
-        if (specimenHashes != null)
-        {
-            extraClause = new SQLFragment(" WHERE SpecimenHash ");
-            tableInfoSpecimen.getSqlDialect().appendInClauseSql(extraClause, specimenHashes);
-        }
-
-        final Map<String, Integer> map = new HashMap<>();
-
-        SQLFragment sql = new SQLFragment("SELECT SpecimenHash, CAST(AvailableCount AS Integer) AS AvailableCount FROM ");
-        sql.append(tableInfoSpecimen.getFromSQL(""));
-        if (extraClause != null)
-        {
-            sql.append(extraClause);
-        }
-        new SqlSelector(SpecimenSchema.get().getSchema(), sql).forEach(rs -> {
-            String specimenHash = rs.getString("SpecimenHash");
-            map.put(specimenHash, rs.getInt("AvailableCount"));
-        });
-
-        return map;
     }
 
     public int getSpecimenCountForVisit(Visit visit)

@@ -10,9 +10,11 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DatabaseCache;
+import org.labkey.api.data.DbSchemaCache;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -113,6 +115,8 @@ public class SpecimenRequestManager
             try (var ignore = SpringActionController.ignoreSqlUpdates())
             {
                 Table.insert(user, _requestStatusHelper.getTableInfo(), notYetSubmittedStatus);
+                DbCache.trackRemove(_requestStatusHelper.getTableInfo());
+                _requestStatusHelper.clearCache(c);
             }
             statuses = _requestStatusHelper.get(c, "SortOrder");
         }
@@ -1247,7 +1251,7 @@ public class SpecimenRequestManager
 
     public RequestedSpecimens getRequestableBySpecimenHash(Container c, User user, Set<String> formValues, Integer preferredLocation) throws AmbiguousLocationException
     {
-        Map<String, List<Vial>> vialsByHash = SpecimenManagerNew.get().getVialsForSpecimenHashes(c, user, formValues, true);
+        Map<String, List<Vial>> vialsByHash = SpecimenManager.get().getVialsForSpecimenHashes(c, user, formValues, true);
 
         if (vialsByHash == null || vialsByHash.isEmpty())
             return new RequestedSpecimens(Collections.emptyList());
