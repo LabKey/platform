@@ -24,11 +24,6 @@ import org.labkey.api.study.AbstractStudyCachable;
 
 import java.util.Date;
 
-/**
- * User: brittp
- * Date: Feb 24, 2006
- * Time: 1:56:09 PM
- */
 public class SpecimenRequestEvent extends AbstractStudyCachable<SpecimenRequestEvent> implements AttachmentParent
 {
     private int _rowId;

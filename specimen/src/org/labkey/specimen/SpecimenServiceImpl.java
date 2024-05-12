@@ -20,27 +20,36 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.specimen.DefaultSpecimenTablesTemplate;
 import org.labkey.api.specimen.SpecimenColumns;
 import org.labkey.api.specimen.SpecimenManagerNew;
+import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.importer.SimpleSpecimenImporter;
 import org.labkey.api.specimen.importer.SpecimenColumn;
+import org.labkey.api.specimen.location.LocationCache;
 import org.labkey.api.specimen.model.SpecimenTablesProvider;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.SpecimenChangeListener;
@@ -460,5 +469,70 @@ public class SpecimenServiceImpl implements SpecimenService
     {
         for (SpecimenChangeListener l : _changeListeners)
             l.specimensChanged(c, user, logger);
+    }
+
+    @Override
+    public void deleteAllSpecimenData(Container c, Set<TableInfo> set, User user)
+    {
+        // UNDONE: use transaction?
+        SimpleFilter containerFilter = SimpleFilter.createContainerFilter(c);
+
+        Table.delete(SpecimenSchema.get().getTableInfoSampleRequestSpecimen(), containerFilter);
+        assert set.add(SpecimenSchema.get().getTableInfoSampleRequestSpecimen());
+        Table.delete(SpecimenSchema.get().getTableInfoSampleRequestEvent(), containerFilter);
+        assert set.add(SpecimenSchema.get().getTableInfoSampleRequestEvent());
+        Table.delete(SpecimenSchema.get().getTableInfoSampleRequest(), containerFilter);
+        assert set.add(SpecimenSchema.get().getTableInfoSampleRequest());
+        Table.delete(SpecimenSchema.get().getTableInfoSampleRequestStatus(), containerFilter);
+        DbCache.trackRemove(SpecimenSchema.get().getTableInfoSampleRequestStatus());
+        SpecimenRequestManager.get().clearRequestStatusHelper(c);
+        assert set.add(SpecimenSchema.get().getTableInfoSampleRequestStatus());
+
+        new SpecimenTablesProvider(c, null, null).deleteTables();
+        LocationCache.clear(c);
+
+        Table.delete(SpecimenSchema.get().getTableInfoSampleAvailabilityRule(), containerFilter);
+        assert set.add(SpecimenSchema.get().getTableInfoSampleAvailabilityRule());
+
+        SpecimenMigrationService SMS = SpecimenMigrationService.get();
+        if (null != SMS)
+            SMS.purgeRequestRequirementsAndActors(c);
+        assert set.add(SpecimenSchema.get().getTableInfoSampleRequestRequirement());
+        assert set.add(SpecimenSchema.get().getTableInfoSampleRequestActor());
+
+        DbSchema expSchema = ExperimentService.get().getSchema();
+        TableInfo tinfoMaterial = expSchema.getTable("Material");
+
+        ExpSampleType sampleType = SampleTypeService.get().getSampleType(c, SpecimenService.SAMPLE_TYPE_NAME);
+
+        if (sampleType != null)
+        {
+            // Check if any of the samples are referenced in an experiment run
+            SQLFragment sql = new SQLFragment("SELECT m.RowId FROM ");
+            sql.append(ExperimentService.get().getTinfoMaterial(), "m");
+            sql.append(" INNER JOIN ");
+            sql.append(ExperimentService.get().getTinfoMaterialInput(), "mi");
+            sql.append(" ON m.RowId = mi.MaterialId AND m.CpasType = ?");
+            sql.add(sampleType.getLSID());
+
+            if (new SqlSelector(ExperimentService.get().getSchema(), sql).exists())
+            {
+                // If so, do the slow version of the delete that tears down runs
+                sampleType.delete(user);
+            }
+            else
+            {
+                // If not, do the quick version that just kills the samples themselves in the exp.Material table
+                SimpleFilter materialFilter = new SimpleFilter(containerFilter);
+                materialFilter.addCondition(FieldKey.fromParts("CpasType"), sampleType.getLSID());
+                Table.delete(tinfoMaterial, materialFilter);
+            }
+        }
+
+        // VIEW: if this view gets removed, remove this line
+        assert set.add(SpecimenSchema.get().getSchema().getTable("LockedSpecimens"));
+
+        if (null != SMS)
+            SMS.clearGroupedValuesForColumn(c);
     }
 }

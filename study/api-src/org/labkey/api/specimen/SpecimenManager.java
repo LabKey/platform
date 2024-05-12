@@ -20,27 +20,18 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.exp.api.ExpSampleType;
-import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.security.User;
-import org.labkey.api.specimen.location.LocationCache;
 import org.labkey.api.specimen.model.SpecimenComment;
-import org.labkey.api.specimen.model.SpecimenTablesProvider;
-import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
@@ -52,7 +43,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class SpecimenManager
 {
@@ -195,7 +185,7 @@ public class SpecimenManager
 
         SQLFragment sqlVisitRange = new SQLFragment();
         sqlVisitRange.append(tinfoSpecimen.getColumn("VisitValue").getValueSql(specimenAlias)).append(" >= ? AND ")
-                .append(tinfoSpecimen.getColumn("VisitValue").getValueSql(specimenAlias)).append(" <= ?");
+            .append(tinfoSpecimen.getColumn("VisitValue").getValueSql(specimenAlias)).append(" <= ?");
 
         if (TimepointType.VISIT == study.getTimepointType())
         {
@@ -210,7 +200,7 @@ public class SpecimenManager
             Sort sort = new Sort();
             sort.insertSortColumn(FieldKey.fromString("SequenceNum"), Sort.SortDirection.ASC);
             ArrayList<Double> visitValues = new TableSelector(columnInfo, filter, sort).getArrayList(Double.class);
-            if (0 == visitValues.size())
+            if (visitValues.isEmpty())
             {
                 // No participant visits for this timepoint; return False
                 return null;
@@ -251,68 +241,6 @@ public class SpecimenManager
             if (null != SMS)
                 SMS.clearRequestCaches(vial.getContainer());
         }
-    }
-
-    public void deleteAllSpecimenData(Container c, Set<TableInfo> set, User user)
-    {
-        // UNDONE: use transaction?
-        SimpleFilter containerFilter = SimpleFilter.createContainerFilter(c);
-
-        Table.delete(SpecimenSchema.get().getTableInfoSampleRequestSpecimen(), containerFilter);
-        assert set.add(SpecimenSchema.get().getTableInfoSampleRequestSpecimen());
-        Table.delete(SpecimenSchema.get().getTableInfoSampleRequestEvent(), containerFilter);
-        assert set.add(SpecimenSchema.get().getTableInfoSampleRequestEvent());
-        Table.delete(SpecimenSchema.get().getTableInfoSampleRequest(), containerFilter);
-        assert set.add(SpecimenSchema.get().getTableInfoSampleRequest());
-        Table.delete(SpecimenSchema.get().getTableInfoSampleRequestStatus(), containerFilter);
-        assert set.add(SpecimenSchema.get().getTableInfoSampleRequestStatus());
-
-        new SpecimenTablesProvider(c, null, null).deleteTables();
-        LocationCache.clear(c);
-
-        Table.delete(SpecimenSchema.get().getTableInfoSampleAvailabilityRule(), containerFilter);
-        assert set.add(SpecimenSchema.get().getTableInfoSampleAvailabilityRule());
-
-        SpecimenMigrationService SMS = SpecimenMigrationService.get();
-        if (null != SMS)
-            SMS.purgeRequestRequirementsAndActors(c);
-        assert set.add(SpecimenSchema.get().getTableInfoSampleRequestRequirement());
-        assert set.add(SpecimenSchema.get().getTableInfoSampleRequestActor());
-
-        DbSchema expSchema = ExperimentService.get().getSchema();
-        TableInfo tinfoMaterial = expSchema.getTable("Material");
-
-        ExpSampleType sampleType = SampleTypeService.get().getSampleType(c, SpecimenService.SAMPLE_TYPE_NAME);
-
-        if (sampleType != null)
-        {
-            // Check if any of the samples are referenced in an experiment run
-            SQLFragment sql = new SQLFragment("SELECT m.RowId FROM ");
-            sql.append(ExperimentService.get().getTinfoMaterial(), "m");
-            sql.append(" INNER JOIN ");
-            sql.append(ExperimentService.get().getTinfoMaterialInput(), "mi");
-            sql.append(" ON m.RowId = mi.MaterialId AND m.CpasType = ?");
-            sql.add(sampleType.getLSID());
-
-            if (new SqlSelector(ExperimentService.get().getSchema(), sql).exists())
-            {
-                // If so, do the slow version of the delete that tears down runs
-                sampleType.delete(user);
-            }
-            else
-            {
-                // If not, do the quick version that just kills the samples themselves in the exp.Material table
-                SimpleFilter materialFilter = new SimpleFilter(containerFilter);
-                materialFilter.addCondition(FieldKey.fromParts("CpasType"), sampleType.getLSID());
-                Table.delete(tinfoMaterial, materialFilter);
-            }
-        }
-
-        // VIEW: if this view gets removed, remove this line
-        assert set.add(SpecimenSchema.get().getSchema().getTable("LockedSpecimens"));
-
-        if (null != SMS)
-            SMS.clearGroupedValuesForColumn(c);
     }
 
     public SpecimenComment[] getSpecimenCommentForSpecimen(Container container, String specimenHash)

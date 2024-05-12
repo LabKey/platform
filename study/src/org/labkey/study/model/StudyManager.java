@@ -147,6 +147,7 @@ import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.DataspaceContainerFilter;
 import org.labkey.api.study.QueryHelper;
+import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyCache;
 import org.labkey.api.study.StudyService;
@@ -2789,7 +2790,9 @@ public class StudyManager
             //
             // specimens
             //
-            SpecimenManager.get().deleteAllSpecimenData(c, deletedTables, user);
+            SpecimenService ss = SpecimenService.get();
+            if (null != ss)
+                ss.deleteAllSpecimenData(c, deletedTables, user);
 
             //
             // assay schedule
@@ -2797,6 +2800,8 @@ public class StudyManager
             Table.delete(SCHEMA.getTableInfoAssaySpecimenVisit(), containerFilter);
             assert deletedTables.add(SCHEMA.getTableInfoAssaySpecimenVisit());
             Table.delete(_assaySpecimenHelper.getTableInfo(), containerFilter);
+            DbCache.trackRemove(_assaySpecimenHelper.getTableInfo());
+            _assaySpecimenHelper.clearCache(c);
             assert deletedTables.add(_assaySpecimenHelper.getTableInfo());
 
             //

@@ -303,7 +303,7 @@ public class SpecimenRequestManager
         String parentObjectLsid = getRequestInputObjectLsid(container);
         Map<String,ObjectProperty> resourceProperties = OntologyManager.getPropertyObjects(container, parentObjectLsid);
         SpecimenRequestInput[] inputs = new SpecimenRequestInput[0];
-        if (resourceProperties == null || resourceProperties.size() == 0)
+        if (resourceProperties == null || resourceProperties.isEmpty())
         {
             if (createIfMissing)
             {
@@ -748,7 +748,7 @@ public class SpecimenRequestManager
 
         updateSql.append("\tFROM ").append(tableInfoVialSelectName).append("\n");
 
-        if (vials != null && vials.size() > 0)
+        if (vials != null && !vials.isEmpty())
         {
             Set<Long> specimenIds = new HashSet<>();
             for (Vial vial : vials)
@@ -787,6 +787,11 @@ public class SpecimenRequestManager
             clearCaches(study.getContainer());
 
         clearGroupedValuesForColumn(c);
+    }
+
+    void clearRequestStatusHelper(Container c)
+    {
+        _requestStatusHelper.clearCache(c);
     }
 
     private static class GroupedValueColumnHelper

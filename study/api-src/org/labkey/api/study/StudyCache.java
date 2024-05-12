@@ -25,7 +25,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.util.Path;
-import org.springframework.jdbc.core.metadata.Db2CallMetaDataProvider;
 
 import java.util.HashMap;
 import java.util.Map;
