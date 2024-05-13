@@ -106,6 +106,7 @@ public class WellImpl extends PositionImpl implements Well
         _excluded = excluded;
     }
 
+    @Override
     public Integer getSampleId()
     {
         return _sampleId;

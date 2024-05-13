@@ -106,7 +106,7 @@ public class WellTriggerFactory implements TriggerFactory
         )
         {
             // Skip computing well groups when this is a plate copy operation
-            if (errors.hasErrors() || isCopy(extraContext))
+            if (isCopyOperation(extraContext))
                 return;
 
             var hasSampleChange = hasSampleChange(newRow);
@@ -175,9 +175,9 @@ public class WellTriggerFactory implements TriggerFactory
             return row != null && (row.containsKey(WellTable.Column.Type.name()) || row.containsKey(WellTable.Column.Group.name()));
         }
 
-        private boolean isCopy(Map<String, Object> extraContext)
+        private boolean isCopyOperation(Map<String, Object> extraContext)
         {
-            return extraContext != null && extraContext.containsKey(PlateManager.PLATE_COPY_FLAG);
+            return extraContext != null && (boolean) extraContext.getOrDefault(PlateManager.PLATE_COPY_FLAG, false);
         }
 
         @Override
@@ -214,6 +214,9 @@ public class WellTriggerFactory implements TriggerFactory
             Map<String, Object> extraContext
         )
         {
+            if (errors.hasErrors())
+                return;
+
             checkForChanges(newRow, null, errors, extraContext);
         }
 
@@ -228,6 +231,9 @@ public class WellTriggerFactory implements TriggerFactory
             Map<String, Object> extraContext
         )
         {
+            if (errors.hasErrors())
+                return;
+
             checkForChanges(newRow, oldRow, errors, extraContext);
         }
     }
