@@ -242,26 +242,19 @@ public class StudyManager
     private final QueryHelper<CohortImpl> _cohortHelper;
     private final BlockingCache<Container, Set<PropertyDescriptor>> _sharedProperties;
 
-    private final BlockingCache<Container, Map<String, Participant>> _participantCache = DatabaseCache.get(StudySchema.getInstance().getScope(), Constants.getMaxContainers(), "Participants", new CacheLoader<Container, Map<String, Participant>>()
-    {
-        @Override
-        public Map<String, Participant> load(@NotNull Container c, @Nullable Object argument)
-        {
-            SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-            return Collections.unmodifiableMap(
-                new TableSelector(StudySchema.getInstance().getTableInfoParticipant(), filter, new Sort("ParticipantId"))
-                    .stream(Participant.class)
-                    .collect(Collectors.toMap(Participant::getParticipantId, participant -> participant))
-            );
-        }
+    private final BlockingCache<Container, Map<String, Participant>> _participantCache = DatabaseCache.get(StudySchema.getInstance().getScope(), Constants.getMaxContainers(), CacheManager.HOUR, "Participants", (c, argument) -> {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
+        return Collections.unmodifiableMap(
+            new TableSelector(StudySchema.getInstance().getTableInfoParticipant(), filter, new Sort("ParticipantId"))
+                .stream(Participant.class)
+                .collect(Collectors.toMap(Participant::getParticipantId, participant -> participant))
+        );
     });
 
     private static final String LSID_REQUIRED = "LSID_REQUIRED";
 
-
-    protected StudyManager()
+    private StudyManager()
     {
-        // prevent external construction with a private default constructor
         _studyHelper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoStudy(), StudyImpl.class)
         {
             @Override
@@ -429,7 +422,6 @@ public class StudyManager
                 super.clearCache(); // Big hammer, but we're caching datasets in multiple containers
             }
         };
-
 
         private DatasetHelper()
         {
