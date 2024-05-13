@@ -479,6 +479,8 @@ public class SpecimenServiceImpl implements SpecimenService
         Table.delete(SpecimenSchema.get().getTableInfoSampleRequestSpecimen(), containerFilter);
         assert set.add(SpecimenSchema.get().getTableInfoSampleRequestSpecimen());
         Table.delete(SpecimenSchema.get().getTableInfoSampleRequestEvent(), containerFilter);
+        DbCache.trackRemove(SpecimenSchema.get().getTableInfoSampleRequestEvent());
+        SpecimenRequestManager.get().clearRequestEventHelper(c);
         assert set.add(SpecimenSchema.get().getTableInfoSampleRequestEvent());
         Table.delete(SpecimenSchema.get().getTableInfoSampleRequest(), containerFilter);
         DbCache.trackRemove(SpecimenSchema.get().getTableInfoSampleRequest());

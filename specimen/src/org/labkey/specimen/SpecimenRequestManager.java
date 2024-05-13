@@ -803,6 +803,11 @@ public class SpecimenRequestManager
         _requestHelper.clearCache(c);
     }
 
+    void clearRequestEventHelper(Container c)
+    {
+        _requestEventHelper.clearCache(c);
+    }
+
     private static class GroupedValueColumnHelper
     {
         private final String _viewColumnName;
