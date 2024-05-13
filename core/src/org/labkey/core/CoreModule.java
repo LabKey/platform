@@ -136,6 +136,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.usageMetrics.UsageMetricsService;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
@@ -1174,9 +1175,20 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         {
             MarkdownService.setInstance(new MarkdownServiceImpl());
         }
-        catch (Exception e)
+        catch (RuntimeException | Error e)
         {
-            LOG.error("Exception registering MarkdownServiceImpl", e);
+            if (AppProps.getInstance().isDevMode())
+            {
+                // Be tolerant of inability to render Markdown in dev mode, as
+                // redeploying the webapp without bouncing Tomcat causes problems
+                // with Graal's JNI registration. See issue 50315
+                LOG.error("Error registering MarkdownServiceImpl", e);
+            }
+            else
+            {
+                // In production mode, treat this as a fatal error
+                throw e;
+            }
         }
 
         // initialize email preference service and listeners
