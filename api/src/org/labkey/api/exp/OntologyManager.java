@@ -103,30 +103,34 @@ public class OntologyManager
         @Override
         public PropertyDescriptor load(@NotNull Pair<String, GUID> key, @Nullable Object argument)
         {
+            PropertyDescriptor ret = null;
             String propertyURI = key.first;
             Container c = ContainerManager.getForId(key.second);
-            Container proj = c.getProject();
-            if (null == proj)
-                proj = c;
-            _log.debug("Loading a property descriptor for key " + key + " using project " + proj);
-            String sql = " SELECT * FROM " + getTinfoPropertyDescriptor() + " WHERE PropertyURI = ? AND Project IN (?,?)";
-            List<PropertyDescriptor> pdArray = new SqlSelector(getExpSchema(), sql, propertyURI, proj, _sharedContainer.getId()).getArrayList(PropertyDescriptor.class);
-            if (!pdArray.isEmpty())
+            if (null != c)
             {
-                PropertyDescriptor pd = pdArray.get(0);
-
-                // if someone has explicitly inserted a descriptor with the same URI as an existing one ,
-                // and one of the two is in the shared project, use the project-level descriptor.
-                if (pdArray.size() > 1)
+                Container proj = c.getProject();
+                if (null == proj)
+                    proj = c;
+                _log.debug("Loading a property descriptor for key " + key + " using project " + proj);
+                String sql = " SELECT * FROM " + getTinfoPropertyDescriptor() + " WHERE PropertyURI = ? AND Project IN (?,?)";
+                List<PropertyDescriptor> pdArray = new SqlSelector(getExpSchema(), sql, propertyURI, proj, _sharedContainer.getId()).getArrayList(PropertyDescriptor.class);
+                if (!pdArray.isEmpty())
                 {
-                    _log.debug("Multiple PropertyDescriptors found for " + propertyURI);
-                    if (pd.getProject().equals(_sharedContainer))
-                        pd = pdArray.get(1);
+                    PropertyDescriptor pd = pdArray.get(0);
+
+                    // if someone has explicitly inserted a descriptor with the same URI as an existing one,
+                    // and one of the two is in the shared project, use the project-level descriptor.
+                    if (pdArray.size() > 1)
+                    {
+                        _log.debug("Multiple PropertyDescriptors found for " + propertyURI);
+                        if (pd.getProject().equals(_sharedContainer))
+                            pd = pdArray.get(1);
+                    }
+                    _log.debug("Loaded property descriptor " + pd);
+                    ret = pd;
                 }
-                _log.debug("Loaded property descriptor " + pd);
-                return pd;
             }
-            return null;
+            return ret;
         }
     });
 
