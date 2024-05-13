@@ -2751,7 +2751,6 @@ public class StudyManager
         }
     }
 
-
     // Any container can be passed here (whether it contains a study or not).
     public void clearCaches(Container c, boolean unmaterializeDatasets)
     {
@@ -2863,6 +2862,8 @@ public class StudyManager
             Table.delete(StudySchema.getInstance().getTableInfoVisitAliases(), containerFilter);
             assert deletedTables.add(StudySchema.getInstance().getTableInfoVisitAliases());
             Table.delete(SCHEMA.getTableInfoParticipant(), containerFilter);
+            DbCache.trackRemove(SCHEMA.getTableInfoParticipant());
+            _participantCache.remove(c);
             assert deletedTables.add(SCHEMA.getTableInfoParticipant());
             Table.delete(_cohortHelper.getTableInfo(), containerFilter);
             DbCache.trackRemove(_cohortHelper.getTableInfo());
@@ -4145,9 +4146,13 @@ public class StudyManager
         }
         Map<String, Participant> participantMapNew = _participantCache.get(study.getContainer());
 
-        assert participantMap.equals(participantMapNew);
+        if (!Objects.equals(participantMap, participantMapNew))
+        {
+            DbCache.logUnmatched();
+            throw new IllegalStateException(participantMap + " != " + participantMapNew);
+        }
 
-        return participantMap;
+        return participantMapNew;
     }
 
     public void clearParticipantCache(Container container)
