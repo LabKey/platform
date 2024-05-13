@@ -338,8 +338,9 @@ public class ExperimentUpgradeCode implements UpgradeCode
                 LOG.info("Adding rows to exp.materialAncestors from samples in container " + container.getPath());
                 SampleTypeService.get().getSampleTypes(container, null, false).forEach(
                     sampleType -> {
-                        // TODO should we eliminate samples where materialSourceId is null?
-                        SQLFragment from = new SQLFragment(" FROM exp.material WHERE container = ?").add(container.getEntityId());
+                        LOG.debug("   Adding rows from samples in sampleType " + sampleType.getName() + " in container " + container.getPath());
+                        SQLFragment from = new SQLFragment(" FROM exp.material WHERE container = ?").add(container.getEntityId())
+                                .append(" AND materialSourceId = ?").add(sampleType.getRowId());
                         SQLFragment sql = ClosureQueryHelper.selectAndInsertSql(schema.getSqlDialect(), from, null, "INSERT INTO exp.materialAncestors (RowId, AncestorRowId, AncestorTypeId) ");
                         new SqlExecutor(schema.getScope()).execute(sql);
                     }
@@ -361,10 +362,11 @@ public class ExperimentUpgradeCode implements UpgradeCode
         ContainerManager.getAllChildren(ContainerManager.getRoot()).forEach(
             container -> {
                 LOG.info("Adding rows to exp.dataAncestors from data objects in container " + container.getPath());
-                SampleTypeService.get().getSampleTypes(container, null, false).forEach(
-                        sampleType -> {
-                            SQLFragment from = new SQLFragment(" FROM exp.data WHERE container = ?").add(container.getEntityId());
-
+                ExperimentService.get().getDataClasses(container, null, false).forEach(
+                        dataClass -> {
+                            LOG.debug("    Adding rows to exp.dataAncestors from data class " + dataClass.getName() + " in container " + container.getPath());
+                            SQLFragment from = new SQLFragment(" FROM exp.data WHERE container = ?").add(container.getEntityId())
+                                    .append(" AND classId = ?").add(dataClass.getRowId());
                             SQLFragment sql = ClosureQueryHelper.selectAndInsertSql(schema.getSqlDialect(), from, null,
                                     "INSERT INTO exp.dataAncestors (RowId, AncestorRowId, AncestorTypeId) ");
                             new SqlExecutor(schema.getScope()).execute(sql);

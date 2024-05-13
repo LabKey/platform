@@ -93,7 +93,6 @@ public class ClosureQueryHelper
                 SELECT CTE_.Start_, Edge.FromObjectId as End_, CTE_.Path_ || CAST(Edge.FromObjectId AS VARCHAR) || '/' as Path_, Depth_ + 1 as Depth_
                 FROM CTE_ INNER JOIN exp.Edge ON CTE_.End_ = Edge.ToObjectId
                 WHERE Depth_ < %d AND 0 = POSITION('/' || CAST(Edge.FromObjectId AS VARCHAR) || '/' IN Path_)
-                
             )
             """, MAX_LINEAGE_LOOKUP_DEPTH);
 
@@ -174,6 +173,62 @@ public class ClosureQueryHelper
         return selectAndInsertSql(d, from, into, null);
     }
 
+    /*
+     * This can be used to add a column directly to an exp table, or to create a column
+     * in an intermediate fake lookup table
+     */
+    static MutableColumnInfo createAncestorDataLookupColumn(final ColumnInfo fkRowId, boolean isSampleSource, ExpObject target)
+    {
+        if (!(target instanceof ExpSampleType) && !(target instanceof ExpDataClass))
+            throw new IllegalStateException();
+
+        final TableType targetType = TableType.fromExpObject(target);
+
+        TableInfo parentTable = fkRowId.getParentTable();
+
+        var ret = new ExprColumn(parentTable, target.getName(), new SQLFragment("#ERROR#"), JdbcType.INTEGER)
+        {
+
+            @Override
+            public SQLFragment getValueSql(String tableAlias)
+            {
+                SQLFragment objectId = fkRowId.getValueSql(tableAlias);
+                return ClosureQueryHelper.getValueSql(isSampleSource, objectId, target);
+            }
+        };
+        ret.setDisplayColumnFactory(AncestorLookupDisplayColumn::new);
+        ret.setLabel(target.getName());
+        UserSchema schema = Objects.requireNonNull(parentTable.getUserSchema());
+
+        // Determine the container scope of the lookup
+        ContainerFilter cf = QueryService.get().getProductContainerFilterForLookups(schema.getContainer(), schema.getUser(), null);
+        if (cf == null)
+            cf = parentTable.getContainerFilter();
+
+        var builder = new QueryForeignKey.Builder(schema, cf).table(target.getName()).key("rowid");
+        builder.schema(targetType.schemaKey);
+        var qfk = new QueryForeignKey(builder) {
+            @Override
+            public ColumnInfo createLookupColumn(ColumnInfo foreignKey, String displayField)
+            {
+                var ret = (MutableColumnInfo) super.createLookupColumn(foreignKey, displayField);
+                if (ret != null)
+                {
+                    if (ret.getConceptURI() == null)
+                        ret.setConceptURI(CONCEPT_URI);
+                    DisplayColumnFactory originalDisplayColumnFactory = ret.getDisplayColumnFactory();
+                    ret.setDisplayColumnFactory(colInfo -> new AncestorLookupDisplayColumn(foreignKey, colInfo, originalDisplayColumnFactory));
+                }
+                return ret;
+            }
+        };
+        ret.setFk(qfk);
+
+        // Don't override an existing conceptUri
+        if(ret.getConceptURI() == null)
+            ret.setConceptURI(CONCEPT_URI);
+        return ret;
+    }
 
     /*
      * This can be used to add a column directly to an exp table, or to create a column
@@ -236,6 +291,14 @@ public class ClosureQueryHelper
         return ret;
     }
 
+    public static SQLFragment getValueSql(boolean isSampleType, SQLFragment objectId, ExpObject target)
+    {
+        if (target instanceof ExpSampleType st)
+            return getValueSql(isSampleType, objectId, "m" + st.getRowId());
+        if (target instanceof ExpDataClass dc)
+            return getValueSql(isSampleType, objectId, "d" + dc.getRowId());
+        throw new IllegalStateException();
+    }
 
     public static SQLFragment getValueSql(UserSchema userSchema, TableType type, String sourceLSID, SQLFragment objectId, ExpObject target)
     {
@@ -246,6 +309,16 @@ public class ClosureQueryHelper
         throw new IllegalStateException();
     }
 
+    private static SQLFragment getValueSql(boolean isSample, SQLFragment objectId, String targetTypeId)
+    {
+        TableInfo info = isSample ? ExperimentServiceImpl.get().getTinfoMaterialAncestors() : ExperimentServiceImpl.get().getTinfoDataAncestors();
+        return new SQLFragment()
+                .append("(SELECT ancestorRowId FROM ")
+                .append(info)
+                .append(" WHERE ancestorTypeId=").appendValue(targetTypeId)
+                .append(" AND RowId=").append(objectId)
+                .append(")");
+    }
 
     private static SQLFragment getValueSql(UserSchema userSchema, TableType type, String sourceLSID, SQLFragment objectId, String targetId)
     {
@@ -460,17 +533,70 @@ public class ClosureQueryHelper
         return null==closure ? "-1" : String.valueOf(closure.counter.get());
     }
 
-
     private static DbScope getScope()
     {
         return CoreSchema.getInstance().getScope();
     }
 
+    public static MutableColumnInfo createAncestorLookupColumnInfo(String columnName, FilteredTable<UserSchema> parent, ColumnInfo rowId, boolean isSample)
+    {
+        MutableColumnInfo wrappedRowId = parent.wrapColumn(columnName, rowId);
+        wrappedRowId.setIsUnselectable(true);
+        wrappedRowId.setReadOnly(true);
+        wrappedRowId.setCalculated(true);
+        wrappedRowId.setRequired(false);
+        wrappedRowId.setUserEditable(false);
+        wrappedRowId.setFk(new AbstractForeignKey(parent.getUserSchema(),parent.getContainerFilter())
+        {
+            @Override
+            public TableInfo getLookupTableInfo()
+            {
+                return new LineageLookupTypesTableInfo(parent.getUserSchema(), null, isSample);
+            }
+//            @Override
+//            public TableInfo getLookupTableInfo()
+//            {
+//                SimpleFilter filter = new SimpleFilter();
+//                TableInfo lookupTable = isSample ? ExperimentServiceImpl.get().getTinfoMaterialAncestors() : ExperimentServiceImpl.get().getTinfoDataAncestors();
+//
+//                if (lookupTable.getUserSchema() == null)
+//                    return null;
+//                var ret = new FilteredTable<>(lookupTable, lookupTable.getUserSchema());
+//                ret.wrapAllColumns(true);
+//                ret.addCondition(filter);
+//                return ret;
+//            }
 
+            @Override
+            public @Nullable ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
+            {
+                ColumnInfo lk = getLookupTableInfo().getColumn(displayField);
+                if (null == lk)
+                    return null;
+                var ret = new ExprColumn(parent.getParentTable(), new FieldKey(parent.getFieldKey(),lk.getName()), null, JdbcType.INTEGER)
+                {
+                    @Override
+                    public SQLFragment getValueSql(String tableAlias)
+                    {
+                        return parent.getValueSql(tableAlias);
+                    }
+                };
+                ret.setFk(lk.getFk());
+                return ret;
+            }
 
-
-
-
+            @Override
+            public StringExpression getURL(ColumnInfo parent)
+            {
+                return null;
+            }
+        });
+        wrappedRowId.setConceptURI(CONCEPT_URI);
+        wrappedRowId.setShownInDetailsView(false);
+        wrappedRowId.setShownInInsertView(false);
+        wrappedRowId.setShownInUpdateView(false);
+        return wrappedRowId;
+    }
 
     /*
      * Code to create the lineage ancestor lookup column and intermediate lookups that use ClosureQueryHelper
@@ -489,7 +615,7 @@ public class ClosureQueryHelper
             @Override
             public TableInfo getLookupTableInfo()
             {
-                return new LineageLookupTypesTableInfo(parent.getUserSchema(), source);
+                return new LineageLookupTypesTableInfo(parent.getUserSchema(), source, source instanceof ExpSampleType);
             }
 
             @Override
@@ -524,7 +650,7 @@ public class ClosureQueryHelper
     }
 
 
-    enum  TableType
+    public enum  TableType
     {
         SampleType("Samples", "materials")
                 {
@@ -666,10 +792,57 @@ public class ClosureQueryHelper
         }
     }
 
-
     private static class LineageLookupTypesTableInfo extends VirtualTable<UserSchema>
     {
-        LineageLookupTypesTableInfo(UserSchema userSchema, ExpObject source)
+        LineageLookupTypesTableInfo(UserSchema userSchema, @Nullable ExpObject source, boolean isSampleSource)
+        {
+            super(userSchema.getDbSchema(), "LineageLookupTypes", userSchema);
+
+            for (var lk : TableType.values())
+            {
+                var col = new BaseColumnInfo(lk.lookupName, this, JdbcType.INTEGER);
+                col.setIsUnselectable(true);
+                col.setFk(new AbstractForeignKey(getUserSchema(),null)
+                {
+                    @Override
+                    public @Nullable ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
+                    {
+                        if (null == displayField)
+                            return null;
+                        if (null == _userSchema)
+                            return null;
+                        var target = lk.getInstance(_userSchema.getContainer(), _userSchema.getUser(), displayField);
+                        if (null == target)
+                            return null;
+                        if (source == null)
+                            return ClosureQueryHelper.createAncestorDataLookupColumn(parent, isSampleSource, target);
+                        else
+                            return ClosureQueryHelper.createLineageDataLookupColumn(parent, source, target);
+                    }
+
+                    @Override
+                    public TableInfo getLookupTableInfo()
+                    {
+                        if (source == null)
+                            return new AncestorLookupTableInfo(userSchema, isSampleSource, lk);
+                        else
+                            return new LineageLookupTableInfo(userSchema, source, lk);
+                    }
+
+                    @Override
+                    public StringExpression getURL(ColumnInfo parent)
+                    {
+                        return null;
+                    }
+                });
+                addColumn(col);
+            }
+        }
+    }
+
+    private static class FilteredLineageLookupTypesTableInfo extends VirtualTable<UserSchema>
+    {
+        FilteredLineageLookupTypesTableInfo(UserSchema userSchema, ExpObject source)
         {
             super(userSchema.getDbSchema(), "LineageLookupTypes", userSchema);
 
@@ -695,7 +868,7 @@ public class ClosureQueryHelper
                     @Override
                     public TableInfo getLookupTableInfo()
                     {
-                        return new LineageLookupTableInfo(userSchema, source, lk);
+                        return new AncestorLookupTableInfo(userSchema, false, lk);
                     }
 
                     @Override
@@ -709,6 +882,16 @@ public class ClosureQueryHelper
         }
     }
 
+    private static class AncestorLookupTableInfo extends VirtualTable<UserSchema>
+    {
+        AncestorLookupTableInfo(UserSchema userSchema, boolean isSampleSource, TableType type)
+        {
+            super(userSchema.getDbSchema(), "Ancestor Lookup", userSchema);
+            ColumnInfo wrap = new BaseColumnInfo("rowid", this, JdbcType.INTEGER);
+            for (var target : type.getInstances(_userSchema.getContainer(), _userSchema.getUser()))
+                addColumn(ClosureQueryHelper.createAncestorDataLookupColumn(wrap, isSampleSource, target));
+        }
+    }
 
     private static class LineageLookupTableInfo extends VirtualTable<UserSchema>
     {
