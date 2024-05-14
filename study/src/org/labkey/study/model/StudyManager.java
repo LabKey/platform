@@ -867,10 +867,10 @@ public class StudyManager
             if (!old.getName().equals(datasetDefinition.getName()))
             {
                 nameChange = new QueryChangeListener.QueryPropertyChange<>(
-                        QueryService.get().getUserSchema(user, datasetDefinition.getContainer(), StudyQuerySchema.SCHEMA_NAME).getQueryDefForTable(datasetDefinition.getName()),
-                        QueryChangeListener.QueryProperty.Name,
-                        old.getName(),
-                        datasetDefinition.getName()
+                    QueryService.get().getUserSchema(user, datasetDefinition.getContainer(), StudyQuerySchema.SCHEMA_NAME).getQueryDefForTable(datasetDefinition.getName()),
+                    QueryChangeListener.QueryProperty.Name,
+                    old.getName(),
+                    datasetDefinition.getName()
                 );
             }
             final QueryChangeListener.QueryPropertyChange change = nameChange;
@@ -945,11 +945,11 @@ public class StudyManager
             else
                 remove.add("showByDefault");
 
-
             // update the override map
             Container c = datasetDefinition.getContainer();
             String category = "dataset-overrides:" + datasetDefinition.getDatasetId();
             PropertyManager.PropertyMap map = null;
+
             if (!add.isEmpty())
             {
                 map = PropertyManager.getWritableProperties(c, category, true);
@@ -2547,17 +2547,17 @@ public class StudyManager
         return map;
     }
 
-    private static final String VISITMAP_JOIN_BY_VISIT = "SELECT d.*, vm.Required\n" +
-            "FROM study.Visit v, study.DataSet d, study.VisitMap vm\n" +
-            "WHERE v.RowId = vm.VisitRowId and vm.DataSetId = d.DataSetId and " +
-            "v.Container = vm.Container and vm.Container = d.Container " +
-            "and v.Container = ? and v.RowId = ?\n" +
-            "ORDER BY d.DisplayOrder,d.DataSetId";
+    private static final String VISITMAP_JOIN_BY_VISIT = """
+        SELECT d.*, vm.Required FROM study.Visit v, study.DataSet d, study.VisitMap vm
+        WHERE v.RowId = vm.VisitRowId AND vm.DataSetId = d.DataSetId AND v.Container = vm.Container AND
+            vm.Container = d.Container AND v.Container = ? AND v.RowId = ?
+        ORDER BY d.DisplayOrder, d.DataSetId""";
 
-    private static final String VISITMAP_JOIN_BY_DATASET = "SELECT vm.VisitRowId, vm.Required\n" +
-            "FROM study.VisitMap vm JOIN study.Visit v ON vm.VisitRowId = v.RowId\n" +
-            "WHERE vm.Container = ? AND vm.DataSetId = ?\n" +
-            "ORDER BY v.DisplayOrder, v.RowId";
+    private static final String VISITMAP_JOIN_BY_DATASET = """
+        SELECT vm.VisitRowId, vm.Required
+        FROM study.VisitMap vm JOIN study.Visit v ON vm.VisitRowId = v.RowId
+        WHERE vm.Container = ? AND vm.DataSetId = ?
+        ORDER BY v.DisplayOrder, v.RowId""";
 
     List<VisitDataset> getMapping(final VisitImpl visit)
     {
@@ -2567,11 +2567,11 @@ public class StudyManager
         final List<VisitDataset> visitDatasets = new ArrayList<>();
 
         new SqlSelector(StudySchema.getInstance().getSchema(), VISITMAP_JOIN_BY_VISIT,
-                visit.getContainer(), visit.getRowId()).forEach(rs -> {
-                    int datasetId = rs.getInt("DataSetId");
-                    boolean isRequired = rs.getBoolean("Required");
-                    visitDatasets.add(new VisitDataset(visit.getContainer(), datasetId, visit.getRowId(), isRequired));
-                });
+            visit.getContainer(), visit.getRowId()).forEach(rs -> {
+                int datasetId = rs.getInt("DataSetId");
+                boolean isRequired = rs.getBoolean("Required");
+                visitDatasets.add(new VisitDataset(visit.getContainer(), datasetId, visit.getRowId(), isRequired));
+            });
 
         return visitDatasets;
     }
@@ -2836,10 +2836,10 @@ public class StudyManager
             assert deletedTables.add(_studyHelper.getTableInfo());
 
             // participant lists
-            Table.delete(ParticipantGroupManager.getInstance().getTableInfoParticipantGroupMap(), containerFilter);
-            assert deletedTables.add(ParticipantGroupManager.getInstance().getTableInfoParticipantGroupMap());
-            Table.delete(ParticipantGroupManager.getInstance().getTableInfoParticipantGroup(), containerFilter);
-            assert deletedTables.add(ParticipantGroupManager.getInstance().getTableInfoParticipantGroup());
+            Table.delete(ParticipantGroupManager.getTableInfoParticipantGroupMap(), containerFilter);
+            assert deletedTables.add(ParticipantGroupManager.getTableInfoParticipantGroupMap());
+            Table.delete(ParticipantGroupManager.getTableInfoParticipantGroup(), containerFilter);
+            assert deletedTables.add(ParticipantGroupManager.getTableInfoParticipantGroup());
             Table.delete(StudySchema.getInstance().getTableInfoParticipantCategory(), containerFilter);
             assert deletedTables.add(StudySchema.getInstance().getTableInfoParticipantCategory());
             ParticipantGroupManager.getInstance().clearCache(c);
