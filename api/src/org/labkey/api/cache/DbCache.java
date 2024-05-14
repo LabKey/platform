@@ -174,6 +174,13 @@ public class DbCache
 
     public static void logUnmatched()
     {
-        TRACKING_BAG.uniqueSet().forEach(key -> LOG.error("Unmatched {}", key));
+        if (TRACKING_BAG.isEmpty())
+        {
+            LOG.info("No unmatched cache removes");
+        }
+        else
+        {
+            TRACKING_BAG.uniqueSet().forEach(key -> LOG.error("Unmatched {}", key));
+        }
     }
 }

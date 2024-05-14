@@ -349,42 +349,40 @@ public class StudyManager
         };
 
         _visitHelper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoVisit(), VisitImpl.class);
-
         _assaySpecimenHelper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoAssaySpecimen(), AssaySpecimenConfigImpl.class);
-
         _cohortHelper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoCohort(), CohortImpl.class);
 
-        /* Whenever we explicitly invalidate a dataset, unmaterialize it as well
-         * this is probably a little overkill, e.g. name change doesn't need to unmaterialize
-         * however, this is the best choke point
+        /*
+         * Whenever we explicitly invalidate a dataset, unmaterialize it as well this is probably a little overkill,
+         *  e.g. name change doesn't need to unmaterialize however, this is the best choke point
          */
         _datasetHelper = new DatasetHelper();
 
         // Cache of PropertyDescriptors found in the Shared container for datasets in the given study Container.
         // The shared properties cache will be cleared when the _datasetHelper cache is cleared.
         _sharedProperties = CacheManager.getBlockingCache(1000, CacheManager.UNLIMITED, "Study shared properties",
-                (key, argument) ->
+            (key, argument) ->
+            {
+                Container sharedContainer = ContainerManager.getSharedContainer();
+                assert key != sharedContainer;
+
+                List<DatasetDefinition> defs = _datasetHelper.get(key);
+                if (defs == null)
+                    return Collections.emptySet();
+
+                Set<PropertyDescriptor> set = new LinkedHashSet<>();
+                for (DatasetDefinition def : defs)
                 {
-                    Container sharedContainer = ContainerManager.getSharedContainer();
-                    assert key != sharedContainer;
+                    Domain domain = def.getDomain();
+                    if (domain == null)
+                        continue;
 
-                    List<DatasetDefinition> defs = _datasetHelper.get(key);
-                    if (defs == null)
-                        return Collections.emptySet();
-
-                    Set<PropertyDescriptor> set = new LinkedHashSet<>();
-                    for (DatasetDefinition def : defs)
-                    {
-                        Domain domain = def.getDomain();
-                        if (domain == null)
-                            continue;
-
-                        for (DomainProperty dp : domain.getProperties())
-                            if (dp.getContainer().equals(sharedContainer))
-                                set.add(dp.getPropertyDescriptor());
-                    }
-                    return Collections.unmodifiableSet(set);
+                    for (DomainProperty dp : domain.getProperties())
+                        if (dp.getContainer().equals(sharedContainer))
+                            set.add(dp.getPropertyDescriptor());
                 }
+                return Collections.unmodifiableSet(set);
+            }
         );
 
         ViewCategoryManager.addCategoryListener(new CategoryListener(this));
