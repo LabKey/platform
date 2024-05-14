@@ -89,6 +89,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.test.TestTimeout;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileStream;
@@ -1798,6 +1799,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
         return _standardAnalyzer;
     }
 
+    @TestTimeout(120) // Initial load of PDF parser takes a minute on Windows (Started with Tika 2.9.2)
     public static class TikaTestCase extends Assert
     {
         @SuppressWarnings("ConstantConditions")
