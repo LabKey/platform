@@ -258,7 +258,7 @@ public class StudyManager
         _studyHelper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoStudy(), StudyImpl.class)
         {
             @Override
-            public List<StudyImpl> get(final Container c, SimpleFilter filterArg, final String sortString)
+            public List<StudyImpl> getList(final Container c, SimpleFilter filterArg, final String sortString)
             {
                 assert filterArg == null && sortString == null;
                 String cacheId = getCacheId(filterArg);
@@ -458,17 +458,17 @@ public class StudyManager
 
         public List<DatasetDefinition> get(Container c)
         {
-            return toSharedInstance(helper.get(c));
+            return toSharedInstance(helper.getList(c));
         }
 
         public List<DatasetDefinition> get(Container c, SimpleFilter filter)
         {
-            return toSharedInstance(helper.get(c, filter));
+            return toSharedInstance(helper.getList(c, filter));
         }
 
         public List<DatasetDefinition> get(Container c, @Nullable SimpleFilter filterArg, @Nullable String sortString)
         {
-            return toSharedInstance(helper.get(c, filterArg, sortString));
+            return toSharedInstance(helper.getList(c, filterArg, sortString));
         }
 
         public DatasetDefinition get(Container c, int rowId)
@@ -523,7 +523,7 @@ public class StudyManager
 
         while (true)
         {
-            List<StudyImpl> studies = _studyHelper.get(c);
+            List<StudyImpl> studies = _studyHelper.getList(c);
             if (studies == null || studies.isEmpty())
                 return null;
             else if (studies.size() > 1)
@@ -1752,7 +1752,7 @@ public class StudyManager
 
     public List<AssaySpecimenConfigImpl> getAssaySpecimenConfigs(Container container, String sortCol)
     {
-        return _assaySpecimenHelper.get(container, sortCol);
+        return _assaySpecimenHelper.getList(container, sortCol);
     }
 
     public List<VisitImpl> getVisitsForAssaySchedule(Container container)
@@ -1860,7 +1860,7 @@ public class StudyManager
                 filter.addWhereClause("(CohortId IS NULL OR CohortId = ?)", new Object[]{cohort.getRowId()});
         }
 
-        return _visitHelper.get(visitStudy.getContainer(), filter, order.getSortColumns());
+        return _visitHelper.getList(visitStudy.getContainer(), filter, order.getSortColumns());
     }
 
     public void clearParticipantVisitCaches(Study study)
@@ -2116,7 +2116,7 @@ public class StudyManager
     public List<CohortImpl> getCohorts(Container container, User user)
     {
         assertCohortsViewable(container, user);
-        return _cohortHelper.get(container, "Label");
+        return _cohortHelper.getList(container, "Label");
     }
 
     public CohortImpl getCurrentCohortForParticipant(Container container, User user, String participantId)
@@ -2140,7 +2140,7 @@ public class StudyManager
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         filter.addCondition(FieldKey.fromParts("Label"), label);
 
-        List<CohortImpl> cohorts = _cohortHelper.get(container, filter);
+        List<CohortImpl> cohorts = _cohortHelper.getList(container, filter);
         if (cohorts != null && cohorts.size() == 1)
             return cohorts.get(0);
 

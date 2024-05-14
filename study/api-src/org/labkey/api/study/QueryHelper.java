@@ -44,22 +44,22 @@ public class QueryHelper<K extends StudyCachable>
         _objectClass = objectClass;
     }
 
-    public List<K> get(Container c)
+    public List<K> getList(Container c)
     {
-        return get(c, null, null);
+        return getList(c, null, null);
     }
 
-    public List<K> get(Container c, String sortString)
+    public List<K> getList(Container c, String sortString)
     {
-        return get(c, null, sortString);
+        return getList(c, null, sortString);
     }
 
-    public List<K> get(Container c, SimpleFilter filter)
+    public List<K> getList(Container c, SimpleFilter filter)
     {
-        return get(c, filter, null);
+        return getList(c, filter, null);
     }
 
-    public List<K> get(final Container c, @Nullable final SimpleFilter filterArg, @Nullable final String sortString)
+    public List<K> getList(final Container c, @Nullable final SimpleFilter filterArg, @Nullable final String sortString)
     {
         String cacheId = getCacheId(filterArg);
         if (sortString != null)
@@ -93,19 +93,9 @@ public class QueryHelper<K extends StudyCachable>
         return (List<K>)StudyCache.get(getTableInfo(), c, cacheId, loader);
     }
 
-    public K get(Container c, double rowId)
-    {
-        return get(c, (Object)rowId, "RowId");
-    }
-
     public K get(Container c, int rowId)
     {
         return get(c, (Object)rowId, "RowId");
-    }
-
-    public K get(Container c, double rowId, String rowIdColumnName)
-    {
-        return get(c, (Object)rowId, rowIdColumnName);
     }
 
     public K get(Container c, int rowId, String rowIdColumnName)
@@ -118,7 +108,7 @@ public class QueryHelper<K extends StudyCachable>
         CacheLoader<String, Object> loader = (key, argument) -> {
             SimpleFilter filter = SimpleFilter.createContainerFilter(c);
             filter.addCondition(rowIdColumnName, rowId);
-            StudyCachable obj = new TableSelector(getTableInfo(), filter, null).getObject(_objectClass);
+            StudyCachable<K> obj = new TableSelector(getTableInfo(), filter, null).getObject(_objectClass);
             if (obj != null)
                 obj.lock();
             return obj;
@@ -175,7 +165,7 @@ public class QueryHelper<K extends StudyCachable>
         StudyCache.clearCache(getTableInfo());
     }
 
-    protected String getCacheId(Filter filter)
+    protected String getCacheId(@Nullable Filter filter)
     {
         if (filter == null)
             return "~ALL";

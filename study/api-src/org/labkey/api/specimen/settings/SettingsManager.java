@@ -116,7 +116,7 @@ public class SettingsManager
         {
             if (!getRepositorySettings(container).isEnableRequests())
                 return false;
-            List<SpecimenRequestStatus> statuses = _requestStatusHelper.get(container, "SortOrder");
+            List<SpecimenRequestStatus> statuses = _requestStatusHelper.getList(container, "SortOrder");
             return (statuses != null && statuses.size() > 1);
         }
     }

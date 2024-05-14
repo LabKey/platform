@@ -14,7 +14,6 @@ import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DatabaseCache;
-import org.labkey.api.data.DbSchemaCache;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -101,7 +100,7 @@ public class SpecimenRequestManager
 
     public List<SpecimenRequestStatus> getRequestStatuses(Container c, User user)
     {
-        List<SpecimenRequestStatus> statuses = _requestStatusHelper.get(c, "SortOrder");
+        List<SpecimenRequestStatus> statuses = _requestStatusHelper.getList(c, "SortOrder");
         // if the 'not-yet-submitted' status doesn't exist, create it here, with sort order -1,
         // so it's always first.
         if (statuses == null || statuses.isEmpty() || statuses.get(0).getSortOrder() != -1)
@@ -118,7 +117,7 @@ public class SpecimenRequestManager
                 DbCache.trackRemove(_requestStatusHelper.getTableInfo());
                 _requestStatusHelper.clearCache(c);
             }
-            statuses = _requestStatusHelper.get(c, "SortOrder");
+            statuses = _requestStatusHelper.getList(c, "SortOrder");
         }
         return statuses;
     }
@@ -161,7 +160,7 @@ public class SpecimenRequestManager
 
     public Set<Integer> getRequestStatusIdsInUse(Container c)
     {
-        List<SpecimenRequest> requests = _requestHelper.get(c);
+        List<SpecimenRequest> requests = _requestHelper.getList(c);
         Set<Integer> uniqueStatuses = new HashSet<>();
         for (SpecimenRequest request : requests)
             uniqueStatuses.add(request.getStatusId());
@@ -170,7 +169,7 @@ public class SpecimenRequestManager
 
     public List<SpecimenRequestEvent> getRequestEvents(Container c)
     {
-        return _requestEventHelper.get(c);
+        return _requestEventHelper.getList(c);
     }
 
     public SpecimenRequestEvent getRequestEvent(Container c, int rowId)
@@ -551,7 +550,7 @@ public class SpecimenRequestManager
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Hidden"), Boolean.FALSE);
         if (user != null)
             filter.addCondition(FieldKey.fromParts("CreatedBy"), user.getUserId());
-        return _requestHelper.get(c, filter, "-Created");
+        return _requestHelper.getList(c, filter, "-Created");
     }
 
     public SpecimenRequest getRequest(Container c, int rowId)
@@ -1251,7 +1250,7 @@ public class SpecimenRequestManager
     private void deleteRequestEvents(SpecimenRequest request)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RequestId"), request.getRowId());
-        List<SpecimenRequestEvent> events = _requestEventHelper.get(request.getContainer(), filter);
+        List<SpecimenRequestEvent> events = _requestEventHelper.getList(request.getContainer(), filter);
         for (SpecimenRequestEvent event : events)
         {
             AttachmentService.get().deleteAttachments(event);
