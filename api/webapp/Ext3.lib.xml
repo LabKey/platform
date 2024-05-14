@@ -9,6 +9,6 @@
         <script path="ext-3.4.1/ext-all-debug.js" mode="dev"/>
         <script path="ext-3.4.1/ext-all.js" mode="production"/>
 
-        <script path="ext-3.4.1/ext-patches.js" mode="both"/>
+        <script path="ext-patches/ext3-patches.js" mode="both"/>
     </library>
 </libraries>
