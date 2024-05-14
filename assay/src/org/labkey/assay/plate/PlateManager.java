@@ -3028,10 +3028,11 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         Map<Integer, Map<Integer, WellGroupChange>> wellGroupChanges
     ) throws ValidationException
     {
+        requireActiveTransaction();
+
         if (wellGroupChanges.isEmpty())
             return;
 
-        Map<Pair<WellGroup.Type, String>, List<Position>> wellGroupings = new HashMap<>();
         var wellTable = getWellTable(container, user);
         var groupColumnName = wellTable.getColumn(WellTable.Column.Group.name()).getAlias();
 
@@ -3044,6 +3045,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             var wellChanges = entry.getValue();
             var filter = new SimpleFilter(FieldKey.fromParts(WellTable.Column.PlateId.name()), plate.getRowId());
             var wellDataRows = new TableSelector(wellTable, filter, new Sort(WellTable.Column.RowId.name())).getMapCollection();
+            Map<Pair<WellGroup.Type, String>, List<Position>> wellGroupings = new HashMap<>();
 
             for (var wellData : wellDataRows)
             {
@@ -3082,7 +3084,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 var wellGroupKey = Pair.of(WellGroup.Type.valueOf(type), group);
                 if (!wellGroupings.containsKey(wellGroupKey))
                     wellGroupings.put(wellGroupKey, new ArrayList<>());
-                wellGroupings.get(wellGroupKey).add(plate.getPosition(wellRow, wellCol));
+                wellGroupings.get(wellGroupKey).add(position);
             }
 
             // Mark pre-existing well groups on this plate for deletion
@@ -3146,19 +3148,21 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             if (wellGroups.isEmpty() && well.getSampleId() != null)
             {
                 throw new ValidationException(String.format(
-                    "Well %s must specify a \"%s\" when a \"%s\" is specified.",
+                    "Well %s must specify a \"%s\" when a \"%s\" is specified on plate \"%s\".",
                     position.getDescription(),
                     WellTable.Column.Type.name(),
-                    WellTable.Column.SampleId.name()
+                    WellTable.Column.SampleId.name(),
+                    plate.getName()
                 ));
             }
 
             if (wellGroups.size() > 1)
             {
                 throw new ValidationException(String.format(
-                    "Well %s is included in more than one well group. This is not supported for assay type \"%s\" plates.",
+                    "Well %s is included in more than one well group. This is not supported for assay type \"%s\" plate \"%s\".",
                     position.getDescription(),
-                    TsvPlateLayoutHandler.TYPE
+                    TsvPlateLayoutHandler.TYPE,
+                    plate.getName()
                 ));
             }
         }

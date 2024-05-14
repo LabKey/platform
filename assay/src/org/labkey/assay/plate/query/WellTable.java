@@ -133,6 +133,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
                 .append(AssayDbSchema.getInstance().getTableInfoPlate(), "P")
                 .append(" ON P.RowId = WG.PlateId ")
                 .append(" WHERE P.AssayType = ? AND WGP.WellId = " + STR_TABLE_ALIAS + ".RowId")
+                .append(" LIMIT 1")
                 .add(TsvPlateLayoutHandler.TYPE)
                 .append(")");
 
@@ -211,6 +212,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
                 .append(AssayDbSchema.getInstance().getTableInfoPlate(), "P")
                 .append(" ON P.RowId = WG.PlateId ")
                 .append(" WHERE P.AssayType = ? AND WGP.WellId = " + STR_TABLE_ALIAS + ".RowId")
+                .append(" LIMIT 1")
                 .add(TsvPlateLayoutHandler.TYPE)
                 .append(")");
 
