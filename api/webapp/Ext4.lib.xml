@@ -4,6 +4,6 @@
 
         <script path="ext-4.2.1/ext-all-sandbox-debug.js" mode="dev"/>
         <script path="ext-4.2.1/ext-all-sandbox.js" mode="production"/>
-        <script path="ext-4.2.1/ext-patches.js" mode="both"/>
+        <script path="ext-patches/ext4-patches.js" mode="both"/>
     </library>
 </libraries>
