@@ -1,19 +1,19 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.MaterializedQueryHelper;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
@@ -24,6 +24,8 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpSampleType;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
@@ -32,18 +34,12 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
-import org.labkey.api.util.HeartBeat;
-import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.NotFoundException;
 
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -52,28 +48,8 @@ import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ExperimentRunOu
 
 public class ClosureQueryHelper
 {
+    private final static Logger logger = LogHelper.getLogger(ClosureQueryHelper.class, "Sample and data class object ancestor data computation.");
     final static String CONCEPT_URI = "http://www.labkey.org/types#ancestorLookup";
-
-    final static long CACHE_INVALIDATION_INTERVAL = TimeUnit.MINUTES.toMillis(5);
-    final static long CACHE_LRU_AGE_OUT_INTERVAL = TimeUnit.MINUTES.toMillis(30);
-
-    /* TODO/CONSIDER every SampleType and Dataclass should have a unique ObjectId so it can be stored as an in lineage tables (e.g. edge/closure tables) */
-
-    record ClosureTable(MaterializedQueryHelper helper, AtomicInteger counter, TableType type, String lsid) {}
-
-    static final Map<String, ClosureTable> queryHelpers = Collections.synchronizedMap(new HashMap<>());
-    // use this as a separate LRU implementation, because I only want to track calls to getValueSql() not other calls to queryHelpers.get()
-    static final Map<String, Long> lruQueryHelpers = new LinkedHashMap<>(100,0.75f,true);
-
-    static
-    {
-        MemTracker.getInstance().register(set -> {
-            synchronized (queryHelpers)
-            {
-                queryHelpers.values().forEach(ch -> set.add(ch.helper));
-            }
-        });
-    }
 
     // N.B., This should be twice the number of generations we expect as a maximum number of ancestors due to the run nodes.
     static final int MAX_LINEAGE_LOOKUP_DEPTH = 40;
@@ -82,7 +58,7 @@ public class ClosureQueryHelper
             WITH RECURSIVE CTE_ AS (
 
                 SELECT
-                    RowId AS Start_,
+                    RowId,
                     ObjectId as End_,
                     '/' || CAST(ObjectId AS VARCHAR) || '/' as Path_,
                     0 as Depth_
@@ -90,31 +66,31 @@ public class ClosureQueryHelper
 
                     UNION ALL
 
-                SELECT CTE_.Start_, Edge.FromObjectId as End_, CTE_.Path_ || CAST(Edge.FromObjectId AS VARCHAR) || '/' as Path_, Depth_ + 1 as Depth_
+                SELECT CTE_.RowId, Edge.FromObjectId as End_, CTE_.Path_ || CAST(Edge.FromObjectId AS VARCHAR) || '/' as Path_, Depth_ + 1 as Depth_
                 FROM CTE_ INNER JOIN exp.Edge ON CTE_.End_ = Edge.ToObjectId
                 WHERE Depth_ < %d AND 0 = POSITION('/' || CAST(Edge.FromObjectId AS VARCHAR) || '/' IN Path_)
             )
             """, MAX_LINEAGE_LOOKUP_DEPTH);
 
     static String pgClosureSql = """
-            SELECT Start_, CAST(CASE WHEN COUNT(*) = 1 THEN MIN(rowId) ELSE -1 * COUNT(*) END AS INT) AS rowId, targetId
+            SELECT RowId, CAST(CASE WHEN COUNT(*) = 1 THEN MIN(ancestorRowId) ELSE -1 * COUNT(*) END AS INT) AS ancestorRowId, ancestorTypeId
             /*INTO*/
             FROM (
-                SELECT DISTINCT Start_,
-                    COALESCE(material.rowid, data.rowid) as rowId,
-                    COALESCE('m' || CAST(materialsource.rowid AS VARCHAR), 'd' || CAST(dataclass.rowid AS VARCHAR)) as targetId
+                SELECT DISTINCT CTE_.RowId,
+                    COALESCE(material.rowid, data.rowid) as ancestorRowId,
+                    COALESCE('m' || CAST(materialsource.rowid AS VARCHAR), 'd' || CAST(dataclass.rowid AS VARCHAR)) as ancestorTypeId
                 FROM CTE_
                     LEFT OUTER JOIN exp.material ON End_ = material.objectId  LEFT OUTER JOIN exp.materialsource ON material.cpasType = materialsource.lsid
                     LEFT OUTER JOIN exp.data on End_ = data.objectId LEFT OUTER JOIN exp.dataclass ON data.cpasType = dataclass.lsid
                 WHERE Depth_ > 0 AND materialsource.rowid IS NOT NULL OR dataclass.rowid IS NOT NULL) _inner_
-            GROUP BY targetId, Start_
+            GROUP BY ancestorTypeId, RowId
             """;
 
     static String mssqlClosureCTE = String.format("""
             WITH CTE_ AS (
 
                 SELECT
-                    RowId AS Start_,
+                    RowId,
                     ObjectId as End_,
                     '/' + CAST(ObjectId AS VARCHAR(MAX)) + '/' as Path_,
                     0 as Depth_
@@ -122,24 +98,24 @@ public class ClosureQueryHelper
 
                     UNION ALL
 
-                SELECT CTE_.Start_, Edge.FromObjectId as End_, CTE_.Path_ + CAST(Edge.FromObjectId AS VARCHAR) + '/' as Path_, Depth_ + 1 as Depth_
+                SELECT CTE_.RowId, Edge.FromObjectId as End_, CTE_.Path_ + CAST(Edge.FromObjectId AS VARCHAR) + '/' as Path_, Depth_ + 1 as Depth_
                 FROM CTE_ INNER JOIN exp.Edge ON CTE_.End_ = Edge.ToObjectId
                 WHERE Depth_ < %d AND 0 = CHARINDEX('/' + CAST(Edge.FromObjectId AS VARCHAR) + '/', Path_)
             )
             """, (MAX_LINEAGE_LOOKUP_DEPTH));
 
     static String mssqlClosureSql = """
-            SELECT Start_, CAST(CASE WHEN COUNT(*) = 1 THEN MIN(rowId) ELSE -1 * COUNT(*) END AS INT) AS rowId, targetId
+            SELECT RowId, CAST(CASE WHEN COUNT(*) = 1 THEN MIN(ancestorRowId) ELSE -1 * COUNT(*) END AS INT) AS ancestorRowId, ancestorTypeId
             /*INTO*/
             FROM (
-                SELECT DISTINCT Start_,
-                    COALESCE(material.rowid, data.rowid) as rowId,
-                    COALESCE('m' + CAST(materialsource.rowid AS VARCHAR), 'd' + CAST(dataclass.rowid AS VARCHAR)) as targetId
+                SELECT DISTINCT CTE_.RowId,
+                    COALESCE(material.rowid, data.rowid) as ancestorRowId,
+                    COALESCE('m' + CAST(materialsource.rowid AS VARCHAR), 'd' + CAST(dataclass.rowid AS VARCHAR)) as ancestorTypeId
                 FROM CTE_
                     LEFT OUTER JOIN exp.material ON End_ = material.objectId  LEFT OUTER JOIN exp.materialsource ON material.cpasType = materialsource.lsid
                     LEFT OUTER JOIN exp.data on End_ = data.objectId LEFT OUTER JOIN exp.dataclass ON data.cpasType = dataclass.lsid
                 WHERE Depth_ > 0 AND materialsource.rowid IS NOT NULL OR dataclass.rowid IS NOT NULL) _inner_
-            GROUP BY targetId, Start_
+            GROUP BY ancestorTypeId, RowId
             """;
 
 
@@ -260,11 +236,6 @@ public class ClosureQueryHelper
 
     private static void incrementalRecompute(String sourceLSID, SQLFragment from, boolean isSampleType)
     {
-        // if there's nothing cached, we don't need to do incremental
-        MaterializedQueryHelper helper = getClosureHelper(null, sourceLSID, false);
-        if (null == helper)
-            return;
-
         TempTableTracker ttt = null;
         try
         {
@@ -275,28 +246,26 @@ public class ClosureQueryHelper
             new SqlExecutor(getScope()).execute(selectInto);
 
             SQLFragment upsert;
+            TableInfo tInfo = isSampleType ? ExperimentServiceImpl.get().getTinfoMaterialAncestors() : ExperimentServiceImpl.get().getTinfoDataAncestors();
             if (getScope().getSqlDialect().isPostgreSQL())
             {
                 upsert = new SQLFragment()
-                        .append("INSERT INTO temp.${NAME} (Start_, rowId, targetid)\n")
-                        .append("SELECT Start_, RowId, targetId FROM temp.").append(tempTableName).append(" TMP\n")
-                        .append("ON CONFLICT(Start_,targetId) DO UPDATE SET rowId = EXCLUDED.rowId").appendEOS();
+                        .append("INSERT INTO ").append(tInfo)
+                        .append("(RowId, AncestorRowId, AncestorTypeId)\n")
+                        .append("SELECT RowId, ancestorRowId, ancestorTypeId FROM temp.").append(tempTableName).append(" TMP\n")
+                        .append("ON CONFLICT(RowId,ancestorTypeId) DO UPDATE SET ancestorRowId = EXCLUDED.ancestorRowId").appendEOS();
             }
             else
             {
                 upsert = new SQLFragment()
-                        .append("MERGE temp.${NAME} AS Target\n")
-                        .append("USING (SELECT Start_, RowId, targetId FROM temp.").append(tempTableName).append(") AS Source ON Target.Start_=Source.Start_ AND Target.targetid=Source.targetId\n")
-                        .append("WHEN MATCHED THEN UPDATE SET Target.targetId = Source.targetId\n")
-                        .append("WHEN NOT MATCHED THEN INSERT (Start_, rowId, targetid) VALUES (Source.Start_, Source.rowId, Source.targetId)").appendEOS();
+                        .append("MERGE ").append(tInfo, "Target")
+                        .append("USING (SELECT RowId, AncestorRowId, AncestorTypeId FROM temp.").append(tempTableName)
+                        .append(") AS Source ON Target.RowId=Source.RowId AND Target.AncestorTypeId=Source.ancestorTypeId\n")
+                        .append("WHEN MATCHED THEN UPDATE SET Target.AncestorTypeId = Source.ancestorTypeId\n")
+                        .append("WHEN NOT MATCHED THEN INSERT (RowId, AncestorRowId, AncestorTypeId) VALUES (Source.RowId, Source.ancestorRowId, Source.ancestorTypeId)").appendEOS();
             }
 
-            helper.upsert(upsert);
-        }
-        catch (Exception x)
-        {
-            invalidate(sourceLSID);
-            throw x;
+            new SqlExecutor(tInfo.getSchema().getScope()).execute(upsert);
         }
         finally
         {
@@ -305,16 +274,60 @@ public class ClosureQueryHelper
         }
     }
 
-
-    public static void invalidateAll()
+    public static void populateMaterialAncestors(Logger logger)
     {
-        synchronized (queryHelpers)
+        DbSchema schema = ExperimentService.get().getSchema();
+
+        ContainerManager.getAllChildren(ContainerManager.getRoot()).forEach(
+                container -> {
+                    logger.info("Adding rows to exp.materialAncestors from samples in container " + container.getPath());
+                    SampleTypeService.get().getSampleTypes(container, null, false).forEach(
+                            sampleType -> {
+                                logger.debug("   Adding rows from samples in sampleType " + sampleType.getName() + " in container " + container.getPath());
+                                SQLFragment from = new SQLFragment(" FROM exp.material WHERE container = ?").add(container.getEntityId())
+                                        .append(" AND materialSourceId = ?").add(sampleType.getRowId());
+                                SQLFragment sql = ClosureQueryHelper.selectAndInsertSql(schema.getSqlDialect(), from, null, "INSERT INTO exp.materialAncestors (RowId, AncestorRowId, AncestorTypeId) ");
+                                new SqlExecutor(schema.getScope()).execute(sql);
+                            }
+                    );
+                }
+        );
+    }
+
+    public static void populateDataAncestors(Logger logger)
+    {
+        DbSchema schema = ExperimentService.get().getSchema();
+
+        ContainerManager.getAllChildren(ContainerManager.getRoot()).forEach(
+                container -> {
+                    logger.info("Adding rows to exp.dataAncestors from data objects in container " + container.getPath());
+                    ExperimentService.get().getDataClasses(container, null, false).forEach(
+                            dataClass -> {
+                                logger.debug("    Adding rows to exp.dataAncestors from data class " + dataClass.getName() + " in container " + container.getPath());
+                                SQLFragment from = new SQLFragment(" FROM exp.data WHERE container = ?").add(container.getEntityId())
+                                        .append(" AND classId = ?").add(dataClass.getRowId());
+                                SQLFragment sql = ClosureQueryHelper.selectAndInsertSql(schema.getSqlDialect(), from, null,
+                                        "INSERT INTO exp.dataAncestors (RowId, AncestorRowId, AncestorTypeId) ");
+                                new SqlExecutor(schema.getScope()).execute(sql);
+                            }
+                    );
+                }
+        );
+    }
+
+    public static void truncateAndRecreate()
+    {
+        try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction())
         {
-            for (var c : queryHelpers.values())
-            {
-                c.counter.incrementAndGet();
-                c.helper.uncache(null);
-            }
+            TableInfo tInfo = ExperimentServiceImpl.get().getTinfoMaterialAncestors();
+            new SqlExecutor(tInfo.getSchema()).execute("TRUNCATE TABLE " + tInfo);
+            ClosureQueryHelper.populateMaterialAncestors(logger);
+
+            tInfo = ExperimentServiceImpl.get().getTinfoDataAncestors();
+            new SqlExecutor(tInfo.getSchema()).execute("TRUNCATE TABLE " + tInfo);
+            ClosureQueryHelper.populateDataAncestors(logger);
+
+            transaction.commit();
         }
     }
 
@@ -356,83 +369,15 @@ public class ClosureQueryHelper
         incrementalRecompute(sourceTypeLsid, seedFrom, false);
     }
 
-
-    private static MaterializedQueryHelper getClosureHelper(TableType type, String sourceLSID, boolean computeIfAbsent)
-    {
-        ClosureTable closure;
-
-        if (!computeIfAbsent)
-        {
-            closure = queryHelpers.get(sourceLSID);
-            return null==closure ? null : closure.helper;
-        }
-
-        if (null == type)
-            throw new IllegalStateException();
-
-
-        closure = queryHelpers.computeIfAbsent(sourceLSID, cpasType ->
-        {
-            String tableName = type.getDbTableName();
-            SQLFragment from = new SQLFragment(" FROM exp." + tableName + " WHERE " + tableName + ".cpasType = ? ")
-                    .add(cpasType);
-            SQLFragment selectInto = selectIntoTempTableSql(getScope().getSqlDialect(), from, null);
-
-            var helper =  new MaterializedQueryHelper.Builder("closure", DbSchema.getTemp().getScope(), selectInto)
-                    .setIsSelectInto(true)
-                    .addIndex("CREATE UNIQUE INDEX uq_${NAME} ON temp.${NAME} (targetId,Start_)")
-                    .maxTimeToCache(CACHE_INVALIDATION_INTERVAL)
-                    .addInvalidCheck(() -> getInvalidationCounterString(sourceLSID))
-                    .build();
-            return new ClosureTable(helper, new AtomicInteger(), type, sourceLSID);
-        });
-
-        // update LRU
-        synchronized (lruQueryHelpers)
-        {
-            lruQueryHelpers.put(sourceLSID, HeartBeat.currentTimeMillis());
-            checkStaleEntries();
-        }
-
-        return closure.helper;
-    }
-
-
-    private static void checkStaleEntries()
-    {
-        synchronized (lruQueryHelpers)
-        {
-            if (lruQueryHelpers.isEmpty())
-                return;
-            var oldestEntry = lruQueryHelpers.entrySet().iterator().next();
-            if (HeartBeat.currentTimeMillis() - oldestEntry.getValue() < CACHE_LRU_AGE_OUT_INTERVAL)
-                return;
-            queryHelpers.remove(oldestEntry.getKey());
-            lruQueryHelpers.remove(oldestEntry.getKey());
-        }
-    }
-
-
-    private static void invalidate(String sourceLSID)
-    {
-        var closure = queryHelpers.get(sourceLSID);
-        if (null != closure)
-            closure.counter.incrementAndGet();
-    }
-
-
-    private static String getInvalidationCounterString(String sourceLSID)
-    {
-        var closure = queryHelpers.get(sourceLSID);
-        return null==closure ? "-1" : String.valueOf(closure.counter.get());
-    }
-
     private static DbScope getScope()
     {
         return CoreSchema.getInstance().getScope();
     }
 
-    public static MutableColumnInfo createAncestorLookupColumnInfo(String columnName, FilteredTable<UserSchema> parent, ColumnInfo rowId, boolean isSample)
+    /*
+     * Code to create the lineage ancestor lookup column and intermediate lookups that use ClosureQueryHelper
+     */
+    public static MutableColumnInfo createAncestorLookupColumnInfo(String columnName, FilteredTable<UserSchema> parent, ColumnInfo rowId, @Nullable ExpObject source, boolean isSample)
     {
         MutableColumnInfo wrappedRowId = parent.wrapColumn(columnName, rowId);
         wrappedRowId.setIsUnselectable(true);
@@ -445,7 +390,7 @@ public class ClosureQueryHelper
             @Override
             public TableInfo getLookupTableInfo()
             {
-                return new LineageLookupTypesTableInfo(parent.getUserSchema(), null, isSample);
+                return new LineageLookupTypesTableInfo(parent.getUserSchema(), source, isSample);
             }
 
             @Override
@@ -478,58 +423,6 @@ public class ClosureQueryHelper
         wrappedRowId.setShownInUpdateView(false);
         return wrappedRowId;
     }
-
-    /*
-     * Code to create the lineage ancestor lookup column and intermediate lookups that use ClosureQueryHelper
-     */
-
-    public static MutableColumnInfo createLineageLookupColumnInfo(String columnName, FilteredTable<UserSchema> parent, ColumnInfo rowid, ExpObject source)
-    {
-        MutableColumnInfo wrappedRowId = parent.wrapColumn(columnName, rowid);
-        wrappedRowId.setIsUnselectable(true);
-        wrappedRowId.setReadOnly(true);
-        wrappedRowId.setCalculated(true);
-        wrappedRowId.setRequired(false);
-        wrappedRowId.setUserEditable(false);
-        wrappedRowId.setFk(new AbstractForeignKey(parent.getUserSchema(),parent.getContainerFilter())
-        {
-            @Override
-            public TableInfo getLookupTableInfo()
-            {
-                return new LineageLookupTypesTableInfo(parent.getUserSchema(), source, source instanceof ExpSampleType);
-            }
-
-            @Override
-            public @Nullable ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
-            {
-                ColumnInfo lk = getLookupTableInfo().getColumn(displayField);
-                if (null == lk)
-                    return null;
-                var ret = new ExprColumn(parent.getParentTable(), new FieldKey(parent.getFieldKey(),lk.getName()), null, JdbcType.INTEGER)
-                {
-                    @Override
-                    public SQLFragment getValueSql(String tableAlias)
-                    {
-                        return parent.getValueSql(tableAlias);
-                    }
-                };
-                ret.setFk(lk.getFk());
-                return ret;
-            }
-
-            @Override
-            public StringExpression getURL(ColumnInfo parent)
-            {
-                return null;
-            }
-        });
-        wrappedRowId.setConceptURI(CONCEPT_URI);
-        wrappedRowId.setShownInDetailsView(false);
-        wrappedRowId.setShownInInsertView(false);
-        wrappedRowId.setShownInUpdateView(false);
-        return wrappedRowId;
-    }
-
 
     public enum  TableType
     {
@@ -701,10 +594,7 @@ public class ClosureQueryHelper
                     @Override
                     public TableInfo getLookupTableInfo()
                     {
-                        if (source == null)
-                            return new AncestorLookupTableInfo(userSchema, isSampleSource, lk);
-                        else
-                            return new LineageLookupTableInfo(userSchema, source, lk);
+                        return new AncestorLookupTableInfo(userSchema, isSampleSource, lk, source);
                     }
 
                     @Override
@@ -718,84 +608,14 @@ public class ClosureQueryHelper
         }
     }
 
-//    private static class FilteredAncestorsTableInfo extends FilteredTable<UserSchema>
-//    {
-//        FilteredAncestorsTableInfo(UserSchema userSchema, ExpObject source)
-//        {
-//            super(userSchema.getDbSchema(), "LineageLookupTypes", userSchema);
-//
-//            for (var lk : TableType.values())
-//            {
-//                var col = new BaseColumnInfo(lk.lookupName, this, JdbcType.INTEGER);
-//                col.setIsUnselectable(true);
-//                col.setFk(new AbstractForeignKey(getUserSchema(),null)
-//                {
-//                    @Override
-//                    public @Nullable ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
-//                    {
-//                        if (null == displayField)
-//                            return null;
-//                        if (null == _userSchema)
-//                            return null;
-//                        var target = lk.getInstance(_userSchema.getContainer(), _userSchema.getUser(), displayField);
-//                        if (null == target)
-//                            return null;
-//                        return ClosureQueryHelper.createLineageDataLookupColumn(parent, source, target);
-//                    }
-//
-//                    @Override
-//                    public TableInfo getLookupTableInfo()
-//                    {
-//                        return new AncestorLookupTableInfo(userSchema, false, lk);
-//                    }
-//
-//                    @Override
-//                    public StringExpression getURL(ColumnInfo parent)
-//                    {
-//                        return null;
-//                    }
-//                });
-//                addColumn(col);
-//            }
-//        }
-//    }
-
     private static class AncestorLookupTableInfo extends VirtualTable<UserSchema>
     {
-        AncestorLookupTableInfo(UserSchema userSchema, boolean isSampleSource, TableType type)
+        AncestorLookupTableInfo(UserSchema userSchema, boolean isSampleSource, TableType type, @Nullable ExpObject source)
         {
             super(userSchema.getDbSchema(), "Ancestor Lookup", userSchema);
             ColumnInfo wrap = new BaseColumnInfo("rowid", this, JdbcType.INTEGER);
             for (var target : type.getInstances(_userSchema.getContainer(), _userSchema.getUser()))
-                addColumn(ClosureQueryHelper.createAncestorDataLookupColumn(wrap, isSampleSource, target, null));
-        }
-    }
-
-//    private static class FilteredAncestorLookupTableInfo extends FilteredTable<UserSchema>
-//    {
-//        FilteredAncestorLookupTableInfo(UserSchema userSchema, ExpObject source)
-//        {
-//            super(source instanceof ExpSampleType ? ExperimentServiceImpl.get().getTinfoMaterialAncestors() : ExperimentServiceImpl.get().getTinfoDataAncestors(),
-//                    userSchema);
-//
-//            addCondition(getRealTable().getColumn("TypeId"), source.getRowId());
-//        }
-//    }
-
-    private static class LineageLookupTableInfo extends VirtualTable<UserSchema>
-    {
-        LineageLookupTableInfo(UserSchema userSchema, ExpObject source, TableType type)
-        {
-            super(userSchema.getDbSchema(), "Lineage Lookup", userSchema);
-            ColumnInfo wrap = new BaseColumnInfo("rowid", this, JdbcType.INTEGER);
-            for (var target : type.getInstances(_userSchema.getContainer(), _userSchema.getUser()))
-                addColumn(ClosureQueryHelper.createAncestorDataLookupColumn(wrap, source instanceof ExpSampleType, source, target));
-        }
-
-        @Override
-        public @NotNull SQLFragment getFromSQL()
-        {
-            throw new IllegalStateException();
+                addColumn(ClosureQueryHelper.createAncestorDataLookupColumn(wrap, isSampleSource, target, source));
         }
     }
 

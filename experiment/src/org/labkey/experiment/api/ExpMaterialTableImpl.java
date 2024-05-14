@@ -795,16 +795,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         setDefaultVisibleColumns(defaultCols);
 
-        if (null == _ss)
-        {
-            MutableColumnInfo lineageLookup = ClosureQueryHelper.createAncestorLookupColumnInfo("Ancestors", this, _rootTable.getColumn("rowid"), true);
-            addColumn(lineageLookup);
-        }
-        else
-        {
-            MutableColumnInfo lineageLookup = ClosureQueryHelper.createLineageLookupColumnInfo("Ancestors", this, _rootTable.getColumn("rowid"), _ss);
-            addColumn(lineageLookup);
-        }
+        MutableColumnInfo lineageLookup = ClosureQueryHelper.createAncestorLookupColumnInfo("Ancestors", this, _rootTable.getColumn("rowid"), _ss, true);
+        addColumn(lineageLookup);
     }
 
     private ContainerFilter getSampleStatusLookupContainerFilter()

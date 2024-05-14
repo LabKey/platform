@@ -3409,7 +3409,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         final Container runContainer;
         boolean deleteFirst = true;
         boolean verifyEdgesNoInsert=false;
-        boolean invalidateClosureCache=true;
+        boolean doIncrementalClosureInvalidation =true;
 
         SyncRunEdges(ExpRun run)
         {
@@ -3439,9 +3439,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             return this;
         }
 
-        SyncRunEdges invalidateClosureCache(boolean i)
+        SyncRunEdges doIncrementalClosureInvalidation(boolean i)
         {
-            invalidateClosureCache = i;
+            doIncrementalClosureInvalidation = i;
             return this;
         }
 
@@ -3650,7 +3650,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             timer.stop();
             LOG.debug("  " + (verifyEdgesNoInsert ? "verified" : "synced") + " edges in " + timer.getDuration());
 
-            if (!verifyEdgesNoInsert && invalidateClosureCache)
+            if (!verifyEdgesNoInsert && doIncrementalClosureInvalidation)
             {
                 materialToCpasTypes.forEach(type -> ClosureQueryHelper.invalidateMaterialsForRun(type, runId));
                 dataToCpasTypes.forEach(type -> ClosureQueryHelper.invalidateDataObjectsForRun(type, runId));
@@ -3686,7 +3686,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     new SyncRunEdges(runId, runObjectId, runLsid, runContainer)
                             .deleteFirst(false)
                             .verifyEdgesNoInsert(false)
-                            .invalidateClosureCache(false)      // don't do incremental invalidation calls
+                            .doIncrementalClosureInvalidation(false)      // don't do incremental invalidation calls
                             .sync(cpasTypeToObjectId);
                 }
             }
@@ -3697,7 +3697,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 LOG.debug("Rebuilt all run-based edges: " + timing.getDuration() + " ms");
             }
         }
-        ClosureQueryHelper.invalidateAll();
+        ClosureQueryHelper.truncateAndRecreate();
     }
 
     public void verifyRunEdges(ExpRun run)
