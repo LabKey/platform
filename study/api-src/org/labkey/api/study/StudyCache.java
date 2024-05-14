@@ -36,7 +36,7 @@ public class StudyCache
     // TODO: Switch to BlockingCache
     private static final Map<Path, DatabaseCache<String, Object>> CACHES = new HashMap<>(10);
 
-    private static DatabaseCache<String, Object> getCache(TableInfo tinfo, boolean create)
+    public static DatabaseCache<String, Object> getCache(TableInfo tinfo, boolean create)
     {
         Path cacheKey = tinfo.getNotificationKey();
         assert null != cacheKey : "StudyCache not supported for " + tinfo;
@@ -55,7 +55,7 @@ public class StudyCache
         }
     }
 
-    private static String getCacheName(Container c, @Nullable Object cacheKey)
+    public static String getCacheName(Container c, @Nullable Object cacheKey)
     {
         return c.getId() + "/" + (null != cacheKey ? cacheKey : "");
     }
@@ -73,21 +73,6 @@ public class StudyCache
     {
         DbCache.remove(tinfo, getCacheName(c, cacheKey));
         clearCache(tinfo, c); // TODO: this method is broken/inconsistent -- the cacheKey passed in doesn't match the put() keys
-    }
-
-    public static Object getCached(TableInfo tinfo, Container c, Object cacheKey)
-    {
-        Object oldObj = DbCache.get(tinfo, getCacheName(c, cacheKey));
-        DatabaseCache<String, Object> cache = getCache(tinfo, false);
-        Object newObj = cache != null ? cache.get(getCacheName(c, cacheKey)) : null;
-
-        if (!Objects.equals(oldObj, newObj))
-        {
-            DbCache.logUnmatched();
-            throw new IllegalStateException(oldObj + " != " + newObj);
-        }
-
-        return newObj;
     }
 
     public static Object get(TableInfo tinfo, Container c, Object cacheKey, CacheLoader<String, Object> loader)

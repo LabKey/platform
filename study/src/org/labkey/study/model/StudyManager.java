@@ -483,7 +483,7 @@ public class StudyManager
             ArrayList<DatasetDefinition> ret = new ArrayList<>(in.size());
             for (DatasetDefinition dsIn : in)
             {
-                DatasetDefinition dsRet = (DatasetDefinition) StudyCache.getCached(t, dsIn.getContainer(), dsIn.getEntityId());
+                DatasetDefinition dsRet = (DatasetDefinition) getCached(t, dsIn.getContainer(), dsIn.getEntityId());
                 if (null == dsRet)
                 {
                     dsRet = dsIn;
@@ -499,13 +499,28 @@ public class StudyManager
             if (null == dsIn)
                 return null;
             TableInfo t = getTableInfo();
-            DatasetDefinition dsRet = (DatasetDefinition) StudyCache.getCached(t, dsIn.getContainer(), dsIn.getEntityId());
+            DatasetDefinition dsRet = (DatasetDefinition) getCached(t, dsIn.getContainer(), dsIn.getEntityId());
             if (null == dsRet)
             {
                 dsRet = dsIn;
                 StudyCache.cache(t, dsIn.getContainer(), dsIn.getEntityId(), dsIn);
             }
             return dsRet;
+        }
+
+        private static Object getCached(TableInfo tinfo, Container c, Object cacheKey)
+        {
+            Object oldObj = DbCache.get(tinfo, StudyCache.getCacheName(c, cacheKey));
+            DatabaseCache<String, Object> cache = StudyCache.getCache(tinfo, false);
+            Object newObj = cache != null ? cache.get(StudyCache.getCacheName(c, cacheKey)) : null;
+
+            if (!Objects.equals(oldObj, newObj))
+            {
+                DbCache.logUnmatched();
+                throw new IllegalStateException(oldObj + " != " + newObj);
+            }
+
+            return newObj;
         }
     }
 
