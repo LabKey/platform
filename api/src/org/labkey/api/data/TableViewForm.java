@@ -215,9 +215,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         {
             Object[] pkVal = getPkVals();
             if (null != pkVal && null != pkVal[0])
-            {
                 Table.delete(_tinfo, pkVal);
-            }
             else //Hmm, throw an exception here????
                 _log.warn("Nothing to delete for table " + _tinfo.getName() + " on request " + _request.getRequestURI());
         }

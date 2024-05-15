@@ -91,6 +91,7 @@ public class TableViewFormTestCase extends Assert
         Assert.assertTrue("Final form should be valid", tf.isValid());
     }
 
+
     @Test
     public void testDbOperations() throws SQLException
     {
