@@ -74,6 +74,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.AbstractExpSchema;
 import org.labkey.api.exp.query.DataClassUserSchema;
 import org.labkey.api.exp.query.ExpDataTable;
+import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.qc.DataState;
@@ -2246,6 +2247,10 @@ public class ExpDataIterators
                 dontUpdate.addAll(((ExpMaterialTableImpl) _expTable).getUniqueIdFields());
                 dontUpdate.add(RootMaterialRowId.toString());
                 dontUpdate.add(AliquotedFromLSID.toString());
+                dontUpdate.add(ExpMaterialTable.Column.AliquotCount.name());
+                dontUpdate.add(ExpMaterialTable.Column.AliquotVolume.name());
+                dontUpdate.add(ExpMaterialTable.Column.AvailableAliquotCount.name());
+                dontUpdate.add(ExpMaterialTable.Column.AvailableAliquotVolume.name());
             }
             else if (isMergeOrUpdate)
             {

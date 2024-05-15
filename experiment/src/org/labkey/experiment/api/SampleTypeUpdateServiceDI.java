@@ -131,7 +131,11 @@ import static org.labkey.api.dataiterator.SampleUpdateAddColumnsDataIterator.CUR
 import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipAliquotRollup;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipMaxSampleCounterFunction;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotCount;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotVolume;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotedFromLSID;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.AvailableAliquotCount;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.AvailableAliquotVolume;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.LSID;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Name;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.RootMaterialRowId;
@@ -160,6 +164,13 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     public static final String PARENT_RECOMPUTE_NAME_SET = "ParentNameToRecomputeSet";
 
     public static final Map<String, String> SAMPLE_ALT_IMPORT_NAME_COLS;
+
+    private static final Map<String, JdbcType> ALIQUOT_ROLLUP_FIELDS = Map.of(
+            AliquotCount.toString(), JdbcType.INTEGER,
+            AvailableAliquotCount.toString(), JdbcType.INTEGER,
+            AliquotVolume.toString(), JdbcType.DOUBLE,
+            AvailableAliquotVolume.toString(), JdbcType.DOUBLE
+    );
 
     static
     {
@@ -1444,24 +1455,25 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             // TODO: check if this covers all the functionality, in particular how is alternateKeyCandidates used?
             DataIterator c = LoggingDataIterator.wrap(new _SamplesCoerceDataIterator(source, context, sampleType, materialTable));
 
-            // auto gen a sequence number for genId - reserve BATCH_SIZE numbers at a time so we don't select the next sequence value for every row
-            SimpleTranslator addGenId = new SimpleTranslator(c, context);
-            addGenId.setDebugName("add genId");
+            SimpleTranslator addColumns = new SimpleTranslator(c, context);
+            addColumns.setDebugName("add genId and other requried columns");
             Set<String> idColNames = Sets.newCaseInsensitiveHashSet("genId");
             materialTable.getColumns().stream().filter(ColumnInfo::isUniqueIdField).forEach(columnInfo -> idColNames.add(columnInfo.getName()));
-            addGenId.selectAll(idColNames);
+            addColumns.selectAll(idColNames);
 
+            // auto gen a sequence number for genId - reserve BATCH_SIZE numbers at a time so we don't select the next sequence value for every row
             ColumnInfo genIdCol = new BaseColumnInfo(FieldKey.fromParts("genId"), JdbcType.INTEGER);
             final int batchSize = context.getInsertOption().batch ? BATCH_SIZE : 1;
-            addGenId.addSequenceColumn(genIdCol, sampleType.getContainer(), ExpSampleTypeImpl.SEQUENCE_PREFIX, sampleType.getRowId(), batchSize, sampleType.getMinGenId());
-            addGenId.addUniqueIdDbSequenceColumns(ContainerManager.getRoot(), materialTable);
-            // only add when AliquotedFrom column is not null
+            addColumns.addSequenceColumn(genIdCol, sampleType.getContainer(), ExpSampleTypeImpl.SEQUENCE_PREFIX, sampleType.getRowId(), batchSize, sampleType.getMinGenId());
+            addColumns.addUniqueIdDbSequenceColumns(ContainerManager.getRoot(), materialTable);
+
+            // recompute only add when AliquotedFrom column is not null
             if (columnNameMap.containsKey(ExpMaterial.ALIQUOTED_FROM_INPUT))
             {
-                addGenId.addNullColumn(ROOT_RECOMPUTE_ROWID_COL, JdbcType.INTEGER);
-                addGenId.addNullColumn(PARENT_RECOMPUTE_NAME_COL, JdbcType.VARCHAR);
+                addColumns.addNullColumn(ROOT_RECOMPUTE_ROWID_COL, JdbcType.INTEGER);
+                addColumns.addNullColumn(PARENT_RECOMPUTE_NAME_COL, JdbcType.VARCHAR);
             }
-            DataIterator dataIterator = LoggingDataIterator.wrap(addGenId);
+            DataIterator dataIterator = LoggingDataIterator.wrap(addColumns);
 
             // Table Counters
             DataIteratorBuilder dib = ExpDataIterators.CounterDataIteratorBuilder.create(dataIterator, sampleType.getContainer(), materialTable, ExpSampleType.SEQUENCE_PREFIX, sampleType.getRowId());
@@ -1781,10 +1793,10 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             _sampleType = sampleType;
             _metricUnit = _sampleType.getMetricUnit() != null ? Measurement.Unit.valueOf(_sampleType.getMetricUnit()) : null;
             setDebugName("Coerce before trigger script - samples");
-            init(materialTable, context.getInsertOption().useImportAliases);
+            init(materialTable, context.getInsertOption().useImportAliases, !context.getInsertOption().updateOnly);
         }
 
-        void init(TableInfo target, boolean useImportAliases)
+        void init(TableInfo target, boolean useImportAliases, boolean initRollupCounts)
         {
             Map<String,ColumnInfo> targetMap = DataIteratorUtil.createTableMap(target, useImportAliases);
             DataIterator di = getInput();
@@ -1797,16 +1809,16 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     scopedFields.put(dp.getName(), ExpSchema.DerivationDataScopeType.ChildOnly.name().equalsIgnoreCase(dp.getDerivationDataScope()));
             }
 
-            int derivationDataColInd = -1;
+            int aliquotedFromDataColInd = -1;
             int unitDataColInd = -1;
             int amountDataColInd = -1;
-            for (int i = 1; i <= count && (derivationDataColInd < 0 || unitDataColInd < 0 || amountDataColInd < 0); i++)
+            for (int i = 1; i <= count && (aliquotedFromDataColInd < 0 || unitDataColInd < 0 || amountDataColInd < 0); i++)
             {
                 ColumnInfo from = di.getColumnInfo(i);
                 if (from != null)
                 {
                     if (getAliquotedFromColName().equalsIgnoreCase(from.getName()))
-                        derivationDataColInd = i;
+                        aliquotedFromDataColInd = i;
                     else if ("Units".equalsIgnoreCase(from.getName()))
                         unitDataColInd = i;
                     else if ("StoredAmount".equalsIgnoreCase(from.getName()) || "Amount".equalsIgnoreCase(from.getName()))
@@ -1831,7 +1843,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                         if (isScopedField)
                         {
                             ColumnInfo clone = new BaseColumnInfo(to);
-                            addColumn(clone, new DerivationScopedColumn(i, derivationDataColInd, scopedFields.get(name), ignoredAliquotPropValue, ignoredMetaPropValue));
+                            addColumn(clone, new DerivationScopedColumn(i, aliquotedFromDataColInd, scopedFields.get(name), ignoredAliquotPropValue, ignoredMetaPropValue));
                         }
                         else
                             addColumn(to, i);
@@ -1843,7 +1855,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                         {
                             var col = new BaseColumnInfo(getInput().getColumnInfo(i));
                             col.setName(name);
-                            addColumn(col, new DerivationScopedColumn(i, derivationDataColInd, scopedFields.get(name), ignoredAliquotPropValue, ignoredMetaPropValue));
+                            addColumn(col, new DerivationScopedColumn(i, aliquotedFromDataColInd, scopedFields.get(name), ignoredAliquotPropValue, ignoredMetaPropValue));
                         }
                         else
                             addColumn(to.getName(), i);
@@ -1859,19 +1871,31 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     else
                     {
                         if (isScopedField)
-                            _addConvertColumn(name, i, to.getJdbcType(), to.getFk(), derivationDataColInd, scopedFields.get(name));
+                            _addConvertColumn(name, i, to.getJdbcType(), to.getFk(), aliquotedFromDataColInd, scopedFields.get(name));
                         else
                             addConvertColumn(to.getName(), i, to.getJdbcType(), to.getFk(), RemapMissingBehavior.OriginalValue);
                     }
                 }
                 else
                 {
-                    if (derivationDataColInd == i && _context.getInsertOption().mergeRows && !_context.getConfigParameterBoolean(SampleTypeService.ConfigParameters.DeferAliquotRuns))
+                    if (aliquotedFromDataColInd == i && _context.getInsertOption().mergeRows && !_context.getConfigParameterBoolean(SampleTypeService.ConfigParameters.DeferAliquotRuns))
                     {
                         addColumn(AliquotedFromLSID.name(), i); // temporarily populate sample name as lsid for merge, used to differentiate insert vs update for merge
                     }
 
                     addColumn(i);
+                }
+            }
+
+            if (initRollupCounts)
+            {
+                for (Map.Entry<String, JdbcType> entry : ALIQUOT_ROLLUP_FIELDS.entrySet())
+                {
+                    String fieldName = entry.getKey();
+                    JdbcType jdbcType = entry.getValue();
+                    var col = new BaseColumnInfo(fieldName, jdbcType);
+
+                    addColumn(col, new AliquotRollupConvertColumn(fieldName, jdbcType, aliquotedFromDataColInd));
                 }
             }
         }
@@ -1927,6 +1951,30 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             protected Object convert(Object amountObj)
             {
                 return Measurement.convertToAmount(amountObj);
+            }
+        }
+
+        protected class AliquotRollupConvertColumn extends SimpleConvertColumn
+        {
+            final int aliquotedFromColInd;
+
+            public AliquotRollupConvertColumn(String fieldName, @Nullable JdbcType to, int aliquotedFromColInd)
+            {
+                super(fieldName, 0, to, true);
+                this.aliquotedFromColInd = aliquotedFromColInd;
+            }
+
+            @Override
+            protected Object convert(Object o)
+            {
+                if (aliquotedFromColInd < 0)
+                    return 0; // if AliquotedFrom column absent, is root, initialize rollup count/amount to 0
+
+                Object aliquotedFrom = _data.get(aliquotedFromColInd);
+                if (aliquotedFrom == null || StringUtils.isEmpty((String) aliquotedFrom)) // if AliquotedFrom is empty, is root
+                    return 0;
+
+                return null; // for aliquot, initialize rollup count/amount to null
             }
         }
     }
