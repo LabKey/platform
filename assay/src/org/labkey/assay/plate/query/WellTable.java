@@ -48,6 +48,8 @@ import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.assay.plate.PlateManager;
@@ -92,6 +94,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
     private static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
     private static final Set<String> ignoredColumns = new CaseInsensitiveHashSet();
     private final Map<FieldKey, ColumnInfo> _provisionedFieldMap = new HashMap<>();
+    private final boolean _allowInsertDelete;
 
     static
     {
@@ -106,9 +109,10 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         ignoredColumns.add(Column.Dilution.name());
     }
 
-    public WellTable(PlateSchema schema, @Nullable ContainerFilter cf)
+    public WellTable(PlateSchema schema, @Nullable ContainerFilter cf, boolean allowInsertDelete)
     {
         super(schema, AssayDbSchema.getInstance().getTableInfoWell(), cf);
+        _allowInsertDelete = allowInsertDelete;
         addTriggerFactory(new WellTriggerFactory());
     }
 
@@ -124,7 +128,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
 
     private void addGroupColumn()
     {
-        SQLFragment groupSql = new SQLFragment("(SELECT WG.Name FROM ")
+        SQLFragment groupSql = new SQLFragment("SELECT WG.Name FROM ")
                 .append(AssayDbSchema.getInstance().getTableInfoWellGroupPositions(), "WGP")
                 .append(" INNER JOIN ")
                 .append(AssayDbSchema.getInstance().getTableInfoWellGroup(), "WG")
@@ -133,9 +137,11 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
                 .append(AssayDbSchema.getInstance().getTableInfoPlate(), "P")
                 .append(" ON P.RowId = WG.PlateId ")
                 .append(" WHERE P.AssayType = ? AND WGP.WellId = " + STR_TABLE_ALIAS + ".RowId")
-                .append(" LIMIT 1")
-                .add(TsvPlateLayoutHandler.TYPE)
-                .append(")");
+                .add(TsvPlateLayoutHandler.TYPE);
+
+        // The underlying schema allows for multiple well groups per well, however, as a "well group" column
+        // we do not support having multiple values. Here we limit the query to return a single result.
+        groupSql = new SQLFragment("(").append(getSqlDialect().limitRows(groupSql, 1)).append(")");
 
         var column = new ExprColumn(this, FieldKey.fromParts(Column.Group.name()), groupSql, JdbcType.VARCHAR);
         column.setUserEditable(true);
@@ -202,8 +208,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
 
     private void addTypeColumn()
     {
-        // TODO: Shutdown adding well rows via LKS UI
-        SQLFragment wellTypeSql = new SQLFragment("(SELECT DISTINCT WG.TypeName FROM ")
+        SQLFragment wellTypeSql = new SQLFragment("SELECT DISTINCT WG.TypeName FROM ")
                 .append(AssayDbSchema.getInstance().getTableInfoWellGroupPositions(), "WGP")
                 .append(" INNER JOIN ")
                 .append(AssayDbSchema.getInstance().getTableInfoWellGroup(), "WG")
@@ -212,9 +217,11 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
                 .append(AssayDbSchema.getInstance().getTableInfoPlate(), "P")
                 .append(" ON P.RowId = WG.PlateId ")
                 .append(" WHERE P.AssayType = ? AND WGP.WellId = " + STR_TABLE_ALIAS + ".RowId")
-                .append(" LIMIT 1")
-                .add(TsvPlateLayoutHandler.TYPE)
-                .append(")");
+                .add(TsvPlateLayoutHandler.TYPE);
+
+        // The underlying schema allows for multiple well groups per well, however, as a "well type" column
+        // we do not support having multiple values. Here we limit the query to return a single result.
+        wellTypeSql = new SQLFragment("(").append(getSqlDialect().limitRows(wellTypeSql, 1)).append(")");
 
         var column = new ExprColumn(this, FieldKey.fromParts(Column.Type.name()), wellTypeSql, JdbcType.VARCHAR);
         column.setFk(new QueryForeignKey(getUserSchema().getTable(WellGroupTypeTable.NAME), null, null));
@@ -388,6 +395,14 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
             provisionedTable = StorageProvisioner.createTableInfo(domain);
 
         return new WellUpdateService(this, AssayDbSchema.getInstance().getTableInfoWell(), provisionedTable);
+    }
+
+    @Override
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
+    {
+        if (!_allowInsertDelete && (InsertPermission.class.equals(perm) || DeletePermission.class.equals(perm)))
+            return false;
+        return super.hasPermission(user, perm);
     }
 
     /**

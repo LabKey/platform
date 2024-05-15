@@ -1387,8 +1387,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
     private @NotNull TableInfo getWellTable(Container container, User user)
     {
-        UserSchema schema = getPlateUserSchema(container, user);
-        return schema.getTableOrThrow(WellTable.NAME);
+        return PlateSchema.getWellTable(container, user, null);
     }
 
     private @NotNull QueryUpdateService getWellUpdateService(Container container, User user)
