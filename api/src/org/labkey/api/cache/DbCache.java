@@ -127,7 +127,6 @@ public class DbCache
      */
 
     private static final Bag<String> TRACKING_BAG = new HashBag<>();
-    private static final Set<String> INTERESTING = Set.of("TestTable", "ExperimentRun", "Study");
 
     private static boolean isInteresting(TableInfo tinfo)
     {

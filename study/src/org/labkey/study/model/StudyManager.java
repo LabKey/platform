@@ -410,14 +410,14 @@ public class StudyManager
             public void clearCache(Container c)
             {
                 super.clearCache(c);
-                super.clearCache(); // Big hammer, but we're caching datasets in multiple containers
+                StudyCache.track(getTableInfo(), "Clear container " + c);
             }
 
             @Override
             public void clearCache(DatasetDefinition obj)
             {
-                super.clearCache(obj);
-                super.clearCache(); // Big hammer, but we're caching datasets in multiple containers
+                super.clearCache(obj.getContainer());
+                StudyCache.track(getTableInfo(), "Clear container " + obj.getContainer() + " for dataset " + obj);
             }
         };
 
@@ -516,14 +516,20 @@ public class StudyManager
 
             if (!Objects.equals(oldObj, newObj))
             {
-                DbCache.logUnmatched();
-                throw new IllegalStateException(oldObj + " != " + newObj);
+                if (newObj instanceof DatasetDefinition dd)
+                {
+                    _log.info("Mismatch for dataset " + dd);
+                }
+                else
+                {
+                    DbCache.logUnmatched();
+                    throw new IllegalStateException(oldObj + " != " + newObj);
+                }
             }
 
             return newObj;
         }
     }
-
 
     public static StudyManager getInstance()
     {

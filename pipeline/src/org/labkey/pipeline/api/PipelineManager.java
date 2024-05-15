@@ -28,7 +28,6 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbSchemaCache;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.ObjectFactory;

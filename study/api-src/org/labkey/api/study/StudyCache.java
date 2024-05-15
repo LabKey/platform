@@ -16,6 +16,8 @@
 
 package org.labkey.api.study;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
@@ -67,12 +69,24 @@ public class StudyCache
         DbCache.put(tinfo, getCacheName(c, objectId), cachable, CacheManager.HOUR);
         DatabaseCache<String, Object> cache = getCache(tinfo, true);
         cache.put(getCacheName(c, objectId), cachable, CacheManager.HOUR);
+        track(tinfo, "Put " + getCacheName(c, objectId));
     }
 
+    private static final Logger LOG = LogManager.getLogger(StudyCache.class);
+
+    public static void track(TableInfo tinfo, String message)
+    {
+        if (tinfo.getName().contains("DataSet"))
+            LOG.info(message);
+    }
+
+    // TODO: this method is broken/inconsistent -- the cacheKey passed in doesn't match the put() keys
     public static void uncache(TableInfo tinfo, Container c, Object cacheKey)
     {
         DbCache.remove(tinfo, getCacheName(c, cacheKey));
-        clearCache(tinfo, c); // TODO: this method is broken/inconsistent -- the cacheKey passed in doesn't match the put() keys
+        DatabaseCache<String, Object> cache = getCache(tinfo, false);
+        if (null != cache) {cache.remove(getCacheName(c, cacheKey)); cache.clear();}
+        track(tinfo, "Remove " + getCacheName(c, cacheKey));
     }
 
     public static Object get(TableInfo tinfo, Container c, Object cacheKey, CacheLoader<String, Object> loader)
@@ -100,6 +114,7 @@ public class StudyCache
         DatabaseCache<String, Object> cache = getCache(tinfo, false);
         if (null != cache)
             cache.removeUsingFilter(new Cache.StringPrefixFilter(getCacheName(c, null)));
+        track(tinfo, "Remove using prefix " + getCacheName(c, null));
     }
 
     public static void clearCache(TableInfo tinfo)

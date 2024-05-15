@@ -31,6 +31,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 public class QueryHelper<K extends StudyCachable>
@@ -84,6 +85,8 @@ public class QueryHelper<K extends StudyCachable>
             if (sortString != null)
                 sort = new Sort(sortString);
             List<K> objs = new TableSelector(getTableInfo(), filter, sort).getArrayList(_objectClass);
+            if (null == sort)
+                objs.sort(Comparator.comparingInt(Object::hashCode)); // TODO: temp for comparison purposes -- stable sort if none specified
             // Make both the objects and the list itself immutable so that we don't end up with a corrupted
             // version in the cache
             for (StudyCachable obj : objs)
