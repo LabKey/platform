@@ -53,9 +53,9 @@ public abstract class AbstractWebdavResolver implements WebdavResolver
 
         // start at the root and work down, to avoid lots of cache misses
         WebdavResource resource = root;
-        for (String name : path)
+        for (int i=0 ; i<path.size() ; i++)
         {
-            WebdavResource r = resource.find(name);
+            WebdavResource r = resource.find(path.getPart(i));
             // short circuit the descent at last web folder
             if (null == r  || r instanceof UnboundResource)
                 return new LookupResult(this,new UnboundResource(fullPath));
@@ -118,7 +118,7 @@ public abstract class AbstractWebdavResolver implements WebdavResolver
         }
 
         @Override
-        public WebdavResource find(String name)
+        public WebdavResource find(Path.Part name)
         {
             return new UnboundResource(this.getPath().append(name));
         }

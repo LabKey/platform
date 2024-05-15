@@ -1233,7 +1233,7 @@ public class DavController extends SpringActionController
 
                 if (StringUtils.isEmpty(filename) || filename.contains("/"))
                     return WebdavStatus.SC_METHOD_NOT_ALLOWED;
-                WebdavResource dest = resource.find(filename);
+                WebdavResource dest = resource.find(Path.toPathPart(filename));
                 if (null == dest)
                     return WebdavStatus.SC_METHOD_NOT_ALLOWED;
 
@@ -1254,7 +1254,7 @@ public class DavController extends SpringActionController
                 {
                     if (!resource.isCollection())                           // If we added a directory as parent, we need to re-resolve
                         resource = resolvePath(true);
-                    WebdavResource newDest = resource.find(filename);       // #30569: get newly created resource object that now has metadata
+                    WebdavResource newDest = resource.find(Path.toPathPart(filename));       // #30569: get newly created resource object that now has metadata
                     PropfindAction action = new PropfindAction()
                     {
                         @Override
@@ -4877,7 +4877,7 @@ public class DavController extends SpringActionController
         WebdavResolver.LookupResult result = resolvePathResult(path, false);
         if (null != result && null != result.resolver)
         {
-            String name = result.resolver.defaultWelcomePage();
+            Path.Part name = result.resolver.defaultWelcomePage();
             if (null == name)
                 return null;
             Path welcomePath = path.append(name);
@@ -4972,7 +4972,7 @@ public class DavController extends SpringActionController
 
         // hasZip could be null or TRUE, either way look for .gz
         // NOTE if hasZip ever becomes false, it stays that way. which is only weird for extrawebapp
-        WebdavResource gz = (WebdavResource)r.parent().find(r.getName() + ".gz");
+        WebdavResource gz = (WebdavResource)r.parent().find(Path.toPathPart(r.getName() + ".gz"));
         if (null != gz && gz.exists())
         {
             File rFile = r.getFile();
