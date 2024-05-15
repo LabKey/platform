@@ -251,7 +251,7 @@ public class ClosureQueryHelper
             {
                 upsert = new SQLFragment()
                         .append("INSERT INTO ").append(tInfo)
-                        .append("(RowId, AncestorRowId, AncestorTypeId)\n")
+                        .append(" (RowId, AncestorRowId, AncestorTypeId)\n")
                         .append("SELECT RowId, ancestorRowId, ancestorTypeId FROM temp.").append(tempTableName).append(" TMP\n")
                         .append("ON CONFLICT(RowId,ancestorTypeId) DO UPDATE SET ancestorRowId = EXCLUDED.ancestorRowId").appendEOS();
             }
@@ -259,7 +259,7 @@ public class ClosureQueryHelper
             {
                 upsert = new SQLFragment()
                         .append("MERGE ").append(tInfo, "Target")
-                        .append("USING (SELECT RowId, AncestorRowId, AncestorTypeId FROM temp.").append(tempTableName)
+                        .append(" USING (SELECT RowId, AncestorRowId, AncestorTypeId FROM temp.").append(tempTableName)
                         .append(") AS Source ON Target.RowId=Source.RowId AND Target.AncestorTypeId=Source.ancestorTypeId\n")
                         .append("WHEN MATCHED THEN UPDATE SET Target.AncestorTypeId = Source.ancestorTypeId\n")
                         .append("WHEN NOT MATCHED THEN INSERT (RowId, AncestorRowId, AncestorTypeId) VALUES (Source.RowId, Source.ancestorRowId, Source.ancestorTypeId)").appendEOS();
