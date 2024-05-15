@@ -516,11 +516,7 @@ public class StudyManager
 
             if (!Objects.equals(oldObj, newObj))
             {
-                if (newObj instanceof DatasetDefinition dd)
-                {
-                    _log.info("Mismatch for dataset " + dd);
-                }
-                else
+                if (newObj instanceof List || oldObj instanceof List)
                 {
                     DbCache.logUnmatched();
                     throw new IllegalStateException(oldObj + " != " + newObj);
