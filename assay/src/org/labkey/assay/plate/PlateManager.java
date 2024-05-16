@@ -165,7 +165,13 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     private static final String PLATE_SET_NAME_EXPRESSION = "PLS-${now:date('yyyyMMdd')}-${RowId}";
     private static final String PLATE_NAME_EXPRESSION = "${${PlateSet/PlateSetId}-:withCounter}";
 
+    // This flag is applied to the extraScriptContext of query mutating calls (e.g. insertRows, updateRows, etc.)
+    // when those calls are being made for a plate copy operation.
     public static final String PLATE_COPY_FLAG = ".plateCopy";
+
+    // This flag is applied to the extraScriptContext of query mutating calls (e.g. insertRows, updateRows, etc.)
+    // when those calls are being made for a plate save operation.
+    public static final String PLATE_SAVE_FLAG = ".plateSave";
 
     public SearchService.SearchCategory PLATE_CATEGORY = new SearchService.SearchCategory("plate", "Plate") {
         @Override
@@ -910,7 +916,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             QueryUpdateService qus = getPlateUpdateService(container, user);
             BatchValidationException errors = new BatchValidationException();
 
-            Map<String, Object> extraScriptContext = CaseInsensitiveHashMap.of(PLATE_COPY_FLAG, isCopy);
+            Map<String, Object> extraScriptContext = new CaseInsensitiveHashMap<>();
+            extraScriptContext.put(PLATE_COPY_FLAG, isCopy);
+            extraScriptContext.put(PLATE_SAVE_FLAG, true);
 
             if (updateExisting)
             {

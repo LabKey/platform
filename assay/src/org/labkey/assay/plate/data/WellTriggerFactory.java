@@ -105,8 +105,8 @@ public class WellTriggerFactory implements TriggerFactory
             Map<String, Object> extraContext
         )
         {
-            // Skip computing well groups when this is a plate copy operation
-            if (isCopyOperation(extraContext))
+            // Skip computing well groups when this is a plate copy or save operation
+            if (isCopyOperation(extraContext) || isSaveOperation(extraContext))
                 return;
 
             var hasSampleChange = hasSampleChange(newRow);
@@ -178,6 +178,11 @@ public class WellTriggerFactory implements TriggerFactory
         private boolean isCopyOperation(Map<String, Object> extraContext)
         {
             return extraContext != null && (boolean) extraContext.getOrDefault(PlateManager.PLATE_COPY_FLAG, false);
+        }
+
+        private boolean isSaveOperation(Map<String, Object> extraContext)
+        {
+            return extraContext != null && (boolean) extraContext.getOrDefault(PlateManager.PLATE_SAVE_FLAG, false);
         }
 
         @Override
