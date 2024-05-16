@@ -21,6 +21,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Path;
 import org.labkey.query.xml.ReportDescriptorType;
 
 import java.io.IOException;
@@ -45,7 +46,7 @@ public class ModuleReportResource
         _reportDescriptor = reportDescriptor;
         _sourceFile = sourceFile;
         Resource dir = sourceFile.parent();
-        _metaDataFile = dir.find(_reportDescriptor.getReportName() + ScriptReportDescriptor.REPORT_METADATA_EXTENSION);
+        _metaDataFile = dir.find(Path.toPathPart(_reportDescriptor.getReportName() + ScriptReportDescriptor.REPORT_METADATA_EXTENSION));
     }
 
     public void loadScript()

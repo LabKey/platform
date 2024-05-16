@@ -122,6 +122,7 @@ import org.labkey.query.reports.view.ReportAndDatasetChangeDigestEmailTemplate;
 import org.labkey.query.reports.view.ReportUIProvider;
 import org.labkey.query.sql.Method;
 import org.labkey.query.sql.QNode;
+import org.labkey.query.sql.Query;
 import org.labkey.query.sql.SqlParser;
 import org.labkey.query.view.InheritedQueryDataViewProvider;
 import org.labkey.query.view.QueryDataViewProvider;
@@ -383,6 +384,7 @@ public class QueryModule extends DefaultModule
             MetadataElementBase.TestCase.class,
             Method.TestCase.class,
             QNode.TestCase.class,
+            Query.TestCase.class,
             ReportsController.SerializationTest.class,
             SqlParser.SqlParserTestCase.class,
             TableWriter.TestCase.class

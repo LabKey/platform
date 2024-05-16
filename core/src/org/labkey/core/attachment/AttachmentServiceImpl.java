@@ -1286,14 +1286,14 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
 
 
         @Override
-        public WebdavResource find(String name)
+        public WebdavResource find(Path.Part name)
         {
-            Attachment a = getAttachment(_parent, name);
+            Attachment a = getAttachment(_parent, name.toString());
 
             if (null != a)
                 return new AttachmentResource(this, _parent, a);
             else
-                return new AttachmentResource(this, _parent, name);
+                return new AttachmentResource(this, _parent, name.toString());
         }
 
 

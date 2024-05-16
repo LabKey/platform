@@ -51,7 +51,7 @@ public class WebdavResourceReadOnly implements WebdavResource
     }
 
     @Override
-    public WebdavResource find(String name)
+    public WebdavResource find(Path.Part name)
     {
         WebdavResource wr = getDelegate().find(name);
         if (null == wr)

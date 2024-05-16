@@ -71,7 +71,7 @@ public class ModuleQueryDef
         Resource parent = r.parent();
         if (parent != null)
         {
-            Resource metadataResource = parent.find(_name + META_FILE_EXTENSION);
+            Resource metadataResource = parent.find(Path.toPathPart(_name + META_FILE_EXTENSION));
             if (metadataResource != null)
                 _metadataDef = new ModuleQueryMetadataDef(metadataResource);
       }
