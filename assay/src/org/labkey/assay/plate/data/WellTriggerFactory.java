@@ -159,9 +159,7 @@ public class WellTriggerFactory implements TriggerFactory
 
                 var change = new PlateManager.WellGroupChange(plateRowId, wellRowId, type, group);
 
-                if (!wellGroupChanges.containsKey(plateRowId))
-                    wellGroupChanges.put(plateRowId, new HashMap<>());
-                wellGroupChanges.get(plateRowId).put(wellRowId, change);
+                wellGroupChanges.computeIfAbsent(plateRowId, HashMap::new).put(wellRowId, change);
             }
         }
 

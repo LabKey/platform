@@ -549,9 +549,7 @@ public class AssayUpgradeCode implements UpgradeCode
                     Integer wellRowId = (Integer) sampleWellRow.get("RowId");
                     PlateManager.WellGroupChange change = new PlateManager.WellGroupChange(plateRowId, wellRowId, WellGroup.Type.SAMPLE.name(), null);
 
-                    if (!wellGroupChanges.containsKey(plateRowId))
-                        wellGroupChanges.put(plateRowId, new HashMap<>());
-                    wellGroupChanges.get(plateRowId).put(wellRowId, change);
+                    wellGroupChanges.computeIfAbsent(plateRowId, HashMap::new).put(wellRowId, change);
                 }
 
                 if (wellGroupChanges.isEmpty())

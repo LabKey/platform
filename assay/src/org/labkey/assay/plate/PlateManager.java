@@ -3089,9 +3089,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 }
 
                 var wellGroupKey = Pair.of(WellGroup.Type.valueOf(type), group);
-                if (!wellGroupings.containsKey(wellGroupKey))
-                    wellGroupings.put(wellGroupKey, new ArrayList<>());
-                wellGroupings.get(wellGroupKey).add(position);
+                wellGroupings.computeIfAbsent(wellGroupKey, k -> new ArrayList<>()).add(position);
             }
 
             // Mark pre-existing well groups on this plate for deletion
