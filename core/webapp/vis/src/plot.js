@@ -2320,9 +2320,9 @@ boxPlot.render();
                             data: meanStdDevData,
                             aes: {
                                 error: function (row) {
-                                    return row[config.properties.mean];
+                                    return row.upperBound;
                                 },
-                                yLeft: 'upperBound'
+                                yLeft: config.properties.mean
                             }
                         });
                         config.layers.push(upperBoundLayer);
