@@ -33,10 +33,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 
-/**
- * User: jeckels
- * Date: Sep 26, 2007
- */
 public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> extends ExpObjectImpl
 {
     protected Type _object;
@@ -153,6 +149,7 @@ public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> ext
                 }
 
                 _object = Table.update(user, table, _object, getRowId());
+                if (table.getName().equals("ExperimentRun")) DbCache.trackRemove(table);
 
                 if (_prevLsid != null && ensureObject)
                 {

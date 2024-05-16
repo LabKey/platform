@@ -20,6 +20,7 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentFile;
+import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
@@ -339,7 +340,9 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
 
         try
         {
-            return Table.insert(user, getDbTable(), row);
+            Map<String, Object> ret = Table.insert(user, getDbTable(), row);
+            if (getDbTable().getName().equals("AssaySpecimen")) { DbCache.trackRemove(getDbTable()); }
+            return ret;
         }
         catch (RuntimeValidationException e)
         {
