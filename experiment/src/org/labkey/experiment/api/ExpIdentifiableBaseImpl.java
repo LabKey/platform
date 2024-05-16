@@ -149,7 +149,7 @@ public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> ext
                 }
 
                 _object = Table.update(user, table, _object, getRowId());
-                if (table.getName().equals("ExperimentRun")) DbCache.trackRemove(table);
+                if (table.getName().equals("ExperimentRun")) DbCache.trackRemove(table); // Handled in override
 
                 if (_prevLsid != null && ensureObject)
                 {

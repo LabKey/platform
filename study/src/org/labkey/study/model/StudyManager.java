@@ -1729,6 +1729,7 @@ public class StudyManager
                     try
                     {
                         Table.delete(schema.getTableInfoVisit(), new Object[]{visitStudy.getContainer(), visit.getRowId()});
+                        DbCache.trackRemove(schema.getTableInfoVisit());
                     }
                     finally
                     {
@@ -1760,11 +1761,9 @@ public class StudyManager
 
     public void updateParticipant(User user, Participant participant)
     {
-        Table.update(user,
-                SCHEMA.getTableInfoParticipant(),
-                participant,
-                new Object[]{participant.getContainer().getId(), participant.getParticipantId()}
-        );
+        Table.update(user, SCHEMA.getTableInfoParticipant(), participant, new Object[]{participant.getContainer().getId(), participant.getParticipantId()});
+        DbCache.trackRemove(SCHEMA.getTableInfoParticipant());
+        _participantCache.remove(participant.getContainer());
     }
 
     public List<AssaySpecimenConfigImpl> getAssaySpecimenConfigs(Container container, String sortCol)
