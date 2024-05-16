@@ -4166,7 +4166,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
         else
         {
-            assert null == runNew;
+            if (runNew != null)
+            {
+                DbCache.logUnmatched();
+                throw new IllegalStateException(runOld + " != " + runNew);
+            }
         }
 
         return runOld;
