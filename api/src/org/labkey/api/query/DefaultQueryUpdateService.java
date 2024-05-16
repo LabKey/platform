@@ -571,7 +571,9 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             }
         }
 
-        return Table.update(user, getDbTable(), row, keys);
+        Map<String, Object> ret = Table.update(user, getDbTable(), row, keys);
+        if (getDbTable().getName().equals("AssaySpecimen")) DbCache.trackRemove(getDbTable()); // Handled in caller (TreatmentManager.saveAssaySpecimen())
+        return ret;
     }
 
     // Get value from row map where the keys are column names.
@@ -584,7 +586,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             return row.get(pd.getLabel());
 
         Set<String> aliases = pd.getImportAliasSet();
-        if (aliases.size() > 0)
+        if (!aliases.isEmpty())
         {
             for (String alias : aliases)
             {
@@ -606,7 +608,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             return true;
 
         Set<String> aliases = pd.getImportAliasSet();
-        if (aliases.size() > 0)
+        if (!aliases.isEmpty())
         {
             for (String alias : aliases)
             {
