@@ -834,7 +834,7 @@ validNum:       {
     public static long parseDateTime(Container c, String s)
     {
         @Nullable String extraDateTimeParsingPattern = FolderSettingsCache.getExtraDateTimeParsingPattern(c);
-        MonthDayOption monthDayOption = LookAndFeelProperties.getInstance(c).getDateParsingMode().getDayMonth();
+        MonthDayOption monthDayOption = LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getDateParsingMode().getDayMonth();
 
         return parseDateTime(s, monthDayOption, true, extraDateTimeParsingPattern);
     }
@@ -878,7 +878,7 @@ validNum:       {
     public static long parseDate(Container c, String s)
     {
         @Nullable String extraDateParsingPattern = FolderSettingsCache.getExtraDateParsingPattern(c);
-        MonthDayOption monthDayOption = LookAndFeelProperties.getInstance(c).getDateParsingMode().getDayMonth();
+        MonthDayOption monthDayOption = LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getDateParsingMode().getDayMonth();
 
         return parseDate(s, monthDayOption, extraDateParsingPattern);
     }
