@@ -1971,7 +1971,16 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     return 0; // if AliquotedFrom column absent, is root, initialize rollup count/amount to 0
 
                 Object aliquotedFrom = _data.get(aliquotedFromColInd);
-                if (aliquotedFrom == null || StringUtils.isEmpty((String) aliquotedFrom)) // if AliquotedFrom is empty, is root
+                String aliquotParentName = null;
+                if (aliquotedFrom instanceof String)
+                {
+                    aliquotParentName = StringUtilsLabKey.unquoteString((String) aliquotedFrom);
+                }
+                else if (aliquotedFrom instanceof Number)
+                {
+                    aliquotParentName = aliquotedFrom.toString();
+                }
+                if (aliquotParentName == null || StringUtils.isEmpty(aliquotParentName)) // if AliquotedFrom is empty, is root
                     return 0;
 
                 return null; // for aliquot, initialize rollup count/amount to null

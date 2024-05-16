@@ -18,6 +18,7 @@ package org.labkey.experiment.api;
 
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.math3.util.Precision;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -1558,6 +1559,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
             }
         }
+
+        totalVolume = Precision.round(totalVolume, 6);
+        totalAvailableVolume = Precision.round(totalAvailableVolume, 6);
 
         if (Double.compare(totalVolume, 0.0) == 0)
             totalDisplayUnit = null;
