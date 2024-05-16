@@ -2771,9 +2771,11 @@ public class StudyManager
             for (DatasetDefinition def : getDatasetDefinitions(study))
                 uncache(def);
         _datasetHelper.clearCache(c);
+        _cohortHelper.clearCache(c);
 
         DbCache.clear(StudySchema.getInstance().getTableInfoParticipant());
         DbCache.trackRemove(StudySchema.getInstance().getTableInfoParticipant());
+        _participantCache.remove(c);
 
         for (StudyImpl substudy : StudyManager.getInstance().getAncillaryStudies(c))
             clearCaches(substudy.getContainer(), unmaterializeDatasets);
