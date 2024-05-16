@@ -16,6 +16,7 @@
 
 package org.labkey.api.assay.plate;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.Identifiable;
 import org.labkey.api.study.PropertySet;
@@ -28,13 +29,27 @@ public interface WellGroup extends PropertySet, Identifiable, WellData
 {
     enum Type
     {
-        CONTROL,
-        SPECIMEN,
-        REPLICATE,
-        ANTIGEN,
-        OTHER,
-        VIRUS,
-        SAMPLE
+        ANTIGEN("Antigen"),
+        CONTROL("Control"),
+        OTHER("Other"),
+        NEGATIVE_CONTROL("Negative Control"),
+        POSITIVE_CONTROL("Positive Control"),
+        REPLICATE("Replicate"),
+        SAMPLE("Sample"),
+        SPECIMEN("Specimen"),
+        VIRUS("Virus");
+
+        private final String _label;
+
+        Type(String label)
+        {
+            _label = label;
+        }
+
+        public String getLabel()
+        {
+            return _label;
+        }
     }
 
     Integer getRowId();
@@ -69,5 +84,10 @@ public interface WellGroup extends PropertySet, Identifiable, WellData
     default @Nullable ActionURL detailsURL()
     {
         return null;
+    }
+
+    default boolean isZone()
+    {
+        return StringUtils.isEmpty(getName());
     }
 }
