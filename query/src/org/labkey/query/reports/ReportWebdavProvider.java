@@ -23,6 +23,7 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Path;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.webdav.AbstractDocumentResource;
 import org.labkey.api.webdav.AbstractWebdavResourceCollection;
@@ -99,11 +100,11 @@ public class ReportWebdavProvider implements WebdavService.Provider
 
         private Map<String, Report> _map;
         @Override
-        public WebdavResource find(String name)
+        public WebdavResource find(Path.Part name)
         {
             Map<String, Report> map = getReportMap();
-            if (map.containsKey(name))
-                return new ViewResource(this, map.get(name));
+            if (map.containsKey(name.toString()))
+                return new ViewResource(this, map.get(name.toString()));
 
             return null;
         }
@@ -264,7 +265,7 @@ public class ReportWebdavProvider implements WebdavService.Provider
         }
 
         @Override
-        public WebdavResource find(String name)
+        public WebdavResource find(Path.Part name)
         {
             return null;
         }

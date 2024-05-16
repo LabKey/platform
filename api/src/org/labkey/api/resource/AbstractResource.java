@@ -97,7 +97,7 @@ abstract public class AbstractResource implements Resource
     }
 
     @Override
-    public Resource find(String name)
+    public Resource find(Path.Part name)
     {
         return null;
     }

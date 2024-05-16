@@ -41,10 +41,10 @@ public interface Resource
     // should really be 'isResource()'
     boolean isCollection();
 
-    Resource find(String name);
+    Resource find(Path.Part name);
 
     /**
-     * Traverse a relative folder/collection path from this resource, invoking find(String) on each part
+     * Traverse a relative folder/collection path from this resource, invoking find(PathPart) on each part
      * @param path The path to traverse
      * @return The collection resource at the requested location or null if path is invalid
      */
@@ -52,8 +52,9 @@ public interface Resource
     {
         Resource r = this;
 
-        for (String part : path)
+        for (int i=0 ; i<path.size() ; i++)
         {
+            Path.Part part = path.getPart(i);
             r = r.find(part);
 
             if (null == r || !r.isCollection())

@@ -19,6 +19,7 @@ import datadog.trace.api.CorrelationIdentifier;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.ThreadContext;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -551,8 +552,8 @@ public class ViewServlet extends HttpServlet
 
         private MockRequest(ServletContext servletContext, String method, ActionURL actionURL)
         {
-            super(servletContext, method, null != actionURL ? actionURL.getURIString() : null);
-            _actionURL = actionURL;
+            super(servletContext, method, null);
+            setActionURL(actionURL);
         }
 
         public ActionURL getActionURL()
@@ -562,25 +563,26 @@ public class ViewServlet extends HttpServlet
 
         public void setActionURL(ActionURL actionURL)
         {
-            setRequestURI(actionURL.getURIString());
+            if (null != actionURL && null != actionURL.getPath())
+                setRequestURI(actionURL.getPath());
             _actionURL = actionURL;
         }
 
         @Override
-        public Map<String, String[]> getParameterMap()
+        public @NotNull Map<String, String[]> getParameterMap()
         {
             return _actionURL.getParameterMap();
         }
 
         @Override
-        public String[] getParameterValues(String name)
+        public @NotNull String @NotNull [] getParameterValues(String name)
         {
             List<String> parameters = _actionURL.getParameterValues(name);
-            return parameters.toArray(new String[parameters.size()]);
+            return parameters.toArray(new String[0]);
         }
 
         @Override
-        public Enumeration<String> getParameterNames()
+        public  @NotNull Enumeration<String> getParameterNames()
         {
             return _actionURL.getParameterNames();
         }
