@@ -90,7 +90,7 @@ public abstract class AbstractWebdavResourceCollection extends AbstractWebdavRes
     }
 
     @Override
-    abstract public WebdavResource find(String name);
+    abstract public WebdavResource find(Path.Part name);
 
     @Override
     public Collection<? extends WebdavResource> list()
@@ -99,7 +99,7 @@ public abstract class AbstractWebdavResourceCollection extends AbstractWebdavRes
         List<WebdavResource> list = new ArrayList<>(names.size());
         for (String name : names)
         {
-            WebdavResource r = find(name);
+            WebdavResource r = find(Path.toPathPart(name));
             if (r != null)
                 list.add(r);
         }

@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileStream;
+import org.labkey.api.util.Path;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
@@ -27,7 +28,6 @@ import org.labkey.api.writer.ContainerUser;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -40,7 +40,7 @@ import java.util.Map;
 public interface WebdavResource extends Resource
 {
     @Override
-    WebdavResource find(String name);
+    WebdavResource find(Path.Part name);
 
     // isCollection() only returns true when resource exists
     // return true to indicate that this resource may _only_ be a collection (whether it exists or not)
@@ -48,7 +48,7 @@ public interface WebdavResource extends Resource
 
     // TODO move more functionality into interface and remove this method
     @Nullable File getFile();
-    default @Nullable Path getNioPath()
+    default @Nullable java.nio.file.Path getNioPath()
     {
         File file = getFile();
         return file != null ? file.toPath() : null;

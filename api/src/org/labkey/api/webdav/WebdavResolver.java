@@ -30,6 +30,8 @@ import java.util.Date;
  */
 public interface WebdavResolver extends Resolver
 {
+    static final Path.Part INDEX_HTML = Path.toPathPart("index.html");
+
     class LookupResult
     {
         public final WebdavResolver resolver;
@@ -55,9 +57,9 @@ public interface WebdavResolver extends Resolver
     @Nullable LookupResult lookupEx(Path path);
 
     @Nullable WebdavResource welcome();
-    default @Nullable String defaultWelcomePage()
+    default @Nullable Path.Part defaultWelcomePage()
     {
-        return "index.html";
+        return INDEX_HTML;
     }
 
     default boolean allowHtmlListing()
