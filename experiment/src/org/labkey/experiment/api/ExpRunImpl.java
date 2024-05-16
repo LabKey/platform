@@ -80,6 +80,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
+import static org.labkey.experiment.api.ExperimentServiceImpl.EXPERIMENT_RUN_CACHE;
 import static org.labkey.experiment.api.ExperimentServiceImpl.getExpSchema;
 
 public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> implements ExpRun
@@ -549,6 +550,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         final SqlDialect dialect = svc.getSchema().getSqlDialect();
 
         DbCache.remove(svc.getTinfoExperimentRun(), svc.getCacheKey(getLSID()));
+        EXPERIMENT_RUN_CACHE.remove(getLSID());
 
         deleteProtocolApplicationProvenance();
 
