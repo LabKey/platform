@@ -332,7 +332,13 @@ public class DataGenerator<T extends DataGenerator.Config>
         }
         List<String> parentTypes = new ArrayList<>(config.getSampleTypeParents());
         boolean hasParentTypes = !parentTypes.isEmpty();
+        // Default to using all types in the container
+        if (!hasParentTypes)
+            parentTypes.addAll(SampleTypeService.get().getSampleTypes(getContainer(), getUser(), false).stream().map(ExpSampleType::getName).toList());
         List<String> dataClassParents = new ArrayList<>(config.getDataClassParents());
+        // Default to using all types in the container
+        if (dataClassParents.isEmpty())
+            dataClassParents.addAll(ExperimentService.get().getDataClasses(getContainer(), getUser(), false).stream().map(ExpDataClass::getName).toList());
         for (ExpSampleType sampleType : getSampleTypes(_config.getSampleTypeNames()))
         {
             _log.info(String.format("Generating %d samples for sample type '%s'.", numSamples, sampleType.getName()));
