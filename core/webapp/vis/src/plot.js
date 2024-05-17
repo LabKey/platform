@@ -1814,24 +1814,23 @@ boxPlot.render();
                     && config.properties.valueConversion === 'percentDeviation') {
                 maxValue = mean * LABKEY.vis.Stat.MOVING_RANGE_UPPER_LIMIT_WEIGHT;
                 minValue = mean;
-            } else if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.LeveyJennings
-                        && config.properties.valueConversion === 'standardDeviation') {
+            } else if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.LeveyJennings) {
                 if (config.properties.boundType === LABKEY.vis.PlotProperties.BoundType.StandardDeviation) {
                     maxValue = config.properties.upperBound + cushion;
                     minValue = config.properties.lowerBound - cushion;
+                }
+                else if (config.properties.boundType === LABKEY.vis.PlotProperties.BoundType.MeanDeviation) {
+                    maxValue = mean + config.properties.upperBound + cushion;
+                    minValue = mean + config.properties.lowerBound - cushion;
+                    if (config.properties.valueConversion === 'percentDeviation') {
+                        maxValue = mean + config.properties.upperBound * 10 + cushion;
+                        minValue = mean + config.properties.lowerBound * 10 - cushion;
+                    }
                 }
                 else {
                     maxValue = 3.2;
                     minValue = -3.2;
                 }
-            }
-            else if (config.properties.boundType === LABKEY.vis.PlotProperties.BoundType.Absolute) {
-                maxValue = config.properties.upperBound + cushion;
-                minValue = config.properties.lowerBound - cushion;
-            }
-            else if (config.properties.boundType === LABKEY.vis.PlotProperties.BoundType.MeanDeviation) {
-                maxValue = mean + config.properties.upperBound + cushion;
-                minValue = mean + config.properties.lowerBound - cushion;
             }
             else if (!config.properties.combined && stddev) {
                 maxValue = mean + ((config.properties.upperBound + cushion) * stddev);
@@ -1940,6 +1939,34 @@ boxPlot.render();
 
                 // Handle value conversions
                 convertValues(config.properties.valueConversion);
+                if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.LeveyJennings) {
+                    meanStdDevData[index] = row;
+                    if (config.properties.boundType === LABKEY.vis.PlotProperties.BoundType.Absolute) {
+                        row.upperBound = config.properties.upperBound;
+                        row.lowerBound = config.properties.lowerBound;
+                    }
+                    else if (config.properties.boundType === LABKEY.vis.PlotProperties.BoundType.MeanDeviation) {
+                        row.upperBound = config.properties.upperBound + row[meanProp];
+                        row.lowerBound = config.properties.lowerBound + row[meanProp];
+                    }
+
+                    if (config.properties.valueConversion === 'percentDeviation') {
+                        row.upperBound = convertToPercentDeviation(row.upperBound, row[meanProp]);
+                        row.lowerBound = convertToPercentDeviation(row.lowerBound, row[meanProp]);
+                    }
+                    else if (config.properties.valueConversion === 'standardDeviation') {
+                        row.upperBound = convertToStandardDeviation(row.upperBound, row[meanProp], row[sdProp]);
+                        row.lowerBound = convertToStandardDeviation(row.lowerBound, row[meanProp], row[sdProp]);
+                    }
+                    if (config.properties.yAxisDomain) {
+                        if (config.properties.yAxisDomain[0] > row.lowerBound) {
+                            config.properties.yAxisDomain[0] = row.lowerBound - 0.2;
+                        }
+                        if (config.properties.yAxisDomain[1] < row.upperBound) {
+                            config.properties.yAxisDomain[1] = row.upperBound + 0.2;
+                        }
+                    }
+                }
                 if (config.properties.valueConversion === 'percentDeviation') {
                     row[sdProp] = convertToPercentDeviation(row[sdProp], row[meanProp]);
                     row[meanProp] = 100;
@@ -2060,12 +2087,6 @@ boxPlot.render();
 
             tickLabelMap[index] = row[config.properties.xTickLabel];
             row.seqValue = index;
-
-            if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.LeveyJennings) {
-                meanStdDevData[index] = row;
-                row.upperBound = config.properties.upperBound;
-                row.lowerBound = config.properties.lowerBound;
-            }
         }
 
         // min x-axis tick length is 10 by default
@@ -2212,69 +2233,83 @@ boxPlot.render();
         }
         else {
             var barWidth = Math.max(config.width / config.data[config.data.length-1].seqValue / 4, 3);
-
+            // the below if-else sections add the mean/SD/error bars to the plot
             if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.LeveyJennings) {
                 config.layers = [];
 
-                if (config.properties.mean !== undefined) {
-                    if (config.properties.stdDev !== undefined &&
-                            config.properties.boundType === LABKEY.vis.PlotProperties.BoundType.StandardDeviation &&
-                            config.properties.showBoundLines) {
+                if (config.properties.stdDev !== undefined &&
+                        config.properties.boundType === LABKEY.vis.PlotProperties.BoundType.StandardDeviation &&
+                        config.properties.showBoundLines) {
 
-                        config.layers.push(new LABKEY.vis.Layer({
-                            geom: new LABKEY.vis.Geom.ErrorBar({size: 1, color: 'red', dashed: true, width: barWidth, topOnly: true}),
-                            data: meanStdDevData,
-                            aes: {
-                                error: function (row) {
-                                    return row[config.properties.stdDev] * config.properties.upperBound;
-                                },
-                                yLeft: config.properties.mean
-                            }
-                        }));
-                        config.layers.push(new LABKEY.vis.Layer({
-                            geom: new LABKEY.vis.Geom.ErrorBar({size: 1, color: 'red', dashed: true, width: barWidth, topOnly: true}),
-                            data: meanStdDevData,
-                            aes: {
-                                error: function (row) {
-                                    return row[config.properties.stdDev] * config.properties.lowerBound;
-                                },
-                                yLeft: config.properties.mean
-                            }
-                        }));
-                        if (config.properties.hideSDLines !== true) {
-                            config.layers.push(new LABKEY.vis.Layer({
-                                geom: new LABKEY.vis.Geom.ErrorBar({size: 1, color: 'blue', dashed: true, width: barWidth}),
-                                data: meanStdDevData,
-                                aes: {
-                                    error: function(row){return row[config.properties.stdDev] * 2;},
-                                    yLeft: config.properties.mean
-                                }
-                            }));
-
-                            config.layers.push(new LABKEY.vis.Layer({
-                                geom: new LABKEY.vis.Geom.ErrorBar({size: 1, color: 'green', dashed: true, width: barWidth}),
-                                data: meanStdDevData,
-                                aes: {
-                                    error: function(row){return row[config.properties.stdDev];},
-                                    yLeft: config.properties.mean
-                                }
-                            }));
-                        }
-                    }
                     config.layers.push(new LABKEY.vis.Layer({
-                        geom: new LABKEY.vis.Geom.ErrorBar({size: 1, color: 'darkgrey', width: barWidth, topOnly: true}),
+                        geom: new LABKEY.vis.Geom.ErrorBar({size: 1, color: 'red', dashed: true, width: barWidth, topOnly: true}),
                         data: meanStdDevData,
                         aes: {
-                            error: function(row){return 0;},
+                            error: function (row) {
+                                return row[config.properties.stdDev] * config.properties.upperBound;
+                            },
+                            yLeft: config.properties.mean
+                        }
+                    }));
+                    config.layers.push(new LABKEY.vis.Layer({
+                        geom: new LABKEY.vis.Geom.ErrorBar({size: 1, color: 'red', dashed: true, width: barWidth, topOnly: true}),
+                        data: meanStdDevData,
+                        aes: {
+                            error: function (row) {
+                                return row[config.properties.stdDev] * config.properties.lowerBound;
+                            },
+                            yLeft: config.properties.mean
+                        }
+                    }));
+                    if (config.properties.hideSDLines !== true) {
+                        config.layers.push(new LABKEY.vis.Layer({
+                            geom: new LABKEY.vis.Geom.ErrorBar({size: 1, color: 'blue', dashed: true, width: barWidth}),
+                            data: meanStdDevData,
+                            aes: {
+                                error: function(row){return row[config.properties.stdDev] * 2;},
+                                yLeft: config.properties.mean
+                            }
+                        }));
+
+                        config.layers.push(new LABKEY.vis.Layer({
+                            geom: new LABKEY.vis.Geom.ErrorBar({size: 1, color: 'green', dashed: true, width: barWidth}),
+                            data: meanStdDevData,
+                            aes: {
+                                error: function(row){return row[config.properties.stdDev];},
+                                yLeft: config.properties.mean
+                            }
+                        }));
+                    }
+                }
+
+                if (config.properties.mean !== undefined) {
+                    config.layers.push(new LABKEY.vis.Layer({
+                        geom: new LABKEY.vis.Geom.ErrorBar({
+                            size: 1,
+                            color: 'darkgrey',
+                            width: barWidth,
+                            topOnly: true
+                        }),
+                        data: meanStdDevData,
+                        aes: {
+                            error: function (row) {
+                                return 0;
+                            },
                             yLeft: config.properties.mean
                         }
                     }));
                 }
 
-                if (config.properties.boundType === LABKEY.vis.PlotProperties.BoundType.Absolute) {
+                if (config.properties.boundType === LABKEY.vis.PlotProperties.BoundType.Absolute && !config.properties.combined) {
                     if (config.properties.lowerBound) {
                         const lowerBoundLayer = new LABKEY.vis.Layer({
-                            geom: new LABKEY.vis.Geom.ErrorBar({ size: 1, color: 'red', width: barWidth, dashed: true }),
+                            geom: new LABKEY.vis.Geom.ErrorBar({
+                                size: 1,
+                                color: 'red',
+                                width: barWidth,
+                                dashed: true,
+                                topOnly: true
+                            }),
                             data: meanStdDevData,
                             aes: {
                                 error: function (row) {
@@ -2287,7 +2322,13 @@ boxPlot.render();
                     }
                     if (config.properties.upperBound) {
                         const upperBoundLayer = new LABKEY.vis.Layer({
-                            geom: new LABKEY.vis.Geom.ErrorBar({ size: 1, color: 'red', width: barWidth, dashed: true }),
+                            geom: new LABKEY.vis.Geom.ErrorBar({
+                                size: 1,
+                                color: 'red',
+                                width: barWidth,
+                                dashed: true,
+                                topOnly: true
+                            }),
                             data: meanStdDevData,
                             aes: {
                                 error: function (row) {
@@ -2300,14 +2341,20 @@ boxPlot.render();
                     }
                 }
 
-                if (config.properties.boundType === LABKEY.vis.PlotProperties.BoundType.MeanDeviation) {
+                if (config.properties.boundType === LABKEY.vis.PlotProperties.BoundType.MeanDeviation && !config.properties.combined) {
                     if (config.properties.lowerBound) {
                         const lowerBoundLayer = new LABKEY.vis.Layer({
-                            geom: new LABKEY.vis.Geom.ErrorBar({ size: 1, color: 'red', width: barWidth, dashed: true }),
+                            geom: new LABKEY.vis.Geom.ErrorBar({
+                                size: 1,
+                                color: 'red',
+                                width: barWidth,
+                                dashed: true,
+                                topOnly: true
+                            }),
                             data: meanStdDevData,
                             aes: {
                                 error: function (row) {
-                                    return row[config.properties.mean];
+                                    return 0;
                                 },
                                 yLeft: 'lowerBound'
                             }
@@ -2316,13 +2363,19 @@ boxPlot.render();
                     }
                     if (config.properties.upperBound) {
                         const upperBoundLayer = new LABKEY.vis.Layer({
-                            geom: new LABKEY.vis.Geom.ErrorBar({ size: 1, color: 'red', width: barWidth, dashed: true }),
+                            geom: new LABKEY.vis.Geom.ErrorBar({
+                                size: 1,
+                                color: 'red',
+                                width: barWidth,
+                                dashed: true,
+                                topOnly: true
+                            }),
                             data: meanStdDevData,
                             aes: {
                                 error: function (row) {
-                                    return row.upperBound;
+                                    return 0;
                                 },
-                                yLeft: config.properties.mean
+                                yLeft: 'upperBound'
                             }
                         });
                         config.layers.push(upperBoundLayer);
