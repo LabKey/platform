@@ -447,6 +447,11 @@ public class StudyManager
             clearProperties(def);
         }
 
+        public void clearCache()
+        {
+            helper.clearCache();
+        }
+
         public DatasetDefinition create(User user, DatasetDefinition obj)
         {
             return helper.create(user, obj);
@@ -2770,7 +2775,9 @@ public class StudyManager
         if (unmaterializeDatasets && null != study)
             for (DatasetDefinition def : getDatasetDefinitions(study))
                 uncache(def);
-        _datasetHelper.clearCache(c);
+        // Aggressive, but datasets are cached with container objects that might go stale, for example, when moving a
+        // folder tree to another parent the datasets in subfolders will be left with invalid paths. See FolderTest.
+        _datasetHelper.clearCache();
         _cohortHelper.clearCache(c);
 
         DbCache.clear(StudySchema.getInstance().getTableInfoParticipant());

@@ -27,7 +27,6 @@ import org.labkey.api.util.logging.LogHelper;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Don't use this! Use CacheManager.getCache() or DatabaseCache instead. DbCache associates a DatabaseCache with each
@@ -114,8 +113,8 @@ public class DbCache
     }
 
     /**
-     * Everything below is temporary, meant to help irradicate the use of DbCache. If a TableInfo is deemed
-     * "interesting" (it's in the process of being migrated):
+     * Everything below is temporary, meant to help eradicate the use of DbCache. If a TableInfo is deemed "interesting"
+     * (it's in the process of being migrated):
      * - Each call to invalidateAll() or clear() causes its stack trace to be added to the tracking bag
      * - Each call to trackRemove() causes its stack trace to be removed from the tracking bag
      * A remove that's unsuccessful indicates no corresponding invalidateAll(), so log that. Anything left in the bag
