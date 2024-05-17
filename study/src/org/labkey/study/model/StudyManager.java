@@ -41,6 +41,7 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.Activity;
 import org.labkey.api.data.ColumnInfo;
@@ -247,7 +248,7 @@ public class StudyManager
         return Collections.unmodifiableMap(
             new TableSelector(StudySchema.getInstance().getTableInfoParticipant(), filter, new Sort("ParticipantId"))
                 .stream(Participant.class)
-                .collect(Collectors.toMap(Participant::getParticipantId, participant -> participant))
+                .collect(LabKeyCollectors.toLinkedMap(Participant::getParticipantId, participant -> participant))
         );
     });
 
