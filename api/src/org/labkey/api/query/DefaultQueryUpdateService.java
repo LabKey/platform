@@ -729,7 +729,12 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         convertTypes(user, c, row,  getDbTable(), null);
     }
 
-    protected void convertTypes(User user, Container c, Map<String,Object> row, TableInfo t, @Nullable String file_link_dir_name) throws ValidationException
+    final protected void convertTypes(User user, Container c, Map<String,Object> row, TableInfo t, @Nullable String file_link_dir_name) throws ValidationException
+    {
+        convertTypes(user, c, row,  getDbTable(), file_link_dir_name, false);
+    }
+
+    protected void convertTypes(User user, Container c, Map<String,Object> row, TableInfo t, @Nullable String file_link_dir_name, boolean useExistingFile) throws ValidationException
     {
         for (ColumnInfo col : t.getColumns())
         {
@@ -746,7 +751,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                         default -> {
                             if (PropertyType.FILE_LINK == col.getPropertyType() && (value instanceof MultipartFile || value instanceof AttachmentFile))
                             {
-                                value = saveFile(user, c, col.getName(), value, file_link_dir_name);
+                                value = saveFile(user, c, col.getName(), value, file_link_dir_name, useExistingFile);
                             }
                             row.put(col.getName(), ConvertUtils.convert(value.toString(), col.getJdbcType().getJavaClass()));
                         }

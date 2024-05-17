@@ -80,6 +80,10 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
         if (!run.getContainer().equals(container))
             throw new UnauthorizedException("Assay results being updated are from a different container.");
 
+        // Assay results use FILE_LINK not FILE_ATTACHMENT, use convertTypes() to handle directing the posted files to the run specific directory
+        // TODO verify that we do want to use existing files (i.e. prevent duplicates). Should we do the same for sample types, etc.?
+        convertTypes(user, container, row, getDbTable(), AssayResultsFileWriter.getRunResultsFileDir(run), true);
+
         Map<String, Object> result = super.updateRow(user, container, row, oldRow, configParameters);
 
         Map<String, Object> updatedValues = getRow(user, container, oldRow);
