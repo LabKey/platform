@@ -104,7 +104,7 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
         {
             try
             {
-                dir = FileUtil.createDirectory(dir);
+                dir = FileUtil.createDirectories(dir);
             }
             catch (IOException e)
             {
