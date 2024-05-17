@@ -159,7 +159,7 @@ public class SQLFragment implements Appendable, CharSequence
     @Override
     public boolean isEmpty()
     {
-        return (null == sb || sb.length() == 0) && (sql == null || sql.length() == 0);
+        return (null == sb || sb.isEmpty()) && (sql == null || sql.isEmpty());
     }
 
 

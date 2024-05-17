@@ -4166,7 +4166,6 @@ public class StudyManager
     public void clearParticipantCache(Container container)
     {
         DbCache.remove(StudySchema.getInstance().getTableInfoParticipant(), getParticipantCacheKey(container));
-        DbCache.trackRemove(StudySchema.getInstance().getTableInfoParticipant());
         _participantCache.remove(container);
     }
 
