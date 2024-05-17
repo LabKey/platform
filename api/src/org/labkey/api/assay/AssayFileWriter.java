@@ -242,7 +242,7 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
         return savedFiles;
     }
 
-    public Map<String, File> savePostedFiles(ContextType context, Set<String> parameterNames) throws ExperimentException, IOException
+    public Map<String, File> savePostedFiles(ContextType context, Set<String> parameterNames, boolean allowMultiple) throws ExperimentException, IOException
     {
         Map<String, File> files = new TreeMap<>();
         Set<String> originalFileNames = new HashSet<>();
@@ -295,7 +295,7 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
                 }
             }
 
-            if (!overflowFiles.isEmpty())  // too many files; shouldn't happen, but if it does, throw an error
+            if (!overflowFiles.isEmpty() && !allowMultiple)  // too many files; shouldn't happen, but if it does, throw an error
                 throw new ExperimentException("Tried to save too many files: number of keys is " + parameterNames.size() +
                         ", but " + overflowFiles.size() + " extra file(s) were found.");
         }

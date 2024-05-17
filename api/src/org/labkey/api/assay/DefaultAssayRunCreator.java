@@ -70,6 +70,7 @@ import org.labkey.api.qc.TransformDataHandler;
 import org.labkey.api.qc.TransformResult;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.PropertyValidationError;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
@@ -368,6 +369,10 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             else
                 savePropertyObject(run, container, runProperties, context.getUser());
 
+            AssayResultsFileWriter resultsFileWriter = new AssayResultsFileWriter(run);
+            resultsFileWriter.savePostedFiles(context);
+            QueryService.get().setEnvironment(QueryService.Environment.EXP_RUN, run);
+
             importResultData(context, run, inputDatas, outputDatas, info, xarContext, transformResult, insertedDatas);
 
             Integer reRunId = context.getReRunId();
@@ -432,7 +437,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             return batch;
         }
-        catch (BatchValidationException e)
+        catch (BatchValidationException | IOException e) // TODO is this right for IOException?
         {
             throw new ExperimentException(e);
         }

@@ -22,9 +22,11 @@ import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.assay.AssayDataType;
+import org.labkey.api.assay.AssayResultsFileWriter;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.files.FileContentService;
@@ -213,6 +215,7 @@ public class ExpDataFileConverter implements Converter
 
         Container container = (Container) QueryService.get().getEnvironment(QueryService.Environment.CONTAINER);
         User user = (User) QueryService.get().getEnvironment(QueryService.Environment.USER);
+        ExpRun run = (ExpRun) QueryService.get().getEnvironment(QueryService.Environment.EXP_RUN); // TODO is there a better way to get the ExpRun into the context here?
 
         // Don't bother resolving if we don't know the container, or we don't know the user has permission to the container
         if (type.isAssignableFrom(File.class) && container != null && user != null && container.hasPermission(user, ReadPermission.class))
@@ -227,9 +230,22 @@ public class ExpDataFileConverter implements Converter
                 PipeRoot root = PipelineService.get().getPipelineRootSetting(container);
                 if (root != null)
                 {
+                    // Interpret relative paths based on the file root
                     if (!f.isAbsolute())
                     {
-                        // Interpret relative paths based on the file root
+                        // first check the run specific path within the root
+                        if (run != null)
+                        {
+                            String runParentPath = AssayResultsFileWriter.getRunResultsFileDir(run);
+                            File runRoot = new File(root.getRootPath(), runParentPath);
+                            if (runRoot.exists())
+                            {
+                                File resultsFile = new File(runRoot, f.getPath());
+                                if (resultsFile.exists())
+                                    f = new File(runParentPath, f.getPath());
+                            }
+                        }
+
                         f = new File(root.getRootPath(), f.getPath());
                     }
 
