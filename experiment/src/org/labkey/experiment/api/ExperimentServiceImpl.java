@@ -39,6 +39,7 @@ import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssayResultsFileWriter;
 import org.labkey.api.assay.AssaySchema;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.AssayTableMetadata;
@@ -3833,6 +3834,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         // Note: At the moment, FlowRun is the only example of an ExpRun attachment parent, but we're keeping this general
         // so other cases can be added in the future
         AttachmentService.get().deleteAttachments(new ExpRunAttachmentParent(run));
+
+        // Delete the run specific results file directory
+        PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(run.getContainer());
+        String resultsFilePath = AssayResultsFileWriter.getRunResultsFileDir(run);
+        File resultsFileDir = pipeRoot.resolvePath(resultsFilePath);
+        if (resultsFileDir != null && resultsFileDir.exists() && resultsFileDir.isDirectory())
+            FileUtil.deleteDir(resultsFileDir);
 
         // remove edges prior to deleting protocol applications
         // Calling deleteProtocolApplications calls ExperimentService.beforeDeleteData() which
