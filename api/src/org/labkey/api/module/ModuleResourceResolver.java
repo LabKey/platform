@@ -145,8 +145,8 @@ public class ModuleResourceResolver implements Resolver
         Resource r = _root;
         for (int i=0 ; i<path.size() ; i++)
         {
-            String p = path.get(i);
-            if (null == p || filter(p))
+            Path.Part p = path.getPart(i);
+            if (null == p || filter(p.toString()))
                 return null;
             r = r.find(p);
             if (null == r)

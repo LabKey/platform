@@ -63,11 +63,6 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.function.Supplier;
 
-/**
- * User: brittp
- * Date: Nov 1, 2006
- * Time: 4:37:02 PM
- */
 public class WellGroupTable extends SimpleUserSchema.SimpleTable<UserSchema>
 {
     public static final String NAME = "WellGroup";

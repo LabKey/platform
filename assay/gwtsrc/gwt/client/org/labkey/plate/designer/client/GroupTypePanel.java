@@ -23,6 +23,7 @@ import com.google.gwt.event.dom.client.KeyDownEvent;
 import com.google.gwt.event.dom.client.KeyDownHandler;
 import com.google.gwt.event.dom.client.KeyUpEvent;
 import com.google.gwt.event.dom.client.KeyUpHandler;
+import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.DeferredCommand;
 import com.google.gwt.user.client.IncrementalCommand;
 import com.google.gwt.user.client.Window;
@@ -42,11 +43,6 @@ import org.labkey.api.gwt.client.util.StringProperty;
 import java.util.List;
 import java.util.Map;
 
-/**
- * User: brittp
- * Date: Feb 7, 2007
- * Time: 11:16:28 AM
- */
 public class GroupTypePanel extends ScrollPanel implements GroupChangeListener
 {
     private TemplateView _view;
@@ -149,6 +145,8 @@ public class GroupTypePanel extends ScrollPanel implements GroupChangeListener
         if (!typeToGroupMap.containsKey(_type))
         {
             final TextBox textField = new TextBox();
+            DOM.setElementAttribute(textField.getElement(), "name", "wellGroupName");
+            DOM.setElementAttribute(textField.getElement(), "data-type", _type);
 
             textField.addKeyDownHandler(fieldKeyDownListener);
             textField.addKeyUpHandler(fieldKeyUpListener);

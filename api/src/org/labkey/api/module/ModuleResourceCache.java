@@ -317,7 +317,7 @@ public final class ModuleResourceCache<V> implements ModuleChangeListener
         }
 
         @Override
-        public Resource find(String name)
+        public Resource find(Path.Part name)
         {
             ensureListener();
 

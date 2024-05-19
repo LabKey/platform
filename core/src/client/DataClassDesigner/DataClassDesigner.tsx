@@ -13,9 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import React from 'react'
+import React from 'react';
 import { ActionURL, getServerContext } from "@labkey/api";
-import { Alert, BeforeUnload, DataClassDesigner, DataClassModel, fetchDataClass, LoadingSpinner } from "@labkey/components";
+import {
+    Alert,
+    BeforeUnload,
+    DataClassDesigner,
+    DataClassModel,
+    fetchDataClass,
+    LoadingSpinner,
+    withServerContext
+} from '@labkey/components';
 
 import "../DomainDesigner.scss"
 
@@ -25,7 +33,7 @@ type State = {
     message?: string
 }
 
-export class App extends React.Component<any, State> {
+class DataClassDesignerWrapper extends React.Component<any, State> {
 
     private _dirty: boolean = false;
 
@@ -105,3 +113,4 @@ export class App extends React.Component<any, State> {
     }
 }
 
+export const App = withServerContext(DataClassDesignerWrapper);
