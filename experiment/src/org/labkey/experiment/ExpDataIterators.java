@@ -396,7 +396,7 @@ public class ExpDataIterators
                 }
 
                 Map<String, Object> existingMap = getExistingRecord();
-                if (existingMap != null)
+                if (existingMap != null && !existingMap.isEmpty())
                 {
                     if (_storedAmountCol == null && _unitsCol == null && _sampleStateCol == null)
                         return null; // update/merge existing will only trigger recompute if stored amount or unit or status is updated)
