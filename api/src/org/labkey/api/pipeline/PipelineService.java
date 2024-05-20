@@ -224,6 +224,7 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
     boolean runGenerateFolderArchiveAndImportJob(Container c, User user, ActionURL url, ImportOptions options);
 
     Integer getJobId(User u, Container c, String jobGUID);
+    String getJobGUID(User u, Container c, Integer rowId);
 
     PathAnalysisProperties getFileAnalysisProperties(Container c, String taskId, String path);
 
