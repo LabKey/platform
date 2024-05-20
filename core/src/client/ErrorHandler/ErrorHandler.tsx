@@ -3,6 +3,7 @@ import { ActionURL } from '@labkey/api';
 
 import { getErrorHeading, getImage, getInstruction, getSubHeading, getViewDetails } from './ErrorType';
 import { ErrorDetails } from './model';
+import { withServerContext } from '@labkey/components';
 
 export interface AppContext {
     errorDetails: ErrorDetails;
@@ -16,7 +17,7 @@ interface ErrorHandlerState {
     showDetails: boolean;
 }
 
-export class ErrorHandler extends PureComponent<ErrorHandlerProps, ErrorHandlerState> {
+export class ErrorHandlerImpl extends PureComponent<ErrorHandlerProps, ErrorHandlerState> {
     state: Readonly<ErrorHandlerState> = { showDetails: false };
 
     onBackClick = (): void => {
@@ -76,3 +77,6 @@ export class ErrorHandler extends PureComponent<ErrorHandlerProps, ErrorHandlerS
         );
     }
 }
+
+// export const ErrorHandler = ErrorHandlerImpl;
+export const ErrorHandler = withServerContext(ErrorHandlerImpl);

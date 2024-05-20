@@ -25,25 +25,25 @@ public class PlateSetExport
 {
     public static final String DESTINATION = "Destination ";
     public static final String SOURCE = "Source ";
-
     public static final String SAMPLE_ID_COL = "sampleId";
     public static final String ROW_ID_COL = "rowid";
     public static final String PLATE_SET_ID_COL = "plateSetId";
     public static final String PLATE_NAME_COL = "plateName";
-    
 
     private final Map<String, FieldKey> FKMap = Map.of(
-            SAMPLE_ID_COL, FieldKey.fromParts("sampleid", "name"),
-            WellTable.POSITION_COL, FieldKey.fromParts("position"),
-            ROW_ID_COL, FieldKey.fromParts("rowid"),
-            WellTable.ROW_COL, FieldKey.fromParts("plateid", "platetype", "rows"),
-            WellTable.COL_COL, FieldKey.fromParts("plateid", "platetype", "columns"),
-            WellTable.PLATEID_COL, FieldKey.fromParts("plateid"),
-            PLATE_SET_ID_COL, FieldKey.fromParts("plateid", "plateset"),
-            PLATE_NAME_COL, FieldKey.fromParts("plateid", "name")
+        SAMPLE_ID_COL, FieldKey.fromParts("sampleid", "name"),
+        WellTable.Column.Position.name(), FieldKey.fromParts("position"),
+        ROW_ID_COL, FieldKey.fromParts("rowid"),
+        WellTable.Column.Row.name(), FieldKey.fromParts("plateid", "platetype", "rows"),
+        WellTable.Column.Col.name(), FieldKey.fromParts("plateid", "platetype", "columns"),
+        WellTable.Column.PlateId.name(), FieldKey.fromParts("plateid"),
+        PLATE_SET_ID_COL, FieldKey.fromParts("plateid", "plateset"),
+        PLATE_NAME_COL, FieldKey.fromParts("plateid", "name")
     );
 
-    public PlateSetExport(){};
+    public PlateSetExport()
+    {
+    }
 
     // Returns the base set of columns as well as the metadata columns included on default plate view
     private Collection<ColumnInfo> getWellColumns(TableInfo wellTable, List<FieldKey> includedMetaDataCols)
@@ -56,11 +56,11 @@ public class PlateSetExport
     private Object[] getDataRow(String prefix, Results rs, List<FieldKey> includedMetaDataCols) throws SQLException
     {
         List<Object> baseColumns = new ArrayList<>(
-                Arrays.asList(
-                        rs.getString(FKMap.get(PLATE_NAME_COL)),
-                        rs.getString(FKMap.get(WellTable.POSITION_COL)),
-                        rs.getInt(FKMap.get(WellTable.ROW_COL)) * rs.getInt(FKMap.get(WellTable.COL_COL)) + "-well"
-                )
+            Arrays.asList(
+                rs.getString(FKMap.get(PLATE_NAME_COL)),
+                rs.getString(FKMap.get(WellTable.Column.Position.name())),
+                rs.getInt(FKMap.get(WellTable.Column.Row.name())) * rs.getInt(FKMap.get(WellTable.Column.Col.name())) + "-well"
+            )
         );
 
         if (!prefix.equals(PlateSetExport.DESTINATION))
@@ -96,11 +96,11 @@ public class PlateSetExport
     }
 
     public List<Object[]> getWorklist(
-            TableInfo wellTable,
-            int sourcePlateSetId,
-            int destinationPlateSetId,
-            List<FieldKey> sourceIncludedMetadataCols,
-            List<FieldKey> destinationIncludedMetadataCols
+        TableInfo wellTable,
+        int sourcePlateSetId,
+        int destinationPlateSetId,
+        List<FieldKey> sourceIncludedMetadataCols,
+        List<FieldKey> destinationIncludedMetadataCols
     )
     {
         List<Object[]> plateDataRows = new ArrayList<>();

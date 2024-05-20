@@ -23,6 +23,7 @@ import {
     fetchListDesign,
     getListIdFromDomainId,
     BeforeUnload,
+    withServerContext,
 } from '@labkey/components';
 
 import '../DomainDesigner.scss';
@@ -37,7 +38,7 @@ interface State {
     model?: ListModel;
 }
 
-export class App extends React.Component<Props, State> {
+export class ListDesigner extends React.Component<Props, State> {
     private _dirty = false;
 
     readonly state: State = { isLoadingModel: true };
@@ -152,3 +153,5 @@ export class App extends React.Component<Props, State> {
         );
     }
 }
+
+export const App = withServerContext(ListDesigner);

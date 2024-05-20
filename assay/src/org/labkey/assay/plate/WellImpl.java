@@ -19,17 +19,13 @@ package org.labkey.assay.plate;
 import org.labkey.api.assay.plate.PositionImpl;
 import org.labkey.api.assay.plate.Well;
 
-/**
- * User: brittp
-* Date: Oct 20, 2006
-* Time: 10:25:20 AM
-*/
 public class WellImpl extends PositionImpl implements Well
 {
-    private Double _value;
     private Double _dilution;
-    protected PlateImpl _plate;
     private boolean _excluded;
+    protected PlateImpl _plate;
+    private Integer _sampleId;
+    private Double _value;
 
     public WellImpl()
     {
@@ -66,13 +62,13 @@ public class WellImpl extends PositionImpl implements Well
     @Override
     public double getMean()
     {
-        return  _excluded ? Double.NaN : _value;
+        return _excluded ? Double.NaN : _value;
     }
 
     @Override
     public double getMin()
     {
-        return  _excluded ? Double.NaN : _value;
+        return _excluded ? Double.NaN : _value;
     }
 
     @Override
@@ -108,5 +104,16 @@ public class WellImpl extends PositionImpl implements Well
     public void setExcluded(boolean excluded)
     {
         _excluded = excluded;
+    }
+
+    @Override
+    public Integer getSampleId()
+    {
+        return _sampleId;
+    }
+
+    public void setSampleId(Integer sampleId)
+    {
+        _sampleId = sampleId;
     }
 }

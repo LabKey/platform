@@ -377,7 +377,9 @@ public class TreatmentManager
     public Integer saveAssaySpecimen(Container container, User user, AssaySpecimenConfigImpl assaySpecimen) throws Exception
     {
         TableInfo assaySpecimenTable = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.ASSAY_SPECIMEN_TABLE_NAME);
-        return saveStudyDesignRow(container, user, assaySpecimenTable, assaySpecimen.serialize(), assaySpecimen.isNew() ? null : assaySpecimen.getRowId(), "RowId", true);
+        Integer ret = saveStudyDesignRow(container, user, assaySpecimenTable, assaySpecimen.serialize(), assaySpecimen.isNew() ? null : assaySpecimen.getRowId(), "RowId", true);
+        StudyManager.getInstance().clearAssaySpecimenCache(container);
+        return ret;
     }
 
     public Integer saveAssaySpecimenVisit(Container container, User user, AssaySpecimenVisitImpl assaySpecimenVisit) throws Exception
