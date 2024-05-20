@@ -45,7 +45,6 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.security.User;
-import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenQuerySchema;
 import org.labkey.api.specimen.SpecimenSchema;
@@ -83,11 +82,6 @@ import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
 
-/**
- * User: brittp
- * Date: Aug 23, 2006
- * Time: 3:38:44 PM
- */
 public class SpecimenQueryView extends BaseSpecimenQueryView
 {
     public enum Mode

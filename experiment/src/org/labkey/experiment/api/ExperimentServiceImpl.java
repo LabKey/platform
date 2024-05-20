@@ -299,7 +299,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     private final Cache<String, ExpProtocolImpl> PROTOCOL_LSID_CACHE = DatabaseCache.get(getExpSchema().getScope(), CacheManager.UNLIMITED, CacheManager.HOUR, "Protocol by LSID",
         (key, argument) -> toExpProtocol(new TableSelector(getTinfoProtocol(), new SimpleFilter(FieldKey.fromParts("LSID"), key), null).getObject(Protocol.class)));
-    static final Cache<String, ExperimentRun> EXPERIMENT_RUN_CACHE = DatabaseCache.get(getExpSchema().getScope(), CacheManager.UNLIMITED, "Experiment Runs", new ExperimentRunCacheLoader());
+    private final Cache<String, ExperimentRun> EXPERIMENT_RUN_CACHE = DatabaseCache.get(getExpSchema().getScope(), getTinfoExperimentRun().getCacheSize(), "Experiment Run by LSID", new ExperimentRunCacheLoader());
 
     private final Cache<String, SortedSet<DataClass>> dataClassCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Data classes", (containerId, argument) ->
     {
@@ -3883,11 +3883,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public TableInfo getTinfoExperimentRun()
     {
-        return getTableInfoExperimentRun();
-    }
-
-    private static TableInfo getTableInfoExperimentRun()
-    {
         return getExpSchema().getTable("ExperimentRun");
     }
 
@@ -4147,10 +4142,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return ExpExperimentImpl.fromExperiments(new TableSelector(getTinfoExperiment(), filter, sort).getArray(Experiment.class));
     }
 
-    public ExperimentRun getExperimentRun(String LSID)
+    public ExperimentRun getExperimentRun(String lsid)
     {
-        ExperimentRun runOld = getExperimentRunOld(LSID);
-        ExperimentRun runNew = getExperimentRunNew(LSID);
+        ExperimentRun runOld = getExperimentRunOld(lsid);
+        ExperimentRun runNew = getExperimentRunNew(lsid);
 
         if (null != runOld)
         {
@@ -4196,13 +4191,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return EXPERIMENT_RUN_CACHE.get(LSID);
     }
 
-    private static class ExperimentRunCacheLoader implements CacheLoader<String, ExperimentRun>
+    private class ExperimentRunCacheLoader implements CacheLoader<String, ExperimentRun>
     {
         @Override
         public ExperimentRun load(@NotNull String lsid, @Nullable Object argument)
         {
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("LSID"), lsid);
-            return new TableSelector(getTableInfoExperimentRun(), filter, null).getObject(ExperimentRun.class);
+            return new TableSelector(getTinfoExperimentRun(), filter, null).getObject(ExperimentRun.class);
         }
     }
 
@@ -4221,6 +4216,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     public void clearExperimentRunCache()
     {
         EXPERIMENT_RUN_CACHE.clear();
+    }
+
+    @Override
+    public void invalidateExperimentRun(String lsid)
+    {
+        EXPERIMENT_RUN_CACHE.remove(lsid);
     }
 
     @Override

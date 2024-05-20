@@ -43,7 +43,6 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.specimen.DefaultSpecimenTablesTemplate;
 import org.labkey.api.specimen.SpecimenColumns;
-import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.importer.SimpleSpecimenImporter;
@@ -62,6 +61,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.specimen.pipeline.SpecimenReloadJob;
+import org.labkey.specimen.requirements.SpecimenRequestRequirementProvider;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -497,9 +497,7 @@ public class SpecimenServiceImpl implements SpecimenService
         Table.delete(SpecimenSchema.get().getTableInfoSampleAvailabilityRule(), containerFilter);
         assert set.add(SpecimenSchema.get().getTableInfoSampleAvailabilityRule());
 
-        SpecimenMigrationService SMS = SpecimenMigrationService.get();
-        if (null != SMS)
-            SMS.purgeRequestRequirementsAndActors(c);
+        SpecimenRequestRequirementProvider.get().purgeContainer(c);
         assert set.add(SpecimenSchema.get().getTableInfoSampleRequestRequirement());
         assert set.add(SpecimenSchema.get().getTableInfoSampleRequestActor());
 
@@ -535,7 +533,6 @@ public class SpecimenServiceImpl implements SpecimenService
         // VIEW: if this view gets removed, remove this line
         assert set.add(SpecimenSchema.get().getSchema().getTable("LockedSpecimens"));
 
-        if (null != SMS)
-            SMS.clearGroupedValuesForColumn(c);
+        SpecimenRequestManager.get().clearGroupedValuesForColumn(c);
     }
 }

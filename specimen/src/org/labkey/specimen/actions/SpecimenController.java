@@ -1,5 +1,12 @@
 package org.labkey.specimen.actions;
 
+import jakarta.mail.Address;
+import jakarta.mail.Message;
+import jakarta.mail.internet.AddressException;
+import jakarta.mail.internet.InternetAddress;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -25,7 +32,30 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.attachments.ByteArrayAttachmentFile;
 import org.labkey.api.audit.TransactionAuditProvider;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.BeanViewForm;
+import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.ExcelWriter;
+import org.labkey.api.data.MenuButton;
+import org.labkey.api.data.ObjectFactory;
+import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SimpleDisplayColumn;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.TSVGridWriter;
+import org.labkey.api.data.TSVWriter;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
@@ -47,7 +77,6 @@ import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -70,7 +99,6 @@ import org.labkey.api.specimen.security.permissions.ManageRequestSettingsPermiss
 import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
 import org.labkey.api.specimen.settings.DisplaySettings;
 import org.labkey.api.specimen.settings.RepositorySettings;
-import org.labkey.api.specimen.settings.RequestNotificationSettings;
 import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.specimen.settings.StatusSettings;
 import org.labkey.api.study.CohortFilter;
@@ -147,6 +175,7 @@ import org.labkey.specimen.security.permissions.ManageRequestStatusesPermission;
 import org.labkey.specimen.security.permissions.ManageRequestsPermission;
 import org.labkey.specimen.security.permissions.ManageSpecimenActorsPermission;
 import org.labkey.specimen.security.permissions.SetSpecimenCommentsPermission;
+import org.labkey.specimen.settings.RequestNotificationSettings;
 import org.labkey.specimen.view.NotificationBean;
 import org.labkey.specimen.view.SpecimenRequestNotificationEmailTemplate;
 import org.labkey.specimen.view.SpecimenSearchWebPart;
@@ -157,13 +186,6 @@ import org.springframework.validation.ObjectError;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
-import jakarta.mail.Address;
-import jakarta.mail.Message;
-import jakarta.mail.internet.AddressException;
-import jakarta.mail.internet.InternetAddress;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -335,7 +357,7 @@ public class SpecimenController extends SpringActionController
 
     public void ensureSpecimenRequestsConfigured(boolean checkExistingStatuses)
     {
-        if (!SettingsManager.get().isSpecimenRequestEnabled(getContainer(), checkExistingStatuses))
+        if (!org.labkey.specimen.settings.SettingsManager.get().isSpecimenRequestEnabled(getContainer(), checkExistingStatuses))
             throw new RedirectException(new ActionURL(SpecimenRequestConfigRequiredAction.class, getContainer()));
     }
 
@@ -859,7 +881,7 @@ public class SpecimenController extends SpringActionController
                 groupings.add(form.getGrouping1());
                 groupings.add(form.getGrouping2());
                 settings.setSpecimenWebPartGroupings(groupings);
-                SettingsManager.get().saveRepositorySettings(container, settings);
+                org.labkey.specimen.settings.SettingsManager.get().saveRepositorySettings(container, settings);
                 response.put("success", true);
                 return response;
             }
@@ -1464,7 +1486,7 @@ public class SpecimenController extends SpringActionController
             // try to get the settings from the form, just in case this is a reshow:
             RequestNotificationSettings settings = form;
             if (settings == null || settings.getReplyTo() == null)
-                settings = SettingsManager.get().getRequestNotificationSettings(getContainer());
+                settings = org.labkey.specimen.settings.SettingsManager.get().getRequestNotificationSettings(getContainer());
 
             return new JspView<>("/org/labkey/specimen/view/manageNotifications.jsp", settings, errors);
         }
@@ -1491,7 +1513,7 @@ public class SpecimenController extends SpringActionController
             if (errors.hasErrors())
                 return false;
 
-            SettingsManager.get().saveRequestNotificationSettings(getContainer(), settings);
+            org.labkey.specimen.settings.SettingsManager.get().saveRequestNotificationSettings(getContainer(), settings);
             return true;
         }
 
@@ -1533,7 +1555,7 @@ public class SpecimenController extends SpringActionController
         public boolean handlePost(DisplaySettingsForm form, BindException errors)
         {
             DisplaySettings settings = form.getBean();
-            SettingsManager.get().saveDisplaySettings(getContainer(), settings);
+            org.labkey.specimen.settings.SettingsManager.get().saveDisplaySettings(getContainer(), settings);
 
             return true;
         }
@@ -1654,7 +1676,7 @@ public class SpecimenController extends SpringActionController
             settings.setSimple(form.isSimple());
             settings.setEnableRequests(!form.isSimple() && form.isEnableRequests());
             settings.setSpecimenDataEditable(!form.isSimple() && form.isSpecimenDataEditable());
-            SettingsManager.get().saveRepositorySettings(getContainer(), settings);
+            org.labkey.specimen.settings.SettingsManager.get().saveRepositorySettings(getContainer(), settings);
 
             return true;
         }
@@ -1852,7 +1874,7 @@ public class SpecimenController extends SpringActionController
 
         private void createDefaultRequirement(Integer actorId, String description, SpecimenRequestRequirementType type)
         {
-            if (actorId != null && actorId.intValue() > 0 && description != null && description.length() > 0)
+            if (actorId != null && actorId.intValue() > 0 && description != null && !description.isEmpty())
             {
                 SpecimenRequestRequirement requirement = new SpecimenRequestRequirement();
                 requirement.setContainer(getContainer());
@@ -1866,7 +1888,7 @@ public class SpecimenController extends SpringActionController
         @Override
         public ActionURL getSuccessURL(DefaultRequirementsForm form)
         {
-            if (form.getNextPage() != null && form.getNextPage().length() > 0)
+            if (form.getNextPage() != null && !form.getNextPage().isEmpty())
                 return new ActionURL(form.getNextPage());
             else
                 return getManageStudyURL();
@@ -3034,7 +3056,7 @@ public class SpecimenController extends SpringActionController
             if (settings.isUseShoppingCart() != form.isUseShoppingCart())
             {
                 settings.setUseShoppingCart(form.isUseShoppingCart());
-                SettingsManager.get().saveStatusSettings(getContainer(), settings);
+                org.labkey.specimen.settings.SettingsManager.get().saveStatusSettings(getContainer(), settings);
             }
             return true;
         }
@@ -3042,7 +3064,7 @@ public class SpecimenController extends SpringActionController
         @Override
         public ActionURL getSuccessURL(StatusEditForm form)
         {
-            if (form.getNextPage() != null && form.getNextPage().length() > 0)
+            if (form.getNextPage() != null && !form.getNextPage().isEmpty())
                 return new ActionURL(form.getNextPage());
             else
                 return getManageStudyURL();
@@ -3672,7 +3694,7 @@ public class SpecimenController extends SpringActionController
 
     private void sendNewRequestNotifications(SpecimenRequest request, BindException errors) throws Exception
     {
-        RequestNotificationSettings settings = SettingsManager.get().getRequestNotificationSettings(request.getContainer());
+        RequestNotificationSettings settings = org.labkey.specimen.settings.SettingsManager.get().getRequestNotificationSettings(request.getContainer());
         Address[] notify = settings.getNewRequestNotifyAddresses();
         if (notify != null && notify.length > 0)
         {
@@ -3686,7 +3708,7 @@ public class SpecimenController extends SpringActionController
 
     private void sendNotification(DefaultRequestNotification notification, boolean includeInactiveUsers, BindException errors) throws Exception
     {
-        RequestNotificationSettings settings = SettingsManager.get().getRequestNotificationSettings(getContainer());
+        RequestNotificationSettings settings = org.labkey.specimen.settings.SettingsManager.get().getRequestNotificationSettings(getContainer());
 
         SpecimenRequest specimenRequest = notification.getSpecimenRequest();
         String specimenList = null;
@@ -4622,7 +4644,7 @@ public class SpecimenController extends SpringActionController
 
         public boolean isDefaultNotification(ActorNotificationRecipientSet notification)
         {
-            RequestNotificationSettings settings = SettingsManager.get().getRequestNotificationSettings(getContainer());
+            RequestNotificationSettings settings = org.labkey.specimen.settings.SettingsManager.get().getRequestNotificationSettings(getContainer());
             if (settings.getDefaultEmailNotifyEnum() == RequestNotificationSettings.DefaultEmailNotifyEnum.All)
                 return true;        // All should be checked
             else if (settings.getDefaultEmailNotifyEnum() == RequestNotificationSettings.DefaultEmailNotifyEnum.None)
