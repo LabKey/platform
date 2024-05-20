@@ -14,6 +14,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.ListofMapsDataIterator;
 import org.labkey.api.exp.ExperimentException;
@@ -528,14 +529,11 @@ public class DataGenerator<T extends DataGenerator.Config>
         if (limit <= 0)
             return null;
 
-        SQLFragment sql = new SQLFragment("SELECT " + columns + " FROM ")
-                .append(tableInfo, "dc")
-                .append(" LIMIT ")
-                .appendValue(limit);
-        if (totalCount > limit)
-            sql.append(" OFFSET ")
-                    .appendValue(randomLong(0, totalCount-limit));
-        return sql;
+        SqlDialect dialect = tableInfo.getSchema().getSqlDialect();
+        SQLFragment sql = new SQLFragment("SELECT " + columns);
+        SQLFragment fromSql = new SQLFragment(" FROM ").append(tableInfo, "dc");
+
+        return dialect.limitRows(sql, fromSql, null, dialect.isSqlServer() ? "ORDER By RowId" : null, null, limit, totalCount > limit ? randomLong(0, totalCount-limit) : 0);
     }
 
     public List<Map<String, Object>> selectExistingSamples(ExpSampleType sampleType, int limit, long totalSampleCount)
