@@ -12,20 +12,21 @@ import org.labkey.api.assay.plate.PlateSet;
 import org.labkey.api.assay.plate.PlateSetType;
 import org.labkey.api.assay.plate.PlateType;
 import org.labkey.api.assay.plate.Position;
+import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.generator.DataGenerator;
-import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.gwt.client.assay.AssayException;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ViewContext;
+import org.labkey.assay.TsvAssayProvider;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.PlateSetImpl;
+import org.labkey.assay.plate.query.WellTable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -258,14 +259,15 @@ public class PlateSetDataGenerator extends DataGenerator<PlateSetDataGenerator.C
                     Map<String, Object> rowMap = new HashMap<>();
 
                     rowMap.put("wellLocation", position.getDescription());
-                    rowMap.put("sampleId", ids.get(sampleIdx++));
+                    rowMap.put(WellTable.Column.Type.name(), WellGroup.Type.SAMPLE.name());
+                    rowMap.put(WellTable.Column.SampleId.name(), ids.get(sampleIdx++));
 
                     for (String name : wellProperties)
                     {
                         if (name.startsWith(INT_PROP_PREFIX))
-                            rowMap.put("properties/" + name, randomInt(1, 5000));
+                            rowMap.put(WellTable.Column.Properties.name() + "/" + name, randomInt(1, 5000));
                         else
-                            rowMap.put("properties/" + name, randomDouble(1, 100000));
+                            rowMap.put(WellTable.Column.Properties.name() + "/" + name, randomDouble(1, 100000));
                     }
                     rows.add(rowMap);
                 }
@@ -280,12 +282,11 @@ public class PlateSetDataGenerator extends DataGenerator<PlateSetDataGenerator.C
     {
         if (_assayPlateSets.isEmpty())
             throw new ValidationException("There are no assay plate sets to import");
-        else
-            _log.info(String.format("Importing data for %d plate sets.", _assayPlateSets.size()));
+        _log.info(String.format("Importing data for %d plate sets.", _assayPlateSets.size()));
 
-        AssayProvider provider = AssayService.get().getProvider("General");
+        AssayProvider provider = AssayService.get().getProvider(TsvAssayProvider.NAME);
         if (provider == null)
-            throw new ValidationException("No provider for 'General' assays.");
+            throw new ValidationException(String.format("No provider for \"%s\" assays.", TsvAssayProvider.NAME));
 
         ExpProtocol assayToImport = null;
         for (ExpProtocol protocol : AssayService.get().getAssayProtocols(getContainer(), provider))
@@ -297,34 +298,32 @@ public class PlateSetDataGenerator extends DataGenerator<PlateSetDataGenerator.C
             }
         }
 
-        if (assayToImport != null)
-        {
-            ViewContext context = new ViewContext();
-            context.setUser(getUser());
-            context.setContainer(getContainer());
-
-            DomainProperty measure = provider.getResultsDomain(assayToImport)
-                    .getProperties()
-                    .stream()
-                    .filter(dp -> dp.getName().startsWith("FloatField")).findFirst().orElse(null);
-
-            for (PlateSet plateSet : _assayPlateSets)
-            {
-                checkAlive(_job);
-                List<Map<String, Object>> rawData = createRunData(plateSet, measure);
-                var factory = provider.createRunUploadFactory(assayToImport, context)
-                        .setRunProperties(Map.of(AssayPlateMetadataService.PLATE_SET_COLUMN_NAME, plateSet.getRowId()))
-                        .setRawData(rawData)
-                        .setUploadedData(Collections.emptyMap());
-                Map<Object, String> outputData = new HashMap<>();
-
-                DefaultAssayRunCreator.generateResultData(getUser(), getContainer(), provider, rawData, outputData, null);
-                factory.setOutputDatas(outputData);
-                provider.getRunCreator().saveExperimentRun(factory.create(), null);
-            }
-        }
-        else
+        if (assayToImport == null)
             throw new ValidationException("No protocols with plate support enabled");
+
+        ViewContext context = new ViewContext();
+        context.setUser(getUser());
+        context.setContainer(getContainer());
+
+        DomainProperty measure = provider.getResultsDomain(assayToImport)
+                .getProperties()
+                .stream()
+                .filter(dp -> dp.getName().startsWith("FloatField")).findFirst().orElse(null);
+
+        for (PlateSet plateSet : _assayPlateSets)
+        {
+            checkAlive(_job);
+            List<Map<String, Object>> rawData = createRunData(plateSet, measure);
+            var factory = provider.createRunUploadFactory(assayToImport, context)
+                    .setRunProperties(Map.of(AssayPlateMetadataService.PLATE_SET_COLUMN_NAME, plateSet.getRowId()))
+                    .setRawData(rawData)
+                    .setUploadedData(Collections.emptyMap());
+            Map<Object, String> outputData = new HashMap<>();
+
+            DefaultAssayRunCreator.generateResultData(getUser(), getContainer(), provider, rawData, outputData, null);
+            factory.setOutputDatas(outputData);
+            provider.getRunCreator().saveExperimentRun(factory.create(), null);
+        }
     }
 
     private List<Map<String, Object>> createRunData(PlateSet plateSet, @Nullable DomainProperty measure)
@@ -437,7 +436,7 @@ public class PlateSetDataGenerator extends DataGenerator<PlateSetDataGenerator.C
     public static class Driver implements DataGenerationDriver
     {
         @Override
-        public List<CPUTimer> generateData(PipelineJob job, Properties properties) throws ValidationException, AssayException, ExperimentException
+        public List<CPUTimer> generateData(PipelineJob job, Properties properties)
         {
             PlateSetDataGenerator generator = new PlateSetDataGenerator(job, new PlateSetDataGenerator.Config(properties));
             generator.generatePlateSets();
