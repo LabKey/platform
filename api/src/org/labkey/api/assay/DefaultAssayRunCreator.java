@@ -211,6 +211,9 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             context.setPipelineJobGUID(pipelineJob.getJobGUID());
 
+            AssayResultsFileWriter resultsFileWriter = new AssayResultsFileWriter(context.getProtocol(), null, pipelineJob.getJobGUID());
+            resultsFileWriter.savePostedFiles(context);
+
             // Don't queue the job until the transaction is committed, since otherwise the thread
             // that's running the job might start before it can access the job's row in the database.
             ExperimentService.get().getSchema().getScope().addCommitTask(() -> {
@@ -369,7 +372,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             else
                 savePropertyObject(run, container, runProperties, context.getUser());
 
-            AssayResultsFileWriter resultsFileWriter = new AssayResultsFileWriter(run);
+            AssayResultsFileWriter resultsFileWriter = new AssayResultsFileWriter(context.getProtocol(), run, null);
             resultsFileWriter.savePostedFiles(context);
             QueryService.get().setEnvironment(QueryService.Environment.EXP_RUN, run);
 
@@ -437,7 +440,15 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             return batch;
         }
-        catch (BatchValidationException | IOException e) // TODO is this right for IOException?
+        catch (ExperimentException e)
+        {
+            // clean up the run results file dir here if it was created, for non-async imports
+            AssayResultsFileWriter resultsFileWriter = new AssayResultsFileWriter(context.getProtocol(), run, null);
+            resultsFileWriter.cleanupPostedFiles(context);
+
+            throw e;
+        }
+        catch (BatchValidationException | IOException e)
         {
             throw new ExperimentException(e);
         }
