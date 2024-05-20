@@ -357,7 +357,7 @@ public class SpecimenController extends SpringActionController
 
     public void ensureSpecimenRequestsConfigured(boolean checkExistingStatuses)
     {
-        if (!org.labkey.specimen.settings.SettingsManager.get().isSpecimenRequestEnabled(getContainer(), checkExistingStatuses))
+        if (!org.labkey.specimen.settings.SettingsManager.get().isSpecimenRequestEnabled(getContainer(), checkExistingStatuses, getUser()))
             throw new RedirectException(new ActionURL(SpecimenRequestConfigRequiredAction.class, getContainer()));
     }
 

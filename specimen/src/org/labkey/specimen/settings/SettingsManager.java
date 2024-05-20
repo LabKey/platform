@@ -3,13 +3,12 @@ package org.labkey.specimen.settings;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.specimen.SpecimenRequestStatus;
-import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.settings.DisplaySettings;
 import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.api.specimen.settings.StatusSettings;
-import org.labkey.api.study.QueryHelper;
 import org.labkey.specimen.SpecimenRequestManager;
 
 import java.util.List;
@@ -17,8 +16,6 @@ import java.util.Map;
 
 public class SettingsManager
 {
-    private final QueryHelper<SpecimenRequestStatus> _requestStatusHelper;
-
     private static final SettingsManager INSTANCE = new SettingsManager();
 
     public static SettingsManager get()
@@ -28,7 +25,6 @@ public class SettingsManager
 
     private SettingsManager()
     {
-        _requestStatusHelper = new QueryHelper<>(()-> SpecimenSchema.get().getTableInfoSampleRequestStatus(), SpecimenRequestStatus.class);
     }
 
     public RequestNotificationSettings getRequestNotificationSettings(Container container)
@@ -81,12 +77,12 @@ public class SettingsManager
         SpecimenRequestManager.get().clearGroupedValuesForColumn(container);     // May have changed groupings
     }
 
-    public boolean isSpecimenRequestEnabled(Container container)
+    public boolean isSpecimenRequestEnabled(Container container, User user)
     {
-        return isSpecimenRequestEnabled(container, true);
+        return isSpecimenRequestEnabled(container, true, user);
     }
 
-    public boolean isSpecimenRequestEnabled(Container container, boolean checkExistingStatuses)
+    public boolean isSpecimenRequestEnabled(Container container, boolean checkExistingStatuses, User user)
     {
         if (!checkExistingStatuses)
         {
@@ -96,7 +92,7 @@ public class SettingsManager
         {
             if (!org.labkey.api.specimen.settings.SettingsManager.get().getRepositorySettings(container).isEnableRequests())
                 return false;
-            List<SpecimenRequestStatus> statuses = _requestStatusHelper.getList(container, "SortOrder");
+            List<SpecimenRequestStatus> statuses = SpecimenRequestManager.get().getRequestStatuses(container, user);
             return (statuses != null && statuses.size() > 1);
         }
     }

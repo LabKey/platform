@@ -62,16 +62,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * User: kevink
- * Date: 6/13/13
- */
 public class SpecimenSettingsImporter implements SimpleStudyImporter
 {
     @Override
     public Timing getTiming()
     {
-        return Timing.Late; // Can't setup specimen request actors until the locations have been created
+        return Timing.Late; // Can't set up specimen request actors until the locations have been created
     }
 
     @Override

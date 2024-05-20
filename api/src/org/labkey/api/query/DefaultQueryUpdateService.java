@@ -20,7 +20,6 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentFile;
-import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
@@ -335,9 +334,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
 
         try
         {
-            Map<String, Object> ret = Table.insert(user, getDbTable(), row);
-            if (getDbTable().getName().equals("AssaySpecimen")) { DbCache.trackRemove(getDbTable()); }
-            return ret;
+            return Table.insert(user, getDbTable(), row);
         }
         catch (RuntimeValidationException e)
         {
@@ -566,9 +563,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             }
         }
 
-        Map<String, Object> ret = Table.update(user, getDbTable(), row, keys);
-        if (getDbTable().getName().equals("AssaySpecimen")) DbCache.trackRemove(getDbTable()); // Handled in caller (TreatmentManager.saveAssaySpecimen())
-        return ret;
+        return Table.update(user, getDbTable(), row, keys); // Cache-invalidation handled in caller (TreatmentManager.saveAssaySpecimen())
     }
 
     // Get value from row map where the keys are column names.

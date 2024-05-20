@@ -38,7 +38,6 @@ import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.LabKeyCollectors;
@@ -209,7 +208,6 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -218,7 +216,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.WeakHashMap;
-import java.util.stream.Collectors;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 import static org.labkey.study.query.StudyQuerySchema.PERSONNEL_TABLE_NAME;
@@ -408,17 +405,9 @@ public class StudyManager
                 DatasetDefinition.class)
         {
             @Override
-            public void clearCache(Container c)
-            {
-                super.clearCache(c);
-                StudyCache.track(getTableInfo(), "Clear container " + c);
-            }
-
-            @Override
             public void clearCache(DatasetDefinition obj)
             {
                 super.clearCache(obj.getContainer());
-                StudyCache.track(getTableInfo(), "Clear container " + obj.getContainer() + " for dataset " + obj);
             }
         };
 
@@ -516,20 +505,7 @@ public class StudyManager
 
         private static Object getCached(TableInfo tinfo, Container c, Object cacheKey)
         {
-            Object oldObj = DbCache.get(tinfo, StudyCache.getCacheName(c, cacheKey));
-            DatabaseCache<String, Object> cache = StudyCache.getCache(tinfo, false);
-            Object newObj = cache != null ? cache.get(StudyCache.getCacheName(c, cacheKey)) : null;
-
-            if (!Objects.equals(oldObj, newObj))
-            {
-                if (newObj instanceof List || oldObj instanceof List)
-                {
-                    DbCache.logUnmatched();
-                    throw new IllegalStateException(oldObj + " != " + newObj);
-                }
-            }
-
-            return newObj;
+            return StudyCache.getCache(tinfo).get(StudyCache.getCacheName(c, cacheKey));
         }
     }
 
@@ -1735,7 +1711,6 @@ public class StudyManager
                     try
                     {
                         Table.delete(schema.getTableInfoVisit(), new Object[]{visitStudy.getContainer(), visit.getRowId()});
-                        DbCache.trackRemove(schema.getTableInfoVisit());
                     }
                     finally
                     {
@@ -1768,7 +1743,6 @@ public class StudyManager
     public void updateParticipant(User user, Participant participant)
     {
         Table.update(user, SCHEMA.getTableInfoParticipant(), participant, new Object[]{participant.getContainer().getId(), participant.getParticipantId()});
-        DbCache.trackRemove(SCHEMA.getTableInfoParticipant());
         _participantCache.remove(participant.getContainer());
     }
 
@@ -1894,8 +1868,6 @@ public class StudyManager
         if (!study.equals(visitStudy))
             _visitHelper.clearCache(visitStudy.getContainer());
 
-        DbCache.clear(StudySchema.getInstance().getTableInfoParticipant());
-        DbCache.trackRemove(StudySchema.getInstance().getTableInfoParticipant());
         _participantCache.remove(study.getContainer());
         for (StudyImpl substudy : StudyManager.getInstance().getAncillaryStudies(study.getContainer()))
             clearParticipantVisitCaches(substudy);
@@ -2734,7 +2706,6 @@ public class StudyManager
         unindexDataset(ds);
     }
 
-
     /** delete a dataset type and data
      *  does not clear typeURI as we're about to delete the dataset
      */
@@ -2776,12 +2747,9 @@ public class StudyManager
             for (DatasetDefinition def : getDatasetDefinitions(study))
                 uncache(def);
         // Aggressive, but datasets are cached with container objects that might go stale, for example, when moving a
-        // folder tree to another parent the datasets in subfolders will be left with invalid paths. See FolderTest.
+        // folder tree to another parent, the datasets in subfolders will be left with invalid paths. See FolderTest.
         _datasetHelper.clearCache();
         _cohortHelper.clearCache(c);
-
-        DbCache.clear(StudySchema.getInstance().getTableInfoParticipant());
-        DbCache.trackRemove(StudySchema.getInstance().getTableInfoParticipant());
         _participantCache.remove(c);
 
         for (StudyImpl substudy : StudyManager.getInstance().getAncillaryStudies(c))
@@ -2835,7 +2803,6 @@ public class StudyManager
             Table.delete(SCHEMA.getTableInfoAssaySpecimenVisit(), containerFilter);
             assert deletedTables.add(SCHEMA.getTableInfoAssaySpecimenVisit());
             Table.delete(_assaySpecimenHelper.getTableInfo(), containerFilter);
-            DbCache.trackRemove(_assaySpecimenHelper.getTableInfo());
             _assaySpecimenHelper.clearCache(c);
             assert deletedTables.add(_assaySpecimenHelper.getTableInfo());
 
@@ -2847,15 +2814,12 @@ public class StudyManager
             Table.delete(StudySchema.getInstance().getTableInfoUploadLog(), containerFilter);
             assert deletedTables.add(StudySchema.getInstance().getTableInfoUploadLog());
             Table.delete(_datasetHelper.getTableInfo(), containerFilter);
-            DbCache.trackRemove(_datasetHelper.getTableInfo());
             _datasetHelper.clearCache(c);
             assert deletedTables.add(_datasetHelper.getTableInfo());
             Table.delete(_visitHelper.getTableInfo(), containerFilter);
-            DbCache.trackRemove(_visitHelper.getTableInfo());
             _visitHelper.clearCache(c);
             assert deletedTables.add(_visitHelper.getTableInfo());
             Table.delete(_studyHelper.getTableInfo(), containerFilter);
-            DbCache.trackRemove(_studyHelper.getTableInfo());
             _studyHelper.clearCache(c);
             assert deletedTables.add(_studyHelper.getTableInfo());
 
@@ -2878,11 +2842,9 @@ public class StudyManager
             Table.delete(StudySchema.getInstance().getTableInfoVisitAliases(), containerFilter);
             assert deletedTables.add(StudySchema.getInstance().getTableInfoVisitAliases());
             Table.delete(SCHEMA.getTableInfoParticipant(), containerFilter);
-            DbCache.trackRemove(SCHEMA.getTableInfoParticipant());
             _participantCache.remove(c);
             assert deletedTables.add(SCHEMA.getTableInfoParticipant());
             Table.delete(_cohortHelper.getTableInfo(), containerFilter);
-            DbCache.trackRemove(_cohortHelper.getTableInfo());
             _cohortHelper.clearCache(c);
             assert deletedTables.add(StudySchema.getInstance().getTableInfoCohort());
             Table.delete(StudySchema.getInstance().getTableInfoParticipantView(), containerFilter);
@@ -4148,32 +4110,11 @@ public class StudyManager
     /** non-permission checking, non-recursive */
     private Map<String, Participant> getParticipantMap(Study study)
     {
-        Map<String, Participant> participantMap = (Map<String, Participant>) DbCache.get(StudySchema.getInstance().getTableInfoParticipant(), getParticipantCacheKey(study.getContainer()));
-        if (participantMap == null)
-        {
-            SimpleFilter filter = SimpleFilter.createContainerFilter(study.getContainer());
-            ArrayList<Participant> participants = new TableSelector(StudySchema.getInstance().getTableInfoParticipant(),
-                    filter, new Sort("ParticipantId")).getArrayList(Participant.class);
-            participantMap = new LinkedHashMap<>();
-            for (Participant participant : participants)
-                participantMap.put(participant.getParticipantId(), participant);
-            participantMap = Collections.unmodifiableMap(participantMap);
-            DbCache.put(StudySchema.getInstance().getTableInfoParticipant(), getParticipantCacheKey(study.getContainer()), participantMap, CacheManager.HOUR);
-        }
-        Map<String, Participant> participantMapNew = _participantCache.get(study.getContainer());
-
-        if (!Objects.equals(participantMap, participantMapNew))
-        {
-            DbCache.logUnmatched();
-            throw new IllegalStateException(participantMap + " != " + participantMapNew);
-        }
-
-        return participantMapNew;
+        return _participantCache.get(study.getContainer());
     }
 
     public void clearParticipantCache(Container container)
     {
-        DbCache.remove(StudySchema.getInstance().getTableInfoParticipant(), getParticipantCacheKey(container));
         _participantCache.remove(container);
     }
 
