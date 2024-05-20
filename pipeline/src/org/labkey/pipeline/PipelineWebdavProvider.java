@@ -27,6 +27,7 @@ import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Path;
 import org.labkey.api.webdav.FileSystemResource;
 import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.webdav.WebdavResource;
@@ -92,7 +93,7 @@ public class PipelineWebdavProvider implements WebdavService.Provider
 
         PipelineFolderResource(WebdavResource parent, Container c, PipeRootImpl root)
         {
-            super(parent.getPath(), FileContentService.PIPELINE_LINK);
+            super(parent.getPath(), Path.toPathPart(FileContentService.PIPELINE_LINK));
 
             this.c = c;
             _containerId = c.getId();
@@ -133,7 +134,7 @@ public class PipelineWebdavProvider implements WebdavService.Provider
         }
 
         @Override
-        public FileSystemResource find(String name)
+        public FileSystemResource find(Path.Part name)
         {
             if (_files != null)
                 return new FileSystemResource(this, name);

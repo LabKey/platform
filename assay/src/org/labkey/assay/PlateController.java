@@ -16,6 +16,7 @@
 package org.labkey.assay;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
@@ -233,36 +234,44 @@ public class PlateController extends SpringActionController
         public ModelAndView getView(DesignerForm form, BindException errors)
         {
             Map<String, String> properties = new HashMap<>();
+            String templateName = null;
+            Integer plateId = null;
+
             if (form.getTemplateName() != null)
             {
+                plateId = form.getPlateId();
+                templateName = form.getTemplateName();
+            }
+            else if (form.getPlateId() != null)
+            {
+                Plate plate = PlateManager.get().getPlate(getContainer(), form.getPlateId());
+                if (plate != null)
+                {
+                    plateId = plate.getRowId();
+                    templateName = plate.getName();
+                }
+            }
+
+            if (templateName != null)
+            {
                 properties.put("copyTemplate", Boolean.toString(form.isCopy()));
-                properties.put("templateName", form.getTemplateName());
-                if (form.getPlateId() != null)
-                    properties.put("plateId", String.valueOf(form.getPlateId()));
+                properties.put("templateName", templateName);
+                if (plateId != null)
+                    properties.put("plateId", String.valueOf(plateId));
                 if (form.isCopy())
-                    properties.put("defaultPlateName", getUniqueName(getContainer(), form.getTemplateName()));
+                    properties.put("defaultPlateName", getUniqueName(getContainer(), templateName));
                 else
-                    properties.put("defaultPlateName", form.getTemplateName());
+                    properties.put("defaultPlateName", templateName);
             }
+
             if (form.getAssayType() != null)
-            {
                 properties.put("assayTypeName", form.getAssayType());
-            }
-
             if (form.getTemplateType() != null)
-            {
                 properties.put("templateTypeName", form.getTemplateType());
-            }
 
-            properties.put("templateRowCount", "" + form.getRowCount());
-            properties.put("templateColumnCount", "" + form.getColCount());
+            properties.put("templateRowCount", String.valueOf(form.getRowCount()));
+            properties.put("templateColumnCount", String.valueOf(form.getColCount()));
 
-            List<Plate> plates = PlateService.get().getPlates(getContainer());
-            for (int i = 0; i < plates.size(); i++)
-            {
-                Plate plate = plates.get(i);
-                properties.put("templateName[" + i + "]", plate.getName());
-            }
             return new AssayGWTView(gwt.client.org.labkey.plate.designer.client.TemplateDesigner.class, properties);
         }
 
@@ -1050,14 +1059,17 @@ public class PlateController extends SpringActionController
                 List<PlateManager.CreatePlateSetPlate> plates = new ArrayList<>();
                 if (form.isStandaloneAssayPlateCase() || form.isRearrayCase())
                 {
-                    plates = PlateManager.get().getPlateData(getViewContext(), form.getSelectionKey(), form.getPlates(), getContainer());
+                    String selectionKey = StringUtils.trimToNull(form.getSelectionKey());
+                    if (selectionKey == null)
+                    {
+                        errors.reject(ERROR_REQUIRED, "Specifying a \"selectionKey\" is required for this configuration.");
+                        return null;
+                    }
+                    plates = PlateManager.get().getPlateData(getContainer(), selectionKey, form.getPlates());
                 }
                 else if (form.isReplateCase())
                 {
-                    // When replating, we want the new plate names to be auto-generated
-                    plates = PlateManager.get()
-                            .getPlates(form.getParentPlateSetId(), getContainer(), getUser()).stream()
-                            .map(p -> new PlateManager.CreatePlateSetPlate(null, p.plateType(), p.data())).toList();
+                    plates = PlateManager.get().getPlateData(getContainer(), getUser(), form.getParentPlateSetId());
                 }
                 else if (form.isDefaultCase())
                 {

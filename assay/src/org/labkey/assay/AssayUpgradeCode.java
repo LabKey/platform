@@ -9,6 +9,7 @@ import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.plate.AbstractPlateBasedAssayProvider;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateBasedAssayProvider;
+import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -41,6 +42,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -48,6 +50,7 @@ import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.util.Pair;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.PlateSetImpl;
+import org.labkey.assay.plate.TsvPlateLayoutHandler;
 import org.labkey.assay.plate.model.PlateSetLineage;
 import org.labkey.assay.query.AssayDbSchema;
 
@@ -396,7 +399,7 @@ public class AssayUpgradeCode implements UpgradeCode
                         domain.delete(User.getAdminServiceUser());
                     }
 
-                    if (container.getProject() != null && "Biologics".equals(ContainerManager.getFolderTypeName(container.getProject())))
+                    if (isBiologicsFolder(container.getProject()))
                     {
                         // ensure the plate metadata domain for the top level biologics projects
                         if (container.isProject())
@@ -426,6 +429,7 @@ public class AssayUpgradeCode implements UpgradeCode
 
     /**
      * Called from assay-24.005-24.006.sql
+     * Populates
      */
     @SuppressWarnings({"UnusedDeclaration"})
     public static void populatePlateSetPaths(ModuleContext ctx) throws Exception
@@ -483,5 +487,88 @@ public class AssayUpgradeCode implements UpgradeCode
 
             tx.commit();
         }
+    }
+
+    /**
+     * Called from assay-24.007-24.008.sql
+     * This updates the well type to WellGroup.Type.SAMPLE for all wells in Biologics folders that have a value
+     * set for Well.SampleId.
+     */
+    @DeferredUpgrade
+    @SuppressWarnings({"UnusedDeclaration"})
+    public static void populatePlateWellTypes(ModuleContext ctx) throws Exception
+    {
+        if (ctx.isNewInstall())
+            return;
+
+        DbScope scope = AssayDbSchema.getInstance().getSchema().getScope();
+
+        // Determine all containers that have a Plate where Samples are specified in wells
+        SQLFragment sql = new SQLFragment("""
+                SELECT DISTINCT P.Container
+                FROM assay.Well AS W
+                INNER JOIN assay.Plate AS P ON P.RowId = W.PlateId
+                WHERE P.AssayType = ? AND W.SampleId IS NOT NULL
+            """).add(TsvPlateLayoutHandler.TYPE);
+        List<String> containerIds = new SqlSelector(scope, sql).getArrayList(String.class);
+
+        for (String containerId : containerIds)
+        {
+            Container container = ContainerManager.getForId(containerId);
+            if (container == null)
+            {
+                _log.error(String.format("Failed to populate plate well types. Unable to resolve container for entityId \"%s\".", containerId));
+                continue;
+            }
+
+            if (!(isBiologicsFolder(container) || isBiologicsFolder(container.getProject())))
+            {
+                _log.info(String.format("Populating plate well types. Skipping \"%s\" plates in \"%s\".", TsvPlateLayoutHandler.TYPE, container.getPath()));
+                continue;
+            }
+
+            _log.info(String.format("Populating plate well types in \"%s\".", container.getPath()));
+
+
+            try (DbScope.Transaction tx = scope.ensureTransaction())
+            {
+                SQLFragment wellSql = new SQLFragment("""
+                    SELECT W.RowId, W.PlateId
+                    FROM assay.Well AS W
+                    INNER JOIN assay.Plate AS P ON P.RowId = W.PlateId
+                    WHERE P.Container = ? AND P.AssayType = ? AND W.SampleId IS NOT NULL AND W.RowId NOT IN (
+                        SELECT WellId FROM assay.WellGroupPositions AS WGP WHERE WGP.WellId = W.RowId
+                    )
+                """).add(containerId).add(TsvPlateLayoutHandler.TYPE);
+
+                Map<Integer, Map<Integer, PlateManager.WellGroupChange>> wellGroupChanges = new HashMap<>();
+                Collection<Map<String, Object>> sampleWellRows = new SqlSelector(scope, wellSql).getMapCollection();
+                for (Map<String, Object> sampleWellRow : sampleWellRows)
+                {
+                    Integer plateRowId = (Integer) sampleWellRow.get("PlateId");
+                    Integer wellRowId = (Integer) sampleWellRow.get("RowId");
+                    PlateManager.WellGroupChange change = new PlateManager.WellGroupChange(plateRowId, wellRowId, WellGroup.Type.SAMPLE.name(), null);
+
+                    wellGroupChanges.computeIfAbsent(plateRowId, HashMap::new).put(wellRowId, change);
+                }
+
+                if (wellGroupChanges.isEmpty())
+                {
+                    _log.info(String.format("No well group updates for plates in \"%s\".", container.getPath()));
+                    continue;
+                }
+
+                _log.info(String.format("Updating \"%d\" well groups across \"%d\" plates in \"%s\".", sampleWellRows.size(), wellGroupChanges.entrySet().size(), container.getPath()));
+                PlateManager.get().computeWellGroups(container, User.getAdminServiceUser(), wellGroupChanges);
+                _log.info(String.format("Completed well group update in \"%s\".", container.getPath()));
+
+                tx.commit();
+            }
+        }
+    }
+
+    private static boolean isBiologicsFolder(Container container)
+    {
+        return container != null && "Biologics".equals(ContainerManager.getFolderTypeName(container));
     }
 }

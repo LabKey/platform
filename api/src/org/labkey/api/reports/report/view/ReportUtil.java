@@ -71,6 +71,7 @@ import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.thumbnail.ThumbnailService.ImageType;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Path;
 import org.labkey.api.util.ThumbnailUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
@@ -188,7 +189,7 @@ public class ReportUtil
         Resource parent = descriptor.getSourceFile().parent();
         if (null == parent)
             return null;
-        Resource attachmentDir = parent.find(ReportUtil.getSerializedName(r.getDescriptor()));
+        Resource attachmentDir = parent.find(Path.toPathPart(ReportUtil.getSerializedName(r.getDescriptor())));
         if (null == attachmentDir)
             return null;
         String imageFileName = null;
@@ -204,7 +205,7 @@ public class ReportUtil
         if (null == imageFileName)
             return null;
 
-        return attachmentDir.find(imageFileName);
+        return attachmentDir.find(Path.toPathPart(imageFileName));
     }
 
     // Consider: combine these two methods... need standard way to get static thumbnail and icon url

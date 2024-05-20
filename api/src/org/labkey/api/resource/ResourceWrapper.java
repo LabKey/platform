@@ -70,7 +70,7 @@ public class ResourceWrapper implements Resource
     }
 
     @Override
-    public Resource find(String name)
+    public Resource find(Path.Part name)
     {
         return _resource.find(name);
     }

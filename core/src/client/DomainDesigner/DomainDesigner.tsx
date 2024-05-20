@@ -15,7 +15,6 @@
  */
 
 import React from 'react';
-import { Panel } from 'react-bootstrap';
 import { ActionURL, getServerContext } from '@labkey/api';
 import {
     LoadingSpinner,
@@ -29,6 +28,7 @@ import {
     resolveErrorMessage,
     DomainException,
     Modal,
+    withServerContext,
 } from '@labkey/components';
 
 import '../DomainDesigner.scss';
@@ -43,7 +43,7 @@ interface IAppState {
     badDomain: DomainDesign;
 }
 
-export class App extends React.PureComponent<any, Partial<IAppState>> {
+class DomainDesigner extends React.PureComponent<any, Partial<IAppState>> {
     private _dirty: boolean = false;
 
     constructor(props) {
@@ -268,3 +268,5 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
         );
     }
 }
+
+export const App = withServerContext(DomainDesigner);
