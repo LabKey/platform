@@ -221,8 +221,10 @@ public class PipelineManager
 
         try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
         {
-            DbCache.clear(ExperimentService.get().getTinfoExperimentRun());
             new SqlExecutor(PipelineSchema.getInstance().getSchema()).execute(sql);
+            DbCache.clear(ExperimentService.get().getTinfoExperimentRun());
+            DbCache.trackRemove(ExperimentService.get().getTinfoExperimentRun());
+            ExperimentService.get().clearCaches();
 
             ContainerUtil.purgeTable(pipeline.getTableInfoStatusFiles(), container, "Container");
 

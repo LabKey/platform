@@ -96,6 +96,7 @@ public class AssayScheduleImporter extends DefaultStudyDesignImporter implements
                     // assay specimen table
                     StudyQuerySchema.TablePackage assaySpecimenTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.ASSAY_SPECIMEN_TABLE_NAME, null);
                     importTableData(ctx, vf, assaySpecimenTablePackage, _assaySpecimenTransform, null);
+                    StudyManager.getInstance().clearAssaySpecimenCache(assaySpecimenTablePackage.getContainer());
 
                     // assay specimen visit table
                     StudyQuerySchema.TablePackage assaySpecimenVisitTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.ASSAY_SPECIMEN_VISIT_TABLE_NAME, null);

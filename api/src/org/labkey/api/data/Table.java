@@ -632,7 +632,7 @@ public class Table
         //noinspection unchecked
         ObjectFactory<K> f = ObjectFactory.Registry.getFactory((Class<K>)from.getClass());
         if (null == f)
-            throw new IllegalArgumentException("Cound not find a matching object factory.");
+            throw new IllegalArgumentException("Could not find a matching object factory.");
         fields = f.toMap(from, null);
         return _getTableData(table, fields, insert);
     }

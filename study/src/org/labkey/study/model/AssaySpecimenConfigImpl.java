@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Represents an assay/specimen configuration for a study
@@ -277,5 +278,20 @@ public class AssaySpecimenConfigImpl extends AbstractStudyEntity<AssaySpecimenCo
         }
 
         return assay;
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        AssaySpecimenConfigImpl that = (AssaySpecimenConfigImpl) o;
+        return _rowId == that._rowId && Objects.equals(_assayName, that._assayName) && Objects.equals(_dataset, that._dataset) && Objects.equals(_description, that._description) && Objects.equals(_source, that._source) && Objects.equals(_locationId, that._locationId) && Objects.equals(_primaryTypeId, that._primaryTypeId) && Objects.equals(_derivativeTypeId, that._derivativeTypeId) && Objects.equals(_tubeType, that._tubeType) && Objects.equals(_lab, that._lab) && Objects.equals(_sampleType, that._sampleType) && Objects.equals(_sampleQuantity, that._sampleQuantity) && Objects.equals(_sampleUnits, that._sampleUnits);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return Objects.hash(_rowId, _assayName, _dataset, _description, _source, _locationId, _primaryTypeId, _derivativeTypeId, _tubeType, _lab, _sampleType, _sampleQuantity, _sampleUnits);
     }
 }

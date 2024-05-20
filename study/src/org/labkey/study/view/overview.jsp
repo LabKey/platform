@@ -353,7 +353,7 @@
                 else if (userCanRead)
                 {
                     ActionURL datasetLink = new ActionURL(DatasetAction.class, container);
-                    datasetLink.addParameter(VisitImpl.VISITKEY, visit.getRowId());
+                    datasetLink.addParameter(VisitImpl.VISIT_KEY, visit.getRowId());
                     datasetLink.addParameter(Dataset.DATASETKEY, dataset.getDatasetId());
                     if (selectedCohort != null)
                         bean.cohortFilter.addURLParameters(study, datasetLink, null);
