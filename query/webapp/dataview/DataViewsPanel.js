@@ -5,7 +5,7 @@
  */
 
 // http://www.sencha.com/forum/showthread.php?184010-TreeStore-filtering
-// TODO: pluggin no longer needed as filtering support has been added to TreeStore in ext-patches.js
+// TODO: plugin no longer needed as filtering support has been added to TreeStore in ext4-patches.js
 Ext4.define('TreeFilter', {
     extend: 'Ext.AbstractPlugin',
     alias: 'plugin.jsltreefilter',

@@ -27,6 +27,7 @@ import {
     SampleTypeDesigner,
     SampleTypeModel,
     getSampleDomainDefaultSystemFields,
+    withServerContext,
 } from '@labkey/components';
 
 import '../DomainDesigner.scss';
@@ -39,7 +40,7 @@ interface State {
 
 const UPDATE_SAMPLE_TYPE_ACTION = 'updateMaterialSource';
 
-export class App extends React.PureComponent<any, State> {
+class SampleTypeDesignerWrapper extends React.PureComponent<any, State> {
 
     private _dirty: boolean = false;
 
@@ -170,3 +171,4 @@ export class App extends React.PureComponent<any, State> {
     }
 }
 
+export const App = withServerContext(SampleTypeDesignerWrapper);

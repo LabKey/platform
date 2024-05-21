@@ -551,12 +551,14 @@ public final class PlateManagerTest
                 CaseInsensitiveHashMap.of(
                         "wellLocation", "A1",
                         "sampleId", sample1.getRowId(),
+                        "type", "SAMPLE",
                         "properties/concentration", 2.25,
                         "properties/barcode", "B1234")
                 ,
                 CaseInsensitiveHashMap.of(
                         "wellLocation", "A2",
                         "sampleId", sample2.getRowId(),
+                        "type", "SAMPLE",
                         "properties/concentration", 1.25,
                         "properties/barcode", "B5678"
                 )
@@ -598,12 +600,14 @@ public final class PlateManagerTest
                 CaseInsensitiveHashMap.of(
                         "wellLocation", "A1",
                         "sampleId", sample1.getRowId(),
+                        "type", "SAMPLE",
                         "properties/concentration", 2.25,
                         "properties/barcode", "B1234")
                 ,
                 CaseInsensitiveHashMap.of(
                         "wellLocation", "A2",
                         "sampleId", sample2.getRowId(),
+                        "type", "SAMPLE",
                         "properties/concentration", 1.25,
                         "properties/barcode", "B5678"
                 )
@@ -613,14 +617,17 @@ public final class PlateManagerTest
         List<Map<String, Object>> rows2 = List.of(
                 CaseInsensitiveHashMap.of(
                         "wellLocation", "A1",
+                        "type", "SAMPLE",
                         "sampleId", sample2.getRowId())
                 ,
                 CaseInsensitiveHashMap.of(
                         "wellLocation", "A2",
+                        "type", "SAMPLE",
                         "sampleId", sample1.getRowId())
                 ,
                 CaseInsensitiveHashMap.of(
                         "wellLocation", "A3",
+                        "type", "SAMPLE",
                         "sampleId", sample2.getRowId())
         );
         Plate plateDestination = PlateManager.get().createAndSavePlate(container, user, new PlateImpl(container, "myPlate2", plateType), null, rows2);

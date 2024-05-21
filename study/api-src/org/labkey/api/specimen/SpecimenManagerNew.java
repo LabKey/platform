@@ -20,10 +20,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.view.NotFoundException;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 public class SpecimenManagerNew
@@ -37,12 +34,6 @@ public class SpecimenManagerNew
     public static SpecimenManagerNew get()
     {
         return INSTANCE;
-    }
-
-    public boolean isSpecimensEmpty(Container container, User user)
-    {
-        TableSelector selector = getSpecimensSelector(container, user, null);
-        return !selector.exists();
     }
 
     public List<Vial> getVials(Container container, User user, Set<Long> vialRowIds)
@@ -70,12 +61,12 @@ public class SpecimenManagerNew
         final List<Vial> vials = new ArrayList<>();
 
         getSpecimensSelector(container, user, filter)
-                .forEachMap(map -> vials.add(new Vial(container, map)));
+            .forEachMap(map -> vials.add(new Vial(container, map)));
 
         return vials;
     }
 
-    private TableSelector getSpecimensSelector(final Container container, final User user, SimpleFilter filter)
+    public TableSelector getSpecimensSelector(final Container container, final User user, SimpleFilter filter)
     {
         Study study = StudyService.get().getStudy(container);
         if (study == null)
@@ -96,54 +87,17 @@ public class SpecimenManagerNew
         return vials.get(0);
     }
 
-    /** Looks for any specimens that have the given id as a globalUniqueId  */
-    public Vial getVial(Container container, User user, String globalUniqueId)
-    {
-        SimpleFilter filter = new SimpleFilter(new SimpleFilter.SQLClause("LOWER(GlobalUniqueId) = LOWER(?)", new Object[] { globalUniqueId }));
-        List<Vial> matches = getVials(container, user, filter);
-        if (matches == null || matches.isEmpty())
-            return null;
-        if (matches.size() > 1)
-        {
-            // we apparently have two specimens with IDs that differ only in case; do a case sensitive check
-            // here to find the right one:
-            for (Vial vial : matches)
-            {
-                if (vial.getGlobalUniqueId().equals(globalUniqueId))
-                    return vial;
-            }
-            throw new IllegalStateException("Expected at least one vial to exactly match the specified global unique ID: " + globalUniqueId);
-        }
-        else
-            return matches.get(0);
-    }
-
-    public PrimaryType getPrimaryType(Container c, int rowId)
-    {
-        List<PrimaryType> primaryTypes = getPrimaryTypes(c, new SimpleFilter(FieldKey.fromParts("RowId"), rowId), null);
-        if (!primaryTypes.isEmpty())
-            return primaryTypes.get(0);
-        return null;
-    }
-
     public List<PrimaryType> getPrimaryTypes(Container c)
     {
         return getPrimaryTypes(c, null, new Sort("ExternalId"));
     }
 
-    private List<PrimaryType> getPrimaryTypes(final Container container, @Nullable SimpleFilter filter, @Nullable Sort sort)
+    public List<PrimaryType> getPrimaryTypes(final Container container, @Nullable SimpleFilter filter, @Nullable Sort sort)
     {
         final List<PrimaryType> primaryTypes = new ArrayList<>();
         new TableSelector(SpecimenSchema.get().getTableInfoSpecimenPrimaryType(container), filter, sort).
                 forEachMap(map -> primaryTypes.add(new PrimaryType(container, map)));
         return primaryTypes;
-    }
-
-    public List<Vial> getRequestableVials(Container container, User user, Set<Long> vialRowIds)
-    {
-        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-        filter.addInClause(FieldKey.fromParts("RowId"), vialRowIds).addCondition(FieldKey.fromString("available"), true);
-        return getVials(container, user, filter);
     }
 
     public SpecimenTypeSummary getSpecimenTypeSummary(Container container, @NotNull User user)
@@ -234,24 +188,6 @@ public class SpecimenManagerNew
         SpecimenTypeSummaryRow[] rows = new SqlSelector(SpecimenSchema.get().getSchema(), specimenTypeSummarySQL).getArray(SpecimenTypeSummaryRow.class);
 
         return new SpecimenTypeSummary(container, rows);
-    }
-
-    public Map<String,List<Vial>> getVialsForSpecimenHashes(Container container, User user, Collection<String> hashes, boolean onlyAvailable)
-    {
-        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-        filter.addInClause(FieldKey.fromParts("SpecimenHash"), hashes);
-        if (onlyAvailable)
-            filter.addCondition(FieldKey.fromParts("Available"), true);
-        List<Vial> vials = getVials(container, user, filter);
-        Map<String, List<Vial>> map = new HashMap<>();
-        for (Vial vial : vials)
-        {
-            String hash = vial.getSpecimenHash();
-            List<Vial> keyVials = map.computeIfAbsent(hash, k -> new ArrayList<>());
-            keyVials.add(vial);
-        }
-
-        return map;
     }
 }
 

@@ -328,6 +328,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     {
         assert ensureObject;
         super.save(user, table, true);
+        ExperimentServiceImpl.get().invalidateExperimentRun(getLSID());
     }
 
     @Override
@@ -548,6 +549,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         final SqlDialect dialect = svc.getSchema().getSqlDialect();
 
         DbCache.remove(svc.getTinfoExperimentRun(), svc.getCacheKey(getLSID()));
+        ExperimentServiceImpl.get().invalidateExperimentRun(getLSID());
 
         deleteProtocolApplicationProvenance();
 
