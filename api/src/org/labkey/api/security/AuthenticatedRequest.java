@@ -469,6 +469,7 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
 
     private static void _logGuestSession(String ip, String msg)
     {
+        /* try to not flood the log with repeat messages if we have a badly behaved client (e.g. not remembering JSESSIONID) */
         ip = StringUtils.defaultString(ip,"unknown");
         String prevMessage = logMessages.get(ip);
         if (StringUtils.equals(prevMessage, msg))
