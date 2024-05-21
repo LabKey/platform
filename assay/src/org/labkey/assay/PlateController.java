@@ -998,11 +998,6 @@ public class PlateController extends SpringActionController
             _selectionKey = selectionKey;
         }
 
-        public boolean isStandaloneAssayPlateCase()
-        {
-            return _selectionKey != null && !_plates.isEmpty() && _parentPlateSetId == null;
-        }
-
         public boolean isReplateCase()
         {
             return _parentPlateSetId != null && _selectionKey == null && _plates.isEmpty();
@@ -1010,7 +1005,7 @@ public class PlateController extends SpringActionController
 
         public boolean isRearrayCase()
         {
-            return _selectionKey != null && _parentPlateSetId != null && !_plates.isEmpty();
+            return _selectionKey != null && !_plates.isEmpty();
         }
 
         public boolean isEmptyCase()
@@ -1040,7 +1035,7 @@ public class PlateController extends SpringActionController
         @Override
         public void validateForm(CreatePlateSetForm form, Errors errors)
         {
-            if (!form.isStandaloneAssayPlateCase() && !form.isReplateCase() && !form.isRearrayCase() && !form.isEmptyCase() && !form.isDefaultCase())
+            if (!form.isReplateCase() && !form.isRearrayCase() && !form.isEmptyCase() && !form.isDefaultCase())
                 errors.reject(ERROR_GENERIC, "Invalid parameters.");
         }
 
@@ -1056,8 +1051,14 @@ public class PlateController extends SpringActionController
                 if (form.getTemplate() != null)
                     plateSet.setTemplate(form.getTemplate());
 
-                List<PlateManager.CreatePlateSetPlate> plates = new ArrayList<>();
-                if (form.isStandaloneAssayPlateCase() || form.isRearrayCase())
+                if (form.isReplateCase())
+                {
+                    plateSet = (PlateSetImpl) PlateManager.get().createPlateSetAndCopyPlates(getContainer(), getUser(), plateSet, form.getParentPlateSetId());
+                    return success(plateSet);
+                }
+
+                List<PlateManager.CreatePlateSetPlate> plates;
+                if (form.isRearrayCase())
                 {
                     String selectionKey = StringUtils.trimToNull(form.getSelectionKey());
                     if (selectionKey == null)
@@ -1065,16 +1066,12 @@ public class PlateController extends SpringActionController
                         errors.reject(ERROR_REQUIRED, "Specifying a \"selectionKey\" is required for this configuration.");
                         return null;
                     }
-                    plates = PlateManager.get().getPlateData(getContainer(), selectionKey, form.getPlates());
-                }
-                else if (form.isReplateCase())
-                {
-                    plates = PlateManager.get().getPlateData(getContainer(), getUser(), form.getParentPlateSetId());
+                    plates = PlateManager.get().getPlateData(getContainer(), getUser(), selectionKey, form.getPlates());
                 }
                 else if (form.isDefaultCase())
-                {
                     plates = form.getPlates();
-                }
+                else
+                    plates = new ArrayList<>();
 
                 plateSet = PlateManager.get().createPlateSet(getContainer(), getUser(), plateSet, plates, form.getParentPlateSetId());
                 return success(plateSet);
