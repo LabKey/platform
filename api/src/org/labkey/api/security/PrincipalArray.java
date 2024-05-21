@@ -30,7 +30,7 @@ public class PrincipalArray implements Iterable<Integer>
         for (int principal : principals)
             _array[i++] = principal;
         Arrays.sort(_array);
-        _list = Ints.asList(_array);
+        _list = Collections.unmodifiableList(Ints.asList(_array));
     }
 
     // Needed for pipeline deserialization
