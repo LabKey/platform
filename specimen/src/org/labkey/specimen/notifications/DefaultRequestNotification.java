@@ -26,23 +26,18 @@ import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.query.SpecimenQueryView;
-import org.labkey.api.specimen.settings.RequestNotificationSettings;
-import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.view.ViewContext;
 import org.labkey.specimen.model.SpecimenRequestEvent;
 import org.labkey.specimen.requirements.SpecimenRequest;
 import org.labkey.specimen.requirements.SpecimenRequestRequirement;
+import org.labkey.specimen.settings.RequestNotificationSettings;
+import org.labkey.specimen.settings.SettingsManager;
 
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * User: brittp
- * Date: May 4, 2007
- * Time: 3:41:44 PM
- */
 public class DefaultRequestNotification
 {
     protected List<? extends NotificationRecipientSet> _recipients;
@@ -68,7 +63,7 @@ public class DefaultRequestNotification
     public final String getSpecimenListHTML(ViewContext context) throws SQLException, IOException
     {
         List<Vial> vials = getSpecimenList();
-        if (vials != null && vials.size() > 0)
+        if (vials != null && !vials.isEmpty())
         {
             SpecimenQueryView view = SpecimenQueryView.createView(context, vials, SpecimenQueryView.ViewType.VIALS_EMAIL);
             view.setDisableLowVialIndicators(true);
@@ -86,7 +81,7 @@ public class DefaultRequestNotification
         {
             final ByteArrayAttachmentFile specimenListFile;
             List<Vial> vials = getSpecimenList();
-            if (vials != null && vials.size() > 0)
+            if (vials != null && !vials.isEmpty())
             {
                 SpecimenQueryView view = SpecimenQueryView.createView(context, vials, SpecimenQueryView.ViewType.VIALS_EMAIL);
                 view.getSettings().setMaxRows(-1);

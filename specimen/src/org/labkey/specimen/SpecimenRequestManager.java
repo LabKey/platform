@@ -10,6 +10,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DatabaseCache;
@@ -99,7 +100,7 @@ public class SpecimenRequestManager
 
     public List<SpecimenRequestStatus> getRequestStatuses(Container c, User user)
     {
-        List<SpecimenRequestStatus> statuses = _requestStatusHelper.get(c, "SortOrder");
+        List<SpecimenRequestStatus> statuses = _requestStatusHelper.getList(c, "SortOrder");
         // if the 'not-yet-submitted' status doesn't exist, create it here, with sort order -1,
         // so it's always first.
         if (statuses == null || statuses.isEmpty() || statuses.get(0).getSortOrder() != -1)
@@ -113,8 +114,10 @@ public class SpecimenRequestManager
             try (var ignore = SpringActionController.ignoreSqlUpdates())
             {
                 Table.insert(user, _requestStatusHelper.getTableInfo(), notYetSubmittedStatus);
+                DbCache.trackRemove(_requestStatusHelper.getTableInfo());
+                _requestStatusHelper.clearCache(c);
             }
-            statuses = _requestStatusHelper.get(c, "SortOrder");
+            statuses = _requestStatusHelper.getList(c, "SortOrder");
         }
         return statuses;
     }
@@ -157,7 +160,7 @@ public class SpecimenRequestManager
 
     public Set<Integer> getRequestStatusIdsInUse(Container c)
     {
-        List<SpecimenRequest> requests = _requestHelper.get(c);
+        List<SpecimenRequest> requests = _requestHelper.getList(c);
         Set<Integer> uniqueStatuses = new HashSet<>();
         for (SpecimenRequest request : requests)
             uniqueStatuses.add(request.getStatusId());
@@ -166,7 +169,7 @@ public class SpecimenRequestManager
 
     public List<SpecimenRequestEvent> getRequestEvents(Container c)
     {
-        return _requestEventHelper.get(c);
+        return _requestEventHelper.getList(c);
     }
 
     public SpecimenRequestEvent getRequestEvent(Container c, int rowId)
@@ -303,7 +306,7 @@ public class SpecimenRequestManager
         String parentObjectLsid = getRequestInputObjectLsid(container);
         Map<String,ObjectProperty> resourceProperties = OntologyManager.getPropertyObjects(container, parentObjectLsid);
         SpecimenRequestInput[] inputs = new SpecimenRequestInput[0];
-        if (resourceProperties == null || resourceProperties.size() == 0)
+        if (resourceProperties == null || resourceProperties.isEmpty())
         {
             if (createIfMissing)
             {
@@ -547,7 +550,7 @@ public class SpecimenRequestManager
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Hidden"), Boolean.FALSE);
         if (user != null)
             filter.addCondition(FieldKey.fromParts("CreatedBy"), user.getUserId());
-        return _requestHelper.get(c, filter, "-Created");
+        return _requestHelper.getList(c, filter, "-Created");
     }
 
     public SpecimenRequest getRequest(Container c, int rowId)
@@ -748,7 +751,7 @@ public class SpecimenRequestManager
 
         updateSql.append("\tFROM ").append(tableInfoVialSelectName).append("\n");
 
-        if (vials != null && vials.size() > 0)
+        if (vials != null && !vials.isEmpty())
         {
             Set<Long> specimenIds = new HashSet<>();
             for (Vial vial : vials)
@@ -787,6 +790,21 @@ public class SpecimenRequestManager
             clearCaches(study.getContainer());
 
         clearGroupedValuesForColumn(c);
+    }
+
+    void clearRequestStatusHelper(Container c)
+    {
+        _requestStatusHelper.clearCache(c);
+    }
+
+    void clearRequestHelper(Container c)
+    {
+        _requestHelper.clearCache(c);
+    }
+
+    void clearRequestEventHelper(Container c)
+    {
+        _requestEventHelper.clearCache(c);
     }
 
     private static class GroupedValueColumnHelper
@@ -1232,7 +1250,7 @@ public class SpecimenRequestManager
     private void deleteRequestEvents(SpecimenRequest request)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RequestId"), request.getRowId());
-        List<SpecimenRequestEvent> events = _requestEventHelper.get(request.getContainer(), filter);
+        List<SpecimenRequestEvent> events = _requestEventHelper.getList(request.getContainer(), filter);
         for (SpecimenRequestEvent event : events)
         {
             AttachmentService.get().deleteAttachments(event);
@@ -1242,7 +1260,7 @@ public class SpecimenRequestManager
 
     public RequestedSpecimens getRequestableBySpecimenHash(Container c, User user, Set<String> formValues, Integer preferredLocation) throws AmbiguousLocationException
     {
-        Map<String, List<Vial>> vialsByHash = SpecimenManagerNew.get().getVialsForSpecimenHashes(c, user, formValues, true);
+        Map<String, List<Vial>> vialsByHash = SpecimenManager.get().getVialsForSpecimenHashes(c, user, formValues, true);
 
         if (vialsByHash == null || vialsByHash.isEmpty())
             return new RequestedSpecimens(Collections.emptyList());

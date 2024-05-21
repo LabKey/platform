@@ -18,22 +18,18 @@ package org.labkey.specimen.view;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
-import org.labkey.api.specimen.settings.RequestNotificationSettings;
-import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.specimen.actions.SpecimenController;
+import org.labkey.specimen.settings.RequestNotificationSettings;
+import org.labkey.specimen.settings.SettingsManager;
 
 import java.util.List;
 import java.util.function.Function;
 
-/**
- * User: jeckels
- * Date: 11/11/13
- */
 public class SpecimenRequestNotificationEmailTemplate extends EmailTemplate
 {
     public static final String NAME = "Specimen request notification";
@@ -133,8 +129,7 @@ public class SpecimenRequestNotificationEmailTemplate extends EmailTemplate
         _notification = notification;
 
         // For backwards compatibility, use the template specified in the notification management UI
-        RequestNotificationSettings settings =
-                SettingsManager.get().getRequestNotificationSettings(notification.getContainer());
+        RequestNotificationSettings settings = SettingsManager.get().getRequestNotificationSettings(notification.getContainer());
 
         _subjectSuffix = settings.getSubjectSuffix().replaceAll("%requestId%", "" + notification.getRequestId());
     }

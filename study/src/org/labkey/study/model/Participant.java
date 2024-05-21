@@ -18,11 +18,8 @@ package org.labkey.study.model;
 import org.labkey.api.data.Container;
 
 import java.util.Date;
+import java.util.Objects;
 
-/**
- * User: brittp
- * Created: Jan 17, 2008 10:26:32 AM
- */
 public class Participant
 {
     private Container _container;
@@ -101,5 +98,20 @@ public class Participant
     public void setInitialCohortId(Integer initialCohortId)
     {
         _initialCohortId = initialCohortId;
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Participant that = (Participant) o;
+        return Objects.equals(_container, that._container) && Objects.equals(_participantId, that._participantId) && Objects.equals(_enrollmentSiteId, that._enrollmentSiteId) && Objects.equals(_currentSiteId, that._currentSiteId) && Objects.equals(_startDate, that._startDate) && Objects.equals(_initialCohortId, that._initialCohortId) && Objects.equals(_currentCohortId, that._currentCohortId);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return Objects.hash(_container, _participantId, _enrollmentSiteId, _currentSiteId, _startDate, _initialCohortId, _currentCohortId);
     }
 }

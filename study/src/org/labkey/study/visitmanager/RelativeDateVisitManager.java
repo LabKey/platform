@@ -321,7 +321,7 @@ public class RelativeDateVisitManager extends VisitManager
 
         ValidationException errors = StudyManager.getInstance().ensureVisits(getStudy(), user, daysToEnsure, null, failForUndefinedVisits);
 
-        if (daysToEnsure.size() > 0)
+        if (!daysToEnsure.isEmpty())
             _updateVisitRowId();
 
         return errors;

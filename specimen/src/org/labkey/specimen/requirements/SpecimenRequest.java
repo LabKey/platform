@@ -30,12 +30,8 @@ import org.labkey.api.study.Location;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 
-/**
- * User: brittp
- * Date: Feb 8, 2006
- * Time: 1:50:53 PM
- */
 public class SpecimenRequest extends AbstractStudyCachable<SpecimenRequest> implements RequirementOwner
 {
     private Container _container;
@@ -47,7 +43,7 @@ public class SpecimenRequest extends AbstractStudyCachable<SpecimenRequest> impl
     private int _modifiedBy;
     private long _modified;
     private String _comments;
-    private Integer _destinationSiteId;     // This is a locationId, but still needs to martch the column in the table
+    private Integer _destinationSiteId;     // This is a locationId, but still needs to match the column in the table
     private boolean _hidden;
 
     @Override
@@ -221,5 +217,20 @@ public class SpecimenRequest extends AbstractStudyCachable<SpecimenRequest> impl
     public void setEntityId(String entityId)
     {
         _entityId = entityId;
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        SpecimenRequest that = (SpecimenRequest) o;
+        return _rowId == that._rowId && _statusId == that._statusId && _createdBy == that._createdBy && _created == that._created && _modifiedBy == that._modifiedBy && _modified == that._modified && _hidden == that._hidden && Objects.equals(_container, that._container) && Objects.equals(_entityId, that._entityId) && Objects.equals(_comments, that._comments) && Objects.equals(_destinationSiteId, that._destinationSiteId);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return Objects.hash(_container, _entityId, _rowId, _statusId, _createdBy, _created, _modifiedBy, _modified, _comments, _destinationSiteId, _hidden);
     }
 }
