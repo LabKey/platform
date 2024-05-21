@@ -16,6 +16,7 @@
 
 package org.labkey.specimen;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.collections4.bag.HashBag;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.logging.log4j.Logger;
@@ -37,15 +38,21 @@ import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParam;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenQuerySchema;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.SpecimensPage;
-import org.labkey.api.specimen.importer.SpecimenImporter;
+import org.labkey.specimen.importer.SimpleSpecimenImporter;
+import org.labkey.specimen.importer.SpecimenImporter;
+import org.labkey.api.study.MapArrayExcelWriter;
+import org.labkey.api.study.TimepointType;
+import org.labkey.specimen.query.SpecimenUpdateService;
 import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.SpecimenService;
@@ -82,6 +89,7 @@ import org.labkey.specimen.writer.SpecimenArchiveWriter;
 import org.labkey.specimen.writer.SpecimenSettingsWriter;
 import org.labkey.specimen.writer.SpecimenWriter;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
@@ -204,6 +212,42 @@ public class SpecimenModule extends SpringModule
             public void updateVialCounts(Container container, User user)
             {
                 SpecimenRequestManager.get().updateVialCounts(container, user);
+            }
+
+            @Override
+            public @Nullable QueryUpdateService getSpecimenQueryUpdateService(Container c, TableInfo queryTable)
+            {
+                return SettingsManager.get().getRepositorySettings(c).isSpecimenDataEditable() ? new SpecimenUpdateService(queryTable) : null;
+            }
+
+            @Override
+            public void importSpecimens(Container container, User user, List<Map<String, Object>> specimens) throws ValidationException, IOException
+            {
+                SimpleSpecimenImporter importer = new SimpleSpecimenImporter(container, user);
+                importer.process(specimens, false);
+            }
+
+            @Override
+            public void exportSpecimens(Container container, User user, List<Map<String, Object>> specimens, TimepointType timepointType, String participantIdLabel, HttpServletResponse response)
+            {
+                SimpleSpecimenImporter importer = new SimpleSpecimenImporter(container, user, TimepointType.DATE, "Subject");
+                MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(specimens, importer.getSimpleSpecimenColumns());
+                // Note: I don't think this is having any effect on the output because ExcelColumn.renderCaption() uses
+                // the DisplayColumn's caption, not its own caption. That seems wrong...
+                xlWriter.setColumnModifier(col -> col.setCaption(importer.label(col.getName())));
+                xlWriter.renderWorkbook(response);
+            }
+
+            @Override
+            public Map<String, String> getColumnLabelMap(Container container, User user)
+            {
+                return new SimpleSpecimenImporter(container, user).getColumnLabels();
+            }
+
+            @Override
+            public void fixupSpecimenColumns(Container container, User user, TabLoader loader) throws IOException
+            {
+                new SimpleSpecimenImporter(container, user).fixupSpecimenColumns(loader);
             }
         });
      }

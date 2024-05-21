@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.api.specimen.importer;
+package org.labkey.specimen.importer;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.mutable.MutableInt;
@@ -56,14 +56,17 @@ import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.security.User;
-import org.labkey.api.specimen.SpecimenColumns;
+import org.labkey.specimen.SpecimenColumns;
 import org.labkey.api.specimen.SpecimenEvent;
 import org.labkey.api.specimen.SpecimenEventDateComparator;
 import org.labkey.api.specimen.SpecimenEventManager;
 import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenSchema;
-import org.labkey.api.specimen.SpecimenTableManager;
+import org.labkey.specimen.SpecimenTableManager;
 import org.labkey.api.specimen.Vial;
+import org.labkey.api.specimen.importer.EventVialRollup;
+import org.labkey.api.specimen.importer.RequestabilityManager;
+import org.labkey.api.specimen.importer.RollupInstance;
 import org.labkey.api.specimen.location.LocationCache;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.specimen.model.SpecimenComment;
@@ -117,17 +120,17 @@ import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static org.labkey.api.specimen.SpecimenColumns.DRAW_TIMESTAMP;
-import static org.labkey.api.specimen.SpecimenColumns.GLOBAL_UNIQUE_ID;
-import static org.labkey.api.specimen.SpecimenColumns.GLOBAL_UNIQUE_ID_TSV_COL;
-import static org.labkey.api.specimen.SpecimenColumns.LAB_ID;
-import static org.labkey.api.specimen.SpecimenColumns.LAB_RECEIPT_DATE;
-import static org.labkey.api.specimen.SpecimenColumns.SHIP_DATE;
-import static org.labkey.api.specimen.SpecimenColumns.SITE_COLUMNS;
-import static org.labkey.api.specimen.SpecimenColumns.SPEC_NUMBER_TSV_COL;
-import static org.labkey.api.specimen.SpecimenColumns.STORAGE_DATE;
-import static org.labkey.api.specimen.SpecimenColumns.VISIT_COL;
-import static org.labkey.api.specimen.SpecimenColumns.VISIT_VALUE;
+import static org.labkey.specimen.SpecimenColumns.DRAW_TIMESTAMP;
+import static org.labkey.specimen.SpecimenColumns.GLOBAL_UNIQUE_ID;
+import static org.labkey.specimen.SpecimenColumns.GLOBAL_UNIQUE_ID_TSV_COL;
+import static org.labkey.specimen.SpecimenColumns.LAB_ID;
+import static org.labkey.specimen.SpecimenColumns.LAB_RECEIPT_DATE;
+import static org.labkey.specimen.SpecimenColumns.SHIP_DATE;
+import static org.labkey.specimen.SpecimenColumns.SITE_COLUMNS;
+import static org.labkey.specimen.SpecimenColumns.SPEC_NUMBER_TSV_COL;
+import static org.labkey.specimen.SpecimenColumns.STORAGE_DATE;
+import static org.labkey.specimen.SpecimenColumns.VISIT_COL;
+import static org.labkey.specimen.SpecimenColumns.VISIT_VALUE;
 
 /**
  * User: brittp

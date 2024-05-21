@@ -27,7 +27,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableInfoWriter;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.specimen.SpecimenColumns;
+import org.labkey.specimen.SpecimenColumns;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.model.SpecimenTablesProvider;
 import org.labkey.api.study.Study;

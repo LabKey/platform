@@ -1,4 +1,4 @@
-package org.labkey.api.specimen;
+package org.labkey.specimen;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
@@ -8,12 +8,13 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.security.User;
+import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.importer.EventVialRollup;
-import org.labkey.api.specimen.importer.ImportTypes;
+import org.labkey.specimen.importer.ImportTypes;
 import org.labkey.api.specimen.importer.RollupHelper;
 import org.labkey.api.specimen.importer.RollupHelper.RollupMap;
-import org.labkey.api.specimen.importer.SpecimenColumn;
-import org.labkey.api.specimen.importer.TargetTable;
+import org.labkey.specimen.importer.SpecimenColumn;
+import org.labkey.specimen.importer.TargetTable;
 import org.labkey.api.specimen.model.SpecimenTablesProvider;
 
 import java.util.ArrayList;

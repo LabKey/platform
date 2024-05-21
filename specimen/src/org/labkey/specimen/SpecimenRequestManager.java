@@ -33,7 +33,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.specimen.SpecimenManagerNew;
 import org.labkey.api.specimen.SpecimenQuerySchema;
 import org.labkey.api.specimen.SpecimenRequestException;
 import org.labkey.api.specimen.SpecimenRequestStatus;
@@ -1163,11 +1162,11 @@ public class SpecimenRequestManager
     public void deleteRequestSpecimenMappings(User user, SpecimenRequest request, List<Long> vialIds, boolean createEvents)
             throws RequestabilityManager.InvalidRuleException, AttachmentService.DuplicateFilenameException
     {
-        if (vialIds == null || vialIds.size() == 0)
+        if (vialIds == null || vialIds.isEmpty())
             return;
 
         Set<Long> vialRowIds = new HashSet<>(vialIds);
-        List<Vial> vials = SpecimenManagerNew.get().getVials(request.getContainer(), user, vialRowIds);
+        List<Vial> vials = SpecimenManager.get().getVials(request.getContainer(), user, vialRowIds);
         List<String> globalUniqueIds = new ArrayList<>(vials.size());
         List<String> descriptions = new ArrayList<>();
         for (Vial vial : vials)

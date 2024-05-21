@@ -48,7 +48,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
-import org.labkey.api.specimen.importer.SimpleSpecimenImporter;
+import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
@@ -395,7 +395,7 @@ public class StudyDesignManager
 
     public Study generateStudyFromDesign(User user, Container parent, String folderName, Date startDate,
                                          String subjectNounSingular, String subjectNounPlural, String subjectColumnName, StudyDesignInfo info,
-                                         List<Map<String,Object>> participantDataset, List<Map<String,Object>> specimens) throws IOException, ValidationException
+                                         List<Map<String, Object>> participantDataset, List<Map<String, Object>> specimens) throws IOException, ValidationException
     {
         Container studyFolder = parent.getChild(folderName);
         if (null == studyFolder)
@@ -476,8 +476,9 @@ public class StudyDesignManager
 //        for (DatasetDefinition dsd : dsds)
 //            StudyManager.getInstance().updateVisitDatasetMapping(user, study.getContainer(), 1, dsd.getDatasetId(), VisitDatasetType.OPTIONAL);
 
-        SimpleSpecimenImporter importer = new SimpleSpecimenImporter(study.getContainer(), user);
-        importer.process(specimens, false);
+        SpecimenMigrationService sms = SpecimenMigrationService.get();
+        if (null != sms)
+            sms.importSpecimens(study.getContainer(), user, specimens);
 
         //Move study design into study folder...
         moveStudyDesign(user, info, study.getContainer());
@@ -530,7 +531,7 @@ public class StudyDesignManager
      * @param participantInfo
      * @return
      */
-    public List<Map<String,Object>> generateSampleList(GWTStudyDefinition studyDefinition, List<Map<String, Object>> participantInfo, Date studyStartDate)
+    public List<Map<String, Object>> generateSampleList(GWTStudyDefinition studyDefinition, List<Map<String, Object>> participantInfo, Date studyStartDate)
     {
         GWTAssaySchedule assaySchedule = studyDefinition.getAssaySchedule();
         List<GWTTimepoint> timepoints = assaySchedule.getTimepoints();
@@ -557,16 +558,12 @@ public class StudyDesignManager
         }
 
         //CONSIDER: Use something like ArrayListMap to share hash table space
-        List<Map<String,Object>> rows = new ArrayList<>();
+        List<Map<String, Object>> rows = new ArrayList<>();
         int timepointIndex = 1; //Use one based
         for (GWTTimepoint tp : timepoints)
         {
-            List<GWTCohort> groups = studyDefinition.getGroups();
             Map<String, Integer> timepointSamples = vialsPerSampleType.get(tp);
-            String cohort = null;
-            int cohortIndex = 0;
-            int participantIndex = 0;
-            for (Map participant : participantInfo)
+            for (Map<String, Object> participant : participantInfo)
             {
                 Date startDate = (Date) participant.get("StartDate");
                 if (startDate == null)
@@ -576,13 +573,13 @@ public class StudyDesignManager
                 for (String st : timepointSamples.keySet())
                 {
                     String sampleId = ptid + "-" + tp.getDays();
-                    Map<String,Object> m = new HashMap<>();
-                    m.put(SimpleSpecimenImporter.VISIT, timepointIndex);
-                    m.put(SimpleSpecimenImporter.PARTICIPANT_ID, ptid);
-                    m.put(SimpleSpecimenImporter.SAMPLE_ID, sampleId);
-                    m.put(SimpleSpecimenImporter.VIAL_ID, sampleId + (timepointSamples.size() == 1 ? "" : st));
-                    m.put(SimpleSpecimenImporter.DERIVIATIVE_TYPE, st);
-                    m.put(SimpleSpecimenImporter.DRAW_TIMESTAMP, getDay(startDate, tp.getDays()));
+                    Map<String, Object> m = new HashMap<>();
+                    m.put(SpecimenMigrationService.VISIT, timepointIndex);
+                    m.put(SpecimenMigrationService.PARTICIPANT_ID, ptid);
+                    m.put(SpecimenMigrationService.SAMPLE_ID, sampleId);
+                    m.put(SpecimenMigrationService.VIAL_ID, sampleId + (timepointSamples.size() == 1 ? "" : st));
+                    m.put(SpecimenMigrationService.DERIVATIVE_TYPE, st);
+                    m.put(SpecimenMigrationService.DRAW_TIMESTAMP, getDay(startDate, tp.getDays()));
                     rows.add(m);
                 }
             }

@@ -492,7 +492,7 @@ public class SpecimenApiController extends SpringActionController
             try
             {
                 int id = Integer.parseInt(vialId);
-                vial = SpecimenManagerNew.get().getVial(getContainer(), getUser(), id);
+                vial = SpecimenManager.get().getVial(getContainer(), getUser(), id);
             }
             catch (NumberFormatException e)
             {
