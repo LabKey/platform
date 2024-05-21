@@ -218,7 +218,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.WeakHashMap;
-import java.util.stream.Collectors;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 import static org.labkey.study.query.StudyQuerySchema.PERSONNEL_TABLE_NAME;
@@ -3446,6 +3445,7 @@ public class StudyManager
         SQLFragment sql = new SQLFragment("UPDATE ").append(SCHEMA.getTableInfoParticipant()).append(" SET AlternateId = ? WHERE Container = ? AND ParticipantId = ?")
                 .addAll(alternateId, containerId, participantId);
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
+        StudyManager.getInstance().clearParticipantCache(study.getContainer());
     }
 
     private void setAlternateIdAndDateOffset(Study study, String participantId, @Nullable String alternateId, @Nullable Integer dateOffset)
@@ -3471,6 +3471,7 @@ public class StudyManager
             sql.add(study.getContainer());
             sql.add(participantId);
             new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
+            StudyManager.getInstance().clearParticipantCache(study.getContainer());
         }
     }
 

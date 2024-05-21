@@ -633,6 +633,7 @@ public abstract class VisitManager
         Parameter.TypedValue startDateParam = new Parameter.TypedValue(getStudy().getStartDate(), JdbcType.TIMESTAMP);
 
         new SqlExecutor(schema).execute(sqlUpdateStartDates, startDateParam, getStudy().getContainer());
+        StudyManager.getInstance().clearParticipantCache(getStudy().getContainer());
     }
 
     protected static TableInfo getSpecimenTable(StudyImpl study, User user)
@@ -718,7 +719,14 @@ public abstract class VisitManager
         // SQLExceptions. Shut off automatic logging of exceptions in the data access layer; caller will catch the exceptions
         // and retry if appropriate.
         SqlExecutor executor = new SqlExecutor(schema).setExceptionFramework(ExceptionFramework.JDBC).setLogLevel(Level.OFF);
-        return executor.execute(del);
+        try
+        {
+            return executor.execute(del);
+        }
+        finally
+        {
+            StudyManager.getInstance().clearParticipantCache(c);
+        }
     }
 
 
