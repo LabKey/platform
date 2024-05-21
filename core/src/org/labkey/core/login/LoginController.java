@@ -1755,7 +1755,7 @@ public class LoginController extends SpringActionController
 
     public static void checkVerificationErrors(boolean isVerified, User user, ValidEmail email, String verification, Errors errors)
     {
-        if(isVerified)
+        if (isVerified)
         {
             if (user == null)
             {

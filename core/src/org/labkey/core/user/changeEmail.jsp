@@ -38,7 +38,7 @@
     UserForm form = me.getModelBean();
     ActionURL cancelURL = urlFor(DetailsAction.class).addParameter("userId", form.getUserId());
     boolean canUpdateUser = getUser().hasRootPermission(UpdateUserPermission.class);
-    String currentEmail = form.getUser().getEmail();
+    String currentEmail = form.getUserToChange().getEmail();
 
     if (form.getIsChangeEmailRequest())
     {
@@ -88,7 +88,7 @@
     else if (form.getIsVerified())
     {
 %>
-        <p>Email change from <%=h(form.getOldEmail())%> to <%=h(form.getRequestedEmail())%> was successful. An email has been sent to the old address for security purposes.</p>
+        <p>Email change from <%=h(currentEmail)%> to <%=h(form.getRequestedEmail())%> was successful. An email has been sent to the old address for security purposes.</p>
         <%= button("Done").href(cancelURL) %>
 <%
     }

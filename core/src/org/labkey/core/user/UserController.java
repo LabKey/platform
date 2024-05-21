@@ -16,6 +16,8 @@
 
 package org.labkey.core.user;
 
+import jakarta.mail.Message;
+import jakarta.mail.internet.MimeMessage;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -111,7 +113,6 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
-import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.Pair;
@@ -153,8 +154,6 @@ import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
-import jakarta.mail.Message;
-import jakarta.mail.internet.MimeMessage;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1142,7 +1141,7 @@ public class UserController extends SpringActionController
         }
     }
 
-    private static class UpdateUserDetailsForm extends UserQueryForm
+    public static class UpdateUserDetailsForm extends UserQueryForm
     {
         // Specifying "merge" as true allows for passing sparse row data and assumes the original row
         // values that are not explicitly specified should be left unchanged.
@@ -1587,19 +1586,8 @@ public class UserController extends SpringActionController
 
             // don't let a non-site admin manage certain parts of a site-admin's account
             boolean canManageDetailsUser = currentUser.hasSiteAdminPermission() || !detailsUser.hasSiteAdminPermission();
-
-            ValidEmail detailsEmail = null;
-            boolean loginExists = false;
-
-            try
-            {
-                detailsEmail = new ValidEmail(detailsUser.getEmail());
-                loginExists = SecurityManager.loginExists(detailsEmail);
-            }
-            catch (ValidEmail.InvalidEmailException e)
-            {
-                // Allow display and edit of users with invalid email addresses so they can be fixed, #12276.
-            }
+            String detailsEmail = detailsUser.getEmail();
+            boolean loginExists = SecurityManager.loginExists(detailsEmail);
 
             UserSchema schema = form.getSchema();
             if (schema == null)
@@ -1659,7 +1647,7 @@ public class UserController extends SpringActionController
                     // with LDAP/SSO and later needing to use database authentication. Also allows site admin to have
                     // an alternate login, e.g., in case LDAP server goes down or configuration changes.
                     ActionURL resetURL = new ActionURL(AdminResetPasswordAction.class, c);
-                    resetURL.addParameter("email", detailsEmail.getEmailAddress());
+                    resetURL.addParameter("email", detailsEmail);
                     resetURL.addReturnURL(currentUrl);
                     ActionButton reset = new ActionButton(resetURL, loginExists ? "Reset Password" : "Create Password");
                     reset.setActionType(ActionButton.Action.LINK);
@@ -1668,7 +1656,7 @@ public class UserController extends SpringActionController
                     if (loginExists)
                     {
                         ActionURL deleteURL = new ActionURL(AdminDeletePasswordAction.class, c);
-                        deleteURL.addParameter("email", detailsEmail.getEmailAddress());
+                        deleteURL.addParameter("email", detailsEmail);
                         deleteURL.addReturnURL(currentUrl);
                         ActionButton delete = new ActionButton(deleteURL, "Delete Password");
                         delete.setActionType(ActionButton.Action.LINK);
@@ -1804,7 +1792,7 @@ public class UserController extends SpringActionController
 
         private ActionButton makeChangeEmailButton(Container c, User user)
         {
-            ActionURL changeEmailURL = getChangeEmailAction(c, user);
+            ActionURL changeEmailURL = getChangeEmailURL(c, user);
             changeEmailURL.addParameter("isChangeEmailRequest", true);
             changeEmailURL.addReturnURL(getViewContext().getActionURL());
             ActionButton changeEmail = new ActionButton(changeEmailURL, "Change Email");
@@ -1819,7 +1807,7 @@ public class UserController extends SpringActionController
         }
     }
 
-    private static ActionURL getChangeEmailAction(Container c, User user)
+    private static ActionURL getChangeEmailURL(Container c, User user)
     {
         ActionURL url = new ActionURL(ChangeEmailAction.class, c);
         url.addParameter("userId", user.getUserId());
@@ -1830,8 +1818,8 @@ public class UserController extends SpringActionController
     @RequiresLogin
     public class ChangeEmailAction extends FormViewAction<UserForm>
     {
-        private String _currentEmailFromDatabase;
-        private String _requestedEmailFromDatabase;
+        private User _userToChange;
+        private String _requestedEmail;
         private int _urlUserId;
         private boolean _isPasswordPrompt = false;
         private ValidEmail _validRequestedEmail;
@@ -1883,21 +1871,21 @@ public class UserController extends SpringActionController
                 {
                     throw new UnauthorizedException("User attempted to access self-service email change, but this function is disabled.");
                 }
-                _urlUserId = getUser().getUserId();
+                _urlUserId = form.getUserId();
 
-                if (_urlUserId != form.getUserId())
+                if (_urlUserId != getUser().getUserId())
                 {
                     errors.reject(ERROR_MSG, "You aren't allowed to change another user's email!");
                 }
                 else
                 {
-                    form._user = getUser();  // Push validated user into form for JSP
+                    form._userToChange = getUser();  // Push validated user into form for JSP
                 }
             }
             else  // site or app admin, could be another user's ID
             {
                 _urlUserId = form.getUserId();
-                form._user = getModifiableUser(_urlUserId);  // Push validated user into form for JSP
+                form._userToChange = getModifiableUser(_urlUserId);  // Push validated user into form for JSP
             }
 
             if (form.getIsFromVerifiedLink())
@@ -1906,7 +1894,7 @@ public class UserController extends SpringActionController
                 if (errors.getErrorCount() == 0)
                 {
                     User user = getUser();
-                    int userId = user.getUserId();
+                    String oldEmail = _userToChange.getEmail();
 
                     // don't let non-site admin change email of site admin
                     User formUser = UserManager.getUser(_urlUserId);
@@ -1918,16 +1906,16 @@ public class UserController extends SpringActionController
                     try (var ignored = SpringActionController.ignoreSqlUpdates())
                     {
                         // update email in database
-                        UserManager.changeEmail(canUpdateUser, userId, _currentEmailFromDatabase, _requestedEmailFromDatabase, form.getVerificationToken(), getUser());
+                        UserManager.changeEmail(user, _userToChange, canUpdateUser, _requestedEmail, form.getVerificationToken());
                     }
+
                     // post-verification email to old email address
                     Container c = getContainer();
-                    MimeMessage m = getChangeEmailMessage(_currentEmailFromDatabase, _requestedEmailFromDatabase);
+                    MimeMessage m = getChangeEmailMessage(oldEmail, _requestedEmail);
                     MailHelper.send(m, user, c);
                     form.setIsFromVerifiedLink(false);  // will still be true in URL, though, confusingly
                     form.setIsVerified(true);
-                    form.setOldEmail(_currentEmailFromDatabase);  // for benefit of the page display, since it has changed
-                    form.setRequestedEmail(_requestedEmailFromDatabase);  // for benefit of the page display
+                    form.setRequestedEmail(_requestedEmail);  // for benefit of the page display
                 }
             }
 
@@ -1946,15 +1934,15 @@ public class UserController extends SpringActionController
 
                 String verificationToken = target.getVerificationToken();
                 UserManager.VerifyEmail verifyEmail = UserManager.getVerifyEmail(validUserEmail);
-                String currentEmailFromDatabase = verifyEmail.getEmail();
-                String requestedEmailFromDatabase = verifyEmail.getRequestedEmail();
+                User userToChange = verifyEmail.getUserToChange();
+                String requestedEmail = verifyEmail.getRequestedEmail();
 
                 boolean isVerified = SecurityManager.verify(validUserEmail, verificationToken);
                 LoginController.checkVerificationErrors(isVerified, loggedInUser, validUserEmail, verificationToken, errors);
 
-                if(errors.getErrorCount() == 0)  // verified
+                if (errors.getErrorCount() == 0)  // verified
                 {
-                    if(!(currentEmailFromDatabase.equals(loggedInUserEmail)))
+                    if (!userToChange.getEmail().equals(loggedInUserEmail))
                     {
                         errors.reject(ERROR_MSG, "The current user is not the same user that initiated this request. Please log in with the account you used to make " +
                                 "this email change request.");
@@ -1966,16 +1954,15 @@ public class UserController extends SpringActionController
                         {
                             if (!canUpdateUser)  // don't bother auditing admin password link clicks
                             {
-                                UserManager.auditEmailTimeout(loggedInUser.getUserId(), validUserEmail.getEmailAddress(), requestedEmailFromDatabase, verificationToken, getUser());
+                                UserManager.auditEmailTimeout(loggedInUser.getUserId(), validUserEmail.getEmailAddress(), requestedEmail, verificationToken, getUser());
                             }
                             errors.reject(ERROR_MSG, "This verification link has expired. Please try to change your email address again.");
                         }
                         else
                         {
                             // everything is good, update database emails and return for update
-                            _currentEmailFromDatabase = currentEmailFromDatabase;
-                            _requestedEmailFromDatabase = requestedEmailFromDatabase;
-                            return;
+                            _userToChange = userToChange;
+                            _requestedEmail = requestedEmail;
                         }
                     }
                 }
@@ -1989,7 +1976,7 @@ public class UserController extends SpringActionController
                         }
                         errors.reject(ERROR_MSG, "Verification was incorrect. Make sure you've copied the entire link into your browser's address bar.");  // double error, to better explain to user
                     }
-                    else if(!(verificationToken.equals(verifyEmail.getVerification())))
+                    else if (!(verificationToken.equals(verifyEmail.getVerification())))
                     {
                         if (!canUpdateUser)  // don't bother auditing admin verification link clicks
                         {
@@ -2014,39 +2001,36 @@ public class UserController extends SpringActionController
         public boolean handlePost(UserForm form, BindException errors) throws Exception
         {
             boolean canUpdateUser = getUser().hasRootPermission(UpdateUserPermission.class);
-            User user;
-            int userId;
+            User userToChange;
 
             if (!canUpdateUser)
             {
-                user = getUser();
-                userId = user.getUserId();
+                userToChange = getUser();
             }
-            else  // admin, so use form user ID, which may be different from admin's
+            else  // admin, so use form user ID, which may be different from administrator's ID
             {
-                userId = form.getUserId();
-                user = getModifiableUser(userId);
+                userToChange = getModifiableUser(form.getUserId());
             }
 
             if (!canUpdateUser)  // need to verify email before changing if not site or app admin
             {
-                if(!AuthenticationManager.isSelfServiceEmailChangesEnabled())  // uh oh, shouldn't be here
+                if (!AuthenticationManager.isSelfServiceEmailChangesEnabled())  // uh oh, shouldn't be here
                 {
                     throw new UnauthorizedException("User attempted to access self-service email change, but this function is disabled.");
                 }
 
-                if(form.getIsChangeEmailRequest())
+                if (form.getIsChangeEmailRequest())
                 {
                     // do nothing, validation happened earlier
                 }
-                else if(form.getIsPasswordPrompt() || _isPasswordPrompt)
+                else if (form.getIsPasswordPrompt() || _isPasswordPrompt)
                 {
                     _isPasswordPrompt = true; // in case we get an error and need to come back to this action again
 
                     ValidEmail validRequestedEmail;
                     try
                     {
-                        if(form.getRequestedEmail() != null)
+                        if (form.getRequestedEmail() != null)
                         {
                             validRequestedEmail = new ValidEmail(form.getRequestedEmail());  // validate in case user altered this in the URL parameter
                             _validRequestedEmail = validRequestedEmail;
@@ -2062,26 +2046,26 @@ public class UserController extends SpringActionController
                         return false;
                     }
 
-                    String userEmail = user.getEmail();
+                    String userEmail = userToChange.getEmail();
                     boolean isAuthenticated = authenticate(userEmail, form.getPassword(), getViewContext().getActionURL().getReturnURL(), errors);
                     if (isAuthenticated)
                     {
                         String verificationToken = SecurityManager.createTempPassword();
-                        UserManager.requestEmailChange(userId, userEmail, validRequestedEmail.getEmailAddress(), verificationToken, getUser());
+                        UserManager.requestEmailChange(userToChange, validRequestedEmail, verificationToken, getUser());
                         // verification email
                         Container c = getContainer();
 
-                        ActionURL verifyLinkUrl = getChangeEmailAction(c, user);  // note that user ID added to URL here will only be used if an admin clicks the link, and the link won't work
+                        ActionURL verifyLinkUrl = getChangeEmailURL(c, userToChange);  // note that user ID added to URL here will only be used if an admin clicks the link, and the link won't work
                         verifyLinkUrl.addParameter("verificationToken", verificationToken);
                         verifyLinkUrl.addParameter("isFromVerifiedLink", true);
 
-                        SecurityManager.sendEmail(c, user, getRequestEmailMessage(userEmail, validRequestedEmail.getEmailAddress()), validRequestedEmail.getEmailAddress(), verifyLinkUrl);
+                        SecurityManager.sendEmail(c, userToChange, getRequestEmailMessage(userEmail, validRequestedEmail.getEmailAddress()), validRequestedEmail.getEmailAddress(), verifyLinkUrl);
                     }
                     else
                     {
                         errors.reject(ERROR_MSG, "Incorrect password.");
                         Container c = getContainer();
-                        ActionURL passwordPromptRetryUrl = getChangeEmailAction(c, user);
+                        ActionURL passwordPromptRetryUrl = getChangeEmailURL(c, userToChange);
                         passwordPromptRetryUrl.addParameter("isPasswordPrompt", true);
                         passwordPromptRetryUrl.addParameter("requestedEmail", form.getRequestedEmail());
                     }
@@ -2093,15 +2077,15 @@ public class UserController extends SpringActionController
             }
             else  // site admin, so make change directly
             {
-                if (user == null)
+                if (userToChange == null)
                     throw new IllegalStateException("Unknown user for change email POST.");
 
                 // don't let non-site admin change email of site admin
-                if (!getUser().hasSiteAdminPermission() && user.hasSiteAdminPermission())
+                if (!getUser().hasSiteAdminPermission() && userToChange.hasSiteAdminPermission())
                     throw new UnauthorizedException("Can not change email of a Site Admin user");
 
                 // use "ADMIN" as verification token for debugging, but should never be checked/used
-                UserManager.changeEmail(true, userId, user.getEmail(), form.getRequestedEmail(), "ADMIN", getUser());
+                UserManager.changeEmail(getUser(), userToChange, true, form.getRequestedEmail(), "ADMIN");
             }
 
             return !errors.hasErrors();
@@ -2114,12 +2098,12 @@ public class UserController extends SpringActionController
 
             if (!canUpdateUser)
             {
-                User user = getUser();
+                User currentUser = getUser();
 
                 if (form.getIsChangeEmailRequest())
                 {
                     Container c = getContainer();
-                    ActionURL passwordPromptUrl = getChangeEmailAction(c, user);
+                    ActionURL passwordPromptUrl = getChangeEmailURL(c, currentUser);
                     passwordPromptUrl.addParameter("isPasswordPrompt", true);
                     passwordPromptUrl.addParameter("requestedEmail", form.getRequestedEmail());
                     return passwordPromptUrl;
@@ -2127,14 +2111,14 @@ public class UserController extends SpringActionController
                 else if (form.getIsPasswordPrompt())
                 {
                     Container c = getContainer();
-                    ActionURL verifyRedirectUrl = getChangeEmailAction(c, user);
+                    ActionURL verifyRedirectUrl = getChangeEmailURL(c, currentUser);
                     verifyRedirectUrl.addParameter("isVerifyRedirect", true);
                     verifyRedirectUrl.addParameter("requestedEmail", form.getRequestedEmail());
                     return verifyRedirectUrl;
                 }
                 else  // actually making self-service email change, so redirect to user details page
                 {
-                    return new UserUrlsImpl().getUserDetailsURL(getContainer(), user.getUserId(), form.getReturnURLHelper());
+                    return new UserUrlsImpl().getUserDetailsURL(getContainer(), currentUser.getUserId(), form.getReturnURLHelper());
                 }
             }
             else  // admin email change, so redirect to user details page
@@ -2181,7 +2165,6 @@ public class UserController extends SpringActionController
     {
         private int _userId;
         private String _password;
-        private String _oldEmail;
         private String _requestedEmail;
         private String _requestedEmailConfirmation;
         private String _message = null;
@@ -2191,11 +2174,11 @@ public class UserController extends SpringActionController
         private boolean _isFromVerifiedLink = false;
         private boolean _isVerified = false;
         private String _verificationToken = null;
-        private User _user;
+        private User _userToChange;
 
-        public User getUser()
+        public User getUserToChange()
         {
-            return _user;
+            return _userToChange;
         }
 
         public int getUserId()
@@ -2218,17 +2201,6 @@ public class UserController extends SpringActionController
         public void setPassword(String password)
         {
             _password = password;
-        }
-
-        public String getOldEmail()
-        {
-            return _oldEmail;
-        }
-
-        @SuppressWarnings({"UnusedDeclaration"})
-        public void setOldEmail(String oldEmail)
-        {
-            _oldEmail = oldEmail;
         }
 
         public String getRequestedEmail()

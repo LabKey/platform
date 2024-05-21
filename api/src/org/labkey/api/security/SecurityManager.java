@@ -1359,7 +1359,7 @@ public class SecurityManager
     }
 
     // Used only in the case of email change... current email address might be invalid
-    static boolean loginExists(String email)
+    public static boolean loginExists(String email)
     {
         return (null != getPasswordHash(email));
     }
