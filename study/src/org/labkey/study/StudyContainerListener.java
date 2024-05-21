@@ -24,11 +24,6 @@ import org.labkey.study.model.StudyManager;
 
 import java.beans.PropertyChangeEvent;
 
-/**
- * User: adam
- * Date: Nov 3, 2008
- * Time: 3:48:15 PM
- */
 public class StudyContainerListener extends ContainerManager.AbstractContainerListener
 {
     @Override

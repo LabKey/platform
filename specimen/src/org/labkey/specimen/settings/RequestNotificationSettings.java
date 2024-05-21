@@ -13,25 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.specimen.settings;
+package org.labkey.specimen.settings;
 
+import jakarta.mail.Address;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.SafeToRenderEnum;
 
-import jakarta.mail.Address;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
-
-/*
- * User: brittp
- * Date: May 8, 2009
- * Time: 2:52:06 PM
- */
 
 public class RequestNotificationSettings
 {
