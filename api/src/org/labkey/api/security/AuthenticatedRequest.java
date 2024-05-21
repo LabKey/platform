@@ -490,7 +490,7 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
         GuestSessionMarker(AuthenticatedRequest r)
         {
             // do not hold onto request
-            _ip = r.getRemoteAddr();
+            _ip = StringUtils.defaultIfBlank(r.getHeader("X-Forwarded-For"), r.getRemoteAddr());
             _info = new TreeMap<>();
             Enumeration<String> e = r.getHeaderNames();
             while (e.hasMoreElements())
