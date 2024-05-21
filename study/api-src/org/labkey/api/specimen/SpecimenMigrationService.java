@@ -6,7 +6,9 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
+import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
@@ -14,6 +16,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.importer.SimpleStudyImportContext;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -45,17 +48,13 @@ public interface SpecimenMigrationService
     String SPECIMENS_ARCHIVE_TYPE = "Specimens";
 
     ActionURL getBeginURL(Container c);
-    ActionURL getInsertSpecimenQueryRowURL(Container c, String schemaName, TableInfo table);
     ActionURL getSelectedSpecimensURL(Container c);
-    ActionURL getSpecimenEventsURL(Container c, ActionURL returnUrl);
     ActionURL getSpecimensURL(Container c);
-    ActionURL getUpdateSpecimenQueryRowURL(Container c, String schemaName, TableInfo table);
 
     void importSpecimenArchive(@Nullable Path inputFile, PipelineJob job, SimpleStudyImportContext ctx, boolean merge,
                                boolean syncParticipantVisit) throws PipelineJobException, ValidationException;
 
     void clearRequestCaches(Container c);
-    void updateVialCounts(Container container, User user);
 
     @Nullable QueryUpdateService getSpecimenQueryUpdateService(Container c, TableInfo queryTable);
 
@@ -63,4 +62,5 @@ public interface SpecimenMigrationService
     void exportSpecimens(Container container, User user, List<Map<String, Object>> specimens, TimepointType timepointType, String participantIdLabel, HttpServletResponse response);
     Map<String, String> getColumnLabelMap(Container container, User user);
     void fixupSpecimenColumns(Container container, User user, TabLoader loader) throws IOException;
+    QueryView getSpecimenQueryView(ViewContext context, QuerySettings settings);
 }

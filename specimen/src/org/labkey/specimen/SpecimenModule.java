@@ -37,7 +37,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryParam;
+import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.ValidationException;
@@ -48,16 +48,13 @@ import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenQuerySchema;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.SpecimensPage;
-import org.labkey.specimen.importer.SimpleSpecimenImporter;
-import org.labkey.specimen.importer.SpecimenImporter;
-import org.labkey.api.study.MapArrayExcelWriter;
-import org.labkey.api.study.TimepointType;
-import org.labkey.specimen.query.SpecimenUpdateService;
 import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.api.specimen.settings.SettingsManager;
+import org.labkey.api.study.MapArrayExcelWriter;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.StudyInternalService;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.importer.SimpleStudyImportContext;
 import org.labkey.api.study.importer.SimpleStudyImporterRegistry;
 import org.labkey.api.study.writer.SimpleStudyWriterRegistry;
@@ -66,17 +63,22 @@ import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.specimen.actions.SpecimenApiController;
 import org.labkey.specimen.actions.SpecimenController;
 import org.labkey.specimen.importer.AbstractSpecimenTask;
 import org.labkey.specimen.importer.DefaultSpecimenImportStrategyFactory;
+import org.labkey.specimen.importer.SimpleSpecimenImporter;
+import org.labkey.specimen.importer.SpecimenImporter;
 import org.labkey.specimen.importer.SpecimenSchemaImporter;
 import org.labkey.specimen.importer.SpecimenSettingsImporter;
 import org.labkey.specimen.model.SpecimenRequestEventType;
 import org.labkey.specimen.pipeline.SampleMindedTransform;
 import org.labkey.specimen.pipeline.SampleMindedTransformTask;
 import org.labkey.specimen.pipeline.SpecimenPipeline;
+import org.labkey.specimen.query.SpecimenQueryView;
+import org.labkey.specimen.query.SpecimenUpdateService;
 import org.labkey.specimen.security.roles.SpecimenCoordinatorRole;
 import org.labkey.specimen.security.roles.SpecimenRequesterRole;
 import org.labkey.specimen.view.ManageSpecimenView;
@@ -171,32 +173,6 @@ public class SpecimenModule extends SpringModule
             }
 
             @Override
-            public ActionURL getSpecimenEventsURL(Container c, ActionURL returnURL)
-            {
-                return new ActionURL(SpecimenController.SpecimenEventsAction.class, c).addReturnURL(returnURL);
-            }
-
-            @Override
-            public ActionURL getInsertSpecimenQueryRowURL(Container c, String schemaName, TableInfo table)
-            {
-                ActionURL url = new ActionURL(SpecimenController.InsertSpecimenQueryRowAction.class, c);
-                url.addParameter("schemaName", schemaName);
-                url.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, table.getName());
-
-                return url;
-            }
-
-            @Override
-            public ActionURL getUpdateSpecimenQueryRowURL(Container c, String schemaName, TableInfo table)
-            {
-                ActionURL url = new ActionURL(SpecimenController.UpdateSpecimenQueryRowAction.class, c);
-                url.addParameter("schemaName", schemaName);
-                url.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, table.getName());
-
-                return url;
-            }
-
-            @Override
             public void importSpecimenArchive(@Nullable Path inputFile, PipelineJob job, SimpleStudyImportContext ctx, boolean merge, boolean syncParticipantVisit) throws PipelineJobException, ValidationException
             {
                 AbstractSpecimenTask.doImport(inputFile, job, ctx, merge, syncParticipantVisit);
@@ -230,7 +206,7 @@ public class SpecimenModule extends SpringModule
             @Override
             public void exportSpecimens(Container container, User user, List<Map<String, Object>> specimens, TimepointType timepointType, String participantIdLabel, HttpServletResponse response)
             {
-                SimpleSpecimenImporter importer = new SimpleSpecimenImporter(container, user, TimepointType.DATE, "Subject");
+                SimpleSpecimenImporter importer = new SimpleSpecimenImporter(container, user, timepointType, participantIdLabel);
                 MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(specimens, importer.getSimpleSpecimenColumns());
                 // Note: I don't think this is having any effect on the output because ExcelColumn.renderCaption() uses
                 // the DisplayColumn's caption, not its own caption. That seems wrong...
@@ -248,6 +224,12 @@ public class SpecimenModule extends SpringModule
             public void fixupSpecimenColumns(Container container, User user, TabLoader loader) throws IOException
             {
                 new SimpleSpecimenImporter(container, user).fixupSpecimenColumns(loader);
+            }
+
+            @Override
+            public QueryView getSpecimenQueryView(ViewContext context, QuerySettings settings)
+            {
+                return SpecimenQueryView.createView(context, settings, SpecimenQueryView.ViewType.VIALS);
             }
         });
      }

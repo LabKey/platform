@@ -62,6 +62,7 @@ import org.labkey.api.specimen.SpecimenEventDateComparator;
 import org.labkey.api.specimen.SpecimenEventManager;
 import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenSchema;
+import org.labkey.specimen.SpecimenRequestManager;
 import org.labkey.specimen.SpecimenTableManager;
 import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.importer.EventVialRollup;
@@ -1067,7 +1068,7 @@ public class SpecimenImporter extends SpecimenTableManager
         _iTimer.setPhase(ImportPhases.UpdateVialCounts);
         info("Updating cached vial counts...");
 
-        SpecimenMigrationService.get().updateVialCounts(getContainer(), getUser());
+        SpecimenRequestManager.get().updateVialCounts(getContainer(), getUser());
 
         info("Vial count update complete.");
     }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.api.specimen.query;
+package org.labkey.specimen.query;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -41,11 +41,12 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.security.User;
-import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenQuerySchema;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
@@ -65,6 +66,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.specimen.actions.SpecimenController;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -211,7 +213,7 @@ public class SpecimenQueryView extends BaseSpecimenQueryView
     protected static ActionURL getHistoryLinkURL(ViewContext ctx, String containerId)
     {
         Container container = null != containerId ? ContainerManager.getForId(containerId) : ctx.getContainer();
-        return SpecimenMigrationService.get().getSpecimenEventsURL(container, ctx.getActionURL());
+        return new ActionURL(SpecimenController.SpecimenEventsAction.class, container).addReturnURL(ctx.getActionURL());
     }
 
     private class SpecimenRestrictedDataRegion extends SpecimenDataRegion
@@ -385,12 +387,16 @@ public class SpecimenQueryView extends BaseSpecimenQueryView
         if (isEditable)
         {
             AbstractTableInfo tableInfo = (AbstractTableInfo) getTable();
-            ActionURL updateActionURL = SpecimenMigrationService.get().getUpdateSpecimenQueryRowURL(getContainer(), "study", tableInfo);
-            setUpdateURL(new DetailsURL(updateActionURL, Collections.singletonMap("RowId", "RowId")));
+            ActionURL updateUrl = new ActionURL(SpecimenController.UpdateSpecimenQueryRowAction.class, getContainer());
+            updateUrl.addParameter("schemaName", "study");
+            updateUrl.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, tableInfo.getName());
+            setUpdateURL(new DetailsURL(updateUrl, Collections.singletonMap("RowId", "RowId")));
 
-            ActionURL insertActionURL = SpecimenMigrationService.get().getInsertSpecimenQueryRowURL(getContainer(), "study", tableInfo);
             // we want a DetailsURL-like string so clear the container
-            insertActionURL.setContainer(ContainerManager.getRoot());
+            ActionURL insertActionURL = new ActionURL(SpecimenController.UpdateSpecimenQueryRowAction.class, ContainerManager.getRoot());
+            insertActionURL.addParameter("schemaName", "study");
+            insertActionURL.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, tableInfo.getName());
+
             setInsertURL(insertActionURL.getLocalURIString(false));
         }
 

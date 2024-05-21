@@ -30,7 +30,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.specimen.SpecimenQuerySchema;
 import org.labkey.api.specimen.SpecimenRequestStatus;
-import org.labkey.api.specimen.query.BaseSpecimenQueryView;
 import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
 import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.Study;
