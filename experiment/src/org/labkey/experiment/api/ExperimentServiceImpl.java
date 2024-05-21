@@ -3771,6 +3771,15 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
     }
 
+    public void clearAncestors(ExpRunItem runItem)
+    {
+        boolean isSample = runItem instanceof ExpMaterial;
+        if (isSample)
+            ClosureQueryHelper.clearAncestorsForMaterial(runItem.getRowId());
+        else
+            ClosureQueryHelper.clearAncestorsForDataObject(runItem.getRowId());
+    }
+
     public List<ProtocolApplication> getProtocolApplicationsForRun(int runId)
     {
         List<ProtocolApplication> protocolApplications = new TableSelector(getTinfoProtocolApplication(), new SimpleFilter(FieldKey.fromParts("RunId"), runId), null).getArrayList(ProtocolApplication.class);

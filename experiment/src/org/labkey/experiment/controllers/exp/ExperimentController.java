@@ -197,6 +197,7 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.experiment.*;
+import org.labkey.experiment.api.ClosureQueryHelper;
 import org.labkey.experiment.api.DataClass;
 import org.labkey.experiment.api.DataClassDomainKind;
 import org.labkey.experiment.api.ExpDataClassAttachmentParent;
@@ -7010,6 +7011,19 @@ public class ExperimentController extends SpringActionController
             return success();
         }
     }
+
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(AdminPermission.class)
+    public static class RebuildAncestorsAction extends MutatingApiAction<Object>
+    {
+        @Override
+        public Object execute(Object form, BindException errors)
+        {
+            ClosureQueryHelper.truncateAndRecreate();
+            return success();
+        }
+    }
+
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(AdminPermission.class)

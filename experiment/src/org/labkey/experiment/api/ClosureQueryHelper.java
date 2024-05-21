@@ -17,6 +17,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TempTableTracker;
 import org.labkey.api.data.VirtualTable;
@@ -39,6 +40,7 @@ import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.NotFoundException;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -234,7 +236,7 @@ public class ClosureQueryHelper
 
     static final AtomicInteger temptableNumber = new AtomicInteger();
 
-    private static void incrementalRecompute(String sourceLSID, SQLFragment from, boolean isSampleType)
+    private static void incrementalRecompute(SQLFragment from, boolean isSampleType)
     {
         TempTableTracker ttt = null;
         try
@@ -245,9 +247,13 @@ public class ClosureQueryHelper
             SQLFragment selectInto = selectIntoTempTableSql(getScope().getSqlDialect(), from, tempTableName);
             new SqlExecutor(getScope()).execute(selectInto);
 
+
             SQLFragment upsert;
             TableInfo tInfo = isSampleType ? ExperimentServiceImpl.get().getTinfoMaterialAncestors() : ExperimentServiceImpl.get().getTinfoDataAncestors();
-            if (getScope().getSqlDialect().isPostgreSQL())
+            DbScope scope = tInfo.getSchema().getScope();
+            SqlDialect dialect = scope.getSqlDialect();
+
+            if (dialect.isPostgreSQL())
             {
                 upsert = new SQLFragment()
                         .append("INSERT INTO ").append(tInfo)
@@ -265,13 +271,38 @@ public class ClosureQueryHelper
                         .append("WHEN NOT MATCHED THEN INSERT (RowId, AncestorRowId, AncestorTypeId) VALUES (Source.RowId, Source.ancestorRowId, Source.ancestorTypeId)").appendEOS();
             }
 
-            new SqlExecutor(tInfo.getSchema().getScope()).execute(upsert);
+            new SqlExecutor(scope).execute(upsert);
+
+            // now delete the rows for ancestor types no longer in the mix.
+            List<Integer> rowIds = new SqlSelector(scope, "SELECT DISTINCT RowId FROM temp." + tempTableName).getArrayList(Integer.class);
+            SQLFragment delete = new SQLFragment()
+                    .append("DELETE FROM ").append(tInfo)
+                    .append(" WHERE RowId ");
+            dialect.appendInClauseSql(delete, rowIds);
+            delete.append(" AND AncestorTypeId IN  (SELECT AncestorTypeId FROM ").append(tInfo).append(" WHERE RowId ");
+            dialect.appendInClauseSql(delete, rowIds);
+            delete.append(" EXCEPT SELECT AncestorTypeId FROM temp.").append(tempTableName).append(")");
+            new SqlExecutor(scope).execute(delete);
         }
         finally
         {
             if (null != ttt)
                 ttt.delete();
         }
+    }
+
+    public static void clearAncestorsForMaterial(int rowId)
+    {
+        SQLFragment sql = new SQLFragment("DELETE FROM ").append(ExperimentService.get().getTinfoMaterialAncestors())
+                .append(" WHERE RowId=").appendValue(rowId);
+        new SqlExecutor(getScope()).execute(sql);
+    }
+
+    public static void clearAncestorsForDataObject(int rowId)
+    {
+        SQLFragment sql = new SQLFragment("DELETE FROM ").append(ExperimentService.get().getTinfoDataAncestors())
+                .append(" WHERE RowId=").appendValue(rowId);
+        new SqlExecutor(getScope()).execute(sql);
     }
 
     public static void populateMaterialAncestors(Logger logger)
@@ -347,7 +378,7 @@ public class ClosureQueryHelper
                 .append("WHERE pa.RunId = ").appendValue(runId)
                 .append(" AND m.cpasType = ? ").add(sourceTypeLsid)
                 .append(" AND pa.CpasType = ").appendValue(ExperimentRunOutput).append(") _seed_ ");
-        incrementalRecompute(sourceTypeLsid, seedFrom, true);
+        incrementalRecompute(seedFrom, true);
     }
 
     public static void invalidateDataObjectsForRun(String sourceTypeLsid, int runId)
@@ -366,7 +397,7 @@ public class ClosureQueryHelper
                 .append("WHERE pa.RunId = ").appendValue(runId)
                 .append(" AND d.cpasType = ? ").add(sourceTypeLsid)
                 .append(" AND pa.CpasType = ").appendValue(ExperimentRunOutput).append(") _seed_ ");
-        incrementalRecompute(sourceTypeLsid, seedFrom, false);
+        incrementalRecompute(seedFrom, false);
     }
 
     private static DbScope getScope()
