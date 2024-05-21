@@ -20,10 +20,11 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.specimen.SpecimenEvent;
+import org.labkey.api.specimen.SpecimenEventManager;
 import org.labkey.api.specimen.SpecimenManagerNew;
 import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenQuerySchema;
-import org.labkey.api.specimen.SpecimenRequestException;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.location.LocationImpl;
@@ -564,5 +565,32 @@ public class SpecimenManager
         SQLFragment sql = new SQLFragment("SELECT MAX(ExternalId) FROM ");
         sql.append(tableInfo);
         return new SqlSelector(tableInfo.getSchema(), sql).getArrayList(Long.class).get(0);
+    }
+
+    public String getFirstProcessedByInitials(List<SpecimenEvent> dateOrderedEvents)
+    {
+        SpecimenEvent firstEvent = SpecimenEventManager.get().getFirstEvent(dateOrderedEvents);
+        return firstEvent != null ? firstEvent.getProcessedByInitials() : null;
+    }
+
+    public List<SpecimenEvent> getSpecimenEvents(List<Vial> vials, boolean includeObsolete)
+    {
+        if (vials == null || vials.isEmpty())
+            return Collections.emptyList();
+        Collection<Long> vialIds = new HashSet<>();
+        Container container = null;
+        for (Vial vial : vials)
+        {
+            vialIds.add(vial.getRowId());
+            if (container == null)
+                container = vial.getContainer();
+            else if (!container.equals(vial.getContainer()))
+                throw new IllegalArgumentException("All specimens must be from the same container");
+        }
+        SimpleFilter filter = new SimpleFilter();
+        filter.addInClause(FieldKey.fromString("VialId"), vialIds);
+        if (!includeObsolete)
+            filter.addCondition(FieldKey.fromString("Obsolete"), false);
+        return SpecimenEventManager.get().getSpecimenEvents(container, filter);
     }
 }

@@ -63,4 +63,6 @@ public interface SpecimenMigrationService
     Map<String, String> getColumnLabelMap(Container container, User user);
     void fixupSpecimenColumns(Container container, User user, TabLoader loader) throws IOException;
     QueryView getSpecimenQueryView(ViewContext context, QuerySettings settings);
+
+    void setDefaultRequestabilityRules(Container container, User user);
 }

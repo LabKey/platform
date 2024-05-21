@@ -69,6 +69,7 @@ import org.labkey.specimen.actions.SpecimenApiController;
 import org.labkey.specimen.actions.SpecimenController;
 import org.labkey.specimen.importer.AbstractSpecimenTask;
 import org.labkey.specimen.importer.DefaultSpecimenImportStrategyFactory;
+import org.labkey.specimen.importer.RequestabilityManager;
 import org.labkey.specimen.importer.SimpleSpecimenImporter;
 import org.labkey.specimen.importer.SpecimenImporter;
 import org.labkey.specimen.importer.SpecimenSchemaImporter;
@@ -185,12 +186,6 @@ public class SpecimenModule extends SpringModule
             }
 
             @Override
-            public void updateVialCounts(Container container, User user)
-            {
-                SpecimenRequestManager.get().updateVialCounts(container, user);
-            }
-
-            @Override
             public @Nullable QueryUpdateService getSpecimenQueryUpdateService(Container c, TableInfo queryTable)
             {
                 return SettingsManager.get().getRepositorySettings(c).isSpecimenDataEditable() ? new SpecimenUpdateService(queryTable) : null;
@@ -230,6 +225,12 @@ public class SpecimenModule extends SpringModule
             public QueryView getSpecimenQueryView(ViewContext context, QuerySettings settings)
             {
                 return SpecimenQueryView.createView(context, settings, SpecimenQueryView.ViewType.VIALS);
+            }
+
+            @Override
+            public void setDefaultRequestabilityRules(Container container, User user)
+            {
+                RequestabilityManager.getInstance().setDefaultRules(container, user);
             }
         });
      }

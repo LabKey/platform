@@ -40,7 +40,6 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.specimen.SpecimenEvent;
 import org.labkey.api.specimen.SpecimenEventManager;
 import org.labkey.api.specimen.SpecimenMigrationService;
-import org.labkey.api.specimen.SpecimenRequestException;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
 import org.labkey.api.study.Study;
@@ -48,6 +47,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.specimen.SpecimenManager;
+import org.labkey.specimen.SpecimenRequestException;
 import org.labkey.specimen.importer.EditableSpecimenImporter;
 
 import java.io.IOException;
@@ -523,14 +523,14 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         ArrayList<Integer> counts = new SqlSelector(getQueryTable().getSchema(), sql).getArrayList(Integer.class);
         if (counts.size() > 1)
             throw new ValidationException("Expected one and only one count of rows.");
-        else if (counts.size() > 0 && counts.get(0) != 0)
+        else if (!counts.isEmpty() && counts.get(0) != 0)
             throw new ValidationException("Specimen may not be deleted because it has been used in a request.");
     }
 
     private static Map<String, Object> getLastEventMap(Container container, Vial vial)
     {
         List<Vial> vials = Collections.singletonList(vial);
-        SpecimenEvent specimenEvent = SpecimenEventManager.get().getLastEvent(SpecimenEventManager.get().getSpecimenEvents(vials, false));
+        SpecimenEvent specimenEvent = SpecimenEventManager.get().getLastEvent(SpecimenManager.get().getSpecimenEvents(vials, false));
         if (null == specimenEvent)
             throw new IllegalStateException("Expected at least one event for specimen.");
         TableInfo tableInfoSpecimenEvent = SpecimenSchema.get().getTableInfoSpecimenEvent(container);
