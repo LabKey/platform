@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import React from 'react'
-import { ActionURL, getServerContext, Domain } from "@labkey/api";
+import React from 'react';
+import { ActionURL, getServerContext } from "@labkey/api";
 import {
     Alert,
     LoadingSpinner,
@@ -22,7 +22,8 @@ import {
     BeforeUnload,
     IssuesListDefDesignerPanels,
     fetchIssuesListDefDesign,
-} from "@labkey/components";
+    withServerContext,
+} from '@labkey/components';
 
 import '../DomainDesigner.scss';
 
@@ -32,7 +33,7 @@ type State = {
     model?: IssuesListDefModel
 }
 
-export class App extends React.Component<{}, State> {
+class IssuesListDesigner extends React.Component<{}, State> {
 
     private _dirty: boolean = false;
 
@@ -129,3 +130,5 @@ export class App extends React.Component<{}, State> {
         );
     }
 }
+
+export const App = withServerContext(IssuesListDesigner);

@@ -58,7 +58,7 @@
     <tr>
         <td>Visit</td>
         <td>
-            <select name="<%=h(VisitImpl.VISITKEY)%>">
+            <select name="<%=h(VisitImpl.VISIT_KEY)%>">
                 <option value="0">All Visits</option>
                 <%
                     for (VisitImpl visit : bean.getVisits())

@@ -58,6 +58,11 @@ public class TsvPlateLayoutHandler extends AbstractPlateLayoutHandler
     @Override
     public List<WellGroup.Type> getWellGroupTypes()
     {
-        return Arrays.asList(WellGroup.Type.CONTROL, WellGroup.Type.SAMPLE);
+        return Arrays.asList(
+            WellGroup.Type.CONTROL,
+            WellGroup.Type.SAMPLE,
+            WellGroup.Type.POSITIVE_CONTROL,
+            WellGroup.Type.NEGATIVE_CONTROL
+        );
     }
 }

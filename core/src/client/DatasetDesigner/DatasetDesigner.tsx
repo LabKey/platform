@@ -22,6 +22,7 @@ import {
     fetchDatasetDesign,
     LoadingSpinner,
     BeforeUnload,
+    withServerContext,
 } from '@labkey/components';
 import { ActionURL, Domain, getServerContext } from '@labkey/api';
 
@@ -33,7 +34,7 @@ interface State {
     message?: string;
 }
 
-export class App extends PureComponent<any, State> {
+class DatasetDesigner extends PureComponent<any, State> {
     private _dirty: boolean = false;
 
     constructor(props) {
@@ -139,3 +140,5 @@ export class App extends PureComponent<any, State> {
         );
     }
 }
+
+export const App = withServerContext(DatasetDesigner);

@@ -25,6 +25,7 @@ import {
     IBannerMessage,
     LoadingSpinner,
     Modal,
+    withServerContext,
 } from '@labkey/components';
 import { ActionURL, getServerContext } from '@labkey/api';
 
@@ -49,7 +50,7 @@ interface IAppState {
     error: string;
 }
 
-export class App extends PureComponent<any, Partial<IAppState>> {
+class QueryMetadataEditor extends PureComponent<any, Partial<IAppState>> {
     private _dirty: boolean = false;
 
     constructor(props) {
@@ -430,3 +431,5 @@ export class App extends PureComponent<any, Partial<IAppState>> {
         );
     }
 }
+
+export const App = withServerContext(QueryMetadataEditor);

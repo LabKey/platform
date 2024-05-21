@@ -37,11 +37,6 @@ import static org.labkey.api.data.Table.CREATED_COLUMN_NAME;
 import static org.labkey.api.data.Table.MODIFIED_BY_COLUMN_NAME;
 import static org.labkey.api.data.Table.MODIFIED_COLUMN_NAME;
 
-/**
- * User: brittp
- * Date: June 25, 2007
- * Time: 1:01:43 PM
- */
 public class AssayResultDomainKind extends AssayDomainKind
 {
     public static final String PLATE_COLUMN_NAME = "Plate";

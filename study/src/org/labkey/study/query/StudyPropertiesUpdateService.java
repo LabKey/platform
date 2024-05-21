@@ -16,6 +16,7 @@
 package org.labkey.study.query;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -39,17 +40,12 @@ import org.labkey.study.visitmanager.VisitManager;
 import java.util.Date;
 import java.util.Map;
 
-/**
- * User: jgarms
- * Date: Aug 11, 2008
- */
 public class StudyPropertiesUpdateService extends AbstractQueryUpdateService
 {
     public StudyPropertiesUpdateService(TableInfo table)
     {
         super(table);
     }
-
 
     @Override
     @SuppressWarnings("unchecked")
@@ -64,7 +60,6 @@ public class StudyPropertiesUpdateService extends AbstractQueryUpdateService
             throw new QueryUpdateServiceException("StudyProperties table not found.");
         return new TableSelector(queryTableInfo).getObject(container.getId(), Map.class);
     }
-
 
     @Override
     protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @Nullable Map<String, Object> oldRow, @Nullable Map<Enum, Object> configParameters) throws ValidationException, QueryUpdateServiceException
@@ -140,7 +135,10 @@ public class StudyPropertiesUpdateService extends AbstractQueryUpdateService
         }
 
         if (!updateRow.isEmpty())
+        {
             Table.update(user, table.getRealTable(), updateRow, study.getContainer().getId());
+            DbCache.trackRemove(table.getRealTable());
+        }
 
         StudyManager.getInstance().clearCaches(container, false);
 
@@ -149,7 +147,7 @@ public class StudyPropertiesUpdateService extends AbstractQueryUpdateService
 
         if (recalculateTimepoints)
         {
-            // Blow away all of the existing visit info and rebuild it
+            // Blow away all existing visit info and rebuild it
             VisitManager manager = StudyManager.getInstance().getVisitManager(study);
             StudySchema schema = StudySchema.getInstance();
 
@@ -172,13 +170,11 @@ public class StudyPropertiesUpdateService extends AbstractQueryUpdateService
         return getRow(user, container, null);
     }
 
-
     @Override
     protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow)
     {
         throw new UnsupportedOperationException("You cannot delete all of a Study's properties");
     }
-
 
     @Override
     protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws ValidationException, QueryUpdateServiceException

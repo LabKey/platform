@@ -48,6 +48,7 @@ import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
+import org.labkey.specimen.SpecimenManager;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -78,7 +79,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
         if (!settings.isSimple())
             return HttpView.redirect(PageFlowUtil. urlProvider(PipelineUrls.class).urlBrowse(container));
 
-        boolean isEmpty = SpecimenManagerNew.get().isSpecimensEmpty(container, getUser());
+        boolean isEmpty = SpecimenManager.get().isSpecimensEmpty(container, getUser());
         if (isEmpty)
         {
             form.setNoSpecimens(true);

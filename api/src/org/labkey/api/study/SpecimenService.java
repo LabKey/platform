@@ -119,7 +119,7 @@ public interface SpecimenService
     /** Hooks to allow other modules to control a few items about how specimens are treated */
     interface SpecimenRequestCustomizer
     {
-        /** @return whether or not a specimen request must include at least one vial */
+        /** @return whether a specimen request must include at least one vial */
         boolean allowEmptyRequests();
 
         /** @return null if users should always supply a destination site for a given request, or the site's id if they should all be the same */
@@ -140,4 +140,6 @@ public interface SpecimenService
 
     @Migrate // Remove after specimen module refactor (SpecimenImporter should call the impl)
     void fireSpecimensChanged(Container c, User user, Logger logger);
+
+    void deleteAllSpecimenData(Container c, Set<TableInfo> set, User user);
 }

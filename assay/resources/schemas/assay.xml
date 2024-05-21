@@ -107,75 +107,6 @@
       </column>
     </columns>
   </table>
-  <table tableName="Well" tableDbType="TABLE">
-    <description>Contains one row per well in a plate.</description>
-    <columns>
-      <column columnName="RowId"/>
-      <column columnName="LSID">
-        <isUserEditable>false</isUserEditable>
-      </column>
-      <column columnName="Container"/>
-      <column columnName="Value">
-        <description>The data value associated with each well.</description>
-      </column>
-      <column columnName="Dilution">
-        <description>This well's dilution/concentration value.</description>
-      </column>
-      <column columnName="PlateId">
-        <description>The row ID of the plate with which each well is associated.</description>
-        <columnTitle>Plate</columnTitle>
-        <fk>
-          <fkDbSchema>plate</fkDbSchema>
-          <fkTable>Plate</fkTable>
-          <fkColumnName>rowId</fkColumnName>
-        </fk>
-      </column>
-      <column columnName="SampleId">
-        <description>The sample associated with this well.</description>
-      </column>
-      <column columnName="Row">
-        <description>The zero-based row index of each well.</description>
-      </column>
-      <column columnName="Col">
-        <description>The zero-based column index of each well.</description>
-      </column>
-    </columns>
-  </table>
-  <table tableName="WellGroup" tableDbType="TABLE">
-    <description>Contains one row per well group.</description>
-    <columns>
-      <column columnName="RowId"/>
-      <column columnName="PlateId">
-        <description>The row ID of the plate with which each well group is associated.</description>
-        <columnTitle>Plate</columnTitle>
-        <fk>
-          <fkDbSchema>plate</fkDbSchema>
-          <fkTable>Plate</fkTable>
-          <fkColumnName>rowId</fkColumnName>
-        </fk>
-      </column>
-      <column columnName="LSID"/>
-      <column columnName="Container"/>
-      <column columnName="Name">
-        <description>The name of each well group.</description>
-      </column>
-      <column columnName="TypeName">
-        <columnTitle>Type</columnTitle>
-        <description>The type of each well group.  For example, "CONTROL", "REPLICATE", or "SPECIMEN".</description>
-      </column>
-      <column columnName="Template">
-        <description>Boolean indicating whether each well group is part of a plate template (versus a plate instance).</description>
-      </column>
-    </columns>
-  </table>
-  <table tableName="wellGroupPositions" tableDbType="TABLE">
-    <description>Contains well to well group association.</description>
-    <columns>
-      <column columnName="RowId"/>
-      <column columnName="WellId"/>
-      <column columnName="WellGroupId"/>
-    </columns>
-  </table>
   <table tableName="PlateProperty" tableDbType="TABLE">
     <columns>
       <column columnName="RowId"/>
@@ -254,6 +185,81 @@
       <column columnName="PlateSetPath">
         <isHidden>true</isHidden>
       </column>
+    </columns>
+  </table>
+  <table tableName="Well" tableDbType="TABLE">
+    <description>Contains one row per well in a plate.</description>
+    <columns>
+      <column columnName="RowId"/>
+      <column columnName="LSID">
+        <isUserEditable>false</isUserEditable>
+      </column>
+      <column columnName="Container"/>
+      <column columnName="Value">
+        <description>The data value associated with each well.</description>
+      </column>
+      <column columnName="Dilution">
+        <description>This well's dilution/concentration value.</description>
+      </column>
+      <column columnName="PlateId">
+        <description>The row ID of the plate with which each well is associated.</description>
+        <columnTitle>Plate</columnTitle>
+        <fk>
+          <fkDbSchema>plate</fkDbSchema>
+          <fkTable>Plate</fkTable>
+          <fkColumnName>rowId</fkColumnName>
+        </fk>
+      </column>
+      <column columnName="SampleId">
+        <description>The sample associated with this well.</description>
+      </column>
+      <column columnName="Row">
+        <description>The zero-based row index of each well.</description>
+      </column>
+      <column columnName="Col">
+        <description>The zero-based column index of each well.</description>
+      </column>
+    </columns>
+  </table>
+  <table tableName="WellGroup" tableDbType="TABLE">
+    <description>Contains one row per well group.</description>
+    <columns>
+      <column columnName="RowId"/>
+      <column columnName="PlateId">
+        <description>The row ID of the plate with which each well group is associated.</description>
+        <columnTitle>Plate</columnTitle>
+        <fk>
+          <fkDbSchema>plate</fkDbSchema>
+          <fkTable>Plate</fkTable>
+          <fkColumnName>rowId</fkColumnName>
+        </fk>
+      </column>
+      <column columnName="LSID"/>
+      <column columnName="Container"/>
+      <column columnName="Name">
+        <description>The name of each well group.</description>
+      </column>
+      <column columnName="TypeName">
+        <columnTitle>Type</columnTitle>
+        <description>The type of each well group.  For example, "CONTROL", "REPLICATE", or "SAMPLE".</description>
+        <fk>
+          <fkDbSchema>plate</fkDbSchema>
+          <fkTable>WellGroupType</fkTable>
+          <fkColumnName>Value</fkColumnName>
+          <fkDisplayColumnName>Label</fkDisplayColumnName>
+        </fk>
+      </column>
+      <column columnName="Template">
+        <description>Boolean indicating whether each well group is part of a plate template (versus a plate instance).</description>
+      </column>
+    </columns>
+  </table>
+  <table tableName="WellGroupPositions" tableDbType="TABLE">
+    <description>Contains well to well group association.</description>
+    <columns>
+      <column columnName="RowId"/>
+      <column columnName="WellId"/>
+      <column columnName="WellGroupId"/>
     </columns>
   </table>
 </tables>

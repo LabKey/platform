@@ -249,8 +249,7 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
         @Override
         public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
         {
-            List<Map<String, Object>> results = super._insertRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
-            return results;
+            return super._insertRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
         }
 
         @Override
@@ -261,9 +260,13 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
             if (plate == null)
                 return Collections.emptyMap();
 
-            int runsInUse = PlateManager.get().getRunCountUsingPlate(container, user, plate);
-            if (runsInUse > 0)
-                throw new QueryUpdateServiceException(String.format("%s is used by %d runs and cannot be updated", plate.isTemplate() ? "Plate template" : "Plate", runsInUse));
+            // During upgrades we do not want to enforce this plate edit constraint.
+            if (!User.getAdminServiceUser().equals(user))
+            {
+                int runsInUse = PlateManager.get().getRunCountUsingPlate(container, user, plate);
+                if (runsInUse > 0)
+                    throw new QueryUpdateServiceException(String.format("%s is used by %d runs and cannot be updated", plate.isTemplate() ? "Plate template" : "Plate", runsInUse));
+            }
 
             // disallow plate type changes
             if (row.containsKey("plateType") && ObjectUtils.notEqual(oldRow.get("plateType"), row.get("plateType")))

@@ -20,8 +20,6 @@ import org.labkey.api.data.Container;
 
 /**
  * An object owned by a study that's eligible to be cached.
- * User: brittp
- * Date: Feb 10, 2006
  */
 public interface StudyCachable<T>
 {
