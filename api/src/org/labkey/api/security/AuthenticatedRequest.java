@@ -465,7 +465,7 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
     }
 
     // helper to avoid filling the _log
-    private static final Cache<String, String> logMessages = CacheManager.getCache(100, TimeUnit.MINUTES.toMillis(1), "Guest session messages");
+    private static final Cache<String, String> logMessages = CacheManager.getCache(100, TimeUnit.MINUTES.toMillis(5), "Guest session messages");
 
     private static void _logGuestSession(String ip, String msg)
     {
@@ -496,8 +496,14 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
             while (e.hasMoreElements())
             {
                 String name = e.nextElement();
-                if (StringUtils.startsWithIgnoreCase(name, "x-"))
-                    _info.put(name, r.getHeader(name));
+                String lower = name.toLowerCase();
+                if (!StringUtils.startsWith(lower, "x-"))
+                    continue;
+                if (StringUtils.startsWith(lower,"x-amzn-"))
+                    continue;
+                if (StringUtils.startsWith(lower,"x-forwarded-"))
+                    continue;
+                _info.put(name, r.getHeader(name));
             }
             _info.put("user-agent", r.getHeader("User-Agent"));
         }
