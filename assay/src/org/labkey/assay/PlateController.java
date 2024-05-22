@@ -86,15 +86,11 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -585,12 +581,13 @@ public class PlateController extends SpringActionController
     public static class CreatePlateForm implements ApiJsonForm
     {
         private String _assayType = TsvPlateLayoutHandler.TYPE;
-        private final List<Map<String, Object>> _data = new ArrayList<>();
+        private List<Map<String, Object>> _data;
         private String _description;
         private String _name;
         private Integer _plateSetId;
         private Integer _plateType;
         private boolean _template;
+        private Integer _templateId;
 
         public String getDescription()
         {
@@ -627,6 +624,11 @@ public class PlateController extends SpringActionController
             return _template;
         }
 
+        public Integer getTemplateId()
+        {
+            return _templateId;
+        }
+
         @Override
         public void bindJson(JSONObject json)
         {
@@ -648,8 +650,12 @@ public class PlateController extends SpringActionController
             if (json.has("template"))
                 _template = json.getBoolean("template");
 
+            if (json.has("templateId"))
+                _templateId = json.getInt("templateId");
+
             if (json.has("data"))
             {
+                _data = new ArrayList<>();
                 RowMapFactory<Object> factory = new RowMapFactory<>();
                 JSONArray data = json.getJSONArray("data");
                 for (int i = 0; i < data.length(); i++)
@@ -680,7 +686,10 @@ public class PlateController extends SpringActionController
 
             _plateType = PlateManager.get().getPlateType(form.getPlateType());
             if (_plateType == null)
-                errors.reject(ERROR_REQUIRED, "Plate type id \"" + form.getPlateType() + "\" is invalid.");
+                errors.reject(ERROR_REQUIRED, String.format("Plate type id (%d) is invalid.", form.getPlateType()));
+
+            if (form.getData() != null && form.getTemplateId() != null)
+                errors.reject(ERROR_GENERIC, "Either \"data\" or a \"templateId\" can be specified but not both.");
         }
 
         @Override
@@ -688,12 +697,29 @@ public class PlateController extends SpringActionController
         {
             try
             {
-                PlateImpl plate = new PlateImpl(getContainer(), form.getName(), form.getAssayType(), _plateType);
-                if (form.isTemplate() != null)
-                    plate.setTemplate(form.isTemplate());
-                plate.setDescription(form.getDescription());
+                PlateImpl newPlate = new PlateImpl(getContainer(), form.getName(), form.getAssayType(), _plateType);
+                if (form.getData() == null && form.getTemplateId() != null && TsvPlateLayoutHandler.TYPE.equalsIgnoreCase(newPlate.getAssayType()))
+                {
+                    newPlate = (PlateImpl) PlateManager.get().copyPlate(
+                        getContainer(),
+                        getUser(),
+                        form.getTemplateId(),
+                        form.isTemplate(),
+                        form.getPlateSetId(),
+                        form.getName(),
+                        form.getDescription(),
+                        false
+                    );
+                }
+                else
+                {
+                    if (form.isTemplate() != null)
+                        newPlate.setTemplate(form.isTemplate());
+                    newPlate.setDescription(form.getDescription());
 
-                Plate newPlate = PlateManager.get().createAndSavePlate(getContainer(), getUser(), plate, form.getPlateSetId(), form.getData());
+                    newPlate = (PlateImpl) PlateManager.get().createAndSavePlate(getContainer(), getUser(), newPlate, form.getPlateSetId(), form.getData());
+                }
+
                 return success(newPlate);
             }
             catch (Exception e)
@@ -1057,7 +1083,7 @@ public class PlateController extends SpringActionController
                     return success(plateSet);
                 }
 
-                List<PlateManager.CreatePlateSetPlate> plates;
+                List<PlateManager.CreatePlateSetPlate> plates = null;
                 if (form.isRearrayCase())
                 {
                     String selectionKey = StringUtils.trimToNull(form.getSelectionKey());
@@ -1070,8 +1096,6 @@ public class PlateController extends SpringActionController
                 }
                 else if (form.isDefaultCase())
                     plates = form.getPlates();
-                else
-                    plates = new ArrayList<>();
 
                 plateSet = PlateManager.get().createPlateSet(getContainer(), getUser(), plateSet, plates, form.getParentPlateSetId());
                 return success(plateSet);
@@ -1654,7 +1678,16 @@ public class PlateController extends SpringActionController
         @Override
         public Object execute(CopyPlateForm form, BindException errors) throws Exception
         {
-            Plate plate = PlateManager.get().copyPlate(getContainer(), getUser(), form.getSourcePlateRowId(), form.isCopyAsTemplate(), form.getName(), form.getDescription());
+            Plate plate = PlateManager.get().copyPlate(
+                getContainer(),
+                getUser(),
+                form.getSourcePlateRowId(),
+                form.isCopyAsTemplate(),
+                null,
+                form.getName(),
+                form.getDescription(),
+                null
+            );
             return success(plate);
         }
     }

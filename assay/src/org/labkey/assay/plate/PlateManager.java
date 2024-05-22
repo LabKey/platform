@@ -1611,21 +1611,10 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         User user,
         Integer sourcePlateRowId,
         boolean copyAsTemplate,
-        @Nullable String name,
-        @Nullable String description
-    ) throws Exception
-    {
-        return copyPlate(container, user, sourcePlateRowId, copyAsTemplate, null, name, description);
-    }
-
-    public Plate copyPlate(
-        Container container,
-        User user,
-        Integer sourcePlateRowId,
-        boolean copyAsTemplate,
         @Nullable Integer destinationPlateSetRowId,
         @Nullable String name,
-        @Nullable String description
+        @Nullable String description,
+        @Nullable Boolean copySamples
     ) throws Exception
     {
         if (!container.hasPermission(user, InsertPermission.class))
@@ -1646,18 +1635,17 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         if (!container.equals(destinationPlateSet.getContainer()))
             throw new ValidationException(String.format("Failed to copy plate. The destination folder \"%s\" does not match the plate set folder \"%s\".", container.getPath(), destinationPlateSet.getContainer().getPath()));
 
-        boolean isTemplate = copyAsTemplate || sourcePlate.isTemplate();
         boolean hasName = StringUtils.trimToNull(name) != null;
 
-        if (isTemplate && !hasName)
+        if (copyAsTemplate && !hasName)
             throw new ValidationException("Failed to copy plate template. A \"name\" is required.");
 
-        if (!isTemplate && ((PlateSetImpl) destinationPlateSet).isFull())
+        if (!copyAsTemplate && ((PlateSetImpl) destinationPlateSet).isFull())
             throw new ValidationException(String.format("Failed to copy plate. The plate set \"%s\" is full.", destinationPlateSet.getName()));
 
         if (hasName)
         {
-            if (isTemplate)
+            if (copyAsTemplate)
             {
                 if (isDuplicatePlateTemplateName(container, name))
                     throw new ValidationException(String.format("Failed to copy plate template. A plate template already exists with the name \"%s\".", name));
@@ -1673,7 +1661,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             newPlate.setCustomFields(sourcePlate.getCustomFields());
             newPlate.setDescription(description);
 
-            if (isTemplate)
+            if (copyAsTemplate)
                 newPlate.setTemplate(true);
             else
                 newPlate.setPlateSet(destinationPlateSet);
@@ -1688,7 +1676,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 throw new IllegalStateException("Unexpected failure. Failed to retrieve plate after save (pre-commit).");
 
             // Copy plate metadata
-            copyWellData(user, sourcePlate, newPlate, !newPlate.isTemplate());
+            if (copySamples == null)
+                copySamples = true;
+            copyWellData(user, sourcePlate, newPlate, !newPlate.isTemplate() && copySamples);
 
             tx.commit();
 
@@ -1697,7 +1687,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     }
 
     /**
-     * @deprecated Use {@link #copyPlate(Container, User, Integer, boolean, String, String)}
+     * @deprecated Use {@link #copyPlate(Container, User, Integer, boolean, Integer, String, String, Boolean)}
      */
     @Deprecated
     public Plate copyPlateDeprecated(Plate source, User user, Container destContainer)
@@ -2369,7 +2359,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             PlateSet newPlateSet = createPlateSet(container, user, plateSet, null, parentId);
 
             for (Plate plate : parentPlateSet.getPlates(user))
-                copyPlate(container, user, plate.getRowId(), false, newPlateSet.getRowId(), null, null);
+                copyPlate(container, user, plate.getRowId(), false, newPlateSet.getRowId(), null, null, true);
 
             tx.commit();
 
