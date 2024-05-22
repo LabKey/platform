@@ -255,6 +255,9 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
             {
                 result = f.getName();
             }
+
+            if (!f.exists())
+                result += " (unavailable)";
         }
         return result;
     }
