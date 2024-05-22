@@ -1,6 +1,7 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.AbstractForeignKey;
@@ -57,7 +58,7 @@ public class ClosureQueryHelper
     static final int MAX_ANCESTOR_LOOKUP_DEPTH = 40;
 
     static String pgAncestorClosureCTE = String.format("""
-            WITH RECURSIVE CTE_ AS (
+            CTE_ AS (
 
                 SELECT
                     RowId,
@@ -89,7 +90,7 @@ public class ClosureQueryHelper
             """;
 
     static String pgDescendantClosureCTE = String.format("""
-            WITH RECURSIVE DCTE_ AS (
+            DCTE_ AS (
 
                 SELECT
                     RowId,
@@ -116,7 +117,7 @@ public class ClosureQueryHelper
 
 
     static String mssqlAncestorClosureCTE = String.format("""
-            WITH CTE_ AS (
+            CTE_ AS (
 
                 SELECT
                     RowId,
@@ -148,7 +149,7 @@ public class ClosureQueryHelper
             """;
 
     static String mssqlDescendantClosureCTE = String.format("""
-            WITH DCTE_ AS (
+            DCTE_ AS (
 
                 SELECT
                     RowId,
@@ -174,7 +175,7 @@ public class ClosureQueryHelper
             """;
 
 
-    public static SQLFragment selectAndInsertSql(SqlDialect d, SQLFragment from, @Nullable String into, @Nullable String insert)
+    public static SQLFragment selectAndInsertSql(SqlDialect d, @Nullable SQLFragment additionalCte, SQLFragment from, @Nullable String into, @Nullable String insert)
     {
         String cte = d.isPostgreSQL() ? pgAncestorClosureCTE : mssqlAncestorClosureCTE;
         String select = d.isPostgreSQL() ? pgAncestorClosureSql : mssqlAncestorClosureSql;
@@ -185,8 +186,12 @@ public class ClosureQueryHelper
         String[] selectIntoParts = StringUtils.splitByWholeSeparator(select,"/*INTO*/");
         assert selectIntoParts.length == 2;
 
-        SQLFragment sql = new SQLFragment()
-                .append(cteParts[0]).append(" ").append(from).append(" ").append(cteParts[1]);
+        SQLFragment sql = new SQLFragment("WITH ");
+        if (d.isPostgreSQL())
+            sql.append(" RECURSIVE ");
+        if (additionalCte != null)
+            sql.append(additionalCte).append(", ");
+        sql.append(cteParts[0]).append(" ").append(from).append(" ").append(cteParts[1]);
         if (insert != null)
             sql.append(insert);
         sql.append(selectIntoParts[0]);
@@ -197,27 +202,26 @@ public class ClosureQueryHelper
     }
 
 
-    public static SQLFragment selectDescendantIdsSql(SqlDialect d, SQLFragment from)
+    public static Pair<SQLFragment, SQLFragment> selectDescendantIdsSql(SqlDialect d, SQLFragment from)
     {
         String cte = d.isPostgreSQL() ? pgDescendantClosureCTE : mssqlDescendantClosureCTE;
         String select = d.isPostgreSQL() ? pgDescendantClosureSql : mssqlDescendantClosureSql;
-//        String select = pgDescendantClosureSql;
 
         String[] cteParts = StringUtils.splitByWholeSeparator(cte,"/*FROM*/");
         assert cteParts.length == 2;
 
         SQLFragment sql = new SQLFragment()
                 .append(cteParts[0]).append(" ").append(from).append(" ").append(cteParts[1]);
-        sql.append(select);
-        return sql;
+
+        return Pair.of(sql, new SQLFragment(select));
     }
 
-    public static SQLFragment selectIntoTempTableSql(SqlDialect d, SQLFragment from, @Nullable String tempTable)
+    public static SQLFragment selectIntoTempTableSql(SqlDialect d, SQLFragment from, @Nullable String tempTable, @Nullable SQLFragment additionalCte)
     {
         String into = " INTO temp.${NAME} ";
         if (null != tempTable)
             into = " INTO temp." + tempTable + " ";
-        return selectAndInsertSql(d, from, into, null);
+        return selectAndInsertSql(d, additionalCte, from, into, null);
     }
 
     /*
@@ -307,19 +311,20 @@ public class ClosureQueryHelper
 
     private static void incrementalRecomputeForDescendants(SQLFragment from)
     {
+        Pair<SQLFragment, SQLFragment> descendants = selectDescendantIdsSql(getScope().getSqlDialect(), from);
         SQLFragment fromDescendants = new SQLFragment("FROM (SELECT p.RowId, p.ObjectId FROM ").append(ExperimentServiceImpl.get().getTinfoMaterial(), "p")
-                .append(" WHERE p.objectId IN (").append(selectDescendantIdsSql(getScope().getSqlDialect(), from))
+                .append(" WHERE p.objectId IN (").append(descendants.getRight())
                 .append(")) x");
-        incrementalAncestorRecompute(fromDescendants, true);
+        incrementalAncestorRecompute(descendants.getLeft(), fromDescendants, true);
 
         fromDescendants = new SQLFragment("FROM (SELECT p.RowId, p.ObjectId FROM ").append(ExperimentServiceImpl.get().getTinfoData(), "p")
-                .append(" WHERE p.objectId IN (").append(selectDescendantIdsSql(getScope().getSqlDialect(), from))
+                .append(" WHERE p.objectId IN (").append(descendants.getRight())
                 .append(")) x");
-        incrementalAncestorRecompute(fromDescendants, false);
+        incrementalAncestorRecompute(descendants.getLeft(), fromDescendants, false);
 
     }
 
-    private static void incrementalAncestorRecompute(SQLFragment from, boolean isSampleType)
+    private static void incrementalAncestorRecompute(@Nullable SQLFragment cte, SQLFragment from, boolean isSampleType)
     {
         TempTableTracker ttt = null;
         try
@@ -327,7 +332,7 @@ public class ClosureQueryHelper
             Object ref = new Object();
             String tempTableName = "closinc_"+temptableNumber.incrementAndGet();
             ttt = TempTableTracker.track(tempTableName, ref);
-            SQLFragment selectInto = selectIntoTempTableSql(getScope().getSqlDialect(), from, tempTableName);
+            SQLFragment selectInto = selectIntoTempTableSql(getScope().getSqlDialect(), from, tempTableName, cte);
             new SqlExecutor(getScope()).execute(selectInto);
 
             SQLFragment upsert;
@@ -385,7 +390,7 @@ public class ClosureQueryHelper
 
     private static void incrementalRecompute(SQLFragment from, boolean isSampleType)
     {
-        incrementalAncestorRecompute(from, isSampleType);
+        incrementalAncestorRecompute(null, from, isSampleType);
         incrementalRecomputeForDescendants(from);
     }
 
@@ -429,7 +434,7 @@ public class ClosureQueryHelper
                                 logger.debug("   Adding rows from samples in sampleType " + sampleType.getName() + " in container " + container.getPath());
                                 SQLFragment from = new SQLFragment(" FROM exp.material WHERE container = ?").add(container.getEntityId())
                                         .append(" AND materialSourceId = ?").add(sampleType.getRowId());
-                                SQLFragment sql = ClosureQueryHelper.selectAndInsertSql(schema.getSqlDialect(), from, null, "INSERT INTO exp.materialAncestors (RowId, AncestorRowId, AncestorTypeId) ");
+                                SQLFragment sql = ClosureQueryHelper.selectAndInsertSql(schema.getSqlDialect(), null, from, null, "INSERT INTO exp.materialAncestors (RowId, AncestorRowId, AncestorTypeId) ");
                                 new SqlExecutor(schema.getScope()).execute(sql);
                             }
                     );
@@ -450,7 +455,7 @@ public class ClosureQueryHelper
                                 logger.debug("    Adding rows to exp.dataAncestors from data class " + dataClass.getName() + " in container " + container.getPath());
                                 SQLFragment from = new SQLFragment(" FROM exp.data WHERE container = ?").add(container.getEntityId())
                                         .append(" AND classId = ?").add(dataClass.getRowId());
-                                SQLFragment sql = ClosureQueryHelper.selectAndInsertSql(schema.getSqlDialect(), from, null,
+                                SQLFragment sql = ClosureQueryHelper.selectAndInsertSql(schema.getSqlDialect(), null, from, null,
                                         "INSERT INTO exp.dataAncestors (RowId, AncestorRowId, AncestorTypeId) ");
                                 new SqlExecutor(schema.getScope()).execute(sql);
                             }
