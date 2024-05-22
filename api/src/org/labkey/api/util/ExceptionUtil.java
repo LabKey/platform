@@ -119,8 +119,12 @@ public class ExceptionUtil
     {
     }
 
-
     public static String renderStackTrace(@Nullable StackTraceElement[] stackTrace)
+    {
+        return renderStackTrace(stackTrace, 2);
+    }
+
+    public static String renderStackTrace(@Nullable StackTraceElement[] stackTrace, int linesToSkip)
     {
         if (stackTrace == null)
         {
@@ -128,7 +132,7 @@ public class ExceptionUtil
         }
         StringBuilder trace = new StringBuilder();
 
-        for (int i = 2; i < stackTrace.length; i++)
+        for (int i = linesToSkip; i < stackTrace.length; i++)
         {
             String line = String.valueOf(stackTrace[i]);
             if (line.startsWith("javax.servlet.http.HttpServlet.service("))
@@ -139,7 +143,6 @@ public class ExceptionUtil
 
         return trace.toString();
     }
-
 
     @NotNull
     public static Throwable unwrapException(@NotNull Throwable ex)
@@ -168,7 +171,6 @@ public class ExceptionUtil
         return ex;
     }
 
-
     public static HtmlString renderException(Throwable e)
     {
         StringWriter sw = new StringWriter();
@@ -178,7 +180,6 @@ public class ExceptionUtil
         s = s.replaceAll("\t", "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;");
         return HtmlString.unsafe("<pre class='exception-stacktrace'>\n" + s + "</pre>\n");
     }
-
 
     public static HtmlString getUnauthorizedMessage(ViewContext context)
     {

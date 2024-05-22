@@ -486,7 +486,7 @@ public class ReportsController extends BaseStudyController
 
             CrosstabReportDescriptor descriptor = (CrosstabReportDescriptor) report.getDescriptor();
 
-            if (_visitRowId != -1) descriptor.setProperty(VisitImpl.VISITKEY, Integer.toString(_visitRowId));
+            if (_visitRowId != -1) descriptor.setProperty(VisitImpl.VISIT_KEY, Integer.toString(_visitRowId));
             if (!StringUtils.isEmpty(_rowField)) descriptor.setProperty("rowField", _rowField);
             if (!StringUtils.isEmpty(_colField)) descriptor.setProperty("colField", _colField);
             if (!StringUtils.isEmpty(_statField)) descriptor.setProperty("statField", _statField);
@@ -1215,7 +1215,7 @@ public class ReportsController extends BaseStudyController
                         label += " (All Visits)";
 
                     ActionURL datasetUrl = getViewContext().getActionURL().clone();
-                    datasetUrl.deleteParameter(VisitImpl.VISITKEY);
+                    datasetUrl.deleteParameter(VisitImpl.VISIT_KEY);
                     datasetUrl.setAction(StudyController.DatasetAction.class);
                     root.addChild(label, datasetUrl.getLocalURIString());
                 }

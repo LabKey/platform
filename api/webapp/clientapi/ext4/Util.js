@@ -42,7 +42,7 @@
      * @param options.offsetY - distance between bottom of page to bottom of component
      * @param options.overrideMinWidth - true to set ext container's minWidth value to calculated width, default false
      */
-    // resizeToContainer -- defined in Ext4/ext-patches.js
+    // resizeToContainer -- defined in ext-patches/ext4-patches.js
 
     Ext4.apply(Util, {
 

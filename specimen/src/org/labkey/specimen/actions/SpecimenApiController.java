@@ -126,7 +126,7 @@ public class SpecimenApiController extends SpringActionController
             vialProperties.put("primaryTypeId", vial.getPrimaryTypeId());
             if (vial.getPrimaryTypeId() != null)
             {
-                PrimaryType primaryType = SpecimenManagerNew.get().getPrimaryType(vial.getContainer(), vial.getPrimaryTypeId());
+                PrimaryType primaryType = SpecimenManager.get().getPrimaryType(vial.getContainer(), vial.getPrimaryTypeId());
                 if (primaryType != null)
                     vialProperties.put("primaryType", primaryType.getPrimaryType());
             }
@@ -331,7 +331,7 @@ public class SpecimenApiController extends SpringActionController
         @Override
         public ApiResponse execute(GetProvidingLocationsForm form, BindException errors)
         {
-            Map<String, List<Vial>> vialsByHash = SpecimenManagerNew.get().getVialsForSpecimenHashes(getContainer(), getUser(),
+            Map<String, List<Vial>> vialsByHash = SpecimenManager.get().getVialsForSpecimenHashes(getContainer(), getUser(),
                     PageFlowUtil.set(form.getSpecimenHashes()), true);
             Collection<Integer> preferredLocations = StudyUtils.getPreferredProvidingLocations(vialsByHash.values());
             final Map<String, Object> response = new HashMap<>();
@@ -486,7 +486,7 @@ public class SpecimenApiController extends SpringActionController
     {
         Vial vial;
         if (IdTypes.GlobalUniqueId.name().equals(idType))
-            vial = SpecimenManagerNew.get().getVial(getContainer(), getUser(), vialId);
+            vial = SpecimenManager.get().getVial(getContainer(), getUser(), vialId);
         else if (IdTypes.RowId.name().equals(idType))
         {
             try

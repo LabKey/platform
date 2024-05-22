@@ -52,7 +52,7 @@ public class StudyCrosstabReport extends CrosstabReport
     {
         final String queryName = descriptor.getProperty(QueryParam.queryName.toString());
         final String viewName = descriptor.getProperty(QueryParam.viewName.toString());
-        final String visitRowId = descriptor.getProperty(VisitImpl.VISITKEY);
+        final String visitRowId = descriptor.getProperty(VisitImpl.VISIT_KEY);
 
         ReportQueryView view = ReportQueryViewFactory.get().generateQueryView(context, descriptor, queryName, viewName);
 

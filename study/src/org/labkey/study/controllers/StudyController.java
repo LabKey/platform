@@ -911,7 +911,7 @@ public class StudyController extends BaseStudyController
             if (null == typeURI)
                 return new TypeNotFoundAction().getView(form, errors);
 
-            _visitId = NumberUtils.toInt((String)context.get(VisitImpl.VISITKEY), 0);
+            _visitId = NumberUtils.toInt((String)context.get(VisitImpl.VISIT_KEY), 0);
             VisitImpl visit;
             if (_visitId != 0)
             {
@@ -3339,7 +3339,7 @@ public class StudyController extends BaseStudyController
             if (null == typeURI)
                 return Collections.emptyList();
 
-            int visitRowId = null == context.get(VisitImpl.VISITKEY) ? 0 : Integer.parseInt((String) context.get(VisitImpl.VISITKEY));
+            int visitRowId = null == context.get(VisitImpl.VISIT_KEY) ? 0 : Integer.parseInt((String) context.get(VisitImpl.VISIT_KEY));
             if (visitRowId != 0)
             {
                 VisitImpl visit = studyMgr.getVisitForRowId(study, visitRowId);

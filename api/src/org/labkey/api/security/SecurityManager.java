@@ -1894,13 +1894,7 @@ public class SecurityManager
                 // group always returned empty set. Allow a special case of returning real set if explicitly requested.
                 if (next.isUsers() && returnSiteUsers)
                 {
-                    List<Integer> userIds = UserManager.getUserIds();
-                    int[] ids = new int[userIds.size()];
-                    for (int i = 0; i < userIds.size(); i++)
-                    {
-                        ids[i] = userIds.get(i);
-                    }
-                    addMembers(members, ids, memberType);
+                    addMembers(members, UserManager.getUserIds(), memberType);
                 }
                 else
                 {
@@ -1915,19 +1909,17 @@ public class SecurityManager
         return members;
     }
 
-    private static <P extends UserPrincipal> void addMembers(Collection<P> principals, int[] ids, MemberType<P> memberType)
+    private static <P extends UserPrincipal> void addMembers(Collection<P> principals, List<Integer> ids, MemberType<P> memberType)
     {
-        for (int id : ids)
-        {
-            P principal = memberType.getPrincipal(id);
-            if (null != principal)
-                principals.add(principal);
-        }
+        ids.stream()
+            .map(memberType::getPrincipal)
+            .filter(Objects::nonNull)
+            .forEach(principals::add);
     }
 
     private static <P extends UserPrincipal> void addMembers(Collection<P> principals, PrincipalArray members, MemberType<P> memberType)
     {
-        addMembers(principals, members.getPrincipals(), memberType);
+        addMembers(principals, members.getList(), memberType);
     }
 
     // get the list of group members that do not need to be direct members because they are a member of a member group (i.e. groups-in-groups)
