@@ -298,6 +298,7 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
 
     public DateParsingMode getDateParsingMode()
     {
+        assert this._settingsContainer.isRoot();
         return DateParsingMode.fromString(lookupStringValue(dateParsingMode, DateParsingMode.US.toString()));
     }
 

@@ -44,6 +44,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.function.Consumer;
 
 /**
  * Represents a security policy for a {@link org.labkey.api.security.SecurableResource}. You can get a security policy for a resource
@@ -174,7 +175,7 @@ public class SecurityPolicy
 
     /**
      * Return set of permissions explicitly granted by this SecurityPolicy, will not inspect any
-     * contextual roles (does not call UserPrincipal.getContextualRoles().  E.g. this will not
+     * contextual roles (does not call UserPrincipal.getContextualRoles()). E.g. this will not
      * reflect any permission granted due to assignment of site-wide roles, and it will not reflect
      * permission filtering by the impersonation context.
      */
@@ -219,45 +220,29 @@ public class SecurityPolicy
         }
     }
 
-
     /* Does not inspect any contextual roles, just the roles explicitly given by this SecurityPolicy */
     @NotNull
     private Set<Class<? extends Permission>> getOwnPermissions(PrincipalArray principalArray)
     {
-        int[] principals = principalArray.getPrincipals();
-        Set<Class<? extends Permission>> perms = new HashSet<>();
+        Set<Class<? extends Permission>> permClasses = new HashSet<>();
+        handleRoles(principalArray, role -> permClasses.addAll(role.getPermissions()));
 
-        //role assignments are sorted by user id,
-        //as are the principal ids,
-        //so iterate over both of them in one pass
-        Iterator<RoleAssignment> assignmentIter = getAssignments().iterator();
-        RoleAssignment assignment = assignmentIter.hasNext() ? assignmentIter.next() : null;
-        int principalsIdx = 0;
-
-        while (null != assignment && principalsIdx < principals.length)
-        {
-            if (assignment.getUserId() == principals[principalsIdx])
-            {
-                if (null != assignment.getRole())
-                    perms.addAll(assignment.getRole().getPermissions());
-
-                assignment = assignmentIter.hasNext() ? assignmentIter.next() : null;
-            }
-            else if (assignment.getUserId() < principals[principalsIdx])
-                assignment = assignmentIter.hasNext() ? assignmentIter.next() : null;
-            else
-                ++principalsIdx;
-        }
-
-        return perms;
+        return permClasses;
     }
 
-
+    /* Does not inspect any contextual roles, just the roles explicitly given by this SecurityPolicy */
     @NotNull
     public Set<Role> getRoles(PrincipalArray principalArray)
     {
-        int[] principals = principalArray.getPrincipals();
         Set<Role> roles = new HashSet<>();
+        handleRoles(principalArray, roles::add);
+
+        return roles;
+    }
+
+    private void handleRoles(PrincipalArray principalArray, Consumer<Role> consumer)
+    {
+        List<Integer> principals = principalArray.getList();
 
         //role assignments are sorted by user id,
         //as are the principal ids,
@@ -266,22 +251,22 @@ public class SecurityPolicy
         RoleAssignment assignment = assignmentIter.hasNext() ? assignmentIter.next() : null;
         int principalsIdx = 0;
 
-        while (null != assignment && principalsIdx < principals.length)
+        while (null != assignment && principalsIdx < principals.size())
         {
-            if (assignment.getUserId() == principals[principalsIdx])
+            int principalId = principals.get(principalsIdx);
+            if (assignment.getUserId() == principalId)
             {
-                if (null != assignment.getRole())
-                    roles.add(assignment.getRole());
+                Role role = assignment.getRole();
+                if (null != role)
+                    consumer.accept(role);
 
                 assignment = assignmentIter.hasNext() ? assignmentIter.next() : null;
             }
-            else if (assignment.getUserId() < principals[principalsIdx])
+            else if (assignment.getUserId() < principalId)
                 assignment = assignmentIter.hasNext() ? assignmentIter.next() : null;
             else
                 ++principalsIdx;
         }
-
-        return roles;
     }
 
     /**
