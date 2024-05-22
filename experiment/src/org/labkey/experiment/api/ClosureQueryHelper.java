@@ -54,9 +54,9 @@ public class ClosureQueryHelper
     final static String CONCEPT_URI = "http://www.labkey.org/types#ancestorLookup";
 
     // N.B., This should be twice the number of generations we expect as a maximum number of ancestors due to the run nodes.
-    static final int MAX_LINEAGE_LOOKUP_DEPTH = 40;
+    static final int MAX_ANCESTOR_LOOKUP_DEPTH = 40;
 
-    static String pgClosureCTE = String.format("""
+    static String pgAncestorClosureCTE = String.format("""
             WITH RECURSIVE CTE_ AS (
 
                 SELECT
@@ -72,9 +72,9 @@ public class ClosureQueryHelper
                 FROM CTE_ INNER JOIN exp.Edge ON CTE_.End_ = Edge.ToObjectId
                 WHERE Depth_ < %d AND 0 = POSITION('/' || CAST(Edge.FromObjectId AS VARCHAR) || '/' IN Path_)
             )
-            """, MAX_LINEAGE_LOOKUP_DEPTH);
+            """, MAX_ANCESTOR_LOOKUP_DEPTH);
 
-    static String pgClosureSql = """
+    static String pgAncestorClosureSql = """
             SELECT RowId, CAST(CASE WHEN COUNT(*) = 1 THEN MIN(ancestorRowId) ELSE -1 * COUNT(*) END AS INT) AS ancestorRowId, ancestorTypeId
             /*INTO*/
             FROM (
@@ -88,7 +88,34 @@ public class ClosureQueryHelper
             GROUP BY ancestorTypeId, RowId
             """;
 
-    static String mssqlClosureCTE = String.format("""
+    static String pgDescendantClosureCTE = String.format("""
+            WITH RECURSIVE CTE_ AS (
+
+                SELECT
+                    RowId,
+                    ObjectId as End_,
+                    '/' || CAST(ObjectId AS VARCHAR) || '/' as Path_,
+                    0 as Depth_
+                /*FROM*/
+
+                    UNION ALL
+
+                SELECT CTE_.RowId, Edge.ToObjectId as End_, CTE_.Path_ || CAST(Edge.ToObjectId AS VARCHAR) || '/' as Path_, Depth_ + 1 as Depth_
+                FROM CTE_ INNER JOIN exp.Edge ON CTE_.End_ = Edge.FromObjectId
+                WHERE Depth_ < %d AND 0 = POSITION('/' || CAST(Edge.ToObjectId AS VARCHAR) || '/' IN Path_)
+            )
+            """, MAX_ANCESTOR_LOOKUP_DEPTH);
+
+    static String pgDescendantClosureSql = """
+                (SELECT DISTINCT COALESCE(material.objectId, data.objectId) as descendantObjectId
+                FROM CTE_
+                    LEFT OUTER JOIN exp.material ON End_ = material.objectId  LEFT OUTER JOIN exp.materialsource ON material.cpasType = materialsource.lsid
+                    LEFT OUTER JOIN exp.data on End_ = data.objectId LEFT OUTER JOIN exp.dataclass ON data.cpasType = dataclass.lsid
+                WHERE Depth_ > 0 AND materialsource.rowid IS NOT NULL OR dataclass.rowid IS NOT NULL)
+            """;
+
+
+    static String mssqlAncestorClosureCTE = String.format("""
             WITH CTE_ AS (
 
                 SELECT
@@ -104,27 +131,50 @@ public class ClosureQueryHelper
                 FROM CTE_ INNER JOIN exp.Edge ON CTE_.End_ = Edge.ToObjectId
                 WHERE Depth_ < %d AND 0 = CHARINDEX('/' + CAST(Edge.FromObjectId AS VARCHAR) + '/', Path_)
             )
-            """, (MAX_LINEAGE_LOOKUP_DEPTH));
+            """, (MAX_ANCESTOR_LOOKUP_DEPTH));
 
-    static String mssqlClosureSql = """
+    static String mssqlAncestorClosureSql = """
             SELECT RowId, CAST(CASE WHEN COUNT(*) = 1 THEN MIN(ancestorRowId) ELSE -1 * COUNT(*) END AS INT) AS ancestorRowId, ancestorTypeId
             /*INTO*/
             FROM (
-                SELECT DISTINCT CTE_.RowId,
-                    COALESCE(material.rowid, data.rowid) as ancestorRowId,
-                    COALESCE('m' + CAST(materialsource.rowid AS VARCHAR), 'd' + CAST(dataclass.rowid AS VARCHAR)) as ancestorTypeId
+                SELECT DISTINCT COALESCE(material.rowid, data.rowid) as descendantRowId
                 FROM CTE_
                     LEFT OUTER JOIN exp.material ON End_ = material.objectId  LEFT OUTER JOIN exp.materialsource ON material.cpasType = materialsource.lsid
                     LEFT OUTER JOIN exp.data on End_ = data.objectId LEFT OUTER JOIN exp.dataclass ON data.cpasType = dataclass.lsid
                 WHERE Depth_ > 0 AND materialsource.rowid IS NOT NULL OR dataclass.rowid IS NOT NULL) _inner_
-            GROUP BY ancestorTypeId, RowId
+            """;
+
+    static String mssqlDescendantClosureCTE = String.format("""
+            WITH CTE_ AS (
+
+                SELECT
+                    RowId,
+                    ObjectId as End_,
+                    '/' + CAST(ObjectId AS VARCHAR(MAX)) + '/' as Path_,
+                    0 as Depth_
+                /*FROM*/
+
+                    UNION ALL
+
+                SELECT CTE_.RowId, Edge.ToObjectId as End_, CTE_.Path_ + CAST(Edge.ToObjectId AS VARCHAR) + '/' as Path_, Depth_ + 1 as Depth_
+                FROM CTE_ INNER JOIN exp.Edge ON CTE_.End_ = Edge.FromObjectId
+                WHERE Depth_ < %d AND 0 = CHARINDEX('/' + CAST(Edge.ToObjectId AS VARCHAR) + '/', Path_)
+            )
+            """, (MAX_ANCESTOR_LOOKUP_DEPTH));
+
+    static String mssqlDescendantClosureSql = """
+                (SELECT DISTINCT COALESCE(material.objectId, data.objectId) as descendantObjectId,
+                FROM CTE_
+                    LEFT OUTER JOIN exp.material ON End_ = material.objectId  LEFT OUTER JOIN exp.materialsource ON material.cpasType = materialsource.lsid
+                    LEFT OUTER JOIN exp.data on End_ = data.objectId LEFT OUTER JOIN exp.dataclass ON data.cpasType = dataclass.lsid
+                WHERE Depth_ > 0 AND materialsource.rowid IS NOT NULL OR dataclass.rowid IS NOT NULL)
             """;
 
 
     public static SQLFragment selectAndInsertSql(SqlDialect d, SQLFragment from, @Nullable String into, @Nullable String insert)
     {
-        String cte = d.isPostgreSQL() ? pgClosureCTE : mssqlClosureCTE;
-        String select = d.isPostgreSQL() ? pgClosureSql : mssqlClosureSql;
+        String cte = d.isPostgreSQL() ? pgAncestorClosureCTE : mssqlAncestorClosureCTE;
+        String select = d.isPostgreSQL() ? pgAncestorClosureSql : mssqlAncestorClosureSql;
 
         String[] cteParts = StringUtils.splitByWholeSeparator(cte,"/*FROM*/");
         assert cteParts.length == 2;
@@ -140,6 +190,21 @@ public class ClosureQueryHelper
         if (into != null)
             sql.append(into);
         sql.append(selectIntoParts[1]);
+        return sql;
+    }
+
+
+    public static SQLFragment selectDescendantIdsSql(SqlDialect d, SQLFragment from)
+    {
+        String cte = d.isPostgreSQL() ? pgDescendantClosureCTE : mssqlDescendantClosureCTE;
+        String select = d.isPostgreSQL() ? pgDescendantClosureSql : mssqlDescendantClosureSql;
+
+        String[] cteParts = StringUtils.splitByWholeSeparator(cte,"/*FROM*/");
+        assert cteParts.length == 2;
+
+        SQLFragment sql = new SQLFragment()
+                .append(cteParts[0]).append(" ").append(from).append(" ").append(cteParts[1]);
+        sql.append(select);
         return sql;
     }
 
@@ -236,7 +301,21 @@ public class ClosureQueryHelper
 
     static final AtomicInteger temptableNumber = new AtomicInteger();
 
-    private static void incrementalRecompute(SQLFragment from, boolean isSampleType)
+    private static void incrementalRecomputeForDescendants(SQLFragment from)
+    {
+        SQLFragment fromDescendants = new SQLFragment("FROM (SELECT p.RowId, p.ObjectId FROM ").append(ExperimentServiceImpl.get().getTinfoMaterial(), "p")
+                .append(" WHERE p.objectId IN (").append(selectDescendantIdsSql(getScope().getSqlDialect(), from))
+                .append(")) x");
+        incrementalAncestorRecompute(fromDescendants, true);
+
+        fromDescendants = new SQLFragment("FROM (SELECT p.RowId, p.ObjectId FROM ").append(ExperimentServiceImpl.get().getTinfoData(), "p")
+                .append(" WHERE p.objectId IN (").append(selectDescendantIdsSql(getScope().getSqlDialect(), from))
+                .append(")) x");
+        incrementalAncestorRecompute(fromDescendants, false);
+
+    }
+
+    private static void incrementalAncestorRecompute(SQLFragment from, boolean isSampleType)
     {
         TempTableTracker ttt = null;
         try
@@ -246,7 +325,6 @@ public class ClosureQueryHelper
             ttt = TempTableTracker.track(tempTableName, ref);
             SQLFragment selectInto = selectIntoTempTableSql(getScope().getSqlDialect(), from, tempTableName);
             new SqlExecutor(getScope()).execute(selectInto);
-
 
             SQLFragment upsert;
             TableInfo tInfo = isSampleType ? ExperimentServiceImpl.get().getTinfoMaterialAncestors() : ExperimentServiceImpl.get().getTinfoDataAncestors();
@@ -273,16 +351,26 @@ public class ClosureQueryHelper
 
             new SqlExecutor(scope).execute(upsert);
 
+            /*
+            SELECT rowId, ancestorTypeId FROM exp.materialancestors WHERE RowId IN (3878144, 3878146, 3878151)
+                EXCEPT
+            SELECT rowId, ancestorTypeId FROM temp.closinc_1 WHERE RowId IN (3878144, 3878146, 3878151)
+             */
             // now delete the rows for ancestor types no longer in the mix.
             List<Integer> rowIds = new SqlSelector(scope, "SELECT DISTINCT RowId FROM temp." + tempTableName).getArrayList(Integer.class);
-            SQLFragment delete = new SQLFragment()
-                    .append("DELETE FROM ").append(tInfo)
-                    .append(" WHERE RowId ");
-            dialect.appendInClauseSql(delete, rowIds);
-            delete.append(" AND AncestorTypeId IN  (SELECT AncestorTypeId FROM ").append(tInfo).append(" WHERE RowId ");
-            dialect.appendInClauseSql(delete, rowIds);
-            delete.append(" EXCEPT SELECT AncestorTypeId FROM temp.").append(tempTableName).append(")");
-            new SqlExecutor(scope).execute(delete);
+            SQLFragment toDelete = new SQLFragment("SELECT rowId, ancestorTypeId FROM ").append(tInfo).append(" WHERE RowId ");
+            dialect.appendInClauseSql(toDelete, rowIds);
+            toDelete.append(" EXCEPT\n")
+                    .append("SELECT rowId, ancestorTypeId FROM temp.").append(tempTableName).append(" WHERE RowId ");
+            dialect.appendInClauseSql(toDelete, rowIds);
+
+            new SqlSelector(scope, toDelete).mapStream().forEach(map -> {
+                SQLFragment delete = new SQLFragment("DELETE FROM ").append(tInfo)
+                        .append(" WHERE RowId = ?").add(map.get("rowId"))
+                        .append(" AND AncestorTypeId = ?").add(map.get("AncestorTypeId"));
+
+                new SqlExecutor(scope).execute(delete);
+            });
         }
         finally
         {
@@ -291,18 +379,38 @@ public class ClosureQueryHelper
         }
     }
 
+    private static void incrementalRecompute(SQLFragment from, boolean isSampleType)
+    {
+        incrementalAncestorRecompute(from, isSampleType);
+        incrementalRecomputeForDescendants(from);
+    }
+
     public static void clearAncestorsForMaterial(int rowId)
     {
+        var tx = getScope().getCurrentTransaction();
+        if (null != tx)
+        {
+            tx.addCommitTask(() -> clearAncestorsForMaterial(rowId), DbScope.CommitTaskOption.POSTCOMMIT);
+            return;
+        }
         SQLFragment sql = new SQLFragment("DELETE FROM ").append(ExperimentService.get().getTinfoMaterialAncestors())
                 .append(" WHERE RowId=").appendValue(rowId);
         new SqlExecutor(getScope()).execute(sql);
+        incrementalRecomputeForDescendants(new SQLFragment("FROM exp.material WHERE rowId=?").add(rowId));
     }
 
     public static void clearAncestorsForDataObject(int rowId)
     {
+        var tx = getScope().getCurrentTransaction();
+        if (null != tx)
+        {
+            tx.addCommitTask(() -> clearAncestorsForDataObject(rowId), DbScope.CommitTaskOption.POSTCOMMIT);
+            return;
+        }
         SQLFragment sql = new SQLFragment("DELETE FROM ").append(ExperimentService.get().getTinfoDataAncestors())
                 .append(" WHERE RowId=").appendValue(rowId);
         new SqlExecutor(getScope()).execute(sql);
+        incrementalRecomputeForDescendants(new SQLFragment("FROM exp.data WHERE rowId=?").add(rowId));
     }
 
     public static void populateMaterialAncestors(Logger logger)
@@ -323,6 +431,7 @@ public class ClosureQueryHelper
                     );
                 }
         );
+        logger.info("Finished populating exp.materialAncestors");
     }
 
     public static void populateDataAncestors(Logger logger)
@@ -344,6 +453,7 @@ public class ClosureQueryHelper
                     );
                 }
         );
+        logger.info("Finished populating exp.dataAncestors");
     }
 
     public static void truncateAndRecreate()
