@@ -91,6 +91,12 @@ public class AssayResultsFileWriter<ContextType extends AssayRunUploadContext<? 
             }
         }
 
-        return super.savePostedFiles(context, Collections.singleton(FILE_INPUT_NAME), true);
+        Map<String, File> files = super.savePostedFiles(context, Collections.singleton(FILE_INPUT_NAME), true);
+
+        // if no files were written to the targetDir, delete the empty directory
+        if (files.isEmpty())
+            cleanupPostedFiles(context);
+
+        return files;
     }
 }
