@@ -89,7 +89,7 @@ public class ClosureQueryHelper
             """;
 
     static String pgDescendantClosureCTE = String.format("""
-            WITH RECURSIVE CTE_ AS (
+            WITH RECURSIVE DCTE_ AS (
 
                 SELECT
                     RowId,
@@ -100,15 +100,15 @@ public class ClosureQueryHelper
 
                     UNION ALL
 
-                SELECT CTE_.RowId, Edge.ToObjectId as End_, CTE_.Path_ || CAST(Edge.ToObjectId AS VARCHAR) || '/' as Path_, Depth_ + 1 as Depth_
-                FROM CTE_ INNER JOIN exp.Edge ON CTE_.End_ = Edge.FromObjectId
+                SELECT DCTE_.RowId, Edge.ToObjectId as End_, DCTE_.Path_ || CAST(Edge.ToObjectId AS VARCHAR) || '/' as Path_, Depth_ + 1 as Depth_
+                FROM DCTE_ INNER JOIN exp.Edge ON DCTE_.End_ = Edge.FromObjectId
                 WHERE Depth_ < %d AND 0 = POSITION('/' || CAST(Edge.ToObjectId AS VARCHAR) || '/' IN Path_)
             )
             """, MAX_ANCESTOR_LOOKUP_DEPTH);
 
     static String pgDescendantClosureSql = """
                 (SELECT DISTINCT COALESCE(material.objectId, data.objectId) as descendantObjectId
-                FROM CTE_
+                FROM DCTE_
                     LEFT OUTER JOIN exp.material ON End_ = material.objectId  LEFT OUTER JOIN exp.materialsource ON material.cpasType = materialsource.lsid
                     LEFT OUTER JOIN exp.data on End_ = data.objectId LEFT OUTER JOIN exp.dataclass ON data.cpasType = dataclass.lsid
                 WHERE Depth_ > 0 AND materialsource.rowid IS NOT NULL OR dataclass.rowid IS NOT NULL)
@@ -137,15 +137,18 @@ public class ClosureQueryHelper
             SELECT RowId, CAST(CASE WHEN COUNT(*) = 1 THEN MIN(ancestorRowId) ELSE -1 * COUNT(*) END AS INT) AS ancestorRowId, ancestorTypeId
             /*INTO*/
             FROM (
-                SELECT DISTINCT COALESCE(material.rowid, data.rowid) as descendantRowId
+                SELECT DISTINCT CTE_.RowId,
+                    COALESCE(material.rowid, data.rowid) as ancestorRowId,
+                    COALESCE('m' + CAST(materialsource.rowid AS VARCHAR), 'd' + CAST(dataclass.rowid AS VARCHAR)) as ancestorTypeId
                 FROM CTE_
                     LEFT OUTER JOIN exp.material ON End_ = material.objectId  LEFT OUTER JOIN exp.materialsource ON material.cpasType = materialsource.lsid
                     LEFT OUTER JOIN exp.data on End_ = data.objectId LEFT OUTER JOIN exp.dataclass ON data.cpasType = dataclass.lsid
                 WHERE Depth_ > 0 AND materialsource.rowid IS NOT NULL OR dataclass.rowid IS NOT NULL) _inner_
+            GROUP BY ancestorTypeId, RowId
             """;
 
     static String mssqlDescendantClosureCTE = String.format("""
-            WITH CTE_ AS (
+            WITH DCTE_ AS (
 
                 SELECT
                     RowId,
@@ -156,18 +159,18 @@ public class ClosureQueryHelper
 
                     UNION ALL
 
-                SELECT CTE_.RowId, Edge.ToObjectId as End_, CTE_.Path_ + CAST(Edge.ToObjectId AS VARCHAR) + '/' as Path_, Depth_ + 1 as Depth_
-                FROM CTE_ INNER JOIN exp.Edge ON CTE_.End_ = Edge.FromObjectId
+                SELECT DCTE_.RowId, Edge.ToObjectId as End_, DCTE_.Path_ + CAST(Edge.ToObjectId AS VARCHAR) + '/' as Path_, Depth_ + 1 as Depth_
+                FROM DCTE_ INNER JOIN exp.Edge ON DCTE_.End_ = Edge.FromObjectId
                 WHERE Depth_ < %d AND 0 = CHARINDEX('/' + CAST(Edge.ToObjectId AS VARCHAR) + '/', Path_)
             )
             """, (MAX_ANCESTOR_LOOKUP_DEPTH));
 
     static String mssqlDescendantClosureSql = """
-                (SELECT DISTINCT COALESCE(material.objectId, data.objectId) as descendantObjectId,
-                FROM CTE_
+                SELECT DISTINCT COALESCE(material.objectId, data.objectId) as descendantObjectId
+                FROM DCTE_
                     LEFT OUTER JOIN exp.material ON End_ = material.objectId  LEFT OUTER JOIN exp.materialsource ON material.cpasType = materialsource.lsid
                     LEFT OUTER JOIN exp.data on End_ = data.objectId LEFT OUTER JOIN exp.dataclass ON data.cpasType = dataclass.lsid
-                WHERE Depth_ > 0 AND materialsource.rowid IS NOT NULL OR dataclass.rowid IS NOT NULL)
+                WHERE Depth_ > 0 AND materialsource.rowid IS NOT NULL OR dataclass.rowid IS NOT NULL
             """;
 
 
@@ -198,6 +201,7 @@ public class ClosureQueryHelper
     {
         String cte = d.isPostgreSQL() ? pgDescendantClosureCTE : mssqlDescendantClosureCTE;
         String select = d.isPostgreSQL() ? pgDescendantClosureSql : mssqlDescendantClosureSql;
+//        String select = pgDescendantClosureSql;
 
         String[] cteParts = StringUtils.splitByWholeSeparator(cte,"/*FROM*/");
         assert cteParts.length == 2;
