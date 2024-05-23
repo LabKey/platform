@@ -393,7 +393,7 @@ public class SpecimenQueryView extends BaseSpecimenQueryView
             setUpdateURL(new DetailsURL(updateUrl, Collections.singletonMap("RowId", "RowId")));
 
             // we want a DetailsURL-like string so clear the container
-            ActionURL insertActionURL = new ActionURL(SpecimenController.UpdateSpecimenQueryRowAction.class, ContainerManager.getRoot());
+            ActionURL insertActionURL = new ActionURL(SpecimenController.InsertSpecimenQueryRowAction.class, ContainerManager.getRoot());
             insertActionURL.addParameter("schemaName", "study");
             insertActionURL.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, tableInfo.getName());
 
