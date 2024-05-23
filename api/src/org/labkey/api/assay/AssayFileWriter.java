@@ -242,6 +242,11 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
         return savedFiles;
     }
 
+    public String getFileName(MultipartFile file)
+    {
+        return file.getOriginalFilename();
+    }
+
     public Map<String, File> savePostedFiles(ContextType context, Set<String> parameterNames, boolean allowMultiple) throws ExperimentException, IOException
     {
         Map<String, File> files = new TreeMap<>();
@@ -261,7 +266,7 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
                     boolean isAfterFirstFile = false;
                     for (MultipartFile multipartFile : multipartFiles)
                     {
-                        String fileName = multipartFile.getOriginalFilename();
+                        String fileName = getFileName(multipartFile);
                         if (!fileName.isEmpty() && !originalFileNames.add(fileName))
                         {
                             throw new ExperimentException("The file '" + fileName + " ' was uploaded twice - all files must be unique");

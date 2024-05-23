@@ -8,6 +8,7 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.util.FileUtil;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
@@ -71,6 +72,18 @@ public class AssayResultsFileWriter<ContextType extends AssayRunUploadContext<? 
         {
             throw new ExperimentException(e);
         }
+    }
+
+    @Override
+    public String getFileName(MultipartFile file)
+    {
+        // since results file upload can support uploading directories of files, some browsers retain path info
+        String filename = file.getOriginalFilename();
+        if (null == filename)
+            return null;
+        int slash = Math.max(filename.lastIndexOf("/"), filename.lastIndexOf("\\"));
+        filename = filename.substring(slash+1);
+        return filename;
     }
 
     public Map<String, File> savePostedFiles(ContextType context) throws ExperimentException, IOException

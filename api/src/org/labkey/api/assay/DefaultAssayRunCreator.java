@@ -374,6 +374,8 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             AssayResultsFileWriter resultsFileWriter = new AssayResultsFileWriter(context.getProtocol(), run, null);
             resultsFileWriter.savePostedFiles(context);
+
+            // TODO is there a better way to get the run info into ExpDataFileConverter?
             QueryService.get().setEnvironment(QueryService.Environment.EXP_RUN, run);
 
             importResultData(context, run, inputDatas, outputDatas, info, xarContext, transformResult, insertedDatas);
@@ -440,15 +442,15 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             return batch;
         }
-        catch (ExperimentException e)
+        catch (ExperimentException | IOException e)
         {
             // clean up the run results file dir here if it was created, for non-async imports
             AssayResultsFileWriter resultsFileWriter = new AssayResultsFileWriter(context.getProtocol(), run, null);
             resultsFileWriter.cleanupPostedFiles(context);
 
-            throw e;
+            throw new ExperimentException(e);
         }
-        catch (BatchValidationException | IOException e)
+        catch (BatchValidationException e)
         {
             throw new ExperimentException(e);
         }
