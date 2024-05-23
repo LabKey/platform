@@ -1816,8 +1816,14 @@ boxPlot.render();
                 minValue = mean;
             } else if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.LeveyJennings) {
                 if (config.properties.boundType === LABKEY.vis.PlotProperties.BoundType.StandardDeviation) {
-                    maxValue = config.properties.upperBound + cushion;
-                    minValue = config.properties.lowerBound - cushion;
+                    if (config.properties.valueConversion === 'standardDeviation') {
+                        maxValue = config.properties.upperBound + cushion;
+                        minValue = config.properties.lowerBound - cushion;
+                    }
+                    else if (config.properties.valueConversion === 'percentDeviation' && !config.properties.combined && stddev ) {
+                        maxValue = mean + ((config.properties.upperBound + cushion) * stddev);
+                        minValue = mean + ((config.properties.lowerBound - cushion) * stddev);
+                    }
                 }
                 else if (config.properties.boundType === LABKEY.vis.PlotProperties.BoundType.MeanDeviation) {
                     maxValue = mean + config.properties.upperBound + cushion;
