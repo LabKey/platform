@@ -16,6 +16,9 @@
 
 package org.labkey.api.security;
 
+import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSessionEvent;
+import jakarta.servlet.http.HttpSessionListener;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -70,12 +73,8 @@ import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AjaxCompletion;
 import org.labkey.api.view.HttpView;
-import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 
-import jakarta.servlet.http.HttpSession;
-import jakarta.servlet.http.HttpSessionEvent;
-import jakarta.servlet.http.HttpSessionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
@@ -341,6 +340,15 @@ public class UserManager
     public static @Nullable User getUser(ValidEmail email)
     {
         return UserCache.getUser(email);
+    }
+
+    // Use only for database login when existing email is invalid
+    public static @Nullable User getUser(String email)
+    {
+        return getUsers(true).stream()
+            .filter(user -> user.getEmail().equals(email))
+            .findAny()
+            .orElse(null);
     }
 
     public static @Nullable User getUserByDisplayName(String displayName)
@@ -816,10 +824,9 @@ public class UserManager
         {
             if (!isAdmin)
             {
-                ValidEmail validUserEmail = new ValidEmail(currentUser.getEmail());
-                if (!SecurityManager.verify(validUserEmail, verificationToken))  // shouldn't happen! should be testing this earlier too
+                if (!getVerifyEmail(oldEmail).isVerified(verificationToken))  // shouldn't happen! should be testing this earlier too
                 {
-                    throw new UserManagementException(validUserEmail, "Verification token '" + verificationToken + "' is incorrect for email change for user " + validUserEmail.getEmailAddress());
+                    throw new UserManagementException(oldEmail, "Verification token '" + verificationToken + "' is incorrect for email change for user " + oldEmail);
                 }
             }
 
@@ -869,10 +876,10 @@ public class UserManager
                 " with token '" + verificationToken + "', but the verification token for that email address was not correct.");
     }
 
-    public static VerifyEmail getVerifyEmail(ValidEmail email)
+    public static VerifyEmail getVerifyEmail(String email)
     {
         SqlSelector sqlSelector = new SqlSelector(CORE.getSchema(), "SELECT Email, RequestedEmail, Verification, VerificationTimeout FROM " + CORE.getTableInfoLogins()
-                + " WHERE Email = ?", email.getEmailAddress());
+                + " WHERE Email = ?", email);
         return sqlSelector.getObject(VerifyEmail.class);
     }
 
@@ -882,15 +889,6 @@ public class UserManager
         private String _requestedEmail;
         private String _verification;
         private Date _verificationTimeout;
-
-        public @NotNull User getUserToChange()
-        {
-            // Current email could be invalid, so can't use ValidEmail here. See Issue #50188.
-            return getUsers(true).stream()
-                .filter(user -> user.getEmail().equals(_email))
-                .findAny()
-                .orElseThrow(() -> new NotFoundException("User with email '" + _email + "' not found."));
-        }
 
         public String getEmail()
         {
@@ -934,6 +932,11 @@ public class UserManager
         public void setVerificationTimeout(Date verificationTimeout)
         {
             _verificationTimeout = verificationTimeout;
+        }
+
+        public boolean isVerified(String userProvidedToken)
+        {
+            return userProvidedToken != null && userProvidedToken.equals(_verification);
         }
     }
 

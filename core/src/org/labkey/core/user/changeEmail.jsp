@@ -88,7 +88,7 @@
     else if (form.getIsVerified())
     {
 %>
-        <p>Email change from <%=h(currentEmail)%> to <%=h(form.getRequestedEmail())%> was successful. An email has been sent to the old address for security purposes.</p>
+        <p>Email change from <%=h(currentEmail)%> to <%=h(form.getRequestedEmail())%> was successful.<% if (form.isSentCourtesyEmail()) {%> An email has been sent to the old address for security purposes.<%}%></p>
         <%= button("Done").href(cancelURL) %>
 <%
     }

@@ -1013,7 +1013,6 @@ public class SecurityManager
         }
     }
 
-
     public static class UserManagementException extends Exception
     {
         private final String _email;
@@ -1337,8 +1336,8 @@ public class SecurityManager
         return getPasswordHash(email.getEmailAddress());
     }
 
-    // Look up email in Logins table and return the corresponding password hash
-    private static String getPasswordHash(String email)
+    // For internal use only, plus database login and change email workflows, where existing email could be invalid.
+    public static String getPasswordHash(String email)
     {
         SqlSelector selector = new SqlSelector(core.getSchema(), new SQLFragment("SELECT Crypt FROM " + core.getTableInfoLogins() + " WHERE Email = ?", email));
         return selector.getObject(String.class);
@@ -1358,7 +1357,7 @@ public class SecurityManager
             return Crypt.MD5.matches(password, hash);
     }
 
-    // Used only in the case of email change... current email address might be invalid
+    // Used in the case of set password or email change... current email address might be invalid
     public static boolean loginExists(String email)
     {
         return (null != getPasswordHash(email));
@@ -3333,7 +3332,6 @@ public class SecurityManager
 
         abstract boolean accept(Set<Class<? extends Permission>> granted, Set<Class<? extends Permission>> required);
     }
-
 
     public static class TestCase extends Assert
     {
