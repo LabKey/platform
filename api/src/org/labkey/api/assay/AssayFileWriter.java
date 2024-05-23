@@ -254,7 +254,6 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
         if (context.getRequest() instanceof MultipartHttpServletRequest multipartRequest)
         {
             Iterator<Map.Entry<String, List<MultipartFile>>> iter = multipartRequest.getMultiFileMap().entrySet().iterator();
-            File dir = getFileTargetDir(context);
             Deque<File> overflowFiles = new ArrayDeque<>();  // using a deque for easy removal of single elements
             Set<String> unusedParameterNames = new HashSet<>(parameterNames);
             while (iter.hasNext())
@@ -273,6 +272,7 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
                         }
                         if (!multipartFile.isEmpty())
                         {
+                            File dir = getFileTargetDir(context);
                             File file = findUniqueFileName(fileName, dir);
                             multipartFile.transferTo(file);
                             if (!isAfterFirstFile)  // first file gets stored with multipartFile's name
