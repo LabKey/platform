@@ -39,7 +39,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.specimen.SpecimenEvent;
 import org.labkey.api.specimen.SpecimenEventManager;
-import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
 import org.labkey.api.study.Study;
@@ -48,6 +47,7 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.specimen.SpecimenManager;
 import org.labkey.specimen.SpecimenRequestException;
+import org.labkey.specimen.SpecimenRequestManager;
 import org.labkey.specimen.importer.EditableSpecimenImporter;
 
 import java.io.IOException;
@@ -117,9 +117,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
             for (Vial vial : vials)
                 SpecimenManager.get().deleteSpecimen(vial, false);
 
-            SpecimenMigrationService SMS = SpecimenMigrationService.get();
-            if (null != SMS)
-                SMS.clearRequestCaches(container);
+            SpecimenRequestManager.get().clearCaches(container);
 
             // Force recalculation of requestability and specimen table
             EditableSpecimenImporter importer = new EditableSpecimenImporter(container, user, false);

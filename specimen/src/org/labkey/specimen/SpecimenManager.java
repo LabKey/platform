@@ -23,7 +23,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.specimen.SpecimenEvent;
 import org.labkey.api.specimen.SpecimenEventManager;
 import org.labkey.api.specimen.SpecimenManagerNew;
-import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenQuerySchema;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
@@ -553,9 +552,7 @@ public class SpecimenManager
 
         if (clearCaches)
         {
-            SpecimenMigrationService SMS = SpecimenMigrationService.get();
-            if (null != SMS)
-                SMS.clearRequestCaches(vial.getContainer());
+            SpecimenRequestManager.get().clearCaches(vial.getContainer());
         }
     }
 

@@ -70,6 +70,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -162,11 +163,6 @@ public class SpecimenRequestManager
         for (SpecimenRequest request : requests)
             uniqueStatuses.add(request.getStatusId());
         return uniqueStatuses;
-    }
-
-    public List<SpecimenRequestEvent> getRequestEvents(Container c)
-    {
-        return _requestEventHelper.getList(c);
     }
 
     public SpecimenRequestEvent getRequestEvent(Container c, int rowId)
@@ -429,10 +425,7 @@ public class SpecimenRequestManager
 
     private String getSafeString(String str)
     {
-        if (str == null)
-            return "";
-        else
-            return str;
+        return Objects.requireNonNullElse(str, "");
     }
 
     public void createRequestStatus(User user, SpecimenRequestStatus status)
@@ -467,11 +460,6 @@ public class SpecimenRequestManager
         if (createEvent)
             createRequestEvent(user, requirement, RequestEventType.REQUIREMENT_REMOVED, requirement.getRequirementSummary(), null);
         requirement.delete();
-    }
-
-    public void createRequestRequirement(User user, SpecimenRequestRequirement requirement, boolean createEvent) throws AttachmentService.DuplicateFilenameException
-    {
-        createRequestRequirement(user, requirement, createEvent, false);
     }
 
     public void createRequestRequirement(User user, SpecimenRequestRequirement requirement, boolean createEvent, boolean force) throws AttachmentService.DuplicateFilenameException
@@ -572,7 +560,7 @@ public class SpecimenRequestManager
 
             // update specimen states
             List<Vial> vials = request.getVials();
-            if (vials.size() > 0)
+            if (!vials.isEmpty())
             {
                 SpecimenRequestStatus status = getRequestStatus(request.getContainer(), request.getStatusId());
                 updateSpecimenStatus(vials, user, status.isSpecimensLocked());
@@ -586,7 +574,7 @@ public class SpecimenRequestManager
     public void createRequestSpecimenMapping(User user, SpecimenRequest request, List<Vial> vials, boolean createEvents, boolean createRequirements)
             throws RequestabilityManager.InvalidRuleException, AttachmentService.DuplicateFilenameException, SpecimenRequestException
     {
-        if (vials == null || vials.size() == 0)
+        if (vials == null || vials.isEmpty())
             return;
 
         DbScope scope = SpecimenSchema.get().getScope();
@@ -633,13 +621,13 @@ public class SpecimenRequestManager
             Table.update(user, SpecimenSchema.get().getTableInfoVial(vial.getContainer()), vial.getRowMap(), vial.getRowId());
         }
         updateRequestabilityAndCounts(vials, user);
-        if (vials.size() > 0)
+        if (!vials.isEmpty())
             clearCaches(getContainer(vials));
     }
 
     private void updateRequestabilityAndCounts(List<Vial> vials, User user) throws RequestabilityManager.InvalidRuleException
     {
-        if (vials.size() == 0)
+        if (vials.isEmpty())
             return;
         Container container = getContainer(vials);
 
@@ -804,7 +792,7 @@ public class SpecimenRequestManager
         _requestEventHelper.clearCache(c);
     }
 
-    private static class GroupedValueColumnHelper
+    public static class GroupedValueColumnHelper
     {
         private final String _viewColumnName;
         private final String _sqlColumnName;
@@ -819,24 +807,9 @@ public class SpecimenRequestManager
             _joinColumnName = joinColumnName;
         }
 
-        public String getViewColumnName()
-        {
-            return _viewColumnName;
-        }
-
-        public String getSqlColumnName()
-        {
-            return _sqlColumnName;
-        }
-
         public String getUrlFilterName()
         {
             return _urlFilterName;
-        }
-
-        public String getJoinColumnName()
-        {
-            return _joinColumnName;
         }
 
         public FieldKey getFieldKey()

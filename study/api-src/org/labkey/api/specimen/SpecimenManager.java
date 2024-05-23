@@ -132,9 +132,9 @@ public class SpecimenManager
 
         new SqlExecutor(SpecimenSchema.get().getSchema()).execute(deleteSpecimenSql);
 
-        SpecimenMigrationService SMS = SpecimenMigrationService.get();
-        if (null != SMS)
-            SMS.clearRequestCaches(visit.getContainer());
+        SpecimenMigrationService sms = SpecimenMigrationService.get();
+        if (null != sms)
+            sms.clearRequestCaches(visit.getContainer());
     }
 
     @Nullable
