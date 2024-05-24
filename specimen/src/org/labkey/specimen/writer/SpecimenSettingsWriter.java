@@ -17,8 +17,6 @@ package org.labkey.specimen.writer;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.security.GroupManager;
-import org.labkey.api.specimen.SpecimenRequestStatus;
-import org.labkey.api.specimen.importer.RequestabilityManager;
 import org.labkey.api.specimen.settings.DisplaySettings;
 import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.api.specimen.settings.SettingsManager;
@@ -31,7 +29,9 @@ import org.labkey.security.xml.GroupType;
 import org.labkey.security.xml.GroupsType;
 import org.labkey.specimen.SpecimenRequestManager;
 import org.labkey.specimen.SpecimenRequestManager.SpecimenRequestInput;
+import org.labkey.specimen.SpecimenRequestStatus;
 import org.labkey.specimen.actions.ManageReqsBean;
+import org.labkey.specimen.importer.RequestabilityManager;
 import org.labkey.specimen.model.SpecimenRequestActor;
 import org.labkey.specimen.requirements.SpecimenRequestRequirement;
 import org.labkey.specimen.requirements.SpecimenRequestRequirementProvider;

@@ -20,10 +20,9 @@
 <%@ page import="org.labkey.api.data.ContainerManager"%>
 <%@ page import="org.labkey.api.security.User"%>
 <%@ page import="org.labkey.api.security.UserManager"%>
-<%@ page import="org.labkey.api.specimen.SpecimenRequestStatus"%>
-<%@ page import="org.labkey.api.specimen.Vial" %>
-<%@ page import="org.labkey.api.specimen.location.LocationImpl"%>
-<%@ page import="org.labkey.api.specimen.location.LocationManager" %>
+<%@ page import="org.labkey.api.specimen.Vial"%>
+<%@ page import="org.labkey.api.specimen.location.LocationImpl" %>
+<%@ page import="org.labkey.api.specimen.location.LocationManager"%>
 <%@ page import="org.labkey.api.specimen.settings.SettingsManager" %>
 <%@ page import="org.labkey.api.study.Location" %>
 <%@ page import="org.labkey.api.study.SpecimenService" %>
@@ -36,6 +35,7 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.specimen.SpecimenManager" %>
 <%@ page import="org.labkey.specimen.SpecimenRequestManager" %>
+<%@ page import="org.labkey.specimen.SpecimenRequestStatus" %>
 <%@ page import="org.labkey.specimen.actions.ManageRequestBean" %>
 <%@ page import="org.labkey.specimen.actions.ShowSearchAction" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController" %>

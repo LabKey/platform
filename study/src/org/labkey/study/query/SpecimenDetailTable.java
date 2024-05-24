@@ -39,10 +39,10 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.importer.RollupHelper;
 import org.labkey.api.specimen.model.SpecimenTablesProvider;
-import org.labkey.api.specimen.query.SpecimenUpdateService;
 import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.StudyService;
 import org.labkey.study.CohortForeignKey;
@@ -359,9 +359,8 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
     @Override
     public QueryUpdateService getUpdateService()
     {
-        if (SettingsManager.get().getRepositorySettings(_userSchema.getStudy().getContainer()).isSpecimenDataEditable())
-            return new SpecimenUpdateService(this);
-        return null;
+        SpecimenMigrationService sms = SpecimenMigrationService.get();
+        return null != sms ? sms.getSpecimenQueryUpdateService(_userSchema.getStudy().getContainer(), this) : null;
     }
 
 
@@ -390,7 +389,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         for (DomainProperty property : optionalVialProperties)
             optionalVialPropertyNames.add(property.getName().toLowerCase());
 
-        // If there are name conflicts betwen Vial and Specimen, Vial takes precedence here
+        // If there are name conflicts between Vial and Specimen, Vial takes precedence here
         for (DomainProperty property : specimenDomain.getNonBaseProperties())
             if (!optionalVialPropertyNames.contains(property.getName().toLowerCase()))
                 optionalSpecimenProperties.add(property);

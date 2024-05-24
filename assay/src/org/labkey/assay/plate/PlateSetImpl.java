@@ -156,6 +156,7 @@ public class PlateSetImpl extends Entity implements PlateSet
         return getPlateCount() >= MAX_PLATES;
     }
 
+    @Override
     public String getDescription()
     {
         return _description;

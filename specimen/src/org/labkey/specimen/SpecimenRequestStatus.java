@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.api.specimen;
+package org.labkey.specimen;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.study.AbstractStudyCachable;

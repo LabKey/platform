@@ -21,7 +21,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
-import org.labkey.api.specimen.query.SpecimenQueryView;
+import org.labkey.specimen.query.SpecimenQueryView;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.Visit;
 import org.labkey.api.util.HtmlString;

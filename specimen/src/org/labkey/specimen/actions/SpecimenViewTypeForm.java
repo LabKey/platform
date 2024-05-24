@@ -1,7 +1,7 @@
 package org.labkey.specimen.actions;
 
 import org.labkey.api.action.QueryViewAction;
-import org.labkey.api.specimen.query.SpecimenQueryView;
+import org.labkey.specimen.query.SpecimenQueryView;
 
 public class SpecimenViewTypeForm extends QueryViewAction.QueryExportForm
 {
