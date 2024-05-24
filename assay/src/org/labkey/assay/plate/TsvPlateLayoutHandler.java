@@ -20,7 +20,7 @@ public class TsvPlateLayoutHandler extends AbstractPlateLayoutHandler
     public static final String TYPE = "Standard";
 
     @Override
-    public String getAssayType()
+    public @NotNull String getAssayType()
     {
         return TYPE;
     }
@@ -33,15 +33,15 @@ public class TsvPlateLayoutHandler extends AbstractPlateLayoutHandler
     }
 
     @Override
-    public Plate createTemplate(@Nullable String templateTypeName, Container container, @NotNull PlateType plateType)
+    public Plate createPlate(@Nullable String plateName, Container container, @NotNull PlateType plateType)
     {
         validatePlateType(plateType);
-        Plate template = PlateService.get().createPlateTemplate(container, getAssayType(), plateType);
+        Plate plate = PlateService.get().createPlate(container, getAssayType(), plateType);
 
-        template.addWellGroup("Positive", WellGroup.Type.CONTROL, Collections.emptyList());
-        template.addWellGroup("Negative", WellGroup.Type.CONTROL, Collections.emptyList());
+        plate.addWellGroup("Positive", WellGroup.Type.CONTROL, Collections.emptyList());
+        plate.addWellGroup("Negative", WellGroup.Type.CONTROL, Collections.emptyList());
 
-        return template;
+        return plate;
     }
 
     @Override
@@ -58,6 +58,11 @@ public class TsvPlateLayoutHandler extends AbstractPlateLayoutHandler
     @Override
     public List<WellGroup.Type> getWellGroupTypes()
     {
-        return Arrays.asList(WellGroup.Type.CONTROL, WellGroup.Type.SAMPLE);
+        return Arrays.asList(
+            WellGroup.Type.CONTROL,
+            WellGroup.Type.SAMPLE,
+            WellGroup.Type.POSITIVE_CONTROL,
+            WellGroup.Type.NEGATIVE_CONTROL
+        );
     }
 }

@@ -29,11 +29,6 @@ import org.labkey.study.model.StudyManager;
 
 import java.util.Collection;
 
-/**
- * User: brittp
- * Date: Jan 6, 2006
- * Time: 10:36:43 AM
- */
 public class StudySchema
 {
     private static final StudySchema instance = new StudySchema();

@@ -16,6 +16,7 @@
 package org.labkey.assay;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
@@ -43,11 +44,13 @@ import org.labkey.api.data.ArrayExcelWriter;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.TSVWriter;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
+import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresAnyOf;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
@@ -56,6 +59,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.ContainerTree;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -67,6 +71,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.writer.ZipFile;
 import org.labkey.assay.plate.PlateDataServiceImpl;
 import org.labkey.assay.plate.PlateImpl;
 import org.labkey.assay.plate.PlateManager;
@@ -80,7 +85,16 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -101,9 +115,9 @@ public class PlateController extends SpringActionController
     public static class PlateUrlsImpl implements PlateUrls
     {
         @Override
-        public ActionURL getPlateTemplateListURL(Container c)
+        public ActionURL getPlateListURL(Container c)
         {
-            return new ActionURL(PlateTemplateListAction.class, c);
+            return new ActionURL(PlateListAction.class, c);
         }
 
         @Override
@@ -119,7 +133,7 @@ public class PlateController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            return HttpView.redirect(new ActionURL(PlateTemplateListAction.class, getContainer()));
+            return HttpView.redirect(new ActionURL(PlateListAction.class, getContainer()));
         }
 
         @Override
@@ -128,10 +142,10 @@ public class PlateController extends SpringActionController
         }
     }
 
-
     public static class PlateTemplateListBean
     {
-        private List<? extends Plate> _templates;
+        private final List<? extends Plate> _templates;
+
         public PlateTemplateListBean(List<? extends Plate> templates)
         {
             _templates = templates;
@@ -144,21 +158,25 @@ public class PlateController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public static class PlateTemplateListAction extends SimpleViewAction<ReturnUrlForm>
+    @ActionNames("plateList, plateTemplateList")
+    public static class PlateListAction extends SimpleViewAction<ReturnUrlForm>
     {
         @Override
-        public ModelAndView getView(ReturnUrlForm plateTemplateListForm, BindException errors)
+        public ModelAndView getView(ReturnUrlForm form, BindException errors)
         {
             setHelpTopic("editPlateTemplate");
-            List<Plate> plateTemplates = PlateService.get().getPlateTemplates(getContainer());
-            return new JspView<>("/org/labkey/assay/plate/view/plateTemplateList.jsp",
+            List<Plate> plateTemplates = PlateService.get().getPlates(getContainer())
+                    .stream()
+                    .filter(p -> !TsvPlateLayoutHandler.TYPE.equalsIgnoreCase(p.getAssayType()))
+                    .toList();
+            return new JspView<>("/org/labkey/assay/plate/view/plateList.jsp",
                     new PlateTemplateListBean(plateTemplates));
         }
 
         @Override
         public void addNavTrail(NavTree root)
         {
-            root.addChild("Plate Templates");
+            root.addChild("Plates");
         }           
     }
 
@@ -216,36 +234,44 @@ public class PlateController extends SpringActionController
         public ModelAndView getView(DesignerForm form, BindException errors)
         {
             Map<String, String> properties = new HashMap<>();
+            String templateName = null;
+            Integer plateId = null;
+
             if (form.getTemplateName() != null)
             {
+                plateId = form.getPlateId();
+                templateName = form.getTemplateName();
+            }
+            else if (form.getPlateId() != null)
+            {
+                Plate plate = PlateManager.get().getPlate(getContainer(), form.getPlateId());
+                if (plate != null)
+                {
+                    plateId = plate.getRowId();
+                    templateName = plate.getName();
+                }
+            }
+
+            if (templateName != null)
+            {
                 properties.put("copyTemplate", Boolean.toString(form.isCopy()));
-                properties.put("templateName", form.getTemplateName());
-                if (form.getPlateId() != null)
-                    properties.put("plateId", String.valueOf(form.getPlateId()));
+                properties.put("templateName", templateName);
+                if (plateId != null)
+                    properties.put("plateId", String.valueOf(plateId));
                 if (form.isCopy())
-                    properties.put("defaultPlateName", getUniqueName(getContainer(), form.getTemplateName()));
+                    properties.put("defaultPlateName", getUniqueName(getContainer(), templateName));
                 else
-                    properties.put("defaultPlateName", form.getTemplateName());
+                    properties.put("defaultPlateName", templateName);
             }
+
             if (form.getAssayType() != null)
-            {
                 properties.put("assayTypeName", form.getAssayType());
-            }
-
             if (form.getTemplateType() != null)
-            {
                 properties.put("templateTypeName", form.getTemplateType());
-            }
 
-            properties.put("templateRowCount", "" + form.getRowCount());
-            properties.put("templateColumnCount", "" + form.getColCount());
+            properties.put("templateRowCount", String.valueOf(form.getRowCount()));
+            properties.put("templateColumnCount", String.valueOf(form.getColCount()));
 
-            List<Plate> templates = PlateService.get().getPlateTemplates(getContainer());
-            for (int i = 0; i < templates.size(); i++)
-            {
-                Plate template = templates.get(i);
-                properties.put("templateName[" + i + "]", template.getName());
-            }
             return new AssayGWTView(gwt.client.org.labkey.plate.designer.client.TemplateDesigner.class, properties);
         }
 
@@ -253,7 +279,7 @@ public class PlateController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             setHelpTopic("editPlateTemplate");
-            root.addChild("Plate Template Editor");
+            root.addChild("Plate Editor");
         }
     }
 
@@ -324,7 +350,7 @@ public class PlateController extends SpringActionController
                         Container dest = ContainerManager.getForPath(_selectedDestination);
                         if (dest != null)
                         {
-                            _destinationTemplates = PlateService.get().getPlateTemplates(dest);
+                            _destinationTemplates = PlateService.get().getPlates(dest);
                         }
                     }
 
@@ -410,29 +436,29 @@ public class PlateController extends SpringActionController
             if (_plate == null)
                 errors.reject(ERROR_REQUIRED, "Unable to retrieve source plate with ID : " + form.getPlateId());
 
-            if (PlateManager.get().isDuplicatePlate(_destination, getUser(), _plate.getName(), null))
+            if (PlateManager.get().isDuplicatePlateName(_destination, getUser(), _plate.getName(), null))
                 errors.reject("copyForm", "A plate template with the same name already exists in the destination folder.");
         }
 
         @Override
         public boolean handlePost(CopyForm form, BindException errors) throws Exception
         {
-            PlateService.get().copyPlate(_plate, getUser(), _destination);
+            PlateManager.get().copyPlateDeprecated(_plate, getUser(), _destination);
             return true;
         }
 
         @Override
         public ActionURL getSuccessURL(CopyForm copyForm)
         {
-            return new ActionURL(PlateTemplateListAction.class, getContainer());
+            return new ActionURL(PlateListAction.class, getContainer());
         }
     }
 
     private String getUniqueName(Container container, String originalName)
     {
         Set<String> existing = new HashSet<>();
-        for (Plate template : PlateService.get().getPlateTemplates(container))
-            existing.add(template.getName());
+        for (Plate plate : PlateService.get().getPlates(container))
+            existing.add(plate.getName());
         String baseUniqueName;
         if (!originalName.startsWith("Copy of "))
             baseUniqueName = "Copy of " + originalName;
@@ -558,11 +584,18 @@ public class PlateController extends SpringActionController
 
     public static class CreatePlateForm implements ApiJsonForm
     {
-        private String _name;
-        private Integer _plateType;
-        private Integer _plateSetId;
-        private List<Map<String, Object>> _data = new ArrayList<>();
         private String _assayType = TsvPlateLayoutHandler.TYPE;
+        private final List<Map<String, Object>> _data = new ArrayList<>();
+        private String _description;
+        private String _name;
+        private Integer _plateSetId;
+        private Integer _plateType;
+        private boolean _template;
+
+        public String getDescription()
+        {
+            return _description;
+        }
 
         public String getName()
         {
@@ -589,6 +622,11 @@ public class PlateController extends SpringActionController
             return _assayType;
         }
 
+        public Boolean isTemplate()
+        {
+            return _template;
+        }
+
         @Override
         public void bindJson(JSONObject json)
         {
@@ -603,6 +641,12 @@ public class PlateController extends SpringActionController
 
             if (json.has("assayType"))
                 _assayType = json.getString("assayType");
+
+            if (json.has("description"))
+                _description = json.getString("description");
+
+            if (json.has("template"))
+                _template = json.getBoolean("template");
 
             if (json.has("data"))
             {
@@ -644,8 +688,13 @@ public class PlateController extends SpringActionController
         {
             try
             {
-                Plate plate = PlateManager.get().createAndSavePlate(getContainer(), getUser(), _plateType, form.getName(), form.getPlateSetId(), form.getAssayType(), form.getData());
-                return success(plate);
+                PlateImpl plate = new PlateImpl(getContainer(), form.getName(), form.getAssayType(), _plateType);
+                if (form.isTemplate() != null)
+                    plate.setTemplate(form.isTemplate());
+                plate.setDescription(form.getDescription());
+
+                Plate newPlate = PlateManager.get().createAndSavePlate(getContainer(), getUser(), plate, form.getPlateSetId(), form.getData());
+                return success(newPlate);
             }
             catch (Exception e)
             {
@@ -885,8 +934,9 @@ public class PlateController extends SpringActionController
         private String _name;
         private List<PlateManager.CreatePlateSetPlate> _plates = new ArrayList<>();
         private Integer _parentPlateSetId;
-        private PlateSetType _type;
         private String _selectionKey;
+        private Boolean _template;
+        private PlateSetType _type;
 
         public String getDescription()
         {
@@ -973,6 +1023,15 @@ public class PlateController extends SpringActionController
             return !_plates.isEmpty() && _selectionKey == null;
         }
 
+        public Boolean getTemplate()
+        {
+            return _template;
+        }
+
+        public void setTemplate(Boolean template)
+        {
+            _template = template;
+        }
     }
 
     @RequiresPermission(InsertPermission.class)
@@ -994,18 +1053,23 @@ public class PlateController extends SpringActionController
                 plateSet.setDescription(form.getDescription());
                 plateSet.setName(form.getName());
                 plateSet.setType(form.getType());
+                if (form.getTemplate() != null)
+                    plateSet.setTemplate(form.getTemplate());
 
                 List<PlateManager.CreatePlateSetPlate> plates = new ArrayList<>();
                 if (form.isStandaloneAssayPlateCase() || form.isRearrayCase())
                 {
-                    plates = PlateManager.get().getPlateData(getViewContext(), form.getSelectionKey(), form.getPlates(), getContainer());
+                    String selectionKey = StringUtils.trimToNull(form.getSelectionKey());
+                    if (selectionKey == null)
+                    {
+                        errors.reject(ERROR_REQUIRED, "Specifying a \"selectionKey\" is required for this configuration.");
+                        return null;
+                    }
+                    plates = PlateManager.get().getPlateData(getContainer(), selectionKey, form.getPlates());
                 }
                 else if (form.isReplateCase())
                 {
-                    // When replating, we want the new plate names to be auto-generated
-                    plates = PlateManager.get()
-                            .getPlates(form.getParentPlateSetId(), getContainer(), getUser()).stream()
-                            .map(p -> new PlateManager.CreatePlateSetPlate(null, p.plateType(), p.data())).toList();
+                    plates = PlateManager.get().getPlateData(getContainer(), getUser(), form.getParentPlateSetId());
                 }
                 else if (form.isDefaultCase())
                 {
@@ -1026,8 +1090,19 @@ public class PlateController extends SpringActionController
 
     public static class ArchiveForm
     {
+        private List<Integer> _plateIds;
         private List<Integer> _plateSetIds;
         private boolean _restore;
+
+        public List<Integer> getPlateIds()
+        {
+            return _plateIds;
+        }
+
+        public void setPlateIds(List<Integer> plateIds)
+        {
+            _plateIds = plateIds;
+        }
 
         public List<Integer> getPlateSetIds()
         {
@@ -1052,13 +1127,13 @@ public class PlateController extends SpringActionController
 
     @Marshal(Marshaller.JSONObject)
     @RequiresPermission(UpdatePermission.class)
-    public static class ArchivePlateSetsAction extends MutatingApiAction<ArchiveForm>
+    public static class ArchiveAction extends MutatingApiAction<ArchiveForm>
     {
         @Override
         public void validateForm(ArchiveForm form, Errors errors)
         {
-            if (form.getPlateSetIds() == null)
-                errors.reject(ERROR_GENERIC, "\"plateSetIds\" is a required field.");
+            if (form.getPlateIds() == null && form.getPlateSetIds() == null)
+                errors.reject(ERROR_GENERIC, "Either \"plateIds\" or \"plateSetIds\" must be specified.");
         }
 
         @Override
@@ -1066,7 +1141,7 @@ public class PlateController extends SpringActionController
         {
             try
             {
-                PlateManager.get().archivePlateSets(getContainer(), getUser(), form.getPlateSetIds(), !form.isRestore());
+                PlateManager.get().archive(getContainer(), getUser(), form.getPlateSetIds(), form.getPlateIds(), !form.isRestore());
                 return success();
             }
             catch (Exception e)
@@ -1205,7 +1280,6 @@ public class PlateController extends SpringActionController
     public static class PlateSetAssaysForm
     {
         private ContainerFilter.Type _containerFilter;
-
         private int _plateSetId;
 
         public ContainerFilter.Type getContainerFilter()
@@ -1291,8 +1365,8 @@ public class PlateController extends SpringActionController
                 if (plateSetSource == null || plateSetDestination == null)
                     throw new NotFoundException("Unable to resolve Plate Set.");
 
-                Set<FieldKey> sourceIncludedMetadataCols = WellTable.getMetadataColumns(form.getSourcePlateSetId(), getContainer(), getUser());
-                Set<FieldKey> destinationIncludedMetadataCols = WellTable.getMetadataColumns(form.getDestinationPlateSetId(), getContainer(), getUser());
+                List<FieldKey> sourceIncludedMetadataCols = WellTable.getMetadataColumns(plateSetSource, getUser());
+                List<FieldKey> destinationIncludedMetadataCols = WellTable.getMetadataColumns(plateSetDestination, getUser());
 
                 ColumnDescriptor[] sourceXlCols = PlateSetExport.getColumnDescriptors(PlateSetExport.SOURCE, sourceIncludedMetadataCols);
                 ColumnDescriptor[] destinationXlCols = PlateSetExport.getColumnDescriptors(PlateSetExport.DESTINATION, destinationIncludedMetadataCols);
@@ -1301,7 +1375,7 @@ public class PlateController extends SpringActionController
                 List<Object[]> plateDataRows = PlateManager.get().getWorklist(form.getSourcePlateSetId(), form.getDestinationPlateSetId(), sourceIncludedMetadataCols, destinationIncludedMetadataCols, getContainer(), getUser());
 
                 ArrayExcelWriter xlWriter = new ArrayExcelWriter(plateDataRows, xlCols);
-                xlWriter.setFullFileName(plateSetSource.getName() + "To" + plateSetDestination.getName() + ".xls");
+                xlWriter.setFullFileName(plateSetSource.getName() + " - " + plateSetDestination.getName());
                 xlWriter.renderWorkbook(getViewContext().getResponse());
 
                 return null; // Returning anything here will cause error as excel writer will close the response stream
@@ -1344,12 +1418,12 @@ public class PlateController extends SpringActionController
                 if (plateSet.getType() != PlateSetType.assay)
                     throw new ValidationException("Instrument Instructions cannot be generated for non-Assay Plate Sets.");
 
-                Set<FieldKey> includedMetadataCols = WellTable.getMetadataColumns(form.getPlateSetId(), getContainer(), getUser());
+                List<FieldKey> includedMetadataCols = WellTable.getMetadataColumns(plateSet, getUser());
                 ColumnDescriptor[] xlCols = PlateSetExport.getColumnDescriptors("", includedMetadataCols);
                 List<Object[]> plateDataRows = PlateManager.get().getInstrumentInstructions(form.getPlateSetId(), includedMetadataCols, getContainer(), getUser());
 
                 ArrayExcelWriter xlWriter = new ArrayExcelWriter(plateDataRows, xlCols);
-                xlWriter.setFullFileName(plateSet.getName() + ".xls");
+                xlWriter.setFullFileName(plateSet.getName());
                 xlWriter.renderWorkbook(getViewContext().getResponse());
 
                 return null; // Returning anything here will cause error as excel writer will close the response stream
@@ -1360,6 +1434,231 @@ public class PlateController extends SpringActionController
             }
 
             return null;
+        }
+    }
+
+    public enum PlateExportType
+    {
+        CSV,
+        TSV,
+        Map,
+    }
+
+    public static class PlateExportForm
+    {
+        private ContainerFilter.Type _containerFilter;
+
+        private List<Integer> _plateIds;
+
+        private PlateExportType _exportType;
+
+        private String _filename;
+
+        public ContainerFilter.Type getContainerFilter()
+        {
+            return _containerFilter;
+        }
+
+        public void setContainerFilter(ContainerFilter.Type containerFilter)
+        {
+            _containerFilter = containerFilter;
+        }
+
+        public List<Integer> getPlateIds()
+        {
+            return _plateIds;
+        }
+
+        public void setPlateIds(List<Integer> plateIds)
+        {
+            _plateIds = plateIds;
+        }
+
+        public PlateExportType getExportType()
+        {
+            return _exportType;
+        }
+
+        public void setExportType(PlateExportType exportType)
+        {
+            _exportType = exportType;
+        }
+
+        public String getFilename()
+        {
+            return _filename;
+        }
+
+        public void setFilename(String filename)
+        {
+            _filename = filename;
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public static class PlateExportAction extends ReadOnlyApiAction<PlateExportForm>
+    {
+        @Override
+        public void validateForm(PlateExportForm form, Errors errors)
+        {
+            if (form.getPlateIds() == null)
+                errors.reject(ERROR_REQUIRED, "\"plateIds\" is required");
+
+            if (form.getPlateIds().size() >= PlateSet.MAX_PLATES)
+                errors.reject(ERROR_GENERIC, "Too many \"plateIds\", maximum of " + PlateSet.MAX_PLATES + " can be exported at a time");
+
+            if (form.getExportType() == null)
+                errors.reject(ERROR_REQUIRED, "\"exportType\" is required");
+        }
+
+        @Override
+        public Object execute(PlateExportForm form, BindException errors) throws Exception
+        {
+            ContainerFilter cf = ContainerFilter.Type.Current.create(getViewContext());
+            // if an optional container filter is specified
+            if (form.getContainerFilter() != null)
+                cf = form.getContainerFilter().create(getViewContext());
+
+            List<PlateManager.PlateFileBytes> fileBytes;
+            String fileExtension;
+
+            if (form.getExportType() == PlateExportType.CSV)
+            {
+                fileBytes = PlateManager.get().exportPlateData(getContainer(), getUser(), cf, form.getPlateIds(), TSVWriter.DELIM.COMMA);
+                fileExtension = TSVWriter.DELIM.COMMA.extension;
+            }
+            else if (form.getExportType() == PlateExportType.TSV)
+            {
+                fileBytes = PlateManager.get().exportPlateData(getContainer(), getUser(), cf, form.getPlateIds(), TSVWriter.DELIM.TAB);
+                fileExtension = TSVWriter.DELIM.TAB.extension;
+            }
+            else
+            {
+                fileBytes = PlateManager.get().exportPlateMaps(getContainer(), getUser(), cf, form.getPlateIds());
+                fileExtension = "xlsx";
+            }
+
+            if (fileBytes.isEmpty())
+            {
+                return null;
+            }
+            else if (fileBytes.size() == 1)
+            {
+                PlateManager.PlateFileBytes plateFileBytes = fileBytes.get(0);
+                String fileName = FileUtil.makeLegalName(plateFileBytes.plateName() + "." + fileExtension);
+                PageFlowUtil.streamFileBytes(getViewContext().getResponse(), fileName, plateFileBytes.bytes().toByteArray(), true);
+                return null;
+            }
+
+            String zipFileName = form.getFilename();
+
+            if (zipFileName == null)
+                zipFileName = "plates.zip";
+            else
+                zipFileName = zipFileName + ".zip";
+
+            zipFileName = FileUtil.makeLegalName(zipFileName);
+
+            // Export to a temporary file first so exceptions are displayed by the standard error page
+            Path tempDir = FileUtil.getTempDirectory().toPath();
+            Path tempZipFile = tempDir.resolve(zipFileName);
+
+            try (ZipFile zip = new ZipFile(tempDir, zipFileName))
+            {
+                for (PlateManager.PlateFileBytes plateFileBytes : fileBytes)
+                {
+                    String fileName = FileUtil.makeLegalName(plateFileBytes.plateName() + "." + fileExtension);
+                    try (
+                        InputStream is = new ByteArrayInputStream(plateFileBytes.bytes().toByteArray());
+                        OutputStream os = zip.getOutputStream(fileName)
+                    )
+                    {
+                        FileUtil.copyData(is, os);
+                    }
+                }
+            }
+            catch (Throwable t)
+            {
+                Files.deleteIfExists(tempZipFile);
+                throw t;
+            }
+
+            try (OutputStream os = ZipFile.getOutputStream(getViewContext().getResponse(), zipFileName))
+            {
+                Files.copy(tempZipFile, os);
+            }
+            finally
+            {
+                Files.delete(tempZipFile);
+            }
+
+            return null;
+        }
+    }
+
+    public static class CopyPlateForm
+    {
+        private boolean _copyAsTemplate;
+        private String _description;
+        private String _name;
+        private Integer _sourcePlateRowId;
+
+        public boolean isCopyAsTemplate()
+        {
+            return _copyAsTemplate;
+        }
+
+        public void setCopyAsTemplate(boolean copyAsTemplate)
+        {
+            _copyAsTemplate = copyAsTemplate;
+        }
+
+        public String getDescription()
+        {
+            return _description;
+        }
+
+        public void setDescription(String description)
+        {
+            _description = description;
+        }
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public void setName(String name)
+        {
+            _name = name;
+        }
+
+        public Integer getSourcePlateRowId()
+        {
+            return _sourcePlateRowId;
+        }
+
+        public void setSourcePlateRowId(Integer sourcePlateRowId)
+        {
+            _sourcePlateRowId = sourcePlateRowId;
+        }
+    }
+
+    @RequiresPermission(InsertPermission.class)
+    public static class CopyPlateAction extends MutatingApiAction<CopyPlateForm>
+    {
+        @Override
+        public void validateForm(CopyPlateForm form, Errors errors)
+        {
+            if (form.getSourcePlateRowId() == null)
+                errors.reject(ERROR_REQUIRED, "Specifying \"sourcePlateRowId\" is required.");
+        }
+
+        @Override
+        public Object execute(CopyPlateForm form, BindException errors) throws Exception
+        {
+            Plate plate = PlateManager.get().copyPlate(getContainer(), getUser(), form.getSourcePlateRowId(), form.isCopyAsTemplate(), form.getName(), form.getDescription());
+            return success(plate);
         }
     }
 }

@@ -47,8 +47,8 @@ public class DatabaseCache<K, V> implements Cache<K, V>
     private final Cache<K, V> _sharedCache;
     private final DbScope _scope;
 
-    @Deprecated // Use the factory methods that return a BlockingDatabaseCache instead
-    public DatabaseCache(DbScope scope, int maxSize, long defaultTimeToLive, String debugName)
+    // Use the factory methods that return a BlockingDatabaseCache instead
+    private DatabaseCache(DbScope scope, int maxSize, long defaultTimeToLive, String debugName)
     {
         _sharedCache = createSharedCache(maxSize, defaultTimeToLive, debugName);
         _scope = scope;

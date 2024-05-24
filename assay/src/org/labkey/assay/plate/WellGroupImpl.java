@@ -100,7 +100,7 @@ public class WellGroupImpl extends PropertySetImpl implements WellGroup
     private static List<? extends Position> sortPositions(List<? extends Position> positions)
     {
         List<? extends Position> sortedPositions = new ArrayList<>(positions);
-        sortedPositions.sort((Comparator<Position>) Comparator.comparingInt(Position::getColumn).thenComparingInt(Position::getRow));
+        sortedPositions.sort(Comparator.comparingInt(Position::getColumn).thenComparingInt(Position::getRow));
         return sortedPositions;
     }
 

@@ -2175,8 +2175,7 @@ public class PageFlowUtil
         if (null != numberFormat)
             json.put("extDefaultNumberFormat", ExtUtil.toExtNumberFormat(numberFormat));
 
-        LookAndFeelProperties laf = LookAndFeelProperties.getInstance(settingsContainer);
-        json.put("useMDYDateParsing", laf.getDateParsingMode().getDayMonth() == DateUtil.MonthDayOption.MONTH_DAY);
+        json.put("useMDYDateParsing", LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getDateParsingMode().getDayMonth() == DateUtil.MonthDayOption.MONTH_DAY);
 
         // For now, all input forms should format using ISO date format, to ensure we can parse the dates we format. We can't
         // guarantee that the default date display formats are parseable. We might change this in the future, so use this
@@ -2261,13 +2260,7 @@ public class PageFlowUtil
         CustomLabelService customLabelService = CustomLabelService.get();
         if (customLabelService != null)
         {
-            Map<String, Map<String, String>> moduleLabels = new HashMap<>();
-            for (CustomLabelProvider provider : customLabelService.getCustomLabelProviders())
-            {
-                Map<String, String> labels = provider.getCustomLabels(container);
-                if (labels != null)
-                    moduleLabels.put(provider.getName(), labels);
-            }
+            Map<String, Map<String, String>> moduleLabels = customLabelService.getCustomLabels(container);
             if (!moduleLabels.isEmpty())
                 json.put("labels", moduleLabels);
         }

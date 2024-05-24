@@ -25,6 +25,7 @@ import org.labkey.api.util.JsonUtil;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -178,5 +179,20 @@ public class CohortImpl extends ExtensibleStudyEntity<CohortImpl> implements Coh
         }
 
         return cohort;
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        CohortImpl cohort = (CohortImpl) o;
+        return _rowId == cohort._rowId && _enrolled == cohort._enrolled && Objects.equals(_lsid, cohort._lsid) && Objects.equals(_subjectCount, cohort._subjectCount) && Objects.equals(_description, cohort._description);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return Objects.hash(_rowId, _lsid, _enrolled, _subjectCount, _description);
     }
 }

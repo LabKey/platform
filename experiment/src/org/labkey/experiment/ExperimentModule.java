@@ -175,7 +175,7 @@ public class ExperimentModule extends SpringModule
     @Override
     public Double getSchemaVersion()
     {
-        return 24.001;
+        return 24.002;
     }
 
     @Nullable
@@ -661,37 +661,37 @@ public class ExperimentModule extends SpringModule
 
                 results.put("scannableColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE scannable = ?", true).getObject(Long.class));
                 results.put("uniqueIdColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE concepturi = ?", STORAGE_UNIQUE_ID_CONCEPT_URI).getObject(Long.class));
-                results.put("sampleTypeWithUniqueIdCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT(DD.DomainURI)) FROM\n" +
+                results.put("sampleTypeWithUniqueIdCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT DD.DomainURI) FROM\n" +
                         "     exp.PropertyDescriptor D \n" +
                         "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
                         "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
                         "WHERE D.conceptURI = ?", STORAGE_UNIQUE_ID_CONCEPT_URI).getObject(Long.class));
 
                 results.put("fileColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE rangeURI = ?", PropertyType.FILE_LINK.getTypeUri()).getObject(Long.class));
-                results.put("sampleTypeWithFileColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT(DD.DomainURI)) FROM\n" +
+                results.put("sampleTypeWithFileColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT DD.DomainURI) FROM\n" +
                         "     exp.PropertyDescriptor D \n" +
                         "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
                         "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
                         "WHERE DD.storageSchemaName = ? AND D.rangeURI = ?", SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME, PropertyType.FILE_LINK.getTypeUri()).getObject(Long.class));
 
-                results.put("sampleTypeAliquotSpecificField", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT(D.PropertyURI)) FROM\n" +
+                results.put("sampleTypeAliquotSpecificField", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT D.PropertyURI) FROM\n" +
                         "     exp.PropertyDescriptor D \n" +
                         "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
                         "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
                         "WHERE DD.storageSchemaName = ? AND D.derivationDataScope = ?", SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME, ExpSchema.DerivationDataScopeType.ChildOnly.name()).getObject(Long.class));
-                results.put("sampleTypeParentOnlyField", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT(D.PropertyURI)) FROM\n" +
+                results.put("sampleTypeParentOnlyField", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT D.PropertyURI) FROM\n" +
                         "     exp.PropertyDescriptor D \n" +
                         "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
                         "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
                         "WHERE DD.storageSchemaName = ? AND (D.derivationDataScope = ? OR D.derivationDataScope IS NULL)", SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME, ExpSchema.DerivationDataScopeType.ParentOnly.name()).getObject(Long.class));
-                results.put("sampleTypeParentAndAliquotField", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT(D.PropertyURI)) FROM\n" +
+                results.put("sampleTypeParentAndAliquotField", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT D.PropertyURI) FROM\n" +
                         "     exp.PropertyDescriptor D \n" +
                         "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
                         "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
                         "WHERE DD.storageSchemaName = ? AND D.derivationDataScope = ?", SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME, ExpSchema.DerivationDataScopeType.All.name()).getObject(Long.class));
 
                 results.put("attachmentColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE rangeURI = ?", PropertyType.ATTACHMENT.getTypeUri()).getObject(Long.class));
-                results.put("dataClassWithAttachmentColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT(DD.DomainURI)) FROM\n" +
+                results.put("dataClassWithAttachmentColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT DD.DomainURI) FROM\n" +
                         "     exp.PropertyDescriptor D \n" +
                         "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
                         "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
@@ -699,19 +699,19 @@ public class ExperimentModule extends SpringModule
 
                 results.put("textChoiceColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE concepturi = ?", TEXT_CHOICE_CONCEPT_URI).getObject(Long.class));
 
-                results.put("domainsWithDateTimeColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT(DD.DomainURI)) FROM\n" +
+                results.put("domainsWithDateTimeColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT DD.DomainURI) FROM\n" +
                         "     exp.PropertyDescriptor D \n" +
                         "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
                         "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
                         "WHERE D.rangeURI = ?", PropertyType.DATE_TIME.getTypeUri()).getObject(Long.class));
 
-                results.put("domainsWithDateColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT(DD.DomainURI)) FROM\n" +
+                results.put("domainsWithDateColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT DD.DomainURI) FROM\n" +
                         "     exp.PropertyDescriptor D \n" +
                         "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
                         "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
                         "WHERE D.rangeURI = ?", PropertyType.DATE.getTypeUri()).getObject(Long.class));
 
-                results.put("domainsWithTimeColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT(DD.DomainURI)) FROM\n" +
+                results.put("domainsWithTimeColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT DD.DomainURI) FROM\n" +
                         "     exp.PropertyDescriptor D \n" +
                         "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
                         "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +

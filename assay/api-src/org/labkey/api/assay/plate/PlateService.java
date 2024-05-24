@@ -80,7 +80,8 @@ public interface PlateService
     @Nullable Plate createPlate(Plate plate, double[][] wellValues, boolean[][] excludedWells);
 
     /**
-     * Creates a new plate
+     * Instantiates a new plate instance.
+     * This plate is not persisted to the database.
      * @param container The template's container.
      * @param templateType The type of plate, if associated with a particular assay.
      * @param plateType Specifies the overall shape of the plate
@@ -88,16 +89,6 @@ public interface PlateService
      * @throws IllegalArgumentException Thrown if a template of the specified name already exists in the container.
      */
     @NotNull Plate createPlate(Container container, String templateType, @NotNull PlateType plateType);
-
-    /**
-     * Creates a new plate template.
-     * @param container The template's container.
-     * @param templateType The type of plate template, if associated with a particular assay.
-     * @param plateType Specifies the overall shape of the plate
-     * @return A newly created plate template instance.
-     * @throws IllegalArgumentException Thrown if a template of the specified name already exists in the container.
-     */
-    @NotNull Plate createPlateTemplate(Container container, String templateType, @NotNull PlateType plateType);
 
     /**
      * Adds a new well group to the plate
@@ -165,14 +156,7 @@ public interface PlateService
      */
     @Nullable Plate getPlate(ContainerFilter cf, Integer plateSetId, Object plateIdentifier);
 
-    /**
-     * Gets all plate templates for the specified container. Plate templates are Plate instances
-     * which have their template field set to TRUE.
-     *
-     * @return An array of all plates that are configured as templates from the specified container.
-     */
-    @NotNull
-    List<Plate> getPlateTemplates(Container container);
+    @NotNull List<Plate> getPlates(Container container);
 
     /**
      * Gets the plate set by ID
@@ -231,8 +215,8 @@ public interface PlateService
     Position createPosition(Container container, int row, int column);
 
     /**
-     * Deletes all plate and template data from the specified container.  Typically used
-     * only when a container is deleted.
+     * Deletes all plate and template data from the specified container.
+     * Typically used only when a container is deleted.
      * @param container The container from which to delete all plate data.
      */
     void deleteAllPlateData(Container container);
@@ -249,17 +233,6 @@ public interface PlateService
      * @param resolver A resolver implementation that will return details URLs for recognized plate instances.
      */
     void registerDetailsLinkResolver(PlateDetailsResolver resolver);
-
-    /**
-     * Copies a plate from one container to another.
-     * @param source The source plate template
-     * @param user The user performing the copy
-     * @param destination The destination container
-     * @return The copied plate template
-     * @throws SQLException Thrown in the event of a database failure.
-     * @throws NameConflictException Thrown if the destination container already contains a template by the same name.
-     */
-    Plate copyPlate(Plate source, User user, Container destination) throws Exception;
 
     /**
      * Registers a handler for a particular type of plate

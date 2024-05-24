@@ -378,35 +378,32 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
         {
             File dataFile = getDataFile(job);
 
-            AssayPlateMetadataService svc = AssayPlateMetadataService.getService(PlateMetadataDataHandler.DATA_TYPE);
-            if (svc != null)
+            try
             {
-                try
+                // plate metadata is only supported for zip archives because on JSON formats are currently supported
+                if ("zip".equalsIgnoreCase(FileUtil.getExtension(dataFile)))
                 {
-                    // plate metadata is only supported for zip archives because on JSON formats are currently supported
-                    if ("zip".equalsIgnoreCase(FileUtil.getExtension(dataFile)))
+                    ensureExplodedZip(job, dataFile);
+                    File dir = getExplodedZipDir(job, dataFile);
+                    File[] results = dir.listFiles((dir1, name) -> PLATE_METADATA_NAME.equalsIgnoreCase(FileUtil.getBaseName(name)));
+                    if (results != null && results.length == 1)
                     {
-                        ensureExplodedZip(job, dataFile);
-                        File dir = getExplodedZipDir(job, dataFile);
-                        File[] results = dir.listFiles((dir1, name) -> PLATE_METADATA_NAME.equalsIgnoreCase(FileUtil.getBaseName(name)));
-                        if (results != null && results.length == 1)
-                        {
-                            File metadataFile = results[0];
-                            job.getLogger().info("Found plate metadata file named : " + metadataFile + ", attempting to parse JSON metadata.");
-                            return svc.parsePlateMetadata(metadataFile);
-                        }
+                        File metadataFile = results[0];
+                        job.getLogger().info("Found plate metadata file named : " + metadataFile + ", attempting to parse JSON metadata.");
+                        return AssayPlateMetadataService.get().parsePlateMetadata(metadataFile);
                     }
                 }
-                catch (ExperimentException e)
-                {
-                    throw new PipelineJobException(e);
-                }
             }
+            catch (ExperimentException e)
+            {
+                throw new PipelineJobException(e);
+            }
+
             return null;
         }
 
         @Override
-        void cleanUp(PipelineJob job) throws PipelineJobException
+        void cleanUp(PipelineJob job)
         {
             File dataFile = getDataFile(job);
             if ("zip".equalsIgnoreCase(FileUtil.getExtension(dataFile)))

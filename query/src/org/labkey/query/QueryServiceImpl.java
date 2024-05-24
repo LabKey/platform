@@ -2382,7 +2382,10 @@ public class QueryServiceImpl implements QueryService
         List<String> subDirs = new ArrayList<>(schemaKey.size() + 1);
         subDirs.add(QueryService.MODULE_QUERIES_DIRECTORY);
         subDirs.addAll(schemaKey.getParts());
-        return new Path(subDirs);
+        // TODO: Schema names can contains slashes (e.g. assay names)
+        // TODO: Not sure how the callers deal with this, when they map these into file-system directories.
+        // TODO: We could throw IllegalArgument and let the caller handle it.
+        return new Path(subDirs.toArray(new String[0]));
     }
 
     // Look for file-based definitions in modules

@@ -6,6 +6,9 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 
+import java.util.Collections;
+import java.util.List;
+
 /**
  * Service which exists to provide mostly application specific functionality around how name expressions work in
  * data classes and sample types.
@@ -44,8 +47,13 @@ public interface NameExpressionOptionService
      * Set the name expression prefix for the specified container. Setting the prefix to null
      * will clear out an existing prefix.
      */
-    void setExpressionPrefix(Container c, User user, @Nullable String prefix) throws Exception;
+    void setExpressionPrefix(Container c, User user, boolean skipPrefixIneligibleSampleTypes, @Nullable String prefix) throws Exception;
 
+    /**
+     * Returns the list of names of sample types where the ID column is not 'Name' and is thus
+     * considered ineligible for setting the expression prefix. See Issue 48675.
+     */
+    @NotNull List<String> getPrefixIneligibleSampleTypeNames(Container c, User user);
     /**
      * Returns whether user-specified names for samples and dataclasses are permitted for this folder.
      */
@@ -80,8 +88,14 @@ public interface NameExpressionOptionService
         }
 
         @Override
-        public void setExpressionPrefix(Container c, User user, String prefix) throws Exception
+        public void setExpressionPrefix(Container c, User user, boolean skipPrefixIneligibleSampleTypes, String prefix) throws Exception
         {
+        }
+
+        @Override
+        public @NotNull List<String> getPrefixIneligibleSampleTypeNames(Container c, User user)
+        {
+            return Collections.emptyList();
         }
 
         @Override

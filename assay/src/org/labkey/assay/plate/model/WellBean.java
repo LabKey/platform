@@ -14,6 +14,7 @@ public class WellBean
     private Integer _row;
     private Integer _col;
     private String _container;
+    private Integer _sampleId;
 
     public Integer getRowId()
     {
@@ -73,5 +74,15 @@ public class WellBean
     public void setContainer(String container)
     {
         _container = container;
+    }
+
+    public Integer getSampleId()
+    {
+        return _sampleId;
+    }
+
+    public void setSampleId(Integer sampleId)
+    {
+        _sampleId = sampleId;
     }
 }

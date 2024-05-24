@@ -21,11 +21,6 @@ import com.google.gwt.user.client.rpc.IsSerializable;
 
 import java.util.*;
 
-/**
- * User: brittp
- * Date: Feb 2, 2007
- * Time: 3:22:43 PM
- */
 public class GWTPlate implements IsSerializable
 {
     private int _rowId;
@@ -119,7 +114,7 @@ public class GWTPlate implements IsSerializable
         List<GWTWellGroup> groups = _groups.get(group.getType());
         for (GWTWellGroup g : groups)
         {
-            if (group.getName().equals(g.getName()))
+            if (group.getName() != null && group.getName().equals(g.getName()))
             {
                 Window.alert("Group '" + group.getName() + "' already exists.");
                 return false;

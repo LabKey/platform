@@ -18,7 +18,6 @@ package org.labkey.api.data;
 
 import jxl.format.Colour;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.apache.logging.log4j.Logger;
 import org.apache.poi.hssf.usermodel.HSSFClientAnchor;
@@ -60,7 +59,6 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
-import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.logging.LogHelper;
@@ -71,18 +69,15 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
-import java.math.BigDecimal;
 import java.sql.Time;
 import java.text.DecimalFormat;
 import java.text.Format;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -97,16 +92,6 @@ public class ExcelColumn extends RenderColumn
 {
     private static final Logger _log = LogHelper.getLogger(ExcelColumn.class, "Excel column rendering");
 
-    private static final int TYPE_UNKNOWN = 0;
-    private static final int TYPE_INT = 1;
-    private static final int TYPE_DOUBLE = 2;
-    private static final int TYPE_STRING = 3;
-    private static final int TYPE_MULTILINE_STRING = 4;
-    private static final int TYPE_DATE = 5;
-    private static final int TYPE_BOOLEAN = 6;
-    private static final int TYPE_FILE = 7;
-    private static final int TYPE_TIME = 8;
-
 
     /**
      * 256 is one full character, one character has 7 pixels.
@@ -117,10 +102,8 @@ public class ExcelColumn extends RenderColumn
     private static final double MAX_IMAGE_HEIGHT = 400.0;
     private static final double MAX_IMAGE_WIDTH = 300.0;
 
-    private static final Date EXCEL_DATE_0 = (new GregorianCalendar(1900, 1, 1)).getTime();
-
     // CONSIDER: Add support for left/right/center alignment (from DisplayColumn)
-    private int _simpleType = TYPE_UNKNOWN;
+    private int _simpleType = ExcelCellUtils.TYPE_UNKNOWN;
     private CellStyle _style = null;
     private boolean _autoSize = false;
     private int _autoSizeWidth = 0;
@@ -195,39 +178,12 @@ public class ExcelColumn extends RenderColumn
 
     private void setSimpleType(DisplayColumn dc)
     {
-        Class valueClass = dc.getDisplayValueClass();
+        _simpleType = ExcelCellUtils.getSimpleType(dc);
 
-        if (Integer.class.isAssignableFrom(valueClass) || Integer.TYPE.isAssignableFrom(valueClass) ||
-                Long.class.isAssignableFrom(valueClass) || Long.TYPE.isAssignableFrom(valueClass) ||
-                Short.class.isAssignableFrom(valueClass) || Short.TYPE.isAssignableFrom(valueClass))
-            _simpleType = TYPE_INT;
-        else if (Float.class.isAssignableFrom(valueClass) || Float.TYPE.isAssignableFrom(valueClass) ||
-                Double.class.isAssignableFrom(valueClass) || Double.TYPE.isAssignableFrom(valueClass) ||
-                BigDecimal.class.isAssignableFrom(valueClass))
-            _simpleType = TYPE_DOUBLE;
-        else if (String.class.isAssignableFrom(valueClass))
+        if (_simpleType == ExcelCellUtils.TYPE_UNKNOWN)
         {
-            _simpleType = TYPE_STRING;
-            if (_dc.getColumnInfo() != null && _dc.getColumnInfo().getInputRows() > 1)
-            {
-                _simpleType = TYPE_MULTILINE_STRING;
-            }
-        }
-        else if (Date.class.isAssignableFrom(valueClass))
-        {
-            if (Time.class.isAssignableFrom(valueClass))
-                _simpleType = TYPE_TIME;
-            else
-                _simpleType = TYPE_DATE;
-        }
-        else if (Boolean.class.isAssignableFrom(valueClass) || Boolean.TYPE.isAssignableFrom(valueClass))
-            _simpleType = TYPE_BOOLEAN;
-        else if (File.class.isAssignableFrom(valueClass))
-            _simpleType = TYPE_FILE;
-        else
-        {
+            Class valueClass = dc.getDisplayValueClass();
             _log.error("init: Unknown Class " + valueClass + " " + getName());
-            _simpleType = TYPE_UNKNOWN;
         }
     }
 
@@ -236,28 +192,7 @@ public class ExcelColumn extends RenderColumn
     public String getFormatString()
     {
         String formatString = super.getFormatString();
-
-        if (formatString != null && (_simpleType == TYPE_DATE || _simpleType == TYPE_TIME))
-        {
-            formatString = formatString.replaceAll("aa", "a").replaceAll("a", "AM/PM");
-        }
-
-        if (null != formatString)
-            return formatString;
-
-        switch (_simpleType)
-        {
-            case(TYPE_DATE):
-                return DateUtil.getStandardDateFormatString();
-            case(TYPE_TIME):
-                return DateUtil.getStandardTimeFormatString();
-            case(TYPE_INT):
-                return "0";
-            case(TYPE_DOUBLE):
-                return "0.0000";
-        }
-
-        return null;
+        return ExcelCellUtils.getFormatString(_simpleType, formatString);
     }
 
 
@@ -266,51 +201,41 @@ public class ExcelColumn extends RenderColumn
     {
         super.setFormatString(formatString);
 
+        ExcelFormatDescriptor formatDescriptor = null;
+
         switch (_simpleType)
         {
-            case(TYPE_INT):
-            case(TYPE_DOUBLE):
+            case(ExcelCellUtils.TYPE_INT):
+            case(ExcelCellUtils.TYPE_DOUBLE):
             {
-                ExcelFormatDescriptor formatDescriptor = new ExcelFormatDescriptor(Number.class, getFormatString());
-                _style = _formatters.get(formatDescriptor);
-                if (_style == null)
-                {
-                    _style = _workbook.createCellStyle();
-                    String excelFormatString = getFormatString();
-                    // Excel has a different idea of how to represent scientific notation, so be sure that we
-                    // transform the Java format if needed.
-                    // https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=17735
-                    excelFormatString = excelFormatString.replaceAll("[eE][^\\+]", "E+0");
-                    short formatIndex = _workbook.createDataFormat().getFormat(excelFormatString);
-                    _style.setDataFormat(formatIndex);
-                    _formatters.put(formatDescriptor, _style);
-                }
+                formatDescriptor = new ExcelFormatDescriptor(Number.class, getFormatString());
                 break;
             }
-            case(TYPE_DATE):
-            case(TYPE_TIME):
+            case(ExcelCellUtils.TYPE_DATE):
             {
-                ExcelFormatDescriptor formatDescriptor = new ExcelFormatDescriptor(_simpleType == TYPE_TIME ? Time.class : Date.class, getFormatString());
-                _style = _formatters.get(formatDescriptor);
-                if (_style == null)
-                {
-                    _style = _workbook.createCellStyle();
-                    short formatIndex = _workbook.createDataFormat().getFormat(getFormatString());
-                    _style.setDataFormat(formatIndex);
-                    _formatters.put(formatDescriptor, _style);
-                }
+                formatDescriptor = new ExcelFormatDescriptor(Date.class, getFormatString());
                 break;
             }
-            case(TYPE_MULTILINE_STRING):
+            case(ExcelCellUtils.TYPE_TIME):
             {
-                ExcelFormatDescriptor formatDescriptor = new ExcelFormatDescriptor(String.class, getFormatString());
-                _style = _formatters.get(formatDescriptor);
-                if (_style == null)
-                {
-                    _style = _workbook.createCellStyle();
-                    _style.setWrapText(true);
-                    _formatters.put(formatDescriptor, _style);
-                }
+                formatDescriptor = new ExcelFormatDescriptor(Time.class, getFormatString());
+                break;
+            }
+            case(ExcelCellUtils.TYPE_MULTILINE_STRING):
+            {
+                formatDescriptor = new ExcelFormatDescriptor(String.class, getFormatString());
+                break;
+            }
+        }
+
+        if (formatDescriptor != null)
+        {
+            _style = _formatters.get(formatDescriptor);
+
+            if (_style == null)
+            {
+                _style = ExcelCellUtils.createCellStyle(_workbook, _simpleType, getFormatString());
+                _formatters.put(formatDescriptor, _style);
             }
         }
     }
@@ -359,155 +284,91 @@ public class ExcelColumn extends RenderColumn
 
         try
         {
-            switch (_simpleType)
+            if (_simpleType == ExcelCellUtils.TYPE_FILE)
             {
-                case(TYPE_DATE):
-                    // Careful here... need to make sure we adjust dates for GMT.  This constructor automatically does the conversion, but there seem to be
-                    // bugs in other jxl 2.5.7 constructors: DateTime(c, r, d) forces the date to time-only, DateTime(c, r, d, gmt) doesn't adjust for gmt
-                    if (o instanceof Date dateVal)
+                String filePath = o.toString().toLowerCase().replaceAll("\r\n", "\n");
+                cell.setCellValue(filePath);
+                if (_style != null)
+                    cell.setCellStyle(_style);
+
+                Drawing drawing = (Drawing)ctx.get(ExcelWriter.SHEET_DRAWING);
+                if (drawing != null && _dc instanceof AbstractFileDisplayColumn)
+                {
+                    String path = (String)o;
+                    int imageType = -1;
+                    if (path.endsWith(".png"))
+                        imageType = Workbook.PICTURE_TYPE_PNG;
+                    else if (path.endsWith(".jpeg") || path.endsWith(".jpg"))
+                        imageType = Workbook.PICTURE_TYPE_JPEG;
+
+                    if (imageType != -1)
                     {
-                        if (dateVal.compareTo(EXCEL_DATE_0) < 0)
+                        BufferedImage img = null;
+                        byte[] data = null;
+                        try(InputStream is = ((AbstractFileDisplayColumn)_dc).getFileContents(ctx, o))
                         {
-                            String format = getFormatString();
-                            if (StringUtils.isEmpty(format))
-                                cell.setCellValue(o.toString());
+                            if (is != null)
+                            {
+                                data = IOUtils.toByteArray(is);
+                                img = ImageIO.read(new ByteArrayInputStream(data));
+                            }
+                        }
+                        catch (IOException e)
+                        {
+                            _log.error("Error reading image file data", e);
+                            //throw new RuntimeException(e);
+                            data = null; //will change to throw exception after fixing file lookups
+                        }
+
+                        if (data != null && data.length > 0)
+                        {
+                            int height = img.getHeight();
+                            int width = img.getWidth();
+
+                            double ratio = (double) width/height;
+                            if (ratio >= MAX_IMAGE_RATIO)
+                            {
+                                // resize to max width
+                                if (width > MAX_IMAGE_WIDTH)
+                                {
+                                    height = (int) (height / (width / MAX_IMAGE_WIDTH));
+                                    width = (int) MAX_IMAGE_WIDTH;
+                                }
+                            }
                             else
                             {
-                                // date is invalid for excel, export as formatted string instead
-                                format = format.replaceAll("AM/PM", "a");
-                                Format formatter = FastDateFormat.getInstance(format);
-                                cell.setCellValue(formatter.format(dateVal));
-                            }
-                        }
-                        else
-                            cell.setCellValue((Date) o);
-                        cell.setCellStyle(_style);
-                    }
-                    else
-                    {
-                        cell.setCellValue(o.toString());
-                    }
-                    break;
-                case(TYPE_TIME):
-                    if (o instanceof Time t)
-                    {
-                        cell.setCellValue(t);
-                        cell.setCellStyle(_style);
-                    }
-                    else
-                        cell.setCellValue(o.toString());
-                    break;
-                case(TYPE_INT):
-                case(TYPE_DOUBLE):
-                    if (o instanceof Number n)
-                    {
-                        cell.setCellValue(n.doubleValue());
-                        cell.setCellStyle(_style);
-                    }
-                    //Issue 47268: Export Does Not Include Failed Lookup Values
-                    //Set Integer broken lookup values as String
-                    else if (columnInfo.isLookup() && o.toString().startsWith("<") && o.toString().endsWith(">"))
-                    {
-                        cell.setCellValue(o.toString());
-                    }
-                    break;
-
-                case TYPE_FILE:
-                    String filePath = o.toString().toLowerCase().replaceAll("\r\n", "\n");
-                    cell.setCellValue(filePath);
-                    if (_style != null)
-                        cell.setCellStyle(_style);
-
-                    Drawing drawing = (Drawing)ctx.get(ExcelWriter.SHEET_DRAWING);
-                    if (drawing != null && _dc instanceof AbstractFileDisplayColumn)
-                    {
-                        String path = (String)o;
-                        int imageType = -1;
-                        if (path.endsWith(".png"))
-                            imageType = Workbook.PICTURE_TYPE_PNG;
-                        else if (path.endsWith(".jpeg") || path.endsWith(".jpg"))
-                            imageType = Workbook.PICTURE_TYPE_JPEG;
-
-                        if (imageType != -1)
-                        {
-                            BufferedImage img = null;
-                            byte[] data = null;
-                            try(InputStream is = ((AbstractFileDisplayColumn)_dc).getFileContents(ctx, o))
-                            {
-                                if (is != null)
+                                // resize to max height
+                                if (height > MAX_IMAGE_HEIGHT)
                                 {
-                                    data = IOUtils.toByteArray(is);
-                                    img = ImageIO.read(new ByteArrayInputStream(data));
+                                    width = (int) (width / (height / MAX_IMAGE_HEIGHT));
+                                    height = (int) MAX_IMAGE_HEIGHT;
                                 }
                             }
-                            catch (IOException e)
-                            {
-                                _log.error("Error reading image file data", e);
-                                //throw new RuntimeException(e);
-                                data = null; //will change to throw exception after fixing file lookups
-                            }
+                            setImageSize(ctx, row, column, Pair.of(width, height));
 
-                            if (data != null && data.length > 0)
-                            {
-                                int height = img.getHeight();
-                                int width = img.getWidth();
+                            Workbook wb = cell.getSheet().getWorkbook();
+                            CreationHelper helper = wb.getCreationHelper();
+                            int pictureIdx = wb.addPicture(data, imageType);
 
-                                double ratio = (double) width/height;
-                                if (ratio >= MAX_IMAGE_RATIO)
-                                {
-                                    // resize to max width
-                                    if (width > MAX_IMAGE_WIDTH)
-                                    {
-                                        height = (int) (height / (width / MAX_IMAGE_WIDTH));
-                                        width = (int) MAX_IMAGE_WIDTH;
-                                    }
-                                }
-                                else
-                                {
-                                    // resize to max height
-                                    if (height > MAX_IMAGE_HEIGHT)
-                                    {
-                                        width = (int) (width / (height / MAX_IMAGE_HEIGHT));
-                                        height = (int) MAX_IMAGE_HEIGHT;
-                                    }
-                                }
-                                setImageSize(ctx, row, column, Pair.of(width, height));
-
-                                Workbook wb = cell.getSheet().getWorkbook();
-                                CreationHelper helper = wb.getCreationHelper();
-                                int pictureIdx = wb.addPicture(data, imageType);
-
-                                double rowRatio = height / /*maxRowHeight*/40.0;
-                                double colRatio = width / /*maxColWidth*/120.0;
-                                ClientAnchor anchor = createAnchor(row, column, rowRatio, colRatio, helper);
-                                Picture pict = drawing.createPicture(anchor, pictureIdx);
-                                setImagePicture(ctx, row, column, pict);
-                            }
+                            double rowRatio = height / /*maxRowHeight*/40.0;
+                            double colRatio = width / /*maxColWidth*/120.0;
+                            ClientAnchor anchor = createAnchor(row, column, rowRatio, colRatio, helper);
+                            Picture pict = drawing.createPicture(anchor, pictureIdx);
+                            setImagePicture(ctx, row, column, pict);
                         }
                     }
-                    break;
-
-                case TYPE_BOOLEAN:
-                    String s = _dc.getTsvFormattedValue(ctx);
-                    cell.setCellValue(s);
-                    if (_style != null)
-                        cell.setCellStyle(_style);
-                    break;
-                case(TYPE_STRING):
-                default:
-                    // 9729 : CRs are doubled in list data exported to Excel, normalize newlines as '\n'
-                    s = o.toString().replaceAll("\r\n", "\n");
-
-                    // Check if the string is too long
-                    if (s.length() > 32767)
-                    {
-                        s = s.substring(0, 32762) + "...";
-                    }
-
-                    cell.setCellValue(s);
-                    if (_style != null)
-                        cell.setCellStyle(_style);
-                    break;
+                }
+            }
+            else if (_simpleType == ExcelCellUtils.TYPE_BOOLEAN)
+            {
+                String s = _dc.getTsvFormattedValue(ctx);
+                cell.setCellValue(s);
+                if (_style != null)
+                    cell.setCellStyle(_style);
+            }
+            else
+            {
+                ExcelCellUtils.writeCell(cell, _style, _simpleType, getFormatString(), columnInfo, o);
             }
 
             if (cell != null)
@@ -632,12 +493,12 @@ public class ExcelColumn extends RenderColumn
                         font.setColor(findBestColour(textColor));
                     }
                     excelFormat = _workbook.createCellStyle();
-                    if (_simpleType == TYPE_INT || _simpleType == TYPE_DOUBLE || _simpleType == TYPE_DATE || _simpleType == TYPE_TIME)
+                    if (_simpleType == ExcelCellUtils.TYPE_INT || _simpleType == ExcelCellUtils.TYPE_DOUBLE || _simpleType == ExcelCellUtils.TYPE_DATE || _simpleType == ExcelCellUtils.TYPE_TIME)
                     {
                         short formatIndex = _workbook.createDataFormat().getFormat(getFormatString());
                         excelFormat.setDataFormat(formatIndex);
                     }
-                    if (_simpleType == TYPE_MULTILINE_STRING)
+                    if (_simpleType == ExcelCellUtils.TYPE_MULTILINE_STRING)
                     {
                         excelFormat.setWrapText(true);
                     }
@@ -817,11 +678,11 @@ public class ExcelColumn extends RenderColumn
 
         switch (_simpleType)
         {
-            case(TYPE_DATE):
+            case(ExcelCellUtils.TYPE_DATE):
                 format = FastDateFormat.getInstance(getFormatString());
                 break;
-            case(TYPE_INT):
-            case(TYPE_DOUBLE):
+            case(ExcelCellUtils.TYPE_INT):
+            case(ExcelCellUtils.TYPE_DOUBLE):
                 format = new DecimalFormat(getFormatString());
                 break;
         }
@@ -846,12 +707,12 @@ public class ExcelColumn extends RenderColumn
                     case NUMERIC:
                         switch (_simpleType)
                         {
-                            case(TYPE_DATE):
+                            case(ExcelCellUtils.TYPE_DATE):
                                 if (org.apache.poi.ss.usermodel.DateUtil.isCellDateFormatted(cell))
                                     formatted = format.format(cell.getDateCellValue());
                                 break;
-                            case(TYPE_INT):
-                            case(TYPE_DOUBLE):
+                            case(ExcelCellUtils.TYPE_INT):
+                            case(ExcelCellUtils.TYPE_DOUBLE):
                                 formatted = format.format(cell.getNumericCellValue());
                                 break;
                         }
@@ -862,7 +723,7 @@ public class ExcelColumn extends RenderColumn
                         break;
 
                     case BLANK:
-                        if (_simpleType == TYPE_FILE) {
+                        if (_simpleType == ExcelCellUtils.TYPE_FILE) {
                             Pair<Integer, Integer> size = getImageSize(ctx, row, column);
                             if (size != null)
                             {

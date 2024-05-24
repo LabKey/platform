@@ -16,13 +16,10 @@
 
 package org.labkey.api.assay.plate;
 
-/**
- * User: brittp
- * Date: Oct 20, 2006
- * Time: 10:17:39 AM
- */
 public interface Well extends WellData, Position
 {
+    Integer getSampleId();
+
     double getValue();
 
     boolean isExcluded();

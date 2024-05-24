@@ -442,8 +442,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 metric.put("linkedAssayDatasetCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(PublishSourceType) FROM study.dataset WHERE PublishSourceType = 'Assay'").getObject(Long.class));
 
                 metric.put("redcapCount", new SqlSelector(PropertySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM prop.PropertySets WHERE Category = 'RedcapConfigurationSettings'").getObject(Long.class));
-                metric.put("publishStudyCount", new SqlSelector(PropertySchema.getInstance().getSchema(), "SELECT COUNT(DISTINCT(destination)) FROM study.StudySnapshot WHERE Type = 'publish'").getObject(Long.class));
-                metric.put("ancillaryStudyCount", new SqlSelector(PropertySchema.getInstance().getSchema(), "SELECT COUNT(DISTINCT(destination)) FROM study.StudySnapshot WHERE Type = 'ancillary'").getObject(Long.class));
+                metric.put("publishStudyCount", new SqlSelector(PropertySchema.getInstance().getSchema(), "SELECT COUNT(DISTINCT destination) FROM study.StudySnapshot WHERE Type = 'publish'").getObject(Long.class));
+                metric.put("ancillaryStudyCount", new SqlSelector(PropertySchema.getInstance().getSchema(), "SELECT COUNT(DISTINCT destination) FROM study.StudySnapshot WHERE Type = 'ancillary'").getObject(Long.class));
 
                 SqlDialect dialect = StudySchema.getInstance().getSqlDialect();
                 metric.put("demographicsDatasetCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Dataset WHERE DemographicData = " + dialect.getBooleanTRUE()).getObject(Long.class));
@@ -455,10 +455,10 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 metric.put("datasetsLinkedFromAssays", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Dataset WHERE PublishSourceType = 'Assay'").getObject(Long.class));
                 metric.put("datasetsLinkedFromSamples", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Dataset WHERE PublishSourceType = 'SampleType'").getObject(Long.class));
 
-                metric.put("assayScheduleCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(DISTINCT(container)) FROM study.AssaySpecimen").getObject(Long.class));
+                metric.put("assayScheduleCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(DISTINCT container) FROM study.AssaySpecimen").getObject(Long.class));
 
                 metric.put("alternateParticipantIdCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Study WHERE AlternateIdPrefix IS NOT NULL").getObject(Long.class));
-                metric.put("participantIdMappingCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(DISTINCT(container)) FROM study.Participant WHERE AlternateId IS NOT NULL").getObject(Long.class));
+                metric.put("participantIdMappingCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(DISTINCT container) FROM study.Participant WHERE AlternateId IS NOT NULL").getObject(Long.class));
                 metric.put("participantAliasCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Study WHERE ParticipantAliasDatasetId IS NOT NULL").getObject(Long.class));
 
                 // grab the counts of report and dataset notification settings (by notification option)

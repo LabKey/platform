@@ -30,10 +30,29 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.*;
+import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DatabaseTableType;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbScope.SchemaTableOptions;
 import org.labkey.api.data.DbScope.Transaction;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MVDisplayColumnFactory;
+import org.labkey.api.data.ParameterMapStatement;
+import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SchemaTableInfo;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableChange.ChangeType;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.UpdateableTableInfo;
+import org.labkey.api.data.VirtualTable;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
@@ -60,6 +79,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.test.TestTimeout;
+import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
@@ -1547,6 +1567,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
     }
 
     @TestTimeout(120)
+    @TestWhen(TestWhen.When.BVT)
     public static class TestCase extends Assert
     {
         private final Container container = JunitUtil.getTestContainer();

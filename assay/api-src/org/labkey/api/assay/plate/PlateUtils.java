@@ -389,8 +389,8 @@ public class PlateUtils
 
     public static class Location
     {
-        private int _row;
-        private int _col;
+        private final int _row;
+        private final int _col;
 
         public Location(int row, int col)
         {

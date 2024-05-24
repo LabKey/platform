@@ -29,11 +29,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * User: adam
- * Date: Oct 22, 2010
- * Time: 7:52:17 AM
- */
 public class AtomicDatabaseInteger
 {
     private final TableInfo _table;
@@ -43,7 +38,6 @@ public class AtomicDatabaseInteger
 
     // Acts like an AtomicInteger, but uses the database for synchronization. This is convenient for scenarios where
     // multiple threads (eventually, even different servers) might attempt an update but only one should succeed.
-    // Currently only implements compareAndSet(), but could add other methods from AtomicInteger.
     public AtomicDatabaseInteger(ColumnInfo targetColumn, @Nullable Container container, Object rowId)
     {
         if (targetColumn.getJavaObjectClass() != Integer.class)

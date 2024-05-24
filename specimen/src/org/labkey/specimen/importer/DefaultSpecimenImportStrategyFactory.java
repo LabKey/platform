@@ -18,7 +18,6 @@ package org.labkey.specimen.importer;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.specimen.importer.StandardSpecimenImportStrategy;
 import org.labkey.api.study.SpecimenImportStrategy;
 import org.labkey.api.study.SpecimenImportStrategyFactory;
 import org.labkey.api.writer.VirtualFile;

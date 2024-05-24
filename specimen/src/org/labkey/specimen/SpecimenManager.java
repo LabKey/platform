@@ -1,5 +1,6 @@
 package org.labkey.specimen;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.ColumnInfo;
@@ -8,6 +9,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
@@ -18,13 +20,15 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.specimen.SpecimenEvent;
+import org.labkey.api.specimen.SpecimenEventManager;
 import org.labkey.api.specimen.SpecimenManagerNew;
 import org.labkey.api.specimen.SpecimenQuerySchema;
-import org.labkey.api.specimen.SpecimenRequestException;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
+import org.labkey.api.specimen.model.PrimaryType;
 import org.labkey.api.specimen.model.SpecimenComment;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Study;
@@ -33,6 +37,7 @@ import org.labkey.api.study.Visit;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Path;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.specimen.model.AdditiveType;
 import org.labkey.specimen.model.DerivativeType;
@@ -346,7 +351,7 @@ public class SpecimenManager
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         filter.addClause(new SimpleFilter.SQLClause("LOWER(ptid) = LOWER(?)", new Object[] {participantId}, FieldKey.fromParts("ptid")));
         filter.addCondition(FieldKey.fromParts("VisitValue"), visit);
-        return SpecimenManagerNew.get().getVials(container, user, filter);
+        return getVials(container, user, filter);
     }
 
     public List<Vial> getVials(Container container, User user, int[] vialsRowIds)
@@ -354,7 +359,7 @@ public class SpecimenManager
         Set<Long> uniqueRowIds = new HashSet<>(vialsRowIds.length);
         for (int vialRowId : vialsRowIds)
             uniqueRowIds.add((long)vialRowId);
-        return SpecimenManagerNew.get().getVials(container, user, uniqueRowIds);
+        return getVials(container, user, uniqueRowIds);
     }
 
     public List<Vial> getVials(Container container, User user, String[] globalUniqueIds) throws SpecimenRequestException
@@ -364,7 +369,7 @@ public class SpecimenManager
         Collections.addAll(uniqueRowIds, globalUniqueIds);
         List<String> ids = new ArrayList<>(uniqueRowIds);
         filter.addInClause(FieldKey.fromParts("GlobalUniqueId"), ids);
-        List<Vial> vials = SpecimenManagerNew.get().getVials(container, user, filter);
+        List<Vial> vials = getVials(container, user, filter);
         if (vials == null || vials.size() != ids.size())
             throw new SpecimenRequestException("Vial not found.");       // an id has no matching specimen, let caller determine what to report
         return vials;
@@ -376,7 +381,7 @@ public class SpecimenManager
         Calendar endCal = DateUtil.newCalendar(date.getTime());
         endCal.add(Calendar.DATE, 1);
         filter.addClause(new SimpleFilter.SQLClause("DrawTimestamp >= ? AND DrawTimestamp < ?", new Object[] {date, endCal.getTime()}));
-        return SpecimenManagerNew.get().getVials(container, user, filter);
+        return getVials(container, user, filter);
     }
 
     @Nullable
@@ -410,5 +415,179 @@ public class SpecimenManager
         new TableSelector(SpecimenSchema.get().getTableInfoSpecimenDerivative(container), filter, null).
                 forEachMap(map -> derivativeTypes.add(new DerivativeType(container, map)));
         return derivativeTypes;
+    }
+
+    public boolean isSpecimensEmpty(Container container, User user)
+    {
+        TableSelector selector = getSpecimensSelector(container, user, null);
+        return !selector.exists();
+    }
+
+    public Vial getVial(Container container, User user, String globalUniqueId)
+    {
+        SimpleFilter filter = new SimpleFilter(new SimpleFilter.SQLClause("LOWER(GlobalUniqueId) = LOWER(?)", new Object[] { globalUniqueId }));
+        List<Vial> matches = getVials(container, user, filter);
+        if (matches == null || matches.isEmpty())
+            return null;
+        if (matches.size() > 1)
+        {
+            // we apparently have two specimens with IDs that differ only in case; do a case-sensitive check
+            // here to find the right one:
+            for (Vial vial : matches)
+            {
+                if (vial.getGlobalUniqueId().equals(globalUniqueId))
+                    return vial;
+            }
+            throw new IllegalStateException("Expected at least one vial to exactly match the specified global unique ID: " + globalUniqueId);
+        }
+        else
+            return matches.get(0);
+    }
+
+    /** Looks for any specimens that have the given id as a globalUniqueId  */
+    public PrimaryType getPrimaryType(Container c, int rowId)
+    {
+        List<PrimaryType> primaryTypes = SpecimenManagerNew.get().getPrimaryTypes(c, new SimpleFilter(FieldKey.fromParts("RowId"), rowId), null);
+        if (!primaryTypes.isEmpty())
+            return primaryTypes.get(0);
+        return null;
+    }
+
+    public List<Vial> getRequestableVials(Container container, User user, Set<Long> vialRowIds)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addInClause(FieldKey.fromParts("RowId"), vialRowIds).addCondition(FieldKey.fromString("available"), true);
+        return getVials(container, user, filter);
+    }
+
+    public Map<String,List<Vial>> getVialsForSpecimenHashes(Container container, User user, Collection<String> hashes, boolean onlyAvailable)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addInClause(FieldKey.fromParts("SpecimenHash"), hashes);
+        if (onlyAvailable)
+            filter.addCondition(FieldKey.fromParts("Available"), true);
+        List<Vial> vials = getVials(container, user, filter);
+        Map<String, List<Vial>> map = new HashMap<>();
+        for (Vial vial : vials)
+        {
+            String hash = vial.getSpecimenHash();
+            List<Vial> keyVials = map.computeIfAbsent(hash, k -> new ArrayList<>());
+            keyVials.add(vial);
+        }
+
+        return map;
+    }
+
+    public List<Vial> getVials(Container container, User user, Set<Long> vialRowIds)
+    {
+        // Take a set to eliminate dups - issue 26940
+
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addInClause(FieldKey.fromParts("RowId"), vialRowIds);
+        List<Vial> vials = getVials(container, user, filter);
+        if (vials.size() != vialRowIds.size())
+        {
+            List<Long> unmatchedRowIds = new ArrayList<>(vialRowIds);
+            for (Vial vial : vials)
+            {
+                unmatchedRowIds.remove(vial.getRowId());
+            }
+            throw new SpecimenRequestException("One or more specimen RowIds had no matching specimen: " + unmatchedRowIds);
+        }
+        return vials;
+    }
+
+    public List<Vial> getVials(final Container container, final User user, SimpleFilter filter)
+    {
+        // TODO: LinkedList?
+        final List<Vial> vials = new ArrayList<>();
+
+        getSpecimensSelector(container, user, filter)
+                .forEachMap(map -> vials.add(new Vial(container, map)));
+
+        return vials;
+    }
+
+    public TableSelector getSpecimensSelector(final Container container, final User user, SimpleFilter filter)
+    {
+        Study study = StudyService.get().getStudy(container);
+        if (study == null)
+        {
+            throw new NotFoundException("No study in container " + container.getPath());
+        }
+        UserSchema schema = SpecimenQuerySchema.get(study, user);
+        TableInfo specimenTable = schema.getTable(SpecimenQuerySchema.SPECIMEN_WRAP_TABLE_NAME);
+        return new TableSelector(specimenTable, filter, null);
+    }
+
+    public Vial getVial(Container container, User user, long rowId)
+    {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), rowId);
+        List<Vial> vials = getVials(container, user, filter);
+        if (vials.isEmpty())
+            return null;
+        return vials.get(0);
+    }
+
+    public void deleteSpecimen(@NotNull Vial vial, boolean clearCaches)
+    {
+        Container container = vial.getContainer();
+        TableInfo tableInfoSpecimenEvent = SpecimenSchema.get().getTableInfoSpecimenEvent(container);
+        TableInfo tableInfoVial = SpecimenSchema.get().getTableInfoVial(container);
+        if (null == tableInfoSpecimenEvent || null == tableInfoVial)
+            return;
+
+        String tableInfoSpecimenEventSelectName = tableInfoSpecimenEvent.getSelectName();
+        String tableInfoVialSelectName = tableInfoVial.getSelectName();
+
+        SQLFragment sqlFragmentEvent = new SQLFragment("DELETE FROM ");
+        sqlFragmentEvent.append(tableInfoSpecimenEventSelectName).append(" WHERE VialId = ?");
+        sqlFragmentEvent.add(vial.getRowId());
+        new SqlExecutor(SpecimenSchema.get().getSchema()).execute(sqlFragmentEvent);
+
+        SQLFragment sqlFragment = new SQLFragment("DELETE FROM ");
+        sqlFragment.append(tableInfoVialSelectName).append(" WHERE RowId = ?");
+        sqlFragment.add(vial.getRowId());
+        new SqlExecutor(SpecimenSchema.get().getSchema()).execute(sqlFragment);
+
+        if (clearCaches)
+        {
+            SpecimenRequestManager.get().clearCaches(vial.getContainer());
+        }
+    }
+
+    public long getMaxExternalId(Container container)
+    {
+        TableInfo tableInfo = SpecimenSchema.get().getTableInfoSpecimenEvent(container);
+        SQLFragment sql = new SQLFragment("SELECT MAX(ExternalId) FROM ");
+        sql.append(tableInfo);
+        return new SqlSelector(tableInfo.getSchema(), sql).getArrayList(Long.class).get(0);
+    }
+
+    public String getFirstProcessedByInitials(List<SpecimenEvent> dateOrderedEvents)
+    {
+        SpecimenEvent firstEvent = SpecimenEventManager.get().getFirstEvent(dateOrderedEvents);
+        return firstEvent != null ? firstEvent.getProcessedByInitials() : null;
+    }
+
+    public List<SpecimenEvent> getSpecimenEvents(List<Vial> vials, boolean includeObsolete)
+    {
+        if (vials == null || vials.isEmpty())
+            return Collections.emptyList();
+        Collection<Long> vialIds = new HashSet<>();
+        Container container = null;
+        for (Vial vial : vials)
+        {
+            vialIds.add(vial.getRowId());
+            if (container == null)
+                container = vial.getContainer();
+            else if (!container.equals(vial.getContainer()))
+                throw new IllegalArgumentException("All specimens must be from the same container");
+        }
+        SimpleFilter filter = new SimpleFilter();
+        filter.addInClause(FieldKey.fromString("VialId"), vialIds);
+        if (!includeObsolete)
+            filter.addCondition(FieldKey.fromString("Obsolete"), false);
+        return SpecimenEventManager.get().getSpecimenEvents(container, filter);
     }
 }

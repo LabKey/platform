@@ -48,7 +48,7 @@ public class DuplicatePlateValidator extends WrapperDataIterator
         if (name != null & plateSet != null)
         {
             PlateSet ps = PlateManager.get().getPlateSet(_container, plateSet);
-            if (PlateManager.get().isDuplicatePlate(_container, _user, name, ps))
+            if (PlateManager.get().isDuplicatePlateName(_container, _user, name, ps))
                 _context.getErrors().addRowError(new ValidationException("Plate with name : " + name + " already exists."));
         }
         return true;

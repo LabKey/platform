@@ -9,6 +9,7 @@ import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.plate.AbstractPlateBasedAssayProvider;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateBasedAssayProvider;
+import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -38,7 +39,10 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -46,6 +50,7 @@ import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.util.Pair;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.PlateSetImpl;
+import org.labkey.assay.plate.TsvPlateLayoutHandler;
 import org.labkey.assay.plate.model.PlateSetLineage;
 import org.labkey.assay.query.AssayDbSchema;
 
@@ -150,7 +155,6 @@ public class AssayUpgradeCode implements UpgradeCode
 
     private static void _ensureColumn(String colName, Domain domain, ExpProtocol protocol, SchemaTableInfo provisionedTable, AssayResultDomainKind kind)
     {
-
         ColumnInfo col = provisionedTable.getColumn(colName);
         if (col != null)
             _log.error("Column '" + colName + "' is already defined in result table for '" + protocol.getName() + "'.");
@@ -158,7 +162,6 @@ public class AssayUpgradeCode implements UpgradeCode
         PropertyStorageSpec colProp = kind.getBaseProperties(domain).stream().filter(p -> colName.equalsIgnoreCase(p.getName())).findFirst().orElseThrow();
         StorageProvisioner.get().addStorageProperties(domain, Arrays.asList(colProp), true);
         _log.info("Added '" + colName + "' column to '" + protocol.getName() + " provisioned result table.");
-
     }
 
     /**
@@ -167,7 +170,8 @@ public class AssayUpgradeCode implements UpgradeCode
      * Switch from storing the protocol plate template by name to the plate lsid.
      */
     @DeferredUpgrade
-    public static void updateProtocolPlateTemplate(ModuleContext ctx) throws Exception
+    @SuppressWarnings({"UnusedDeclaration"})
+    public static void updateProtocolPlateTemplate(ModuleContext ctx)
     {
         if (ctx.isNewInstall())
             return;
@@ -219,6 +223,7 @@ public class AssayUpgradeCode implements UpgradeCode
      * The referenced upgrade script creates a new plate set for every plate in the system. We now
      * want to iterate over each plate set to set the name using the configured name expression.
      */
+    @SuppressWarnings({"UnusedDeclaration"})
     public static void updatePlateSetNames(ModuleContext ctx) throws Exception
     {
         if (ctx.isNewInstall())
@@ -267,6 +272,7 @@ public class AssayUpgradeCode implements UpgradeCode
      * Iterate over each plate and plate set to generate a Plate ID and PlateSet ID based on the
      * configured name expression for each.
      */
+    @SuppressWarnings({"UnusedDeclaration"})
     public static void initializePlateAndPlateSetIDs(ModuleContext ctx) throws Exception
     {
         if (ctx.isNewInstall())
@@ -342,10 +348,27 @@ public class AssayUpgradeCode implements UpgradeCode
     }
 
     /**
+     * Well metadata has transitioned to a provisioned architecture.
+     */
+    private static @Nullable Domain getPlateMetadataVocabDomain(Container container, User user)
+    {
+        DomainKind<?> vocabDomainKind = PropertyService.get().getDomainKindByName("Vocabulary");
+
+        if (vocabDomainKind == null)
+            return null;
+
+        // the domain is scoped at the project level (project and subfolder scoping)
+        Container domainContainer = PlateManager.get().getPlateMetadataDomainContainer(container);
+        String domainURI = vocabDomainKind.generateDomainURI(null, "PlateMetadataDomain", domainContainer, user);
+        return PropertyService.get().getDomain(container, domainURI);
+    }
+
+    /**
      * Called from assay-24.002-24.003.sql to delete the vocabulary domains associated with
      * plate metadata. This upgrade transitions to using a provisioned table approach. Since the plate features are
      * still under an experimental flag we won't worry about upgrading the domains.
      */
+    @SuppressWarnings({"UnusedDeclaration"})
     public static void deletePlateVocabDomains(ModuleContext ctx) throws Exception
     {
         if (ctx.isNewInstall())
@@ -362,7 +385,7 @@ public class AssayUpgradeCode implements UpgradeCode
             {
                 if (container != null)
                 {
-                    Domain domain = PlateManager.get().getPlateMetadataVocabDomain(container, User.getAdminServiceUser());
+                    Domain domain = getPlateMetadataVocabDomain(container, User.getAdminServiceUser());
                     if (domain != null)
                     {
                         // delete the plate metadata values
@@ -376,7 +399,7 @@ public class AssayUpgradeCode implements UpgradeCode
                         domain.delete(User.getAdminServiceUser());
                     }
 
-                    if (container.getProject() != null && "Biologics".equals(ContainerManager.getFolderTypeName(container.getProject())))
+                    if (isBiologicsFolder(container.getProject()))
                     {
                         // ensure the plate metadata domain for the top level biologics projects
                         if (container.isProject())
@@ -406,7 +429,9 @@ public class AssayUpgradeCode implements UpgradeCode
 
     /**
      * Called from assay-24.005-24.006.sql
+     * Populates
      */
+    @SuppressWarnings({"UnusedDeclaration"})
     public static void populatePlateSetPaths(ModuleContext ctx) throws Exception
     {
         if (ctx.isNewInstall())
@@ -462,5 +487,88 @@ public class AssayUpgradeCode implements UpgradeCode
 
             tx.commit();
         }
+    }
+
+    /**
+     * Called from assay-24.007-24.008.sql
+     * This updates the well type to WellGroup.Type.SAMPLE for all wells in Biologics folders that have a value
+     * set for Well.SampleId.
+     */
+    @DeferredUpgrade
+    @SuppressWarnings({"UnusedDeclaration"})
+    public static void populatePlateWellTypes(ModuleContext ctx) throws Exception
+    {
+        if (ctx.isNewInstall())
+            return;
+
+        DbScope scope = AssayDbSchema.getInstance().getSchema().getScope();
+
+        // Determine all containers that have a Plate where Samples are specified in wells
+        SQLFragment sql = new SQLFragment("""
+                SELECT DISTINCT P.Container
+                FROM assay.Well AS W
+                INNER JOIN assay.Plate AS P ON P.RowId = W.PlateId
+                WHERE P.AssayType = ? AND W.SampleId IS NOT NULL
+            """).add(TsvPlateLayoutHandler.TYPE);
+        List<String> containerIds = new SqlSelector(scope, sql).getArrayList(String.class);
+
+        for (String containerId : containerIds)
+        {
+            Container container = ContainerManager.getForId(containerId);
+            if (container == null)
+            {
+                _log.error(String.format("Failed to populate plate well types. Unable to resolve container for entityId \"%s\".", containerId));
+                continue;
+            }
+
+            if (!(isBiologicsFolder(container) || isBiologicsFolder(container.getProject())))
+            {
+                _log.info(String.format("Populating plate well types. Skipping \"%s\" plates in \"%s\".", TsvPlateLayoutHandler.TYPE, container.getPath()));
+                continue;
+            }
+
+            _log.info(String.format("Populating plate well types in \"%s\".", container.getPath()));
+
+
+            try (DbScope.Transaction tx = scope.ensureTransaction())
+            {
+                SQLFragment wellSql = new SQLFragment("""
+                    SELECT W.RowId, W.PlateId
+                    FROM assay.Well AS W
+                    INNER JOIN assay.Plate AS P ON P.RowId = W.PlateId
+                    WHERE P.Container = ? AND P.AssayType = ? AND W.SampleId IS NOT NULL AND W.RowId NOT IN (
+                        SELECT WellId FROM assay.WellGroupPositions AS WGP WHERE WGP.WellId = W.RowId
+                    )
+                """).add(containerId).add(TsvPlateLayoutHandler.TYPE);
+
+                Map<Integer, Map<Integer, PlateManager.WellGroupChange>> wellGroupChanges = new HashMap<>();
+                Collection<Map<String, Object>> sampleWellRows = new SqlSelector(scope, wellSql).getMapCollection();
+                for (Map<String, Object> sampleWellRow : sampleWellRows)
+                {
+                    Integer plateRowId = (Integer) sampleWellRow.get("PlateId");
+                    Integer wellRowId = (Integer) sampleWellRow.get("RowId");
+                    PlateManager.WellGroupChange change = new PlateManager.WellGroupChange(plateRowId, wellRowId, WellGroup.Type.SAMPLE.name(), null);
+
+                    wellGroupChanges.computeIfAbsent(plateRowId, HashMap::new).put(wellRowId, change);
+                }
+
+                if (wellGroupChanges.isEmpty())
+                {
+                    _log.info(String.format("No well group updates for plates in \"%s\".", container.getPath()));
+                    continue;
+                }
+
+                _log.info(String.format("Updating \"%d\" well groups across \"%d\" plates in \"%s\".", sampleWellRows.size(), wellGroupChanges.entrySet().size(), container.getPath()));
+                PlateManager.get().computeWellGroups(container, User.getAdminServiceUser(), wellGroupChanges);
+                _log.info(String.format("Completed well group update in \"%s\".", container.getPath()));
+
+                tx.commit();
+            }
+        }
+    }
+
+    private static boolean isBiologicsFolder(Container container)
+    {
+        return container != null && "Biologics".equals(ContainerManager.getFolderTypeName(container));
     }
 }

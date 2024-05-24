@@ -10,12 +10,14 @@ import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
+import org.labkey.api.util.Path;
 import org.labkey.api.webdav.FileSystemResource;
 import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 
 import java.io.File;
+import java.nio.file.AccessDeniedException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -67,12 +69,18 @@ public class ScriptsResourceProvider implements WebdavService.Provider
             AttachmentDirectory dir = service.getMappedAttachmentDirectory(c, FileContentService.ContentType.scripts, false);
             if (dir != null)
             {
-                return new ScriptsResource(parent, name, dir.getFileSystemDirectory(), c.getPolicy());
+                return new ScriptsResource(parent, Path.toPathPart(name), dir.getFileSystemDirectory(), c.getPolicy());
             }
         }
         catch (MissingRootDirectoryException e)
         {
             // Don't complain here, just hide the @scripts subfolder
+        }
+        catch (RuntimeException e)
+        {
+            // Don't complain here if AccessDeniedException, just hide the @scripts subfolder (Issue 50212)
+            if (!(e.getCause() instanceof AccessDeniedException))
+                throw e;
         }
 
         return null;
@@ -80,18 +88,18 @@ public class ScriptsResourceProvider implements WebdavService.Provider
 
     static class ScriptsResource extends FileSystemResource
     {
-        public ScriptsResource(WebdavResource folder, String name, File file, SecurityPolicy policy)
+        public ScriptsResource(WebdavResource folder, Path.Part name, File file, SecurityPolicy policy)
         {
             super(folder, name, file, policy);
         }
 
-        public ScriptsResource(FileSystemResource folder, String relativePath)
+        public ScriptsResource(FileSystemResource folder, Path.Part relativePath)
         {
             super(folder,relativePath);
         }
 
         @Override
-        public WebdavResource find(String name)
+        public WebdavResource find(Path.Part name)
         {
             return new ScriptsResource(this, name);
         }

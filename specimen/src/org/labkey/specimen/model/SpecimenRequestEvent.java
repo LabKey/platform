@@ -23,12 +23,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.study.AbstractStudyCachable;
 
 import java.util.Date;
+import java.util.Objects;
 
-/**
- * User: brittp
- * Date: Feb 24, 2006
- * Time: 1:56:09 PM
- */
 public class SpecimenRequestEvent extends AbstractStudyCachable<SpecimenRequestEvent> implements AttachmentParent
 {
     private int _rowId;
@@ -159,5 +155,20 @@ public class SpecimenRequestEvent extends AbstractStudyCachable<SpecimenRequestE
     public @NotNull AttachmentType getAttachmentType()
     {
         return SpecimenRequestEventType.get();
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        SpecimenRequestEvent that = (SpecimenRequestEvent) o;
+        return _rowId == that._rowId && _createdBy == that._createdBy && _created == that._created && _requestId == that._requestId && Objects.equals(_entityId, that._entityId) && Objects.equals(_container, that._container) && Objects.equals(_requirementId, that._requirementId) && Objects.equals(_comments, that._comments) && Objects.equals(_entryType, that._entryType);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return Objects.hash(_rowId, _entityId, _createdBy, _created, _container, _requestId, _requirementId, _comments, _entryType);
     }
 }

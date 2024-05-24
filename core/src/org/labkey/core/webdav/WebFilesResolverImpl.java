@@ -334,12 +334,12 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver implements File
         }
 
         @Override
-        public WebdavResource find(String child)
+        public WebdavResource find(Path.Part child)
         {
             String name = null;
             for (String folder : getWebFoldersNames(false))
             {
-                if (folder.equalsIgnoreCase(child))
+                if (folder.equalsIgnoreCase(child.toString()))
                 {
                     name = folder;
                     break;
@@ -347,7 +347,7 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver implements File
             }
 
             Container parentContainer = getContainer();
-            Container c = parentContainer.getChild(child);
+            Container c = parentContainer.getChild(child.toString());
             if (name == null && c != null)
                 name = c.getName();
 
@@ -386,7 +386,7 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver implements File
                                     {
                                         if (!FileUtil.hasCloudScheme(p))
                                         {
-                                            return new FileSystemResource(this, name, p.toFile(), parentContainer.getPolicy());
+                                            return new FileSystemResource(this, Path.toPathPart(name), p.toFile(), parentContainer.getPolicy());
                                         }
                                         else if (isCloudRoot)
                                         {
@@ -418,8 +418,8 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver implements File
                 {
                     if (!FileUtil.hasCloudScheme(fileRootFile))
                     {
-                        FileSystemResource fileRootResource = new FileSystemResource(this, FileContentService.FILES_LINK, fileRootFile.toFile(), parentContainer.getPolicy());
-                        if (child.equals(FileContentService.FILES_LINK))
+                        FileSystemResource fileRootResource = new FileSystemResource(this, Path.toPathPart(FileContentService.FILES_LINK), fileRootFile.toFile(), parentContainer.getPolicy());
+                        if (child.toString().equals(FileContentService.FILES_LINK))
                             return fileRootResource;
                         return new FileSystemResource(fileRootResource, child);
                     }
@@ -428,7 +428,7 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver implements File
                         CloudStoreService cloudStoreService = CloudStoreService.get();
                         if (null != cloudStoreService)
                         {
-                            resource = cloudStoreService.getWebFilesResource(this, parentContainer, child, child);
+                            resource = cloudStoreService.getWebFilesResource(this, parentContainer, child.toString(), child.toString());
                         }
                     }
                     // TODO: handle hasCloudScheme(path) && !isCloudRoot
