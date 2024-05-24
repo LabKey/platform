@@ -1816,8 +1816,14 @@ boxPlot.render();
                 minValue = mean;
             } else if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.LeveyJennings) {
                 if (config.properties.boundType === LABKEY.vis.PlotProperties.BoundType.StandardDeviation) {
-                    maxValue = config.properties.upperBound + cushion;
-                    minValue = config.properties.lowerBound - cushion;
+                    if (config.properties.valueConversion === 'standardDeviation') {
+                        maxValue = config.properties.upperBound + cushion;
+                        minValue = config.properties.lowerBound - cushion;
+                    }
+                    else if (config.properties.valueConversion === 'percentDeviation' && !config.properties.combined && stddev ) {
+                        maxValue = mean + ((config.properties.upperBound + cushion) * stddev);
+                        minValue = mean + ((config.properties.lowerBound - cushion) * stddev);
+                    }
                 }
                 else if (config.properties.boundType === LABKEY.vis.PlotProperties.BoundType.MeanDeviation) {
                     maxValue = mean + config.properties.upperBound + cushion;
@@ -1941,7 +1947,6 @@ boxPlot.render();
                 // Handle value conversions
                 convertValues(config.properties.valueConversion);
                 if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.LeveyJennings) {
-                    meanStdDevData[index] = row;
                     if (config.properties.boundType === LABKEY.vis.PlotProperties.BoundType.Absolute) {
                         row.upperBound = config.properties.upperBound;
                         row.lowerBound = config.properties.lowerBound;
@@ -2112,6 +2117,10 @@ boxPlot.render();
 
             tickLabelMap[index] = row[config.properties.xTickLabel];
             row.seqValue = index;
+
+            if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.LeveyJennings) {
+                meanStdDevData[index] = row;
+            }
         }
 
         // min x-axis tick length is 10 by default
