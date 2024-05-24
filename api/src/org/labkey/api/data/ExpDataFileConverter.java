@@ -227,25 +227,25 @@ public class ExpDataFileConverter implements Converter
             {
                 // Strip out ".." and "."
                 f = FileUtil.resolveFile(f);
+
+                // first check the run specific path
+                if (run != null && !f.isAbsolute())
+                {
+                    File runRoot = AssayResultsFileWriter.getAssayFilesDirectoryPath(run).toFile();
+                    if (runRoot.exists())
+                    {
+                        File resultsFile = new File(runRoot, f.getPath());
+                        if (resultsFile.exists() && URIUtil.isDescendant(runRoot.toURI(), resultsFile.toURI()))
+                            return resultsFile;
+                    }
+                }
+
                 PipeRoot root = PipelineService.get().getPipelineRootSetting(container);
                 if (root != null)
                 {
-                    // Interpret relative paths based on the file root
                     if (!f.isAbsolute())
                     {
-                        // first check the run specific path within the root
-                        if (run != null)
-                        {
-                            String runParentPath = AssayResultsFileWriter.getRunResultsFileDir(run);
-                            File runRoot = new File(root.getRootPath(), runParentPath);
-                            if (runRoot.exists())
-                            {
-                                File resultsFile = new File(runRoot, f.getPath());
-                                if (resultsFile.exists())
-                                    f = new File(runParentPath, f.getPath());
-                            }
-                        }
-
+                        // Interpret relative paths based on the file root
                         f = new File(root.getRootPath(), f.getPath());
                     }
 

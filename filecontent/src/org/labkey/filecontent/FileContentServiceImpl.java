@@ -210,6 +210,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
         switch (type)
         {
             case files:
+            case assayfiles:
                 String folderName = getFolderName(type);
                 if (folderName == null)
                     folderName = "";
@@ -230,6 +231,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
         switch (type)
         {
             case files:
+            case assayfiles:
                 java.nio.file.Path fileRootPath = getFileRootPath(c);
                 if (null != fileRootPath && !FileUtil.hasCloudScheme(fileRootPath))  // Don't add @files when we're in the cloud
                     fileRootPath = fileRootPath.resolve(getFolderName(type));

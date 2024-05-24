@@ -49,6 +49,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
 import java.net.URI;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -246,10 +247,12 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
         {
             File f = FileUtil.getAbsoluteCaseSensitiveFile(new File(result));
             NetworkDrive.ensureDrive(f.getPath());
-            result = relativize(f, FileContentService.get().getFileRoot(_container, FileContentService.ContentType.files));
-            if (result == null)
+            List<FileContentService.ContentType> fileRootTypes = List.of(FileContentService.ContentType.files, FileContentService.ContentType.pipeline, FileContentService.ContentType.assayfiles);
+            for (FileContentService.ContentType fileRootType : fileRootTypes)
             {
-                result = relativize(f, FileContentService.get().getFileRoot(_container, FileContentService.ContentType.pipeline));
+                result = relativize(f, FileContentService.get().getFileRoot(_container, fileRootType));
+                if (result != null)
+                    break;
             }
             if (result == null)
             {

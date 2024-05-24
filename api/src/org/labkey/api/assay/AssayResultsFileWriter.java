@@ -2,10 +2,11 @@ package org.labkey.api.assay;
 
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.util.FileUtil;
 import org.springframework.web.multipart.MultipartFile;
@@ -19,7 +20,7 @@ import java.util.Map;
 
 public class AssayResultsFileWriter<ContextType extends AssayRunUploadContext<? extends AssayProvider>> extends AssayFileWriter<ContextType>
 {
-    private String FILE_INPUT_NAME = "resultsFile";
+    private static final String FILE_INPUT_NAME = "resultsFile";
 
     ExpProtocol _protocol;
     ExpRun _run;
@@ -34,19 +35,51 @@ public class AssayResultsFileWriter<ContextType extends AssayRunUploadContext<? 
 
     public static String getRunResultsFileDir(ExpRun run)
     {
-        return AssayFileWriter.DIR_NAME + File.separator + "AssayId_" + run.getProtocol().getRowId() + File.separator + "RunId_" + run.getRowId();
+        return "AssayId_" + run.getProtocol().getRowId() + File.separator + "RunId_" + run.getRowId();
     }
 
     public static String getPipelineResultsFileDir(ExpProtocol protocol, String pipelineJobGUID)
     {
-        return AssayFileWriter.DIR_NAME + File.separator + "AssayId_" + protocol.getRowId() + File.separator + "Job_" + pipelineJobGUID;
+        return "AssayId_" + protocol.getRowId() + File.separator + "Job_" + pipelineJobGUID;
+    }
+
+    public static Path getAssayFilesDirectoryPath(ExpRun run)
+    {
+        String resultsFilePath = getRunResultsFileDir(run);
+        return getAssayFilesDirectoryPath(run.getContainer(), resultsFilePath);
+    }
+
+    public static Path getAssayFilesDirectoryPath(Container container, String dirName)
+    {
+        Path root = FileContentService.get().getFileRootPath(container, FileContentService.ContentType.assayfiles);
+        return root != null ? root.resolve(dirName) : null;
+    }
+
+    public static File ensureAssayFilesDirectoryPath(Container container, String dirName) throws ExperimentException
+    {
+        Path dir = getAssayFilesDirectoryPath(container, dirName);
+        if (null != dir && !Files.exists(dir))
+        {
+            try
+            {
+                dir = FileUtil.createDirectories(dir);
+            }
+            catch (IOException e)
+            {
+                throw new ExperimentException("Could not create directory: " + dir);
+            }
+        }
+
+        if (null != dir && !FileUtil.hasCloudScheme(dir))
+            return dir.toFile();
+        return null;
     }
 
     @Override
     protected File getFileTargetDir(ContextType context) throws ExperimentException
     {
         String dir = getFileTargetDirName();
-        return ensureUploadDirectory(context.getContainer(), dir);
+        return ensureAssayFilesDirectoryPath(context.getContainer(), dir);
     }
 
     private String getFileTargetDirName()
@@ -54,18 +87,12 @@ public class AssayResultsFileWriter<ContextType extends AssayRunUploadContext<? 
         return _run != null ? getRunResultsFileDir(_run) : getPipelineResultsFileDir(_protocol, _pipelineJobGUID);
     }
 
-    private Path resolveDirName(ContextType context, String dirName)
-    {
-        PipeRoot root = getPipelineRoot(context.getContainer());
-        return root.resolveToNioPath(dirName);
-    }
-
-    public void cleanupPostedFiles(ContextType context) throws ExperimentException
+    public void cleanupPostedFiles(Container container) throws ExperimentException
     {
         try
         {
-            Path targetDir = resolveDirName(context, getFileTargetDirName());
-            if (targetDir != null && Files.exists(targetDir))
+            Path targetDir = getAssayFilesDirectoryPath(container, getFileTargetDirName());
+            if (targetDir != null && Files.exists(targetDir) && Files.isDirectory(targetDir))
                 FileUtil.deleteDir(targetDir);
         }
         catch (IOException e)
@@ -89,17 +116,18 @@ public class AssayResultsFileWriter<ContextType extends AssayRunUploadContext<? 
     public Map<String, File> savePostedFiles(ContextType context) throws ExperimentException, IOException
     {
         // if the file results dir already exists, delete it (clean up from previous failed import)
-        cleanupPostedFiles(context);
+        Container container = context.getContainer();
+        cleanupPostedFiles(container);
 
         // if this is a background import and the files have been stashed in the pipeline results dir, move them to the assay results dir
         if (_run != null && _run.getJobId() != null)
         {
-            String pipelineJobGUID = PipelineService.get().getJobGUID(context.getUser(), context.getContainer(), _run.getJobId());
-            Path pipelineResultsDir = pipelineJobGUID != null ? resolveDirName(context, getPipelineResultsFileDir(_protocol, pipelineJobGUID)) : null;
+            String pipelineJobGUID = PipelineService.get().getJobGUID(context.getUser(), container, _run.getJobId());
+            Path pipelineResultsDir = pipelineJobGUID != null ? getAssayFilesDirectoryPath(container, getPipelineResultsFileDir(_protocol, pipelineJobGUID)) : null;
             if (pipelineResultsDir != null && Files.exists(pipelineResultsDir))
             {
-                Path targetDir = resolveDirName(context, getFileTargetDirName());
-                FileUtils.moveDirectory(pipelineResultsDir.toFile(), targetDir.toFile()); // TODO will .toFile() work here for cloud?
+                Path targetDir = getAssayFilesDirectoryPath(container, getFileTargetDirName());
+                FileUtils.moveDirectoryToDirectory(pipelineResultsDir.toFile(), targetDir.toFile(), true); // TODO will .toFile() work here for cloud?
                 return Collections.emptyMap();
             }
         }
@@ -108,7 +136,7 @@ public class AssayResultsFileWriter<ContextType extends AssayRunUploadContext<? 
 
         // if no files were written to the targetDir, delete the empty directory
         if (files.isEmpty())
-            cleanupPostedFiles(context);
+            cleanupPostedFiles(container);
 
         return files;
     }

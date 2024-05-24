@@ -53,6 +53,7 @@ public interface FileContentService
     String PIPELINE_LINK = "@pipeline";
     String SCRIPTS_LINK = "@scripts";
     String CLOUD_LINK = "@cloud";
+    String ASSAY_FILES = "@assayfiles";
 
     String CLOUD_ROOT_PREFIX = "/@cloud";
 
@@ -206,7 +207,8 @@ public interface FileContentService
         files,
         pipeline,
         assay,
-        scripts
+        scripts,
+        assayfiles
     }
 
     String getFolderName(ContentType type);

@@ -446,7 +446,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         {
             // clean up the run results file dir here if it was created, for non-async imports
             AssayResultsFileWriter resultsFileWriter = new AssayResultsFileWriter(context.getProtocol(), run, null);
-            resultsFileWriter.cleanupPostedFiles(context);
+            resultsFileWriter.cleanupPostedFiles(context.getContainer());
 
             throw new ExperimentException(e);
         }

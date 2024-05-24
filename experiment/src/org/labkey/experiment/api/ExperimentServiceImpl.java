@@ -3838,11 +3838,15 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         AttachmentService.get().deleteAttachments(new ExpRunAttachmentParent(run));
 
         // Delete the run specific results file directory
-        PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(run.getContainer());
-        String resultsFilePath = AssayResultsFileWriter.getRunResultsFileDir(run);
-        File resultsFileDir = pipeRoot.resolvePath(resultsFilePath);
-        if (resultsFileDir != null && resultsFileDir.exists() && resultsFileDir.isDirectory())
-            FileUtil.deleteDir(resultsFileDir);
+        try
+        {
+            AssayResultsFileWriter resultsFileWriter = new AssayResultsFileWriter(run.getProtocol(), run, null);
+            resultsFileWriter.cleanupPostedFiles(run.getContainer());
+        }
+        catch (ExperimentException e)
+        {
+            // TODO log or throw?
+        }
 
         // remove edges prior to deleting protocol applications
         // Calling deleteProtocolApplications calls ExperimentService.beforeDeleteData() which
