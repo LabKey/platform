@@ -67,6 +67,7 @@ import org.labkey.api.util.StartupListener;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.webdav.WebdavService;
 import org.labkey.assay.data.generator.AssayDesignGenerator;
 import org.labkey.assay.data.generator.AssayRunDataGenerator;
 import org.labkey.assay.data.generator.PlateSetDataGenerator;
@@ -270,6 +271,8 @@ public class AssayModule extends SpringModule
 
         AdminConsole.addExperimentalFeatureFlag(EXPERIMENTAL_APP_PLATE_SUPPORT,
                 "Plate samples in Biologics", "Plate samples in Biologics for import and analysis.", false);
+
+        WebdavService.get().addProvider(new AssayFilesResourceProvider());
 
         UsageMetricsService svc = UsageMetricsService.get();
         if (null != svc)
