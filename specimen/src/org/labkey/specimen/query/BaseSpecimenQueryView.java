@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.api.specimen.query;
+package org.labkey.specimen.query;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ButtonBar;
@@ -31,11 +31,6 @@ import org.labkey.api.view.DisplayElement;
 
 import java.util.List;
 
-/**
- * User: brittp
- * Date: Jan 26, 2007
- * Time: 10:03:34 AM
- */
 public abstract class BaseSpecimenQueryView extends QueryView
 {
     protected final SimpleFilter _filter;

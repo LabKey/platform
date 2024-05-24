@@ -41,11 +41,10 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.specimen.DefaultSpecimenTablesTemplate;
-import org.labkey.api.specimen.SpecimenColumns;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
-import org.labkey.api.specimen.importer.SimpleSpecimenImporter;
-import org.labkey.api.specimen.importer.SpecimenColumn;
+import org.labkey.specimen.importer.SimpleSpecimenImporter;
+import org.labkey.specimen.importer.SpecimenColumn;
 import org.labkey.api.specimen.location.LocationCache;
 import org.labkey.api.specimen.model.SpecimenTablesProvider;
 import org.labkey.api.study.ParticipantVisit;
@@ -472,7 +471,7 @@ public class SpecimenServiceImpl implements SpecimenService
     @Override
     public void deleteAllSpecimenData(Container c, Set<TableInfo> set, User user)
     {
-        // UNDONE: use transaction?
+        // Consider: Move this to a container listener? Stop clearing caches, since that's handled by SpecimenRequestContainerListener.
         SimpleFilter containerFilter = SimpleFilter.createContainerFilter(c);
 
         Table.delete(SpecimenSchema.get().getTableInfoSampleRequestSpecimen(), containerFilter);
@@ -486,9 +485,6 @@ public class SpecimenServiceImpl implements SpecimenService
         Table.delete(SpecimenSchema.get().getTableInfoSampleRequestStatus(), containerFilter);
         SpecimenRequestManager.get().clearRequestStatusHelper(c);
         assert set.add(SpecimenSchema.get().getTableInfoSampleRequestStatus());
-
-        new SpecimenTablesProvider(c, null, null).deleteTables();
-        LocationCache.clear(c);
 
         Table.delete(SpecimenSchema.get().getTableInfoSampleAvailabilityRule(), containerFilter);
         assert set.add(SpecimenSchema.get().getTableInfoSampleAvailabilityRule());

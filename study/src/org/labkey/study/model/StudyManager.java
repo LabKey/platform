@@ -144,6 +144,7 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.location.LocationCache;
+import org.labkey.api.specimen.model.SpecimenTablesProvider;
 import org.labkey.api.study.AssaySpecimenConfig;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Dataset;
@@ -2797,6 +2798,10 @@ public class StudyManager
             if (null != ss)
                 ss.deleteAllSpecimenData(c, deletedTables, user);
 
+            // Since study creates these tables, study needs to delete them
+            new SpecimenTablesProvider(c, null, null).deleteTables();
+            LocationCache.clear(c);
+
             //
             // assay schedule
             //
@@ -3408,6 +3413,7 @@ public class StudyManager
         SQLFragment sql = new SQLFragment("UPDATE ").append(SCHEMA.getTableInfoParticipant()).append(" SET AlternateId = ? WHERE Container = ? AND ParticipantId = ?")
                 .addAll(alternateId, containerId, participantId);
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
+        StudyManager.getInstance().clearParticipantCache(study.getContainer());
     }
 
     private void setAlternateIdAndDateOffset(Study study, String participantId, @Nullable String alternateId, @Nullable Integer dateOffset)
@@ -3433,6 +3439,7 @@ public class StudyManager
             sql.add(study.getContainer());
             sql.add(participantId);
             new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
+            StudyManager.getInstance().clearParticipantCache(study.getContainer());
         }
     }
 

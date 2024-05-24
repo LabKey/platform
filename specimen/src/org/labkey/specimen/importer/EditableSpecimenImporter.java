@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.specimen.importer;
+package org.labkey.specimen.importer;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,11 +26,14 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.specimen.SpecimenColumns;
-import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenSchema;
+import org.labkey.api.specimen.importer.EventVialRollup;
+import org.labkey.api.specimen.importer.RollupHelper;
 import org.labkey.api.specimen.importer.RollupHelper.RollupMap;
+import org.labkey.api.specimen.importer.RollupInstance;
 import org.labkey.api.study.SpecimenImportStrategy;
+import org.labkey.specimen.SpecimenColumns;
+import org.labkey.specimen.SpecimenRequestManager;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -264,7 +267,7 @@ public class EditableSpecimenImporter extends SpecimenImporter
 
         if (guidRowCount > 0)
         {
-            SpecimenMigrationService.get().clearRequestCaches(container);
+            SpecimenRequestManager.get().clearCaches(container);
         }
         return noGuidRowCount;
     }
