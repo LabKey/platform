@@ -53,6 +53,7 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.data.xml.TablesDocument;
 import org.springframework.dao.DeadlockLoserDataAccessException;
+import org.springframework.jdbc.support.SQLErrorCodesFactory;
 
 import javax.naming.Binding;
 import javax.naming.Context;
@@ -549,6 +550,9 @@ public class DbScope
             _provisionedTableCache = new SchemaTableInfoCache(this, true);
             _rds = _dialect.isRds(this);
             _escape = dbmd.getSearchStringEscape();
+
+            // Issue 50488: Pre-register this data source's SQL error codes in Spring to prevent deadlocks
+            SQLErrorCodesFactory.getInstance().registerDatabase(dataSource.getDataSource(), _databaseProductName);
         }
     }
 
