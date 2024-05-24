@@ -236,16 +236,20 @@ public class AuthenticationManager
         return builder.getHtmlString();
     }
 
-    @Deprecated // Left behind for backwards compatibility. Remove once mGAP adjusts usages.
+    @Deprecated // Left behind for backwards compatibility. Remove once mGAP & mcc adjust usages.
     public static boolean isLdapEmail(ValidEmail email)
     {
         return isLdapOrSsoEmail(email);
     }
 
     // Ignores domain == "*"
-    public static boolean isLdapOrSsoEmail(ValidEmail email)
+    public static boolean isLdapOrSsoEmail(ValidEmail validEmail)
     {
-        String emailAddress = email.getEmailAddress();
+        return isLdapOrSsoEmail(validEmail.getEmailAddress());
+    }
+
+    public static boolean isLdapOrSsoEmail(String emailAddress)
+    {
         return AuthenticationConfigurationCache.getActiveDomains().stream()
             .anyMatch(domain->StringUtils.endsWithIgnoreCase(emailAddress, "@" + domain));
     }
@@ -1026,45 +1030,57 @@ public class AuthenticationManager
     @NotNull
     public static PrimaryAuthenticationResult finalizePrimaryAuthentication(HttpServletRequest request, AuthenticationResponse response)
     {
-        ValidEmail email = response.getValidEmail();
-        User user;
+        User user = response.getUser();
+        final String emailAddress;
 
-        try
+        if (null != user)
         {
-            user = UserManager.getUser(email);
+            // Authentication provider set a User, so 1) the user exists and 2) the user's email address may be invalid
+            emailAddress = user.getEmail();
+        }
+        else
+        {
+            ValidEmail email = response.getValidEmail();
+            emailAddress = email.getEmailAddress();
 
-            // If user is authenticated but doesn't exist in our system...
-            if (null == user)
+            try
             {
-                // ...are we configured to allow auto-creation?
-                if (isAutoCreateAccountsEnabled())
+                user = UserManager.getUser(email);
+
+                // If user is authenticated but doesn't exist in our system...
+                if (null == user)
                 {
-                    // Yes: add user to the database
-                    SecurityManager.NewUserStatus bean = SecurityManager.addUser(email, null, false);
-                    user = bean.getUser();
-                    UserManager.addToUserHistory(user, user.getEmail() + " authenticated successfully and was added to the system automatically.");
-                }
-                else
-                {
-                    // No: log that we're not permitted to create accounts automatically
-                    addAuditEvent(User.guest, request, "User " + email + " successfully authenticated via " + response.getSuccessDetails() + ", but login failed because account creation is disabled.");
-                    return new PrimaryAuthenticationResult(AuthenticationStatus.UserCreationNotAllowed);
+                    // ...are we configured to allow auto-creation?
+                    if (isAutoCreateAccountsEnabled())
+                    {
+                        // Yes: add user to the database
+                        SecurityManager.NewUserStatus bean = SecurityManager.addUser(email, null, false);
+                        user = bean.getUser();
+                        UserManager.addToUserHistory(user, user.getEmail() + " authenticated successfully and was added to the system automatically.");
+                    }
+                    else
+                    {
+                        // No: log that we're not permitted to create accounts automatically
+                        addAuditEvent(User.guest, request, "User " + email + " successfully authenticated via " + response.getSuccessDetails() + ", but login failed because account creation is disabled.");
+                        return new PrimaryAuthenticationResult(AuthenticationStatus.UserCreationNotAllowed);
+                    }
                 }
             }
-            UserManager.updateLogin(user);
-        }
-        catch (SecurityManager.UserManagementException e)
-        {
-            // "User limit" exception is expected. Log other exceptions.
-            if (!e.getMessage().startsWith("User limit has been reached"))
+            catch (SecurityManager.UserManagementException e)
             {
-                // Make sure we record any unexpected problems during user creation; one goal is to help track down cause of #20712
-                ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.ExtraMessage, email.getEmailAddress(), true);
-                ExceptionUtil.logExceptionToMothership(request, e);
-            }
+                // "User limit" exception is expected. Log other exceptions.
+                if (!e.getMessage().startsWith("User limit has been reached"))
+                {
+                    // Make sure we record any unexpected problems during user creation; one goal is to help track down cause of #20712
+                    ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.ExtraMessage, email.getEmailAddress(), true);
+                    ExceptionUtil.logExceptionToMothership(request, e);
+                }
 
-            return new PrimaryAuthenticationResult(AuthenticationStatus.UserCreationError);
+                return new PrimaryAuthenticationResult(AuthenticationStatus.UserCreationError);
+            }
         }
+
+        UserManager.updateLogin(user);
 
         if (!user.isActive())
         {
@@ -1072,11 +1088,10 @@ public class AuthenticationManager
             return new PrimaryAuthenticationResult(AuthenticationStatus.InactiveUser);
         }
 
-        addAuditEvent(user, request, email + " " + UserManager.UserAuditEvent.LOGGED_IN + " successfully via " + response.getSuccessDetails() + ".");
+        addAuditEvent(user, request, emailAddress + " " + UserManager.UserAuditEvent.LOGGED_IN + " successfully via " + response.getSuccessDetails() + ".");
 
         return new PrimaryAuthenticationResult(user, response);
     }
-
 
     // limit one bad login per second averaged out over 60sec
     private static final Cache<Integer, RateLimiter> addrLimiter = CacheManager.getCache(1001, TimeUnit.MINUTES.toMillis(5), "Login limiter");
@@ -1086,12 +1101,10 @@ public class AuthenticationManager
     private static final CacheLoader<Integer, RateLimiter> pwdLoader = (key, request) -> new RateLimiter("Pwd limiter: " + key, new Rate(20, TimeUnit.MINUTES));
     private static final CacheLoader<Integer, RateLimiter> userLoader = (key, request) -> new RateLimiter("User limiter: " + key, new Rate(20, TimeUnit.MINUTES));
 
-
     private static Integer _toKey(String s)
     {
         return null==s ? 0 : s.toLowerCase().hashCode() % 1000;
     }
-
 
     private static PrimaryAuthenticationResult _beforeAuthenticate(HttpServletRequest request, String id, String pwd)
     {

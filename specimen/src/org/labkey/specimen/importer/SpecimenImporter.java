@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.api.specimen.importer;
+package org.labkey.specimen.importer;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.mutable.MutableInt;
@@ -27,7 +27,29 @@ import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.*;
+import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbSequence;
+import org.labkey.api.data.DbSequenceManager;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.Parameter;
+import org.labkey.api.data.Results;
+import org.labkey.api.data.ResultsImpl;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableResultSet;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.TempTableInfo;
+import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
@@ -56,14 +78,13 @@ import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.security.User;
-import org.labkey.api.specimen.SpecimenColumns;
 import org.labkey.api.specimen.SpecimenEvent;
 import org.labkey.api.specimen.SpecimenEventDateComparator;
 import org.labkey.api.specimen.SpecimenEventManager;
-import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenSchema;
-import org.labkey.api.specimen.SpecimenTableManager;
 import org.labkey.api.specimen.Vial;
+import org.labkey.api.specimen.importer.EventVialRollup;
+import org.labkey.api.specimen.importer.RollupInstance;
 import org.labkey.api.specimen.location.LocationCache;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.specimen.model.SpecimenComment;
@@ -94,6 +115,10 @@ import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.specimen.SpecimenColumns;
+import org.labkey.specimen.SpecimenManager;
+import org.labkey.specimen.SpecimenRequestManager;
+import org.labkey.specimen.SpecimenTableManager;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -117,17 +142,17 @@ import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static org.labkey.api.specimen.SpecimenColumns.DRAW_TIMESTAMP;
-import static org.labkey.api.specimen.SpecimenColumns.GLOBAL_UNIQUE_ID;
-import static org.labkey.api.specimen.SpecimenColumns.GLOBAL_UNIQUE_ID_TSV_COL;
-import static org.labkey.api.specimen.SpecimenColumns.LAB_ID;
-import static org.labkey.api.specimen.SpecimenColumns.LAB_RECEIPT_DATE;
-import static org.labkey.api.specimen.SpecimenColumns.SHIP_DATE;
-import static org.labkey.api.specimen.SpecimenColumns.SITE_COLUMNS;
-import static org.labkey.api.specimen.SpecimenColumns.SPEC_NUMBER_TSV_COL;
-import static org.labkey.api.specimen.SpecimenColumns.STORAGE_DATE;
-import static org.labkey.api.specimen.SpecimenColumns.VISIT_COL;
-import static org.labkey.api.specimen.SpecimenColumns.VISIT_VALUE;
+import static org.labkey.specimen.SpecimenColumns.DRAW_TIMESTAMP;
+import static org.labkey.specimen.SpecimenColumns.GLOBAL_UNIQUE_ID;
+import static org.labkey.specimen.SpecimenColumns.GLOBAL_UNIQUE_ID_TSV_COL;
+import static org.labkey.specimen.SpecimenColumns.LAB_ID;
+import static org.labkey.specimen.SpecimenColumns.LAB_RECEIPT_DATE;
+import static org.labkey.specimen.SpecimenColumns.SHIP_DATE;
+import static org.labkey.specimen.SpecimenColumns.SITE_COLUMNS;
+import static org.labkey.specimen.SpecimenColumns.SPEC_NUMBER_TSV_COL;
+import static org.labkey.specimen.SpecimenColumns.STORAGE_DATE;
+import static org.labkey.specimen.SpecimenColumns.VISIT_COL;
+import static org.labkey.specimen.SpecimenColumns.VISIT_VALUE;
 
 /**
  * User: brittp
@@ -424,7 +449,7 @@ public class SpecimenImporter extends SpecimenTableManager
                 {
                     _iTimer.setPhase(ImportPhases.ClearCaches);
                     StudyInternalService.get().clearCaches(getContainer());
-                    SpecimenMigrationService.get().clearRequestCaches(getContainer());
+                    SpecimenRequestManager.get().clearCaches(getContainer());
 
                     info(_iTimer.getTimings("Timings for each phase of this import are listed below:", Order.HighToLow, "|"));
                 }
@@ -788,7 +813,7 @@ public class SpecimenImporter extends SpecimenTableManager
 
         _iTimer.setPhase(ImportPhases.VialUpdatePreLoopPrep);
         // clear caches before determining current sites:
-        SpecimenMigrationService.get().clearRequestCaches(getContainer());
+        SpecimenRequestManager.get().clearCaches(getContainer());
         final Map<Integer, Location> siteMap = new HashMap<>();
 
         TableInfo vialTable = getTableInfoVial();
@@ -889,7 +914,7 @@ public class SpecimenImporter extends SpecimenTableManager
                     _iTimer.setPhase(ImportPhases.GetProcessingLocationId);
                     Integer processingLocation = LocationManager.get().getProcessingLocationId(dateOrderedEvents);
                     _iTimer.setPhase(ImportPhases.GetFirstProcessedBy);
-                    String firstProcessedByInitials = SpecimenEventManager.get().getFirstProcessedByInitials(dateOrderedEvents);
+                    String firstProcessedByInitials = SpecimenManager.get().getFirstProcessedByInitials(dateOrderedEvents);
                     _iTimer.setPhase(ImportPhases.GetCurrentLocationId);
                     Integer currentLocation = LocationManager.get().getCurrentLocationId(dateOrderedEvents);
 
@@ -1064,7 +1089,7 @@ public class SpecimenImporter extends SpecimenTableManager
         _iTimer.setPhase(ImportPhases.UpdateVialCounts);
         info("Updating cached vial counts...");
 
-        SpecimenMigrationService.get().updateVialCounts(getContainer(), getUser());
+        SpecimenRequestManager.get().updateVialCounts(getContainer(), getUser());
 
         info("Vial count update complete.");
     }

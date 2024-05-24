@@ -24,7 +24,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.specimen.SpecimenQuerySchema;
-import org.labkey.api.specimen.query.SpecimenQueryView;
+import org.labkey.specimen.query.SpecimenQueryView;
 import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;

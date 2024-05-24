@@ -289,7 +289,10 @@ public interface AuthenticationProvider
     class AuthenticationResponse
     {
         private final PrimaryAuthenticationConfiguration<?> _configuration;
+        // Success means either _user or _email is set, but not both. Check _user first.
+        // Failure means both are null
         private final @Nullable ValidEmail _email;
+        private final @Nullable User _user;
         private final @Nullable AuthenticationValidator _validator;
         private final @Nullable FailureReason _failureReason;
         private final @Nullable ActionURL _redirectURL;
@@ -300,7 +303,21 @@ public interface AuthenticationProvider
         private AuthenticationResponse(@NotNull PrimaryAuthenticationConfiguration<?> configuration, @NotNull ValidEmail email, @Nullable AuthenticationValidator validator, @NotNull Map<String, String> attributeMap, @Nullable String successDetails, boolean requireSecondary)
         {
             _configuration = configuration;
+            _user = null;
             _email = email;
+            _validator = validator;
+            _attributeMap = attributeMap;
+            _failureReason = null;
+            _redirectURL = null;
+            _successDetails = null != successDetails ? successDetails : "the \"" + configuration.getDescription() + "\" configuration";
+            _requireSecondary = requireSecondary;
+        }
+
+        private AuthenticationResponse(@NotNull PrimaryAuthenticationConfiguration<?> configuration, @NotNull User user, @Nullable AuthenticationValidator validator, @NotNull Map<String, String> attributeMap, @Nullable String successDetails, boolean requireSecondary)
+        {
+            _configuration = configuration;
+            _user = user;
+            _email = null;
             _validator = validator;
             _attributeMap = attributeMap;
             _failureReason = null;
@@ -312,6 +329,7 @@ public interface AuthenticationProvider
         private AuthenticationResponse(@NotNull PrimaryAuthenticationConfiguration<?> configuration, @NotNull FailureReason failureReason, @Nullable ActionURL redirectURL)
         {
             _configuration = configuration;
+            _user = null;
             _email = null;
             _validator = null;
             _failureReason = failureReason;
@@ -329,6 +347,11 @@ public interface AuthenticationProvider
         public static AuthenticationResponse createSuccessResponse(PrimaryAuthenticationConfiguration<?> configuration, ValidEmail email)
         {
             return createSuccessResponse(configuration, email, null, Collections.emptyMap(), null, true);
+        }
+
+        public static AuthenticationResponse createSuccessResponse(PrimaryAuthenticationConfiguration<?> configuration, User user)
+        {
+            return new AuthenticationResponse(configuration, user, null, Collections.emptyMap(), null, true);
         }
 
         /**
@@ -361,19 +384,25 @@ public interface AuthenticationProvider
 
         public boolean isAuthenticated()
         {
-            return null != _email;
+            return null != _email || null != _user;
         }
 
         public @NotNull FailureReason getFailureReason()
         {
-            assert null != _failureReason && null == _email;
+            assert null != _failureReason && !isAuthenticated();
 
             return _failureReason;
         }
 
+        public @Nullable User getUser()
+        {
+            return _user;
+        }
+
+        // Call only if isAuthenticated() is true and getUser() is null
         public @NotNull ValidEmail getValidEmail()
         {
-            assert null != _email;
+            assert null != _email && _user == null;
 
             return _email;
         }

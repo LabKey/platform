@@ -18,7 +18,7 @@ package org.labkey.specimen.writer;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.specimen.importer.ImportableColumn;
+import org.labkey.specimen.importer.ImportableColumn;
 import org.labkey.api.study.writer.SimpleStudyExportContext;
 
 import java.util.Collection;

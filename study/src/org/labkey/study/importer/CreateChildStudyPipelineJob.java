@@ -683,6 +683,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
             sql.add(sourceStudy.getContainer());
 
             new SqlExecutor(schema.getSchema()).execute(sql);
+            StudyManager.getInstance().clearParticipantCache(getDstContainer());
         }
     }
 }
