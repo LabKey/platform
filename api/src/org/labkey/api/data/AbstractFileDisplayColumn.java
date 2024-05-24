@@ -15,7 +15,7 @@
  */
 package org.labkey.api.data;
 
-import io.micrometer.common.util.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.util.GUID;
@@ -81,6 +81,8 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
     {
         if (null != filename && !StringUtils.isEmpty(filename))
         {
+            // equivalent of DisplayColumn.renderURL.
+            // Don't want to call renderUrl (DataColumn.renderUrl) to skip unnecessary displayValue check
             StringExpression s = compileExpression(ctx.getViewContext());
             String url = null == s ? null : s.eval(ctx);
 
