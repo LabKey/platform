@@ -236,7 +236,7 @@ public class AuthenticationManager
         return builder.getHtmlString();
     }
 
-    @Deprecated // Left behind for backwards compatibility. Remove once mGAP adjusts usages.
+    @Deprecated // Left behind for backwards compatibility. Remove once mGAP & mcc adjust usages.
     public static boolean isLdapEmail(ValidEmail email)
     {
         return isLdapOrSsoEmail(email);

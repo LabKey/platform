@@ -1342,7 +1342,7 @@ public class UserController extends SpringActionController
 
         public String getAccess()
         {
-            if (null == _accessGroups || _accessGroups.size() == 0)
+            if (null == _accessGroups || _accessGroups.isEmpty())
                 return "";
 
             String sep = "";
@@ -1373,7 +1373,7 @@ public class UserController extends SpringActionController
 
         public List<Group> getGroups()
         {
-            if (null == _accessGroups || _accessGroups.size() == 0)
+            if (null == _accessGroups || _accessGroups.isEmpty())
                 return Collections.emptyList();
 
             List<Group> allGroups = new ArrayList<>();
@@ -1540,7 +1540,6 @@ public class UserController extends SpringActionController
         }
     }
 
-
     public static void addUserDetailsNavTrail(Container c, User currentUser, NavTree root, @Nullable ActionURL userDetailsUrl)
     {
         if (c.isRoot())
@@ -1559,7 +1558,6 @@ public class UserController extends SpringActionController
         else
             root.addChild("User Details", userDetailsUrl);
     }
-
 
     @RequiresLogin
     public class DetailsAction extends SimpleViewAction<UserQueryForm>
@@ -1588,7 +1586,7 @@ public class UserController extends SpringActionController
             // don't let a non-site admin manage certain parts of a site-admin's account
             boolean canManageDetailsUser = currentUser.hasSiteAdminPermission() || !detailsUser.hasSiteAdminPermission();
             String detailsEmail = detailsUser.getEmail();
-            boolean loginExists = SecurityManager.loginExists(detailsEmail);
+            boolean loginExists = SecurityManager.loginExists(detailsEmail); // Note: Not using ValidEmail variant since existing address could be invalid
 
             UserSchema schema = form.getSchema();
             if (schema == null)
@@ -1882,6 +1880,7 @@ public class UserController extends SpringActionController
                 form._userToChange = getModifiableUser(form.getUserId());  // Push validated user into form for JSP
             }
 
+            // Consider: create a separate "change password from verification link in an email" action (and JSP?)
             if (form.getIsFromVerifiedLink())
             {
                 User loggedInUser = getUser();

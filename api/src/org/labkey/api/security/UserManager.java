@@ -342,15 +342,6 @@ public class UserManager
         return UserCache.getUser(email);
     }
 
-    // Use only for database login when existing email is invalid
-    public static @Nullable User getUser(String email)
-    {
-        return getUsers(true).stream()
-            .filter(user -> user.getEmail().equals(email))
-            .findAny()
-            .orElse(null);
-    }
-
     public static @Nullable User getUserByDisplayName(String displayName)
     {
         return UserCache.getUser(displayName);
@@ -852,9 +843,9 @@ public class UserManager
                     throw new UserManagementException(oldEmail, "Unexpected number of rows returned when setting new display name: " + rows);
             }
 
-            if (SecurityManager.loginExists(newEmail))
+            ValidEmail validNewEmail = new ValidEmail(newEmail);
+            if (SecurityManager.loginExists(validNewEmail))
             {
-                ValidEmail validNewEmail = new ValidEmail(newEmail);
                 SecurityManager.setVerification(validNewEmail, null);  // so we don't let user use this link again
             }
 

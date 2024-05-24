@@ -328,7 +328,7 @@ public class LoginController extends SpringActionController
                 String defaultDomain = ValidEmail.getDefaultDomain();
                 StringBuilder sb = new StringBuilder();
                 sb.append("Please sign in using your full email address, for example: ");
-                if (defaultDomain.length() > 0)
+                if (!defaultDomain.isEmpty())
                 {
                     sb.append("employee@");
                     sb.append(defaultDomain);
@@ -2765,7 +2765,7 @@ public class LoginController extends SpringActionController
                 }
             }
 
-            // If user doesn't exist (initial user case) or email is invalid pass in a fake user to filter the email address
+            // If user doesn't exist (initial user case) or email is invalid, pass in a fake user to filter the email address
             if (null == user)
                 user = new User(form.getEmail(), -9999);
 

@@ -125,7 +125,10 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
             {
                 // This invalid email address might be in the database. If so, attempt to authenticate; if not, throw.
                 hash = SecurityManager.getPasswordHash(id);
-                user = UserManager.getUser(id);
+                user = UserManager.getUsers(true).stream()
+                    .filter(u -> u.getEmail().equals(id))
+                    .findAny()
+                    .orElse(null);
                 if (null == hash || null == user)
                     throw e;
             }

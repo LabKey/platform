@@ -1336,7 +1336,7 @@ public class SecurityManager
         return getPasswordHash(email.getEmailAddress());
     }
 
-    // For internal use only, plus database login and change email workflows, where existing email could be invalid.
+    // For internal use only, plus database login and change email workflows, where existing email address could be invalid (i.e., non-conforming according to RFC 822)
     public static String getPasswordHash(String email)
     {
         SqlSelector selector = new SqlSelector(core.getSchema(), new SQLFragment("SELECT Crypt FROM " + core.getTableInfoLogins() + " WHERE Email = ?", email));
@@ -1357,7 +1357,7 @@ public class SecurityManager
             return Crypt.MD5.matches(password, hash);
     }
 
-    // Used in the case of set password or email change... current email address might be invalid
+    // Used in the case of set password or email change... current email address could be invalid (i.e., non-conforming according to RFC 822)
     public static boolean loginExists(String email)
     {
         return (null != getPasswordHash(email));
