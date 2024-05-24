@@ -3841,7 +3841,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         try
         {
             AssayResultsFileWriter resultsFileWriter = new AssayResultsFileWriter(run.getProtocol(), run, null);
-            resultsFileWriter.cleanupPostedFiles(run.getContainer());
+            resultsFileWriter.cleanupPostedFiles(run.getContainer(), false);
         }
         catch (ExperimentException e)
         {
@@ -9560,7 +9560,20 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 for (List<AbstractAssayProvider.AssayFileMoveData> runFileRenameData : assayMoveData.fileMovesByRunId().values())
                 {
                     for (AbstractAssayProvider.AssayFileMoveData renameData : runFileRenameData)
+                    {
                         moveFile(renameData);
+
+                        // if we moved the last results file, clean up the source container runId dir
+                        try
+                        {
+                            AssayResultsFileWriter resultsFileWriter = new AssayResultsFileWriter(renameData.run().getProtocol(), renameData.run(), null);
+                            resultsFileWriter.cleanupPostedFiles(renameData.sourceContainer(), true);
+                        }
+                        catch (ExperimentException e)
+                        {
+                            // TODO log or throw?
+                        }
+                    }
                 }
             }, POSTCOMMIT);
 

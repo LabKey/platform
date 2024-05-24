@@ -87,13 +87,16 @@ public class AssayResultsFileWriter<ContextType extends AssayRunUploadContext<? 
         return _run != null ? getRunResultsFileDir(_run) : getPipelineResultsFileDir(_protocol, _pipelineJobGUID);
     }
 
-    public void cleanupPostedFiles(Container container) throws ExperimentException
+    public void cleanupPostedFiles(Container container, boolean deleteIfEmptyOnly) throws ExperimentException
     {
         try
         {
             Path targetDir = getAssayFilesDirectoryPath(container, getFileTargetDirName());
             if (targetDir != null && Files.exists(targetDir) && Files.isDirectory(targetDir))
-                FileUtil.deleteDir(targetDir);
+            {
+                if (!deleteIfEmptyOnly || FileUtils.isEmptyDirectory(targetDir.toFile())) // TODO will .toFile() work here for cloud?
+                    FileUtil.deleteDir(targetDir);
+            }
         }
         catch (IOException e)
         {
@@ -117,7 +120,7 @@ public class AssayResultsFileWriter<ContextType extends AssayRunUploadContext<? 
     {
         // if the file results dir already exists, delete it (clean up from previous failed import)
         Container container = context.getContainer();
-        cleanupPostedFiles(container);
+        cleanupPostedFiles(container, false);
 
         // if this is a background import and the files have been stashed in the pipeline results dir, move them to the assay results dir
         if (_run != null && _run.getJobId() != null)
@@ -127,7 +130,7 @@ public class AssayResultsFileWriter<ContextType extends AssayRunUploadContext<? 
             if (pipelineResultsDir != null && Files.exists(pipelineResultsDir))
             {
                 Path targetDir = getAssayFilesDirectoryPath(container, getFileTargetDirName());
-                FileUtils.moveDirectoryToDirectory(pipelineResultsDir.toFile(), targetDir.toFile(), true); // TODO will .toFile() work here for cloud?
+                FileUtils.moveDirectory(pipelineResultsDir.toFile(), targetDir.toFile()); // TODO will .toFile() work here for cloud?
                 return Collections.emptyMap();
             }
         }
@@ -136,7 +139,7 @@ public class AssayResultsFileWriter<ContextType extends AssayRunUploadContext<? 
 
         // if no files were written to the targetDir, delete the empty directory
         if (files.isEmpty())
-            cleanupPostedFiles(container);
+            cleanupPostedFiles(container, false);
 
         return files;
     }
