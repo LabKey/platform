@@ -3094,8 +3094,10 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     private List<WellData> getWellData(Container container, User user, int plateRowId, boolean includeSamples, boolean includeMetadata)
     {
         Set<String> columns = new HashSet<>();
+        columns.add(WellTable.Column.Col.name());
         columns.add(WellTable.Column.Lsid.name());
         columns.add(WellTable.Column.Position.name());
+        columns.add(WellTable.Column.Row.name());
         columns.add(WellTable.Column.RowId.name());
         columns.add(WellTable.Column.Type.name());
         columns.add(WellTable.Column.WellGroup.name());
@@ -3111,22 +3113,15 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return wellDatas;
     }
 
-    // TODO: Refactor this to use getWellDatas
-    private Collection<Map<String, Object>> getWellData(final TableInfo wellTable, int plateRowId)
+    private List<WellData> getWellMetadata(Container container, User user, List<WellData> wellDataList)
     {
-        var filter = new SimpleFilter(FieldKey.fromParts(WellTable.Column.PlateId.name()), plateRowId);
-        return new TableSelector(wellTable, filter, new Sort(WellTable.Column.RowId.name())).getMapCollection();
-    }
-
-    private List<WellData> getWellMetadata(Container container, User user, List<WellData> wellDatas)
-    {
-        List<String> wellLsids = wellDatas.stream().map(WellData::getLsid).toList();
+        List<String> wellLsids = wellDataList.stream().map(WellData::getLsid).toList();
         if (wellLsids.isEmpty())
-            return wellDatas;
+            return wellDataList;
 
         var metadataTable = getPlateMetadataTable(container, user);
         if (metadataTable == null)
-            return wellDatas;
+            return wellDataList;
 
         var filter = new SimpleFilter(FieldKey.fromParts(WellTable.Column.Lsid.name()), wellLsids, CompareType.IN);
         var metadataMap = new HashMap<String, Map<String, Object>>();
@@ -3148,7 +3143,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         if (!metadataMap.isEmpty())
         {
-            for (var wellData : wellDatas)
+            for (var wellData : wellDataList)
             {
                 var metadata = metadataMap.get(wellData.getLsid());
                 if (metadata != null)
@@ -3156,7 +3151,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             }
         }
 
-        return wellDatas;
+        return wellDataList;
     }
 
     public record WellGroupChange(Integer plateRowId, Integer wellRowId, String type, String group) {}
@@ -3176,9 +3171,6 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         if (wellGroupChanges.isEmpty())
             return;
 
-        var wellTable = getWellTable(container, user);
-        var groupColumnName = wellTable.getColumn(WellTable.Column.WellGroup.name()).getAlias();
-
         for (var entry : wellGroupChanges.entrySet())
         {
             var plate = (PlateImpl) requirePlate(container, entry.getKey(), "Failed to compute well group.");
@@ -3188,28 +3180,30 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             var wellChanges = entry.getValue();
             Map<Pair<WellGroup.Type, String>, List<Position>> wellGroupings = new HashMap<>();
 
-            for (var wellData : getWellData(wellTable, plate.getRowId()))
+            for (var wellData : getWellData(container, user, plate.getRowId(), false, false))
             {
-                String type = StringUtils.trimToNull((String) wellData.get(WellTable.Column.Type.name()));
-                String group = StringUtils.trimToNull((String) wellData.get(groupColumnName));
+                WellGroup.Type type = wellData.getType();
+                String wellGroup = wellData.getWellGroup();
 
-                var wellRowId = (Integer) wellData.get(WellTable.Column.RowId.name());
+                Integer wellRowId = wellData.getRowId();
                 var wellChange = wellChanges.get(wellRowId);
                 if (wellChange != null)
                 {
                     if (wellChange.type != null)
-                        type = StringUtils.trimToNull(wellChange.type);
+                    {
+                        String typeStr = StringUtils.trimToNull(wellChange.type);
+                        if (typeStr != null)
+                            type = WellGroup.Type.valueOf(typeStr);
+                    }
                     if (wellChange.group != null)
-                        group = StringUtils.trimToNull(wellChange.group);
+                        wellGroup = StringUtils.trimToNull(wellChange.group);
                 }
 
                 // Type/Group are not set and are not being updated
-                if (type == null && group == null)
+                if (type == null && wellGroup == null)
                     continue;
 
-                var wellCol = (Integer) wellData.get(WellTable.Column.Col.name());
-                var wellRow = (Integer) wellData.get(WellTable.Column.Row.name());
-                var position = plate.getPosition(wellRow, wellCol);
+                var position = plate.getPosition(wellData.getRow(), wellData.getCol());
 
                 // Specifying a group requires that a type is also specified
                 if (type == null)
@@ -3222,7 +3216,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                     ));
                 }
 
-                var wellGroupKey = Pair.of(WellGroup.Type.valueOf(type), group);
+                var wellGroupKey = Pair.of(type, wellGroup);
                 wellGroupings.computeIfAbsent(wellGroupKey, k -> new ArrayList<>()).add(position);
             }
 
