@@ -90,6 +90,24 @@ public class BlockingCache<K, V> implements Cache<K, V>
     }
 
 
+    public V getIfCached(@NotNull K key)
+    {
+        Wrapper<V> w;
+        synchronized(_cache)
+        {
+            w = _cache.get(key);
+        }
+        if (null == w)
+            return null;
+        synchronized (w.getLockObject())
+        {
+            if (isInitialized(w))
+                return w.getValue();
+        }
+        return null;
+    }
+
+
     @Override
     public V get(@NotNull K key, @Nullable Object argument, CacheLoader<K, V> loader)
     {

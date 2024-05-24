@@ -151,7 +151,7 @@ public abstract class AbstractExpFolderImporter implements FolderImporter
                     for (ExpSampleType sampleType : typesReader.getSampleTypes())
                     {
                         SampleTypeService.get().recomputeSampleTypeRollup(sampleType, ctx.getContainer());
-                        SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(sampleType, false);
+                        SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(sampleType, SampleTypeServiceImpl.SampleChangeType.insert);
                     }
                 }
                 else

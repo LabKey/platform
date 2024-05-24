@@ -293,7 +293,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
 
     private boolean _closed = false;
 
-    private MaterializedQueryHelper(String prefix, DbScope scope, SQLFragment select, @Nullable SQLFragment uptodate, Supplier<String> supplier, @Nullable Collection<String> indexes, long maxTimeToCache,
+    protected MaterializedQueryHelper(String prefix, DbScope scope, SQLFragment select, @Nullable SQLFragment uptodate, Supplier<String> supplier, @Nullable Collection<String> indexes, long maxTimeToCache,
                                     boolean isSelectIntoSql)
     {
         _prefix = StringUtils.defaultString(prefix,"mat");
@@ -365,6 +365,11 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         return getFromSql(_selectQuery, _isSelectIntoSql, tableAlias);
     }
 
+    public SQLFragment getViewSourceSql()
+    {
+        return new SQLFragment(_selectQuery);
+    }
+
 
     public void upsert(SQLFragment sqlf)
     {
@@ -375,7 +380,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
             if (null == tx || null == _map.get(makeKey(tx)))
                 return;
         }
-        // We also don't want to execute the update if it will be materialized by the next user (e.g. after invalidtion check)
+        // We also don't want to execute the update if it will be materialized by the next user (e.g. after invalidation check)
         Materialized m = getMaterialized(true);
         if (Materialized.LoadingState.BEFORELOAD == m._loadingState.get())
             return;
@@ -548,15 +553,15 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
 
     public static class Builder implements org.labkey.api.data.Builder<MaterializedQueryHelper>
     {
-        private final String _prefix;
-        private final DbScope _scope;
-        private final SQLFragment _select;
+        protected final String _prefix;
+        protected final DbScope _scope;
+        protected final SQLFragment _select;
 
-        private boolean _isSelectInto = false;
-        private long _max = CacheManager.UNLIMITED;
-        private SQLFragment _uptodate = null;
-        private Supplier<String> _supplier = null;
-        private Collection<String> _indexes = new ArrayList<>();
+        protected boolean _isSelectInto = false;
+        protected long _max = CacheManager.UNLIMITED;
+        protected SQLFragment _uptodate = null;
+        protected Supplier<String> _supplier = null;
+        protected Collection<String> _indexes = new ArrayList<>();
 
         public Builder(String prefix, DbScope scope, SQLFragment select)
         {

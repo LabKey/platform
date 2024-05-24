@@ -93,15 +93,17 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 import static org.labkey.api.util.StringExpressionFactory.AbstractStringExpression.NullValueBehavior.NullResult;
+import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.delete;
+import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.insert;
 
 public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.Column> implements ExpMaterialTable
 {
@@ -1006,42 +1008,57 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         return sql;
     }
 
-    static final BlockingCache<String,MaterializedQueryHelper> _materializedQueries = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.HOUR, "materialized sample types", null);
+    static final BlockingCache<String,_MaterializedQueryHelper> _materializedQueries = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.HOUR, "materialized sample types", null);
     static final Map<String, AtomicLong> _invalidationCounters = Collections.synchronizedMap(new HashMap<>());
     static final AtomicBoolean initializedListeners = new AtomicBoolean(false);
 
     // used by SampleTypeServiceImpl.refreshSampleTypeMaterializedView()
-    public static void refreshMaterializedView(final String lsid, boolean schemaChange)
+    public static void refreshMaterializedView(final String lsid, SampleTypeServiceImpl.SampleChangeType reason)
     {
         /* NOTE: MaterializedQueryHelper can detect data changes and refresh the materialized view using the provided SQL.
          * It does not handle schema changes where the SQL itself needs to be updated.  In this case, we remove the
          * MQH from the cache to force the SQL to be regenerated.
          */
         var scope = ExperimentServiceImpl.getExpSchema().getScope();
-        if (schemaChange)
+        if (SampleTypeServiceImpl.SampleChangeType.schema == reason)
             scope.addCommitTask(() -> _materializedQueries.remove(lsid), DbScope.CommitTaskOption.POSTCOMMIT);
-        scope.addCommitTask(new RefreshMaterializedViewRunnable(lsid), DbScope.CommitTaskOption.POSTCOMMIT);
+
+        var runnable = new RefreshMaterializedViewRunnable(lsid, reason);
+        scope.addCommitTask(runnable, DbScope.CommitTaskOption.POSTCOMMIT);
+
+        // We don't want to do incremental updates of the cached result if it is invalid in other ways.
+        // We do a extra PRECOMMIT autoincrement to make sure the incremental code (insert/delete) recognizes that the cached results are already invalid
+        // CONSIDER: could we just set a "dontDoIncrementalUpdate" flag on the MaterializedQueryHelper?
+        if (insert != reason && delete != reason)
+            scope.addCommitTask(runnable, DbScope.CommitTaskOption.PRECOMMIT);
     }
 
     private static class RefreshMaterializedViewRunnable implements Runnable
     {
         private final String _lsid;
+        private final SampleTypeServiceImpl.SampleChangeType _reason;
 
-        public RefreshMaterializedViewRunnable(String lsid)
+        public RefreshMaterializedViewRunnable(String lsid, SampleTypeServiceImpl.SampleChangeType reason)
         {
             _lsid = lsid;
+            _reason = reason;
         }
 
         @Override
         public void run()
         {
-            getInvalidateCounter(_lsid).incrementAndGet();
+            switch (_reason)
+            {
+                case insert -> executeIncrementalInsert(_lsid);
+                case delete -> executeIncrementalDelete(_lsid);
+                default -> getInvalidateCounter(_lsid).incrementAndGet();
+            }
         }
 
         @Override
         public boolean equals(Object obj)
         {
-            return obj instanceof RefreshMaterializedViewRunnable other && _lsid.equals(other._lsid);
+            return obj instanceof RefreshMaterializedViewRunnable other && _lsid.equals(other._lsid) && _reason.equals(other._reason);
         }
     }
 
@@ -1071,17 +1088,61 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
              * Maybe have a callback to generate the SQL dynamically, and verify that the sql is unchanged.
              */
             SQLFragment viewSql = getJoinSQL(null).append(" WHERE CpasType = ").appendValue(_ss.getLSID());
-            SQLFragment provisioned = Objects.requireNonNull(_ss.getTinfo().getSQLName());
-            return new MaterializedQueryHelper.Builder("", getExpSchema().getDbSchema().getScope(), viewSql)
+            return (_MaterializedQueryHelper) new _MaterializedQueryHelper.Builder("", getExpSchema().getDbSchema().getScope(), viewSql)
                 .addIndex("CREATE UNIQUE INDEX uq_${NAME}_rowid ON temp.${NAME} (rowid)")
                 .addIndex("CREATE UNIQUE INDEX uq_${NAME}_lsid ON temp.${NAME} (lsid)")
                 .addIndex("CREATE INDEX idx_${NAME}_container ON temp.${NAME} (container)")
                 .addIndex("CREATE INDEX idx_${NAME}_root ON temp.${NAME} (rootmaterialrowid)")
                 .addInvalidCheck(() -> String.valueOf(getInvalidateCounter(_ss.getLSID()).get()))
-                .upToDateSql(new SQLFragment("SELECT CAST(COUNT(*) AS VARCHAR) FROM ").append(provisioned))  // MAX(modified) would probably be better if it were a) in the materialized table b) indexed
                 .build();
         });
         return new SQLFragment("SELECT * FROM ").append(mqh.getFromSql("_cached_view_"));
+    }
+
+    static class _MaterializedQueryHelper extends MaterializedQueryHelper
+    {
+        static class Builder extends MaterializedQueryHelper.Builder
+        {
+            public Builder(String prefix, DbScope scope, SQLFragment select)
+            {
+                super(prefix, scope, select);
+            }
+
+            @Override
+            public _MaterializedQueryHelper build()
+            {
+                return new _MaterializedQueryHelper(_prefix, _scope, _select, _uptodate, _supplier, _indexes, _max, _isSelectInto);
+            }
+        }
+
+        _MaterializedQueryHelper(String prefix, DbScope scope, SQLFragment select, @Nullable SQLFragment uptodate, Supplier<String> supplier, @Nullable Collection<String> indexes, long maxTimeToCache,
+                                        boolean isSelectIntoSql)
+        {
+            super(prefix, scope, select, uptodate, supplier, indexes, maxTimeToCache, isSelectIntoSql);
+        }
+    }
+
+
+    private static void executeIncrementalInsert(String lsid)
+    {
+        var mqh = _materializedQueries.getIfCached(lsid);
+        if (null == mqh)
+            return;
+        SQLFragment incremental = new SQLFragment("INSERT INTO temp.${NAME}\n")
+            .append("SELECT * FROM (")
+            .append(mqh.getViewSourceSql()).append(") viewsource_\n")
+            .append("WHERE rowid > (SELECT NULLIF(MAX(rowid),0) FROM temp.${NAME})");
+        mqh.upsert(incremental);
+    }
+
+    private static void executeIncrementalDelete(String lsid)
+    {
+        var mqh = _materializedQueries.getIfCached(lsid);
+        if (null == mqh)
+            return;
+        SQLFragment incremental = new SQLFragment("DELETE FROM temp.${NAME}\n")
+                .append("WHERE rowid NOT IN (SELECT rowid FROM exp.material)");
+        mqh.upsert(incremental);
     }
 
     /* SELECT and JOIN, does not include WHERE */

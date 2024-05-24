@@ -81,7 +81,6 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.publish.StudyPublishService;
@@ -1075,7 +1074,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
                 }, DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
                 transaction.commit();
-                refreshSampleTypeMaterializedView(st, true);
+                refreshSampleTypeMaterializedView(st, SampleChangeType.schema);
             }
         }
 
@@ -1872,7 +1871,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 for (ExpSampleType sampleType : sampleTypesMap.keySet())
                 {
                     // force refresh of materialized view
-                    SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(sampleType, false);
+                    SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(sampleType, SampleChangeType.update);
                     // update search index for moved samples via indexSampleType() helper, it filters for samples to index
                     // based on the modified date
                     SampleTypeServiceImpl.get().indexSampleType(sampleType);
@@ -2196,8 +2195,10 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return getProjectSampleCount(container, counterType == NameGenerator.EntityCounter.rootSampleCount);
     }
 
-    public void refreshSampleTypeMaterializedView(@NotNull ExpSampleType st, boolean schemaChange)
+    public enum SampleChangeType { insert, update, delete, schema }
+
+    public void refreshSampleTypeMaterializedView(@NotNull ExpSampleType st, SampleChangeType reason)
     {
-        ExpMaterialTableImpl.refreshMaterializedView(st.getLSID(), schemaChange);
+        ExpMaterialTableImpl.refreshMaterializedView(st.getLSID(), reason);
     }
 }

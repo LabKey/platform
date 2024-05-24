@@ -5102,7 +5102,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             // since we don't call onSamplesChanged() for deleted rows, need to tell someone to refresh the materialized view (if any)
             for (var st : sampleTypes.values())
                 if (null != st)
-                    SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(st, false);
+                    SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(st, SampleTypeServiceImpl.SampleChangeType.delete);
 
             // On successful commit, start task to remove items from search index
             final SearchService ss = SearchService.get();
