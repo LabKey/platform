@@ -61,7 +61,6 @@ import org.labkey.api.exp.property.DomainPropertyAuditProvider;
 import org.labkey.api.exp.property.ExperimentProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.SystemProperty;
-import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSampleTypeTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
@@ -86,6 +85,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.JspTestCase;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
 import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.HttpView;
@@ -560,6 +560,8 @@ public class ExperimentModule extends SpringModule
         AttachmentService.get().registerAttachmentType(ExpDataClassType.get());
 
         WebdavService.get().addProvider(new ScriptsResourceProvider());
+
+        SystemMaintenance.addTask(new FileLinkMetricsMaintenanceTask());
 
         UsageMetricsService svc = UsageMetricsService.get();
         if (null != svc)
