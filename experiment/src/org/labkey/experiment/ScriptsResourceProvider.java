@@ -18,6 +18,7 @@ import org.labkey.api.webdav.WebdavService;
 
 import java.io.File;
 import java.nio.file.AccessDeniedException;
+import java.nio.file.Files;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -69,6 +70,11 @@ public class ScriptsResourceProvider implements WebdavService.Provider
             AttachmentDirectory dir = service.getMappedAttachmentDirectory(c, FileContentService.ContentType.scripts, false);
             if (dir != null)
             {
+                // don't create the dir here if it doesn't already exist, it will be created the first time an assay transform script is saved
+                java.nio.file.Path path = dir.getFileSystemDirectoryPath(c, false);
+                if (!Files.exists(path))
+                    return null;
+
                 return new ScriptsResource(parent, Path.toPathPart(name), dir.getFileSystemDirectory(), c.getPolicy());
             }
         }
