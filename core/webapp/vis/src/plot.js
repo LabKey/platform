@@ -1947,7 +1947,6 @@ boxPlot.render();
                 // Handle value conversions
                 convertValues(config.properties.valueConversion);
                 if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.LeveyJennings) {
-                    meanStdDevData[index] = row;
                     if (config.properties.boundType === LABKEY.vis.PlotProperties.BoundType.Absolute) {
                         row.upperBound = config.properties.upperBound;
                         row.lowerBound = config.properties.lowerBound;
@@ -2118,6 +2117,10 @@ boxPlot.render();
 
             tickLabelMap[index] = row[config.properties.xTickLabel];
             row.seqValue = index;
+
+            if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.LeveyJennings) {
+                meanStdDevData[index] = row;
+            }
         }
 
         // min x-axis tick length is 10 by default
