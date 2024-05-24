@@ -1092,7 +1092,7 @@ public class PlateController extends SpringActionController
                         errors.reject(ERROR_REQUIRED, "Specifying a \"selectionKey\" is required for this configuration.");
                         return null;
                     }
-                    plates = PlateManager.get().getPlateData(getContainer(), getUser(), selectionKey, form.getPlates());
+                    plates = PlateManager.get().reArrayFromSelection(getContainer(), getUser(), selectionKey, form.getPlates());
                 }
                 else if (form.isDefaultCase())
                     plates = form.getPlates();
