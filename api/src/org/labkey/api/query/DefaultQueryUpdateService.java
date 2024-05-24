@@ -723,7 +723,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
 
     final protected void convertTypes(User user, Container c, Map<String,Object> row, TableInfo t, @Nullable String file_link_dir_name) throws ValidationException
     {
-        convertTypes(user, c, row,  getDbTable(), file_link_dir_name, false);
+        convertTypes(user, c, row, t, file_link_dir_name, false);
     }
 
     protected void convertTypes(User user, Container c, Map<String,Object> row, TableInfo t, @Nullable String file_link_dir_name, boolean useExistingFile) throws ValidationException
