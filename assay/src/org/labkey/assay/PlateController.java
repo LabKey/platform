@@ -717,7 +717,11 @@ public class PlateController extends SpringActionController
                         newPlate.setTemplate(form.isTemplate());
                     newPlate.setDescription(form.getDescription());
 
-                    newPlate = (PlateImpl) PlateManager.get().createAndSavePlate(getContainer(), getUser(), newPlate, form.getPlateSetId(), form.getData());
+                    List<Map<String, Object>> data = form.getData();
+                    if (form.isTemplate() && data == null)
+                        data = PlateManager.get().prepareEmptyPlateTemplateData(getContainer(), _plateType);
+
+                    newPlate = (PlateImpl) PlateManager.get().createAndSavePlate(getContainer(), getUser(), newPlate, form.getPlateSetId(), data);
                 }
 
                 return success(newPlate);
@@ -1079,25 +1083,30 @@ public class PlateController extends SpringActionController
 
                 if (form.isReplateCase())
                 {
-                    plateSet = (PlateSetImpl) PlateManager.get().createPlateSetAndCopyPlates(getContainer(), getUser(), plateSet, form.getParentPlateSetId());
-                    return success(plateSet);
+                    plateSet = (PlateSetImpl) PlateManager.get().replatePlateSet(getContainer(), getUser(), plateSet, form.getParentPlateSetId());
                 }
-
-                List<PlateManager.CreatePlateSetPlate> plates = null;
-                if (form.isRearrayCase())
+                else
                 {
-                    String selectionKey = StringUtils.trimToNull(form.getSelectionKey());
-                    if (selectionKey == null)
+                    List<PlateManager.CreatePlateSetPlate> plates = form.getPlates();
+                    if (form.isRearrayCase())
                     {
-                        errors.reject(ERROR_REQUIRED, "Specifying a \"selectionKey\" is required for this configuration.");
-                        return null;
-                    }
-                    plates = PlateManager.get().reArrayFromSelection(getContainer(), getUser(), selectionKey, form.getPlates());
-                }
-                else if (form.isDefaultCase())
-                    plates = form.getPlates();
+                        String selectionKey = StringUtils.trimToNull(form.getSelectionKey());
+                        if (selectionKey == null)
+                        {
+                            errors.reject(ERROR_REQUIRED, "Specifying a \"selectionKey\" is required for this configuration.");
+                            return null;
+                        }
 
-                plateSet = PlateManager.get().createPlateSet(getContainer(), getUser(), plateSet, plates, form.getParentPlateSetId());
+                        plates = PlateManager.get().reArrayFromSelection(getContainer(), getUser(), plates, selectionKey);
+                    }
+                    else
+                    {
+                        plates = PlateManager.get().preparePlateData(getContainer(), getUser(), plates);
+                    }
+
+                    plateSet = PlateManager.get().createPlateSet(getContainer(), getUser(), plateSet, plates, form.getParentPlateSetId());
+                }
+
                 return success(plateSet);
             }
             catch (Exception e)

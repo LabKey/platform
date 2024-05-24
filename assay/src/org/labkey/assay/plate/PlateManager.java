@@ -2345,7 +2345,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return plateSet;
     }
 
-    public PlateSet createPlateSetAndCopyPlates(
+    public PlateSet replatePlateSet(
         Container container,
         User user,
         @NotNull PlateSetImpl plateSet,
@@ -2843,9 +2843,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                     return Pair.of(sampleIdsCounter, wellSampleDataForPlate);
 
                 wellSampleDataForPlate.add(CaseInsensitiveHashMap.of(
-                    "sampleId", sampleIds.get(sampleIdsCounter),
-                    "type", WellGroup.Type.SAMPLE.name(),
-                    "wellLocation", createPosition(c, rowIdx, colIdx).getDescription()
+                    WellTable.Column.SampleId.name(), sampleIds.get(sampleIdsCounter),
+                    WellTable.Column.Type.name(), WellGroup.Type.SAMPLE.name(),
+                    "WellLocation", createPosition(c, rowIdx, colIdx).getDescription()
                 ));
                 sampleIdsCounter++;
             }
@@ -2854,13 +2854,56 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return Pair.of(sampleIdsCounter, wellSampleDataForPlate);
     }
 
+    public List<CreatePlateSetPlate> preparePlateData(Container container, User user, List<CreatePlateSetPlate> plates)
+    {
+        if (plates == null || plates.isEmpty())
+            return Collections.emptyList();
+
+        List<CreatePlateSetPlate> plateData = new ArrayList<>();
+
+        for (CreatePlateSetPlate plate : plates)
+        {
+            if (plate.templateId == null)
+                plateData.add(plate);
+            else
+            {
+                List<Map<String, Object>> data = getWellData(container, user, plate.templateId, false, true)
+                        .stream()
+                        .map(WellData::getData)
+                        .toList();
+
+                plateData.add(new CreatePlateSetPlate(plate.name, plate.plateType, plate.templateId, data));
+            }
+        }
+
+        return plateData;
+    }
+
+    public List<Map<String, Object>> prepareEmptyPlateTemplateData(Container container, @NotNull PlateType plateType)
+    {
+        List<Map<String, Object>> data = new ArrayList<>();
+
+        for (int rowIdx = 0; rowIdx < plateType.getRows(); rowIdx++)
+        {
+            for (int colIdx = 0; colIdx < plateType.getColumns(); colIdx++)
+            {
+                data.add(CaseInsensitiveHashMap.of(
+                    WellTable.Column.Type.name(), WellGroup.Type.SAMPLE.name(),
+                    "WellLocation", createPosition(container, rowIdx, colIdx).getDescription()
+                ));
+            }
+        }
+
+        return data;
+    }
+
     // This is a re-array operation, so take the plate sources and apply the selected samples according to each
     // plate's layout.
     public List<CreatePlateSetPlate> reArrayFromSelection(
-        Container c,
+        Container container,
         User user,
-        @NotNull String selectionKey,
-        List<CreatePlateSetPlate> plates
+        List<CreatePlateSetPlate> plates,
+        @NotNull String selectionKey
     ) throws ValidationException
     {
         List<Integer> selectedSampleIds = getSelection(selectionKey).stream().sorted().toList();
@@ -2880,13 +2923,13 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
             if (plate.templateId != null)
             {
-                // 1. Generate well data from a source plate
-                List<WellData> wellData = getWellData(c, user, plate.templateId, false, true);
+                // Generate well data from a source plate
+                List<WellData> wellData = getWellData(container, user, plate.templateId, false, true);
 
-                // 2. Plate the samples into the well data
+                // Plate the samples into the well data
                 sampleIdsCounter = plateSamples(wellData, selectedSampleIds, sampleIdsCounter);
 
-                // 3. Hydrate a CreatePlateSetPlate and add it to plate data
+                // Hydrate a CreatePlateSetPlate and add it to plate data
                 List<Map<String, Object>> data = wellData.stream().map(WellData::getData).toList();
                 platesData.add(new CreatePlateSetPlate(plate.name, plateType.getRowId(), plate.templateId, data));
             }
@@ -2894,7 +2937,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             {
                 // Iterate through sorted samples array and place them in ascending order in each plate's wells
                 Pair<Integer, List<Map<String, Object>>> pair;
-                pair = getWellSampleData(c, selectedSampleIds, plateType.getRows(), plateType.getColumns(), sampleIdsCounter);
+                pair = getWellSampleData(container, selectedSampleIds, plateType.getRows(), plateType.getColumns(), sampleIdsCounter);
                 platesData.add(new CreatePlateSetPlate(plate.name, plateType.getRowId(), null, pair.second));
                 sampleIdsCounter = pair.first;
             }
