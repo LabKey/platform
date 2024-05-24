@@ -365,7 +365,7 @@ public class StudyManager
                 Container sharedContainer = ContainerManager.getSharedContainer();
                 assert key != sharedContainer;
 
-                List<DatasetDefinition> defs = _datasetHelper.get(key);
+                List<DatasetDefinition> defs = _datasetHelper.getList(key);
                 if (defs == null)
                     return Collections.emptySet();
 
@@ -452,19 +452,14 @@ public class StudyManager
             return helper.update(user, obj, pk);
         }
 
-        public List<DatasetDefinition> get(Container c)
+        public List<DatasetDefinition> getList(Container c)
         {
             return toSharedInstance(helper.getList(c));
         }
 
-        public List<DatasetDefinition> get(Container c, SimpleFilter filter)
+        public List<DatasetDefinition> getList(Container c, SimpleFilter filter)
         {
             return toSharedInstance(helper.getList(c, filter));
-        }
-
-        public List<DatasetDefinition> get(Container c, @Nullable SimpleFilter filterArg, @Nullable String sortString)
-        {
-            return toSharedInstance(helper.getList(c, filterArg, sortString));
         }
 
         public DatasetDefinition get(Container c, int rowId)
@@ -2341,7 +2336,7 @@ public class StudyManager
         }
 
         // Make a copy (it's immutable) so that we can sort it. See issue 17875
-        return new ArrayList<>(_datasetHelper.get(study.getContainer(), filter, null));
+        return new ArrayList<>(_datasetHelper.getList(study.getContainer(), filter));
     }
 
 
@@ -2390,7 +2385,7 @@ public class StudyManager
         SimpleFilter filter = SimpleFilter.createContainerFilter(s.getContainer());
         filter.addWhereClause("LOWER(Label) = ?", new Object[]{label.toLowerCase()}, FieldKey.fromParts("Label"));
 
-        List<DatasetDefinition> defs = _datasetHelper.get(s.getContainer(), filter);
+        List<DatasetDefinition> defs = _datasetHelper.getList(s.getContainer(), filter);
         if (defs.size() == 1)
             return defs.get(0);
 
@@ -2404,7 +2399,7 @@ public class StudyManager
         SimpleFilter filter = SimpleFilter.createContainerFilter(s.getContainer());
         filter.addCondition(FieldKey.fromParts("EntityId"), entityId);
 
-        List<DatasetDefinition> defs = _datasetHelper.get(s.getContainer(), filter);
+        List<DatasetDefinition> defs = _datasetHelper.getList(s.getContainer(), filter);
         if (defs.size() == 1)
             return defs.get(0);
 
@@ -2418,7 +2413,7 @@ public class StudyManager
         SimpleFilter filter = SimpleFilter.createContainerFilter(s.getContainer());
         filter.addWhereClause("LOWER(Name) = LOWER(?)", new Object[]{name}, FieldKey.fromParts("Name"));
 
-        List<DatasetDefinition> defs = _datasetHelper.get(s.getContainer(), filter);
+        List<DatasetDefinition> defs = _datasetHelper.getList(s.getContainer(), filter);
         if (defs.size() == 1)
             return defs.get(0);
 
@@ -4768,7 +4763,7 @@ public class StudyManager
                 {
                     SimpleFilter filter = SimpleFilter.createContainerFilter(study.getContainer());
                     filter.addCondition(FieldKey.fromParts("CategoryId"), category.getRowId());
-                    return _instance._datasetHelper.get(study.getContainer(), filter);
+                    return _instance._datasetHelper.getList(study.getContainer(), filter);
                 }
             }
 
