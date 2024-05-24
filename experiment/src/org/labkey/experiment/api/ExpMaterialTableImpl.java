@@ -102,8 +102,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 import static org.labkey.api.util.StringExpressionFactory.AbstractStringExpression.NullValueBehavior.NullResult;
-import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.delete;
-import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.insert;
+import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.*;
 
 public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.Column> implements ExpMaterialTable
 {
@@ -1027,7 +1026,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         // We don't want to do incremental updates of the cached result if it is invalid in other ways.
         // We do an extra PRECOMMIT autoincrement to make sure the incremental code (insert/delete) recognizes that the cached results are already invalid
         // CONSIDER: could we just set a "dontDoIncrementalUpdate" flag on the MaterializedQueryHelper?
-        if (update == rollup)
+        if (update == reason)
             scope.addCommitTask(runnable, DbScope.CommitTaskOption.PRECOMMIT);
     }
 
