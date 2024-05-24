@@ -3654,8 +3654,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             if (!verifyEdgesNoInsert && doIncrementalClosureInvalidation)
             {
-                materialToCpasTypes.forEach(type -> ClosureQueryHelper.invalidateMaterialsForRun(type, runId));
-                dataToCpasTypes.forEach(type -> ClosureQueryHelper.invalidateDataObjectsForRun(type, runId));
+                materialToCpasTypes.forEach(type -> ClosureQueryHelper.recomputeMaterialAncestorsForRun(type, runId));
+                dataToCpasTypes.forEach(type -> ClosureQueryHelper.recomputeDataAncestorsForRun(type, runId));
             }
         }
     }

@@ -1021,7 +1021,7 @@ public class ExpDataIterators
             // the parent columns provided in the input are all empty and there are no existing parents not mentioned in the input that need to be retained.
             if (_context.getInsertOption().allowUpdate && pair.first.doClear())
             {
-                Pair<Set<? extends ExpMaterial>, Set<? extends ExpMaterial>> previousSampleRelatives = clearRunItemSourceRun(_user, runItem);
+                Pair<Set<? extends ExpMaterial>, Set<? extends ExpMaterial>> previousSampleRelatives = clearRunItemSourceRun(_user, runItem, true);
                 String lockCheckMessage = checkForLockedSampleRelativeChange(previousSampleRelatives.first, Collections.emptySet(), runItem.getName(), "parents");
                 lockCheckMessage += checkForLockedSampleRelativeChange(previousSampleRelatives.second, Collections.emptySet(), runItem.getName(), "children");
                 if (!lockCheckMessage.isEmpty())
@@ -1038,7 +1038,7 @@ public class ExpDataIterators
                 {
                     // TODO always clear? or only when parentcols is in input? or only when new derivation is specified?
                     // Since this entry was (maybe) already in the database, we may need to delete old derivation info
-                    previousSampleRelatives = clearRunItemSourceRun(_user, runItem);
+                    previousSampleRelatives = clearRunItemSourceRun(_user, runItem, false);
                 }
 
                 if (_isSample)
@@ -1496,7 +1496,7 @@ public class ExpDataIterators
      * otherwise the run will be deleted.
      */
     @NotNull
-    private static Pair<Set<? extends ExpMaterial>, Set<? extends ExpMaterial>> clearRunItemSourceRun(User user, ExpRunItem runItem) throws ValidationException, ExperimentException
+    private static Pair<Set<? extends ExpMaterial>, Set<? extends ExpMaterial>> clearRunItemSourceRun(User user, ExpRunItem runItem, boolean clearAncestors) throws ValidationException, ExperimentException
     {
         ExpProtocolApplication existingSourceApp = runItem.getSourceApplication();
         Set<? extends ExpMaterial> previousMaterialParents = Collections.emptySet();
@@ -1541,7 +1541,8 @@ public class ExpDataIterators
                 throw new ExperimentException(e);
             }
             existingDerivationRun.delete(user);
-            ExperimentServiceImpl.get().clearAncestors(runItem);
+            if (clearAncestors)
+                ExperimentServiceImpl.get().clearAncestors(runItem);
         }
         else
         {
