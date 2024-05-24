@@ -62,7 +62,6 @@ class UserCache
         return null != user ? user.cloneUser() : null;
     }
 
-
     // Return a new copy of the User with this email address, or null if user doesn't exist
     static @Nullable User getUser(ValidEmail email)
     {
@@ -72,7 +71,6 @@ class UserCache
         return null != user ? user.cloneUser() : null;
     }
 
-
     // Return a new copy of the User with this display name, or null if user doesn't exist
     static @Nullable User getUser(String displayName)
     {
@@ -81,7 +79,6 @@ class UserCache
         // these should really be readonly
         return null != user ? user.cloneUser() : null;
     }
-
 
     // Returns a deep copy of the active users list, allowing callers to interrogate user permissions without affecting
     // cached users. Collection is ordered by email... maybe it should be ordered by display name?

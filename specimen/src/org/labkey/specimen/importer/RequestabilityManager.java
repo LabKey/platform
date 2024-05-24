@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.specimen.importer;
+package org.labkey.specimen.importer;
 
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;

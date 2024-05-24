@@ -16,7 +16,6 @@
 
 package org.labkey.api.specimen;
 
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -59,14 +58,6 @@ public class SpecimenManager
     {
         Module specimenModule = ModuleLoader.getInstance().getModule("Specimen");
         return null != specimenModule && c.getActiveModules().contains(specimenModule);
-    }
-
-    public long getMaxExternalId(Container container)
-    {
-        TableInfo tableInfo = SpecimenSchema.get().getTableInfoSpecimenEvent(container);
-        SQLFragment sql = new SQLFragment("SELECT MAX(ExternalId) FROM ");
-        sql.append(tableInfo);
-        return new SqlSelector(tableInfo.getSchema(), sql).getArrayList(Long.class).get(0);
     }
 
     public int getSpecimenCountForVisit(Visit visit)
@@ -141,9 +132,9 @@ public class SpecimenManager
 
         new SqlExecutor(SpecimenSchema.get().getSchema()).execute(deleteSpecimenSql);
 
-        SpecimenMigrationService SMS = SpecimenMigrationService.get();
-        if (null != SMS)
-            SMS.clearRequestCaches(visit.getContainer());
+        SpecimenMigrationService sms = SpecimenMigrationService.get();
+        if (null != sms)
+            sms.clearRequestCaches(visit.getContainer());
     }
 
     @Nullable
@@ -183,35 +174,6 @@ public class SpecimenManager
             }
         }
         return sqlVisitRange;
-    }
-
-    public void deleteSpecimen(@NotNull Vial vial, boolean clearCaches)
-    {
-        Container container = vial.getContainer();
-        TableInfo tableInfoSpecimenEvent = SpecimenSchema.get().getTableInfoSpecimenEvent(container);
-        TableInfo tableInfoVial = SpecimenSchema.get().getTableInfoVial(container);
-        if (null == tableInfoSpecimenEvent || null == tableInfoVial)
-            return;
-
-        String tableInfoSpecimenEventSelectName = tableInfoSpecimenEvent.getSelectName();
-        String tableInfoVialSelectName = tableInfoVial.getSelectName();
-
-        SQLFragment sqlFragmentEvent = new SQLFragment("DELETE FROM ");
-        sqlFragmentEvent.append(tableInfoSpecimenEventSelectName).append(" WHERE VialId = ?");
-        sqlFragmentEvent.add(vial.getRowId());
-        new SqlExecutor(SpecimenSchema.get().getSchema()).execute(sqlFragmentEvent);
-
-        SQLFragment sqlFragment = new SQLFragment("DELETE FROM ");
-        sqlFragment.append(tableInfoVialSelectName).append(" WHERE RowId = ?");
-        sqlFragment.add(vial.getRowId());
-        new SqlExecutor(SpecimenSchema.get().getSchema()).execute(sqlFragment);
-
-        if (clearCaches)
-        {
-            SpecimenMigrationService SMS = SpecimenMigrationService.get();
-            if (null != SMS)
-                SMS.clearRequestCaches(vial.getContainer());
-        }
     }
 
     public SpecimenComment[] getSpecimenCommentForSpecimen(Container container, String specimenHash)

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.api.specimen.importer;
+package org.labkey.specimen.importer;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.logging.log4j.Logger;
@@ -52,14 +52,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * User: Mark Igra
- * Date: Apr 26, 2007
- * Time: 1:17:36 PM
- */
 public class SimpleSpecimenImporter extends SpecimenImporter
 {
-    public static final String RECORD_ID = "record_id";
     public static final String VIAL_ID = "global_unique_specimen_id";
     public static final String SAMPLE_ID = "specimen_number";
     public static final String DRAW_TIMESTAMP = "draw_timestamp";
@@ -67,7 +61,7 @@ public class SimpleSpecimenImporter extends SpecimenImporter
     public static final String VOLUME = "volume";
     public static final String UNITS = "volume_units";
     public static final String PRIMARY_SPECIMEN_TYPE = "primary_specimen_type";
-    public static final String DERIVIATIVE_TYPE = "derivative_type";
+    public static final String DERIVATIVE_TYPE = "derivative_type";
     public static final String ADDITIVE_TYPE = "additive_type";
     public static final String PARTICIPANT_ID = "ptid";
 
@@ -84,7 +78,7 @@ public class SimpleSpecimenImporter extends SpecimenImporter
         DEFAULT_COLUMN_LABELS.put(UNITS, "Volume Units");
         DEFAULT_COLUMN_LABELS.put(PRIMARY_SPECIMEN_TYPE, "Primary Type");
         DEFAULT_COLUMN_LABELS.put(ADDITIVE_TYPE, "Additive Type");
-        DEFAULT_COLUMN_LABELS.put(DERIVIATIVE_TYPE, "Derivative Type");
+        DEFAULT_COLUMN_LABELS.put(DERIVATIVE_TYPE, "Derivative Type");
         DEFAULT_COLUMN_LABELS.put(PARTICIPANT_ID, "Subject Id");
     }
 
@@ -110,7 +104,7 @@ public class SimpleSpecimenImporter extends SpecimenImporter
         return str == null ? columnName : str;
     }
 
-    public Map<String,String> getColumnLabels()
+    public Map<String, String> getColumnLabels()
     {
         return _columnLabels;
     }
@@ -176,7 +170,7 @@ public class SimpleSpecimenImporter extends SpecimenImporter
                 VOLUME,
                 UNITS,
                 PRIMARY_SPECIMEN_TYPE,
-                DERIVIATIVE_TYPE,
+                DERIVATIVE_TYPE,
                 ADDITIVE_TYPE));
         if (_timepointType == TimepointType.VISIT)
             colNames.add(3, VISIT);

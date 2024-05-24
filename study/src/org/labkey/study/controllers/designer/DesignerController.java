@@ -18,6 +18,8 @@ package org.labkey.study.controllers.designer;
 
 import gwt.client.org.labkey.study.designer.client.model.GWTCohort;
 import gwt.client.org.labkey.study.designer.client.model.GWTStudyDefinition;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -47,7 +49,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.specimen.importer.SimpleSpecimenImporter;
+import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.study.MapArrayExcelWriter;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -77,8 +79,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -405,6 +405,8 @@ public class DesignerController extends SpringActionController
             _includeSubfolders = includeSubfolders;
         }
     }
+
+    @SuppressWarnings("unused") // Invoked from createRepositoryWizard.jsp
     @RequiresPermission(ReadPermission.class)
     public class GetSpecimenExcelAction extends ExportAction<CreateRepositoryForm>
     {
@@ -412,13 +414,12 @@ public class DesignerController extends SpringActionController
         public void export(CreateRepositoryForm form, HttpServletResponse response, BindException errors)
         {
             //Search for a template in all folders up to root.
-            SimpleSpecimenImporter importer = new SimpleSpecimenImporter(getContainer(), getUser(), TimepointType.DATE, "Subject");
-            List<Map<String,Object>> defaultSpecimens = StudyDesignManager.get().generateSampleList(getStudyDefinition(form), getParticipants(), form.getBeginDate());
-            MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(defaultSpecimens, importer.getSimpleSpecimenColumns());
-            // Note: I don't think this is having any effect on the output because ExcelColumn.renderCaption() uses
-            // the DisplayColumn's caption, not its own caption. That seems wrong...
-            xlWriter.setColumnModifier(col -> col.setCaption(importer.label(col.getName())));
-            xlWriter.renderWorkbook(response);
+            SpecimenMigrationService sms = SpecimenMigrationService.get();
+            if (null != sms)
+            {
+                List<Map<String, Object>> defaultSpecimens = StudyDesignManager.get().generateSampleList(getStudyDefinition(form), getParticipants(), form.getBeginDate());
+                sms.exportSpecimens(getContainer(), getUser(), defaultSpecimens, TimepointType.DATE, "Subject", response);
+            }
         }
     }
 
@@ -706,7 +707,7 @@ public class DesignerController extends SpringActionController
         for (ColumnDescriptor col : PARTICIPANT_COLS)
             colMap.put(col.name, col);
         colMap.put("ptid", colMap.get("ParticipantId"));
-        colMap.put("SubjectId", colMap.get(SimpleSpecimenImporter.PARTICIPANT_ID));
+        colMap.put("SubjectId", colMap.get(SpecimenMigrationService.PARTICIPANT_ID));
 
         ColumnDescriptor[] newCols = new ColumnDescriptor[loaderCols.length];
         for (int i = 0; i < loaderCols.length; i++)
@@ -752,90 +753,92 @@ public class DesignerController extends SpringActionController
     }
 
     @SuppressWarnings("unchecked")
-    private void handleUploadSamples(CreateRepositoryForm form)
-            throws IOException
+    private void handleUploadSamples(CreateRepositoryForm form) throws IOException
     {
-        Set<String> errors = new LinkedHashSet<>();
-        String specimenTSV = StringUtils.trimToNull(form.getSpecimenTSV());
-        if (null == specimenTSV)
+        SpecimenMigrationService sms = SpecimenMigrationService.get();
+        if (null != sms)
         {
-            form.setMessage("Please provide specimen information.");
-            return;
-        }
-        TabLoader loader = new TabLoader(specimenTSV, true);
-        Map<String, String> columnAliases = new HashMap();
-        Map<String, String> labels = new HashMap();
-        //Make sure we accept the labels
-        SimpleSpecimenImporter importer = new SimpleSpecimenImporter(getContainer(), getUser());
-        for (Map.Entry<String, String> entry : importer.getColumnLabels().entrySet())
-        {
-            columnAliases.put(entry.getValue(), entry.getKey());
-            labels.put(entry.getKey(), entry.getValue());
-        }
-
-        //And a few more aliases
-        columnAliases.put("ParticipantId", SimpleSpecimenImporter.PARTICIPANT_ID);
-        columnAliases.put("Date", SimpleSpecimenImporter.DRAW_TIMESTAMP);
-        columnAliases.put("Subject", SimpleSpecimenImporter.PARTICIPANT_ID);
-
-        //Remember whether we used a different header so we can put up error messages that make sense
-        for (ColumnDescriptor c : loader.getColumns())
-        {
-            if (columnAliases.containsKey(c.name))
+            Set<String> errors = new LinkedHashSet<>();
+            String specimenTSV = StringUtils.trimToNull(form.getSpecimenTSV());
+            if (null == specimenTSV)
             {
-                labels.put(columnAliases.get(c.name), c.name);
-                c.name = columnAliases.get(c.name);
+                form.setMessage("Please provide specimen information.");
+                return;
+            }
+            TabLoader loader = new TabLoader(specimenTSV, true);
+            Map<String, String> columnAliases = new HashMap<>();
+            Map<String, String> labels = new HashMap<>();
+            //Make sure we accept the labels
+            for (Map.Entry<String, String> entry : sms.getColumnLabelMap(getContainer(), getUser()).entrySet())
+            {
+                columnAliases.put(entry.getValue(), entry.getKey());
+                labels.put(entry.getKey(), entry.getValue());
+            }
+
+            //And a few more aliases
+            columnAliases.put("ParticipantId", SpecimenMigrationService.PARTICIPANT_ID);
+            columnAliases.put("Date", SpecimenMigrationService.DRAW_TIMESTAMP);
+            columnAliases.put("Subject", SpecimenMigrationService.PARTICIPANT_ID);
+
+            //Remember whether we used a different header so we can put up error messages that make sense
+            for (ColumnDescriptor c : loader.getColumns())
+            {
+                if (columnAliases.containsKey(c.name))
+                {
+                    labels.put(columnAliases.get(c.name), c.name);
+                    c.name = columnAliases.get(c.name);
+                }
+                else
+                    labels.put(c.name, c.name);
+            }
+            sms.fixupSpecimenColumns(getContainer(), getUser(), loader);
+
+            List<Map<String, Object>> specimenRows = loader.load();
+            setSpecimens(specimenRows);
+            Set<String> participants = new HashSet<>();
+            int rowNum = 1;
+            for (Map<String, Object> row : specimenRows)
+            {
+                if (row.get(SpecimenMigrationService.VIAL_ID) == null && row.get(SpecimenMigrationService.SAMPLE_ID) == null)
+                    errors.add("Error, Row " + rowNum + " must provide a sample or vial ID.");
+
+                String participant = (String) row.get(SpecimenMigrationService.PARTICIPANT_ID);
+                if (null == participant)
+                    errors.add("Error, Row " + rowNum + " field " + labels.get(SpecimenMigrationService.PARTICIPANT_ID) + " is not supplied");
+                else
+                    participants.add(participant);
+
+                for (String col : PageFlowUtil.set(SpecimenMigrationService.SAMPLE_ID, SpecimenMigrationService.DRAW_TIMESTAMP))
+                    if (null == row.get(col))
+                        errors.add("Error, Row " + rowNum + " does not contain a value for field " + (labels.containsKey(col) ? labels.get(col) : col));
+
+                if (errors.size() >= 3)
+                    break;
+
+                rowNum++;
+            }
+            if (!form.isIgnoreWarnings())
+            {
+                int nParticipantsExpected = 0;
+                for (GWTCohort cohort : getStudyDefinition(form).getGroups())
+                    nParticipantsExpected += cohort.getCount();
+
+                if (participants.size() != nParticipantsExpected)
+                    errors.add("Warning, Expected samples for " + nParticipantsExpected + " subjects, received samples for " + participants);
+
+                form.setContainsWarnings(true);
+            }
+            if (!errors.isEmpty())
+            {
+                StringBuilder sb = new StringBuilder();
+                for (String e : errors)
+                    sb.append(e).append("\n");
+
+                form.setMessage(sb.toString());
             }
             else
-                labels.put(c.name, c.name);
+                form.setWizardStep(WizardStep.CONFIRM);
         }
-        importer.fixupSpecimenColumns(loader);
-
-        List<Map<String, Object>> specimenRows = loader.load();
-        setSpecimens(specimenRows);
-        Set<String> participants = new HashSet<>();
-        int rowNum = 1;
-        for (Map<String,Object> row : specimenRows)
-        {
-            if (row.get(SimpleSpecimenImporter.VIAL_ID) ==  null && row.get(SimpleSpecimenImporter.SAMPLE_ID) == null)
-                errors.add("Error, Row " + rowNum + " must provide a sample or vial ID.");
-
-            String participant = (String) row.get(SimpleSpecimenImporter.PARTICIPANT_ID);
-            if (null == participant)
-                errors.add("Error, Row " + rowNum + " field " + labels.get(SimpleSpecimenImporter.PARTICIPANT_ID) + " is not supplied");
-            else
-                participants.add(participant);
-
-            for (String col : PageFlowUtil.set(SimpleSpecimenImporter.SAMPLE_ID, SimpleSpecimenImporter.DRAW_TIMESTAMP))
-                if (null == row.get(col))
-                    errors.add("Error, Row " + rowNum + " does not contain a value for field " + (labels.containsKey(col) ? labels.get(col) : col));
-
-            if (errors.size() >= 3)
-                break;
-
-            rowNum++;
-        }
-        if (!form.isIgnoreWarnings())
-        {
-            int nParticipantsExpected = 0;
-            for (GWTCohort cohort : getStudyDefinition(form).getGroups())
-                nParticipantsExpected += cohort.getCount();
-
-            if (participants.size() != nParticipantsExpected)
-                errors.add("Warning, Expected samples for " + nParticipantsExpected + " subjects, received samples for " + participants);
-
-            form.setContainsWarnings(true);
-        }
-        if (errors.size() > 0)
-        {
-            StringBuilder sb = new StringBuilder();
-            for (String e : errors)
-                sb.append(e).append("\n");
-
-            form.setMessage(sb.toString());
-        }
-        else
-            form.setWizardStep(WizardStep.CONFIRM);
     }
 
     public static GWTStudyDefinition getStudyDefinition(CreateRepositoryForm form, User user, Container container)
