@@ -1,4 +1,4 @@
-package org.labkey.api.specimen.importer;
+package org.labkey.specimen.importer;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.JdbcType;

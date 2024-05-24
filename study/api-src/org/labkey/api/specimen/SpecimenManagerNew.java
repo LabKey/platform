@@ -9,7 +9,6 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.specimen.model.PrimaryType;
@@ -17,11 +16,9 @@ import org.labkey.api.specimen.model.SpecimenTypeSummary;
 import org.labkey.api.specimen.model.SpecimenTypeSummaryRow;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.view.NotFoundException;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 public class SpecimenManagerNew
 {
@@ -34,57 +31,6 @@ public class SpecimenManagerNew
     public static SpecimenManagerNew get()
     {
         return INSTANCE;
-    }
-
-    public List<Vial> getVials(Container container, User user, Set<Long> vialRowIds)
-    {
-        // Take a set to eliminate dups - issue 26940
-
-        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-        filter.addInClause(FieldKey.fromParts("RowId"), vialRowIds);
-        List<Vial> vials = getVials(container, user, filter);
-        if (vials.size() != vialRowIds.size())
-        {
-            List<Long> unmatchedRowIds = new ArrayList<>(vialRowIds);
-            for (Vial vial : vials)
-            {
-                unmatchedRowIds.remove(vial.getRowId());
-            }
-            throw new SpecimenRequestException("One or more specimen RowIds had no matching specimen: " + unmatchedRowIds);
-        }
-        return vials;
-    }
-
-    public List<Vial> getVials(final Container container, final User user, SimpleFilter filter)
-    {
-        // TODO: LinkedList?
-        final List<Vial> vials = new ArrayList<>();
-
-        getSpecimensSelector(container, user, filter)
-            .forEachMap(map -> vials.add(new Vial(container, map)));
-
-        return vials;
-    }
-
-    public TableSelector getSpecimensSelector(final Container container, final User user, SimpleFilter filter)
-    {
-        Study study = StudyService.get().getStudy(container);
-        if (study == null)
-        {
-            throw new NotFoundException("No study in container " + container.getPath());
-        }
-        UserSchema schema = SpecimenQuerySchema.get(study, user);
-        TableInfo specimenTable = schema.getTable(SpecimenQuerySchema.SPECIMEN_WRAP_TABLE_NAME);
-        return new TableSelector(specimenTable, filter, null);
-    }
-
-    public Vial getVial(Container container, User user, long rowId)
-    {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), rowId);
-        List<Vial> vials = getVials(container, user, filter);
-        if (vials.isEmpty())
-            return null;
-        return vials.get(0);
     }
 
     public List<PrimaryType> getPrimaryTypes(Container c)

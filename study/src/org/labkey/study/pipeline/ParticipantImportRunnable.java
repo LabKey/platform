@@ -33,6 +33,7 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -92,6 +93,7 @@ public class ParticipantImportRunnable extends DatasetImportRunnable
     public void _run() throws IOException, SQLException
     {
         TabLoader loader = null;
+        Container container = getDatasetDefinition().getContainer();
 
         try
         {
@@ -101,7 +103,6 @@ public class ParticipantImportRunnable extends DatasetImportRunnable
             for (ColumnDescriptor c : loader.getColumns())
                 columnMap.put(c.name, c);
 
-            Container container = getDatasetDefinition().getContainer();
             String subjectIdCol = StudyService.get().getSubjectColumnName(container);
             if (!columnMap.containsKey(subjectIdCol))
             {
@@ -146,6 +147,7 @@ public class ParticipantImportRunnable extends DatasetImportRunnable
         }
         finally
         {
+            StudyManager.getInstance().clearParticipantCache(container);
             if (loader != null)
                 loader.close();
         }

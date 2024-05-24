@@ -1,9 +1,9 @@
-package org.labkey.api.specimen;
+package org.labkey.specimen;
 
-import org.labkey.api.specimen.importer.ImportTypes;
-import org.labkey.api.specimen.importer.ImportableColumn;
-import org.labkey.api.specimen.importer.SpecimenColumn;
-import org.labkey.api.specimen.importer.TargetTable;
+import org.labkey.specimen.importer.ImportTypes;
+import org.labkey.specimen.importer.ImportableColumn;
+import org.labkey.specimen.importer.SpecimenColumn;
+import org.labkey.specimen.importer.TargetTable;
 
 import java.util.Arrays;
 import java.util.Collection;

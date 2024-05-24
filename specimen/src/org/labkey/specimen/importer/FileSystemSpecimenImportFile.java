@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.api.specimen.importer;
+package org.labkey.specimen.importer;
 
 import org.labkey.api.reader.Readers;
 import org.labkey.api.reader.TabLoader;
