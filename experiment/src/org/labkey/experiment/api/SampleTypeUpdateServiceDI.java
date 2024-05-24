@@ -1337,11 +1337,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         }
     }
 
-    private void fireSamplesChanged()
-    {
-        fireSamplesChanged(update);
-    }
-
     private void fireSamplesChanged(SampleTypeServiceImpl.SampleChangeType reason)
     {
         if (_sampleType != null)
