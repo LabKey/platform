@@ -7806,6 +7806,7 @@ public class ExperimentController extends SpringActionController
                 {
                     int updatedCount;
                     updatedCount = service.recomputeSampleTypeRollup(sampleType, container);
+                    // we could check "if (0 < updatedCount) refresh(rollup)", but since this is a "manual" usage lets just always refresh
                     SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(sampleType, update);
                     builder.unsafeAppend("<tr><td>")
                             .append(sampleType.getName())

@@ -373,24 +373,24 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
     }
 
 
-    public void upsert(SQLFragment sqlf)
+    public int upsert(SQLFragment sqlf)
     {
         // We want to avoid materializing the table if it has never been used.
         if (null == _map.get(makeKey(null)))
         {
             var tx = _scope.getCurrentTransaction();
             if (null == tx || null == _map.get(makeKey(tx)))
-                return;
+                return -1;
         }
         // We also don't want to execute the update if it will be materialized by the next user (e.g. after invalidation check)
         Materialized m = getMaterialized(true);
         if (Materialized.LoadingState.BEFORELOAD == m._loadingState.get())
-            return;
+            return -1;
 
         // execute incremental update
         SQLFragment copy = new SQLFragment(sqlf);
         copy.setSqlUnsafe(sqlf.getSQL().replace("${NAME}", m._tableName));
-        new SqlExecutor(_scope).execute(copy);
+        return new SqlExecutor(_scope).execute(copy);
     }
 
 

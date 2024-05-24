@@ -1025,9 +1025,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         scope.addCommitTask(runnable, DbScope.CommitTaskOption.POSTCOMMIT);
 
         // We don't want to do incremental updates of the cached result if it is invalid in other ways.
-        // We do a extra PRECOMMIT autoincrement to make sure the incremental code (insert/delete) recognizes that the cached results are already invalid
+        // We do an extra PRECOMMIT autoincrement to make sure the incremental code (insert/delete) recognizes that the cached results are already invalid
         // CONSIDER: could we just set a "dontDoIncrementalUpdate" flag on the MaterializedQueryHelper?
-        if (insert != reason && delete != reason)
+        if (update == rollup)
             scope.addCommitTask(runnable, DbScope.CommitTaskOption.PRECOMMIT);
     }
 
@@ -1049,6 +1049,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             {
                 case insert -> executeIncrementalInsert(_lsid);
                 case delete -> executeIncrementalDelete(_lsid);
+                case rollup -> executeIncrementalRollup(_lsid);
                 default -> getInvalidateCounter(_lsid).incrementAndGet();
             }
         }
@@ -1129,7 +1130,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         SQLFragment incremental = new SQLFragment("INSERT INTO temp.${NAME}\n")
             .append("SELECT * FROM (")
             .append(mqh.getViewSourceSql()).append(") viewsource_\n")
-            .append("WHERE rowid > (SELECT NULLIF(MAX(rowid),0) FROM temp.${NAME})");
+            .append("WHERE rowid > (SELECT COALESCE(MAX(rowid),0) FROM temp.${NAME})");
         mqh.upsert(incremental);
     }
 
@@ -1140,6 +1141,37 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             return;
         SQLFragment incremental = new SQLFragment("DELETE FROM temp.${NAME}\n")
                 .append("WHERE rowid NOT IN (SELECT rowid FROM exp.material)");
+        mqh.upsert(incremental);
+    }
+
+    private static void executeIncrementalRollup(String lsid)
+    {
+        var mqh = _materializedQueries.getIfCached(lsid);
+        if (null == mqh)
+            return;
+        SQLFragment incremental = new SQLFragment();
+        if (CoreSchema.getInstance().getSchema().getSqlDialect().isPostgreSQL())
+        {
+            incremental
+                    .append("UPDATE temp.${NAME} AS st\n")
+                    .append("SET aliquotcount = expm.aliquotcount, availablealiquotcount = expm.availablealiquotcount, aliquotvolume = expm.aliquotvolume, availablealiquotvolume = expm.availablealiquotvolume, aliquotunit = expm.aliquotunit\n")
+                    .append("FROM exp.Material AS expm\n");
+        }
+        else
+        {
+            incremental
+                    .append("UPDATE st\n")
+                    .append("SET aliquotcount = expm.aliquotcount, availablealiquotcount = expm.availablealiquotcount, aliquotvolume = expm.aliquotvolume, availablealiquotvolume = expm.availablealiquotvolume, aliquotunit = expm.aliquotunit\n")
+                    .append("FROM temp.${NAME} st, exp.Material expm\n");
+        }
+        incremental
+            .append("WHERE expm.rowid = st.rowid AND (\n")
+            .append("    st.aliquotcount IS DISTINCT FROM expm.aliquotcount OR ")
+            .append("    st.availablealiquotcount IS DISTINCT FROM expm.availablealiquotcount OR ")
+            .append("    st.aliquotvolume IS DISTINCT FROM expm.aliquotvolume OR ")
+            .append("    st.availablealiquotvolume IS DISTINCT FROM expm.availablealiquotvolume OR ")
+            .append("    st.aliquotunit IS DISTINCT FROM expm.aliquotunit")
+            .append(")");
         mqh.upsert(incremental);
     }
 

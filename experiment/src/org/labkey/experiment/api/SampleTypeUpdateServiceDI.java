@@ -145,6 +145,7 @@ import static org.labkey.api.exp.query.ExpMaterialTable.Column.StoredAmount;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Units;
 import static org.labkey.experiment.ExpDataIterators.incrementCounts;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.insert;
+import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.rollup;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.update;
 
 /**
@@ -1318,7 +1319,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 {
                     var count = SampleTypeService.get().recomputeSampleTypeRollup(_sampleType, rootRowIds, parentNames, container);
                     if (count > 0)
-                        SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(_sampleType, update);
+                        SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(_sampleType, rollup);
                 }
             }
             catch (SQLException e)
