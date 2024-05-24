@@ -48,27 +48,22 @@ public class FileLinkMetricsMaintenanceTask implements SystemMaintenance.Mainten
             if (null != svc)
             {
                 Map<String, Map<String, Set<String>>> results = ExperimentServiceImpl.get().doMissingFilesCheck(getTaskUser(), ContainerManager.getRoot());
+                Map<String, Object> missingFilesMetrics = new HashMap<>();
+                missingFilesMetrics.put("Run time", new Date());
+                Map<String, Object> metrics = new HashMap<>();
+                metrics.put(NAME, missingFilesMetrics);
+                long totalCount = 0;
                 if (null != results)
                 {
-                    Map<String, Object> metrics = new HashMap<>();
-                    Map<String, Object> missingFilesMetrics = new HashMap<>();
-                    metrics.put(NAME, missingFilesMetrics);
-                    missingFilesMetrics.put("Run time", new Date());
                     for (String containerId : results.keySet())
                     {
-                        String containerPath = containerId;
-                        Container container = ContainerManager.getForId(containerId);
-                        if (container != null)
-                            containerPath = container.getPath();
-                        Map<String, Object> containerMetrics = new HashMap<>();
-                        missingFilesMetrics.put(containerPath, containerMetrics);
-
                         Map<String, Set<String>> missingFiles = results.get(containerId);
                         for (String source : missingFiles.keySet())
-                            containerMetrics.put(source, missingFiles.get(source).size());
+                            totalCount += missingFiles.get(source).size();
                     }
-                    svc.registerUsageMetrics(ExperimentServiceImpl.MODULE_NAME, () -> metrics);
                 }
+                missingFilesMetrics.put("Missing files count", totalCount);
+                svc.registerUsageMetrics(ExperimentServiceImpl.MODULE_NAME, () -> metrics);
             }
         }
         catch (Exception e)
