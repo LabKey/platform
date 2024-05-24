@@ -941,6 +941,12 @@ public class SecurityManager
         return (null == getVerification(email));
     }
 
+    // Test if user has been verified for database authentication. Use only when email address could be invalid ().
+    public static boolean isVerified(String email)
+    {
+        return (null == getVerification(email));
+    }
+
     public static boolean verify(ValidEmail email, String verification)
     {
         String dbVerification = getVerification(email);
@@ -956,7 +962,12 @@ public class SecurityManager
 
     public static String getVerification(ValidEmail email)
     {
-        return new SqlSelector(core.getSchema(), "SELECT Verification FROM " + core.getTableInfoLogins() + " WHERE Email = ?", email.getEmailAddress()).getObject(String.class);
+        return getVerification(email.getEmailAddress());
+    }
+
+    private static String getVerification(String email)
+    {
+        return new SqlSelector(core.getSchema(), "SELECT Verification FROM " + core.getTableInfoLogins() + " WHERE Email = ?", email).getObject(String.class);
     }
 
     public static class NewUserStatus
@@ -1336,7 +1347,7 @@ public class SecurityManager
         return getPasswordHash(email.getEmailAddress());
     }
 
-    // For internal use only, plus database login and change email workflows, where existing email address could be invalid (i.e., non-conforming according to RFC 822)
+    // For internal use only, plus database login and change email workflows, where existing email address could be invalid (i.e., non-conforming per RFC 822)
     public static String getPasswordHash(String email)
     {
         SqlSelector selector = new SqlSelector(core.getSchema(), new SQLFragment("SELECT Crypt FROM " + core.getTableInfoLogins() + " WHERE Email = ?", email));
@@ -1357,7 +1368,7 @@ public class SecurityManager
             return Crypt.MD5.matches(password, hash);
     }
 
-    // Used in the case of set password or email change... current email address could be invalid (i.e., non-conforming according to RFC 822)
+    // Used in the case of set password or email change... current email address could be invalid (i.e., non-conforming per RFC 822)
     public static boolean loginExists(String email)
     {
         return (null != getPasswordHash(email));
