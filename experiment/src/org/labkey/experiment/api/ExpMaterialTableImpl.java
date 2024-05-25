@@ -977,8 +977,16 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         SQLFragment sql = new SQLFragment("(");
         boolean usedMaterialized;
 
+
         // SELECT FROM
-        if (null != _ss && null != _ss.getTinfo() && !getExpSchema().getDbSchema().getScope().isTransactionActive())
+        /* NOTE We want to avoid caching in paths where the table is actively being updated (e.g. loadRows)
+         * Unfortunately, we don't _really_ know when this is, but if we in a transaction that's a good guess.
+         * Also, we may use RemapCache for material lookup outside a transaction
+         */
+        boolean onlyMaterialColums = false;
+        if (ALL_COLUMNS != selectedColumns)
+            onlyMaterialColums = selectedColumns.stream().allMatch(fk -> fk.getName().equalsIgnoreCase("Folder") || null != _rootTable.getColumn(fk));
+        if (!onlyMaterialColums && null != _ss && null != _ss.getTinfo() && !getExpSchema().getDbSchema().getScope().isTransactionActive())
         {
             sql.append(getMaterializedSQL());
             usedMaterialized = true;
