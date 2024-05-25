@@ -2854,7 +2854,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return Pair.of(sampleIdsCounter, wellSampleDataForPlate);
     }
 
-    public List<CreatePlateSetPlate> preparePlateData(Container container, User user, List<CreatePlateSetPlate> plates)
+    /** Prepares the plate data for plates that specify a "templateId". */
+    public List<CreatePlateSetPlate> preparePlateData(Container container, User user, Collection<CreatePlateSetPlate> plates)
     {
         if (plates == null || plates.isEmpty())
             return Collections.emptyList();
@@ -2879,6 +2880,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return plateData;
     }
 
+    /** Prepares the plate data for a plate template created from a plate type. */
     public List<Map<String, Object>> prepareEmptyPlateTemplateData(Container container, @NotNull PlateType plateType)
     {
         List<Map<String, Object>> data = new ArrayList<>();
@@ -2897,8 +2899,10 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return data;
     }
 
-    // This is a re-array operation, so take the plate sources and apply the selected samples according to each
-    // plate's layout.
+    /**
+     * This is a re-array operation, so take the plate sources and apply the selected samples
+     * according to each plate's layout.
+     */
     public List<CreatePlateSetPlate> reArrayFromSelection(
         Container container,
         User user,
