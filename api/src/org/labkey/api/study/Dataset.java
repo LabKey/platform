@@ -68,153 +68,154 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
     /**
      * Provides information about the published source for a dataset
      */
-    enum PublishSource {
+    enum PublishSource
+    {
         Assay
+        {
+            @Override
+            public @Nullable ExpProtocol resolvePublishSource(Integer publishSourceId)
+            {
+                if (publishSourceId != null)
+                    return ExperimentService.get().getExpProtocol(publishSourceId);
+                return null;
+            }
+
+            @Override
+            public String getLabel(Integer publishSourceId)
+            {
+                if (publishSourceId != null)
                 {
-                    @Override
-                    public @Nullable ExpProtocol resolvePublishSource(Integer publishSourceId)
-                    {
-                        if (publishSourceId != null)
-                            return ExperimentService.get().getExpProtocol(publishSourceId);
-                        return null;
-                    }
+                    ExpProtocol protocol = ExperimentService.get().getExpProtocol(publishSourceId);
+                    if (protocol != null)
+                        return protocol.getName();
+                }
+                return "";
+            }
 
-                    @Override
-                    public String getLabel(Integer publishSourceId)
-                    {
-                        if (publishSourceId != null)
-                        {
-                            ExpProtocol protocol = ExperimentService.get().getExpProtocol(publishSourceId);
-                            if (protocol != null)
-                                return protocol.getName();
-                        }
-                        return "";
-                    }
+            @Override
+            public ActionURL getSourceActionURL(ExpObject source, Container container)
+            {
+                return PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(container, (ExpProtocol) source);
+            }
 
-                    @Override
-                    public ActionURL getSourceActionURL(ExpObject source, Container container)
+            @Override
+            public @Nullable ActionButton getSourceButton(Integer publishSourceId, ContainerFilter cf, Container container)
+            {
+                if (publishSourceId != null)
+                {
+                    ExpProtocol protocol = resolvePublishSource(publishSourceId);
+                    if (protocol != null)
                     {
-                        return PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(container, (ExpProtocol) source);
+                        ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(
+                                protocol.getContainer(),
+                                protocol,
+                                cf);
+                        return new ActionButton("View Source Assay", url);
                     }
+                }
+                return null;
+            }
 
-                    @Override
-                    public @Nullable ActionButton getSourceButton(Integer publishSourceId, ContainerFilter cf, Container container)
+            @Override
+            public boolean hasUsefulDetailsPage(Integer publishSourceId)
+            {
+                if (publishSourceId != null)
+                {
+                    ExpProtocol protocol = resolvePublishSource(publishSourceId);
+                    if (protocol != null)
                     {
-                        if (publishSourceId != null)
-                        {
-                            ExpProtocol protocol = resolvePublishSource(publishSourceId);
-                            if (protocol != null)
-                            {
-                                ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(
-                                        protocol.getContainer(),
-                                        protocol,
-                                        cf);
-                                return new ActionButton("View Source Assay", url);
-                            }
-                        }
-                        return null;
+                        AssayProvider provider = AssayService.get().getProvider(protocol);
+                        if (provider != null)
+                            return provider.hasUsefulDetailsPage();
                     }
+                }
+                return false;
+            }
 
-                    @Override
-                    public boolean hasUsefulDetailsPage(Integer publishSourceId)
-                    {
-                        if (publishSourceId != null)
-                        {
-                            ExpProtocol protocol = resolvePublishSource(publishSourceId);
-                            if (protocol != null)
-                            {
-                                AssayProvider provider = AssayService.get().getProvider(protocol);
-                                if (provider != null)
-                                    return provider.hasUsefulDetailsPage();
-                            }
-                        }
-                        return false;
-                    }
+            @Override
+            public @Nullable Container resolveSourceLsidContainer(String sourceLsid, Integer sourceRowId)
+            {
+                // for assays the source lsid is the run
+                ExpRun expRun = ExperimentService.get().getExpRun(sourceLsid);
+                if (expRun != null && expRun.getContainer() != null)
+                    return expRun.getContainer();
 
-                    @Override
-                    public @Nullable Container resolveSourceLsidContainer(String sourceLsid, Integer sourceRowId)
-                    {
-                        // for assays the source lsid is the run
-                        ExpRun expRun = ExperimentService.get().getExpRun(sourceLsid);
-                        if (expRun != null && expRun.getContainer() != null)
-                            return expRun.getContainer();
+                return null;
+            }
 
-                        return null;
-                    }
-
-                    @Override
-                    public String getSourceType()
-                    {
-                        return "assay";
-                    }
-                },
+            @Override
+            public String getSourceType()
+            {
+                return "assay";
+            }
+        },
         SampleType
+        {
+            @Override
+            public @Nullable ExpSampleType resolvePublishSource(Integer publishSourceId)
+            {
+                return SampleTypeService.get().getSampleType(publishSourceId);
+            }
+
+            @Override
+            public String getLabel(Integer publishSourceId)
+            {
+                ExpSampleType sampleType =  SampleTypeService.get().getSampleType(publishSourceId);
+                if (sampleType != null)
+                    return sampleType.getName();
+                return "";
+            }
+
+            @Override
+            public @Nullable ActionButton getSourceButton(Integer publishSourceId, ContainerFilter cf, Container container)
+            {
+                if (publishSourceId != null)
                 {
-                    @Override
-                    public @Nullable ExpSampleType resolvePublishSource(Integer publishSourceId)
-                    {
-                        return SampleTypeService.get().getSampleType(publishSourceId);
-                    }
+                    ExpSampleType sampleType = resolvePublishSource(publishSourceId);
+                    if (sampleType != null)
+                        return new ActionButton("View Source Sample Type", getSourceActionURL(sampleType, container));
+                }
+                return null;
+            }
 
-                    @Override
-                    public String getLabel(Integer publishSourceId)
-                    {
-                        ExpSampleType sampleType =  SampleTypeService.get().getSampleType(publishSourceId);
-                        if (sampleType != null)
-                            return sampleType.getName();
-                        return "";
-                    }
+            @Override
+            public boolean hasUsefulDetailsPage(Integer publishSourceId)
+            {
+                return false;
+            }
 
-                    @Override
-                    public @Nullable ActionButton getSourceButton(Integer publishSourceId, ContainerFilter cf, Container container)
-                    {
-                        if (publishSourceId != null)
-                        {
-                            ExpSampleType sampleType = resolvePublishSource(publishSourceId);
-                            if (sampleType != null)
-                                return new ActionButton("View Source Sample Type", getSourceActionURL(sampleType, container));
-                        }
-                        return null;
-                    }
+            @Override
+            public @Nullable Container resolveSourceLsidContainer(String sourceLsid, Integer sourceRowId)
+            {
+                if (sourceRowId != null)
+                {
+                    ExpMaterial expMaterial = ExperimentService.get().getExpMaterial(sourceRowId);
+                    if (expMaterial != null)
+                        return expMaterial.getContainer();
+                }
 
-                    @Override
-                    public boolean hasUsefulDetailsPage(Integer publishSourceId)
-                    {
-                        return false;
-                    }
+                // for sample types the source lsid is the sample type, fall back on this if the source
+                // rowId (ExpMaterial) is not specified. Generally speaking ExpMaterial is more accurate
+                // since a sample type may be scoped to a different container than the data is inserted into.
+                ExpSampleType sampleType = SampleTypeService.get().getSampleType(sourceLsid);
+                if (sampleType != null)
+                    return sampleType.getContainer();
 
-                    @Override
-                    public @Nullable Container resolveSourceLsidContainer(String sourceLsid, Integer sourceRowId)
-                    {
-                        if (sourceRowId != null)
-                        {
-                            ExpMaterial expMaterial = ExperimentService.get().getExpMaterial(sourceRowId);
-                            if (expMaterial != null)
-                                return expMaterial.getContainer();
-                        }
+                return null;
+            }
 
-                        // for sample types the source lsid is the sample type, fall back on this if the source
-                        // rowId (ExpMaterial) is not specified. Generally speaking ExpMaterial is more accurate
-                        // since a sample type may be scoped to a different container than the data is inserted into.
-                        ExpSampleType sampleType = SampleTypeService.get().getSampleType(sourceLsid);
-                        if (sampleType != null)
-                            return sampleType.getContainer();
+            @Override
+            public String getSourceType()
+            {
+                return "sample type";
+            }
 
-                        return null;
-                    }
-
-                    @Override
-                    public String getSourceType()
-                    {
-                        return "sample type";
-                    }
-
-                    @Override
-                    public ActionURL getSourceActionURL(ExpObject sourceObject, Container container)
-                    {
-                        return PageFlowUtil.urlProvider(ExperimentUrls.class, true).getShowSampleTypeURL((ExpSampleType) sourceObject, container);
-                    }
-                };
+            @Override
+            public ActionURL getSourceActionURL(ExpObject sourceObject, Container container)
+            {
+                return PageFlowUtil.urlProvider(ExperimentUrls.class, true).getShowSampleTypeURL((ExpSampleType) sourceObject, container);
+            }
+        };
 
         public abstract @Nullable ExpObject resolvePublishSource(Integer publishSourceId);
         public abstract String getLabel(Integer publishSourceId);

@@ -830,10 +830,9 @@ public class StudyController extends BaseStudyController
             if (null == _def)
             {
                 Object datasetKeyObject = getViewContext().get(Dataset.DATASET_KEY);
-                if (datasetKeyObject instanceof List)
+                if (datasetKeyObject instanceof List<?> list)
                 {
                     // bug 7365: It's been specified twice -- once in the POST, once in the GET. Just need one of them.
-                    List<?> list = (List<?>)datasetKeyObject;
                     datasetKeyObject = list.get(0);
                 }
                 if (null != datasetKeyObject)
@@ -866,7 +865,6 @@ public class StudyController extends BaseStudyController
             ActionURL url = getViewContext().getActionURL();
             String viewName = url.getParameter(DATASET_VIEW_NAME_PARAMETER_NAME);
 
-
             // if the view name refers to a report id (legacy style), redirect to use the newer report id parameter
             if (NumberUtils.isDigits(viewName))
             {
@@ -893,12 +891,13 @@ public class StudyController extends BaseStudyController
         {
             // the full resultset is a join of all datasets for each participant
             // each dataset is determined by a visitid/datasetid
-            Study study = getStudyRedirectIfNull();
+
+            // Ensure a study is present
+            getStudyRedirectIfNull();
             ViewContext context = getViewContext();
 
             String export = StringUtils.trimToNull(context.getActionURL().getParameter("export"));
 
-            String viewName = (String)context.get(DATASET_VIEW_NAME_PARAMETER_NAME);
             DatasetDefinition def = getDatasetDefinition();
             if (null == def)
                 return new TypeNotFoundAction().getView(form, errors);
@@ -930,9 +929,10 @@ public class StudyController extends BaseStudyController
             {
                 setColumnURL(url, queryView, schema, def);
 
-                // Clear any cached participant lists, since the filter/sort may have changed
-                String qcParam = QCStateSet.getQCParameter(DatasetQueryView.DATAREGION, url);
-                removeParticipantListFromCache(context, def.getDatasetId(), viewName, _cohortFilter, qcParam != null ? url.getParameter(qcParam) : null);
+                // Clear any cached participant lists... not really necessary, since the cache key is now the entire
+                // query string (including all filters & sorts), but it doesn't really hurt. List is regenerated only if
+                // user navigates to an individual participant.
+                removeParticipantListFromSession(context);
                 getExpandedState(context, def.getDatasetId()).clear();
             }
 
@@ -1132,10 +1132,7 @@ public class StudyController extends BaseStudyController
             if (_cohortFilter != null && !StudyManager.getInstance().showCohorts(getContainer(), getUser()))
                 throw new UnauthorizedException("User does not have permission to view cohort information");
 
-            final ActionURL url = getViewContext().getActionURL();
-            String qcParam = QCStateSet.getQCParameter(DatasetQueryView.DATAREGION, url);
-            List<String> participants = getParticipantListFromCache(getViewContext(), form.getDatasetId(), viewName,
-                    _cohortFilter, qcParam != null ? url.getParameter(qcParam) : null);
+            List<String> participants = getParticipantListFromSession(getViewContext(), form.getDatasetId(), viewName);
 
             if (participants != null)
             {
@@ -1190,7 +1187,6 @@ public class StudyController extends BaseStudyController
             root.addChild(StudyService.get().getSubjectNounSingular(getContainer()) + " - " + id(_bean.getParticipantId()));
         }
     }
-
 
     public static class Participant2Form
     {
@@ -3246,27 +3242,20 @@ public class StudyController extends BaseStudyController
         return new CaseInsensitiveHashMap<>(sortMap);
     }
 
-    private static String getParticipantListCacheKey(int dataset, String viewName, CohortFilter cohortFilter, String encodedQCState)
+    private static String getParticipantListCacheKey(ViewContext context)
     {
-        String key = Integer.toString(dataset);
-        // if there is also a view associated with the dataset, incorporate it into the key as well
-        if (viewName != null && !StringUtils.isEmpty(viewName))
-            key = key + viewName;
-        if (cohortFilter != null)
-            key = key + "cohort" + cohortFilter.getCacheKey();
-        if (encodedQCState != null)
-            key = key + "qcState" + encodedQCState;
-        return key;
+        // The query string includes all parameters that affect the participant list: dataset id, filters, sorts, etc.
+        return context.getActionURL().getQueryString();
     }
 
-    public static void removeParticipantListFromCache(ViewContext context, int dataset, String viewName, CohortFilter cohortFilter, String encodedQCState)
+    public static void removeParticipantListFromSession(ViewContext context)
     {
-        Map<String, List<String>> map = getParticipantMapFromCache(context);
-        map.remove(getParticipantListCacheKey(dataset, viewName, cohortFilter, encodedQCState));
+        Map<String, List<String>> map = getParticipantMapFromSession(context);
+        map.remove(getParticipantListCacheKey(context));
     }
 
     @SuppressWarnings("unchecked")
-    private static Map<String, List<String>> getParticipantMapFromCache(ViewContext context)
+    private static Map<String, List<String>> getParticipantMapFromSession(ViewContext context)
     {
         HttpSession session = context.getRequest().getSession(true);
         Map<String, List<String>> map = (Map<String, List<String>>) session.getAttribute(PARTICIPANT_CACHE_PREFIX);
@@ -3289,27 +3278,24 @@ public class StudyController extends BaseStudyController
             session.setAttribute(EXPAND_CONTAINERS_KEY, map);
         }
 
-        Map<Integer, String> expandedMap = map.computeIfAbsent(datasetId, k -> new HashMap<>());
-
-        return expandedMap;
+        return map.computeIfAbsent(datasetId, k -> new HashMap<>());
     }
 
-    public static List<String> getParticipantListFromCache(ViewContext context, int dataset, String viewName, CohortFilter cohortFilter, String encodedQCState)
+    public static List<String> getParticipantListFromSession(ViewContext context, int dataset, String viewName)
     {
-        Map<String, List<String>> map = getParticipantMapFromCache(context);
-        String key = getParticipantListCacheKey(dataset, viewName, cohortFilter, encodedQCState);
+        Map<String, List<String>> map = getParticipantMapFromSession(context);
+        String key = getParticipantListCacheKey(context);
         List<String> plist = map.get(key);
         if (plist == null)
         {
             // not in cache, or session expired, try to regenerate the list
-            plist = generateParticipantListFromURL(context, dataset, viewName, cohortFilter);
+            plist = generateParticipantListFromURL(context, dataset, viewName);
             map.put(key, plist);
         }
         return plist;
     }
 
-    // TODO: Remove cohortFilter param? It's not used... or should it be?
-    private static List<String> generateParticipantListFromURL(ViewContext context, int dataset, String viewName, CohortFilter cohortFilter)
+    private static List<String> generateParticipantListFromURL(ViewContext context, int dataset, String viewName)
     {
         try
         {
