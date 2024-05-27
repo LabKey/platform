@@ -469,7 +469,7 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class BeginAction extends SimpleViewAction
+    public class BeginAction extends SimpleViewAction<Object>
     {
         private Study _study;
 
@@ -818,7 +818,6 @@ public class StudyController extends BaseStudyController
     public class DatasetAction extends QueryViewAction<DatasetFilterForm, QueryView>
     {
         private CohortFilter _cohortFilter;
-        private int _visitId;
         private DatasetDefinition _def;
 
         public DatasetAction()
@@ -906,16 +905,6 @@ public class StudyController extends BaseStudyController
             String typeURI = def.getTypeURI();
             if (null == typeURI)
                 return new TypeNotFoundAction().getView(form, errors);
-
-            _visitId = NumberUtils.toInt((String)context.get(VisitImpl.VISIT_KEY), 0);
-            VisitImpl visit;
-            if (_visitId != 0)
-            {
-                assert study.getTimepointType() != TimepointType.CONTINUOUS;
-                visit = StudyManager.getInstance().getVisitForRowId(study, _visitId);
-                if (null == visit)
-                    throw new NotFoundException();
-            }
 
             boolean showEditLinks = !QueryService.get().isQuerySnapshot(getContainer(), StudySchema.getInstance().getSchemaName(), def.getName()) &&
                 !def.isPublishedData();
@@ -1051,7 +1040,7 @@ public class StudyController extends BaseStudyController
         public void addNavTrail(NavTree root)
         {
             setHelpTopic("gridBasics");
-            _addNavTrail(root, getDatasetDefinition().getDatasetId(), _visitId, _cohortFilter);
+            _addNavTrail(root, getDatasetDefinition().getDatasetId(), _cohortFilter);
         }
     }
 
@@ -1124,7 +1113,7 @@ public class StudyController extends BaseStudyController
                 throw new NotFoundException("No " + study.getSubjectNounSingular() + " specified");
             }
 
-            Participant participant = null;
+            Participant participant;
             try
             {
                 participant = findParticipant(study, form.getParticipantId());
@@ -1197,7 +1186,7 @@ public class StudyController extends BaseStudyController
         public void addNavTrail(NavTree root)
         {
             setHelpTopic("participantViews");
-            _addNavTrail(root, _bean.getDatasetId(), 0, _cohortFilter);
+            _addNavTrail(root, _bean.getDatasetId(), _cohortFilter);
             root.addChild(StudyService.get().getSubjectNounSingular(getContainer()) + " - " + id(_bean.getParticipantId()));
         }
     }
@@ -3300,12 +3289,8 @@ public class StudyController extends BaseStudyController
             session.setAttribute(EXPAND_CONTAINERS_KEY, map);
         }
 
-        Map<Integer, String> expandedMap = map.get(datasetId);
-        if (expandedMap == null)
-        {
-            expandedMap = new HashMap<>();
-            map.put(datasetId, expandedMap);
-        }
+        Map<Integer, String> expandedMap = map.computeIfAbsent(datasetId, k -> new HashMap<>());
+
         return expandedMap;
     }
 
@@ -3323,6 +3308,7 @@ public class StudyController extends BaseStudyController
         return plist;
     }
 
+    // TODO: Remove cohortFilter param? It's not used... or should it be?
     private static List<String> generateParticipantListFromURL(ViewContext context, int dataset, String viewName, CohortFilter cohortFilter)
     {
         try
@@ -3336,14 +3322,6 @@ public class StudyController extends BaseStudyController
             String typeURI = def.getTypeURI();
             if (null == typeURI)
                 return Collections.emptyList();
-
-            int visitRowId = null == context.get(VisitImpl.VISIT_KEY) ? 0 : Integer.parseInt((String) context.get(VisitImpl.VISIT_KEY));
-            if (visitRowId != 0)
-            {
-                VisitImpl visit = studyMgr.getVisitForRowId(study, visitRowId);
-                if (null == visit)
-                    return Collections.emptyList();
-            }
 
             StudyQuerySchema querySchema = StudyQuerySchema.createSchema(study, context.getUser());
             QuerySettings qs = querySchema.getSettings(context, DatasetQueryView.DATAREGION, def.getName());
@@ -3789,7 +3767,7 @@ public class StudyController extends BaseStudyController
         @Override
         public void addNavTrail(NavTree root)
         {
-            root = _addNavTrail(root, _datasetId, -1);
+            root = _addNavTrail(root, _datasetId);
             root.addChild("Change QC State");
         }
     }
@@ -4329,7 +4307,7 @@ public class StudyController extends BaseStudyController
                 Integer cohortId = null;
                 if (form.getCohort() != null && form.getCohort()[i] != -1)
                     cohortId = form.getCohort()[i];
-                Character type = typeStr != null && typeStr.length() > 0 ? typeStr.charAt(0) : null;
+                Character type = typeStr != null && !typeStr.isEmpty() ? typeStr.charAt(0) : null;
                 if (def.isShowByDefault() != show || !nullSafeEqual(label, def.getLabel()) || type != def.getTypeCode() || !nullSafeEqual(cohortId, def.getCohortId()))
                 {
                     def = def.createMutable();

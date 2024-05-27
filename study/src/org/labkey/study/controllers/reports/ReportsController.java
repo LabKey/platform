@@ -1170,7 +1170,7 @@ public class ReportsController extends BaseStudyController
             Dataset def = getDatasetDefinition();
 
             if (def != null)
-                _addNavTrail(root, def.getDatasetId(), 0, null);
+                _addNavTrail(root, def.getDatasetId(), null);
         }
     }
 

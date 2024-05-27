@@ -18,7 +18,10 @@
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.data.CompareType" %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.data.TableInfo" %>
+<%@ page import="org.labkey.api.qc.QCStateManager" %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
 <%@ page import="org.labkey.api.specimen.SpecimenMigrationService" %>
 <%@ page import="org.labkey.api.study.Cohort" %>
 <%@ page import="org.labkey.api.study.CohortFilter" %>
@@ -46,20 +49,19 @@
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="org.labkey.study.model.VisitMapKey" %>
+<%@ page import="org.labkey.study.query.StudyQuerySchema" %>
 <%@ page import="org.labkey.study.visitmanager.VisitManager.VisitStatistic" %>
 <%@ page import="org.labkey.study.visitmanager.VisitManager.VisitStatistics" %>
 <%@ page import="java.text.NumberFormat" %>
 <%@ page import="java.util.List" %>
-<%@ page import="static org.labkey.study.model.QCStateSet.getQCUrlFilterValue" %>
+<%@ page import="java.util.Map" %>
 <%@ page import="static org.labkey.study.model.QCStateSet.getQCUrlFilterKey" %>
 <%@ page import="static org.labkey.study.model.QCStateSet.getQCStateFilteredURL" %>
 <%@ page import="static org.labkey.study.model.QCStateSet.PUBLIC_STATES_LABEL" %>
 <%@ page import="static org.labkey.study.model.QCStateSet.PRIVATE_STATES_LABEL" %>
-<%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.qc.QCStateManager" %>
-<%@ page import="org.labkey.study.query.StudyQuerySchema" %>
-<%@ page import="org.labkey.api.data.TableInfo" %>
-<%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
+<%@ page import="org.labkey.study.visitmanager.VisitManager" %>
+<%@ page import="org.labkey.api.util.element.Option.OptionBuilder" %>
+<%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -70,9 +72,11 @@
     User user = (User) request.getUserPrincipal();
     StudyQuerySchema schema = StudyQuerySchema.createSchema(study, user, null);
     StudyManager manager = StudyManager.getInstance();
-    String visitsLabel = manager.getVisitManager(study).getPluralLabel();
+    VisitManager visitManager = manager.getVisitManager(study);
+    String visitsLabel = visitManager.getPluralLabel();
     String subjectNoun = StudyService.get().getSubjectNounSingular(container);
-    String eq = getQCUrlFilterKey(CompareType.EQUAL, "Dataset");
+    String qcUrlFilterKey = getQCUrlFilterKey(CompareType.EQUAL, "Dataset");
+    String visitLabelUrlFilterKey = visitManager.getVisitLabelUrlFilterKey(container, "Dataset");
 
     boolean showCohorts = CohortManager.getInstance().hasCohortMenu(container, user);
     Cohort selectedCohort = null;
@@ -93,8 +97,6 @@
         selectedQCStateSet = bean.qcStates;
         qcStateSetOptions = QCStateSet.getSelectableSets(container);
     }
-
-    VisitStatistic[] statisticsToDisplay = bean.stats.toArray(new VisitStatistic[bean.stats.size()]);
 
     List<VisitImpl> visits = manager.getVisits(study, selectedCohort, user, Visit.Order.DISPLAY);
     List<DatasetDefinition> datasets = manager.getDatasetDefinitions(study, selectedCohort);
@@ -133,19 +135,14 @@
     %>
     <input type="hidden" name="<%= h(Params.cohortFilterType.name()) %>"
            value="<%= h(CohortFilter.Type.PTID_CURRENT.name()) %>">
-    <%= h(subjectNoun) %>'s current cohort: <select id="<%= HtmlString.of(selectId) %>" name="<%= h(Params.cohortId.name()) %>">
-    <option value="">All</option>
-    <%
-        for (CohortImpl cohort : cohorts)
-        {
+    <%= h(subjectNoun) %>'s current cohort: <%=select()
+        .id(selectId)
+        .name(Params.cohortId.name())
+        .addOption("All", "")
+        .addOptions(cohorts.stream().map(c -> new OptionBuilder(c.getLabel(), c.getRowId())))
+        .selected(selectedCohort != null ? selectedCohort.getRowId() : null)
+        .className(null)
     %>
-    <option value="<%= cohort.getRowId() %>"<%=selected(selectedCohort != null && cohort.getRowId() == selectedCohort.getRowId()) %>>
-        <%= h(cohort.getLabel()) %>
-    </option>
-    <%
-        }
-    %>
-</select>
     <%
         }
         if (showQCStates)
@@ -153,18 +150,13 @@
             var selectId = makeId("select");
             addHandler(selectId, "change", "document.changeFilterForm.submit()");
     %>
-    QC State: <select id="<%= HtmlString.of(selectId) %>" name="<%= h(SharedFormParameters.QCState.name()) %>">
-    <%
-        for (QCStateSet set : qcStateSetOptions)
-        {
+    QC State: <%=select()
+        .id(selectId)
+        .name(SharedFormParameters.QCState.name())
+        .addOptions(qcStateSetOptions.stream().map(ac -> new OptionBuilder(ac.getLabel(), ac.getFormValue())))
+        .selected(selectedQCStateSet != null ? selectedQCStateSet.getFormValue() : null)
+        .className(null)
     %>
-    <option value="<%= h(set.getFormValue()) %>"<%=selected(set.equals(selectedQCStateSet))%>>
-        <%= h(set.getLabel()) %>
-    </option>
-    <%
-        }
-    %>
-</select>
     <%
         }
 
@@ -183,17 +175,17 @@
         <td class="labkey-column-header"><img alt="" width=60 height=1 src="<%=getWebappURL("_.gif")%>"></td>
         <td class="labkey-column-header"><%
             String slash = "";
-            for (VisitStatistic v : statisticsToDisplay)
+            for (VisitStatistic v : bean.stats)
             {
         %><%=unsafe(slash)%><%
             if (v == VisitStatistic.ParticipantCount)
             {
-        %>All <%=h(visitsLabel)%><%
+        %><%=h(visits.isEmpty() ? subjectNoun + " Count" : "All " + visitsLabel)%><%
         }
         else
         {
         %><%=h(v.getDisplayString(study))%><%
-                }
+            }
                 slash = " / ";
             }
         %></td>
@@ -289,14 +281,14 @@
                 for (VisitStatistic stat : VisitStatistic.values())
                     all.add(stat, stats.get(stat));
 
-            String innerHtml = "";
+            HtmlStringBuilder innerHtml = HtmlStringBuilder.of();
 
-            for (VisitStatistic stat : statisticsToDisplay)
+            for (VisitStatistic stat : bean.stats)
             {
                 if (!innerHtml.isEmpty())
-                    innerHtml += " / ";
+                    innerHtml.append(" / ");
 
-                innerHtml += NumberFormat.getInstance().format(all.get(stat));
+                innerHtml.append(NumberFormat.getInstance().format(all.get(stat)));
             }
 
             if (userCanRead)
@@ -307,7 +299,7 @@
                 if (selectedCohort != null && bean.cohortFilter != null)
                     bean.cohortFilter.addURLParameters(study, defaultReportURL, "Dataset");
                 if (bean.qcStates != null && StringUtils.isNumeric(bean.qcStates.getFormValue()))
-                    defaultReportURL.replaceParameter(eq, QCStateManager.getInstance().getStateForRowId(container, Integer.parseInt(bean.qcStates.getFormValue())).getLabel());
+                    defaultReportURL.replaceParameter(qcUrlFilterKey, QCStateManager.getInstance().getStateForRowId(container, Integer.parseInt(bean.qcStates.getFormValue())).getLabel());
                 // Public States case
                 if (bean.qcStates != null && QCStateSet.getPublicStates(getContainer()).getFormValue().equals(bean.qcStates.getFormValue()))
                     defaultReportURL = getQCStateFilteredURL(defaultReportURL, PUBLIC_STATES_LABEL, "Dataset", container);
@@ -316,16 +308,15 @@
                     defaultReportURL = getQCStateFilteredURL(defaultReportURL, PRIVATE_STATES_LABEL, "Dataset", container);
                 defaultReportURL.addParameter("skipDataVisibility", 1);
 
-        %><a href="<%= h(defaultReportURL.getLocalURIString()) %>"><%=unsafe(innerHtml)%>
-        </a><%
-        }
-        else
-        {
-        %><%=unsafe(innerHtml)%><%
+                %><%=link(innerHtml, defaultReportURL).clearClasses()%><%
             }
-        %></td>
+            else
+            {
+                %><%=innerHtml%><%
+            }
+        %>
+        </td>
         <%
-
             for (VisitImpl visit : visits)
             {
                 if (!bean.showAll && !visit.isShowByDefault())
@@ -336,39 +327,38 @@
                 Boolean b = requiredMap.get(key);
                 boolean isRequired = b == Boolean.TRUE;
                 boolean isOptional = b == Boolean.FALSE;
-                innerHtml = null;
+                innerHtml = HtmlStringBuilder.of();
 
                 for (VisitStatistic stat : bean.stats)
                 {
                     int count = null != stats ? stats.get(stat) : 0;
 
                     if (isRequired || isOptional || count > 0)
-                        innerHtml = (null == innerHtml ? "" + count : innerHtml + " / " + count);
+                        innerHtml.append(innerHtml.isEmpty() ? "" + count : " / " + count);
                 }
 
-                if (null == innerHtml)
+                if (innerHtml.isEmpty())
                 {
-                    innerHtml = "&nbsp;";
+                    innerHtml = HtmlStringBuilder.of(HtmlString.NBSP);
                 }
                 else if (userCanRead)
                 {
                     ActionURL datasetLink = new ActionURL(DatasetAction.class, container);
-                    datasetLink.addParameter(VisitImpl.VISIT_KEY, visit.getRowId());
+                    datasetLink.addParameter(visitLabelUrlFilterKey, visit.getLabel());
                     datasetLink.addParameter(Dataset.DATASETKEY, dataset.getDatasetId());
                     if (selectedCohort != null)
-                        bean.cohortFilter.addURLParameters(study, datasetLink, null);
+                        bean.cohortFilter.addURLParameters(study, datasetLink, "Dataset");
                     if (bean.qcStates != null && StringUtils.isNumeric(bean.qcStates.getFormValue()))
-                        datasetLink.replaceParameter(eq, QCStateManager.getInstance().getStateForRowId(container, Integer.parseInt(bean.qcStates.getFormValue())).getLabel());
+                        datasetLink.replaceParameter(qcUrlFilterKey, QCStateManager.getInstance().getStateForRowId(container, Integer.parseInt(bean.qcStates.getFormValue())).getLabel());
 
-                    innerHtml = "<a href=\"" + datasetLink.getLocalURIString() + "\">" + innerHtml + "</a>";
+                    innerHtml = HtmlStringBuilder.of(link(innerHtml, datasetLink).clearClasses());
                 }
-
-        %>
-        <td align="center" nowrap="true"><%=unsafe(innerHtml)%>
-        </td>
-        <%
+                %>
+            <td align="center" nowrap="true"><%=innerHtml%></td>
+                <%
             }
-        %></tr>
+        %>
+    </tr>
     <%
         }
     %>
@@ -376,6 +366,6 @@
 <%
     if (cantReadOneOrMoreDatasets)
     {
-%><span style="font-style: italic;">NOTE: You do not have read permission to one or more datasets.  Contact the study administrator for more information.</span><%
+%><span style="font-style: italic;">NOTE: You do not have read permission to one or more datasets. Contact the study administrator for more information.</span><%
     }
 %>

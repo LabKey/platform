@@ -26,8 +26,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
-import org.labkey.api.study.TimepointType;
-import org.labkey.api.study.Visit;
 import org.labkey.api.study.security.permissions.ManageStudyPermission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
@@ -43,13 +41,9 @@ import org.labkey.study.query.DatasetQueryView;
 import org.labkey.study.view.BaseStudyPage;
 import org.springframework.validation.BindException;
 
-/**
- * User: Karl Lum
- * Date: Dec 13, 2007
- */
 public abstract class BaseStudyController extends SpringActionController
 {
-    StudyImpl _study = null;
+    protected StudyImpl _study = null;
 
     public enum SharedFormParameters
     {
@@ -64,7 +58,7 @@ public abstract class BaseStudyController extends SpringActionController
     @Override
     public PageConfig defaultPageConfig()
     {
-        PageConfig page =  super.defaultPageConfig();
+        PageConfig page = super.defaultPageConfig();
         String template = getViewContext().getRequest().getHeader("template");
         if (null == template)
             template = getViewContext().getRequest().getParameter("_template");
@@ -124,7 +118,7 @@ public abstract class BaseStudyController extends SpringActionController
         return _study;
     }
 
-    protected BaseViewAction initAction(BaseViewAction parent, BaseViewAction action)
+    protected BaseViewAction<?> initAction(BaseViewAction<?> parent, BaseViewAction<?> action)
     {
         action.setViewContext(parent.getViewContext());
         action.setPageConfig(parent.getPageConfig());
@@ -180,26 +174,22 @@ public abstract class BaseStudyController extends SpringActionController
         addRootNavTrail(root);
     }
 
-    protected NavTree _addNavTrail(NavTree root, int datasetId, int visitId)
+    protected NavTree _addNavTrail(NavTree root, int datasetId)
     {
-        return _addNavTrail(root, datasetId, visitId, null);
+        return _addNavTrail(root, datasetId, null);
     }
 
-    protected NavTree _addNavTrail(NavTree root, int datasetId, int visitId, CohortFilter cohortFilter)
+    protected NavTree _addNavTrail(NavTree root, int datasetId, CohortFilter cohortFilter)
     {
         Study study = addRootNavTrail(root);
-        _appendDataset(root, study, datasetId, visitId, cohortFilter);
+        _appendDataset(root, study, datasetId, cohortFilter);
         return root;
     }
 
-    protected NavTree _appendDataset(NavTree root, Study study, int datasetId, int visitRowId, @Nullable CohortFilter cohortFilter)
+    private void _appendDataset(NavTree root, Study study, int datasetId, @Nullable CohortFilter cohortFilter)
     {
         if (datasetId > 0)
         {
-            Visit visit = null;
-            if (visitRowId > 0)
-                visit = StudyManager.getInstance().getVisitForRowId(study, visitRowId);
-
             Dataset dataset = study.getDataset(datasetId);
             if (dataset != null)
             {
@@ -210,13 +200,8 @@ public abstract class BaseStudyController extends SpringActionController
                 else
                     label.append("CRF/Assay ").append(dataset.getDatasetId());
 
-                if (visit != null)
-                    label.append(", ").append(visit.getDisplayString());
-                else if (study.getTimepointType() != TimepointType.CONTINUOUS)
-                    label.append(", All Visits");
-
                 ActionURL datasetUrl = new ActionURL(StudyController.DatasetAction.class, getContainer()).
-                        addParameter(Dataset.DATASETKEY, datasetId);
+                    addParameter(Dataset.DATASETKEY, datasetId);
                 if (cohortFilter != null)
                     cohortFilter.addURLParameters(study, datasetUrl, "Dataset");
 
@@ -228,7 +213,6 @@ public abstract class BaseStudyController extends SpringActionController
                 root.addChild(label.toString(), datasetUrl.getLocalURIString());
             }
         }
-        return root;
     }
 
     protected void redirectTypeNotFound(int datasetId) throws RedirectException

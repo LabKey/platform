@@ -32,11 +32,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-/*
- * User: brittp
- * Date: Jul 16, 2008
- * Time: 9:09:25 AM
- */
 
 /**
  * QCStateSet is a helper class designed to make it easier to manage common groupings of QC states.
@@ -48,14 +43,15 @@ import java.util.stream.Collectors;
  */
 public class QCStateSet
 {
-    // use sets instead of arrays, just in case duplicates are somehow passed in:
-    private Set<DataState> _states;
-    private String _label;
-
     public static final String PUBLIC_STATES_LABEL = "Public/approved data";
     public static final String PRIVATE_STATES_LABEL = "Private/non-approved data";
     public static final String ALL_STATES_LABEL = "All data";
-    private boolean _includeUnmarked;
+
+    // use sets instead of arrays, just in case duplicates are somehow passed in:
+    private final Set<DataState> _states;
+    private final boolean _includeUnmarked;
+
+    private String _label;
 
     private QCStateSet(Container container, List<DataState> stateSet, boolean includeUnmarked, String label)
     {
@@ -78,7 +74,7 @@ public class QCStateSet
                 StringBuilder setLabel = new StringBuilder();
                 for (DataState state : stateSet)
                 {
-                    if (setLabel.length() > 0)
+                    if (!setLabel.isEmpty())
                         setLabel.append(", ");
                     setLabel.append(state.getLabel());
                 }
@@ -144,12 +140,12 @@ public class QCStateSet
         // no states, and doesn't include unmarked items.  This can happen, for example, when
         // all states are defined as 'private' and a user selects the default 'Public' set for viewing.
         // In this case, we'll simply return filter ensures zero rows are returned:
-        if (_states.size() == 0 && !_includeUnmarked)
+        if (_states.isEmpty() && !_includeUnmarked)
             return "0 = 1";
         
         StringBuilder sql = new StringBuilder();
         sql.append("(");
-        if (_states.size() > 0)
+        if (!_states.isEmpty())
         {
             sql.append(rowIdColumnAlias).append(" IN (");
             String comma = "";
@@ -181,13 +177,13 @@ public class QCStateSet
         StringBuilder formValue = new StringBuilder();
         for (DataState state : _states)
         {
-            if (formValue.length() > 0)
+            if (!formValue.isEmpty())
                 formValue.append(",");
             formValue.append(state.getRowId());
         }
         if (_includeUnmarked)
         {
-            if (formValue.length() > 0)
+            if (!formValue.isEmpty())
                 formValue.append(",");
             formValue.append("-1");
         }
@@ -248,7 +244,7 @@ public class QCStateSet
 
     public static QCStateSet getSelectedStates(Container container, String formValue)
     {
-        if (formValue == null || formValue.length() == 0)
+        if (formValue == null || formValue.isEmpty())
             return getDefaultStates(container);
 
         String[] rowIdStrings = formValue.split(",");
@@ -310,8 +306,8 @@ public class QCStateSet
         String key = dataRegionName + "." + FieldKey.fromParts("QCState", "Label") + SimpleFilter.SEPARATOR_CHAR;
         // finds the first QC state parameter
         Pair<String, String> param = url.getParameters().stream()
-                .filter(p -> p.getKey().startsWith(key))
-                .findFirst().orElse(null);
+            .filter(p -> p.getKey().startsWith(key))
+            .findFirst().orElse(null);
 
         return param != null ? param.getKey() : null;
     }
@@ -329,9 +325,9 @@ public class QCStateSet
     public static String getQCUrlFilterValue(QCStateSet qcStates)
     {
         List<String> qcLabels = qcStates.getStates()
-                .stream()
-                .map(DataState::getLabel)
-                .collect(Collectors.toList());
+            .stream()
+            .map(DataState::getLabel)
+            .collect(Collectors.toList());
         String filterValue = new SimpleFilter.InClause(FieldKey.fromParts(""), qcLabels).toURLParam("").getValue();
         return filterValue != null ? filterValue : "";
     }
