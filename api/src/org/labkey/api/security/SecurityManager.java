@@ -941,6 +941,12 @@ public class SecurityManager
         return (null == getVerification(email));
     }
 
+    // Test if user has been verified for database authentication. Use only when email address could be invalid ().
+    public static boolean isVerified(String email)
+    {
+        return (null == getVerification(email));
+    }
+
     public static boolean verify(ValidEmail email, String verification)
     {
         String dbVerification = getVerification(email);
@@ -956,7 +962,12 @@ public class SecurityManager
 
     public static String getVerification(ValidEmail email)
     {
-        return new SqlSelector(core.getSchema(), "SELECT Verification FROM " + core.getTableInfoLogins() + " WHERE Email = ?", email.getEmailAddress()).getObject(String.class);
+        return getVerification(email.getEmailAddress());
+    }
+
+    private static String getVerification(String email)
+    {
+        return new SqlSelector(core.getSchema(), "SELECT Verification FROM " + core.getTableInfoLogins() + " WHERE Email = ?", email).getObject(String.class);
     }
 
     public static class NewUserStatus
@@ -1012,7 +1023,6 @@ public class SecurityManager
             return null != _verification;
         }
     }
-
 
     public static class UserManagementException extends Exception
     {
@@ -1337,8 +1347,8 @@ public class SecurityManager
         return getPasswordHash(email.getEmailAddress());
     }
 
-    // Look up email in Logins table and return the corresponding password hash
-    private static String getPasswordHash(String email)
+    // For internal use only, plus database login and change email workflows, where existing email address could be invalid (i.e., non-conforming per RFC 822)
+    public static String getPasswordHash(String email)
     {
         SqlSelector selector = new SqlSelector(core.getSchema(), new SQLFragment("SELECT Crypt FROM " + core.getTableInfoLogins() + " WHERE Email = ?", email));
         return selector.getObject(String.class);
@@ -1358,8 +1368,8 @@ public class SecurityManager
             return Crypt.MD5.matches(password, hash);
     }
 
-    // Used only in the case of email change... current email address might be invalid
-    static boolean loginExists(String email)
+    // Used in the case of set password or email change... current email address could be invalid (i.e., non-conforming per RFC 822)
+    public static boolean loginExists(String email)
     {
         return (null != getPasswordHash(email));
     }
@@ -1894,13 +1904,7 @@ public class SecurityManager
                 // group always returned empty set. Allow a special case of returning real set if explicitly requested.
                 if (next.isUsers() && returnSiteUsers)
                 {
-                    List<Integer> userIds = UserManager.getUserIds();
-                    int[] ids = new int[userIds.size()];
-                    for (int i = 0; i < userIds.size(); i++)
-                    {
-                        ids[i] = userIds.get(i);
-                    }
-                    addMembers(members, ids, memberType);
+                    addMembers(members, UserManager.getUserIds(), memberType);
                 }
                 else
                 {
@@ -1915,19 +1919,17 @@ public class SecurityManager
         return members;
     }
 
-    private static <P extends UserPrincipal> void addMembers(Collection<P> principals, int[] ids, MemberType<P> memberType)
+    private static <P extends UserPrincipal> void addMembers(Collection<P> principals, List<Integer> ids, MemberType<P> memberType)
     {
-        for (int id : ids)
-        {
-            P principal = memberType.getPrincipal(id);
-            if (null != principal)
-                principals.add(principal);
-        }
+        ids.stream()
+            .map(memberType::getPrincipal)
+            .filter(Objects::nonNull)
+            .forEach(principals::add);
     }
 
     private static <P extends UserPrincipal> void addMembers(Collection<P> principals, PrincipalArray members, MemberType<P> memberType)
     {
-        addMembers(principals, members.getPrincipals(), memberType);
+        addMembers(principals, members.getList(), memberType);
     }
 
     // get the list of group members that do not need to be direct members because they are a member of a member group (i.e. groups-in-groups)
@@ -3333,7 +3335,6 @@ public class SecurityManager
 
         abstract boolean accept(Set<Class<? extends Permission>> granted, Set<Class<? extends Permission>> required);
     }
-
 
     public static class TestCase extends Assert
     {

@@ -31,8 +31,7 @@ import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.specimen.SpecimenManagerNew;
-import org.labkey.api.specimen.importer.SimpleSpecimenImporter;
+import org.labkey.specimen.importer.SimpleSpecimenImporter;
 import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.Study;
@@ -48,6 +47,7 @@ import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
+import org.labkey.specimen.SpecimenManager;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -78,7 +78,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
         if (!settings.isSimple())
             return HttpView.redirect(PageFlowUtil. urlProvider(PipelineUrls.class).urlBrowse(container));
 
-        boolean isEmpty = SpecimenManagerNew.get().isSpecimensEmpty(container, getUser());
+        boolean isEmpty = SpecimenManager.get().isSpecimensEmpty(container, getUser());
         if (isEmpty)
         {
             form.setNoSpecimens(true);
@@ -124,9 +124,9 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
         columnAliases.put("additive", SimpleSpecimenImporter.ADDITIVE_TYPE);
         columnAliases.put("additiveType", SimpleSpecimenImporter.ADDITIVE_TYPE);
         columnAliases.put("additive Type", SimpleSpecimenImporter.ADDITIVE_TYPE);
-        columnAliases.put("derivative", SimpleSpecimenImporter.DERIVIATIVE_TYPE);
-        columnAliases.put("derivativeType", SimpleSpecimenImporter.DERIVIATIVE_TYPE);
-        columnAliases.put("derivative Type", SimpleSpecimenImporter.DERIVIATIVE_TYPE);
+        columnAliases.put("derivative", SimpleSpecimenImporter.DERIVATIVE_TYPE);
+        columnAliases.put("derivativeType", SimpleSpecimenImporter.DERIVATIVE_TYPE);
+        columnAliases.put("derivative Type", SimpleSpecimenImporter.DERIVATIVE_TYPE);
         columnAliases.put("drawTimestamp", SimpleSpecimenImporter.DRAW_TIMESTAMP);
         columnAliases.put("Draw Date", SimpleSpecimenImporter.DRAW_TIMESTAMP);
         columnAliases.put("Date", SimpleSpecimenImporter.DRAW_TIMESTAMP);

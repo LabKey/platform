@@ -36,32 +36,23 @@ import org.labkey.study.StudySchema;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
-import java.math.MathContext;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
-/**
- * User: brittp
- * Date: Jan 6, 2006
- * Time: 10:28:55 AM
- */
 public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneable, Serializable, Visit
 {
     // standard strings to use in URLs etc
-    public static final String VISITKEY = "visitRowId";
-    public static final String SEQUENCEKEY = "sequenceNum";
+    public static final String VISIT_KEY = "visitRowId";
     public static final double DEMOGRAPHICS_VISIT = -1;
 
     // Sequence numbers and protocol day are currently stored as NUMERIC(15, 4); below are all the related constants.
-    private static final int PRECISION = 15;
     private static final int MAX_SCALE = 4;
-    private static final double SCALE_FACTOR = Math.pow(10, MAX_SCALE);
     private static final NumberFormat SEQUENCE_FORMAT = new DecimalFormat("0.0###");
-    private static final MathContext ROUNDING_CONTEXT = new MathContext(PRECISION);
 
     private int _rowId = 0;
     private BigDecimal _sequenceMin = BigDecimal.ZERO;
@@ -468,6 +459,21 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     public String toString()
     {
         return (null != _label ? _label + " (" : "(") + getSequenceString() + ")";
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        VisitImpl visit = (VisitImpl) o;
+        return _rowId == visit._rowId && _chronologicalOrder == visit._chronologicalOrder && Objects.equals(_sequenceMin, visit._sequenceMin) && Objects.equals(_sequenceMax, visit._sequenceMax) && Objects.equals(_protocolDay, visit._protocolDay) && Objects.equals(_typeCode, visit._typeCode) && Objects.equals(_visitDateDatasetid, visit._visitDateDatasetid) && Objects.equals(_cohortId, visit._cohortId) && _sequenceHandling == visit._sequenceHandling && Objects.equals(_description, visit._description);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return Objects.hash(_rowId, _sequenceMin, _sequenceMax, _protocolDay, _typeCode, _visitDateDatasetid, _cohortId, _chronologicalOrder, _sequenceHandling, _description);
     }
 
     public static class TestCase extends Assert

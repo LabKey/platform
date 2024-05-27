@@ -50,7 +50,7 @@ public class RunColumn extends ExperimentAuditColumn<ExpRun>
         String[] parts = value.toString().split(KEY_SEPARATOR);
         if (parts.length != 2)
             return null;
-        return parts[1].length() > 0 ? parts[1] : null;
+        return !parts[1].isEmpty() ? parts[1] : null;
     }
 
     @Override

@@ -410,7 +410,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         if (name == null)
             throw new IllegalArgumentException("Dataset name cannot be empty.");
         String description = arguments.getDescription() != null ? arguments.getDescription() : domain.getDescription();
-        String label = (arguments.getLabel() == null || arguments.getLabel().length() == 0) ? arguments.getName() : arguments.getLabel();
+        String label = (arguments.getLabel() == null || arguments.getLabel().isEmpty()) ? arguments.getName() : arguments.getLabel();
         Integer cohortId = arguments.getCohortId();
         String tag = arguments.getTag();
         Integer datasetId = arguments.getDatasetId();
@@ -556,7 +556,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
 
         // Name related exceptions
 
-        if (name == null || name.length() == 0)
+        if (name == null || name.isEmpty())
             throw new IllegalArgumentException("Dataset name cannot be empty.");
 
         if (name.length() > 200)
@@ -587,7 +587,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         if ("".equals(keyPropertyName))
             throw new IllegalArgumentException("Please select a field name for the additional key.");
 
-        if (isManagedField && (keyPropertyName == null || keyPropertyName.length() == 0))
+        if (isManagedField && (keyPropertyName == null || keyPropertyName.isEmpty()))
             throw new IllegalArgumentException("Additional Key Column name must be specified if field is managed.");
 
         if (useTimeKeyField && isManagedField)
@@ -627,7 +627,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         if (!def.canUpdateDefinition(user))
             throw new IllegalArgumentException("Shared dataset can not be edited in this folder.");
 
-        if (datasetProperties.getLabel() == null || datasetProperties.getLabel().length() == 0)
+        if (datasetProperties.getLabel() == null || datasetProperties.getLabel().isEmpty())
             throw new IllegalArgumentException("Dataset label cannot be empty.");
 
         if (null == PropertyService.get().getDomain(container, update.getDomainURI()))

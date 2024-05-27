@@ -82,7 +82,6 @@ public class DateUtil
     private static final String ISO_LONG_TIME_FORMAT_STRING = "HH:mm:ss.SSS";
     private static final String[] SIMPLE_TIME_FORMATS_WITH_AMPM = {"hh:mm:ss.SSS a", "hh:mm:ss a", "hh:mm a"};
     private static final String[] SIMPLE_TIME_FORMATS_NO_AMPM = {"HH:mm:ss.SSS", "HH:mm:ss", "HH:mm"};
-    private static final String[] EXCEL_TIME_FORMATS = {"hh:mm:ss aa", "hh:mm aa", "HH:mm:ss", "HH:mm"};
 
     /**
      * GregorianCalendar is expensive because it calls computeTime() in setTimeInMillis()
@@ -835,7 +834,7 @@ validNum:       {
     public static long parseDateTime(Container c, String s)
     {
         @Nullable String extraDateTimeParsingPattern = FolderSettingsCache.getExtraDateTimeParsingPattern(c);
-        MonthDayOption monthDayOption = LookAndFeelProperties.getInstance(c).getDateParsingMode().getDayMonth();
+        MonthDayOption monthDayOption = LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getDateParsingMode().getDayMonth();
 
         return parseDateTime(s, monthDayOption, true, extraDateTimeParsingPattern);
     }
@@ -879,7 +878,7 @@ validNum:       {
     public static long parseDate(Container c, String s)
     {
         @Nullable String extraDateParsingPattern = FolderSettingsCache.getExtraDateParsingPattern(c);
-        MonthDayOption monthDayOption = LookAndFeelProperties.getInstance(c).getDateParsingMode().getDayMonth();
+        MonthDayOption monthDayOption = LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getDateParsingMode().getDayMonth();
 
         return parseDate(s, monthDayOption, extraDateParsingPattern);
     }
@@ -1632,16 +1631,6 @@ Parse:
         {
             return ZERO_TIME;
         }
-    }
-
-    public static boolean isExcelTimeFormat(String formatString)
-    {
-        for (String validFormat : EXCEL_TIME_FORMATS)
-        {
-            if (validFormat.equalsIgnoreCase(formatString.trim()))
-                return true;
-        }
-        return false;
     }
 
     public static class TestCase extends Assert

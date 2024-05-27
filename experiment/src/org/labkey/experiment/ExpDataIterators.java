@@ -74,6 +74,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.AbstractExpSchema;
 import org.labkey.api.exp.query.DataClassUserSchema;
 import org.labkey.api.exp.query.ExpDataTable;
+import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.qc.DataState;
@@ -149,7 +150,11 @@ import static org.labkey.api.exp.api.ExpMaterial.MATERIAL_INPUT_PARENT;
 import static org.labkey.api.exp.api.ExpRunItem.INPUTS_PREFIX_LC;
 import static org.labkey.api.exp.api.ExperimentService.ALIASCOLUMNALIAS;
 import static org.labkey.api.exp.api.ExperimentService.QueryOptions.SkipBulkRemapCache;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotCount;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotVolume;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotedFromLSID;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.AvailableAliquotCount;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.AvailableAliquotVolume;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Folder;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.MaterialSourceId;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Name;
@@ -391,7 +396,7 @@ public class ExpDataIterators
                 }
 
                 Map<String, Object> existingMap = getExistingRecord();
-                if (existingMap != null)
+                if (existingMap != null && !existingMap.isEmpty())
                 {
                     if (_storedAmountCol == null && _unitsCol == null && _sampleStateCol == null)
                         return null; // update/merge existing will only trigger recompute if stored amount or unit or status is updated)
@@ -2247,6 +2252,10 @@ public class ExpDataIterators
                 dontUpdate.addAll(((ExpMaterialTableImpl) _expTable).getUniqueIdFields());
                 dontUpdate.add(RootMaterialRowId.toString());
                 dontUpdate.add(AliquotedFromLSID.toString());
+                dontUpdate.add(ExpMaterialTable.Column.AliquotCount.name());
+                dontUpdate.add(ExpMaterialTable.Column.AliquotVolume.name());
+                dontUpdate.add(ExpMaterialTable.Column.AvailableAliquotCount.name());
+                dontUpdate.add(ExpMaterialTable.Column.AvailableAliquotVolume.name());
             }
             else if (isMergeOrUpdate)
             {
@@ -3011,7 +3020,11 @@ public class ExpDataIterators
                 EXISTING_RECORD_COLUMN_NAME,
                 CURRENT_SAMPLE_STATUS_COLUMN_NAME,
                 MaterialSourceId.name(),
-                RootMaterialRowId.name()
+                RootMaterialRowId.name(),
+                AliquotCount.name(),
+                AliquotVolume.name(),
+                AvailableAliquotCount.name(),
+                AvailableAliquotVolume.name()
         );
 
         final DataIteratorContext _context;

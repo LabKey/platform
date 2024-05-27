@@ -1,7 +1,7 @@
 package org.labkey.specimen.actions;
 
 import org.labkey.api.specimen.Vial;
-import org.labkey.api.specimen.query.SpecimenQueryView;
+import org.labkey.specimen.query.SpecimenQueryView;
 import org.labkey.api.view.ViewContext;
 
 import java.util.List;

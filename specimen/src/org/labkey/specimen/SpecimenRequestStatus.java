@@ -14,16 +14,13 @@
  * limitations under the License.
  */
 
-package org.labkey.api.specimen;
+package org.labkey.specimen;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.study.AbstractStudyCachable;
 
-/**
- * User: brittp
- * Date: Feb 8, 2006
- * Time: 4:18:11 PM
- */
+import java.util.Objects;
+
 public class SpecimenRequestStatus extends AbstractStudyCachable<SpecimenRequestStatus>
 {
     private int _rowId;
@@ -110,5 +107,20 @@ public class SpecimenRequestStatus extends AbstractStudyCachable<SpecimenRequest
     public boolean isSystemStatus()
     {
         return _sortOrder < 0;
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        SpecimenRequestStatus that = (SpecimenRequestStatus) o;
+        return _rowId == that._rowId && _specimensLocked == that._specimensLocked && _finalState == that._finalState && Objects.equals(_container, that._container) && Objects.equals(_sortOrder, that._sortOrder) && Objects.equals(_label, that._label);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return Objects.hash(_rowId, _container, _sortOrder, _label, _specimensLocked, _finalState);
     }
 }

@@ -23,7 +23,6 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.specimen.SpecimenQuerySchema;
 import org.labkey.api.specimen.Vial;
-import org.labkey.api.specimen.query.BaseSpecimenQueryView;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.view.ViewContext;

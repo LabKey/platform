@@ -165,7 +165,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.specimen.SpecimenManager;
-import org.labkey.api.specimen.importer.RequestabilityManager;
+import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.study.CohortFilter;
@@ -299,10 +299,6 @@ import static org.labkey.study.model.QCStateSet.getQCUrlFilterValue;
 import static org.labkey.study.model.QCStateSet.selectedQCStateLabelFromUrl;
 import static org.labkey.study.query.DatasetQueryView.EXPERIMENTAL_ALLOW_MERGE_WITH_MANAGED_KEYS;
 
-/**
- * User: Karl Lum
- * Date: Nov 28, 2007
- */
 public class StudyController extends BaseStudyController
 {
     private static final Logger _log = LogManager.getLogger(StudyController.class);
@@ -911,7 +907,7 @@ public class StudyController extends BaseStudyController
             if (null == typeURI)
                 return new TypeNotFoundAction().getView(form, errors);
 
-            _visitId = NumberUtils.toInt((String)context.get(VisitImpl.VISITKEY), 0);
+            _visitId = NumberUtils.toInt((String)context.get(VisitImpl.VISIT_KEY), 0);
             VisitImpl visit;
             if (_visitId != 0)
             {
@@ -1449,7 +1445,7 @@ public class StudyController extends BaseStudyController
             study.setSubjectColumnName(form.getSubjectColumnName());
             study.setAssayPlan(form.getAssayPlan());
             study.setDescription(form.getDescription());
-            study.setDefaultTimepointDuration(form.getDefaultTimepointDuration() < 1 ? 1 : form.getDefaultTimepointDuration());
+            study.setDefaultTimepointDuration(Math.max(form.getDefaultTimepointDuration(), 1));
             if (form.getDescriptionRendererType() != null)
                 study.setDescriptionRendererType(form.getDescriptionRendererType());
             study.setGrant(form.getGrant());
@@ -1468,7 +1464,9 @@ public class StudyController extends BaseStudyController
             }
 
             study = StudyManager.getInstance().createStudy(user, study);
-            RequestabilityManager.getInstance().setDefaultRules(c, user);
+            SpecimenMigrationService sms = SpecimenMigrationService.get();
+            if (null != sms)
+                sms.setDefaultRequestabilityRules(c, user);
         }
         return study;
     }
@@ -3339,7 +3337,7 @@ public class StudyController extends BaseStudyController
             if (null == typeURI)
                 return Collections.emptyList();
 
-            int visitRowId = null == context.get(VisitImpl.VISITKEY) ? 0 : Integer.parseInt((String) context.get(VisitImpl.VISITKEY));
+            int visitRowId = null == context.get(VisitImpl.VISIT_KEY) ? 0 : Integer.parseInt((String) context.get(VisitImpl.VISIT_KEY));
             if (visitRowId != 0)
             {
                 VisitImpl visit = studyMgr.getVisitForRowId(study, visitRowId);

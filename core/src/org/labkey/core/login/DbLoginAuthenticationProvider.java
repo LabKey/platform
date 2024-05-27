@@ -31,6 +31,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
+import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.StandardStartupPropertyHandler;
 import org.labkey.api.settings.StartupPropertyEntry;
@@ -95,7 +96,7 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
 
     @Override
     // id and password will not be blank (not null, not empty, not whitespace only)
-    public @NotNull AuthenticationResponse authenticate(DbLoginConfiguration configuration, @NotNull String id, @NotNull String password, URLHelper returnURL) throws ValidEmail.InvalidEmailException
+    public @NotNull AuthenticationResponse authenticate(DbLoginConfiguration configuration, @NotNull String id, @NotNull String password, URLHelper returnURL) throws InvalidEmailException
     {
         // Check for API key first
         if (API_KEY.equals(id))
@@ -109,12 +110,28 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
         }
         else
         {
-            ValidEmail email = new ValidEmail(id);
-            String hash = SecurityManager.getPasswordHash(email);
-            User user = UserManager.getUser(email);
+            String hash;
+            User user;
 
-            if (null == hash || null == user)
-                return AuthenticationResponse.createFailureResponse(configuration, FailureReason.userDoesNotExist);
+            try
+            {
+                ValidEmail email = new ValidEmail(id);
+                hash = SecurityManager.getPasswordHash(email);
+                user = UserManager.getUser(email);
+                if (null == hash || null == user)
+                    return AuthenticationResponse.createFailureResponse(configuration, FailureReason.userDoesNotExist);
+            }
+            catch (InvalidEmailException e)
+            {
+                // This invalid email address might be in the database. If so, attempt to authenticate; if not, throw.
+                hash = SecurityManager.getPasswordHash(id);
+                user = UserManager.getUsers(true).stream()
+                    .filter(u -> u.getEmail().equals(id))
+                    .findAny()
+                    .orElse(null);
+                if (null == hash || null == user)
+                    throw e;
+            }
 
             if (!SecurityManager.matchPassword(password, hash))
                 return AuthenticationResponse.createFailureResponse(configuration, FailureReason.badPassword);
@@ -132,15 +149,16 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
                 else
                 {
                     PasswordExpiration expiration = configuration.getExpiration();
+                    User user2 = user;
 
-                    if (expiration.hasExpired(() -> SecurityManager.getLastChanged(user)))
+                    if (expiration.hasExpired(() -> SecurityManager.getLastChanged(user2)))
                     {
                         return getChangePasswordResponse(configuration, user, returnURL, FailureReason.expired);
                     }
                 }
             }
 
-            return AuthenticationResponse.createSuccessResponse(configuration, email);
+            return AuthenticationResponse.createSuccessResponse(configuration, user);
         }
     }
 

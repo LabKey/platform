@@ -328,7 +328,7 @@ public class LoginController extends SpringActionController
                 String defaultDomain = ValidEmail.getDefaultDomain();
                 StringBuilder sb = new StringBuilder();
                 sb.append("Please sign in using your full email address, for example: ");
-                if (defaultDomain.length() > 0)
+                if (!defaultDomain.isEmpty())
                 {
                     sb.append("employee@");
                     sb.append(defaultDomain);
@@ -1748,14 +1748,14 @@ public class LoginController extends SpringActionController
         boolean isVerified = SecurityManager.verify(email, verification);
 
         User user = UserManager.getUser(email);
-        LoginController.checkVerificationErrors(isVerified, user, email, verification, errors);
+        LoginController.checkVerificationErrors(isVerified, user, email.getEmailAddress(), verification, errors);
 
         return isVerified && !errors.hasErrors();
     }
 
-    public static void checkVerificationErrors(boolean isVerified, User user, ValidEmail email, String verification, Errors errors)
+    public static void checkVerificationErrors(boolean isVerified, User user, String email, String verification, Errors errors)
     {
-        if(isVerified)
+        if (isVerified)
         {
             if (user == null)
             {
@@ -1772,7 +1772,7 @@ public class LoginController extends SpringActionController
             if (!SecurityManager.loginExists(email))
             {
                 if (AuthenticationManager.isLdapOrSsoEmail(email))
-                    errors.reject("setPassword", "Your account will authenticate using LDAP and you do not need to set a separate password.");
+                    errors.reject("setPassword", "You can authenticate your account using LDAP/SSO and you do not need to set a separate password.");
                 else
                     errors.reject("setPassword", "This email address is not associated with an account. Make sure you've copied the entire link into your browser's address bar.");
             }
@@ -2767,7 +2767,7 @@ public class LoginController extends SpringActionController
                 }
             }
 
-            // If user doesn't exist (initial user case) or email is invalid pass in a fake user to filter the email address
+            // If user doesn't exist (initial user case) or email is invalid, pass in a fake user to filter the email address
             if (null == user)
                 user = new User(form.getEmail(), -9999);
 

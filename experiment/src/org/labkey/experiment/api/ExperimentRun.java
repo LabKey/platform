@@ -23,8 +23,6 @@ import org.labkey.experiment.controllers.exp.ExperimentController;
 
 /**
  * Bean class for the exp.experimentrun table.
- * User: migra
- * Date: Jun 14, 2005
  */
 public class ExperimentRun extends IdentifiableEntity
 {
