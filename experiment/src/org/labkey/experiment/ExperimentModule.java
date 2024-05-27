@@ -641,17 +641,18 @@ public class ExperimentModule extends SpringModule
                     assayMetrics.put("sampleLookupCount", sampleLookupCountMetrics);
 
 
+                    // Putting these metrics at the same level as the other BooleanColumnCount metrics (e.g., sampleTypeWithBooleanColumnCount)
                     results.put("assayResultWithBooleanColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT DD.DomainURI) FROM\n" +
                             "     exp.PropertyDescriptor D \n" +
                             "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
                             "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
-                            "WHERE PD.propertyURI LIKE ? AND D.rangeURI = ?", "urn:lsid:%:" + ExpProtocol.AssayDomainTypes.Result.getPrefix() + ".%", PropertyType.BOOLEAN.getTypeUri()).getObject(Long.class));
+                            "WHERE D.propertyURI LIKE ? AND D.rangeURI = ?", "urn:lsid:%:" + ExpProtocol.AssayDomainTypes.Result.getPrefix() + ".%", PropertyType.BOOLEAN.getTypeUri()).getObject(Long.class));
 
                     results.put("assayRunWithBooleanColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT DD.DomainURI) FROM\n" +
                             "     exp.PropertyDescriptor D \n" +
                             "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
                             "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
-                            "WHERE PD.propertyURI LIKE ? AND D.rangeURI = ?", "urn:lsid:%:" + ExpProtocol.AssayDomainTypes.Run.getPrefix() + ".%", PropertyType.BOOLEAN.getTypeUri()).getObject(Long.class));
+                            "WHERE D.propertyURI LIKE ? AND D.rangeURI = ?", "urn:lsid:%:" + ExpProtocol.AssayDomainTypes.Run.getPrefix() + ".%", PropertyType.BOOLEAN.getTypeUri()).getObject(Long.class));
 
                     results.put("assay", assayMetrics);
                 }
