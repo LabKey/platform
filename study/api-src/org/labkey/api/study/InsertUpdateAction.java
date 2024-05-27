@@ -215,7 +215,7 @@ public abstract class InsertUpdateAction<Form extends EditDatasetRowForm> extend
 
         ButtonBar buttonBar = new ButtonBar();
         buttonBar.setStyle(ButtonBar.Style.separateButtons);
-        ActionButton btnSubmit = new ActionButton(new ActionURL(getClass(), getContainer()).addParameter(Dataset.DATASETKEY, form.getDatasetId()), "Submit");
+        ActionButton btnSubmit = new ActionButton(new ActionURL(getClass(), getContainer()).addParameter(Dataset.DATASET_KEY, form.getDatasetId()), "Submit");
         ActionButton btnCancel = new ActionButton("Cancel", cancelURL);
         buttonBar.add(btnSubmit);
         buttonBar.add(btnCancel);

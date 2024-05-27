@@ -52,13 +52,11 @@ import java.util.Set;
 
 /**
  * A table that contains information about subjects and timepoints. The main data type used in studies.
- * User: kevink
- * Date: May 27, 2009
  */
 public interface Dataset extends StudyEntity, StudyCachable<Dataset>
 {
     // standard string to use in URLs etc.
-    String DATASETKEY = "datasetId";
+    String DATASET_KEY = "datasetId";
 
     enum DataSharing
     {

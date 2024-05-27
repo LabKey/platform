@@ -316,7 +316,7 @@ public class ReportsController extends BaseStudyController
         url.setAction(StudyController.DatasetReportAction.class);
 
         url.replaceParameter(StudyController.DATASET_REPORT_ID_PARAMETER_NAME, reportId);
-        url.replaceParameter(Dataset.DATASETKEY, dataset);
+        url.replaceParameter(Dataset.DATASET_KEY, dataset);
 
         return url;
     }
@@ -1139,7 +1139,7 @@ public class ReportsController extends BaseStudyController
             {
                 ActionURL url = getViewContext().cloneActionURL().setAction(StudyController.DatasetAction.class).
                         replaceParameter(StudyController.DATASET_REPORT_ID_PARAMETER_NAME, _report.getDescriptor().getReportId().toString()).
-                        replaceParameter(Dataset.DATASETKEY, def.getDatasetId());
+                        replaceParameter(Dataset.DATASET_KEY, def.getDatasetId());
 
                 return HttpView.redirect(url);
             }

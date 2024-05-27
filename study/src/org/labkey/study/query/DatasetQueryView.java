@@ -118,11 +118,6 @@ import static org.labkey.study.model.QCStateSet.getQCStateFilteredURL;
 import static org.labkey.study.model.QCStateSet.getQCUrlFilterValue;
 import static org.labkey.study.model.QCStateSet.selectedQCStateLabelFromUrl;
 
-/**
- * User: brittp
- * Date: Aug 25, 2006
- * Time: 4:03:59 PM
- */
 public class DatasetQueryView extends StudyQueryView
 {
     public static final String EXPERIMENTAL_LINKED_DATASET_CHECK = "LinkedDatasetCheck";
@@ -255,7 +250,7 @@ public class DatasetQueryView extends StudyQueryView
         }
 
         // allow posts from dataset data regions to determine which dataset was being displayed:
-        view.getDataRegion().addHiddenFormField(Dataset.DATASETKEY, "" + _dataset.getDatasetId());
+        view.getDataRegion().addHiddenFormField(Dataset.DATASET_KEY, "" + _dataset.getDatasetId());
 
         return view;
     }

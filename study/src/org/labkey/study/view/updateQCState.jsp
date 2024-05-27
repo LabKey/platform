@@ -82,7 +82,7 @@
         <tr>
             <td>&nbsp;</td>
             <td><%= button("Update Status").submit(true) %> <%= button("Cancel").href(new ActionURL(DatasetAction.class,
-                    container).addParameter(Dataset.DATASETKEY, bean.getDatasetId())) %></td>
+                    container).addParameter(Dataset.DATASET_KEY, bean.getDatasetId())) %></td>
         </tr>
     </table>
 </labkey:form>

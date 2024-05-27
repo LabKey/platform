@@ -201,7 +201,7 @@ public abstract class BaseStudyController extends SpringActionController
                     label.append("CRF/Assay ").append(dataset.getDatasetId());
 
                 ActionURL datasetUrl = new ActionURL(StudyController.DatasetAction.class, getContainer()).
-                    addParameter(Dataset.DATASETKEY, datasetId);
+                    addParameter(Dataset.DATASET_KEY, datasetId);
                 if (cohortFilter != null)
                     cohortFilter.addURLParameters(study, datasetUrl, "Dataset");
 
