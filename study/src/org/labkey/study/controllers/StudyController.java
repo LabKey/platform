@@ -3817,7 +3817,7 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class DefaultDatasetReportAction extends SimpleRedirectAction
+    public class DefaultDatasetReportAction extends SimpleRedirectAction<Object>
     {
         @Override
         public ActionURL getRedirectURL(Object o)
