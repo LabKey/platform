@@ -1,1 +1,1 @@
-SELECT core.fn_dropifexists('core','PrincipalRelations','TABLE', NULL);
+SELECT core.fn_dropifexists('PrincipalRelations','core','TABLE', NULL);

@@ -1,1 +1,1 @@
-EXEC core.fn_dropifexists 'core', 'PrincipalRelations', 'TABLE', NULL
+EXEC core.fn_dropifexists 'PrincipalRelations', 'core', 'TABLE', NULL
