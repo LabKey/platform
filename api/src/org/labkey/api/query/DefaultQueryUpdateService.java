@@ -19,6 +19,7 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.ArrayListMap;
@@ -55,6 +56,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.UnauthorizedException;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -723,10 +725,11 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
 
     final protected void convertTypes(User user, Container c, Map<String,Object> row, TableInfo t, @Nullable String file_link_dir_name) throws ValidationException
     {
-        convertTypes(user, c, row, t, file_link_dir_name, false);
+        Path path = AssayFileWriter.getUploadDirectoryPath(c, file_link_dir_name);
+        convertTypes(user, c, row, t, path, false);
     }
 
-    protected void convertTypes(User user, Container c, Map<String,Object> row, TableInfo t, @Nullable String file_link_dir_name, boolean useExistingFile) throws ValidationException
+    protected void convertTypes(User user, Container c, Map<String,Object> row, TableInfo t, @Nullable Path file_link_dir, boolean useExistingFile) throws ValidationException
     {
         for (ColumnInfo col : t.getColumns())
         {
@@ -743,7 +746,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                         default -> {
                             if (PropertyType.FILE_LINK == col.getPropertyType() && (value instanceof MultipartFile || value instanceof AttachmentFile))
                             {
-                                value = saveFile(user, c, col.getName(), value, file_link_dir_name, useExistingFile);
+                                value = saveFile(user, c, col.getName(), value, file_link_dir, useExistingFile);
                             }
                             row.put(col.getName(), ConvertUtils.convert(value.toString(), col.getJdbcType().getJavaClass()));
                         }

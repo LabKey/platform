@@ -81,25 +81,31 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
         return subDir;
     }
 
+    public static Path getUploadDirectoryPath(Container container, String dirName)
+    {
+        if (dirName == null)
+            dirName = "";
+        PipeRoot root = getPipelineRoot(container);
+        return root.resolveToNioPath(dirName);
+    }
+
     public static File ensureUploadDirectory(Container container, String dirName) throws ExperimentException
     {
-        Path path = ensureUploadDirectoryPath(container, dirName);
+        Path dir = AssayFileWriter.getUploadDirectoryPath(container, dirName);
+        return ensureUploadDirectory(dir);
+    }
+
+    public static File ensureUploadDirectory(Path dir) throws ExperimentException
+    {
+        Path path = ensureUploadDirectoryPath(dir);
         if (null != path && !FileUtil.hasCloudScheme(path))
             return path.toFile();
         return null;
     }
 
     /** Make sure there's a subdirectory of the specified name available for this container */
-    public static Path ensureUploadDirectoryPath(Container container, String dirName) throws ExperimentException
+    public static Path ensureUploadDirectoryPath(Path dir) throws ExperimentException
     {
-        if (dirName == null)
-        {
-            dirName = "";
-        }
-
-        PipeRoot root = getPipelineRoot(container);
-
-        Path dir = root.resolveToNioPath(dirName);
         if (null != dir && !Files.exists(dir))
         {
             try

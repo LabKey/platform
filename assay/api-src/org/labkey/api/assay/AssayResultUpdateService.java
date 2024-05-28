@@ -42,6 +42,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.view.UnauthorizedException;
 
+import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.Objects;
@@ -81,8 +82,8 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
             throw new UnauthorizedException("Assay results being updated are from a different container.");
 
         // Assay results use FILE_LINK not FILE_ATTACHMENT, use convertTypes() to handle directing the posted files to the run specific directory
-        // TODO verify that we do want to use existing files (i.e. prevent duplicates). Should we do the same for sample types, etc.?
-        convertTypes(user, container, row, getDbTable(), AssayResultsFileWriter.getRunResultsFileDir(run), true);
+        Path assayResultsRunDir = AssayResultsFileWriter.getAssayFilesDirectoryPath(run);
+        convertTypes(user, container, row, getDbTable(), assayResultsRunDir, true);
 
         Map<String, Object> result = super.updateRow(user, container, row, oldRow, configParameters);
 
