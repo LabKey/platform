@@ -1880,7 +1880,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     }
 
 
-    /** TableInfo does not support DbCache by default */
+    /** TableInfo does not support QueryHelper by default */
     @Override
     public Path getNotificationKey()
     {

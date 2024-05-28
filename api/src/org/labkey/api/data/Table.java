@@ -25,7 +25,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.BoundMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -917,8 +916,6 @@ public class Table
 
             _copyInsertSpecialFields(returnObject, fields);
             _copyUpdateSpecialFields(table, returnObject, fields);
-
-            notifyTableUpdate(table);
         }
         catch(SQLException e)
         {
@@ -1098,7 +1095,6 @@ public class Table
                 }
 
                 _copyUpdateSpecialFields(table, fieldsIn, fields);
-                notifyTableUpdate(table);
             }
             catch (OptimisticConflictException e)
             {
@@ -1140,9 +1136,7 @@ public class Table
     {
         assert (table.getTableType() != DatabaseTableType.NOT_IN_DB): (table.getName() + " is not in the physical database.");
         SqlExecutor sqlExecutor = new SqlExecutor(table.getSchema());
-        int result = sqlExecutor.execute("DELETE FROM " + table.getSelectName());
-        notifyTableUpdate(table);
-        return result;
+        return sqlExecutor.execute("DELETE FROM " + table.getSelectName());
     }
 
     public static int delete(TableInfo table, Filter filter)
@@ -1152,10 +1146,8 @@ public class Table
         SQLFragment where = filter.getSQLFragment(table.getSqlDialect(), null, createColumnMap(table,null));
 
         SQLFragment deleteSQL = new SQLFragment("DELETE FROM ").append(table).append("\n\t").append(where);
-        int result = new SqlExecutor(table.getSchema()).execute(deleteSQL);
 
-        notifyTableUpdate(table);
-        return result;
+        return new SqlExecutor(table.getSchema()).execute(deleteSQL);
     }
 
     public static void truncate(TableInfo table)
@@ -1163,15 +1155,12 @@ public class Table
         assert (table.getTableType() != DatabaseTableType.NOT_IN_DB): (table.getName() + " is not in the physical database.");
         SqlExecutor sqlExecutor = new SqlExecutor(table.getSchema());
         sqlExecutor.execute(table.getSqlDialect().getTruncateSql(table.getSelectName()));
-        notifyTableUpdate(table);
     }
-
 
     public static SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort)
     {
         return QueryService.get().getSelectSQL(table, columns, filter, sort, ALL_ROWS, NO_OFFSET, false);
     }
-
 
     public static void ensureRequiredColumns(TableInfo table, Map<FieldKey, ColumnInfo> cols, @Nullable Filter filter, @Nullable Sort sort, @Nullable List<Aggregate> aggregates)
     {
@@ -1218,15 +1207,6 @@ public class Table
 
         new SqlExecutor(tinfo.getSchema()).execute(sqlSelectInto);
     }
-
-
-    // Table modification
-
-    public static void notifyTableUpdate(/*String operation,*/ TableInfo table/*, Container c*/)
-    {
-        DbCache.invalidateAll(table);
-    }
-
 
     private static void _logQuery(Level level, @Nullable SQLFragment sqlFragment, @Nullable Connection conn)
     {
@@ -1281,7 +1261,6 @@ public class Table
         }
     }
 
-    
     public static class TestCase extends Assert
     {
         private static final CoreSchema _core = CoreSchema.getInstance();
