@@ -3040,7 +3040,6 @@ public class AdminController extends SpringActionController
         private static final List<String> PREFIXES_TO_SKIP = List.of(
             "java.base/java.lang.Thread.getStackTrace",
             "org.labkey.api.cache.CacheManager",
-            "org.labkey.api.cache.DbCache",
             "org.labkey.api.cache.Throttle",
             "org.labkey.api.data.DatabaseCache",
             "org.labkey.api.module.ModuleResourceCache"

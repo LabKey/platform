@@ -16,7 +16,6 @@
 package org.labkey.study.query;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -137,7 +136,6 @@ public class StudyPropertiesUpdateService extends AbstractQueryUpdateService
         if (!updateRow.isEmpty())
         {
             Table.update(user, table.getRealTable(), updateRow, study.getContainer().getId());
-            DbCache.trackRemove(table.getRealTable());
         }
 
         StudyManager.getInstance().clearCaches(container, false);
