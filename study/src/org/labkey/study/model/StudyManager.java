@@ -4283,8 +4283,6 @@ public class StudyManager
 
         int getDatasetId();
 
-        String getRedirectUrl();
-
         Map<String, String> getAliases();
     }
 

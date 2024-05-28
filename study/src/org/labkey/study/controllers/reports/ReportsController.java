@@ -66,7 +66,6 @@ import org.labkey.api.study.Dataset;
 import org.labkey.api.study.MapArrayExcelWriter;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.study.reports.CrosstabReportDescriptor;
@@ -125,11 +124,8 @@ public class ReportsController extends BaseStudyController
         return getViewContext().getRequest();
     }
 
-    /**
-     * This method represents the point of entry into the pageflow
-     */
     @RequiresPermission(ReadPermission.class)
-    public class BeginAction extends SimpleViewAction
+    public class BeginAction extends SimpleViewAction<Object>
     {
         private Study _study;
 
@@ -208,7 +204,7 @@ public class ReportsController extends BaseStudyController
 
     public static class ExternalReportBean extends CreateQueryReportBean
     {
-        private ExternalReport extReport;
+        private final ExternalReport extReport;
 
         public ExternalReportBean(ViewContext context, ExternalReport extReport, String queryName)
         {
@@ -223,7 +219,7 @@ public class ReportsController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public static class StreamFileAction extends SimpleViewAction
+    public static class StreamFileAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -1170,7 +1166,7 @@ public class ReportsController extends BaseStudyController
             Dataset def = getDatasetDefinition();
 
             if (def != null)
-                _addNavTrail(root, def.getDatasetId());
+                _addNavTrail(root, def.getDatasetId(), null);
         }
     }
 
@@ -1182,47 +1178,6 @@ public class ReportsController extends BaseStudyController
 
             if (getContainer().hasPermission(getUser(), AdminPermission.class))
                 root.addChild("Manage Views", urlProvider(ReportUrls.class).urlManageViews(getContainer()));
-        }
-        catch (Exception e)
-        {
-        }
-        root.addChild(name);
-    }
-
-    private void _addNavTrail(NavTree root, String name, int datasetId, int visitRowId)
-    {
-        try
-        {
-            Study study = addRootNavTrail(root);
-
-            if (getContainer().hasPermission(getUser(), AdminPermission.class))
-                root.addChild("Manage Views", urlProvider(ReportUrls.class).urlManageViews(getContainer()));
-
-            VisitImpl visit = null;
-
-            if (visitRowId > 0)
-                visit = StudyManager.getInstance().getVisitForRowId(study, visitRowId);
-
-            if (datasetId > 0)
-            {
-                Dataset dataset = StudyManager.getInstance().getDatasetDefinition(study, datasetId);
-
-                if (dataset != null)
-                {
-                    String label = dataset.getLabel() != null ? dataset.getLabel() : "" + dataset.getDatasetId();
-
-                    if (0 == visitRowId && study.getTimepointType() != TimepointType.CONTINUOUS)
-                        label += " (All Visits)";
-
-                    ActionURL datasetUrl = getViewContext().getActionURL().clone();
-                    datasetUrl.deleteParameter(VisitImpl.VISIT_KEY);
-                    datasetUrl.setAction(StudyController.DatasetAction.class);
-                    root.addChild(label, datasetUrl.getLocalURIString());
-                }
-            }
-
-            if (null != visit)
-                root.addChild(visit.getDisplayString(), getViewContext().getActionURL().clone().setAction(StudyController.DatasetAction.class));
         }
         catch (Exception e)
         {

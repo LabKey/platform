@@ -171,7 +171,7 @@ public abstract class BaseStudyController extends SpringActionController
         addRootNavTrail(root);
     }
 
-    protected NavTree _addNavTrail(NavTree root, int datasetId)
+    protected NavTree _addNavTrail(NavTree root, int datasetId, @Nullable ActionURL datasetUrl)
     {
         Study study = addRootNavTrail(root);
         if (datasetId > 0)
@@ -186,13 +186,16 @@ public abstract class BaseStudyController extends SpringActionController
                 else
                     label.append("CRF/Assay ").append(dataset.getDatasetId());
 
-                ActionURL datasetUrl = getViewContext().cloneActionURL()
-                    .setAction(StudyController.DatasetAction.class)
-                    .setContainer(getContainer())
-                    .deleteParameter("participantId");
+                if (null == datasetUrl)
+                {
+                    datasetUrl = getViewContext().cloneActionURL()
+                        .setAction(StudyController.DatasetAction.class)
+                        .setContainer(getContainer())
+                        .deleteParameter("participantId");
 
-                if (datasetUrl.getParameter(Dataset.DATASET_KEY) == null)
-                    datasetUrl.addParameter(Dataset.DATASET_KEY, datasetId);
+                    if (datasetUrl.getParameter(Dataset.DATASET_KEY) == null)
+                        datasetUrl.addParameter(Dataset.DATASET_KEY, datasetId);
+                }
 
                 root.addChild(label.toString(), datasetUrl);
             }

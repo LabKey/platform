@@ -31,7 +31,6 @@ import org.labkey.api.assay.AssayTableMetadata;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -44,7 +43,6 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpdateColumn;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.api.ExpObject;
@@ -255,10 +253,12 @@ public class DatasetQueryView extends StudyQueryView
         return view;
     }
 
-    /** This is how we tell the QueryView that we want to render the UpdateURL (well icon actually) even though
+    /**
+     * This is how we tell the QueryView that we want to render the UpdateURL (well icon actually) even though
      * table.hasPermission(UpdatePermission) is false.
-      * @return
+     * @return whether to render the update URL
      */
+    @Override
     protected boolean allowQueryTableUpdateURLOverride()
     {
         if (super.allowQueryTableUpdateURLOverride())
@@ -601,6 +601,7 @@ public class DatasetQueryView extends StudyQueryView
                 button.addSeparator();
             }
             ActionURL updateAction = new ActionURL(StudyController.UpdateQCStateAction.class, getContainer());
+            updateAction.addReturnURL(getViewContext().getActionURL());
             NavTree updateItem = button.addMenuItem("Update state of selected rows", "if (verifySelected(" + DataRegion.getJavaScriptObjectReference(getDataRegionName()) + ".form, \"" +
                     updateAction.getLocalURIString() + "\", \"post\", \"rows\")) " + DataRegion.getJavaScriptObjectReference(getDataRegionName()) + ".form.submit()");
             updateItem.setId("QCState:updateSelected");
@@ -614,15 +615,6 @@ public class DatasetQueryView extends StudyQueryView
                     getContainer()).addReturnURL(getViewContext().getActionURL()));
         }
         return button;
-    }
-
-    private boolean hasSourceLsids()
-    {
-        TableInfo datasetTable = getTable();
-        SimpleFilter sourceLsidFilter = new SimpleFilter();
-        sourceLsidFilter.addCondition(FieldKey.fromParts("SourceLsid"), null, CompareType.NONBLANK);
-
-        return new TableSelector(datasetTable, sourceLsidFilter, null).exists();
     }
 
     public static class DatasetFilterForm extends QueryViewAction.QueryExportForm

@@ -697,8 +697,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-
-    static class QueryReportForm extends QueryViewAction.QueryExportForm
+    public static class QueryReportForm extends QueryViewAction.QueryExportForm
     {
         ReportIdentifier _reportId;
 
@@ -1041,7 +1040,7 @@ public class StudyController extends BaseStudyController
         public void addNavTrail(NavTree root)
         {
             setHelpTopic("gridBasics");
-            _addNavTrail(root, getDatasetDefinition().getDatasetId());
+            _addNavTrail(root, getDatasetDefinition().getDatasetId(), getViewContext().getActionURL());
         }
     }
 
@@ -1092,7 +1091,6 @@ public class StudyController extends BaseStudyController
         }
         return participant;
     }
-
 
     @RequiresPermission(ReadPermission.class)
     public class ParticipantAction extends SimpleViewAction<ParticipantForm>
@@ -1179,7 +1177,7 @@ public class StudyController extends BaseStudyController
         public void addNavTrail(NavTree root)
         {
             setHelpTopic("participantViews");
-            _addNavTrail(root, _bean.getDatasetId());
+            _addNavTrail(root, _bean.getDatasetId(), _bean.getReturnActionURL());
             root.addChild(StudyService.get().getSubjectNounSingular(getContainer()) + " - " + id(_bean.getParticipantId()));
         }
     }
@@ -3117,6 +3115,7 @@ public class StudyController extends BaseStudyController
                 base.addParameter(param.getKey(), param.getValue());
             }
         }
+        base.addReturnURL(url); // Set current URL so participant page can navigate back (nav trail)
 
         for (DisplayColumn col : columns)
         {
@@ -3563,7 +3562,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    public static class UpdateQCStateForm
+    public static class UpdateQCStateForm extends ReturnUrlForm
     {
         private String _comments;
         private boolean _update;
@@ -3647,7 +3646,7 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(QCAnalystPermission.class)
     public class UpdateQCStateAction extends FormViewAction<UpdateQCStateForm>
     {
-        private int _datasetId;
+        private UpdateQCStateForm _form;
 
         @Override
         public void validateCommand(UpdateQCStateForm updateQCForm, Errors errors)
@@ -3663,11 +3662,12 @@ public class StudyController extends BaseStudyController
         public ModelAndView getView(UpdateQCStateForm updateQCForm, boolean reshow, BindException errors)
         {
             StudyImpl study = getStudyRedirectIfNull();
-            _datasetId = updateQCForm.getDatasetId();
-            DatasetDefinition def = StudyManager.getInstance().getDatasetDefinition(study, _datasetId);
+            _form = updateQCForm;
+            int datasetId = updateQCForm.getDatasetId();
+            DatasetDefinition def = StudyManager.getInstance().getDatasetDefinition(study, datasetId);
             if (def == null)
             {
-                throw new NotFoundException("No dataset found for id: " + _datasetId);
+                throw new NotFoundException("No dataset found for id: " + datasetId);
             }
             Set<String> lsids = null;
             if (isPost())
@@ -3741,8 +3741,13 @@ public class StudyController extends BaseStudyController
         @Override
         public ActionURL getSuccessURL(UpdateQCStateForm updateQCForm)
         {
-            ActionURL url = new ActionURL(DatasetAction.class, getContainer());
-            url.addParameter(Dataset.DATASET_KEY, updateQCForm.getDatasetId());
+            ActionURL url = updateQCForm.getReturnActionURL();
+            if (null == url)
+            {
+                // We've lost the returnUrl... at least redirect back to the dataset
+                url = new ActionURL(DatasetAction.class, getContainer());
+                url.addParameter(Dataset.DATASET_KEY, updateQCForm.getDatasetId());
+            }
             if (updateQCForm.getNewState() != null)
                 url.replaceParameter(getQCUrlFilterKey(CompareType.EQUAL, updateQCForm.getDataRegionName()), QCStateManager.getInstance().getStateForRowId(getContainer(), updateQCForm.getNewState().intValue()).getLabel());
             return url;
@@ -3751,7 +3756,7 @@ public class StudyController extends BaseStudyController
         @Override
         public void addNavTrail(NavTree root)
         {
-            root = _addNavTrail(root, _datasetId);
+            root = _addNavTrail(root, _form.getDatasetId(), _form.getReturnActionURL());
             root.addChild("Change QC State");
         }
     }
@@ -5403,13 +5408,7 @@ public class StudyController extends BaseStudyController
 
         public int getReportId(){return reportId;}
         public void setReportId(int reportId){this.reportId = reportId;}
-
-        @Override
-        public String getRedirectUrl() { return _redirectUrl; }
-
-        public void setRedirectUrl(String redirectUrl) { _redirectUrl = redirectUrl; }
     }
-
 
     public static class StudyPropertiesForm extends ReturnUrlForm
     {

@@ -54,6 +54,7 @@
     <input type="hidden" name="datasetId" value="<%= bean.getDatasetId() %>" />
     <input type="hidden" name="dataRegionName" value="<%= h(bean.getDataRegionName()) %>" />
     <input type="hidden" name="<%= h(DataRegionSelection.DATA_REGION_SELECTION_KEY) %>" value="<%= h(bean.getDataRegionSelectionKey()) %>" />
+    <%=generateReturnUrlFormField(bean)%>
     <table>
         <tr>
             <th>New QC State</th>
@@ -81,8 +82,7 @@
         </tr>
         <tr>
             <td>&nbsp;</td>
-            <td><%= button("Update Status").submit(true) %> <%= button("Cancel").href(new ActionURL(DatasetAction.class,
-                    container).addParameter(Dataset.DATASET_KEY, bean.getDatasetId())) %></td>
+            <td><%= button("Update Status").submit(true) %> <%= button("Cancel").href(bean.getReturnActionURL()) %></td>
         </tr>
     </table>
 </labkey:form>
