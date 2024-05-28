@@ -54,7 +54,6 @@ import org.labkey.api.audit.provider.ContainerAuditProvider;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
@@ -4144,51 +4143,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     public ExperimentRun getExperimentRun(String lsid)
     {
-        ExperimentRun runOld = getExperimentRunOld(lsid);
-        ExperimentRun runNew = getExperimentRunNew(lsid);
-
-        if (null != runOld)
-        {
-            assert runOld.equals(runNew) : "Experiment runs are not equal!";
-
-            assert Objects.equals(runOld.getComments(), runNew.getComments());
-            assert Objects.equals(runOld.getBatchId(), runNew.getBatchId());
-            assert Objects.equals(runOld.getJobId(), runNew.getJobId());
-            assert Objects.equals(runOld.getFilePathRoot(), runNew.getFilePathRoot());
-            assert Objects.equals(runOld.getName(), runNew.getName());
-            assert Objects.equals(runOld.getWorkflowTask(), runNew.getWorkflowTask());
-            assert Objects.equals(runOld.getModified(), runNew.getModified());
-        }
-        else
-        {
-            if (runNew != null)
-            {
-                DbCache.logUnmatched();
-                throw new IllegalStateException(runOld + " != " + runNew);
-            }
-        }
-
-        return runOld;
-    }
-
-    private ExperimentRun getExperimentRunOld(String LSID)
-    {
-        //Use main cache so updates/deletes through table layer get handled
-        String cacheKey = getCacheKey(LSID);
-        ExperimentRun run = (ExperimentRun) DbCache.get(getTinfoExperimentRun(), cacheKey);
-        if (null != run)
-            return run;
-
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("LSID"), LSID);
-        run = new TableSelector(getTinfoExperimentRun(), filter, null).getObject(ExperimentRun.class);
-        if (null != run)
-            DbCache.put(getTinfoExperimentRun(), cacheKey, run);
-        return run;
-    }
-
-    private ExperimentRun getExperimentRunNew(String LSID)
-    {
-        return EXPERIMENT_RUN_CACHE.get(LSID);
+        return EXPERIMENT_RUN_CACHE.get(lsid);
     }
 
     private class ExperimentRunCacheLoader implements CacheLoader<String, ExperimentRun>

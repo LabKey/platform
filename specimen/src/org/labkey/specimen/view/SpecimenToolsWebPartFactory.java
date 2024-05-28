@@ -37,7 +37,7 @@ public class SpecimenToolsWebPartFactory extends ToolsWebPartFactory
         ActionURL vialSearchURL = ShowSearchAction.getShowSearchURL(portalCtx.getContainer(), true);
         items.add(new StudyToolsWebPart.Item("Vial Search", iconBase + "specimen_search.png", vialSearchURL));
 
-        if (SettingsManager.get().isSpecimenRequestEnabled(portalCtx.getContainer()))
+        if (SettingsManager.get().isSpecimenRequestEnabled(portalCtx.getContainer(), portalCtx.getUser()))
         {
             if (portalCtx.getContainer().hasPermission(portalCtx.getUser(), RequestSpecimensPermission.class))
                 items.add(new StudyToolsWebPart.Item("New Request", iconBase + "specimen_request.png", new ActionURL(ShowCreateSpecimenRequestAction.class, portalCtx.getContainer())));
