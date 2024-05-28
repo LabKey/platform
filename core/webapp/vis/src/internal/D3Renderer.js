@@ -1465,36 +1465,36 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                     return extent;
                 } else if (xHandleBrush) {
                     return [
-                        [extent[0], Number.MIN_VALUE],
-                        [extent[1], Number.MAX_VALUE]
+                        [extent[0], Number.NEGATIVE_INFINITY],
+                        [extent[1], Number.POSITIVE_INFINITY]
                     ];
                 } else if (yHandleBrush) {
                     return [
-                        [Number.MIN_VALUE, extent[0]],
-                        [Number.MAX_VALUE, extent[1]]
+                        [Number.NEGATIVE_INFINITY, extent[0]],
+                        [Number.POSITIVE_INFINITY, extent[1]]
                     ];
                 }
             } else if (brushSelectionType == 'x') {
                 if (xHandleBrush && yHandleBrush) {
                     return [
-                        [extent[0][0], Number.MIN_VALUE],
-                        [extent[1][0], Number.MAX_VALUE]
+                        [extent[0][0], Number.NEGATIVE_INFINITY],
+                        [extent[1][0], Number.POSITIVE_INFINITY]
                     ];
                 }
                 return [
-                    [extent[0], Number.MIN_VALUE],
-                    [extent[1], Number.MAX_VALUE]
+                    [extent[0], Number.NEGATIVE_INFINITY],
+                    [extent[1], Number.POSITIVE_INFINITY]
                 ];
             } else if (brushSelectionType == 'y') {
                 if (xHandleBrush && yHandleBrush) {
                     return [
-                        [Number.MIN_VALUE, extent[0][1]],
-                        [Number.MAX_VALUE, extent[1][1]]
+                        [Number.NEGATIVE_INFINITY, extent[0][1]],
+                        [Number.POSITIVE_INFINITY, extent[1][1]]
                     ];
                 }
                 return [
-                    [Number.MIN_VALUE, extent[0]],
-                    [Number.MAX_VALUE, extent[1]]
+                    [Number.NEGATIVE_INFINITY, extent[0]],
+                    [Number.POSITIVE_INFINITY, extent[1]]
                 ];
             }
         }
