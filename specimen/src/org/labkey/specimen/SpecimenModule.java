@@ -95,7 +95,6 @@ import org.labkey.specimen.writer.SpecimenWriter;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -315,13 +314,6 @@ public class SpecimenModule extends SpringModule
                 });
             }
         }
-    }
-
-    @Override
-    @NotNull
-    public Collection<String> getSummary(Container c)
-    {
-        return Collections.emptyList();
     }
 
     @Override

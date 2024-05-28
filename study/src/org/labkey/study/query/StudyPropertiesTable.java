@@ -19,7 +19,6 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.BaseColumnInfo;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
@@ -53,15 +52,10 @@ import org.labkey.study.model.StudyImpl;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * User: jgarms
- * Date: Aug 7, 2008
- * Time: 4:23:44 PM
- */
 public class StudyPropertiesTable extends BaseStudyTable
 {
     private Domain _domain;
-    private List<FieldKey> _visibleColumns = new ArrayList<>();
+    private final List<FieldKey> _visibleColumns = new ArrayList<>();
 
     public StudyPropertiesTable(StudyQuerySchema schema, ContainerFilter cf)
     {
@@ -144,9 +138,9 @@ public class StudyPropertiesTable extends BaseStudyTable
         }
         else
         {
-            for (ColumnInfo extraColumn : _domain.getColumns(this, lsidColumn, c, schema.getUser()))
+            for (BaseColumnInfo extraColumn : _domain.getColumns(this, lsidColumn, c, schema.getUser()))
             {
-                safeAddColumn( (BaseColumnInfo) extraColumn);
+                safeAddColumn(extraColumn);
                 _visibleColumns.add(FieldKey.fromParts(extraColumn.getName()));
             }
         }
