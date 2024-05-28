@@ -16,6 +16,8 @@
 
 package org.labkey.study.controllers.reports;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.Nullable;
@@ -101,8 +103,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -1170,7 +1170,7 @@ public class ReportsController extends BaseStudyController
             Dataset def = getDatasetDefinition();
 
             if (def != null)
-                _addNavTrail(root, def.getDatasetId(), null);
+                _addNavTrail(root, def.getDatasetId());
         }
     }
 

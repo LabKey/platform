@@ -16,6 +16,8 @@
 
 package org.labkey.study.controllers;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -289,6 +291,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
@@ -817,7 +821,6 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(ReadPermission.class)
     public class DatasetAction extends QueryViewAction<DatasetFilterForm, QueryView>
     {
-        private CohortFilter _cohortFilter;
         private DatasetDefinition _def;
 
         public DatasetAction()
@@ -914,16 +917,13 @@ public class StudyController extends BaseStudyController
             settings.setShowEditLinks(showEditLinks);
             settings.setShowSourceLinks(true);
 
-            QueryView queryView = schema.createView(getViewContext(), settings, errors);
-            if (queryView instanceof StudyQueryView)
-                _cohortFilter = ((StudyQueryView)queryView).getCohortFilter();
-
             final ActionURL url = context.getActionURL();
 
             // clear the property map cache and the sort map cache
             getParticipantPropsMap(context).clear();
             getDatasetSortColumnMap(context).clear();
 
+            QueryView queryView = schema.createView(getViewContext(), settings, errors);
             final TableInfo table = queryView.getTable();
             if (table != null)
             {
@@ -948,8 +948,9 @@ public class StudyController extends BaseStudyController
             HtmlStringBuilder sb = HtmlStringBuilder.of();
             if (def.getDescription() != null && !def.getDescription().isEmpty())
                 sb.unsafeAppend(PageFlowUtil.filter(def.getDescription(), true, true)).unsafeAppend("<br/>");
-            if (_cohortFilter != null)
-                sb.unsafeAppend("<br/><span><b>Cohort :</b> ").append(_cohortFilter.getDescription(getContainer(), getUser())).unsafeAppend("</span>");
+            CohortFilter cohortFilter = queryView instanceof StudyQueryView studyQueryView ? studyQueryView.getCohortFilter() : null;
+            if (cohortFilter != null)
+                sb.unsafeAppend("<br/><span><b>Cohort :</b> ").append(cohortFilter.getDescription(getContainer(), getUser())).unsafeAppend("</span>");
 
             if (QCStateManager.getInstance().showStates(getContainer()))
             {
@@ -1040,10 +1041,9 @@ public class StudyController extends BaseStudyController
         public void addNavTrail(NavTree root)
         {
             setHelpTopic("gridBasics");
-            _addNavTrail(root, getDatasetDefinition().getDatasetId(), _cohortFilter);
+            _addNavTrail(root, getDatasetDefinition().getDatasetId());
         }
     }
-
 
     @RequiresNoPermission
     public static class ExpandStateNotifyAction extends SimpleViewAction
@@ -1098,7 +1098,6 @@ public class StudyController extends BaseStudyController
     public class ParticipantAction extends SimpleViewAction<ParticipantForm>
     {
         private ParticipantForm _bean;
-        private CohortFilter _cohortFilter;
 
         @Override
         public ModelAndView getView(ParticipantForm form, BindException errors)
@@ -1127,35 +1126,32 @@ public class StudyController extends BaseStudyController
 
             String viewName = (String) getViewContext().get(DATASET_VIEW_NAME_PARAMETER_NAME);
 
-            _cohortFilter = CohortFilterFactory.getFromURL(getContainer(), getUser(), getViewContext().getActionURL(), DatasetQueryView.DATAREGION);
+            CohortFilter cohortFilter = CohortFilterFactory.getFromURL(getContainer(), getUser(), getViewContext().getActionURL(), DatasetQueryView.DATAREGION);
             // display the next and previous buttons only if we have a cached participant index
-            if (_cohortFilter != null && !StudyManager.getInstance().showCohorts(getContainer(), getUser()))
+            if (cohortFilter != null && !StudyManager.getInstance().showCohorts(getContainer(), getUser()))
                 throw new UnauthorizedException("User does not have permission to view cohort information");
 
             List<String> participants = getParticipantListFromSession(getViewContext(), form.getDatasetId(), viewName);
 
-            if (participants != null)
+            if (isDebug())
             {
-                if (isDebug())
+                _log.info("Cached participants: {}", participants);
+            }
+            int idx = participants.indexOf(form.getParticipantId());
+            if (idx != -1)
+            {
+                if (idx > 0)
                 {
-                    _log.info("Cached participants: " + participants);
+                    final String ptid = participants.get(idx-1);
+                    previousParticipantURL = getViewContext().cloneActionURL();
+                    previousParticipantURL.replaceParameter("participantId", ptid);
                 }
-                int idx = participants.indexOf(form.getParticipantId());
-                if (idx != -1)
-                {
-                    if (idx > 0)
-                    {
-                        final String ptid = participants.get(idx-1);
-                        previousParticipantURL = getViewContext().cloneActionURL();
-                        previousParticipantURL.replaceParameter("participantId", ptid);
-                    }
 
-                    if (idx < participants.size()-1)
-                    {
-                        final String ptid = participants.get(idx+1);
-                        nextParticipantURL = getViewContext().cloneActionURL();
-                        nextParticipantURL.replaceParameter("participantId", ptid);
-                    }
+                if (idx < participants.size()-1)
+                {
+                    final String ptid = participants.get(idx+1);
+                    nextParticipantURL = getViewContext().cloneActionURL();
+                    nextParticipantURL.replaceParameter("participantId", ptid);
                 }
             }
 
@@ -1183,7 +1179,7 @@ public class StudyController extends BaseStudyController
         public void addNavTrail(NavTree root)
         {
             setHelpTopic("participantViews");
-            _addNavTrail(root, _bean.getDatasetId(), _cohortFilter);
+            _addNavTrail(root, _bean.getDatasetId());
             root.addChild(StudyService.get().getSubjectNounSingular(getContainer()) + " - " + id(_bean.getParticipantId()));
         }
     }
@@ -3116,14 +3112,11 @@ public class StudyController extends BaseStudyController
         {
             if ((param.getKey().contains(".sort")) ||
                 (param.getKey().contains("~")) ||
-//                (CohortFilterFactory.isCohortFilterParameterName(param.getKey(), queryView.getDataRegionName())) ||
                 (DATASET_VIEW_NAME_PARAMETER_NAME.equals(param.getKey())))
             {
                 base.addParameter(param.getKey(), param.getValue());
             }
         }
-        if (queryView instanceof StudyQueryView && null != ((StudyQueryView)queryView).getCohortFilter())
-            ((StudyQueryView)queryView).getCohortFilter().addURLParameters(getStudyThrowIfNull(), base, null);
 
         for (DisplayColumn col : columns)
         {
@@ -3137,14 +3130,6 @@ public class StudyController extends BaseStudyController
                 col.setURLExpression(dets);
             }
         }
-    }
-
-    private boolean hasSourceLsids(TableInfo datasetTable)
-    {
-        SimpleFilter sourceLsidFilter = new SimpleFilter();
-        sourceLsidFilter.addCondition(FieldKey.fromParts("SourceLsid"), null, CompareType.NONBLANK);
-
-        return new TableSelector(datasetTable, Collections.singleton("SourceLsid"), sourceLsidFilter, null).exists();
     }
 
     public static ActionURL getProtocolDocumentDownloadURL(Container c, String name)
@@ -3245,23 +3230,27 @@ public class StudyController extends BaseStudyController
     private static String getParticipantListCacheKey(ViewContext context)
     {
         // The query string includes all parameters that affect the participant list: dataset id, filters, sorts, etc.
-        return context.getActionURL().getQueryString();
+        // But need to strip off the participant ID parameter.
+        return context.cloneActionURL().deleteParameter("participantId").getQueryString();
     }
 
     public static void removeParticipantListFromSession(ViewContext context)
     {
-        Map<String, List<String>> map = getParticipantMapFromSession(context);
-        map.remove(getParticipantListCacheKey(context));
+        Cache<String, List<String>> cache = getParticipantMapFromSession(context);
+        String key = getParticipantListCacheKey(context);
+        _log.debug("Invalidate participant list with key: {}", key);
+        cache.invalidate(key);
     }
 
     @SuppressWarnings("unchecked")
-    private static Map<String, List<String>> getParticipantMapFromSession(ViewContext context)
+    private static Cache<String, List<String>> getParticipantMapFromSession(ViewContext context)
     {
         HttpSession session = context.getRequest().getSession(true);
-        Map<String, List<String>> map = (Map<String, List<String>>) session.getAttribute(PARTICIPANT_CACHE_PREFIX);
+        Cache<String, List<String>> map = (Cache<String, List<String>>) session.getAttribute(PARTICIPANT_CACHE_PREFIX);
         if (map == null)
         {
-            map = new HashMap<>();
+            // Use a cache to limit the size (10) and to keep entries for no more than 10 minutes after last access
+            map = CacheBuilder.newBuilder().maximumSize(10).expireAfterAccess(10, TimeUnit.MINUTES).build();
             session.setAttribute(PARTICIPANT_CACHE_PREFIX, map);
         }
         return map;
@@ -3281,22 +3270,28 @@ public class StudyController extends BaseStudyController
         return map.computeIfAbsent(datasetId, k -> new HashMap<>());
     }
 
-    public static List<String> getParticipantListFromSession(ViewContext context, int dataset, String viewName)
+    public static @NotNull List<String> getParticipantListFromSession(ViewContext context, int dataset, String viewName)
     {
-        Map<String, List<String>> map = getParticipantMapFromSession(context);
+        Cache<String, List<String>> cache = getParticipantMapFromSession(context);
         String key = getParticipantListCacheKey(context);
-        List<String> plist = map.get(key);
-        if (plist == null)
+        List<String> ret;
+        try
         {
-            // not in cache, or session expired, try to regenerate the list
-            plist = generateParticipantListFromURL(context, dataset, viewName);
-            map.put(key, plist);
+            ret = cache.get(key, () -> generateParticipantListFromURL(context, dataset, viewName));
         }
-        return plist;
+        catch (ExecutionException e)
+        {
+            // Shouldn't ever happen since our loader doesn't throw exceptions
+            ret = Collections.emptyList();
+        }
+        _log.debug("Get participant list of size {} with key: {}", ret.size(), key);
+
+        return ret;
     }
 
     private static List<String> generateParticipantListFromURL(ViewContext context, int dataset, String viewName)
     {
+        List<String> ret;
         try
         {
             final StudyManager studyMgr = StudyManager.getInstance();
@@ -3315,13 +3310,16 @@ public class StudyController extends BaseStudyController
 
             QueryView queryView = querySchema.createView(context, qs, null);
 
-            return generateParticipantList(queryView);
+            ret = generateParticipantList(queryView);
         }
-        catch (Exception e)
+        catch (Exception ignored)
         {
-            _log.error(e);
+            ret = Collections.emptyList();
         }
-        return Collections.emptyList();
+
+        _log.debug("Generate participant list of size {}", ret.size());
+
+        return ret;
     }
 
     public static List<String> generateParticipantList(QueryView queryView)
@@ -3656,7 +3654,7 @@ public class StudyController extends BaseStudyController
         {
             if (updateQCForm.isUpdate())
             {
-                if (updateQCForm.getComments() == null || updateQCForm.getComments().length() == 0)
+                if (updateQCForm.getComments() == null || updateQCForm.getComments().isEmpty())
                     errors.reject(null, "Comments are required.");
             }
         }
@@ -4767,13 +4765,13 @@ public class StudyController extends BaseStudyController
             if (form.isReshow())
             {
                 ActionURL reshowURL = new ActionURL(CustomizeParticipantViewAction.class, getContainer());
-                if (form.getParticipantId() != null && form.getParticipantId().length() > 0)
+                if (form.getParticipantId() != null && !form.getParticipantId().isEmpty())
                     reshowURL.addParameter("participantId", form.getParticipantId());
-                if (form.getReturnUrl() != null && form.getReturnUrl().length() > 0)
+                if (form.getReturnUrl() != null && !form.getReturnUrl().isEmpty())
                     reshowURL.addParameter(ActionURL.Param.returnUrl, form.getReturnUrl());
                 return reshowURL;
             }
-            else if (form.getReturnUrl() != null && form.getReturnUrl().length() > 0)
+            else if (form.getReturnUrl() != null && !form.getReturnUrl().isEmpty())
                 return new ActionURL(form.getReturnUrl());
             else
                 return urlProvider(ReportUrls.class).urlManageViews(getContainer());

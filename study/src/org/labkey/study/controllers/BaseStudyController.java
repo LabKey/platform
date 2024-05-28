@@ -23,7 +23,6 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.security.User;
-import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.security.permissions.ManageStudyPermission;
@@ -34,10 +33,8 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.study.StudyModule;
-import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.query.DatasetQueryView;
 import org.labkey.study.view.BaseStudyPage;
 import org.springframework.validation.BindException;
 
@@ -176,18 +173,7 @@ public abstract class BaseStudyController extends SpringActionController
 
     protected NavTree _addNavTrail(NavTree root, int datasetId)
     {
-        return _addNavTrail(root, datasetId, null);
-    }
-
-    protected NavTree _addNavTrail(NavTree root, int datasetId, CohortFilter cohortFilter)
-    {
         Study study = addRootNavTrail(root);
-        _appendDataset(root, study, datasetId, cohortFilter);
-        return root;
-    }
-
-    private void _appendDataset(NavTree root, Study study, int datasetId, @Nullable CohortFilter cohortFilter)
-    {
         if (datasetId > 0)
         {
             Dataset dataset = study.getDataset(datasetId);
@@ -200,19 +186,18 @@ public abstract class BaseStudyController extends SpringActionController
                 else
                     label.append("CRF/Assay ").append(dataset.getDatasetId());
 
-                ActionURL datasetUrl = new ActionURL(StudyController.DatasetAction.class, getContainer()).
-                    addParameter(Dataset.DATASET_KEY, datasetId);
-                if (cohortFilter != null)
-                    cohortFilter.addURLParameters(study, datasetUrl, "Dataset");
+                ActionURL datasetUrl = getViewContext().cloneActionURL()
+                    .setAction(StudyController.DatasetAction.class)
+                    .setContainer(getContainer())
+                    .deleteParameter("participantId");
 
-                ActionURL url = getViewContext().getActionURL();
-                String param = QCStateSet.getQCParameter(DatasetQueryView.DATAREGION, url);
-                if (param != null)
-                    datasetUrl.addParameter(param, url.getParameter(param));
+                if (datasetUrl.getParameter(Dataset.DATASET_KEY) == null)
+                    datasetUrl.addParameter(Dataset.DATASET_KEY, datasetId);
 
-                root.addChild(label.toString(), datasetUrl.getLocalURIString());
+                root.addChild(label.toString(), datasetUrl);
             }
         }
+        return root;
     }
 
     protected void redirectTypeNotFound(int datasetId) throws RedirectException
