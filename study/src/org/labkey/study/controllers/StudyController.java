@@ -949,7 +949,7 @@ public class StudyController extends BaseStudyController
                 sb.unsafeAppend(PageFlowUtil.filter(def.getDescription(), true, true)).unsafeAppend("<br/>");
             CohortFilter cohortFilter = queryView instanceof StudyQueryView studyQueryView ? studyQueryView.getCohortFilter() : null;
             if (cohortFilter != null)
-                sb.unsafeAppend("<br/><span><b>Cohort :</b> ").append(cohortFilter.getDescription(getContainer(), getUser())).unsafeAppend("</span>");
+                sb.unsafeAppend("<br/><span><b>Cohort:</b> ").append(cohortFilter.getDescription(getContainer(), getUser())).unsafeAppend("</span>");
 
             if (QCStateManager.getInstance().showStates(getContainer()))
             {
