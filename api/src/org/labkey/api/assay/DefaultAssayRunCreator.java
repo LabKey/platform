@@ -448,7 +448,10 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             AssayResultsFileWriter resultsFileWriter = new AssayResultsFileWriter(context.getProtocol(), run, null);
             resultsFileWriter.cleanupPostedFiles(context.getContainer(), false);
 
-            throw new ExperimentException(e);
+            if (e instanceof ExperimentException)
+                throw (ExperimentException)e;
+            else
+                throw new ExperimentException(e);
         }
         catch (BatchValidationException e)
         {
