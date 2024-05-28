@@ -70,11 +70,6 @@ public class ScriptsResourceProvider implements WebdavService.Provider
             AttachmentDirectory dir = service.getMappedAttachmentDirectory(c, FileContentService.ContentType.scripts, false);
             if (dir != null)
             {
-                // don't create the dir here if it doesn't already exist, it will be created the first time an assay transform script is saved
-                java.nio.file.Path path = dir.getFileSystemDirectoryPath(c, false);
-                if (!Files.exists(path))
-                    return null;
-
                 return new ScriptsResource(parent, Path.toPathPart(name), dir.getFileSystemDirectory(), c.getPolicy());
             }
         }
