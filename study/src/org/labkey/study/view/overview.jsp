@@ -36,6 +36,7 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.study.SingleCohortFilter" %>
 <%@ page import="org.labkey.study.controllers.BaseStudyController.SharedFormParameters" %>
 <%@ page import="org.labkey.study.controllers.StudyController.DatasetAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.DefaultDatasetReportAction" %>
@@ -58,11 +59,11 @@
 <%@ page import="org.labkey.study.visitmanager.VisitManager.VisitStatistics" %>
 <%@ page import="java.text.NumberFormat" %>
 <%@ page import="java.util.List" %>
-<%@ page import="java.util.Map" %>
 <%@ page import="static org.labkey.study.model.QCStateSet.getQCUrlFilterKey" %>
 <%@ page import="static org.labkey.study.model.QCStateSet.getQCStateFilteredURL" %>
 <%@ page import="static org.labkey.study.model.QCStateSet.PUBLIC_STATES_LABEL" %>
 <%@ page import="static org.labkey.study.model.QCStateSet.PRIVATE_STATES_LABEL" %>
+<%@ page import="java.util.Map" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -81,11 +82,17 @@
 
     boolean showCohorts = CohortManager.getInstance().hasCohortMenu(container, user);
     Cohort selectedCohort = null;
+    CohortFilter cohortFilter = null;
     List<CohortImpl> cohorts = null;
 
     if (showCohorts)
     {
-        selectedCohort = bean.cohortFilter != null ? bean.cohortFilter.getCohort(container, user) : null;
+        if (bean.cohortFilter != null)
+        {
+            selectedCohort = bean.cohortFilter.getCohort(container, user);
+            // Get a cohort filter that includes the label, so we use the label (not the rowId) in the filter clause
+            cohortFilter = new SingleCohortFilter(bean.cohortFilter.getType(), selectedCohort);
+        }
         cohorts = manager.getCohorts(container, user);
     }
 
@@ -297,8 +304,8 @@
                 ActionURL defaultReportURL = new ActionURL(DefaultDatasetReportAction.class, container);
                 defaultReportURL.addParameter(Dataset.DATASET_KEY, dataset.getDatasetId());
 
-                if (selectedCohort != null && bean.cohortFilter != null)
-                    bean.cohortFilter.addURLParameters(study, defaultReportURL, DatasetQueryView.DATAREGION);
+                if (selectedCohort != null && cohortFilter != null)
+                    cohortFilter.addURLParameters(study, defaultReportURL, DatasetQueryView.DATAREGION);
                 if (bean.qcStates != null && StringUtils.isNumeric(bean.qcStates.getFormValue()))
                     defaultReportURL.replaceParameter(qcUrlFilterKey, QCStateManager.getInstance().getStateForRowId(container, Integer.parseInt(bean.qcStates.getFormValue())).getLabel());
                 // Public States case
@@ -348,7 +355,7 @@
                     datasetLink.addParameter(visitLabelUrlFilterKey, visit.getLabel());
                     datasetLink.addParameter(Dataset.DATASET_KEY, dataset.getDatasetId());
                     if (selectedCohort != null)
-                        bean.cohortFilter.addURLParameters(study, datasetLink, DatasetQueryView.DATAREGION);
+                        cohortFilter.addURLParameters(study, datasetLink, DatasetQueryView.DATAREGION);
                     if (bean.qcStates != null && StringUtils.isNumeric(bean.qcStates.getFormValue()))
                         datasetLink.replaceParameter(qcUrlFilterKey, QCStateManager.getInstance().getStateForRowId(container, Integer.parseInt(bean.qcStates.getFormValue())).getLabel());
 
