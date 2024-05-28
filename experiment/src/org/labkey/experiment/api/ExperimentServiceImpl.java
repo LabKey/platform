@@ -3845,7 +3845,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
         catch (ExperimentException e)
         {
-            // TODO log or throw?
+            LOG.warn("Unable to delete empty results file directory for run " + run.getRowId(), e);
         }
 
         // remove edges prior to deleting protocol applications
@@ -9571,7 +9571,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         }
                         catch (ExperimentException e)
                         {
-                            // TODO log or throw?
+                            LOG.warn("Unable to delete empty results file directory for run " + renameData.run().getRowId(), e);
                         }
                     }
                 }
