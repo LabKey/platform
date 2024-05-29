@@ -15,12 +15,14 @@
  */
 package org.labkey.api.data;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.element.Input;
 import org.labkey.api.view.HttpView;
 
@@ -77,9 +79,12 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
 
     protected void renderIconAndFilename(RenderContext ctx, Writer out, String filename, @Nullable String fileIconUrl, @Nullable String popupIconUrl, boolean link, boolean thumbnail) throws IOException
     {
-        if (null != filename)
+        if (null != filename && !StringUtils.isEmpty(filename))
         {
-            String url = renderURL(ctx);
+            // equivalent of DisplayColumn.renderURL.
+            // Don't want to call renderUrl (DataColumn.renderUrl) to skip unnecessary displayValue check
+            StringExpression s = compileExpression(ctx.getViewContext());
+            String url = null == s ? null : s.eval(ctx);
 
             if (link)
             {

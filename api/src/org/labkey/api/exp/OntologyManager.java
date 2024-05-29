@@ -2475,7 +2475,7 @@ public class OntologyManager
         return Pair.of(uri, projId);
     }
 
-    //TODO: DbCache semantics. This loads the cache but does not fetch cause need to get them all together
+    //TODO: Cache semantics. This loads the cache but does not fetch cause need to get them all together
     public static List<PropertyDescriptor> getPropertiesForType(String typeURI, Container c)
     {
         List<Pair<String, Boolean>> propertyURIs = DOMAIN_PROPERTIES_CACHE.get(getCacheKey(typeURI, c));

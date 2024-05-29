@@ -241,6 +241,11 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
     @Override
     protected String getFileName(RenderContext ctx, Object value)
     {
+        return getFileName(ctx, value, false);
+    }
+
+    protected String getFileName(RenderContext ctx, Object value, boolean isDisplay)
+    {
         String result = value == null ? null : StringUtils.trimToNull(value.toString());
         if (result != null)
         {
@@ -255,6 +260,9 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
             {
                 result = f.getName();
             }
+
+            if (isDisplay && !f.exists())
+                result += " (unavailable)";
         }
         return result;
     }
@@ -334,6 +342,6 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
     @Override
     public Object getDisplayValue(RenderContext ctx)
     {
-        return getFileName(ctx, super.getDisplayValue(ctx));
+        return getFileName(ctx, super.getDisplayValue(ctx), true);
     }
 }
