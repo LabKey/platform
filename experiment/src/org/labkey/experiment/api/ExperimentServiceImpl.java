@@ -199,6 +199,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;
@@ -4618,7 +4619,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (selectedProtocolIds.length == 0)
             return;
 
-        List<ExpRunImpl> runs = getExpRunsForProtocolIds(false, selectedProtocolIds);
+        List<ExpRunImpl> runs = getExpRunsForProtocolIds(false, selectedProtocolIds);//
 
         String protocolIds = StringUtils.join(ArrayUtils.toObject(selectedProtocolIds), ", ");
 
@@ -4675,8 +4676,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 {
                     for (Protocol protocol : protocols)
                     {
-                        ExpProtocol protocolToDelete = new ExpProtocolImpl(protocol);
+                        if (!c.hasPermission(user, AdminPermission.class) && runs.size() > 0)
+                            throw new UnauthorizedException("You do not have sufficient permissions to delete '" + protocol.getName() + "'.");
 
+                        ExpProtocol protocolToDelete = new ExpProtocolImpl(protocol);
                         AssayProvider provider = assayService.getProvider(protocolToDelete);
                         if (provider != null)
                             provider.deleteProtocol(protocolToDelete, user, auditUserComment);
@@ -6149,6 +6152,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         Domain d = dataClass.getDomain();
         Container dcContainer = dataClass.getContainer();
+        if (!dcContainer.hasPermission(user, AdminPermission.class))
+        {
+            if (dataClass.hasData())
+                throw new UnauthorizedException("You do not have sufficient permissions to delete this data class.");
+        }
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
