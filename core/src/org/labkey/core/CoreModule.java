@@ -65,6 +65,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfoFactory;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.TabContainerType;
 import org.labkey.api.data.Table;
@@ -1170,6 +1171,11 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             results.put("uniqueUserCountThisMonth", UserManager.getUniqueUsersCount(cal.getTime()));
             results.put("scriptEngines", LabKeyScriptEngineManager.get().getScriptEngineMetrics());
             results.put("customLabels", CustomLabelService.get().getCustomLabelMetrics());
+            Map<String, Long> roleAssignments = new HashMap<>();
+            roleAssignments.put("assayDesignerCount", new SqlSelector(CoreSchema.getInstance().getSchema(), "SELECT COUNT(*) FROM core.RoleAssignments WHERE userid > 0 AND role = ?", "org.labkey.assay.security.AssayDesignerRole").getObject(Long.class));
+            roleAssignments.put("dataClassDesignerCount", new SqlSelector(CoreSchema.getInstance().getSchema(), "SELECT COUNT(*) FROM core.RoleAssignments WHERE userid > 0 AND role = ?", "org.labkey.experiment.security.DataClassDesignerRole").getObject(Long.class));
+            roleAssignments.put("sampleTypeDesignerCount", new SqlSelector(CoreSchema.getInstance().getSchema(), "SELECT COUNT(*) FROM core.RoleAssignments WHERE userid > 0 AND role = ?", "org.labkey.experiment.security.SampleTypeDesignerRole").getObject(Long.class));
+            results.put("roleAssignments", roleAssignments);
             return results;
         });
 
