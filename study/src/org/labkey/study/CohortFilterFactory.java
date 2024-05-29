@@ -38,10 +38,6 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * User: adam
- * Date: 8/28/12
- * Time: 3:54 PM
- *
  * NOTE (MAB): with 13.1 we use regular URL filters for dataregions and NOT use CohortFilter to append additional filters to the query.
  * CohortFilter can still be used for non-data region usages, such as overview or reporting, but these should probably migrate to using
  * ParticipantGroup filtering UI

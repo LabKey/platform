@@ -457,7 +457,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return link(text).href(url);
     }
 
-    public LinkBuilder link(Renderable html, @NotNull String url)
+    public LinkBuilder link(Renderable html, @NotNull URLHelper url)
     {
         return new LinkBuilder(html).href(url);
     }
