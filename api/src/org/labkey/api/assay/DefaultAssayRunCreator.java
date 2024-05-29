@@ -375,9 +375,6 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             AssayResultsFileWriter resultsFileWriter = new AssayResultsFileWriter(context.getProtocol(), run, null);
             resultsFileWriter.savePostedFiles(context);
 
-            // TODO is there a better way to get the run info into ExpDataFileConverter?
-            QueryService.get().setEnvironment(QueryService.Environment.EXP_RUN, run);
-
             importResultData(context, run, inputDatas, outputDatas, info, xarContext, transformResult, insertedDatas);
 
             Integer reRunId = context.getReRunId();
