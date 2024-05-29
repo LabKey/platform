@@ -18,7 +18,6 @@ import org.labkey.api.webdav.WebdavService;
 
 import java.io.File;
 import java.nio.file.AccessDeniedException;
-import java.nio.file.Files;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;

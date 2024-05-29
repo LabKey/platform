@@ -327,8 +327,7 @@ public interface QueryService
     {
         USER(JdbcType.OTHER),
         CONTAINER(JdbcType.OTHER),
-        ACTION(JdbcType.OTHER),
-        EXP_RUN(JdbcType.OTHER);
+        ACTION(JdbcType.OTHER);
 
         public final JdbcType type;
 
