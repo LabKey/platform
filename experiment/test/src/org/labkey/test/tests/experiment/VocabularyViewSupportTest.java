@@ -20,9 +20,11 @@ import org.labkey.test.Locator;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.components.CustomizeView;
 import org.labkey.test.components.html.Table;
+import org.labkey.test.params.FieldDefinition;
+import org.labkey.test.params.FieldDefinition.ColumnType;
 import org.labkey.test.params.experiment.SampleTypeDefinition;
+import org.labkey.test.params.list.IntListDefinition;
 import org.labkey.test.util.DataRegionTable;
-import org.labkey.test.util.ListHelper;
 import org.labkey.test.util.PortalHelper;
 import org.labkey.test.util.SampleTypeHelper;
 import org.openqa.selenium.WebElement;
@@ -80,9 +82,10 @@ public class VocabularyViewSupportTest extends ProvenanceAssayHelper
         String listName = "Locations";
         String cityName = "Torrance";
 
-        createListForVocabPropertyLookup(listName);
-        clickAndWait(Locator.linkWithText(listName));
-        _listHelper.insertNewRow(Map.of("name", cityName));
+        createListForVocabPropertyLookup(listName)
+                .clickInsertNewRow()
+                .setField("name", cityName)
+                .submit();
 
         int listRow1RowId = 1;
 
@@ -202,9 +205,10 @@ public class VocabularyViewSupportTest extends ProvenanceAssayHelper
         String listName = "Lab Locations";
         String labLocation = "West wing";
 
-        createListForVocabPropertyLookup(listName);
-        clickAndWait(Locator.linkWithText(listName));
-        _listHelper.insertNewRow(Map.of("name", labLocation));
+        createListForVocabPropertyLookup(listName)
+                .clickInsertNewRow()
+                .setField("name", labLocation)
+                .submit();
         int listRow1RowId = 1;
 
         log("Create a vocabulary - one string prop, one lookup to a list");
@@ -258,15 +262,13 @@ public class VocabularyViewSupportTest extends ProvenanceAssayHelper
         Assert.assertEquals("Run does not contain " + propNameLab + " vocabulary property.", runsTable.getColumnDataAsText(domainProperty + "/" + propNameLocation).get(0), labLocation);
     }
 
-    private void createListForVocabPropertyLookup(String listName)
+    private DataRegionTable createListForVocabPropertyLookup(String listName) throws IOException, CommandException
     {
         log("Create a list for vocabulary property lookup");
-        ListHelper.ListColumn[] columns = new ListHelper.ListColumn[] {
-                new ListHelper.ListColumn("name", "Name", ListHelper.ListColumnType.String, "")
-        };
-
-        _listHelper.createList(getProjectName(), listName, ListHelper.ListColumnType.AutoInteger, "Key", columns);
-        goToManageLists();
+        new IntListDefinition(listName, "Key")
+                .addField(new FieldDefinition("name", ColumnType.String).setLabel("Name")).create(createDefaultConnection(), getProjectName());
+        return goToManageLists().getGrid()
+                .viewListData(listName);
     }
 
 }

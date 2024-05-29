@@ -20,7 +20,6 @@ import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.InvalidFileException;
-import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.Container;
@@ -63,9 +62,6 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-/**
- * Created by klum on 1/24/14.
- */
 public class DefaultStudyDesignImporter
 {
     /**
@@ -73,11 +69,11 @@ public class DefaultStudyDesignImporter
      */
     protected void deleteData(Container container, TableInfo tableInfo) throws ImportException
     {
-        try {
+        try
+        {
             if (tableInfo instanceof FilteredTable)
             {
                 Table.delete(((FilteredTable)tableInfo).getRealTable(), SimpleFilter.createContainerFilter(container));
-                if (tableInfo.getName().equals("AssaySpecimen")) DbCache.trackRemove(((FilteredTable)tableInfo).getRealTable());
             }
         }
         catch (RuntimeSQLException e)

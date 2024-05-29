@@ -27,6 +27,14 @@ if (!LABKEY.vis.PlotProperties) {
             StandardDeviation: 'stddev'
         }
     }
+    if (!LABKEY.vis.PlotProperties.Color) {
+        LABKEY.vis.PlotProperties.Color = {
+            Outlier: 'red',
+            Mean: 'darkgrey',
+            OneSD: 'green',
+            TwoSD: 'blue',
+        }
+    }
 }
 
 LABKEY.vis.makeLine = function(x1, y1, x2, y2){
