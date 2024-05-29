@@ -3237,8 +3237,12 @@ public class StudyController extends BaseStudyController
     {
         Cache<String, List<String>> cache = getParticipantMapFromSession(context);
         String key = getParticipantListCacheKey(context);
-        _log.debug("Invalidate participant list with key: {}", key);
-        cache.invalidate(key);
+        // Guava Cache doesn't tolerate null keys
+        if (key != null)
+        {
+            _log.debug("Invalidate participant list with key: {}", key);
+            cache.invalidate(key);
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -3273,17 +3277,21 @@ public class StudyController extends BaseStudyController
     {
         Cache<String, List<String>> cache = getParticipantMapFromSession(context);
         String key = getParticipantListCacheKey(context);
-        List<String> ret;
-        try
+        List<String> ret = Collections.emptyList();
+
+        // Short-circuit for navigation from somewhere other than a dataset... esp. since Guava Cache doesn't tolerate null keys
+        if (null != key && dataset > 0)
         {
-            ret = cache.get(key, () -> generateParticipantListFromURL(context, dataset, viewName));
+            try
+            {
+                ret = cache.get(key, () -> generateParticipantListFromURL(context, dataset, viewName));
+            }
+            catch (ExecutionException ignored)
+            {
+                // Shouldn't ever happen since our loader doesn't throw exceptions
+            }
+            _log.debug("Get participant list of size {} with key: {}", ret.size(), key);
         }
-        catch (ExecutionException e)
-        {
-            // Shouldn't ever happen since our loader doesn't throw exceptions
-            ret = Collections.emptyList();
-        }
-        _log.debug("Get participant list of size {} with key: {}", ret.size(), key);
 
         return ret;
     }
