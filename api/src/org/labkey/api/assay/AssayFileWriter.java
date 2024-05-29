@@ -91,7 +91,7 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
 
     public static File ensureUploadDirectory(Container container, String dirName) throws ExperimentException
     {
-        Path dir = AssayFileWriter.getUploadDirectoryPath(container, dirName);
+        Path dir = getUploadDirectoryPath(container, dirName);
         return ensureUploadDirectory(dir);
     }
 
