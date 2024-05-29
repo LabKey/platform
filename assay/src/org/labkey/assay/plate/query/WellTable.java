@@ -15,6 +15,7 @@ import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
@@ -44,6 +45,7 @@ import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -66,6 +68,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static org.labkey.api.query.ExprColumn.STR_TABLE_ALIAS;
 
@@ -306,13 +309,22 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         return defaultVisibleColumns;
     }
 
-    public static List<FieldKey> getMetadataColumns(@NotNull PlateSet plateSet, User user)
+    public static List<FieldKey> getMetadataColumns(@NotNull PlateSet plateSet, Container c, User user, ContainerFilter cf)
     {
         Set<FieldKey> includedMetadataCols = new HashSet<>();
         for (Plate plate : plateSet.getPlates(user))
         {
+            QueryView plateQueryView = PlateManager.get().getPlateQueryView(c, user, cf, plate, false);
+            Map<String, FieldKey> displayColumns = PlateManager.get().getPlateDisplayColumns(plateQueryView).stream().collect(Collectors.toMap(col -> col.getColumnInfo().getPropertyURI(), DisplayColumn::getFilterKey));
+
             for (PlateCustomField field : plate.getCustomFields())
-                includedMetadataCols.add(FieldKey.fromParts(Column.Properties.name(), field.getName()));
+            {
+                FieldKey lookupFk = displayColumns.get(field.getPropertyURI());
+                if (lookupFk != null)
+                    includedMetadataCols.add(lookupFk);
+                else
+                    includedMetadataCols.add(FieldKey.fromParts(Column.Properties.name(), field.getName()));
+            }
         }
 
         return includedMetadataCols.stream().sorted(Comparator.comparing(FieldKey::getName)).toList();

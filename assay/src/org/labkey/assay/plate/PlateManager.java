@@ -2929,7 +2929,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return fieldKeys;
     }
 
-    private QueryView getPlateQueryView(Container container, User user, ContainerFilter cf, Plate plate, boolean isMapView)
+    public QueryView getPlateQueryView(Container container, User user, ContainerFilter cf, Plate plate, boolean isMapView)
     {
         UserSchema userSchema = QueryService.get().getUserSchema(user, container, PlateSchema.SCHEMA_NAME);
         List<FieldKey> fieldKeys = getPlateExportFieldKeys(plate, isMapView);
@@ -2956,7 +2956,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return renameColumnMap;
     }
 
-    private List<DisplayColumn> getPlateDisplayColumns(QueryView queryView)
+    public List<DisplayColumn> getPlateDisplayColumns(QueryView queryView)
     {
         // We have to use the display columns from the DataRegion returned from createDataView in order to get the
         // correct columns that we set via QuerySettings in getPlateQueryView, if we don't then we'll only get the
