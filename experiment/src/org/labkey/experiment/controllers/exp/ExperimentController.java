@@ -3371,18 +3371,12 @@ public class ExperimentController extends SpringActionController
         protected abstract void deleteObjects(DeleteForm form) throws Exception;
     }
 
-    @RequiresPermission(DeletePermission.class)
+    @RequiresPermission(DesignAssayPermission.class)
     public class DeleteProtocolByRowIdsAPIAction extends AbstractDeleteAPIAction
     {
         @Override
         protected ApiSimpleResponse deleteObjects(CascadeDeleteForm form)
         {
-            for (ExpProtocol protocol : getProtocolsForDeletion(form))
-            {
-                if (!protocol.getContainer().hasPermission(getUser(), DesignAssayPermission.class))
-                    throw new UnauthorizedException("You do not have sufficient permissions to delete '" + protocol.getName() + "'.");
-            }
-
             for (ExpProtocol protocol : getProtocolsForDeletion(form))
             {
                 protocol.delete(getUser(), form.getUserComment());
@@ -3406,7 +3400,7 @@ public class ExperimentController extends SpringActionController
         return protocols;
     }
 
-    @RequiresPermission(DeletePermission.class)
+    @RequiresPermission(DesignAssayPermission.class)
     public class DeleteProtocolByRowIdsAction extends AbstractDeleteAction
     {
         @Override

@@ -538,7 +538,7 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
     @Override
     public boolean hasData()
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("DataClass"), _object.getRowId());
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ClassId"), _object.getRowId());
         return new TableSelector(ExperimentService.get().getTinfoData(), filter, null).exists();
     }
 
