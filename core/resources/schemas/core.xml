@@ -726,24 +726,6 @@
       <column columnName="EngineContext"/>
     </columns>
   </table>
-  <table tableName="PrincipalRelations" tableDbType="TABLE">
-    <columns>
-      <column columnName="UserId">
-        <fk>
-          <fkColumnName>UserId</fkColumnName>
-          <fkTable>Users</fkTable>
-        </fk>
-      </column>
-      <column columnName="OtherId">
-        <fk>
-          <fkColumnName>UserId</fkColumnName>
-          <fkTable>Users</fkTable>
-        </fk>
-      </column>
-      <column columnName="Relationship"/>
-      <column columnName="Created"/>
-    </columns>
-  </table>
   <table tableName="AuthenticationConfigurations" tableDbType="TABLE">
     <columns>
       <column columnName="RowId"/>

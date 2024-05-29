@@ -49,10 +49,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * User: kevink
- * Date: 6/13/13
- */
 public class SpecimenSettingsWriter extends AbstractSpecimenWriter
 {
     private static final String DEFAULT_SETTINGS_FILE = "specimen_settings.xml";
@@ -119,7 +115,7 @@ public class SpecimenSettingsWriter extends AbstractSpecimenWriter
     private void writeSpecimenGroupings(SpecimenSettingsType specimenSettingsType, RepositorySettings repositorySettings)
     {
         ArrayList<String[]> groupings = repositorySettings.getSpecimenWebPartGroupings();
-        if (groupings.size() > 0)
+        if (!groupings.isEmpty())
         {
             SpecimenSettingsType.WebPartGroupings xmlWebPartGroupings = specimenSettingsType.addNewWebPartGroupings();
             for (String[] grouping : groupings)
@@ -134,7 +130,7 @@ public class SpecimenSettingsWriter extends AbstractSpecimenWriter
     {
         SpecimenSettingsType.RequestStatuses xmlRequestStatuses = null;
         List<SpecimenRequestStatus> statuses = SpecimenRequestManager.get().getRequestStatuses(study.getContainer(), ctx.getUser());
-        if (statuses.size() > 0)
+        if (!statuses.isEmpty())
         {
             for (SpecimenRequestStatus status : statuses)
             {

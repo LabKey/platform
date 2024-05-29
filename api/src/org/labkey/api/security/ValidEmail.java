@@ -40,7 +40,7 @@ import java.util.Collection;
 import java.util.Map;
 
 /**
- * Represents an email address that is known to be valid according to RFC 822. Will automatically append
+ * Represents an email address that is known to be valid per RFC 822. Will automatically append
  * the default email domain from {@link AppProps} and do other normalization if needed.
  */
 public class ValidEmail
