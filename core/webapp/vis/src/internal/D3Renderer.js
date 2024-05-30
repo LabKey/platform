@@ -1507,6 +1507,14 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             throw Error("The extent must be a 2d array in the form of [[xMin, yMin], [xMax, yMax]]");
         }
 
+        for (var i = 0; i <= 1; i++) {
+            for (var j = 0; j <= 1; j++) {
+                if (!Number.isFinite(extent[i][j]))
+                {
+                    extent[i][j] = null;
+                }
+            }
+        }
         var xMin = extent[0][0], xMax = extent[1][0], yMin = extent[0][1], yMax = extent[1][1];
 
         if ((xMin === null && xMax !== null) || (xMin !== null && xMax === null)) {
