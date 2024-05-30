@@ -39,6 +39,7 @@ import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.NotFoundException;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -218,6 +219,13 @@ public class ClosureQueryHelper
             {
                 SQLFragment objectId = fkRowId.getValueSql(tableAlias);
                 return ClosureQueryHelper.getValueSql(isSampleSource, sourceType, objectId, target);
+            }
+
+            @Override
+            public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
+            {
+                fkRowId.declareJoins(parentAlias, map);
+                super.declareJoins(parentAlias, map);
             }
         };
         ret.setDisplayColumnFactory(AncestorLookupDisplayColumn::new);
@@ -564,6 +572,13 @@ public class ClosureQueryHelper
 //                        return new SQLFragment(tableAlias);
                         // TODO here we need to return tableAlias
                         return parent.getValueSql(tableAlias);
+                    }
+
+                    @Override
+                    public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
+                    {
+                        parent.declareJoins(parentAlias, map);
+                        super.declareJoins(parentAlias, map);
                     }
                 };
                 ret.setFk(lk.getFk());
