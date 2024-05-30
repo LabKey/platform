@@ -395,6 +395,30 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return null;
     }
 
+    public List<FieldKey> getMetadataColumns(@NotNull PlateSet plateSet, Container c, User user, ContainerFilter cf)
+    {
+        Set<FieldKey> includedMetadataCols = new HashSet<>();
+        for (Plate plate : plateSet.getPlates(user))
+        {
+            QueryView plateQueryView = PlateManager.get().getPlateQueryView(c, user, cf, plate, false);
+            Map<String, FieldKey> displayColumns = PlateManager.get().getPlateDisplayColumns(plateQueryView)
+                    .stream()
+                    .filter(col -> col.getFilterKey() != null)
+                    .collect(Collectors.toMap(col -> col.getColumnInfo().getPropertyURI(), DisplayColumn::getFilterKey));
+
+            for (PlateCustomField field : plate.getCustomFields())
+            {
+                FieldKey lookupFk = displayColumns.get(field.getPropertyURI());
+                if (lookupFk != null)
+                    includedMetadataCols.add(lookupFk);
+                else
+                    includedMetadataCols.add(FieldKey.fromParts(WellTable.Column.Properties.name(), field.getName()));
+            }
+        }
+
+        return includedMetadataCols.stream().sorted(Comparator.comparing(FieldKey::getName)).toList();
+    }
+
     @NotNull
     public List<Plate> getPlateTemplates(Container container)
     {
@@ -3045,7 +3069,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return fieldKeys;
     }
 
-    private QueryView getPlateQueryView(Container container, User user, ContainerFilter cf, Plate plate, boolean isMapView)
+    public QueryView getPlateQueryView(Container container, User user, ContainerFilter cf, Plate plate, boolean isMapView)
     {
         UserSchema userSchema = QueryService.get().getUserSchema(user, container, PlateSchema.SCHEMA_NAME);
         List<FieldKey> fieldKeys = getPlateExportFieldKeys(plate, isMapView);
@@ -3072,7 +3096,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return renameColumnMap;
     }
 
-    private List<DisplayColumn> getPlateDisplayColumns(QueryView queryView)
+    public List<DisplayColumn> getPlateDisplayColumns(QueryView queryView)
     {
         // We have to use the display columns from the DataRegion returned from createDataView in order to get the
         // correct columns that we set via QuerySettings in getPlateQueryView, if we don't then we'll only get the

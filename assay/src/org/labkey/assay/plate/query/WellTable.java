@@ -5,8 +5,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.plate.Plate;
-import org.labkey.api.assay.plate.PlateCustomField;
-import org.labkey.api.assay.plate.PlateSet;
 import org.labkey.api.assay.plate.PositionImpl;
 import org.labkey.api.assay.plate.Well;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -59,9 +57,7 @@ import org.labkey.assay.query.AssayDbSchema;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -305,18 +301,6 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
     public List<FieldKey> getDefaultVisibleColumns()
     {
         return defaultVisibleColumns;
-    }
-
-    public static List<FieldKey> getMetadataColumns(@NotNull PlateSet plateSet, User user)
-    {
-        Set<FieldKey> includedMetadataCols = new HashSet<>();
-        for (Plate plate : plateSet.getPlates(user))
-        {
-            for (PlateCustomField field : plate.getCustomFields())
-                includedMetadataCols.add(FieldKey.fromParts(Column.Properties.name(), field.getName()));
-        }
-
-        return includedMetadataCols.stream().sorted(Comparator.comparing(FieldKey::getName)).toList();
     }
 
 /*

@@ -536,6 +536,8 @@ public final class PlateManagerTest
     public void getInstrumentInstructions() throws Exception
     {
         // Arrange
+        ContainerFilter cf = ContainerFilter.Type.CurrentAndSubfolders.create(ContainerManager.getSharedContainer(), user);
+
         final ExpMaterial sample1 = ExperimentService.get().createExpMaterial(container, sampleType.generateSampleLSID().setObjectId("sampleOne").toString(), "sampleOne");
         sample1.setCpasType(sampleType.getLSID());
         sample1.save(user);
@@ -566,7 +568,7 @@ public final class PlateManagerTest
         plate = PlateManager.get().createAndSavePlate(container, user, plate, null, rows);
 
         // Act
-        List<FieldKey> includedMetadataCols = WellTable.getMetadataColumns(plate.getPlateSet(), user);
+        List<FieldKey> includedMetadataCols = PlateManager.get().getMetadataColumns(plate.getPlateSet(), container, user, cf);
         List<Object[]> result = PlateManager.get().getInstrumentInstructions(plate.getPlateSet().getRowId(), includedMetadataCols, container, user);
 
         // Assert
@@ -585,6 +587,8 @@ public final class PlateManagerTest
     public void getWorklist() throws Exception
     {
         // Arrange
+        ContainerFilter cf = ContainerFilter.Type.CurrentAndSubfolders.create(ContainerManager.getSharedContainer(), user);
+
         final ExpMaterial sample1 = ExperimentService.get().createExpMaterial(container, sampleType.generateSampleLSID().setObjectId("sampleA").toString(), "sampleA");
         sample1.setCpasType(sampleType.getLSID());
         sample1.save(user);
@@ -632,8 +636,8 @@ public final class PlateManagerTest
         Plate plateDestination = PlateManager.get().createAndSavePlate(container, user, new PlateImpl(container, "myPlate2", plateType), null, rows2);
 
         // Act
-        List<FieldKey> sourceIncludedMetadataCols = WellTable.getMetadataColumns(plateSource.getPlateSet(), user);
-        List<FieldKey> destinationIncludedMetadataCols = WellTable.getMetadataColumns(plateDestination.getPlateSet(), user);
+        List<FieldKey> sourceIncludedMetadataCols = PlateManager.get().getMetadataColumns(plateSource.getPlateSet(), container, user, cf);
+        List<FieldKey> destinationIncludedMetadataCols = PlateManager.get().getMetadataColumns(plateDestination.getPlateSet(), container, user, cf);
         List<Object[]> plateDataRows = PlateManager.get().getWorklist(plateSource.getPlateSet().getRowId(), plateDestination.getPlateSet().getRowId(), sourceIncludedMetadataCols, destinationIncludedMetadataCols, container, user);
 
         // Assert
