@@ -54,8 +54,6 @@ import java.util.Set;
 
 /**
  * Manages bookkeeping for date-based studies, lumping dates into timepoints as defined for the study.
- * User: brittp
- * Created: Feb 29, 2008 11:23:37 AM
  */
 public class RelativeDateVisitManager extends VisitManager
 {

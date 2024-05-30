@@ -59,7 +59,6 @@ public class StudyMergeParticipantsTest extends StudyBaseTest
 
     private static final int MERGE_SUCCESS_TIMEOUT = 60000;
 
-
     @Override
     protected String getProjectName()
     {
@@ -138,8 +137,8 @@ public class StudyMergeParticipantsTest extends StudyBaseTest
 
         log("Check url's to are correctly constructed");
         final String url = WebTestHelper.buildRelativeUrl("study", PROJECT_NAME + "/" + FOLDER_NAME, "dataset",
-                Maps.of("datasetId", 5018,
-                        "Dataset.ParticipantId~in", PTID_NO_ALIAS + URLEncoder.encode(";", StandardCharsets.UTF_8) + PTID_NEW_2));
+            Maps.of("datasetId", 5018,
+                "Dataset.ParticipantId~in", PTID_NO_ALIAS + URLEncoder.encode(";", StandardCharsets.UTF_8) + PTID_NEW_2));
         assertElementPresent(Locator.linkWithHref(url));
 
         log("Resolve conflicts and check for correct row retention");
@@ -157,25 +156,24 @@ public class StudyMergeParticipantsTest extends StudyBaseTest
 
     private void configureAliases()
     {
-
         // Create alias dataset and insert some data
         DatasetDesignerPage editDatasetPage = _studyHelper.goToManageDatasets()
-                .clickCreateNewDataset()
-                .setName(ALIAS_DATASET);
+            .clickCreateNewDataset()
+            .setName(ALIAS_DATASET);
         editDatasetPage.getFieldsPanel()
-                .manuallyDefineFields("Property");
+            .manuallyDefineFields("Property");
         editDatasetPage.getFieldsPanel()
-                .addField(ALIAS_COLUMN).setRequiredField(true);
+            .addField(ALIAS_COLUMN).setRequiredField(true);
         editDatasetPage.getFieldsPanel()
-                .addField(SOURCE_COLUMN).setRequiredField(true);
+            .addField(SOURCE_COLUMN).setRequiredField(true);
 
         editDatasetPage
-                .clickSave()
-                .clickViewData()
-                .getDataRegion()
-                .clickImportBulkData();
+            .clickSave()
+            .clickViewData()
+            .getDataRegion()
+            .clickImportBulkData();
         setFormElement(Locator.name("text"), "participantId\tdate\t" + ALIAS_COLUMN + "\t" + SOURCE_COLUMN + "\n" + PTID_WITH_ALIAS + "\t1/3/2014\tabc123\t" + ALIAS_SOURCE_1);
-        clickButton("Submit", "Dataset: " + ALIAS_DATASET + ", All Visits");
+        clickButton("Submit", "Dataset: " + ALIAS_DATASET);
 
         // Configure new dataset as the alias dataset
         goToManageAlternateIds();
@@ -188,7 +186,7 @@ public class StudyMergeParticipantsTest extends StudyBaseTest
 
         // Refresh the page and make sure the configuration stuck
         refresh();
-        waitForFormElementToEqual(Locator.input("datasetCombo"),ALIAS_DATASET);
+        waitForFormElementToEqual(Locator.input("datasetCombo"), ALIAS_DATASET);
 
         clickButton("Done");
     }

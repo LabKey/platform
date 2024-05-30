@@ -132,7 +132,7 @@ public class StudyQueryReport extends QueryReport
             DatasetDefinition datasetDef = StudyManager.getInstance().getDatasetDefinition(study, datasetId);
             if (datasetDef != null)
                 return new ActionURL(StudyController.DatasetReportAction.class, context.getContainer()).
-                            addParameter(Dataset.DATASETKEY, datasetId).
+                            addParameter(Dataset.DATASET_KEY, datasetId).
                             addParameter(StudyController.DATASET_REPORT_ID_PARAMETER_NAME, getDescriptor().getReportId().toString());
         }
 

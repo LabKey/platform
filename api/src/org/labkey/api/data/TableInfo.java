@@ -607,10 +607,8 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
     default boolean hasDbTriggers() { return false; }
 
     /**
-     * TableInfos that can be associated with a DbCache need a reliable key other than a TableInfo instance.
-     * Return null if DbCache is not supported.
-     *
-     * We should probably kill DbCache, but let's fix this for now (https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=10508)
+     * TableInfos that can be associated with a QueryHelper need a reliable key other than a TableInfo instance.
+     * Return null if QueryHelper is not supported.
      */
     Path getNotificationKey();
 

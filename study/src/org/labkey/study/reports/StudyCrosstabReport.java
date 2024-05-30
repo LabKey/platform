@@ -76,7 +76,7 @@ public class StudyCrosstabReport extends CrosstabReport
     @Override
     public ActionURL getRunReportURL(ViewContext context)
     {
-        int datasetId = NumberUtils.toInt(getDescriptor().getProperty(Dataset.DATASETKEY), -1);
+        int datasetId = NumberUtils.toInt(getDescriptor().getProperty(Dataset.DATASET_KEY), -1);
         if (datasetId == -1)
         {
             String queryName = getDescriptor().getProperty(ReportDescriptor.Prop.queryName);
@@ -95,7 +95,7 @@ public class StudyCrosstabReport extends CrosstabReport
         if (datasetId != -1)
         {
             return new ActionURL(StudyController.DatasetReportAction.class, context.getContainer()).
-                        addParameter(Dataset.DATASETKEY, datasetId).
+                        addParameter(Dataset.DATASET_KEY, datasetId).
                         addParameter(StudyController.DATASET_REPORT_ID_PARAMETER_NAME, getDescriptor().getReportId().toString());
         }
         return super.getRunReportURL(context);

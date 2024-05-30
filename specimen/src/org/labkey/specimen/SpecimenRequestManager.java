@@ -10,7 +10,6 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DatabaseCache;
@@ -112,7 +111,6 @@ public class SpecimenRequestManager
             try (var ignore = SpringActionController.ignoreSqlUpdates())
             {
                 Table.insert(user, _requestStatusHelper.getTableInfo(), notYetSubmittedStatus);
-                DbCache.trackRemove(_requestStatusHelper.getTableInfo());
                 _requestStatusHelper.clearCache(c);
             }
             statuses = _requestStatusHelper.getList(c, "SortOrder");
