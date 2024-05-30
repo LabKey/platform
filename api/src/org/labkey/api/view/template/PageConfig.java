@@ -16,6 +16,8 @@
 
 package org.labkey.api.view.template;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
@@ -32,6 +34,8 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.SafeToRender;
+import org.labkey.api.util.SafeToRenderBuilder;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.util.logging.LogHelper;
@@ -43,8 +47,6 @@ import org.labkey.api.view.ViewService;
 import org.labkey.api.view.ViewServlet;
 import org.springframework.web.servlet.ModelAndView;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
@@ -594,8 +596,20 @@ public class PageConfig
     public HtmlString getScriptTagStart()
     {
         HtmlString nonce = getScriptNonce();
-        return HtmlStringBuilder.of(HtmlString.unsafe("\n<script type=\"text/javascript\" nonce=\"")).append(nonce).unsafeAppend("\">").getHtmlString();
+        return HtmlStringBuilder.of(HtmlString.unsafe("\n<script type=\"text/javascript\" nonce=\"")).append(nonce).unsafeAppend("\">\n").getHtmlString();
     }
+
+
+    public SafeToRender buildScriptTagBlock(JavaScriptFragment javaScriptFragment)
+    {
+        SafeToRenderBuilder scriptBuilder = SafeToRenderBuilder.of();
+        scriptBuilder.append(HttpView.currentPageConfig().getScriptTagStart());
+        scriptBuilder.append(HtmlString.unsafe("\n"));
+        scriptBuilder.append(javaScriptFragment);
+        scriptBuilder.append(HtmlString.unsafe("\n</script>\n"));
+        return scriptBuilder.getSafeToRender();
+    }
+
 
 
     private void _addHandler(EventHandler eh)
