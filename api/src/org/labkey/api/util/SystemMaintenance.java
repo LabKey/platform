@@ -157,10 +157,10 @@ public class SystemMaintenance
         _timerDisabled = disable;
     }
 
-    private final static String SET_NAME = "SystemMaintenance";
+    public final static String SET_NAME = "SystemMaintenance";
     private final static String TIME_PROPERTY_NAME = "MaintenanceTime";
-    private final static String DISABLED_TASKS_PROPERTY_NAME = "DisabledTasks";
-    private final static String ENABLED_TASKS_PROPERTY_NAME = "EnabledTasks";
+    public final static String DISABLED_TASKS_PROPERTY_NAME = "DisabledTasks";
+    public final static String ENABLED_TASKS_PROPERTY_NAME = "EnabledTasks";
 
     public static SystemMaintenanceProperties getProperties()
     {

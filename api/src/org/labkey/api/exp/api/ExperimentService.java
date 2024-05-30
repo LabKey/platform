@@ -1086,8 +1086,6 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     boolean useStrictCounter();
 
-    Map<String, Map<String, Set<String>>> doMissingFilesCheck(User user, Container container) throws SQLException;
-
     class XarExportOptions
     {
         String _lsidRelativizer = LSID_OPTION_FOLDER_RELATIVE;

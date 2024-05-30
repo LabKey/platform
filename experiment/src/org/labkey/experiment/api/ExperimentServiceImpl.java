@@ -9733,7 +9733,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
     }
 
-    @Override
     public Map<String, Map<String, Set<String>>> doMissingFilesCheck(User user, Container container) throws SQLException
     {
         if (container == null)
@@ -9760,6 +9759,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             selectSql = unionSql;
         else
             selectSql = new SQLFragment("SELECT * FROM (").append(unionSql).append(") WHERE Container ").appendInClause(cf.getIds(), CoreSchema.getInstance().getSchema().getSqlDialect());
+        final int MAX_MISSING_COUNT = 1000;
+        int missingCount = 0;
         try (ResultSet rs = new SqlSelector(CoreSchema.getInstance().getSchema(), selectSql).getResultSet(false))
         {
             while (rs.next())
@@ -9776,6 +9777,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
                 if (!file.exists())
                 {
+                    missingCount++;
                     String containerId = rs.getString("Container");
                     String sourceName = rs.getString("SourceName");
                     if (!missingFiles.containsKey(containerId))
@@ -9785,6 +9787,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
                     missingFiles.get(containerId).get(sourceName).add(filePath);
                 }
+
+                if (missingCount >= MAX_MISSING_COUNT)
+                    break;
             }
         }
         return missingFiles;

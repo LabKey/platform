@@ -44,7 +44,6 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.DefaultExperimentDataHandler;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
-import org.labkey.api.exp.api.ExpLineageOptions;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolAttachmentType;
@@ -562,6 +561,8 @@ public class ExperimentModule extends SpringModule
         WebdavService.get().addProvider(new ScriptsResourceProvider());
 
         SystemMaintenance.addTask(new FileLinkMetricsMaintenanceTask());
+
+        FileLinkMetricsMaintenanceTask.populateStartupProperties();
 
         UsageMetricsService svc = UsageMetricsService.get();
         if (null != svc)
