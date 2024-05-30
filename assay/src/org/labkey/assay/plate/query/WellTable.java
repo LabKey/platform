@@ -82,7 +82,6 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         Col,
         Container,
         Dilution,
-        Group,
         Lsid,
         PlateId,
         Position,
@@ -92,6 +91,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         SampleId,
         Type,
         Value,
+        WellGroup
     }
 
     private static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
@@ -123,13 +123,13 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
     public void addColumns()
     {
         super.addColumns();
-        addGroupColumn();
+        addWellGroupColumn();
         addPositionColumn();
         addPropertiesColumn();
         addTypeColumn();
     }
 
-    private void addGroupColumn()
+    private void addWellGroupColumn()
     {
         SQLFragment groupSql = new SQLFragment("SELECT WG.Name FROM ")
                 .append(AssayDbSchema.getInstance().getTableInfoWellGroupPositions(), "WGP")
@@ -146,7 +146,8 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         // we do not support having multiple values. Here we limit the query to return a single result.
         groupSql = new SQLFragment("(").append(getSqlDialect().limitRows(groupSql, 1)).append(")");
 
-        var column = new ExprColumn(this, FieldKey.fromParts(Column.Group.name()), groupSql, JdbcType.VARCHAR);
+        var column = new ExprColumn(this, FieldKey.fromParts(Column.WellGroup.name()), groupSql, JdbcType.VARCHAR);
+        column.setLabel("Group");
         column.setUserEditable(true);
         column.setShownInInsertView(true);
         addColumn(column);
