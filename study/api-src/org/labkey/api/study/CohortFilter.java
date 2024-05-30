@@ -25,11 +25,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.SafeToRenderEnum;
 import org.labkey.api.view.ActionURL;
 
-/**
- * User: brittp
- * Date: Sep 10, 2009
- * Time: 10:32:54 AM
- */
 public interface CohortFilter
 {
     Type getType();

@@ -69,7 +69,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.StudySchema;
-import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.DatasetManager;
@@ -174,7 +173,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 addParameter(qs.param(QueryParam.schemaName), settings.getSchemaName()).
                 addParameter(qs.param(QueryParam.queryName), settings.getQueryName()).
                 addParameter(qs.param(QueryParam.viewName), settings.getViewName()).
-                addParameter(Dataset.DATASETKEY, context.getActionURL().getParameter(Dataset.DATASETKEY)).
+                addParameter(Dataset.DATASET_KEY, context.getActionURL().getParameter(Dataset.DATASET_KEY)).
                 addParameter(ActionURL.Param.redirectUrl, PageFlowUtil.encode(context.getActionURL().getLocalURIString()));
         filter.applyToURL(result, qs.getDataRegionName());
         return result;
@@ -390,7 +389,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 Study study = StudyManager.getInstance().getStudy(qsDef.getContainer());
                 DatasetDefinition def = StudyManager.getInstance().getDatasetDefinitionByName(study, qsDef.getName());
                 return new ActionURL(StudyController.DatasetAction.class, qsDef.getContainer()).
-                    addParameter(Dataset.DATASETKEY, def.getDatasetId());
+                    addParameter(Dataset.DATASET_KEY, def.getDatasetId());
             }
         }
         return null;
@@ -528,7 +527,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                                 transaction.commit();
 
                                 return new ActionURL(StudyController.DatasetAction.class, form.getViewContext().getContainer()).
-                                    addParameter(Dataset.DATASETKEY, dsDef.getDatasetId());
+                                    addParameter(Dataset.DATASET_KEY, dsDef.getDatasetId());
                             }
                         }
                     }

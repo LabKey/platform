@@ -27,7 +27,7 @@ import org.labkey.test.pages.DesignerController.DesignerTester;
 import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.params.FieldDefinition.ColumnType;
-import org.labkey.test.params.list.VarListDefinition;
+import org.labkey.test.params.list.IntListDefinition;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.PortalHelper;
 
@@ -167,9 +167,9 @@ public class VaccineProtocolTest extends BaseWebDriverTest
 
         portalHelper.addWebPart("Lists");
 
-        new VarListDefinition(LIST_NAME)
+        new IntListDefinition(LIST_NAME)
                 .setFields(List.of(
-                        new FieldDefinition("Key", FieldDefinition.ColumnType.Integer),
+                        new FieldDefinition("Key", ColumnType.Integer),
                         new FieldDefinition("Value", ColumnType.String).setDescription("Vaccine Value")))
                 .create(createDefaultConnection(), getProjectName() + "/" + FOLDER_NAME + "/" + STUDY_FOLDER);
 
