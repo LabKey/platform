@@ -23,17 +23,21 @@ import org.labkey.api.assay.AssayService;
 import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.iterator.ValidatingDataRowIterator;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.writer.PrintWriters;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * User: klum
@@ -42,59 +46,72 @@ import java.util.Map;
 public class TsvDataSerializer implements DataExchangeHandler.DataSerializer
 {
     @Override
-    public void exportRunData(ExpProtocol protocol, List<Map<String, Object>> data, File runDataFile) throws Exception
+    public void exportRunData(ExpProtocol protocol, Supplier<ValidatingDataRowIterator> data, File runDataFile) throws IOException, ValidationException
     {
-        if (data.size() > 0)
+        try (ValidatingDataRowIterator iter = data.get())
         {
-            try (PrintWriter pw = PrintWriters.getPrintWriter(runDataFile))
+            // Only write a file if there are data rows
+            if (iter.hasNext())
             {
-                // write the column header
-                List<String> columns = new ArrayList<>(data.get(0).keySet());
-                String sep = "";
-                for (String name : columns)
+                try (PrintWriter pw = PrintWriters.getPrintWriter(runDataFile))
                 {
-                    pw.append(sep);
-                    pw.append(name);
-                    sep = "\t";
-                }
-                pw.println();
-
-                // write the rows
-                for (Map<String, Object> row : data)
-                {
-                    sep = "";
+                    Map<String, Object> row = iter.next();
+                    // write the column header
+                    List<String> columns = new ArrayList<>(row.keySet());
+                    String sep = "";
                     for (String name : columns)
                     {
-                        Object o = row.get(name);
                         pw.append(sep);
-                        if (o != null)
-                        {
-                            if (Date.class.isAssignableFrom(o.getClass()))
-                                pw.append(DateUtil.formatIsoDateShortTime((Date) o));  // Always ISO? Or should we apply display format?
-                            else if (MvFieldWrapper.class.isAssignableFrom(o.getClass()))
-                                pw.append(String.valueOf(((MvFieldWrapper)o).getOriginalValue()));
-                            else if (Collection.class.isAssignableFrom(o.getClass()))
-                                pw.append(StringUtils.join((Collection) o, ","));
-                            else if (Object[].class.isAssignableFrom(o.getClass()))
-                                pw.append(StringUtils.join((Object[]) o, ","));
-                            else
-                                pw.append(String.valueOf(o));
-                        }
+                        pw.append(name);
                         sep = "\t";
                     }
                     pw.println();
+                    writeRow(row, columns, pw);
+
+                    // write the remaining rows
+                    while (iter.hasNext())
+                    {
+                        row = iter.next();
+                        writeRow(row, columns, pw);
+                    }
                 }
             }
         }
     }
 
+    private static void writeRow(Map<String, Object> row, List<String> columns, PrintWriter pw)
+    {
+        String sep;
+        sep = "";
+        for (String name : columns)
+        {
+            Object o = row.get(name);
+            pw.append(sep);
+            if (o != null)
+            {
+                if (Date.class.isAssignableFrom(o.getClass()))
+                    pw.append(DateUtil.formatIsoDateShortTime((Date) o));  // Always ISO? Or should we apply display format?
+                else if (MvFieldWrapper.class.isAssignableFrom(o.getClass()))
+                    pw.append(String.valueOf(((MvFieldWrapper) o).getOriginalValue()));
+                else if (Collection.class.isAssignableFrom(o.getClass()))
+                    pw.append(StringUtils.join((Collection) o, ","));
+                else if (Object[].class.isAssignableFrom(o.getClass()))
+                    pw.append(StringUtils.join((Object[]) o, ","));
+                else
+                    pw.append(String.valueOf(o));
+            }
+            sep = "\t";
+        }
+        pw.println();
+    }
+
     @Override
-    public List<Map<String, Object>> importRunData(ExpProtocol protocol, File runData) throws Exception
+    public Supplier<ValidatingDataRowIterator> importRunData(ExpProtocol protocol, File runData) throws Exception
     {
         return _importRunData(protocol, runData, true);
     }
 
-    protected List<Map<String, Object>> _importRunData(ExpProtocol protocol, File runData, boolean shouldInferTypes) throws Exception
+    protected Supplier<ValidatingDataRowIterator> _importRunData(ExpProtocol protocol, File runData, boolean shouldInferTypes) throws Exception
     {
         AssayProvider provider = AssayService.get().getProvider(protocol);
         Domain dataDomain = provider.getResultsDomain(protocol);
@@ -103,7 +120,9 @@ public class TsvDataSerializer implements DataExchangeHandler.DataSerializer
 
         try (DataLoader loader = AbstractAssayTsvDataHandler.createLoaderForImport(runData, dataDomain, loaderSettings, shouldInferTypes))
         {
-            return loader.load();
+            // TODO - streaming iterator
+            List<Map<String, Object>> rows = loader.load();
+            return () -> ValidatingDataRowIterator.of(rows);
         }
     }
 }

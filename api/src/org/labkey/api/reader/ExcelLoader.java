@@ -492,7 +492,7 @@ public class ExcelLoader extends DataLoader
         private volatile RuntimeException _exception;
         private volatile boolean _complete = false;
 
-        private List<Object> _row;
+        private List<Object> _nextRow;
 
         public AsyncXlsxIterator() throws IOException, InvalidFormatException
         {
@@ -592,36 +592,42 @@ public class ExcelLoader extends DataLoader
         @Override
         public boolean hasNext()
         {
-            _row = null;
+            if (_nextRow != null)
+            {
+                return true;
+            }
+
             do
             {
                 try
                 {
-                    _row = _queue.poll(1, TimeUnit.MILLISECONDS);
+                    _nextRow = _queue.poll(1, TimeUnit.MILLISECONDS);
                 }
                 catch (InterruptedException ignored)
                 {
 
                 }
             }
-            while (!_complete && _row == null && _exception == null);
+            while (!_complete && _nextRow == null && _exception == null);
 
             if (_exception != null)
             {
                 throw _exception;
             }
 
-            return _row != null;
+            return _nextRow != null;
         }
 
         @Override
         public List<Object> next()
         {
-            if (_row == null)
+            if (_nextRow == null)
             {
                 throw new NoSuchElementException();
             }
-            return _row;
+            var result = _nextRow;
+            _nextRow = null;
+            return result;
         }
     }
 
@@ -851,6 +857,29 @@ public class ExcelLoader extends DataLoader
 
             }
             ensureAsyncThreads(0);
+        }
+
+        @Test
+        public void testExtraHasNext() throws Exception
+        {
+            for (String file : Arrays.asList("ExcelLoaderTest.xlsx", "ExcelLoaderTest.xls"))
+            {
+                try (ExcelLoader loader = getExcelLoader(file))
+                {
+                    try (var iter = loader.iterator())
+                    {
+                        int rowCount = 0;
+                        while (iter.hasNext())
+                        {
+                            assertTrue(iter.hasNext());
+                            iter.next();
+                            rowCount++;
+                        }
+                        assertEquals("Wrong row count for " + file, 7, rowCount);
+                    }
+                }
+                ensureAsyncThreads(0);
+            }
         }
 
         @Test

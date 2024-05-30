@@ -63,6 +63,9 @@ import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.iterator.CloseableIterator;
+import org.labkey.api.iterator.ValidatingDataRowIterator;
+import org.labkey.api.iterator.WrappingCloseableIterator;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.qc.DataTransformer;
@@ -95,6 +98,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.unmodifiableCollection;
@@ -219,7 +223,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 }
                 catch (PipelineValidationException e)
                 {
-                    throw new UnexpectedException(e);
+                    throw UnexpectedException.wrap(e);
                 }
             }, DbScope.CommitTaskOption.POSTCOMMIT);
         }
@@ -463,7 +467,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                     }
                 }
                 Container targetStudy = null;
-                if (targetStudyId != null && targetStudyId.length() > 0)
+                if (targetStudyId != null && !targetStudyId.isEmpty())
                     targetStudy = ContainerManager.getForId(targetStudyId);
 
                 resolver = resolverType.createResolver(
@@ -493,7 +497,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         List<ExpData> insertedDatas
     ) throws ExperimentException, ValidationException
     {
-        List<Map<String, Object>> rawData = context.getRawData();
+        Supplier<ValidatingDataRowIterator> rawData = context.getRawData();
         if (rawData != null)
         {
             insertedDatas.addAll(outputDatas.keySet());
@@ -573,7 +577,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             // this should assert to always be true
             if (handler instanceof TransformDataHandler transformDataHandler)
             {
-                for (Map.Entry<ExpData, List<Map<String, Object>>> entry : transformResult.getTransformedData().entrySet())
+                for (Map.Entry<ExpData, Supplier<ValidatingDataRowIterator>> entry : transformResult.getTransformedData().entrySet())
                 {
                     ExpData expData = entry.getKey();
                     // The object may have already been claimed by
@@ -767,7 +771,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
         // Don't create an empty result data file if there are other outputs from this run, or if the user didn't
         // include any data rows
-        if (dataArray.size() > 0 && outputData.isEmpty())
+        if (!dataArray.isEmpty() && outputData.isEmpty())
         {
             DataType dataType = provider.getDataType();
             if (dataType == null)

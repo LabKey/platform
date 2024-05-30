@@ -13,6 +13,8 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.iterator.CloseableIterator;
+import org.labkey.api.iterator.ValidatingDataRowIterator;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.ExperimentalFeatureService;
@@ -21,6 +23,7 @@ import org.labkey.api.util.Pair;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 public interface AssayPlateMetadataService
 {
@@ -64,19 +67,15 @@ public interface AssayPlateMetadataService
      * result data has been imported
      *
      * @param plateMetadata the parsed plate metadata, use the parsePlateMetadata methods to convert from File or JSON objects.
-     * @param inserted the inserted result data
-     * @param rowIdToLsidMap a map of result data rowIds to result data lsids
      */
-    void addAssayPlateMetadata(
+    OntologyManager.RowCallback getAssayPlateMetadataRowCallback(
         ExpData resultData,
         Map<String, MetadataLayer> plateMetadata,
         Container container,
         User user,
         ExpRun run,
         AssayProvider provider,
-        ExpProtocol protocol,
-        List<Map<String, Object>> inserted,
-        Map<Integer, String> rowIdToLsidMap
+        ExpProtocol protocol
     ) throws ExperimentException;
 
     /**
@@ -84,12 +83,12 @@ public interface AssayPlateMetadataService
      *
      * @return the merged rows
      */
-    List<Map<String, Object>> mergePlateMetadata(
+    Supplier<ValidatingDataRowIterator> mergePlateMetadata(
         Container container,
         User user,
         Lsid plateLsid,
         Integer plateSetId,
-        List<Map<String, Object>> rows,
+        Supplier<ValidatingDataRowIterator> rows,
         @Nullable Map<String, MetadataLayer> plateMetadata,
         AssayProvider provider,
         ExpProtocol protocol
@@ -105,14 +104,14 @@ public interface AssayPlateMetadataService
      * Handles the validation and parsing of the plate data (or data file) including plate graphical formats as
      * well as cases where plate identifiers have not been supplied.
      */
-    List<Map<String, Object>> parsePlateData(
+    Supplier<ValidatingDataRowIterator> parsePlateData(
         Container container,
         User user,
         AssayProvider provider,
         ExpProtocol protocol,
         Integer plateSetId,
         File dataFile,
-        List<Map<String, Object>> data,
+        Supplier<ValidatingDataRowIterator> data,
         Pair<String, Boolean> plateIdAdded
     ) throws ExperimentException;
 

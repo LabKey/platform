@@ -466,7 +466,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     /**
      * Returns an iterator over the data, respecting the map filter and not including a row hash
      */
-    @Override
+    @Override @NotNull
     public final CloseableIterator<Map<String, Object>> iterator()
     {
         return iterator(false);
@@ -546,7 +546,6 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         private final RowMapFactory<Object> _factory;
         private final boolean _generateInputRowHash;
 
-        private Object[] _fields = null;
         private Map<String, Object> _values = null;
         private int _lineNum;
 
@@ -601,24 +600,24 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         @Override
         public boolean hasNext()
         {
-            if (_fields != null)
-                return true;    // throw illegalstate?
+            if (_values != null)
+                return true;
 
             try
             {
                 while (true)
                 {
-                    _fields = readFields();
-                    if (_fields == null)
+                    Object[] fields = readFields();
+                    if (fields == null)
                     {
                         close();
                         return false;
                     }
                     _lineNum++;
 
-                    String hash = _generateInputRowHash ? HashDataIterator.calculateRowHash(_fields,0,_fields.length) : null;
+                    String hash = _generateInputRowHash ? HashDataIterator.calculateRowHash(fields,0,fields.length) : null;
 
-                    _values = convertValues();
+                    _values = convertValues(fields);
                     if (null == _values)
                         return false;
 
@@ -674,15 +673,13 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
             return -1;
         }
 
-        protected final Map<String, Object> convertValues()
+        protected final Map<String, Object> convertValues(Object[] fields)
         {
-            if (_fields == null)
+            if (fields == null)
                 return null;    // consider: throw IllegalState
 
             try
             {
-                Object[] fields = _fields;
-                _fields = null;
                 Object[] values = new Object[_activeColumns.length];
 
                 boolean foundData = false;
