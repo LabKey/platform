@@ -1233,13 +1233,13 @@ boxPlot.render();
 
         this.getBrushExtent = function() {
             // Returns an array of arrays. First array is xMin, yMin, second array is xMax, yMax
-            // If the seleciton is 1D, then the min/max of the non-selected dimension will be null/null.
+            // If the seleciton is 1D, then the min/max of the non-selected dimension will be -Infinity/Infinity.
             return this.renderer.getBrushExtent();
         };
 
         this.setBrushExtent = function(extent) {
             // Takes a 2D array. First array is xMin, yMin, second array is xMax, yMax. If the seleciton is 1D, then the
-            // min/max of the non-selected dimension will be null/null.
+            // min/max of the non-selected dimension should be null/null or -Infinity/Infinity.
             this.renderer.setBrushExtent(extent);
         };
 
