@@ -37,12 +37,6 @@ import org.labkey.study.model.StudyManager.ParticipantViewConfig;
 import java.util.Map;
 import java.util.Set;
 
-import static org.labkey.api.util.PageFlowUtil.filter;
-
-/**
- * User: brittp
- * Created: May 2, 2008 2:13:02 PM
- */
 public class SubjectDetailsWebPartFactory extends BaseWebPartFactory
 {
     public enum DataType
@@ -195,12 +189,6 @@ public class SubjectDetailsWebPartFactory extends BaseWebPartFactory
             public int getDatasetId()
             {
                 return sourceDatasetId;
-            }
-
-            @Override
-            public String getRedirectUrl()
-            {
-                return currentUrl;
             }
         };
 

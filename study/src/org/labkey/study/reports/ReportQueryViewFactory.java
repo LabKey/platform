@@ -141,7 +141,7 @@ public class ReportQueryViewFactory
         public MenuButton createViewButton(ReportService.ItemFilter filter)
         {
             MenuButton button = super.createViewButton(StudyReportUIProvider.getItemFilter());
-            String id = getViewContext().getRequest().getParameter(Dataset.DATASETKEY);
+            String id = getViewContext().getRequest().getParameter(Dataset.DATASET_KEY);
             if (id != null)
                 button.addMenuItem("Set Default", getViewContext().cloneActionURL().setAction(StudyController.ViewPreferencesAction.class));
 

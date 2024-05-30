@@ -17,9 +17,9 @@
 package org.labkey.study.reports;
 
 import org.labkey.api.query.QueryParam;
-import org.labkey.api.reports.report.r.RReport;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportUrls;
+import org.labkey.api.reports.report.r.RReport;
 import org.labkey.api.reports.report.view.ReportQueryView;
 import org.labkey.api.study.Study;
 import org.labkey.api.util.PageFlowUtil;
@@ -31,16 +31,10 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.model.DatasetDefinition;
-import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.query.DatasetQueryView;
 
 import java.util.List;
 
-/**
- * User: Karl Lum
- * Date: Jul 25, 2007
- */
 public class StudyRReport extends RReport
 {
     public static final String TYPE = "Study.rReport";
@@ -83,10 +77,8 @@ public class StudyRReport extends RReport
         if (def != null)
             datasetId = def.getRowId();
 
-        final ActionURL url = context.getActionURL();
-        String qcParam = QCStateSet.getQCParameter(DatasetQueryView.DATAREGION, url);
-        List<String> participants = StudyController.getParticipantListFromCache(context, datasetId,
-                getDescriptor().getProperty(ReportDescriptor.Prop.viewName), null, qcParam != null ? url.getParameter(qcParam) : null);
+        List<String> participants = StudyController.getParticipantListFromSession(context, datasetId,
+                getDescriptor().getProperty(ReportDescriptor.Prop.viewName));
 
         VBox vBox = new VBox();
         vBox.addView(ReportsController.getParticipantNavTrail(context, participants));
