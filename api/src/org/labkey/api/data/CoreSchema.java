@@ -182,11 +182,6 @@ public class CoreSchema
         return getSchema().getTable("ReportEngineMap");
     }
 
-    public TableInfo getTableInfoPrincipalRelations()
-    {
-        return getSchema().getTable("PrincipalRelations");
-    }
-
     public TableInfo getTableInfoAuthenticationConfigurations()
     {
         return getSchema().getTable("AuthenticationConfigurations");

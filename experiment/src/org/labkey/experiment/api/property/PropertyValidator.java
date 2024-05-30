@@ -21,11 +21,6 @@ import org.labkey.api.util.UnexpectedException;
 
 import java.io.Serializable;
 
-/*
-* User: Karl Lum
-* Date: Aug 11, 2008
-* Time: 1:07:12 PM
-*/
 public class PropertyValidator implements Serializable, Cloneable
 {
     private int _rowId;

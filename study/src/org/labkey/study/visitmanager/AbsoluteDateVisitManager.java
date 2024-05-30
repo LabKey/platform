@@ -42,8 +42,6 @@ import java.util.Set;
 
 /**
  * Avoid bookkeeping on study-managed tables for continuous-style studies, like EHRs.
- * User: kevink
- * Date: Dec 30, 2009 12:13:57 PM
  */
 public class AbsoluteDateVisitManager extends RelativeDateVisitManager
 {

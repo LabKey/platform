@@ -122,8 +122,7 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
     public static final String SCHEMA_NAME = "study";
     public static final String DATASETS_SCHEMA_NAME = "Datasets";
     public static final String DESIGN_SCHEMA_NAME = "Design";
-    public static final String SPECIMENTS_SCHEMA_NAME = "Specimens";
-
+    public static final String SPECIMENS_SCHEMA_NAME = "Specimens";
 
     public static final String SCHEMA_DESCRIPTION = "Contains all data related to the study, including subjects, cohorts, visits, datasets, specimens, etc.";
     public static final String SIMPLE_SPECIMEN_TABLE_NAME = "SimpleSpecimen";
@@ -260,7 +259,7 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
             return Set.of();
         var ret = new LinkedHashSet<>(Arrays.asList(DATASETS_SCHEMA_NAME, DESIGN_SCHEMA_NAME));
         if (null != SpecimenService.get())
-            ret.add(SPECIMENTS_SCHEMA_NAME);
+            ret.add(SPECIMENS_SCHEMA_NAME);
         return ret;
     }
 
@@ -271,7 +270,7 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
             return new DatasetSchema(this);
         if (StringUtils.equalsIgnoreCase(DESIGN_SCHEMA_NAME, name))
             return new DesignSchema(this);
-        if (StringUtils.equalsIgnoreCase(SPECIMENTS_SCHEMA_NAME,name))
+        if (StringUtils.equalsIgnoreCase(SPECIMENS_SCHEMA_NAME,name))
             return new SpecimenSchema(this);
         return super.getSchema(name);
     }
