@@ -251,7 +251,7 @@ public class SqlScriptController extends SpringActionController
             {
                 modules = modules.stream()
                     .filter(Module::shouldManageVersion)
-                    .collect(Collectors.toList());
+                    .toList();
             }
 
             ArrayList<SqlScript> allRun = new ArrayList<>();

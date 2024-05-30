@@ -31,7 +31,6 @@ import org.labkey.api.assay.AssayTableMetadata;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -44,7 +43,6 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpdateColumn;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.api.ExpObject;
@@ -118,11 +116,6 @@ import static org.labkey.study.model.QCStateSet.getQCStateFilteredURL;
 import static org.labkey.study.model.QCStateSet.getQCUrlFilterValue;
 import static org.labkey.study.model.QCStateSet.selectedQCStateLabelFromUrl;
 
-/**
- * User: brittp
- * Date: Aug 25, 2006
- * Time: 4:03:59 PM
- */
 public class DatasetQueryView extends StudyQueryView
 {
     public static final String EXPERIMENTAL_LINKED_DATASET_CHECK = "LinkedDatasetCheck";
@@ -255,15 +248,17 @@ public class DatasetQueryView extends StudyQueryView
         }
 
         // allow posts from dataset data regions to determine which dataset was being displayed:
-        view.getDataRegion().addHiddenFormField(Dataset.DATASETKEY, "" + _dataset.getDatasetId());
+        view.getDataRegion().addHiddenFormField(Dataset.DATASET_KEY, "" + _dataset.getDatasetId());
 
         return view;
     }
 
-    /** This is how we tell the QueryView that we want to render the UpdateURL (well icon actually) even though
+    /**
+     * This is how we tell the QueryView that we want to render the UpdateURL (well icon actually) even though
      * table.hasPermission(UpdatePermission) is false.
-      * @return
+     * @return whether to render the update URL
      */
+    @Override
     protected boolean allowQueryTableUpdateURLOverride()
     {
         if (super.allowQueryTableUpdateURLOverride())
@@ -606,6 +601,7 @@ public class DatasetQueryView extends StudyQueryView
                 button.addSeparator();
             }
             ActionURL updateAction = new ActionURL(StudyController.UpdateQCStateAction.class, getContainer());
+            updateAction.addReturnURL(getViewContext().getActionURL());
             NavTree updateItem = button.addMenuItem("Update state of selected rows", "if (verifySelected(" + DataRegion.getJavaScriptObjectReference(getDataRegionName()) + ".form, \"" +
                     updateAction.getLocalURIString() + "\", \"post\", \"rows\")) " + DataRegion.getJavaScriptObjectReference(getDataRegionName()) + ".form.submit()");
             updateItem.setId("QCState:updateSelected");
@@ -619,15 +615,6 @@ public class DatasetQueryView extends StudyQueryView
                     getContainer()).addReturnURL(getViewContext().getActionURL()));
         }
         return button;
-    }
-
-    private boolean hasSourceLsids()
-    {
-        TableInfo datasetTable = getTable();
-        SimpleFilter sourceLsidFilter = new SimpleFilter();
-        sourceLsidFilter.addCondition(FieldKey.fromParts("SourceLsid"), null, CompareType.NONBLANK);
-
-        return new TableSelector(datasetTable, sourceLsidFilter, null).exists();
     }
 
     public static class DatasetFilterForm extends QueryViewAction.QueryExportForm

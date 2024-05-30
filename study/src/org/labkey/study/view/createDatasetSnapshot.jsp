@@ -105,8 +105,8 @@
 
             out.println(button(bean.isEdit() ? "Done" : "Cancel").submit(true).onClick("this.form.action.value='" + StudyController.StudySnapshotForm.CANCEL + "'"));
         %>
-    <%  if (getActionURL().getParameter(Dataset.DATASETKEY) != null) { %>
-    <input type="hidden" name="<%=h(Dataset.DATASETKEY)%>" value="<%=h(getActionURL().getParameter(Dataset.DATASETKEY))%>">
+    <%  if (getActionURL().getParameter(Dataset.DATASET_KEY) != null) { %>
+    <input type="hidden" name="<%=h(Dataset.DATASET_KEY)%>" value="<%=h(getActionURL().getParameter(Dataset.DATASET_KEY))%>">
     <%  } %>
     <input type="hidden" name="action" value="<%=h(StudyController.StudySnapshotForm.CREATE_SNAPSHOT)%>" id="action">
     <input type="hidden" name="snapshotDatasetId" value="<%=bean.getSnapshotDatasetId()%>">

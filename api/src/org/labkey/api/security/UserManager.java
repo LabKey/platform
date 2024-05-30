@@ -963,7 +963,6 @@ public class UserManager
             executor.execute("DELETE FROM " + CORE.getTableInfoLogins() + " WHERE Email=?", user.getEmail());
             executor.execute("DELETE FROM " + CORE.getTableInfoPrincipals() + " WHERE UserId=?", userId);
             executor.execute("DELETE FROM " + CORE.getTableAPIKeys() + " WHERE CreatedBy=?", userId);
-            executor.execute("DELETE FROM " + CORE.getTableInfoPrincipalRelations() + " WHERE userid=?", userId);
 
             OntologyManager.deleteOntologyObject(user.getEntityId(), ContainerManager.getSharedContainer(), true);
 
@@ -1217,18 +1216,6 @@ public class UserManager
             parsed.add(null == u ? name : String.valueOf(u.getUserId()));
         }
         return parsed;
-    }
-
-    //TODO is this worth creating a cache for?
-    public static Set<UserRelationships> getRelationships(User user, User other)
-    {
-        SQLFragment sql = new SQLFragment("SELECT relationship").append("\n")
-                .append("FROM ").append(CORE.getTableInfoPrincipalRelations(), "pr").append("\n")
-                .append("WHERE userid = ?").add(user.getEntityId()).append("\n")
-                .append("  AND otherid = ?").add(other.getEntityId());
-
-        Collection<UserRelationships> relationships = new SqlSelector(CORE.getScope(), sql).getCollection(UserRelationships.class);
-        return new HashSet<>(relationships);
     }
 
     /**
