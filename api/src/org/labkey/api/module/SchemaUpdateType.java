@@ -25,12 +25,7 @@ import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
 import java.util.Collection;
 import java.util.LinkedList;
 
-/**
-* User: adam
-* Date: 8/28/13
-* Time: 4:19 PM
-*/
-enum SchemaUpdateType
+public enum SchemaUpdateType
 {
     Before
     {

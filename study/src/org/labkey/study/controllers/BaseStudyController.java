@@ -23,11 +23,8 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.security.User;
-import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
-import org.labkey.api.study.TimepointType;
-import org.labkey.api.study.Visit;
 import org.labkey.api.study.security.permissions.ManageStudyPermission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
@@ -36,20 +33,14 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.study.StudyModule;
-import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.query.DatasetQueryView;
 import org.labkey.study.view.BaseStudyPage;
 import org.springframework.validation.BindException;
 
-/**
- * User: Karl Lum
- * Date: Dec 13, 2007
- */
 public abstract class BaseStudyController extends SpringActionController
 {
-    StudyImpl _study = null;
+    protected StudyImpl _study = null;
 
     public enum SharedFormParameters
     {
@@ -64,7 +55,7 @@ public abstract class BaseStudyController extends SpringActionController
     @Override
     public PageConfig defaultPageConfig()
     {
-        PageConfig page =  super.defaultPageConfig();
+        PageConfig page = super.defaultPageConfig();
         String template = getViewContext().getRequest().getHeader("template");
         if (null == template)
             template = getViewContext().getRequest().getParameter("_template");
@@ -124,7 +115,7 @@ public abstract class BaseStudyController extends SpringActionController
         return _study;
     }
 
-    protected BaseViewAction initAction(BaseViewAction parent, BaseViewAction action)
+    protected BaseViewAction<?> initAction(BaseViewAction<?> parent, BaseViewAction<?> action)
     {
         action.setViewContext(parent.getViewContext());
         action.setPageConfig(parent.getPageConfig());
@@ -180,26 +171,11 @@ public abstract class BaseStudyController extends SpringActionController
         addRootNavTrail(root);
     }
 
-    protected NavTree _addNavTrail(NavTree root, int datasetId, int visitId)
-    {
-        return _addNavTrail(root, datasetId, visitId, null);
-    }
-
-    protected NavTree _addNavTrail(NavTree root, int datasetId, int visitId, CohortFilter cohortFilter)
+    protected NavTree _addNavTrail(NavTree root, int datasetId, @Nullable ActionURL datasetUrl)
     {
         Study study = addRootNavTrail(root);
-        _appendDataset(root, study, datasetId, visitId, cohortFilter);
-        return root;
-    }
-
-    protected NavTree _appendDataset(NavTree root, Study study, int datasetId, int visitRowId, @Nullable CohortFilter cohortFilter)
-    {
         if (datasetId > 0)
         {
-            Visit visit = null;
-            if (visitRowId > 0)
-                visit = StudyManager.getInstance().getVisitForRowId(study, visitRowId);
-
             Dataset dataset = study.getDataset(datasetId);
             if (dataset != null)
             {
@@ -210,22 +186,18 @@ public abstract class BaseStudyController extends SpringActionController
                 else
                     label.append("CRF/Assay ").append(dataset.getDatasetId());
 
-                if (visit != null)
-                    label.append(", ").append(visit.getDisplayString());
-                else if (study.getTimepointType() != TimepointType.CONTINUOUS)
-                    label.append(", All Visits");
+                if (null == datasetUrl)
+                {
+                    datasetUrl = getViewContext().cloneActionURL()
+                        .setAction(StudyController.DatasetAction.class)
+                        .setContainer(getContainer())
+                        .deleteParameter("participantId");
 
-                ActionURL datasetUrl = new ActionURL(StudyController.DatasetAction.class, getContainer()).
-                        addParameter(Dataset.DATASETKEY, datasetId);
-                if (cohortFilter != null)
-                    cohortFilter.addURLParameters(study, datasetUrl, "Dataset");
+                    if (datasetUrl.getParameter(Dataset.DATASET_KEY) == null)
+                        datasetUrl.addParameter(Dataset.DATASET_KEY, datasetId);
+                }
 
-                ActionURL url = getViewContext().getActionURL();
-                String param = QCStateSet.getQCParameter(DatasetQueryView.DATAREGION, url);
-                if (param != null)
-                    datasetUrl.addParameter(param, url.getParameter(param));
-
-                root.addChild(label.toString(), datasetUrl.getLocalURIString());
+                root.addChild(label.toString(), datasetUrl);
             }
         }
         return root;

@@ -45,8 +45,6 @@ import java.util.Set;
 /**
  * Responsible for scanning which SQL upgrade scripts are present for a module, and which ones should be run
  * to transition from its previously installed version to the current version.
- * User: adam
- * Date: Sep 20, 2007
  */
 public abstract class SqlScriptManager
 {
@@ -66,13 +64,11 @@ public abstract class SqlScriptManager
             return new ExternalDataSourceSqlScriptManager(provider, schema);
     }
 
-
     private SqlScriptManager(SqlScriptProvider provider, DbSchema schema)
     {
         _provider = provider;
         _schema = schema;
     }
-
 
     // Returns all the scripts associated with schema that have not been run
     public List<SqlScript> getNewScripts()
@@ -88,7 +84,6 @@ public abstract class SqlScriptManager
         return newScripts;
     }
 
-
     public List<SqlScript> getRecommendedScripts(double to)
     {
         if (!_schema.getSqlDialect().canExecuteUpgradeScripts())
@@ -97,7 +92,6 @@ public abstract class SqlScriptManager
         List<SqlScript> newScripts = getNewScripts();
         return getRecommendedScripts(newScripts, getFrom(), to);
     }
-
 
     // Get the recommended scripts from a given collection of scripts
     public List<SqlScript> getRecommendedScripts(Collection<SqlScript> schemaScripts, double from, double to)
@@ -139,7 +133,6 @@ public abstract class SqlScriptManager
         return scripts;
     }
 
-
     private static Pair<Double, List<SqlScript>> getNearestFrom(Map<Double, Pair<Double, List<SqlScript>>> m, double targetFrom)
     {
         Pair<Double, List<SqlScript>> nearest = m.get(targetFrom);
@@ -159,7 +152,6 @@ public abstract class SqlScriptManager
 
         return nearest;
     }
-
 
     // Return all sql scripts that have been run by this provider
     public Set<SqlScript> getPreviouslyRunScripts()
