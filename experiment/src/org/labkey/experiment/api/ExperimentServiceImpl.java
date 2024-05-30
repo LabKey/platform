@@ -9749,10 +9749,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         else
             cf = ContainerFilter.Type.CurrentAndSubfolders.create(container, user);
 
-        FileListener fileListener = new FileLinkFileListener();
+        FileLinkFileListener fileListener = new FileLinkFileListener();
 
         Map<String, Map<String, Set<String>>> missingFiles = new HashMap<>();
-        SQLFragment unionSql = fileListener.listFilesQuery();
+        SQLFragment unionSql = fileListener.listFilesQuery(true);
         Collection<GUID> containerIds = cf.getIds();
         SQLFragment selectSql;
         if (containerIds == null || containerIds.isEmpty())

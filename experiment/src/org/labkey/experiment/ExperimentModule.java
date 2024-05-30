@@ -199,6 +199,8 @@ public class ExperimentModule extends SpringModule
         PropertyService.setInstance(propertyServiceImpl);
         UsageMetricsService.get().registerUsageMetrics(getName(), propertyServiceImpl);
 
+        UsageMetricsService.get().registerUsageMetrics(getName(), FileLinkMetricsProvider.getInstance());
+
         ExperimentProperty.register();
         SamplesSchema.register(this);
         ExpSchema.register(this);

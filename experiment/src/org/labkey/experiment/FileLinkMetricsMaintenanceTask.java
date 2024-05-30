@@ -12,7 +12,6 @@ import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.settings.StandardStartupPropertyHandler;
 import org.labkey.api.settings.StartupProperty;
 import org.labkey.api.settings.StartupPropertyEntry;
-import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 
@@ -60,27 +59,23 @@ public class FileLinkMetricsMaintenanceTask implements SystemMaintenance.Mainten
     {
         try
         {
-            UsageMetricsService svc = UsageMetricsService.get();
-            if (null != svc)
+            Map<String, Map<String, Set<String>>> results = ExperimentServiceImpl.get().doMissingFilesCheck(getTaskUser(), ContainerManager.getRoot());
+            Map<String, Object> missingFilesMetrics = new HashMap<>();
+            missingFilesMetrics.put("Run time", new Date());
+            Map<String, Object> metrics = new HashMap<>();
+            metrics.put(NAME, missingFilesMetrics);
+            long totalCount = 0;
+            if (null != results)
             {
-                Map<String, Map<String, Set<String>>> results = ExperimentServiceImpl.get().doMissingFilesCheck(getTaskUser(), ContainerManager.getRoot());
-                Map<String, Object> missingFilesMetrics = new HashMap<>();
-                missingFilesMetrics.put("Run time", new Date());
-                Map<String, Object> metrics = new HashMap<>();
-                metrics.put(NAME, missingFilesMetrics);
-                long totalCount = 0;
-                if (null != results)
+                for (String containerId : results.keySet())
                 {
-                    for (String containerId : results.keySet())
-                    {
-                        Map<String, Set<String>> missingFiles = results.get(containerId);
-                        for (String source : missingFiles.keySet())
-                            totalCount += missingFiles.get(source).size();
-                    }
+                    Map<String, Set<String>> missingFiles = results.get(containerId);
+                    for (String source : missingFiles.keySet())
+                        totalCount += missingFiles.get(source).size();
                 }
-                missingFilesMetrics.put("Missing files count", totalCount);
-                svc.registerUsageMetrics(ExperimentServiceImpl.MODULE_NAME, () -> metrics);
             }
+            missingFilesMetrics.put("Missing files count", totalCount);
+            FileLinkMetricsProvider.getInstance().updateMetrics(metrics);
         }
         catch (Exception e)
         {
