@@ -984,7 +984,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
          * Also, we may use RemapCache for material lookup outside a transaction
          */
         boolean onlyMaterialColums = false;
-        if (ALL_COLUMNS != selectedColumns)
+        if (null != selectedColumns && !selectedColumns.isEmpty())
             onlyMaterialColums = selectedColumns.stream().allMatch(fk -> fk.getName().equalsIgnoreCase("Folder") || null != _rootTable.getColumn(fk));
         if (!onlyMaterialColums && null != _ss && null != _ss.getTinfo() && !getExpSchema().getDbSchema().getScope().isTransactionActive())
         {
