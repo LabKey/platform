@@ -26,9 +26,6 @@ import java.util.zip.GZIPInputStream;
 /**
  * Users of FastaLoader implementations can simply iterate the loader itself (if all they want is a stream of Ts) or
  * they can grab the iterator to monitor progress, current line, etc.
- *
- * User: migra
- * Date: Jun 16, 2004
  */
 public abstract class FastaLoader<T> implements Iterable<T>
 {
