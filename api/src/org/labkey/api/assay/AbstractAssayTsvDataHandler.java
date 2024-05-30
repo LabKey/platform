@@ -715,10 +715,14 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             importHelper = AssayPlateMetadataService.get().getImportHelper(container, user, run, data, protocol, provider);
 
         if (tableInfo instanceof UpdateableTableInfo)
+        {
             OntologyManager.insertTabDelimited(tableInfo, container, user, importHelper, fileData, autoFillDefaultColumns, LOG, rowCallback);
-
-        Integer id = OntologyManager.ensureObject(container, data.getLSID());
-        OntologyManager.insertTabDelimited(container, user, id, importHelper, dataDomain, fileData, false, rowCallback);
+        }
+        else
+        {
+            Integer id = OntologyManager.ensureObject(container, data.getLSID());
+            OntologyManager.insertTabDelimited(container, user, id, importHelper, dataDomain, fileData, false, rowCallback);
+        }
     }
 
     protected abstract boolean shouldAddInputMaterials();
