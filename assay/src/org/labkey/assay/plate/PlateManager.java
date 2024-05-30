@@ -393,6 +393,30 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return null;
     }
 
+    public List<FieldKey> getMetadataColumns(@NotNull PlateSet plateSet, Container c, User user, ContainerFilter cf)
+    {
+        Set<FieldKey> includedMetadataCols = new HashSet<>();
+        for (Plate plate : plateSet.getPlates(user))
+        {
+            QueryView plateQueryView = PlateManager.get().getPlateQueryView(c, user, cf, plate, false);
+            Map<String, FieldKey> displayColumns = PlateManager.get().getPlateDisplayColumns(plateQueryView)
+                    .stream()
+                    .filter(col -> col.getFilterKey() != null)
+                    .collect(Collectors.toMap(col -> col.getColumnInfo().getPropertyURI(), DisplayColumn::getFilterKey));
+
+            for (PlateCustomField field : plate.getCustomFields())
+            {
+                FieldKey lookupFk = displayColumns.get(field.getPropertyURI());
+                if (lookupFk != null)
+                    includedMetadataCols.add(lookupFk);
+                else
+                    includedMetadataCols.add(FieldKey.fromParts(WellTable.Column.Properties.name(), field.getName()));
+            }
+        }
+
+        return includedMetadataCols.stream().sorted(Comparator.comparing(FieldKey::getName)).toList();
+    }
+
     @NotNull
     public List<Plate> getPlateTemplates(Container container)
     {
