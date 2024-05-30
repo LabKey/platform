@@ -71,7 +71,6 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.ParticipantVisitResolver;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
@@ -206,30 +205,15 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         try (DataLoader loader = createLoaderForImport(dataFile, dataDomain, settings, true))
         {
             Map<DataType, Supplier<ValidatingDataRowIterator>> datas = new HashMap<>();
-            boolean hasRows;
-            try (CloseableIterator<Map<String, Object>> iter = loader.iterator())
-            {
-                hasRows = iter.hasNext();
-            }
-
             Supplier<ValidatingDataRowIterator> dataRows = () -> ValidatingDataRowIterator.of(loader.iterator());
 
             if (plateMetadataEnabled && AssayPlateMetadataService.isExperimentalAppPlateEnabled())
             {
-                Pair<String, Boolean> plateIdAdded = new Pair<>("PlateIdAdded", false);
                 Integer plateSetId = getPlateSetValueFromRunProps(context, provider, protocol);
-                dataRows = AssayPlateMetadataService.get().parsePlateData(context.getContainer(), context.getUser(), provider, protocol, plateSetId, dataFile, dataRows, plateIdAdded);
-
-                // need to do this otherwise the added plateID may get stripped
-                hasRows = !plateIdAdded.second;
+                dataRows = AssayPlateMetadataService.get().parsePlateData(context.getContainer(), context.getUser(), provider, protocol, plateSetId, dataFile, dataRows);
             }
 
-            // loader did not parse any rows
-            if (!hasRows && !settings.isAllowEmptyData() && !dataDomain.getProperties().isEmpty())
-                throw new ExperimentException("Unable to load any rows from the input data. Please check the format of the input data to make sure it matches the assay data columns.");
-
-            if (hasRows)
-                dataRows = adjustFirstRowOrder(dataRows, loader);
+            dataRows = adjustFirstRowOrder(dataRows, loader, settings, dataDomain);
 
             // assays with plate metadata support will merge the plate metadata with the data rows to make it easier for
             // transform scripts to perform metadata related calculations
@@ -237,6 +221,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 dataRows = mergePlateMetadata(context, provider, protocol, dataRows, rawPlateMetadata, plateMetadataFile);
 
             datas.put(getDataType(), dataRows);
+
             return datas;
         }
         catch (IOException ioe)
@@ -375,26 +360,43 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
      * to cause serializers for tsv formats to respect the original file column order. A bit of a hack but
      * the way row maps are generated make it difficult to preserve order at row map generation time.
      */
-    private Supplier<ValidatingDataRowIterator> adjustFirstRowOrder(Supplier<ValidatingDataRowIterator> iter, DataLoader loader) throws IOException
+    private Supplier<ValidatingDataRowIterator> adjustFirstRowOrder(Supplier<ValidatingDataRowIterator> iter, DataLoader loader, DataLoaderSettings settings, Domain dataDomain) throws IOException
     {
         ColumnDescriptor[] columns = loader.getColumns();
 
         return () -> new ValidatingDataRowIterator.Wrapper(iter.get())
         {
-            boolean firstRow = true;
+            @Override
+            public boolean hasNext() throws ValidationException
+            {
+                boolean result = super.hasNext();
+                if (!result && getCurrentRowNumber() == -1 && !settings.isAllowEmptyData() && !dataDomain.getProperties().isEmpty())
+                {
+                    throw new ValidationException("Unable to load any rows from the input data. Please check the format of the input data to make sure it matches the assay data columns.");
+                }
+                return result;
+             }
 
             @Override
             public Map<String, Object> next() throws ValidationException
             {
                 Map<String, Object> result = super.next();
-                if (firstRow)
+                if (getCurrentRowNumber() == 0)
                 {
-                    firstRow = false;
+                    Set<String> remainingFields = new HashSet<>(result.keySet());
                     Map<String, Object> newRow = new LinkedHashMap<>();
                     for (ColumnDescriptor column : columns)
                     {
                         if (result.containsKey(column.name))
+                        {
+                            remainingFields.remove(column.name);
                             newRow.put(column.name, result.get(column.name));
+                        }
+                    }
+                    // Now propagate anything that's doesn't match exactly with a column
+                    for (String key : remainingFields)
+                    {
+                        newRow.put(key, result.get(key));
                     }
                     return newRow;
                 }
@@ -571,7 +573,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             }
             Map<ExpMaterial, String> rowBasedInputMaterials = new LinkedHashMap<>();
 
-            ValidatingDataRowIterator fileData = checkData(container, user, dataTable, dataDomain, rawData, settings, resolver, protocolInputMaterials, cf, rowBasedInputMaterials);
+            ValidatingDataRowIterator fileData = checkData(container, user, dataTable, dataDomain, iter, settings, resolver, protocolInputMaterials, cf, rowBasedInputMaterials);
             fileData = convertPropertyNamesToURIs(fileData, dataDomain);
 
             OntologyManager.RowCallback rowCallback = NO_OP_ROW_CALLBACK;
@@ -727,13 +729,12 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
     protected abstract boolean shouldAddInputMaterials();
 
-    // NOTE: Calls filterColumns which mutates rawData in-place
-    private ValidatingDataRowIterator checkColumns(Domain dataDomain, Set<String> actual, Supplier<ValidatingDataRowIterator> rawData) throws ValidationException
+    private ValidatingDataRowIterator checkColumns(Domain dataDomain, Set<String> actual, ValidatingDataRowIterator rawData) throws ValidationException
     {
         List<String> missing = new ArrayList<>();
         List<String> unexpected = new ArrayList<>();
 
-        Supplier<ValidatingDataRowIterator> result = () -> ValidatingDataRowIterator.of(rawData.get());
+        ValidatingDataRowIterator result = rawData;
         Set<String> checkSet = new CaseInsensitiveHashSet();
         List<? extends DomainProperty> expected = dataDomain.getProperties();
         for (DomainProperty pd : expected)
@@ -771,43 +772,29 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
         for (DomainProperty pd : missingProps)
         {
-            if ((pd.isRequired() || false))
+            if ((pd.isRequired()))
                 missing.add(pd.getName());
         }
 
-        if (!missing.isEmpty() || !unexpected.isEmpty())
+        if (!missing.isEmpty())
         {
             StringBuilder builder = new StringBuilder();
-            if (!missing.isEmpty())
+            builder.append("Expected columns were not found: ");
+            for (java.util.Iterator<String> it = missing.iterator(); it.hasNext(); )
             {
-                builder.append("Expected columns were not found: ");
-                for (java.util.Iterator<String> it = missing.iterator(); it.hasNext(); )
-                {
-                    builder.append(it.next());
-                    if (it.hasNext())
-                        builder.append(", ");
-                    else
-                        builder.append(".  ");
-                }
-            }
-            if (!unexpected.isEmpty())
-            {
-                builder.append("Unexpected columns were found: ");
-                for (java.util.Iterator<String> it = unexpected.iterator(); it.hasNext(); )
-                {
-                    builder.append(it.next());
-                    if (it.hasNext())
-                        builder.append(", ");
-                }
+                builder.append(it.next());
+                if (it.hasNext())
+                    builder.append(", ");
+                else
+                    builder.append(".  ");
             }
             throw new ValidationException(builder.toString());
         }
 
-        return result.get();
+        return result;
     }
 
-    // NOTE: Mutates the rawData list in-place
-    private Supplier<ValidatingDataRowIterator> filterColumns(Domain domain, Set<String> actual, Supplier<ValidatingDataRowIterator> rawData)
+    private ValidatingDataRowIterator filterColumns(Domain domain, Set<String> actual, ValidatingDataRowIterator rawData)
     {
         Map<String,String> expectedKey2ActualKey = new HashMap<>();
         for (Map.Entry<String,DomainProperty> aliased : domain.createImportMap(true).entrySet())
@@ -825,7 +812,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 }
             }
         }
-        return () -> new ValidatingDataRowIterator.Wrapper(rawData.get())
+        return new ValidatingDataRowIterator.Wrapper(rawData)
         {
             @Override
             public Map<String, Object> next() throws ValidationException
@@ -849,7 +836,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                                                User user,
                                                TableInfo dataTable,
                                                Domain dataDomain,
-                                               Supplier<ValidatingDataRowIterator> rawData,
+                                               ValidatingDataRowIterator rawData,
                                                DataLoaderSettings settings,
                                                ParticipantVisitResolver resolver,
                                                Map<String, ExpMaterial> inputMaterials,
@@ -860,15 +847,12 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         final ExperimentService exp = ExperimentService.get();
 
         Set<String> columnNames = Collections.emptySet();
-        if (rawData != null)
+        assert rawData.getCurrentRowNumber() == -1;
+
+        Map<String, Object> firstRow = rawData.peek();
+        if (firstRow != null)
         {
-            try (ValidatingDataRowIterator iter = rawData.get())
-            {
-                if (iter.hasNext())
-                {
-                    columnNames = iter.next().keySet();
-                }
-            }
+            columnNames = firstRow.keySet();
         }
 
         // For now, we'll only enforce that required columns are present.  In the future, we'd like to

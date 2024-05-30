@@ -555,8 +555,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         ExpProtocol protocol,
         Integer plateSetId,
         File dataFile,
-        Supplier<ValidatingDataRowIterator> data,
-        Pair<String, Boolean> plateIdAdded
+        Supplier<ValidatingDataRowIterator> data
     ) throws ExperimentException
     {
         // get the ordered list of plates for the plate set
@@ -577,14 +576,13 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 
             if (isGridFormat(rows))
             {
-                plateIdAdded.setValue(true);
                 List<Map<String, Object>> gridRows = parsePlateGrids(container, user, provider, protocol, plateSet, plates, dataFile);
 
                 // best attempt at returning something we can import
                 return () -> ValidatingDataRowIterator.of((gridRows.isEmpty() && !rows.isEmpty()) ? rows : gridRows);
             }
 
-            return parsePlateRows(provider, protocol, plates, rows, plateIdAdded);
+            return parsePlateRows(provider, protocol, plates, rows);
         }
         catch (ValidationException e)
         {
@@ -606,8 +604,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         AssayProvider provider,
         ExpProtocol protocol,
         List<Plate> plates,
-        List<Map<String, Object>> data,
-        Pair<String, Boolean> plateIdAdded
+        List<Map<String, Object>> data
     ) throws ExperimentException
     {
         DomainProperty plateProp = provider.getResultsDomain(protocol).getPropertyByName(AssayResultDomainKind.PLATE_COLUMN_NAME);
@@ -622,7 +619,6 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             return () -> ValidatingDataRowIterator.of(data);
 
         final String ERROR_MESSAGE = "Unable to automatically assign plate identifiers to the data rows because %s. Please include plate identifiers for the data rows.";
-        plateIdAdded.second = true;
 
         // verify all plates in the set have the same shape
         Set<PlateType> types = plates.stream().map(Plate::getPlateType).collect(Collectors.toSet());

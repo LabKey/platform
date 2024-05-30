@@ -103,6 +103,7 @@ public interface AssayPlateMetadataService
     /**
      * Handles the validation and parsing of the plate data (or data file) including plate graphical formats as
      * well as cases where plate identifiers have not been supplied.
+     * TODO - convert to take a ValidatingDataRowIterator instead of a list of maps
      */
     Supplier<ValidatingDataRowIterator> parsePlateData(
         Container container,
@@ -111,8 +112,7 @@ public interface AssayPlateMetadataService
         ExpProtocol protocol,
         Integer plateSetId,
         File dataFile,
-        Supplier<ValidatingDataRowIterator> data,
-        Pair<String, Boolean> plateIdAdded
+        Supplier<ValidatingDataRowIterator> data
     ) throws ExperimentException;
 
     /**
