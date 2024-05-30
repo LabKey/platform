@@ -18,7 +18,6 @@ package org.labkey.api.study;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheLoader;
-import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.SimpleFilter;
@@ -31,7 +30,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
 public class QueryHelper<K extends StudyCachable>
@@ -85,8 +83,6 @@ public class QueryHelper<K extends StudyCachable>
             if (sortString != null)
                 sort = new Sort(sortString);
             List<K> objs = new TableSelector(getTableInfo(), filter, sort).getArrayList(_objectClass);
-            if (null == sort)
-                objs.sort(Comparator.comparingInt(Object::hashCode)); // TODO: temp for comparison purposes -- stable sort if none specified
             // Make both the objects and the list itself immutable so that we don't end up with a corrupted
             // version in the cache
             for (StudyCachable obj : objs)
@@ -123,7 +119,6 @@ public class QueryHelper<K extends StudyCachable>
     public K create(User user, K obj)
     {
         K ret = Table.insert(user, getTableInfo(), obj);
-        DbCache.trackRemove(getTableInfo());
         clearCache(obj);
         return ret;
     }
@@ -136,7 +131,6 @@ public class QueryHelper<K extends StudyCachable>
     public K update(User user, K obj, Object... pk)
     {
         K ret = Table.update(user, getTableInfo(), obj, pk);
-        DbCache.trackRemove(getTableInfo());
         clearCache(obj);
         return ret;
     }
@@ -144,7 +138,6 @@ public class QueryHelper<K extends StudyCachable>
     public void delete(K obj)
     {
         Table.delete(getTableInfo(), obj.getPrimaryKey());
-        DbCache.trackRemove(getTableInfo());
         clearCache(obj);
     }
 

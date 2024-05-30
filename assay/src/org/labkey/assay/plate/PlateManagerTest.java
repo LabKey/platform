@@ -41,10 +41,9 @@ import org.labkey.assay.plate.query.WellTable;
 import org.labkey.assay.query.AssayDbSchema;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
@@ -263,9 +262,9 @@ public final class PlateManagerTest
 
         // Act
         PlateSet plateSet = PlateManager.get().createPlateSet(container, user, plateSetImpl, List.of(
-                new PlateManager.CreatePlateSetPlate("testAccessPlateByIdentifiersFirst", plateType.getRowId(), null),
-                new PlateManager.CreatePlateSetPlate("testAccessPlateByIdentifiersSecond", plateType.getRowId(), null),
-                new PlateManager.CreatePlateSetPlate("testAccessPlateByIdentifiersThird", plateType.getRowId(), null)
+                new PlateManager.CreatePlateSetPlate("testAccessPlateByIdentifiersFirst", plateType.getRowId(), null, null),
+                new PlateManager.CreatePlateSetPlate("testAccessPlateByIdentifiersSecond", plateType.getRowId(), null, null),
+                new PlateManager.CreatePlateSetPlate("testAccessPlateByIdentifiersThird", plateType.getRowId(), null, null)
         ), null);
 
         // Assert
@@ -499,17 +498,17 @@ public final class PlateManagerTest
     public void getWellSampleData()
     {
         // Act
-        int[] sampleIdsSorted = new int[]{0, 3, 5, 8, 10, 11, 12, 13, 15, 17, 19};
-        Pair<Integer, List<Map<String, Object>>> wellSampleDataFilledFull = PlateManager.get().getWellSampleData(sampleIdsSorted, 2, 3, 0, container);
-        Pair<Integer, List<Map<String, Object>>> wellSampleDataFilledPartial = PlateManager.get().getWellSampleData(sampleIdsSorted, 2, 3, 6, container);
+        List<Integer> sampleIds = List.of(0, 3, 5, 8, 10, 11, 12, 13, 15, 17, 19);
+        Pair<Integer, List<Map<String, Object>>> wellSampleDataFilledFull = PlateManager.get().getWellSampleData(container, sampleIds, 2, 3, 0);
+        Pair<Integer, List<Map<String, Object>>> wellSampleDataFilledPartial = PlateManager.get().getWellSampleData(container, sampleIds, 2, 3, 6);
 
         // Assert
         assertEquals(wellSampleDataFilledFull.first, 6, 0);
-        ArrayList<String> wellLocations = new ArrayList<>(Arrays.asList("A1", "A2", "A3", "B1", "B2", "B3"));
+        List<String> wellLocations = List.of("A1", "A2", "A3", "B1", "B2", "B3");
         for (int i = 0; i < wellSampleDataFilledFull.second.size(); i++)
         {
             Map<String, Object> well = wellSampleDataFilledFull.second.get(i);
-            assertEquals(well.get("sampleId"), sampleIdsSorted[i]);
+            assertEquals(well.get("sampleId"), sampleIds.get(i));
             assertEquals(well.get("wellLocation"), wellLocations.get(i));
         }
 
@@ -517,14 +516,14 @@ public final class PlateManagerTest
         for (int i = 0; i < wellSampleDataFilledPartial.second.size(); i++)
         {
             Map<String, Object> well = wellSampleDataFilledPartial.second.get(i);
-            assertEquals(well.get("sampleId"), sampleIdsSorted[i + 6]);
+            assertEquals(well.get("sampleId"), sampleIds.get(i + 6));
             assertEquals(well.get("wellLocation"), wellLocations.get(i));
         }
 
         // Act
         try
         {
-            PlateManager.get().getWellSampleData(new int[]{}, 2, 3, 0, container);
+            PlateManager.get().getWellSampleData(container, Collections.emptyList(), 2, 3, 0);
         }
         // Assert
         catch (IllegalArgumentException e)
@@ -537,6 +536,8 @@ public final class PlateManagerTest
     public void getInstrumentInstructions() throws Exception
     {
         // Arrange
+        ContainerFilter cf = ContainerFilter.Type.CurrentAndSubfolders.create(ContainerManager.getSharedContainer(), user);
+
         final ExpMaterial sample1 = ExperimentService.get().createExpMaterial(container, sampleType.generateSampleLSID().setObjectId("sampleOne").toString(), "sampleOne");
         sample1.setCpasType(sampleType.getLSID());
         sample1.save(user);
@@ -567,7 +568,7 @@ public final class PlateManagerTest
         plate = PlateManager.get().createAndSavePlate(container, user, plate, null, rows);
 
         // Act
-        List<FieldKey> includedMetadataCols = WellTable.getMetadataColumns(plate.getPlateSet(), user);
+        List<FieldKey> includedMetadataCols = PlateManager.get().getMetadataColumns(plate.getPlateSet(), container, user, cf);
         List<Object[]> result = PlateManager.get().getInstrumentInstructions(plate.getPlateSet().getRowId(), includedMetadataCols, container, user);
 
         // Assert
@@ -586,6 +587,8 @@ public final class PlateManagerTest
     public void getWorklist() throws Exception
     {
         // Arrange
+        ContainerFilter cf = ContainerFilter.Type.CurrentAndSubfolders.create(ContainerManager.getSharedContainer(), user);
+
         final ExpMaterial sample1 = ExperimentService.get().createExpMaterial(container, sampleType.generateSampleLSID().setObjectId("sampleA").toString(), "sampleA");
         sample1.setCpasType(sampleType.getLSID());
         sample1.save(user);
@@ -633,8 +636,8 @@ public final class PlateManagerTest
         Plate plateDestination = PlateManager.get().createAndSavePlate(container, user, new PlateImpl(container, "myPlate2", plateType), null, rows2);
 
         // Act
-        List<FieldKey> sourceIncludedMetadataCols = WellTable.getMetadataColumns(plateSource.getPlateSet(), user);
-        List<FieldKey> destinationIncludedMetadataCols = WellTable.getMetadataColumns(plateDestination.getPlateSet(), user);
+        List<FieldKey> sourceIncludedMetadataCols = PlateManager.get().getMetadataColumns(plateSource.getPlateSet(), container, user, cf);
+        List<FieldKey> destinationIncludedMetadataCols = PlateManager.get().getMetadataColumns(plateDestination.getPlateSet(), container, user, cf);
         List<Object[]> plateDataRows = PlateManager.get().getWorklist(plateSource.getPlateSet().getRowId(), plateDestination.getPlateSet().getRowId(), sourceIncludedMetadataCols, destinationIncludedMetadataCols, container, user);
 
         // Assert

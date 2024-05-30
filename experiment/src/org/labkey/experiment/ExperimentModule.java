@@ -645,6 +645,20 @@ public class ExperimentModule extends SpringModule
 
                     assayMetrics.put("sampleLookupCount", sampleLookupCountMetrics);
 
+
+                    // Putting these metrics at the same level as the other BooleanColumnCount metrics (e.g., sampleTypeWithBooleanColumnCount)
+                    results.put("assayResultWithBooleanColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT DD.DomainURI) FROM\n" +
+                            "     exp.PropertyDescriptor D \n" +
+                            "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
+                            "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
+                            "WHERE D.propertyURI LIKE ? AND D.rangeURI = ?", "urn:lsid:%:" + ExpProtocol.AssayDomainTypes.Result.getPrefix() + ".%", PropertyType.BOOLEAN.getTypeUri()).getObject(Long.class));
+
+                    results.put("assayRunWithBooleanColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT DD.DomainURI) FROM\n" +
+                            "     exp.PropertyDescriptor D \n" +
+                            "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
+                            "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
+                            "WHERE D.propertyURI LIKE ? AND D.rangeURI = ?", "urn:lsid:%:" + ExpProtocol.AssayDomainTypes.Run.getPrefix() + ".%", PropertyType.BOOLEAN.getTypeUri()).getObject(Long.class));
+
                     results.put("assay", assayMetrics);
                 }
 
@@ -678,6 +692,11 @@ public class ExperimentModule extends SpringModule
                         "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
                         "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
                         "WHERE DD.storageSchemaName = ? AND D.rangeURI = ?", SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME, PropertyType.FILE_LINK.getTypeUri()).getObject(Long.class));
+                results.put("sampleTypeWithBooleanColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT DD.DomainURI) FROM\n" +
+                        "     exp.PropertyDescriptor D \n" +
+                        "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
+                        "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
+                        "WHERE DD.storageSchemaName = ? AND D.rangeURI = ?", SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME, PropertyType.BOOLEAN.getTypeUri()).getObject(Long.class));
 
                 results.put("sampleTypeAliquotSpecificField", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT D.PropertyURI) FROM\n" +
                         "     exp.PropertyDescriptor D \n" +
@@ -701,6 +720,11 @@ public class ExperimentModule extends SpringModule
                         "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
                         "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
                         "WHERE DD.storageSchemaName = ? AND D.rangeURI = ?", DataClassDomainKind.PROVISIONED_SCHEMA_NAME, PropertyType.ATTACHMENT.getTypeUri()).getObject(Long.class));
+                results.put("dataClassWithBooleanColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT DD.DomainURI) FROM\n" +
+                        "     exp.PropertyDescriptor D \n" +
+                        "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
+                        "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
+                        "WHERE DD.storageSchemaName = ? AND D.rangeURI = ?", DataClassDomainKind.PROVISIONED_SCHEMA_NAME, PropertyType.BOOLEAN.getTypeUri()).getObject(Long.class));
 
                 results.put("textChoiceColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE concepturi = ?", TEXT_CHOICE_CONCEPT_URI).getObject(Long.class));
 

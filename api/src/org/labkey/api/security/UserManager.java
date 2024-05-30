@@ -16,6 +16,9 @@
 
 package org.labkey.api.security;
 
+import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSessionEvent;
+import jakarta.servlet.http.HttpSessionListener;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -72,9 +75,6 @@ import org.labkey.api.view.AjaxCompletion;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
-import jakarta.servlet.http.HttpSession;
-import jakarta.servlet.http.HttpSessionEvent;
-import jakarta.servlet.http.HttpSessionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
@@ -270,7 +270,6 @@ public class UserManager
         return errors;
     }
 
-
     public static List<Throwable> fireUserPropertiesChanged(int userid)
     {
         List<UserListener> list = getListeners();
@@ -338,12 +337,10 @@ public class UserManager
         return UserCache.getUser(userId);
     }
 
-
     public static @Nullable User getUser(ValidEmail email)
     {
         return UserCache.getUser(email);
     }
-
 
     public static @Nullable User getUserByDisplayName(String displayName)
     {
@@ -368,7 +365,6 @@ public class UserManager
         }
     }
 
-
     private static void removeRecentUser(User user)
     {
         synchronized(RECENT_USERS)
@@ -382,7 +378,6 @@ public class UserManager
     {
         return new SqlSelector(CORE.getSchema(), new SQLFragment("SELECT COUNT(*) FROM " + CORE.getTableInfoUsersData() + " WHERE LastLogin >= ?", since)).getObject(Integer.class);
     }
-
 
     private static final Comparator<Pair<String, Long>> RECENT_USER_COMPARATOR = Comparator.comparing(Pair<String, Long>::getValue).thenComparing(Pair::getKey);
 
@@ -552,20 +547,17 @@ public class UserManager
         return User.guest;
     }
 
-
     // Return display name if user id != null and user exists, otherwise return null
     public static String getDisplayName(Integer userId, User currentUser)
     {
         return getDisplayName(userId, false, currentUser);
     }
 
-
     // If userIdIfDeleted = true, then return "<userId>" if user doesn't exist
     public static String getDisplayNameOrUserId(Integer userId, User currentUser)
     {
         return getDisplayName(userId, true, currentUser);
     }
-
 
     private static String getDisplayName(Integer userId, boolean userIdIfDeleted, User currentUser)
     {
@@ -587,7 +579,6 @@ public class UserManager
 
         return user.getDisplayName(currentUser);
     }
-
 
     public static String getEmailForId(Integer userId)
     {
@@ -681,8 +672,7 @@ public class UserManager
         }
         catch (RuntimeException ignored){}
 
-        UserAuditEvent event = new UserAuditEvent(c.getId(), message, principal);
-        AuditLogService.get().addEvent(user, event);
+        addAuditEvent(user, c, principal, message);
     }
 
     public static boolean hasUsers()
@@ -792,32 +782,32 @@ public class UserManager
         addToUserHistory(toUpdate, "Contact information for " + toUpdate.getEmail() + " was updated");
     }
 
-    public static void requestEmailChange(int userId, String currentEmail, String requestedEmail, String verificationToken, User currentUser) throws UserManagementException
+    public static void requestEmailChange(User userToChange, ValidEmail requestedEmail, String verificationToken, User currentUser) throws UserManagementException
     {
-        if (SecurityManager.loginExists(currentEmail))
+        if (SecurityManager.loginExists(userToChange.getEmail()))
         {
             DbScope scope = CORE.getSchema().getScope();
             try (Transaction transaction = scope.ensureTransaction())
             {
                 Instant timeoutDate = Instant.now().plus(VERIFICATION_EMAIL_TIMEOUT, ChronoUnit.MINUTES);
                 SqlExecutor executor = new SqlExecutor(CORE.getSchema());
-                int rows = executor.execute("UPDATE " + CORE.getTableInfoLogins() + " SET RequestedEmail=?, Verification=?, VerificationTimeout=? WHERE Email=?",
-                        requestedEmail, verificationToken, Date.from(timeoutDate), currentEmail);
+                int rows = executor.execute("UPDATE " + CORE.getTableInfoLogins() + " SET RequestedEmail = ?, Verification = ?, VerificationTimeout = ? WHERE Email = ?",
+                        requestedEmail.getEmailAddress(), verificationToken, Date.from(timeoutDate), userToChange.getEmail());
                 if (1 != rows)
                     throw new UserManagementException(requestedEmail, "Unexpected number of rows returned when setting verification: " + rows);
-                addToUserHistory(getUser(userId), currentUser + " requested email address change from " + currentEmail + " to " + requestedEmail +
+                addToUserHistory(userToChange, currentUser + " requested email address change from " + userToChange.getEmail() + " to " + requestedEmail +
                         " with token '" + verificationToken + "' and timeout date '" + Date.from(timeoutDate) + "'.");
                 transaction.commit();
             }
         }
     }
 
-    public static void changeEmail(boolean isAdmin, int userId, String oldEmail, String newEmail, String verificationToken, User currentUser)
+    public static void changeEmail(User currentUser, User userToChange, boolean isAdmin, String newEmail, String verificationToken)
             throws UserManagementException, ValidEmail.InvalidEmailException
     {
         // make sure these emails are valid, and also have been processed (like changing to lowercase)
 
-        oldEmail = new ValidEmail(oldEmail).getEmailAddress();
+        String oldEmail = userToChange.getEmail();
         newEmail = new ValidEmail(newEmail).getEmailAddress();
 
         DbScope scope = CORE.getSchema().getScope();
@@ -825,39 +815,37 @@ public class UserManager
         {
             if (!isAdmin)
             {
-                ValidEmail validUserEmail = new ValidEmail(currentUser.getEmail());
-                if (!SecurityManager.verify(validUserEmail, verificationToken))  // shouldn't happen! should be testing this earlier too
+                if (!getVerifyEmail(oldEmail).isVerified(verificationToken))  // shouldn't happen! should be testing this earlier too
                 {
-                    throw new UserManagementException(validUserEmail, "Verification token '" + verificationToken + "' is incorrect for email change for user " + validUserEmail.getEmailAddress());
+                    throw new UserManagementException(oldEmail, "Verification token '" + verificationToken + "' is incorrect for email change for user " + oldEmail);
                 }
             }
 
             SqlExecutor executor = new SqlExecutor(CORE.getSchema());
-            int rows = executor.execute("UPDATE " + CORE.getTableInfoPrincipals() + " SET Name=? WHERE UserId=?", newEmail, userId);
+            int rows = executor.execute("UPDATE " + CORE.getTableInfoPrincipals() + " SET Name = ? WHERE UserId = ?", newEmail, userToChange.getUserId());
             if (1 != rows)
                 throw new UserManagementException(oldEmail, "Unexpected number of rows returned when setting new name: " + rows);
 
-            executor.execute("UPDATE " + CORE.getTableInfoLogins() + " SET Email=? WHERE Email=?", newEmail, oldEmail);  // won't update if non-LabKey-managed, because there is no data here
+            executor.execute("UPDATE " + CORE.getTableInfoLogins() + " SET Email = ? WHERE Email = ?", newEmail, oldEmail);  // won't update if non-LabKey-managed, because there is no data here
             if (isAdmin)
             {
-                addToUserHistory(getUser(userId), "Admin " + currentUser + " changed an email address from " + oldEmail + " to " + newEmail + ".");
+                addToUserHistory(userToChange, "Admin " + currentUser + " changed an email address from " + oldEmail + " to " + newEmail + ".");
             }
             else
             {
-                addToUserHistory(getUser(userId), currentUser + " changed their email address from " + oldEmail + " to " + newEmail + " with token '" + verificationToken + "'.");
+                addToUserHistory(userToChange, currentUser + " changed their email address from " + oldEmail + " to " + newEmail + " with token '" + verificationToken + "'.");
             }
-            User userToBeEdited = getUser(userId);
 
-            if (userToBeEdited.getDisplayName(userToBeEdited).equals(oldEmail))
+            if (userToChange.getDisplayName(userToChange).equals(oldEmail))
             {
-                rows = executor.execute("UPDATE " + CORE.getTableInfoUsersData() + " SET DisplayName=? WHERE UserId=?", newEmail, userId);
+                rows = executor.execute("UPDATE " + CORE.getTableInfoUsersData() + " SET DisplayName = ? WHERE UserId = ?", newEmail, userToChange.getUserId());
                 if (1 != rows)
                     throw new UserManagementException(oldEmail, "Unexpected number of rows returned when setting new display name: " + rows);
             }
 
-            if (SecurityManager.loginExists(newEmail))
+            ValidEmail validNewEmail = new ValidEmail(newEmail);
+            if (SecurityManager.loginExists(validNewEmail))
             {
-                ValidEmail validNewEmail = new ValidEmail(newEmail);
                 SecurityManager.setVerification(validNewEmail, null);  // so we don't let user use this link again
             }
 
@@ -879,10 +867,10 @@ public class UserManager
                 " with token '" + verificationToken + "', but the verification token for that email address was not correct.");
     }
 
-    public static VerifyEmail getVerifyEmail(ValidEmail email)
+    public static VerifyEmail getVerifyEmail(String email)
     {
         SqlSelector sqlSelector = new SqlSelector(CORE.getSchema(), "SELECT Email, RequestedEmail, Verification, VerificationTimeout FROM " + CORE.getTableInfoLogins()
-                + " WHERE Email = ?", email.getEmailAddress());
+                + " WHERE Email = ?", email);
         return sqlSelector.getObject(VerifyEmail.class);
     }
 
@@ -898,6 +886,7 @@ public class UserManager
             return _email;
         }
 
+        @SuppressWarnings("unused")
         public void setEmail(String email)
         {
             _email = email;
@@ -908,6 +897,7 @@ public class UserManager
             return _requestedEmail;
         }
 
+        @SuppressWarnings("unused")
         public void setRequestedEmail(String requestedEmail)
         {
             _requestedEmail = requestedEmail;
@@ -918,6 +908,7 @@ public class UserManager
             return _verification;
         }
 
+        @SuppressWarnings("unused")
         public void setVerification(String verification)
         {
             _verification = verification;
@@ -928,9 +919,15 @@ public class UserManager
             return _verificationTimeout;
         }
 
+        @SuppressWarnings("unused")
         public void setVerificationTimeout(Date verificationTimeout)
         {
             _verificationTimeout = verificationTimeout;
+        }
+
+        public boolean isVerified(String userProvidedToken)
+        {
+            return userProvidedToken != null && userProvidedToken.equals(_verification);
         }
     }
 
@@ -966,7 +963,6 @@ public class UserManager
             executor.execute("DELETE FROM " + CORE.getTableInfoLogins() + " WHERE Email=?", user.getEmail());
             executor.execute("DELETE FROM " + CORE.getTableInfoPrincipals() + " WHERE UserId=?", userId);
             executor.execute("DELETE FROM " + CORE.getTableAPIKeys() + " WHERE CreatedBy=?", userId);
-            executor.execute("DELETE FROM " + CORE.getTableInfoPrincipalRelations() + " WHERE userid=?", userId);
 
             OntologyManager.deleteOntologyObject(user.getEntityId(), ContainerManager.getSharedContainer(), true);
 
@@ -1059,14 +1055,6 @@ public class UserManager
             LOG.error("setUserActive: " + e);
             throw new UserManagementException(userToAdjust.getEmail(), e);
         }
-    }
-
-    /**
-     *  Get completions from list of all site users
-     */
-    public static List<AjaxCompletion> getAjaxCompletions(User currentUser, Container c)
-    {
-        return getAjaxCompletions(getActiveUsers(), currentUser, c);
     }
 
     /**
@@ -1197,9 +1185,9 @@ public class UserManager
     }
 
     /**
-     * Parse a string of delimited email addresses and/or display names into a delimited string of
-     * corresponding userIds. Inputs which did not resolve to a current active user are preserved in the output.
-     * @param theList Any combination of email addresses and display names, delimited with semi-colons or new line characters
+     * Parse a string of delimited email addresses and/or display names into a delimited string of corresponding
+     * userIds. Inputs which did not resolve to a current active user are preserved in the output.
+     * @param theList Any combination of email addresses and display names, delimited with semicolons or new line characters
      * @return Semi-colon delimited string of corresponding userIds. Unresolvable inputs are preserved.
      */
     public static String parseUserListInput(String theList)
@@ -1230,22 +1218,10 @@ public class UserManager
         return parsed;
     }
 
-    //TODO is this worth creating a cache for?
-    public static Set<UserRelationships> getRelationships(User user, User other)
-    {
-        SQLFragment sql = new SQLFragment("SELECT relationship").append("\n")
-                .append("FROM ").append(CORE.getTableInfoPrincipalRelations(), "pr").append("\n")
-                .append("WHERE userid = ?").add(user.getEntityId()).append("\n")
-                .append("  AND otherid = ?").add(other.getEntityId());
-
-        Collection<UserRelationships> relationships = new SqlSelector(CORE.getScope(), sql).getCollection(UserRelationships.class);
-        return new HashSet<>(relationships);
-    }
-
     /**
      * Return the HTML tag for the user details page of the displayedUserId.
      * @param container The current container
-     * @param currentUser The current logged in user
+     * @param currentUser The current logged-in user
      * @param displayedUserId The user id of the url we want to navigate to
      * @return The HTML string to navigate to the displayedUserId's user details page
      */

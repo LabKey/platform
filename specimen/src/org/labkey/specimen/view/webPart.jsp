@@ -228,7 +228,7 @@
                 </tbody>
             </table>
 <%
-    if (SettingsManager.get().isSpecimenRequestEnabled(c))
+    if (SettingsManager.get().isSpecimenRequestEnabled(c, getUser()))
     {
 %>
             <table class="labkey-nav-tree" style="width: 100%;margin-top:0.5em">

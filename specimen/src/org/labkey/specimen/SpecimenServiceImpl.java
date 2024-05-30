@@ -20,7 +20,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.PropertyManager;
@@ -478,15 +477,12 @@ public class SpecimenServiceImpl implements SpecimenService
         Table.delete(SpecimenSchema.get().getTableInfoSampleRequestSpecimen(), containerFilter);
         assert set.add(SpecimenSchema.get().getTableInfoSampleRequestSpecimen());
         Table.delete(SpecimenSchema.get().getTableInfoSampleRequestEvent(), containerFilter);
-        DbCache.trackRemove(SpecimenSchema.get().getTableInfoSampleRequestEvent());
         SpecimenRequestManager.get().clearRequestEventHelper(c);
         assert set.add(SpecimenSchema.get().getTableInfoSampleRequestEvent());
         Table.delete(SpecimenSchema.get().getTableInfoSampleRequest(), containerFilter);
-        DbCache.trackRemove(SpecimenSchema.get().getTableInfoSampleRequest());
         SpecimenRequestManager.get().clearRequestHelper(c);
         assert set.add(SpecimenSchema.get().getTableInfoSampleRequest());
         Table.delete(SpecimenSchema.get().getTableInfoSampleRequestStatus(), containerFilter);
-        DbCache.trackRemove(SpecimenSchema.get().getTableInfoSampleRequestStatus());
         SpecimenRequestManager.get().clearRequestStatusHelper(c);
         assert set.add(SpecimenSchema.get().getTableInfoSampleRequestStatus());
 

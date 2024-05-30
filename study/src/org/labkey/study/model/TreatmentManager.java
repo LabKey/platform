@@ -62,7 +62,7 @@ import java.util.Set;
  */
 public class TreatmentManager
 {
-    private static TreatmentManager _instance = new TreatmentManager();
+    private static final TreatmentManager _instance = new TreatmentManager();
 
     private TreatmentManager()
     {
@@ -171,9 +171,7 @@ public class TreatmentManager
         TableInfo ti = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.TREATMENT_TABLE_NAME);
 
         //Using a user schema so containerFilter will be created for us later (so don't need SimpleFilter.createContainerFilter)
-        SimpleFilter filter = new SimpleFilter();
-        if (filterRowIds != null && !filterRowIds.isEmpty())
-            filter.addCondition(FieldKey.fromParts("RowId"), filterRowIds, CompareType.NOT_IN);
+        SimpleFilter filter = new SimpleFilter().addCondition(FieldKey.fromParts("RowId"), filterRowIds, CompareType.NOT_IN);
 
         return new TableSelector(ti, filter, new Sort("RowId")).getArrayList(TreatmentImpl.class);
     }
