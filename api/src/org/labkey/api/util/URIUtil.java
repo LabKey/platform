@@ -31,6 +31,10 @@ public class URIUtil
 {
     static public boolean isDescendant(URI base, URI descendant)
     {
+        // to protect against paths that are trying to escape the base, return false if the descendant includes "../"
+        if (descendant.getPath().contains(".."))
+            return false;
+
         if (!descendant.getScheme().equalsIgnoreCase(base.getScheme()))
             return false;
         return descendant.getPath().startsWith(base.getPath());
