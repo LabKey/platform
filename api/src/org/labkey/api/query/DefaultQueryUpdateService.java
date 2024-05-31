@@ -718,13 +718,13 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         convertTypes(user, c, row,  getDbTable(), null);
     }
 
-    final protected void convertTypes(User user, Container c, Map<String,Object> row, TableInfo t, @Nullable String file_link_dir_name) throws ValidationException
+    final protected void convertTypes(User user, Container c, Map<String,Object> row, TableInfo t, @Nullable String fileLinkDirName) throws ValidationException
     {
-        Path path = AssayFileWriter.getUploadDirectoryPath(c, file_link_dir_name);
+        Path path = AssayFileWriter.getUploadDirectoryPath(c, fileLinkDirName);
         convertTypes(user, c, row, t, path, false);
     }
 
-    protected void convertTypes(User user, Container c, Map<String,Object> row, TableInfo t, @Nullable Path file_link_dir, boolean useExistingFile) throws ValidationException
+    protected void convertTypes(User user, Container c, Map<String,Object> row, TableInfo t, @Nullable Path fileLinkDirPath, boolean useExistingFile) throws ValidationException
     {
         for (ColumnInfo col : t.getColumns())
         {
@@ -741,7 +741,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                         default -> {
                             if (PropertyType.FILE_LINK == col.getPropertyType() && (value instanceof MultipartFile || value instanceof AttachmentFile))
                             {
-                                value = saveFile(user, c, col.getName(), value, file_link_dir, useExistingFile);
+                                value = saveFile(user, c, col.getName(), value, fileLinkDirPath, useExistingFile);
                             }
                             row.put(col.getName(), ConvertUtils.convert(value.toString(), col.getJdbcType().getJavaClass()));
                         }

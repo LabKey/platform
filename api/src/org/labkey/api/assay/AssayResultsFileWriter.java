@@ -94,7 +94,7 @@ public class AssayResultsFileWriter<ContextType extends AssayRunUploadContext<? 
             Path targetDir = getAssayFilesDirectoryPath(container, getFileTargetDirName());
             if (targetDir != null && Files.exists(targetDir) && Files.isDirectory(targetDir))
             {
-                if (!deleteIfEmptyOnly || FileUtils.isEmptyDirectory(targetDir.toFile())) // TODO will .toFile() work here for cloud?
+                if (!deleteIfEmptyOnly || FileUtils.isEmptyDirectory(targetDir.toFile())) // TODO refactor to support cloud-based storage which won't have a toFile()
                     FileUtil.deleteDir(targetDir);
             }
         }
@@ -130,7 +130,7 @@ public class AssayResultsFileWriter<ContextType extends AssayRunUploadContext<? 
             if (pipelineResultsDir != null && Files.exists(pipelineResultsDir))
             {
                 Path targetDir = getAssayFilesDirectoryPath(container, getFileTargetDirName());
-                FileUtils.moveDirectory(pipelineResultsDir.toFile(), targetDir.toFile()); // TODO will .toFile() work here for cloud?
+                FileUtils.moveDirectory(pipelineResultsDir.toFile(), targetDir.toFile()); // TODO refactor to support cloud-based storage which won't have a toFile()
                 return Collections.emptyMap();
             }
         }

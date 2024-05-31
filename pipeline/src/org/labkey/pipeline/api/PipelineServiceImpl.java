@@ -971,7 +971,7 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
     }
 
     @Override
-    public String getJobGUID(User u, Container c, Integer rowId)
+    public String getJobGUID(User u, Container c, int rowId)
     {
         PipelineStatusFileImpl statusFile = getStatusFile(rowId);
         if (statusFile == null || !statusFile.getContainerId().equalsIgnoreCase(c.getId()))

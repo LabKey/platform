@@ -2067,7 +2067,7 @@ public class ExpDataIterators
         Supplier<Object>[] suppliers;
         String[] savedFileName;
 
-        FileLinkDataIterator(final DataIterator in, final DataIteratorContext context, Container c, User user, String file_link_dir_name)
+        FileLinkDataIterator(final DataIterator in, final DataIteratorContext context, Container c, User user, String fileLinkDirName)
         {
             super(in);
             suppliers = new Supplier[in.getColumnCount() + 1];
@@ -2091,7 +2091,7 @@ public class ExpDataIterators
                         {
                             try
                             {
-                                Object file = AbstractQueryUpdateService.saveFile(user, c, col.getName(), value, file_link_dir_name);
+                                Object file = AbstractQueryUpdateService.saveFile(user, c, col.getName(), value, fileLinkDirName);
                                 assert file instanceof File;
                                 value = ((File)file).getPath();
                                 savedFileName[index] = (String)value;
