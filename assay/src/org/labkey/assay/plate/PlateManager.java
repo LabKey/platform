@@ -326,8 +326,10 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             metadataFields = metadataTable.getColumns().stream().map(ColumnInfo::getFieldKey).collect(Collectors.toSet());
 
         // resolve columns and set any custom fields associated with the plate
-        for (Map<String, Object> dataRow : data)
+        for (Map<String, Object> dataMap : data)
         {
+            var dataRow = new CaseInsensitiveHashMap<>(dataMap);
+
             if (dataRow.containsKey(WELL_LOCATION))
             {
                 for (String colName : dataRow.keySet())
