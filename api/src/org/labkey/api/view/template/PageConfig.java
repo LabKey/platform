@@ -596,7 +596,7 @@ public class PageConfig
     public HtmlString getScriptTagStart()
     {
         HtmlString nonce = getScriptNonce();
-        return HtmlStringBuilder.of(HtmlString.unsafe("\n<script type=\"text/javascript\" nonce=\"")).append(nonce).unsafeAppend("\">\n").getHtmlString();
+        return HtmlStringBuilder.of(HtmlString.unsafe("\n<script type=\"text/javascript\" nonce=\"")).append(nonce).unsafeAppend("\">").getHtmlString();
     }
 
 
