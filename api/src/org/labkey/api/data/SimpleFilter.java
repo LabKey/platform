@@ -18,7 +18,6 @@ package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -49,6 +48,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import static org.labkey.api.data.CompareType.CONTAINS_NONE_OF;
@@ -139,7 +139,7 @@ public class SimpleFilter implements Filter
         }
 
         /**
-         * Whether or not the value needs to be type converted before being sent to the database. This is important
+         * Whether the value needs to be type converted before being sent to the database. This is important
          * for things like URL-supplied filters, where the value is always going to be a string, while the database
          * column may be an INT or DATE.
          */
@@ -193,7 +193,7 @@ public class SimpleFilter implements Filter
             if (val instanceof Calendar)
                 val = ((Calendar)val).getTime();
 
-            String param = StringUtils.defaultString(ConvertUtils.convert(val), "NULL");
+            String param = Objects.toString(ConvertUtils.convert(val), "NULL");
 
             // Surround value with quotes if it contains whitespace
             if (param.contains(" "))
@@ -201,7 +201,6 @@ public class SimpleFilter implements Filter
 
             return param;
         }
-
 
         /** @return non-URL encoded name/value pair. Value may be null if there's none to be used (for IS BLANK or similar clauses).
          * The whole return value may be null if this clause can't be represented on the URL */
@@ -267,7 +266,7 @@ public class SimpleFilter implements Filter
 
         public abstract SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect);
 
-        // most filters don't need tableAlias to disambiguate columns, this can be overriden if you have nested select statements (need to override toSQLFragment(Map,SqlDialect) as well)
+        // most filters don't need tableAlias to disambiguate columns, this can be overridden if you have nested select statements (need to override toSQLFragment(Map,SqlDialect) as well)
         public SQLFragment toSQLFragment(String tableAlias, Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
             return toSQLFragment(columnMap, dialect);
@@ -286,9 +285,7 @@ public class SimpleFilter implements Filter
             if (_needsTypeConversion != that._needsTypeConversion) return false;
             // Probably incorrect - comparing Object[] arrays with Arrays.equals
             if (!Arrays.equals(_paramVals, that._paramVals)) return false;
-            if (!getFieldKeys().equals(that.getFieldKeys())) return false;
-
-            return true;
+            return getFieldKeys().equals(that.getFieldKeys());
         }
 
         @Override
@@ -330,9 +327,7 @@ public class SimpleFilter implements Filter
 
         SimpleFilter filter = (SimpleFilter) o;
 
-        if (_clauses != null ? !_clauses.equals(filter._clauses) : filter._clauses != null) return false;
-
-        return true;
+        return Objects.equals(_clauses, filter._clauses);
     }
 
     @Override
@@ -382,7 +377,6 @@ public class SimpleFilter implements Filter
         }
     }
 
-
     public static class FalseClause extends SQLClause
     {
         public FalseClause()
@@ -390,7 +384,6 @@ public class SimpleFilter implements Filter
             super("0=1", null);
         }
     }
-
 
     public abstract static class OperationClause extends FilterClause
     {
@@ -447,7 +440,6 @@ public class SimpleFilter implements Filter
             
             return sqlFragment;
         }
-
 
         @Override
         public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
@@ -612,6 +604,36 @@ public class SimpleFilter implements Filter
             }
             return null;
         }
+
+        protected void appendFilterValues(StringBuilder sb)
+        {
+            sb.append("(");
+
+            if (getParamVals().length > MAX_FILTER_VALUES_TO_DISPLAY)
+            {
+                sb.append("too many values to display");
+            }
+            else
+            {
+                String sep = "";
+                for (Object val : getParamVals())
+                {
+                    if (val != null)
+                    {
+                        String s = formattedParamValue(val);
+                        sb.append(sep).append(s);
+                        sep = ", ";
+                    }
+                }
+
+                if (sep.isEmpty() || isIncludeNull())
+                {
+                    sb.append(sep).append("BLANK");
+                }
+            }
+
+            sb.append(")");
+        }
     }
 
     public static class InClause extends MultiValuedFilterClause
@@ -657,33 +679,11 @@ public class SimpleFilter implements Filter
             }
 
             if (isNegated())
-                sb.append(" IS NOT ANY OF (");
+                sb.append(" IS NOT ANY OF ");
             else
-                sb.append(" IS ONE OF (");
+                sb.append(" IS ONE OF ");
 
-            if (getParamVals().length > MAX_FILTER_VALUES_TO_DISPLAY)
-            {
-                sb.append("too many values to display)");
-                return;
-            }
-
-            String sep = "";
-            for (Object val : getParamVals())
-            {
-                if (val != null)
-                {
-                    String s = formattedParamValue(val);
-                    sb.append(sep).append(s);
-                    sep = ", ";
-                }
-            }
-
-            if ("".equals(sep) || isIncludeNull())
-            {
-                sb.append(sep).append("BLANK");
-            }
-
-            sb.append(")");
+            appendFilterValues(sb);
         }
 
         @Override
@@ -700,40 +700,44 @@ public class SimpleFilter implements Filter
                     in.append(alias).append(" IS ").append(isNegated() ? " NOT " : "").append("NULL");
                 else if (!isNegated())
                     in.append(alias).append(" IN (NULL)");  // Empty list case; "WHERE column IN (NULL)" should always be false
-
-                return in.toString();
-            }
-
-            in.append("((").append(alias);
-            in.append(" ").append(isNegated() ? "NOT " : "").append("IN (");
-            String sep = "";
-
-            for (Object param : params)
-            {
-                in.append(sep).append(escapeLabKeySqlValue(param, col.getJdbcType()));
-                sep = ", ";
-            }
-
-            in.append(")");
-
-            if (isIncludeNull())
-            {
-                if (isNegated())
-                    in.append(") AND ").append(alias).append(" IS NOT NULL)");
-                else
-                    in.append(") OR ").append(alias).append(" IS NULL)");
             }
             else
             {
-                if (isNegated())
-                    in.append(") OR ").append(alias).append(" IS NULL)");
+                if (null == col)
+                {
+                    throw new IllegalArgumentException("Filter column '" + _fieldKey.toDisplayString() + "' not found.");
+                }
+
+                in.append("((").append(alias);
+                in.append(" ").append(isNegated() ? "NOT " : "").append("IN (");
+                String sep = "";
+
+                for (Object param : params)
+                {
+                    in.append(sep).append(escapeLabKeySqlValue(param, col.getJdbcType()));
+                    sep = ", ";
+                }
+
+                in.append(")");
+
+                if (isIncludeNull())
+                {
+                    if (isNegated())
+                        in.append(") AND ").append(alias).append(" IS NOT NULL)");
+                    else
+                        in.append(") OR ").append(alias).append(" IS NULL)");
+                }
                 else
-                    in.append("))");
+                {
+                    if (isNegated())
+                        in.append(") OR ").append(alias).append(" IS NULL)");
+                    else
+                        in.append("))");
+                }
             }
 
             return in.toString();
         }
-
 
         @Override
         public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
@@ -830,12 +834,12 @@ public class SimpleFilter implements Filter
 
     public static class ContainsOneOfClause extends MultiValuedFilterClause
     {
-        public ContainsOneOfClause(FieldKey fieldKey, Collection params, boolean urlClause)
+        public ContainsOneOfClause(FieldKey fieldKey, Collection<?> params, boolean urlClause)
         {
             this(fieldKey, params, urlClause, false);
         }
 
-        public ContainsOneOfClause(FieldKey fieldKey, Collection params, boolean urlClause, boolean negated)
+        public ContainsOneOfClause(FieldKey fieldKey, Collection<?> params, boolean urlClause, boolean negated)
         {
             super(fieldKey, negated ? CONTAINS_NONE_OF : CONTAINS_ONE_OF, params, negated);
 
@@ -846,29 +850,9 @@ public class SimpleFilter implements Filter
         protected void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
         {
             sb.append(formatter.format(getFieldKey()));
-            sb.append(" ").append(isNegated() ? "DOES NOT CONTAIN ANY OF (" : "CONTAINS ONE OF (");
+            sb.append(" ").append(isNegated() ? "DOES NOT CONTAIN ANY OF " : "CONTAINS ONE OF ");
 
-            if (getParamVals().length > MAX_FILTER_VALUES_TO_DISPLAY)
-            {
-                sb.append("too many values to display)");
-                return;
-            }
-
-            String sep = "";
-            for (Object val : getParamVals())
-            {
-                if (val != null)
-                {
-                    String s = formattedParamValue(val);
-                    sb.append(sep).append(s);
-                    sep = ", ";
-                }
-            }
-
-            if(isIncludeNull())
-                sb.append(sep).append("BLANK");
-
-            sb.append(")");
+            appendFilterValues(sb);
         }
 
         @Override
@@ -893,7 +877,7 @@ public class SimpleFilter implements Filter
 
             SQLFragment in = new SQLFragment();
             OperationClause oc = getContainsClause(colInfo);
-            if(oc.getClauses().size() > 0)
+            if(!oc.getClauses().isEmpty())
                 return in.append(oc.toSQLFragment(columnMap, dialect));
 
             return in.append(alias).append(isNegated() ? " NOT IN " : " IN ").append("(NULL)");  // Empty list case; "WHERE column IN (NULL)" should always be false
@@ -909,18 +893,15 @@ public class SimpleFilter implements Filter
                 oc = new OrClause();
 
             FieldKey fieldKey = colInfo == null ? getFieldKey() : colInfo.getFieldKey();
-            if (params.length > 0)
+            for (Object param : params)
             {
-                for(Object param : params)
+                if (isNegated())
                 {
-                    if(isNegated())
-                    {
-                        oc.addClause(new CompareType.DoesNotContainClause(fieldKey, param));
-                    }
-                    else
-                    {
-                        oc.addClause(new CompareType.ContainsClause(fieldKey, param));
-                    }
+                    oc.addClause(new CompareType.DoesNotContainClause(fieldKey, param));
+                }
+                else
+                {
+                    oc.addClause(new CompareType.ContainsClause(fieldKey, param));
                 }
             }
 
@@ -928,7 +909,7 @@ public class SimpleFilter implements Filter
             if (isIncludeNull())
             {
                 OrClause clause = new OrClause();
-                if (oc._clauses.size() > 0)
+                if (!oc._clauses.isEmpty())
                     clause.addClause(oc);
 
                 if (isNegated())
@@ -962,10 +943,10 @@ public class SimpleFilter implements Filter
                 FilterClause compareClause = CompareType.CONTAINS.createFilterClause(getFieldKeys().get(0), params);
                 if (compareClause.meetsCriteria(col, value))
                 {
-                    return true;
+                    return !_negated;
                 }
             }
-            return false;
+            return _negated;
         }
     }
 
@@ -1317,7 +1298,7 @@ public class SimpleFilter implements Filter
     {
         SQLFragment ret = new SQLFragment();
 
-        if (null == _clauses || 0 == _clauses.size())
+        if (null == _clauses || _clauses.isEmpty())
             return ret;
 
         String sAND = "WHERE ";
@@ -1419,7 +1400,7 @@ public class SimpleFilter implements Filter
             separator = ") AND (";
             result.append(filterClause.getLabKeySQLWhereClause(columns));
         }
-        if (result.length() > 0)
+        if (!result.isEmpty())
         {
             result.append(")");
         }
@@ -1439,17 +1420,15 @@ public class SimpleFilter implements Filter
     {
         for (FilterClause clause : _clauses)
         {
-            if (clause instanceof CompareClause)
+            if (clause instanceof CompareClause compClause)
             {
-                CompareClause compClause = (CompareClause) clause;
                 if (compClause.getCompareType() == CompareType.EQUAL &&
                         compClause.getFieldKeys().size() == 1 &&
                         CONTAINER_FIELD_KEY.equals(compClause.getFieldKeys().get(0)))
                     return true;
             }
-            if (clause instanceof InClause)
+            if (clause instanceof InClause inClause)
             {
-                InClause inClause = (InClause)clause;
                 if (inClause.getFieldKeys().size() == 1 &&
                         CONTAINER_FIELD_KEY.equals(inClause.getFieldKeys().get(0)))
                 {
@@ -1470,7 +1449,7 @@ public class SimpleFilter implements Filter
         for (FilterClause clause : _clauses)
         {
             List<FieldKey> fieldKeys = clause.getFieldKeys();
-            if (fieldKeys.size() == 0)
+            if (fieldKeys.isEmpty())
                 throw new IllegalArgumentException("Expected filter criteria column name");
             if (fieldKeys.size() > 1)
                 throw new IllegalArgumentException("Can't check filter criteria of multi-column clauses");
@@ -1772,11 +1751,11 @@ public class SimpleFilter implements Filter
             testActiveUsersInClause(expected, ids, ids);
         }
 
-        private void testActiveUsersInClause(int expectedSize, Collection... users)
+        private void testActiveUsersInClause(int expectedSize, Collection<?>... users)
         {
             SimpleFilter f = new SimpleFilter();
             OrClause orClause = new OrClause();
-            for (Collection userSet : users)
+            for (Collection<?> userSet : users)
             {
                 orClause.addClause(new InClause(FieldKey.fromParts("UserId"), userSet));
             }
