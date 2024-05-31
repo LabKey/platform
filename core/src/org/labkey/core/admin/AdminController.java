@@ -482,7 +482,6 @@ public class AdminController extends SpringActionController
         addTab(TYPE.FolderManagement,"Files", "files", FOLDERS_AND_PROJECTS, FileRootsAction.class);
         addTab(TYPE.FolderManagement,"Formats", "settings", FOLDERS_ONLY, FolderSettingsAction.class);
         addTab(TYPE.FolderManagement,"Information", "info", NOT_ROOT, FolderInformationAction.class);
-        addTab(TYPE.FolderManagement,"Validate", "validate", EVERY_CONTAINER, ConfigureSiteValidationAction.class);
         addTab(TYPE.FolderManagement,"R Config", "rConfig", NOT_ROOT, RConfigurationAction.class);
 
         addTab(TYPE.ProjectSettings, "Properties", "properties", PROJECTS_ONLY, ProjectSettingsAction.class);
@@ -1495,10 +1494,10 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class ConfigureSiteValidationAction extends FolderManagementViewAction
+    public class ConfigureSiteValidationAction extends SimpleViewAction<Object>
     {
         @Override
-        protected JspView<?> getTabView()
+        public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             return new JspView<>("/org/labkey/core/admin/sitevalidation/configureSiteValidation.jsp");
         }

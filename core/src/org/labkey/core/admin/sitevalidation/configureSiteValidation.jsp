@@ -67,7 +67,7 @@
     {
 %>
 Clicking the "Validate" button will run the selected validators in the designated folder(s). Producing the results could take some time, especially with many folders, providers, and/or objects that need to be validated.<br><br>
-<labkey:form action="<%=urlFor(AdminController.SiteValidationAction.class)%>" method="post">
+<labkey:form action="<%=urlFor(AdminController.SiteValidationAction.class)%>" method="get">
     <%
         if (getContainer().isRoot())
             renderProviderList("Site Validation Providers", validationService.getSiteProviders(), out);
@@ -91,7 +91,7 @@ Clicking the "Validate" button will run the selected validators in the designate
         {
             out.println(
                 DOM.createHtmlFragment(
-                    input().type("checkbox").checked(true).name("includeSubfolders"),
+                    input().type("checkbox").checked(true).value("true").name("includeSubfolders"),
                     "Include subfolders",
                     DOM.BR(),
                     DOM.BR()
@@ -99,7 +99,7 @@ Clicking the "Validate" button will run the selected validators in the designate
             );
         }
     %>
-    <%=button("Validate").usePost().submit(true)%>
+    <%=button("Validate").submit(true)%>
     <%=generateBackButton("Cancel")%>
 </labkey:form>
 <%
