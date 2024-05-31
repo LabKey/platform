@@ -966,6 +966,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 plateId = (Integer) row.get("RowId");
                 plate.setRowId(plateId);
                 plate.setLsid((String) row.get("Lsid"));
+                plate.setName((String) row.get("Name"));
                 plate.setPlateId((String) row.get("PlateId"));
             }
             savePropertyBag(container, user, plate.getLSID(), plate.getProperties(), updateExisting);
@@ -1024,7 +1025,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             {
                 QueryUpdateService wellQus = getWellUpdateService(container, user);
                 List<Map<String, Object>> wellRows = new ArrayList<>();
-                Map<String, Map<String, Object>> wellDataMap = getWellDataMap(wellData);
+                Map<String, Map<String, Object>> wellDataMap = getWellDataMap(plate, wellData);
 
                 for (int row = 0; row < plate.getRows(); row++)
                 {
@@ -1095,7 +1096,10 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         }
     }
 
-    private @NotNull Map<String, Map<String, Object>> getWellDataMap(@Nullable List<Map<String, Object>> rawWellData)
+    private @NotNull Map<String, Map<String, Object>> getWellDataMap(
+        @NotNull Plate plate,
+        @Nullable List<Map<String, Object>> rawWellData
+    ) throws ValidationException
     {
         if (rawWellData == null || rawWellData.isEmpty())
             return Collections.emptyMap();
@@ -1113,35 +1117,39 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         );
 
         Map<String, Map<String, Object>> wellDataMap = new HashMap<>();
+        int rowIdx = 0;
 
-        for (var wellDataRow : rawWellData)
+        for (var wellData : rawWellData)
         {
-            if (wellDataRow.containsKey(WELL_LOCATION))
+            rowIdx++;
+            var wellDataRow = new CaseInsensitiveHashMap<>(wellData);
+            var wellLocation = StringUtils.trimToNull(String.valueOf(wellDataRow.get(WELL_LOCATION)));
+            if (wellLocation == null)
             {
-                var wellLocation = StringUtils.trimToNull(String.valueOf(wellDataRow.get(WELL_LOCATION)));
-                if (wellLocation == null)
+                throw new ValidationException(String.format(
+                    "Failed to resolve \"%s\" for row index (%d) on plate \"%s\". All well data must provide a \"%s\".", WELL_LOCATION, rowIdx, plate.getName(), rowIdx
+                ));
+            }
+
+            var safeWellRow = new CaseInsensitiveHashMap<>();
+            for (var entry : wellDataRow.entrySet())
+            {
+                if (StringUtils.trimToNull(entry.getKey()) == null || entry.getValue() == null)
                     continue;
 
-                var safeWellRow = new CaseInsensitiveHashMap<>();
-                for (var entry : wellDataRow.entrySet())
-                {
-                    if (StringUtils.trimToNull(entry.getKey()) == null || entry.getValue() == null)
-                        continue;
+                var key = entry.getKey();
+                var customFieldPrefix = WellTable.Column.Properties.name().toLowerCase() + "/";
+                if (key.toLowerCase().startsWith(customFieldPrefix))
+                    key = key.substring(customFieldPrefix.length());
 
-                    var key = entry.getKey();
-                    var customFieldPrefix = WellTable.Column.Properties.name().toLowerCase() + "/";
-                    if (key.toLowerCase().startsWith(customFieldPrefix))
-                        key = key.substring(customFieldPrefix.length());
+                if (StringUtils.trimToNull(key) != null && keywords.contains(key))
+                    continue;
 
-                    if (StringUtils.trimToNull(key) != null && keywords.contains(key))
-                        continue;
-
-                    safeWellRow.put(key, entry.getValue());
-                }
-
-                if (!safeWellRow.isEmpty())
-                    wellDataMap.put(wellLocation, safeWellRow);
+                safeWellRow.put(key, entry.getValue());
             }
+
+            if (!safeWellRow.isEmpty())
+                wellDataMap.put(wellLocation, safeWellRow);
         }
 
         return wellDataMap;
