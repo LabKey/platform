@@ -68,7 +68,6 @@ import org.labkey.assay.plate.model.WellBean;
 import org.labkey.assay.query.AssayDbSchema;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -900,7 +899,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 
         public PlateMetadataImportHelper(ExpData data, Container container, User user, ExpRun run, ExpProtocol protocol, AssayProvider provider)
         {
-            super(data);
+            super(data, protocol, provider);
             _wellPositionMap = new HashMap<>();
             _plateIdentifierMap = new HashMap<>();
             _container = container;

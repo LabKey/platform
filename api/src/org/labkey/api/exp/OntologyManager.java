@@ -393,6 +393,10 @@ public class OntologyManager
 
                 assert before.start();
                 String lsid = helper.beforeImportObject(map);
+                if (lsid == null)
+                {
+                    throw new IllegalStateException("No LSID available");
+                }
 
                 assert before.stop();
 
@@ -721,13 +725,20 @@ public class OntologyManager
                     int rowId = parameterMap.getRowId();
                     currentRow.put("rowId", rowId);
                 }
-                helper.afterImportObject(currentRow);
+                lsid = helper.afterImportObject(currentRow);
+                if (lsid == null)
+                {
+                    throw new IllegalStateException("No LSID available");
+                }
                 rowCallback.rowProcessed(currentRow, lsid);
                 rowCount++;
             }
 
+
             if (!errors.isEmpty())
                 throw new ValidationException(errors);
+
+            rowCallback.complete();
 
             helper.afterBatchInsert(rowCount);
             if (logger != null)
@@ -792,7 +803,7 @@ public class OntologyManager
         /**
          * may modify map
          *
-         * @return LSID for new or existing Object
+         * @return LSID for new or existing Object. Null indicates LSID is still unknown.
          */
         String beforeImportObject(Map<String, Object> map) throws SQLException;
 
@@ -805,9 +816,10 @@ public class OntologyManager
     public interface UpdateableTableImportHelper extends ImportHelper
     {
         /**
-         * may be used to process attachments, for auditing, etc etc
+         * may be used to process attachments, for auditing, etc
+         * @return the LSID of the inserted row
          */
-        void afterImportObject(Map<String, Object> map) throws SQLException;
+        String afterImportObject(Map<String, Object> map) throws SQLException;
 
         /**
          * may set parameters directly for columns that are not exposed by tableinfo
@@ -1755,7 +1767,7 @@ public class OntologyManager
             if (colDiffs.toString().contains("RangeURI") || colDiffs.toString().contains("PropertyType"))
                 fMajorDifference = true;
 
-            String errmsg = "ensurePropertyDescriptor:  descriptor In different from Found for " + colDiffs.toString() +
+            String errmsg = "ensurePropertyDescriptor:  descriptor In different from Found for " + colDiffs +
                     "\n\t Descriptor In: " + pdIn +
                     "\n\t Descriptor Found: " + pd;
 
@@ -1783,7 +1795,7 @@ public class OntologyManager
     {
         TableInfo t = getTinfoPropertyDescriptor();
         try (Connection conn = t.getSchema().getScope().getConnection();
-            ParameterMapStatement stmt = getInsertStmt(conn, user, t, true);)
+            ParameterMapStatement stmt = getInsertStmt(conn, user, t, true))
         {
             ObjectFactory<PropertyDescriptor> f = ObjectFactory.Registry.getFactory(PropertyDescriptor.class);
             Map<String, Object> m = f.toMap(pd, null);

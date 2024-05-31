@@ -52,7 +52,6 @@ import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.ValidatorContext;
-import org.labkey.api.iterator.CloseableIterator;
 import org.labkey.api.iterator.ValidatingDataRowIterator;
 import org.labkey.api.qc.DataLoaderSettings;
 import org.labkey.api.qc.ValidationDataHandler;
@@ -620,40 +619,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         }
     }
 
-    /**
-     * The insertedData collection that is returned from insertRowData contains the actual rowId but the wrong lsid. This
-     * utility will return a map of rowId to lsid that can be used during the construction of ontology objects attached
-     * to the result data row.
-     */
-    private Map<Integer, String> getRowIdtoLsidMap(User user, Container container, AssayProvider provider, ExpProtocol protocol,
-                                                   ExpRun run, List<Map<String, Object>> insertedData)
-    {
-        FieldKey assayResultFieldKey = provider.getTableMetadata(protocol).getResultLsidFieldKey();
-        if (assayResultFieldKey == null)
-            throw new IllegalStateException("provenance error: Assay result table for assay '" + protocol.getName() + "' has no LSID column");
-
-        // get the LSID for the newly inserted assay result data rows
-        TableInfo dataTable = provider.createProtocolSchema(user, container, protocol, null).createDataTable(null);
-        if (dataTable == null)
-            throw new IllegalStateException("Assay results table required to attach provenance");
-
-        ColumnInfo lsidCol = dataTable.getColumn(assayResultFieldKey);
-        if (lsidCol == null)
-            throw new IllegalStateException("Assay results table LSID column required to attach provenance");
-
-        ColumnInfo rowIdCol = dataTable.getColumn("RowId");
-        if (rowIdCol == null)
-            throw new IllegalStateException("Assay results table RowId column required to attach provenance");
-
-        List<Integer> rowIds = insertedData.stream().map(row -> (Integer)row.get("rowId")).collect(toList());
-
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("run"), run.getRowId());
-        filter.addCondition(rowIdCol, rowIds, CompareType.IN);
-        Sort sort = new Sort(FieldKey.fromParts("rowId"));
-
-        return new TableSelector(dataTable, List.of(rowIdCol, lsidCol), filter, sort).getValueMap();
-    }
-
     private OntologyManager.RowCallback addAssayPlateMetadata(
         Container container,
         User user,
@@ -712,7 +677,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         OntologyManager.RowCallback rowCallback
     ) throws SQLException, ValidationException, ExperimentException
     {
-        OntologyManager.UpdateableTableImportHelper importHelper = new SimpleAssayDataImportHelper(data);
+        OntologyManager.UpdateableTableImportHelper importHelper = new SimpleAssayDataImportHelper(data, protocol, provider);
         if (provider.isPlateMetadataEnabled(protocol))
             importHelper = AssayPlateMetadataService.get().getImportHelper(container, user, run, data, protocol, provider);
 
