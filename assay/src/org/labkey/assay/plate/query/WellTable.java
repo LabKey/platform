@@ -56,8 +56,8 @@ import org.labkey.assay.plate.data.WellTriggerFactory;
 import org.labkey.assay.query.AssayDbSchema;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -88,7 +88,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         WellGroup
     }
 
-    private static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
+    private static final Set<FieldKey> defaultVisibleColumns = new LinkedHashSet<>();
     private static final Set<String> ignoredColumns = new CaseInsensitiveHashSet();
     private final Map<FieldKey, ColumnInfo> _provisionedFieldMap = new HashMap<>();
     private final boolean _allowInsertDelete;
@@ -301,7 +301,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
     @Override
     public List<FieldKey> getDefaultVisibleColumns()
     {
-        return defaultVisibleColumns;
+        return defaultVisibleColumns.stream().toList();
     }
 
 /*
