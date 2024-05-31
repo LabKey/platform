@@ -150,9 +150,9 @@ public class WellTriggerFactory implements TriggerFactory
                     if (StringUtils.trimToNull(type) == null)
                         type = "";
                 }
-                if (newRow.containsKey(WellTable.Column.Group.name()))
+                if (newRow.containsKey(WellTable.Column.WellGroup.name()))
                 {
-                    group = (String) newRow.get(WellTable.Column.Group.name());
+                    group = (String) newRow.get(WellTable.Column.WellGroup.name());
                     if (StringUtils.trimToNull(group) == null)
                         group = "";
                 }
@@ -170,7 +170,7 @@ public class WellTriggerFactory implements TriggerFactory
 
         private boolean hasTypeGroupChange(@Nullable Map<String, Object> row)
         {
-            return row != null && (row.containsKey(WellTable.Column.Type.name()) || row.containsKey(WellTable.Column.Group.name()));
+            return row != null && (row.containsKey(WellTable.Column.Type.name()) || row.containsKey(WellTable.Column.WellGroup.name()));
         }
 
         private boolean isCopyOperation(Map<String, Object> extraContext)

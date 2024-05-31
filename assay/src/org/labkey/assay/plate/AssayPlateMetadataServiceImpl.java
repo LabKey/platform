@@ -1047,8 +1047,8 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             PlateSetImpl plateSet = new PlateSetImpl();
             PlateType plateType = PlateManager.get().getPlateType(8, 12);
             List<PlateManager.CreatePlateSetPlate> plates = List.of(
-                    new PlateManager.CreatePlateSetPlate(null, plateType.getRowId(), Collections.emptyList()),
-                    new PlateManager.CreatePlateSetPlate(null, plateType.getRowId(), Collections.emptyList())
+                    new PlateManager.CreatePlateSetPlate(null, plateType.getRowId(), null, Collections.emptyList()),
+                    new PlateManager.CreatePlateSetPlate(null, plateType.getRowId(), null, Collections.emptyList())
             );
             plateSet = PlateManager.get().createPlateSet(container, user, plateSet, plates, null);
             List<Plate> platesetPlates = PlateManager.get().getPlatesForPlateSet(plateSet);

@@ -187,6 +187,12 @@ public class PlateSetImpl extends Entity implements PlateSet
         _rootPlateSetId = rootPlateSetId;
     }
 
+    @JsonIgnore // TODO: Should probably just make this first class
+    public boolean isStandalone()
+    {
+        return getRootPlateSetId() == null && PlateSetType.assay.equals(getType()) && !isTemplate();
+    }
+
     @Override
     public boolean isTemplate()
     {
