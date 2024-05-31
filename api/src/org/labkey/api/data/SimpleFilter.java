@@ -962,10 +962,10 @@ public class SimpleFilter implements Filter
                 FilterClause compareClause = CompareType.CONTAINS.createFilterClause(getFieldKeys().get(0), params);
                 if (compareClause.meetsCriteria(col, value))
                 {
-                    return true;
+                    return !_negated;
                 }
             }
-            return false;
+            return _negated;
         }
     }
 
