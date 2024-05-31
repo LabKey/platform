@@ -171,6 +171,7 @@ import org.labkey.api.exp.xar.LSIDRelativizer;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.exp.xar.XarConstants;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.files.FileListener;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
@@ -199,6 +200,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;
@@ -225,6 +227,7 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.experiment.ExperimentAuditProvider;
+import org.labkey.experiment.FileLinkFileListener;
 import org.labkey.experiment.XarExportType;
 import org.labkey.experiment.XarExporter;
 import org.labkey.experiment.XarReader;
@@ -246,6 +249,7 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -9682,6 +9686,69 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             return !AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_ALLOW_GAP_COUNTER);
         }
+    }
+
+    public Map<String, Map<String, Set<String>>> doMissingFilesCheck(User user, Container container) throws SQLException
+    {
+        if (container == null)
+            container = ContainerManager.getRoot();
+
+        if (!container.hasPermission(user, AdminPermission.class))
+            throw new UnauthorizedException("You don't have the required permission to perform this action");
+
+        ContainerFilter cf;
+        if (container.isRoot())
+        {
+            cf = new ContainerFilter.AllFolders(user);
+        }
+        else
+            cf = ContainerFilter.Type.CurrentAndSubfolders.create(container, user);
+
+        FileLinkFileListener fileListener = new FileLinkFileListener();
+
+        Map<String, Map<String, Set<String>>> missingFiles = new HashMap<>();
+        SQLFragment unionSql = fileListener.listFilesQuery(true);
+        Collection<GUID> containerIds = cf.getIds();
+        SQLFragment selectSql;
+        if (containerIds == null || containerIds.isEmpty())
+            selectSql = unionSql;
+        else
+            selectSql = new SQLFragment("SELECT * FROM (").append(unionSql).append(") WHERE Container ").appendInClause(cf.getIds(), CoreSchema.getInstance().getSchema().getSqlDialect());
+        final int MAX_MISSING_COUNT = 1000;
+        int missingCount = 0;
+        try (ResultSet rs = new SqlSelector(CoreSchema.getInstance().getSchema(), selectSql).getResultSet(false))
+        {
+            while (rs.next())
+            {
+                String filePath = rs.getString("FilePath");
+                if (StringUtils.isEmpty(filePath))
+                    continue;
+
+                File file;
+                // TODO: Issue 50538: support s3 files
+                if (filePath.startsWith("file:"))
+                    file = new File(URI.create(filePath));
+                else
+                    file = new File(filePath);
+
+                if (!file.exists())
+                {
+                    missingCount++;
+                    String containerId = rs.getString("Container");
+                    String sourceName = rs.getString("SourceName");
+                    if (!missingFiles.containsKey(containerId))
+                        missingFiles.put(containerId, new HashMap<>());
+                    if (!missingFiles.get(containerId).containsKey(sourceName))
+                        missingFiles.get(containerId).put(sourceName, new HashSet<>());
+
+                    missingFiles.get(containerId).get(sourceName).add(filePath);
+                }
+
+                if (missingCount >= MAX_MISSING_COUNT)
+                    break;
+            }
+        }
+        return missingFiles;
     }
 
     public static class TestCase extends Assert
