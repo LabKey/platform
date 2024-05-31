@@ -157,10 +157,10 @@ public class SystemMaintenance
         _timerDisabled = disable;
     }
 
-    public final static String SET_NAME = "SystemMaintenance";
+    private final static String SET_NAME = "SystemMaintenance";
     private final static String TIME_PROPERTY_NAME = "MaintenanceTime";
-    public final static String DISABLED_TASKS_PROPERTY_NAME = "DisabledTasks";
-    public final static String ENABLED_TASKS_PROPERTY_NAME = "EnabledTasks";
+    private final static String DISABLED_TASKS_PROPERTY_NAME = "DisabledTasks";
+    private final static String ENABLED_TASKS_PROPERTY_NAME = "EnabledTasks";
 
     public static SystemMaintenanceProperties getProperties()
     {
@@ -189,9 +189,9 @@ public class SystemMaintenance
 
     public static void enableTask(String taskToEnable)
     {
-        PropertyManager.PropertyMap writableProps = PropertyManager.getWritableProperties(SystemMaintenance.SET_NAME, true);
-        String disabled = writableProps.get(SystemMaintenance.DISABLED_TASKS_PROPERTY_NAME);
-        String enabled = writableProps.get(SystemMaintenance.ENABLED_TASKS_PROPERTY_NAME);
+        PropertyManager.PropertyMap writableProps = PropertyManager.getWritableProperties(SET_NAME, true);
+        String disabled = writableProps.get(DISABLED_TASKS_PROPERTY_NAME);
+        String enabled = writableProps.get(ENABLED_TASKS_PROPERTY_NAME);
 
         Set<String> disabledTasks = new HashSet<>();
         Set<String> enabledTasks = new HashSet<>();
@@ -203,8 +203,8 @@ public class SystemMaintenance
         disabledTasks.remove(taskToEnable);
         enabledTasks.add(taskToEnable);
 
-        writableProps.put(SystemMaintenance.DISABLED_TASKS_PROPERTY_NAME, StringUtils.join(disabledTasks, ","));
-        writableProps.put(SystemMaintenance.ENABLED_TASKS_PROPERTY_NAME, StringUtils.join(enabledTasks, ","));
+        writableProps.put(DISABLED_TASKS_PROPERTY_NAME, StringUtils.join(disabledTasks, ","));
+        writableProps.put(ENABLED_TASKS_PROPERTY_NAME, StringUtils.join(enabledTasks, ","));
 
         writableProps.save();
     }
