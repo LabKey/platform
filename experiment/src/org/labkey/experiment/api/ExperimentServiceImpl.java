@@ -9725,6 +9725,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     continue;
 
                 File file;
+                // TODO: Issue 50538: support s3 files
                 if (filePath.startsWith("file:"))
                     file = new File(URI.create(filePath));
                 else
