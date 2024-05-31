@@ -8,7 +8,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
-import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.assay.AssayProtocolSchema;
@@ -1033,11 +1032,6 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 
             container = JunitUtil.getTestContainer();
             user = TestContext.get().getUser();
-        }
-
-        @After
-        public void cleanup()
-        {
         }
 
         @Test

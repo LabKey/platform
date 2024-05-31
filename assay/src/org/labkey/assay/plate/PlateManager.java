@@ -152,6 +152,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
 import static org.labkey.api.assay.plate.PlateSet.MAX_PLATES;
+import static org.labkey.assay.plate.query.WellTable.WELL_LOCATION;
 
 public class PlateManager implements PlateService, AssayListener, ExperimentListener
 {
@@ -327,7 +328,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         // resolve columns and set any custom fields associated with the plate
         for (Map<String, Object> dataRow : data)
         {
-            if (dataRow.containsKey("wellLocation"))
+            if (dataRow.containsKey(WELL_LOCATION))
             {
                 for (String colName : dataRow.keySet())
                 {
@@ -774,9 +775,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     @Override
     public int save(Container container, User user, Plate plate) throws Exception
     {
-        if (plate instanceof PlateImpl plateTemplate)
-            return save(container, user, plateTemplate, null);
-        throw new IllegalArgumentException("Only plate instances created by the plate service can be saved.");
+        return save(container, user, plate, null);
     }
 
     private int save(Container container, User user, Plate plate, @Nullable List<Map<String, Object>> wellData) throws Exception
@@ -1110,16 +1109,16 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             WellTable.Column.Properties.name(),
             WellTable.Column.Row.name(),
             WellTable.Column.RowId.name(),
-            "WellLocation"
+            WELL_LOCATION
         );
 
         Map<String, Map<String, Object>> wellDataMap = new HashMap<>();
 
         for (var wellDataRow : rawWellData)
         {
-            if (wellDataRow.containsKey("wellLocation"))
+            if (wellDataRow.containsKey(WELL_LOCATION))
             {
-                var wellLocation = StringUtils.trimToNull(String.valueOf(wellDataRow.get("wellLocation")));
+                var wellLocation = StringUtils.trimToNull(String.valueOf(wellDataRow.get(WELL_LOCATION)));
                 if (wellLocation == null)
                     continue;
 
@@ -2929,7 +2928,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 wellSampleDataForPlate.add(CaseInsensitiveHashMap.of(
                     WellTable.Column.SampleId.name(), sampleIds.get(sampleIdsCounter),
                     WellTable.Column.Type.name(), WellGroup.Type.SAMPLE.name(),
-                    "WellLocation", createPosition(c, rowIdx, colIdx).getDescription()
+                    WELL_LOCATION, createPosition(c, rowIdx, colIdx).getDescription()
                 ));
                 sampleIdsCounter++;
             }
@@ -2975,7 +2974,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             {
                 data.add(CaseInsensitiveHashMap.of(
                     WellTable.Column.Type.name(), WellGroup.Type.SAMPLE.name(),
-                    "WellLocation", createPosition(container, rowIdx, colIdx).getDescription()
+                    WELL_LOCATION, createPosition(container, rowIdx, colIdx).getDescription()
                 ));
             }
         }

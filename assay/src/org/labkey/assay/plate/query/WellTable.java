@@ -68,6 +68,7 @@ import static org.labkey.api.query.ExprColumn.STR_TABLE_ALIAS;
 public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
 {
     public static final String NAME = "Well";
+    public static final String WELL_LOCATION = "WellLocation";
     public static final String WELL_PROPERTIES_TABLE = "WellProperties";
 
     public enum Column
