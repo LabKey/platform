@@ -45,6 +45,7 @@ import org.labkey.api.assay.plate.WellCustomField;
 import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
@@ -118,6 +119,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.assay.AssayManager;
 import org.labkey.assay.TsvAssayProvider;
+import org.labkey.assay.plate.data.WellData;
 import org.labkey.assay.plate.model.PlateBean;
 import org.labkey.assay.plate.model.PlateSetAssays;
 import org.labkey.assay.plate.model.PlateSetLineage;
@@ -393,6 +395,30 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return null;
     }
 
+    public List<FieldKey> getMetadataColumns(@NotNull PlateSet plateSet, Container c, User user, ContainerFilter cf)
+    {
+        Set<FieldKey> includedMetadataCols = new HashSet<>();
+        for (Plate plate : plateSet.getPlates(user))
+        {
+            QueryView plateQueryView = PlateManager.get().getPlateQueryView(c, user, cf, plate, false);
+            Map<String, FieldKey> displayColumns = PlateManager.get().getPlateDisplayColumns(plateQueryView)
+                    .stream()
+                    .filter(col -> col.getFilterKey() != null)
+                    .collect(Collectors.toMap(col -> col.getColumnInfo().getPropertyURI(), DisplayColumn::getFilterKey));
+
+            for (PlateCustomField field : plate.getCustomFields())
+            {
+                FieldKey lookupFk = displayColumns.get(field.getPropertyURI());
+                if (lookupFk != null)
+                    includedMetadataCols.add(lookupFk);
+                else
+                    includedMetadataCols.add(FieldKey.fromParts(WellTable.Column.Properties.name(), field.getName()));
+            }
+        }
+
+        return includedMetadataCols.stream().sorted(Comparator.comparing(FieldKey::getName)).toList();
+    }
+
     @NotNull
     public List<Plate> getPlateTemplates(Container container)
     {
@@ -658,6 +684,15 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return (PlateSet) require(
             getPlateSet(container, plateSetRowId),
             String.format("Plate set with rowId (%d) is not available in %s.", plateSetRowId, container.getPath()),
+            errorPrefix
+        );
+    }
+
+    private @NotNull PlateType requirePlateType(int plateTypeRowId, @Nullable String errorPrefix) throws ValidationException
+    {
+        return (PlateType) require(
+            getPlateType(plateTypeRowId),
+            String.format("Unable to resolve plate type (%d).", plateTypeRowId),
             errorPrefix
         );
     }
@@ -1552,8 +1587,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             var copyRow = copyWellData[i];
 
             var updateCopyRow = new CaseInsensitiveHashMap<>();
-            updateCopyRow.put("RowId", copyRow.get("RowId"));
-            if (copySample)
+            if (copySample && sourceRow.get("SampleId") != null)
                 updateCopyRow.put("SampleId", sourceRow.get("SampleId"));
 
             if (sourceMetaData.containsKey(sourceWellLSID))
@@ -1568,8 +1602,15 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 }
             }
 
-            newWellData.add(updateCopyRow);
+            if (!updateCopyRow.isEmpty())
+            {
+                updateCopyRow.put("RowId", copyRow.get("RowId"));
+                newWellData.add(updateCopyRow);
+            }
         }
+
+        if (newWellData.isEmpty())
+            return;
 
         var errors = new BatchValidationException();
         Map<String, Object> extraScriptContext = CaseInsensitiveHashMap.of(PLATE_COPY_FLAG, true);
@@ -1596,8 +1637,10 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         User user,
         Integer sourcePlateRowId,
         boolean copyAsTemplate,
+        @Nullable Integer destinationPlateSetRowId,
         @Nullable String name,
-        @Nullable String description
+        @Nullable String description,
+        @Nullable Boolean copySamples
     ) throws Exception
     {
         if (!container.hasPermission(user, InsertPermission.class))
@@ -1611,30 +1654,29 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         if (sourcePlate == null)
             throw new ValidationException(String.format("Failed to copy plate. Unable to resolve source plate with RowId (%d).", sourcePlateRowId));
 
-        PlateSet sourcePlateSet = sourcePlate.getPlateSet();
-        if (sourcePlateSet == null)
-            throw new ValidationException(String.format("Failed to copy plate. Unable to resolve source plate set for plate \"%s\".", sourcePlate.getName()));
+        if (destinationPlateSetRowId == null)
+            destinationPlateSetRowId = sourcePlate.getPlateSetId();
+        PlateSet destinationPlateSet = requirePlateSet(container, destinationPlateSetRowId, "Failed to copy plate.");
 
-        if (!container.equals(sourcePlateSet.getContainer()))
-            throw new ValidationException(String.format("Failed to copy plate. The destination folder \"%s\" does not match the plate set folder \"%s\".", container.getPath(), sourcePlateSet.getContainer().getPath()));
+        if (!container.equals(destinationPlateSet.getContainer()))
+            throw new ValidationException(String.format("Failed to copy plate. The destination folder \"%s\" does not match the plate set folder \"%s\".", container.getPath(), destinationPlateSet.getContainer().getPath()));
 
-        boolean isTemplate = copyAsTemplate || sourcePlate.isTemplate();
         boolean hasName = StringUtils.trimToNull(name) != null;
 
-        if (isTemplate && !hasName)
+        if (copyAsTemplate && !hasName)
             throw new ValidationException("Failed to copy plate template. A \"name\" is required.");
 
-        if (!isTemplate && ((PlateSetImpl) sourcePlateSet).isFull())
-            throw new ValidationException(String.format("Failed to copy plate. The plate set \"%s\" is full.", sourcePlateSet.getName()));
+        if (!copyAsTemplate && ((PlateSetImpl) destinationPlateSet).isFull())
+            throw new ValidationException(String.format("Failed to copy plate. The plate set \"%s\" is full.", destinationPlateSet.getName()));
 
         if (hasName)
         {
-            if (isTemplate)
+            if (copyAsTemplate)
             {
                 if (isDuplicatePlateTemplateName(container, name))
                     throw new ValidationException(String.format("Failed to copy plate template. A plate template already exists with the name \"%s\".", name));
             }
-            else if (isDuplicatePlateName(container, user, name, sourcePlateSet))
+            else if (isDuplicatePlateName(container, user, name, destinationPlateSet))
                 throw new ValidationException(String.format("Failed to copy plate. A plate already exists with the name \"%s\".", name));
         }
 
@@ -1645,10 +1687,10 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             newPlate.setCustomFields(sourcePlate.getCustomFields());
             newPlate.setDescription(description);
 
-            if (isTemplate)
+            if (copyAsTemplate)
                 newPlate.setTemplate(true);
             else
-                newPlate.setPlateSet(sourcePlateSet);
+                newPlate.setPlateSet(destinationPlateSet);
 
             copyProperties(sourcePlate, newPlate);
             copyWellGroups(sourcePlate, newPlate);
@@ -1660,7 +1702,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 throw new IllegalStateException("Unexpected failure. Failed to retrieve plate after save (pre-commit).");
 
             // Copy plate metadata
-            copyWellData(user, sourcePlate, newPlate, !newPlate.isTemplate());
+            if (copySamples == null)
+                copySamples = true;
+            copyWellData(user, sourcePlate, newPlate, !newPlate.isTemplate() && copySamples);
 
             tx.commit();
 
@@ -1669,7 +1713,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     }
 
     /**
-     * @deprecated Use {@link #copyPlate(Container, User, Integer, boolean, String, String)}
+     * @deprecated Use {@link #copyPlate(Container, User, Integer, boolean, Integer, String, String, Boolean)}
      */
     @Deprecated
     public Plate copyPlateDeprecated(Plate source, User user, Container destContainer)
@@ -2255,7 +2299,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return PLATE_NAME_EXPRESSION;
     }
 
-    public record CreatePlateSetPlate(String name, Integer plateType, List<Map<String, Object>> data) {}
+    public record CreatePlateSetPlate(String name, Integer plateType, Integer templateId, List<Map<String, Object>> data) {}
 
     public PlateSetImpl createPlateSet(
         Container container,
@@ -2309,10 +2353,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             {
                 for (var plate : plates)
                 {
-                    var plateType = getPlateType(plate.plateType);
-                    if (plateType == null)
-                        throw new ValidationException("Failed to create plate set. Plate Type (" + plate.plateType + ") is invalid.");
-
+                    var plateType = requirePlateType(plate.plateType, "Failed to create plate set.");
                     var plateImpl = new PlateImpl(container, plate.name, plateType);
                     plateImpl.setTemplate(plateSet.isTemplate());
 
@@ -2326,6 +2367,30 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         }
 
         return plateSet;
+    }
+
+    public PlateSet replatePlateSet(
+        Container container,
+        User user,
+        @NotNull PlateSetImpl plateSet,
+        Integer sourcePlateSetRowId
+    ) throws Exception
+    {
+        PlateSetImpl parentPlateSet = (PlateSetImpl) requirePlateSet(container, sourcePlateSetRowId, "Failed to create plate set.");
+
+        Integer parentId = parentPlateSet.isStandalone() ? null : parentPlateSet.getRowId();
+
+        try (DbScope.Transaction tx = ensureTransaction())
+        {
+            PlateSet newPlateSet = createPlateSet(container, user, plateSet, null, parentId);
+
+            for (Plate plate : parentPlateSet.getPlates(user))
+                copyPlate(container, user, plate.getRowId(), false, newPlateSet.getRowId(), null, null, true);
+
+            tx.commit();
+
+            return getPlateSet(container, newPlateSet.getRowId());
+        }
     }
 
     private void savePlateSetHeritage(Integer plateSetId, PlateSetType plateSetType, @Nullable PlateSetImpl parentPlateSet)
@@ -2783,14 +2848,14 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     }
 
     Pair<Integer, List<Map<String, Object>>> getWellSampleData(
-        int[] sampleIdsSorted,
+        Container c,
+        @NotNull List<Integer> sampleIds,
         Integer rowCount,
         Integer columnCount,
-        int sampleIdsCounter,
-        Container c
+        int sampleIdsCounter
     )
     {
-        if (sampleIdsSorted.length == 0)
+        if (sampleIds.isEmpty())
             throw new IllegalArgumentException("No samples are in the current selection.");
 
         List<Map<String, Object>> wellSampleDataForPlate = new ArrayList<>();
@@ -2798,13 +2863,13 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         {
             for (int colIdx = 0; colIdx < columnCount; colIdx++)
             {
-                if (sampleIdsCounter >= sampleIdsSorted.length)
+                if (sampleIdsCounter >= sampleIds.size())
                     return Pair.of(sampleIdsCounter, wellSampleDataForPlate);
 
                 wellSampleDataForPlate.add(CaseInsensitiveHashMap.of(
-                    "sampleId", sampleIdsSorted[sampleIdsCounter],
-                    "type", WellGroup.Type.SAMPLE.name(),
-                    "wellLocation", createPosition(c, rowIdx, colIdx).getDescription()
+                    WellTable.Column.SampleId.name(), sampleIds.get(sampleIdsCounter),
+                    WellTable.Column.Type.name(), WellGroup.Type.SAMPLE.name(),
+                    "WellLocation", createPosition(c, rowIdx, colIdx).getDescription()
                 ));
                 sampleIdsCounter++;
             }
@@ -2813,77 +2878,152 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return Pair.of(sampleIdsCounter, wellSampleDataForPlate);
     }
 
-    public List<CreatePlateSetPlate> getPlateData(
-        Container c,
-        @NotNull String selectionKey,
-        List<CreatePlateSetPlate> platesModel
+    /** Prepares the plate data for plates that specify a "templateId". */
+    public List<CreatePlateSetPlate> preparePlateData(Container container, User user, Collection<CreatePlateSetPlate> plates)
+    {
+        if (plates == null || plates.isEmpty())
+            return Collections.emptyList();
+
+        List<CreatePlateSetPlate> plateData = new ArrayList<>();
+
+        for (CreatePlateSetPlate plate : plates)
+        {
+            if (plate.templateId == null)
+                plateData.add(plate);
+            else
+            {
+                List<Map<String, Object>> data = getWellData(container, user, plate.templateId, false, true)
+                        .stream()
+                        .map(WellData::getData)
+                        .toList();
+
+                plateData.add(new CreatePlateSetPlate(plate.name, plate.plateType, plate.templateId, data));
+            }
+        }
+
+        return plateData;
+    }
+
+    /** Prepares the plate data for a plate template created from a plate type. */
+    public List<Map<String, Object>> prepareEmptyPlateTemplateData(Container container, @NotNull PlateType plateType)
+    {
+        List<Map<String, Object>> data = new ArrayList<>();
+
+        for (int rowIdx = 0; rowIdx < plateType.getRows(); rowIdx++)
+        {
+            for (int colIdx = 0; colIdx < plateType.getColumns(); colIdx++)
+            {
+                data.add(CaseInsensitiveHashMap.of(
+                    WellTable.Column.Type.name(), WellGroup.Type.SAMPLE.name(),
+                    "WellLocation", createPosition(container, rowIdx, colIdx).getDescription()
+                ));
+            }
+        }
+
+        return data;
+    }
+
+    /**
+     * This is a re-array operation, so take the plate sources and apply the selected samples
+     * according to each plate's layout.
+     */
+    public List<CreatePlateSetPlate> reArrayFromSelection(
+        Container container,
+        User user,
+        List<CreatePlateSetPlate> plates,
+        @NotNull String selectionKey
     ) throws ValidationException
     {
-        int[] sampleIdsSorted = getSelection(selectionKey)
-                .stream()
-                .mapToInt(Integer::intValue)
-                .sorted()
-                .toArray();
-        int sampleIdsCounter = 0;
+        List<Integer> selectedSampleIds = getSelection(selectionKey).stream().sorted().toList();
+        if (selectedSampleIds.isEmpty())
+            throw new ValidationException("Failed to generate plate data. No samples selected.");
 
+        int sampleIdsCounter = 0;
         List<CreatePlateSetPlate> platesData = new ArrayList<>();
         Map<Integer, PlateType> plateTypesHash = new HashMap<>();
 
-        for (CreatePlateSetPlate plate : platesModel)
+        for (CreatePlateSetPlate plate : plates)
         {
             int plateTypeId = plate.plateType;
+            if (!plateTypesHash.containsKey(plateTypeId))
+                plateTypesHash.put(plateTypeId, requirePlateType(plateTypeId, "Failed to generate plate data."));
+            PlateType plateType = plateTypesHash.get(plateTypeId);
 
-            PlateType plateType;
-            if (plateTypesHash.get(plateTypeId) != null)
+            if (plate.templateId != null)
             {
-                plateType = plateTypesHash.get(plateTypeId);
+                // Generate well data from a source plate
+                List<WellData> wellData = getWellData(container, user, plate.templateId, false, true);
+
+                // Plate the samples into the well data
+                sampleIdsCounter = plateSamples(wellData, selectedSampleIds, sampleIdsCounter);
+
+                // Hydrate a CreatePlateSetPlate and add it to plate data
+                List<Map<String, Object>> data = wellData.stream().map(WellData::getData).toList();
+                platesData.add(new CreatePlateSetPlate(plate.name, plateType.getRowId(), plate.templateId, data));
             }
             else
             {
-                plateType = getPlateType(plateTypeId);
-                if (plateType == null)
-                    throw new ValidationException(String.format("Failed to generate plate data. The plate type id (%d) is invalid.", plateTypeId));
-                plateTypesHash.put(plateTypeId, plateType);
+                // Iterate through sorted samples array and place them in ascending order in each plate's wells
+                Pair<Integer, List<Map<String, Object>>> pair;
+                pair = getWellSampleData(container, selectedSampleIds, plateType.getRows(), plateType.getColumns(), sampleIdsCounter);
+                platesData.add(new CreatePlateSetPlate(plate.name, plateType.getRowId(), null, pair.second));
+                sampleIdsCounter = pair.first;
             }
-
-            // Iterate through sorted samples array and place them in ascending order in each plate's wells
-            Pair<Integer, List<Map<String, Object>>> pair = getWellSampleData(sampleIdsSorted, plateType.getRows(), plateType.getColumns(), sampleIdsCounter, c);
-            platesData.add(new CreatePlateSetPlate(plate.name, plateTypeId, pair.second));
-
-            sampleIdsCounter = pair.first;
         }
 
-        if (sampleIdsSorted.length != sampleIdsCounter)
+        if (selectedSampleIds.size() != sampleIdsCounter)
             throw new ValidationException("Failed to generate plate data. Plate dimensions are incompatible with selected sample count.");
 
         return platesData;
     }
 
-    public List<CreatePlateSetPlate> getPlateData(Container c, User u, Integer plateSetId) throws ValidationException
+    private int plateSamples(List<WellData> wellDataList, List<Integer> sampleIds, int counter)
     {
-        PlateSet plateSet = requirePlateSet(c, plateSetId, "Failed to generate plate data.");
-        List<CreatePlateSetPlate> plates = new ArrayList<>();
+        if (counter >= sampleIds.size())
+            return counter;
 
-        for (Plate p : plateSet.getPlates(u))
+        Map<String, Integer> groupSampleMap = new HashMap<>();
+
+        for (WellData wellData : wellDataList)
         {
-            List<Map<String, Object>> data = new ArrayList<>();
+            boolean isSampleWell = WellGroup.Type.SAMPLE.equals(wellData.getType());
+            String group = wellData.getWellGroup();
 
-            for (Well well : p.getWells())
+            if (counter >= sampleIds.size())
             {
-                if (well.getSampleId() != null)
+                // Fill remaining group wells
+                if (isSampleWell && group != null && groupSampleMap.containsKey(group))
                 {
-                    data.add(CaseInsensitiveHashMap.of(
-                        "sampleId", well.getSampleId(),
-                        "type", WellGroup.Type.SAMPLE.name(), // TODO: This will not be sufficient for other types -- need to copy through
-                        "wellLocation", createPosition(c, well.getRow(), well.getColumn()).getDescription()
-                    ));
+                    wellData.setSampleId(groupSampleMap.get(group));
                 }
             }
+            else if (isSampleWell)
+            {
+                Integer sampleId = sampleIds.get(counter);
 
-            plates.add(new CreatePlateSetPlate(null, p.getPlateType().getRowId(), data));
+                if (group != null)
+                {
+                    if (groupSampleMap.containsKey(group))
+                    {
+                        // Do not increment counter as this reuses the same sample within a group
+                        sampleId = groupSampleMap.get(group);
+                    }
+                    else
+                    {
+                        groupSampleMap.put(group, sampleId);
+                        counter++;
+                    }
+                }
+                else
+                {
+                    counter++;
+                }
+
+                wellData.setSampleId(sampleId);
+            }
         }
 
-        return plates;
+        return counter;
     }
 
     public List<Object[]> getWorklist(
@@ -2929,7 +3069,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return fieldKeys;
     }
 
-    private QueryView getPlateQueryView(Container container, User user, ContainerFilter cf, Plate plate, boolean isMapView)
+    public QueryView getPlateQueryView(Container container, User user, ContainerFilter cf, Plate plate, boolean isMapView)
     {
         UserSchema userSchema = QueryService.get().getUserSchema(user, container, PlateSchema.SCHEMA_NAME);
         List<FieldKey> fieldKeys = getPlateExportFieldKeys(plate, isMapView);
@@ -2956,7 +3096,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return renameColumnMap;
     }
 
-    private List<DisplayColumn> getPlateDisplayColumns(QueryView queryView)
+    public List<DisplayColumn> getPlateDisplayColumns(QueryView queryView)
     {
         // We have to use the display columns from the DataRegion returned from createDataView in order to get the
         // correct columns that we set via QuerySettings in getPlateQueryView, if we don't then we'll only get the
@@ -2999,7 +3139,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return fileBytes;
     }
 
-    public List<PlateFileBytes> exportPlateMaps(Container c, User user, ContainerFilter cf, List<Integer> plateIds)  throws Exception
+    public List<PlateFileBytes> exportPlateMaps(Container c, User user, ContainerFilter cf, List<Integer> plateIds) throws Exception
     {
         if (plateIds.isEmpty()) return emptyList();
 
@@ -3022,6 +3162,68 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return fileBytes;
     }
 
+    private List<WellData> getWellData(Container container, User user, int plateRowId, boolean includeSamples, boolean includeMetadata)
+    {
+        Set<String> columns = new HashSet<>();
+        columns.add(WellTable.Column.Col.name());
+        columns.add(WellTable.Column.Lsid.name());
+        columns.add(WellTable.Column.Position.name());
+        columns.add(WellTable.Column.Row.name());
+        columns.add(WellTable.Column.RowId.name());
+        columns.add(WellTable.Column.Type.name());
+        columns.add(WellTable.Column.WellGroup.name());
+        if (includeSamples)
+            columns.add(WellTable.Column.SampleId.name());
+
+        var wellTable = getWellTable(container, user);
+        var filter = new SimpleFilter(FieldKey.fromParts(WellTable.Column.PlateId.name()), plateRowId);
+        var wellDatas = new TableSelector(wellTable, columns, filter, new Sort(WellTable.Column.RowId.name())).getArrayList(WellData.class);
+
+        if (includeMetadata)
+            return getWellMetadata(container, user, wellDatas);
+        return wellDatas;
+    }
+
+    private List<WellData> getWellMetadata(Container container, User user, List<WellData> wellDataList)
+    {
+        List<String> wellLsids = wellDataList.stream().map(WellData::getLsid).toList();
+        if (wellLsids.isEmpty())
+            return wellDataList;
+
+        var metadataTable = getPlateMetadataTable(container, user);
+        if (metadataTable == null)
+            return wellDataList;
+
+        var filter = new SimpleFilter(FieldKey.fromParts(WellTable.Column.Lsid.name()), wellLsids, CompareType.IN);
+        var metadataMap = new HashMap<String, Map<String, Object>>();
+        var ignoredKeys = CaseInsensitiveHashSet.of("_row", WellTable.Column.Lsid.name());
+
+        new TableSelector(metadataTable, filter, null).getMapCollection().forEach(row -> {
+            var lsid = (String) row.get(WellTable.Column.Lsid.name());
+            var metadata = new CaseInsensitiveHashMap<>();
+
+            for (var key : row.keySet())
+            {
+                if (row.get(key) != null && !ignoredKeys.contains(key))
+                    metadata.put(key, row.get(key));
+            }
+
+            if (!metadata.isEmpty())
+                metadataMap.put(lsid, metadata);
+        });
+
+        if (!metadataMap.isEmpty())
+        {
+            for (var wellData : wellDataList)
+            {
+                var metadata = metadataMap.get(wellData.getLsid());
+                if (metadata != null)
+                    wellData.setMetadata(metadata);
+            }
+        }
+
+        return wellDataList;
+    }
 
     public record WellGroupChange(Integer plateRowId, Integer wellRowId, String type, String group) {}
 
@@ -3040,9 +3242,6 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         if (wellGroupChanges.isEmpty())
             return;
 
-        var wellTable = getWellTable(container, user);
-        var groupColumnName = wellTable.getColumn(WellTable.Column.Group.name()).getAlias();
-
         for (var entry : wellGroupChanges.entrySet())
         {
             var plate = (PlateImpl) requirePlate(container, entry.getKey(), "Failed to compute well group.");
@@ -3050,32 +3249,32 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 continue;
 
             var wellChanges = entry.getValue();
-            var filter = new SimpleFilter(FieldKey.fromParts(WellTable.Column.PlateId.name()), plate.getRowId());
-            var wellDataRows = new TableSelector(wellTable, filter, new Sort(WellTable.Column.RowId.name())).getMapCollection();
             Map<Pair<WellGroup.Type, String>, List<Position>> wellGroupings = new HashMap<>();
 
-            for (var wellData : wellDataRows)
+            for (var wellData : getWellData(container, user, plate.getRowId(), false, false))
             {
-                String type = StringUtils.trimToNull((String) wellData.get(WellTable.Column.Type.name()));
-                String group = StringUtils.trimToNull((String) wellData.get(groupColumnName));
+                WellGroup.Type type = wellData.getType();
+                String wellGroup = wellData.getWellGroup();
 
-                var wellRowId = (Integer) wellData.get(WellTable.Column.RowId.name());
+                Integer wellRowId = wellData.getRowId();
                 var wellChange = wellChanges.get(wellRowId);
                 if (wellChange != null)
                 {
                     if (wellChange.type != null)
-                        type = StringUtils.trimToNull(wellChange.type);
+                    {
+                        String typeStr = StringUtils.trimToNull(wellChange.type);
+                        if (typeStr != null)
+                            type = WellGroup.Type.valueOf(typeStr);
+                    }
                     if (wellChange.group != null)
-                        group = StringUtils.trimToNull(wellChange.group);
+                        wellGroup = StringUtils.trimToNull(wellChange.group);
                 }
 
                 // Type/Group are not set and are not being updated
-                if (type == null && group == null)
+                if (type == null && wellGroup == null)
                     continue;
 
-                var wellCol = (Integer) wellData.get(WellTable.Column.Col.name());
-                var wellRow = (Integer) wellData.get(WellTable.Column.Row.name());
-                var position = plate.getPosition(wellRow, wellCol);
+                var position = plate.getPosition(wellData.getRow(), wellData.getCol());
 
                 // Specifying a group requires that a type is also specified
                 if (type == null)
@@ -3084,11 +3283,11 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                         "Well %s must specify a \"%s\" when a \"%s\" is specified.",
                         position.getDescription(),
                         WellTable.Column.Type.name(),
-                        WellTable.Column.Group.name()
+                        WellTable.Column.WellGroup.name()
                     ));
                 }
 
-                var wellGroupKey = Pair.of(WellGroup.Type.valueOf(type), group);
+                var wellGroupKey = Pair.of(type, wellGroup);
                 wellGroupings.computeIfAbsent(wellGroupKey, k -> new ArrayList<>()).add(position);
             }
 

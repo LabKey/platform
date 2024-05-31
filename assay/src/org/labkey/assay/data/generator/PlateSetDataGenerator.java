@@ -273,7 +273,7 @@ public class PlateSetDataGenerator extends DataGenerator<PlateSetDataGenerator.C
                     rows.add(rowMap);
                 }
             }
-            plates.add(new CreatePlateSetPlate(null, _plateType.getRowId(), rows));
+            plates.add(new CreatePlateSetPlate(null, _plateType.getRowId(), null, rows));
         }
         _plateSetsCreated++;
         return PlateManager.get().createPlateSet(getContainer(), getUser(), plateSet, plates, parentPlateSet != null ? parentPlateSet.getRowId() : null);

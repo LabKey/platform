@@ -62,7 +62,7 @@ import static org.junit.Assert.assertTrue;
 public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
 {
     private boolean _archived;
-    private String _assayType;
+    private String _assayType = TsvPlateLayoutHandler.TYPE;
     private long _created;
     private int _createdBy;
     private List<PlateCustomField> _customFields = Collections.emptyList();
@@ -94,14 +94,15 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     {
         super(container);
         _name = StringUtils.trimToNull(name);
-        _assayType = assayType;
+        if (StringUtils.trimToNull(assayType) != null)
+            _assayType = assayType;
         _dataFileId = GUID.makeGUID();
         _plateType = plateType;
     }
 
     public PlateImpl(Container container, String name, @NotNull PlateType plateType)
     {
-        this(container, name, TsvPlateLayoutHandler.TYPE, plateType);
+        this(container, name, null, plateType);
     }
 
     public PlateImpl(@NotNull PlateImpl plate, double[][] wellValues, boolean[][] excluded, int runId, int plateNumber)
