@@ -60,7 +60,7 @@ public class JspTemplate<ModelClass> extends JspView<ModelClass>
         context.setRequest(new MockHttpServletRequest("GET", null));
         var mockResponse = new MockHttpServletResponse();
         context.setResponse(mockResponse);
-        try (var init = HttpView.initForRequest(context, context.getRequest(), context.getResponse()))
+        try (var ignored = HttpView.initForRequest(context, context.getRequest(), context.getResponse()))
         {
             // Tomcat 8 Jasper rejects requests other than GET, POST, or HEAD... so, make this mock request a GET. #24750
             include(this, out, context.getRequest(), context.getResponse());
