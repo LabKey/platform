@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.apache.logging.log4j.Logger" %>
 <%@ page import="org.labkey.api.admin.sitevalidation.SiteValidationResult" %>
 <%@ page import="org.labkey.api.admin.sitevalidation.SiteValidationResult.Level" %>
 <%@ page import="org.labkey.api.admin.sitevalidation.SiteValidationResultList" %>
@@ -24,7 +25,14 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-
+<%!
+    void info(SiteValidationForm form, String message)
+    {
+        Logger log = form.getLogger();
+        if (null != log)
+            log.info(message);
+    }
+%>
 <style type="text/css">
     ul {list-style-type: none; padding-left: 5px;}
 </style>
@@ -47,15 +55,18 @@
 <%
             if (validationService.getSiteProviders().isEmpty())
             {
+                info(form, "No site-wide validators are registered");
 %>
                 <p>No site-wide validators are registered.</p>
 <%
             }
             else
             {
+                info(form, "Running selected site-wide validators");
                 Map<String,Map<SiteValidatorDescriptor, SiteValidationResultList>> siteResults = validationService.runSiteScopeValidators(form.getProviders(), getUser());
                 if (siteResults.isEmpty())
                 {
+                    info(form, "No site-wide validators were selected");
 %>
                     <p>No site-wide validators were selected.</p>
 <%
@@ -124,6 +135,7 @@
 %>
         <strong>Folder Validation Results</strong>
 <%
+        info(form, "Running all selected folder validators for all selected folders");
         Map<String, Map<SiteValidatorDescriptor, Map<String, Map<String, SiteValidationResultList>>>> containerResults = validationService.runContainerScopeValidators(getContainer(), form.isIncludeSubfolders(), form.getProviders(), getUser());
         if (containerResults.isEmpty())
         {

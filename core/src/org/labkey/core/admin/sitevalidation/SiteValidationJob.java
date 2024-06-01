@@ -15,6 +15,7 @@ import org.labkey.core.admin.AdminController.SiteValidationForm;
 
 import java.io.File;
 import java.io.PrintWriter;
+import java.net.URISyntaxException;
 
 public class SiteValidationJob extends PipelineJob
 {
@@ -36,8 +37,16 @@ public class SiteValidationJob extends PipelineJob
     @Override
     public URLHelper getStatusHref()
     {
-        return null;
-    } // TODO: Link to HTML file
+        try
+        {
+            // Caller requires an absolute URL
+            return new URLHelper(ActionURL.getBaseServerURL() + getPipeRoot().getWebdavURL() + getResultsFileName());
+        }
+        catch (URISyntaxException e)
+        {
+            return null;
+        }
+    }
 
     @Override
     public String getDescription()
@@ -50,6 +59,7 @@ public class SiteValidationJob extends PipelineJob
     {
         info("Site validation started");
         PipelineJob.TaskStatus finalStatus = PipelineJob.TaskStatus.complete;
+        _form.setLogger(getLogger());
         JspTemplate<SiteValidationForm> template = new JspTemplate<>("/org/labkey/core/admin/sitevalidation/siteValidation.jsp", _form);
         ViewContext context = new ViewContext();
         context.setUser(getUser());
@@ -57,7 +67,7 @@ public class SiteValidationJob extends PipelineJob
         context.setActionURL(new ActionURL());
         template.setViewContext(context);
 
-        File results = new File(getPipeRoot().getLogDirectory(), "site_validation.html");
+        File results = new File(getPipeRoot().getLogDirectory(), getResultsFileName());
 
         try (PrintWriter out = new PrintWriter(results, StringUtilsLabKey.DEFAULT_CHARSET))
         {
@@ -71,5 +81,10 @@ public class SiteValidationJob extends PipelineJob
 
         info("Site validation complete");
         setStatus(finalStatus);
+    }
+
+    private String getResultsFileName()
+    {
+        return getLogFile().getName().replace(".log", ".html");
     }
 }

@@ -166,7 +166,6 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.usageMetrics.UsageMetricsService;
-import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;

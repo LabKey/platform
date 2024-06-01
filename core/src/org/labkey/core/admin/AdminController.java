@@ -117,6 +117,7 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.Transient;
 import org.labkey.api.data.dialect.SqlDialect.ExecutionPlanType;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.data.queryprofiler.QueryProfiler.QueryStatTsvWriter;
@@ -1516,6 +1517,7 @@ public class AdminController extends SpringActionController
     {
         private List<String> _providers;
         private boolean _includeSubfolders = false;
+        private transient @Nullable Logger _logger = null;
 
         public List<String> getProviders()
         {
@@ -1536,13 +1538,23 @@ public class AdminController extends SpringActionController
         {
             _includeSubfolders = includeSubfolders;
         }
+
+        public @Nullable Logger getLogger()
+        {
+            return _logger;
+        }
+
+        public void setLogger(@Nullable Logger logger)
+        {
+            _logger = logger;
+        }
     }
 
     @RequiresPermission(AdminPermission.class)
     public class SiteValidationAction extends SimpleViewAction<SiteValidationForm>
     {
         @Override
-        public ModelAndView getView(SiteValidationForm form, BindException errors) throws Exception
+        public ModelAndView getView(SiteValidationForm form, BindException errors)
         {
             return new JspView<>("/org/labkey/core/admin/sitevalidation/siteValidation.jsp", form);
         }

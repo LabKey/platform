@@ -102,6 +102,7 @@ Clicking the "Validate" button will run the selected validators in the designate
             DOM.createHtmlFragment(
                 input().id("background").type("checkbox").checked(false).value("true").name("background").onChange("change()"),
                 "Run in the background",
+                helpPopup("Validating many folders can take a long time. Running in a background pipeline job avoids proxy timeouts. Once the job completes, click the \"Data\" button to see the report."),
                 DOM.BR(),
                 DOM.BR()
             )
