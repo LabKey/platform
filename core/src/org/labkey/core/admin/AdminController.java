@@ -117,7 +117,6 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.Transient;
 import org.labkey.api.data.dialect.SqlDialect.ExecutionPlanType;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.data.queryprofiler.QueryProfiler.QueryStatTsvWriter;
@@ -269,7 +268,6 @@ import org.labkey.api.view.FolderManagement.TYPE;
 import org.labkey.api.view.FolderTab;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
-import org.labkey.api.view.JspTemplate;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
@@ -1604,6 +1602,44 @@ public class AdminController extends SpringActionController
         public URLHelper getSuccessURL(SiteValidationForm form)
         {
             return _redirectUrl;
+        }
+    }
+
+    public static class ViewValidationResultsForm
+    {
+        private String _fileName;
+
+        public String getFileName()
+        {
+            return _fileName;
+        }
+
+        @SuppressWarnings("unused")
+        public void setFileName(String fileName)
+        {
+            _fileName = fileName;
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public class ViewValidationResultsAction extends SimpleViewAction<ViewValidationResultsForm>
+    {
+        @Override
+        public ModelAndView getView(ViewValidationResultsForm form, BindException errors) throws Exception
+        {
+            PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
+            File results = new File(root.getLogDirectory(), form.getFileName());
+            if (!results.isFile())
+                throw new NotFoundException("File not found: " + form.getFileName());
+
+            return new HtmlView(HtmlString.unsafe(PageFlowUtil.getFileContentsAsString(results)));
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            setHelpTopic("siteValidation");
+            addAdminNavTrail(root, "View " + (getContainer().isRoot() ? "Site" : "Folder") + " Validation Results", getClass());
         }
     }
 

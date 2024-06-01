@@ -12,10 +12,10 @@ import org.labkey.api.view.JspTemplate;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.core.admin.AdminController.SiteValidationForm;
+import org.labkey.core.admin.AdminController.ViewValidationResultsAction;
 
 import java.io.File;
 import java.io.PrintWriter;
-import java.net.URISyntaxException;
 
 public class SiteValidationJob extends PipelineJob
 {
@@ -37,15 +37,8 @@ public class SiteValidationJob extends PipelineJob
     @Override
     public URLHelper getStatusHref()
     {
-        try
-        {
-            // Caller requires an absolute URL
-            return new URLHelper(ActionURL.getBaseServerURL() + getPipeRoot().getWebdavURL() + getResultsFileName());
-        }
-        catch (URISyntaxException e)
-        {
-            return null;
-        }
+        return new ActionURL(ViewValidationResultsAction.class, getContainer())
+            .addParameter("fileName", getResultsFileName());
     }
 
     @Override
@@ -61,12 +54,8 @@ public class SiteValidationJob extends PipelineJob
         PipelineJob.TaskStatus finalStatus = PipelineJob.TaskStatus.complete;
         _form.setLogger(getLogger());
         JspTemplate<SiteValidationForm> template = new JspTemplate<>("/org/labkey/core/admin/sitevalidation/siteValidation.jsp", _form);
-        ViewContext context = new ViewContext();
-        context.setUser(getUser());
-        context.setContainer(getContainer());
-        context.setActionURL(new ActionURL());
+        ViewContext context = new ViewContext(getInfo());
         template.setViewContext(context);
-
         File results = new File(getPipeRoot().getLogDirectory(), getResultsFileName());
 
         try (PrintWriter out = new PrintWriter(results, StringUtilsLabKey.DEFAULT_CHARSET))
