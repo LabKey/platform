@@ -1515,7 +1515,7 @@ public class AdminController extends SpringActionController
     {
         private List<String> _providers;
         private boolean _includeSubfolders = false;
-        private transient @Nullable Logger _logger = null;
+        private transient Consumer<String> _logger = s -> {}; // No-op by default
 
         public List<String> getProviders()
         {
@@ -1537,12 +1537,12 @@ public class AdminController extends SpringActionController
             _includeSubfolders = includeSubfolders;
         }
 
-        public @Nullable Logger getLogger()
+        public Consumer<String> getLogger()
         {
             return _logger;
         }
 
-        public void setLogger(@Nullable Logger logger)
+        public void setLogger(Consumer<String> logger)
         {
             _logger = logger;
         }

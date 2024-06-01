@@ -52,7 +52,10 @@ public class SiteValidationJob extends PipelineJob
     {
         info("Site validation started");
         PipelineJob.TaskStatus finalStatus = PipelineJob.TaskStatus.complete;
-        _form.setLogger(getLogger());
+        _form.setLogger(s -> {
+            getLogger().info(s);
+            setStatus(s);
+        });
         JspTemplate<SiteValidationForm> template = new JspTemplate<>("/org/labkey/core/admin/sitevalidation/siteValidation.jsp", _form);
         ViewContext context = new ViewContext(getInfo());
         template.setViewContext(context);
