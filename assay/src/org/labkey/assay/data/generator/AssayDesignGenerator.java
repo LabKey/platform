@@ -58,7 +58,7 @@ public class AssayDesignGenerator extends DataGenerator<AssayDesignGenerator.Con
         _log.info(String.format("Generating %d assay designs took %s", numAssayDesigns, timer.getDuration() + "."));
     }
 
-    private void createStandardAssayDesign(String name) throws ValidationException, AssayException
+    private void createStandardAssayDesign(String name) throws ValidationException
     {
         // create assay design
         AssayDomainService assayDomainService = new AssayDomainServiceImpl(new ViewContext(new ViewBackgroundInfo(getContainer(), getUser(), null)));

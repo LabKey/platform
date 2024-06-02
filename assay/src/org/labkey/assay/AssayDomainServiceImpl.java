@@ -367,20 +367,20 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
     }
 
     @Override
-    public GWTProtocol saveChanges(GWTProtocol assay, boolean replaceIfExisting) throws AssayException, ValidationException
+    public GWTProtocol saveChanges(GWTProtocol assay, boolean replaceIfExisting) throws ValidationException
     {
         // Synchronize the whole method to prevent saving of new two assay designs with the same name at the same
         // time, which will lead to a SQLException on the UNIQUE constraint on protocol LSIDs
         synchronized (AssayDomainServiceImpl.class)
         {
             if (!replaceIfExisting)
-                throw new AssayException("Only replaceIfExisting == true is supported.");
+                throw new ValidationException("Only replaceIfExisting == true is supported.");
 
             DbSchema schema = AssayDbSchema.getInstance().getSchema();
             try (DbScope.Transaction transaction = schema.getScope().ensureTransaction())
             {
                 if (assay.getAutoLinkCategory() != null && assay.getAutoLinkCategory().length() > 200)
-                    throw new AssayException("Linked Dataset Category name must be shorter than 200 characters.");
+                    throw new ValidationException("Linked Dataset Category name must be shorter than 200 characters.");
 
                 ExpProtocol protocol;
                 boolean isNew = assay.getProtocolId() == null;
@@ -391,7 +391,7 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                 {
                     // check for existing assay protocol with the given name before creating
                     if (AssayManager.get().getAssayProtocolByName(getContainer(), assay.getName()) != null)
-                        throw new AssayException("Assay protocol already exists for this name.");
+                        throw new ValidationException("Assay protocol already exists for this name.");
 
                     XarContext context = new XarContext("Domains", getContainer(), getUser());
                     context.addSubstitution("AssayName", PageFlowUtil.encode(assay.getName()));
@@ -429,15 +429,15 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
 
                     if (protocol == null)
                     {
-                        throw new AssayException("Assay design has been deleted");
+                        throw new ValidationException("Assay design has been deleted");
                     }
 
                     //ensure that the user has edit perms in this container
                     if (!canUpdateProtocols())
-                        throw new AssayException("You do not have sufficient permissions to update this Assay");
+                        throw new ValidationException("You do not have sufficient permissions to update this Assay");
 
                     if (!protocol.getContainer().equals(getContainer()))
-                        throw new AssayException("Assays can only be edited in the folder where they were created.  " +
+                        throw new ValidationException("Assays can only be edited in the folder where they were created.  " +
                                 "This assay was created in folder " + protocol.getContainer().getPath());
                     oldAssayName = protocol.getName();
                     hasNameChange = !assay.getName().equals(oldAssayName);
@@ -481,7 +481,7 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                     if (plate != null)
                         plateProvider.setPlate(getContainer(), protocol, plate);
                     else
-                        throw new AssayException("The selected plate could not be found.  Perhaps it was deleted by another user?");
+                        throw new ValidationException("The selected plate could not be found.  Perhaps it was deleted by another user?");
 
                     String selectedFormat = assay.getSelectedMetadataInputFormat();
                     SampleMetadataInputFormat inputFormat = SampleMetadataInputFormat.valueOf(selectedFormat);
@@ -493,7 +493,7 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                 List<File> transformScripts = new ArrayList<>();
                 List<String> submittedScripts = assay.getProtocolTransformScripts();
                 if (!submittedScripts.isEmpty() && !canUpdateTransformationScript())
-                    throw new AssayException("You must be a platform developer or site admin to configure assay transformation scripts.");
+                    throw new ValidationException("You must be a platform developer or site admin to configure assay transformation scripts.");
                 for (String script : assay.getProtocolTransformScripts())
                 {
                     if (!StringUtils.isBlank(script))
@@ -508,7 +508,7 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                     if (detectionMethod != null)
                         dmProvider.setSelectedDetectionMethod(getContainer(), protocol, detectionMethod);
                     else
-                        throw new AssayException("The selected detection method could not be found.");
+                        throw new ValidationException("The selected detection method could not be found.");
                 }
 
                 ValidationException scriptValidation = provider.setValidationAndAnalysisScripts(protocol, transformScripts);
@@ -539,7 +539,7 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                 // verify that the autoLinkTargetContainerId is valid
                 if (autoLinkTargetContainerId != null && ContainerManager.getForId(autoLinkTargetContainerId) == null)
                 {
-                    throw new AssayException("No such auto-link target container id: " + autoLinkTargetContainerId);
+                    throw new ValidationException("No such auto-link target container id: " + autoLinkTargetContainerId);
                 }
 
                 if (autoLinkTargetContainerId != null)
