@@ -1,5 +1,6 @@
 import { IntegrationTestServer, RequestOptions, successfulResponse } from '@labkey/test';
-import { caseInsensitive } from '@labkey/components';
+import { caseInsensitive, SAMPLE_TYPE_DESIGNER_ROLE } from '@labkey/components';
+import { PermissionRoles } from '@labkey/api';
 
 export const SAMPLE_TYPE_NAME_1 = 'TestMoveSampleType1';
 export const SAMPLE_TYPE_NAME_2 = 'TestMoveSampleType2';
@@ -180,4 +181,154 @@ export async function getAssayResults(server: IntegrationTestServer, assayDesign
         'query.columns': 'rowId,' + fileField,
     }, { ...folderOptions }).expect(successfulResponse);
     return response.body.rows;
+}
+
+async function getRowIdByName(server: IntegrationTestServer, queryName: string, dataTypeName: string, folderOptions: RequestOptions) {
+    const response = await server.post('query', 'selectRows', {
+        schemaName: 'exp',
+        queryName: queryName,
+        'query.name~eq': dataTypeName,
+        'query.columns': "RowId",
+    }, { ...folderOptions  }).expect(successfulResponse);
+    if (response.body.rows?.length > 0)
+        return caseInsensitive(response.body.rows[0], 'rowId');
+    return 0;
+}
+
+export async function getDataClassRowIdByName(server: IntegrationTestServer, dataClassName: string, folderOptions: RequestOptions) {
+    return getRowIdByName(server, 'dataclasses', dataClassName, folderOptions);
+}
+
+export async function getSampleTypeRowIdByName(server: IntegrationTestServer, sampleType: string, folderOptions: RequestOptions) {
+    return getRowIdByName(server, 'samplesets', sampleType, folderOptions);
+}
+
+async function addRecord(server: IntegrationTestServer, schema: string, queryName: string, recordName: string, folderOptions: RequestOptions, editorUserOptions: RequestOptions) {
+    const materialResponse = await server.request('query', 'insertRows', (agent, url) => {
+        let request = agent.post(url);
+
+        request = request.field('json', JSON.stringify({
+            schemaName: schema,
+            queryName: queryName,
+            rows: [{name: recordName}]
+        }));
+
+        return request;
+
+    }, { ...folderOptions, ...editorUserOptions }).expect(successfulResponse);
+    return caseInsensitive(materialResponse.body.rows[0], 'rowId');
+}
+
+export async function deleteSourceType(server: IntegrationTestServer, dataTypeRowId: number, folderOptions: RequestOptions, userOptions: RequestOptions) {
+    const resp = await server.request('experiment', 'deleteDataClass', (agent, url) => {
+        return agent
+            .post(url)
+            .type('form')
+            .send({
+                singleObjectRowId: dataTypeRowId,
+                forceDelete: true
+            });
+    }, { ...folderOptions, ...userOptions });
+    return resp;
+}
+
+export async function deleteSampleType(server: IntegrationTestServer, sampleTypeRowId: number, folderOptions: RequestOptions, userOptions: RequestOptions) {
+    const resp = await server.request('experiment', 'deleteSampleTypes', (agent, url) => {
+        return agent
+            .post(url)
+            .type('form')
+            .send({
+                singleObjectRowId: sampleTypeRowId,
+                forceDelete: true
+            });
+    }, { ...folderOptions, ...userOptions });
+    return resp;
+}
+
+export async function initProject(server: IntegrationTestServer, projectName: string, ensureModules = ['experiment']) {
+    await server.init(projectName, {
+        ensureModules,
+    });
+    const topFolderOptions = { containerPath: projectName };
+
+    const emailSuffix = '@' + projectName.replace(' ', '').toLowerCase() + '.com';
+    // create subfolders to use in tests
+    const subfolder1 = await server.createTestContainer();
+    const subfolder1Options = { containerPath: subfolder1.path };
+    const subfolder2 = await server.createTestContainer();
+    const subfolder2Options = { containerPath: subfolder2.path };
+
+    // create users with different permissions
+    const readerUser = await server.createUser('reader' + emailSuffix);
+    await server.addUserToRole(readerUser.username, PermissionRoles.Reader, projectName);
+    const readerUserOptions = { requestContext: await server.createRequestContext(readerUser) };
+
+    const editorUser = await server.createUser('editor' + emailSuffix);
+    await server.addUserToRole(editorUser.username, PermissionRoles.Editor, projectName);
+    await server.addUserToRole(editorUser.username, PermissionRoles.Editor, subfolder1.path);
+    const editorUserOptions = { requestContext: await server.createRequestContext(editorUser) };
+
+    const designer = await server.createUser('designer' + emailSuffix);
+    await server.addUserToRole(designer.username, SAMPLE_TYPE_DESIGNER_ROLE, projectName);
+    const designerOptions = { requestContext: await server.createRequestContext(designer) };
+
+    const designerReader = await server.createUser('readerdesigner' + emailSuffix);
+    await server.addUserToRole(designerReader.username, SAMPLE_TYPE_DESIGNER_ROLE, projectName);
+    await server.addUserToRole(designerReader.username, PermissionRoles.Reader, projectName);
+    const designerReaderOptions = { requestContext: await server.createRequestContext(designerReader) };
+
+    const designerEditor = await server.createUser('designereditor' + emailSuffix);
+    await server.addUserToRole(designerEditor.username, PermissionRoles.Editor, projectName);
+    await server.addUserToRole(designerEditor.username, SAMPLE_TYPE_DESIGNER_ROLE, projectName);
+    const designerEditorOptions = { requestContext: await server.createRequestContext(designerEditor) };
+
+    const admin = await server.createUser('admin' + emailSuffix);
+    await server.addUserToRole(admin.username, PermissionRoles.ProjectAdmin, projectName);
+    await server.addUserToRole(admin.username, PermissionRoles.FolderAdmin, subfolder1.path);
+    await server.addUserToRole(admin.username, PermissionRoles.FolderAdmin, subfolder2.path);
+    const adminOptions = { requestContext: await server.createRequestContext(admin) };
+
+    return {
+        topFolderOptions,
+        subfolder1Options,
+        subfolder2Options,
+        readerUser,
+        readerUserOptions,
+        editorUser,
+        editorUserOptions,
+        designer,
+        designerOptions,
+        designerReader,
+        designerReaderOptions,
+        designerEditor,
+        designerEditorOptions,
+        admin,
+        adminOptions
+    }
+}
+
+export async function checkLackDesignerOrReaderPerm(server: IntegrationTestServer, domainType: string, topFolderOptions: RequestOptions, readerUserOptions: RequestOptions, editorUserOptions: RequestOptions, designerOptions: RequestOptions) {
+    await server.post('property', 'createDomain', {
+        kind: domainType,
+        domainDesign: { name: "Failed", fields: [{ name: 'Prop' }] },
+        options: {
+            name: "Failed",
+        }
+    }, {...topFolderOptions, ...readerUserOptions}).expect(403);
+
+    await server.post('property', 'createDomain', {
+        kind: domainType,
+        domainDesign: { name: "Failed", fields: [{ name: 'Prop' }] },
+        options: {
+            name: "Failed",
+        }
+    }, {...topFolderOptions, ...editorUserOptions}).expect(403);
+
+    await server.post('property', 'createDomain', {
+        kind: domainType,
+        domainDesign: { name: "Failed", fields: [{ name: 'Prop' }] },
+        options: {
+            name: "Failed",
+        }
+    }, {...topFolderOptions, ...designerOptions}).expect(403);
 }

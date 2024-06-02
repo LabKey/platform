@@ -1,7 +1,12 @@
-import { PermissionRoles } from '@labkey/api';
 import { hookServer, RequestOptions, successfulResponse } from '@labkey/test';
-import { caseInsensitive, DATA_CLASS_DESIGNER_ROLE } from '@labkey/components';
 import mock from 'mock-fs';
+import {
+    checkLackDesignerOrReaderPerm,
+    createSource,
+    deleteSourceType,
+    getDataClassRowIdByName,
+    initProject
+} from './utils';
 const server = hookServer(process.env);
 const PROJECT_NAME = 'DataClassCrudJestProject';
 
@@ -18,89 +23,40 @@ let subfolder2Options;
 
 async function getDataClassRowId(dataClassName: string, folderOptions: RequestOptions) {
     mock.restore();
-    const response = await server.post('query', 'selectRows', {
-        schemaName: 'exp',
-        queryName: 'dataclasses',
-        'query.name~eq': dataClassName,
-        'query.columns': "RowId",
-    }, { ...folderOptions  }).expect(successfulResponse);
-    if (response.body.rows?.length > 0)
-        return caseInsensitive(response.body.rows[0], 'rowId');
-    return 0;
+    return getDataClassRowIdByName(server, dataClassName, folderOptions);
 }
 
 async function createData(dataClassName: string, name: string, folderOptions: RequestOptions) {
-    const response = await server.request('query', 'insertRows', (agent, url) => {
-        let request = agent.post(url);
-
-        request = request.field('json', JSON.stringify({
-            schemaName: 'exp.data',
-            queryName: dataClassName,
-            rows: [{name}]
-        }));
-
-        return request;
-
-    }, { ...folderOptions, ...editorUserOptions }).expect(successfulResponse);
-    return caseInsensitive(response.body.rows[0], 'rowId');
+    return createSource(server, name, folderOptions, editorUserOptions, undefined, dataClassName);
 }
 
 async function deleteDataClass(dataTypeRowId: number, folderOptions: RequestOptions, userOptions: RequestOptions) {
-    const resp = await server.request('experiment', 'deleteDataClass', (agent, url) => {
-        return agent
-            .post(url)
-            .type('form')
-            .send({
-                singleObjectRowId: dataTypeRowId,
-                forceDelete: true
-            });
-    }, { ...folderOptions, ...userOptions });
-    return resp;
+    return deleteSourceType(server, dataTypeRowId, folderOptions, userOptions);
 }
 
-
 beforeAll(async () => {
-    await server.init(PROJECT_NAME, {
-        ensureModules: ['experiment'],
-    });
-    topFolderOptions = { containerPath: PROJECT_NAME };
+    const options = await initProject(server, PROJECT_NAME);
 
-    // create subfolders to use in tests
-    const subfolder1 = await server.createTestContainer();
-    subfolder1Options = { containerPath: subfolder1.path };
-    const subfolder2 = await server.createTestContainer();
-    subfolder2Options = { containerPath: subfolder2.path };
+    topFolderOptions = options.topFolderOptions;
+    subfolder1Options = options.subfolder1Options;
+    subfolder2Options = options.subfolder2Options;
+    readerUser = options.readerUser;
+    readerUserOptions = options.readerUserOptions;
 
-    // create users with different permissions
-    readerUser = await server.createUser('reader@expdscrudtest.com');
-    await server.addUserToRole(readerUser.username, PermissionRoles.Reader, PROJECT_NAME);
-    readerUserOptions = { requestContext: await server.createRequestContext(readerUser) };
+    editorUser = options.editorUser;
+    editorUserOptions = options.editorUserOptions;
 
-    editorUser = await server.createUser('editor@expdscrudtest.com');
-    await server.addUserToRole(editorUser.username, PermissionRoles.Editor, PROJECT_NAME);
-    await server.addUserToRole(editorUser.username, PermissionRoles.Editor, subfolder1.path);
-    editorUserOptions = { requestContext: await server.createRequestContext(editorUser) };
+    designer = options.designer;
+    designerOptions = options.designerOptions;
 
-    designer = await server.createUser('designer@expdscrudtest.com');
-    await server.addUserToRole(designer.username, DATA_CLASS_DESIGNER_ROLE, PROJECT_NAME);
-    designerOptions = { requestContext: await server.createRequestContext(designer) };
+    designerReader = options.designerReader;
+    designerReaderOptions = options.designerReaderOptions;
 
-    designerReader = await server.createUser('readerdesigner@expdscrudtest.com');
-    await server.addUserToRole(designerReader.username, DATA_CLASS_DESIGNER_ROLE, PROJECT_NAME);
-    await server.addUserToRole(designerReader.username, PermissionRoles.Reader, PROJECT_NAME);
-    designerReaderOptions = { requestContext: await server.createRequestContext(designerReader) };
+    designerEditor = options.designerEditor;
+    designerEditorOptions = options.designerReaderOptions;
 
-    designerEditor = await server.createUser('designereditor@expdscrudtest.com');
-    await server.addUserToRole(designerEditor.username, PermissionRoles.Editor, PROJECT_NAME);
-    await server.addUserToRole(designerEditor.username, DATA_CLASS_DESIGNER_ROLE, PROJECT_NAME);
-    designerEditorOptions = { requestContext: await server.createRequestContext(designerEditor) };
-
-    admin = await server.createUser('admin@expdscrudtest.com');
-    await server.addUserToRole(admin.username, PermissionRoles.ProjectAdmin, PROJECT_NAME);
-    await server.addUserToRole(admin.username, PermissionRoles.FolderAdmin, subfolder1.path);
-    await server.addUserToRole(admin.username, PermissionRoles.FolderAdmin, subfolder2.path);
-    adminOptions = { requestContext: await server.createRequestContext(admin) };
-
+    admin = options.admin;
+    adminOptions = options.adminOptions;
 });
 
 afterAll(async () => {
@@ -112,36 +68,8 @@ afterEach(() => {
 });
 
 describe('Data Class Designer - Permissions', () => {
-    describe('Lack designer or Reader permission', () => {
-        it('Reader', async () => {
-            await server.post('property', 'createDomain', {
-                kind: 'DataClass',
-                domainDesign: { name: "Failed", fields: [{ name: 'Prop' }] },
-                options: {
-                    name: "Failed",
-                }
-            }, {...topFolderOptions, ...readerUserOptions}).expect(403);
-        });
-
-        it('Editor', async () => {
-            await server.post('property', 'createDomain', {
-                kind: 'DataClass',
-                domainDesign: { name: "Failed", fields: [{ name: 'Prop' }] },
-                options: {
-                    name: "Failed",
-                }
-            }, {...topFolderOptions, ...editorUserOptions}).expect(403);
-        });
-
-        it('Designer', async () => {
-            await server.post('property', 'createDomain', {
-                kind: 'DataClass',
-                domainDesign: { name: "Failed", fields: [{ name: 'Prop' }] },
-                options: {
-                    name: "Failed",
-                }
-            }, {...topFolderOptions, ...designerOptions}).expect(403);
-        });
+    it('Lack designer or Reader permission', async () => {
+        await checkLackDesignerOrReaderPerm(server, 'DataClass', topFolderOptions, readerUserOptions, editorUserOptions, designerOptions);
     });
 
     describe('Create/update/delete designs', () => {
