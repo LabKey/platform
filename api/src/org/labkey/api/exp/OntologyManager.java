@@ -552,7 +552,7 @@ public class OntologyManager
                                          Logger logger,
                                          boolean insert,
                                          boolean autoFillDefaultColumns,
-                                         RowCallback rowCallback)
+                                         @Nullable RowCallback rowCallback)
             throws SQLException, ValidationException
     {
         if (!(table instanceof UpdateableTableInfo))
@@ -561,6 +561,11 @@ public class OntologyManager
         if (!rows.hasNext())
         {
             return;
+        }
+
+        if (rowCallback == null)
+        {
+            rowCallback = NO_OP_ROW_CALLBACK;
         }
 
         DbScope scope = table.getSchema().getScope();
