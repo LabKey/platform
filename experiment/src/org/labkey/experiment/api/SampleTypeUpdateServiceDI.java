@@ -1639,7 +1639,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         private NameGenerator.SampleNameExpressionSummary getSampleNameExpressionSummary(@NotNull NameGenerator nameGen, @NotNull NameGenerator aliquotNameGen)
         {
-            if (sampleType == null)
+            if (sampleType == null || nameGen.getExpressionSummary() == null)
                 return null;
 
             boolean hasProjectSampleCounter = false;
