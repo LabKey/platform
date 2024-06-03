@@ -19,7 +19,8 @@
 <%@ page import="org.labkey.api.admin.sitevalidation.SiteValidationService" %>
 <%@ page import="org.labkey.api.util.DOM" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
-<%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="org.labkey.core.admin.AdminController.SiteValidationAction" %>
+<%@ page import="org.labkey.core.admin.AdminController.SiteValidationBackgroundAction" %>
 <%@ page import="java.io.IOException" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.List" %>
@@ -67,7 +68,7 @@
     {
 %>
 Clicking the "Validate" button will run the selected validators in the designated folder(s). Producing the results could take some time, especially with many folders, providers, and/or objects that need to be validated.<br><br>
-<labkey:form action="<%=urlFor(AdminController.SiteValidationAction.class)%>" method="post">
+<labkey:form id="form" action="<%=urlFor(SiteValidationAction.class)%>" method="get">
     <%
         if (getContainer().isRoot())
             renderProviderList("Site Validation Providers", validationService.getSiteProviders(), out);
@@ -91,17 +92,37 @@ Clicking the "Validate" button will run the selected validators in the designate
         {
             out.println(
                 DOM.createHtmlFragment(
-                    input().type("checkbox").checked(true).name("includeSubfolders"),
+                    input().type("checkbox").checked(true).value("true").name("includeSubfolders"),
                     "Include subfolders",
-                    DOM.BR(),
                     DOM.BR()
                 )
             );
         }
+        out.println(
+            DOM.createHtmlFragment(
+                input().id("background").type("checkbox").checked(false).value("true").name("background").onChange("change()"),
+                "Run in the background",
+                helpPopup("Validating many folders can take a long time. Running in a background pipeline job avoids proxy timeouts. Once the job completes, click the \"Data\" button to see the report."),
+                DOM.BR(),
+                DOM.BR()
+            )
+        );
     %>
-    <%=button("Validate").usePost().submit(true)%>
+    <%=button("Validate").submit(true)%>
     <%=generateBackButton("Cancel")%>
+    <labkey:csrf/>
 </labkey:form>
 <%
     }
 %>
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
+    // We want to GET SiteValidationAction for foreground render (keep parameters on the URL for link sharing)
+    // or POST to SiteValidationBackgroundAction for background render (handle CSRF and mutating SQL)
+    function change()
+    {
+        const background = document.getElementById("background").checked;
+        const form = document.getElementById("form");
+        form.action = background ? <%=q(urlFor(SiteValidationBackgroundAction.class))%> : <%=q(urlFor(SiteValidationAction.class))%>;
+        form.method = background ? "post" : "get";
+    }
+</script>

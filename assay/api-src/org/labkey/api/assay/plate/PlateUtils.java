@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static org.junit.Assert.assertEquals;
 
@@ -406,6 +407,20 @@ public class PlateUtils
         public int getCol()
         {
             return _col;
+        }
+
+        @Override
+        public boolean equals(Object obj)
+        {
+            if (obj instanceof Location loc)
+                return loc.getRow() == getRow() && loc.getCol() == getCol();
+            return false;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return Objects.hash(_row, _col);
         }
     }
 
