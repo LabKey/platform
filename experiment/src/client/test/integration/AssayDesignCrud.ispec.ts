@@ -67,29 +67,29 @@ const resultPropField = {
 }
 
 describe('Assay Designer - Permissions', () => {
-    // it('Lack designer or Reader permission', async () => {
-    //     await server.post(
-    //         'assay',
-    //         'saveProtocol.api',
-    //         getAssayDesignPayload('Failed', [], []),
-    //         {...topFolderOptions, ...readerUserOptions}
-    //     ).expect(403);
-    //
-    //     await server.post(
-    //         'assay',
-    //         'saveProtocol.api',
-    //         getAssayDesignPayload('Failed', [], []),
-    //         {...topFolderOptions, ...editorUserOptions}
-    //     ).expect(403);
-    //
-    //     await server.post(
-    //         'assay',
-    //         'saveProtocol.api',
-    //         getAssayDesignPayload('Failed', [], []),
-    //         {...topFolderOptions, ...designerOptions}
-    //     ).expect(403);
-    //
-    // });
+    it('Lack designer or Reader permission', async () => {
+        await server.post(
+            'assay',
+            'saveProtocol.api',
+            getAssayDesignPayload('Failed', [], []),
+            {...topFolderOptions, ...readerUserOptions}
+        ).expect(403);
+
+        await server.post(
+            'assay',
+            'saveProtocol.api',
+            getAssayDesignPayload('Failed', [], []),
+            {...topFolderOptions, ...editorUserOptions}
+        ).expect(403);
+
+        await server.post(
+            'assay',
+            'saveProtocol.api',
+            getAssayDesignPayload('Failed', [], []),
+            {...topFolderOptions, ...designerOptions}
+        ).expect(403);
+
+    });
 
     describe('Create/update/delete designs', () => {
         it('Designer can create, update and delete empty design', async () => {
