@@ -105,12 +105,17 @@ public class WellTriggerFactory implements TriggerFactory
             Map<String, Object> extraContext
         )
         {
-            // Skip computing well groups when this is a plate copy or save operation
-            if (isCopyOperation(extraContext) || isSaveOperation(extraContext))
+            // Skip computing well groups when this is a plate copy operation
+            if (isCopyOperation(extraContext))
                 return;
 
             var hasSampleChange = hasSampleChange(newRow);
             var hasTypeGroupChange = hasTypeGroupChange(newRow);
+
+            // If this is an insertion (newRow != null && oldRow == null),
+            // then verify further to ignore when type and group are present but are set to null.
+            if (hasTypeGroupChange && oldRow == null)
+                hasTypeGroupChange = newRow.get(WellTable.Column.Type.name()) != null || newRow.get(WellTable.Column.WellGroup.name()) != null;
 
             if (!hasSampleChange && !hasTypeGroupChange)
                 return;

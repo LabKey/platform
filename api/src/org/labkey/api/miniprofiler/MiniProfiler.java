@@ -15,6 +15,7 @@
  */
 package org.labkey.api.miniprofiler;
 
+import jakarta.servlet.ServletContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
@@ -27,12 +28,12 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.SafeToRender;
 import org.labkey.api.util.SafeToRenderEnum;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 
-import jakarta.servlet.ServletContext;
 import java.security.Principal;
 import java.util.Map;
 import java.util.Set;
@@ -151,12 +152,11 @@ public class MiniProfiler
         SETTINGS_CACHE.remove(user);
     }
 
-    public static JavaScriptFragment renderInitScript(@NotNull User user, long currentId, Set<Long> ids, String version)
+    public static SafeToRender renderInitScript(@NotNull User user, long currentId, Set<Long> ids, String version)
     {
         Settings settings = getSettings(user);
 
-        return JavaScriptFragment.unsafe(
-            HttpView.currentPageConfig().getScriptTagStart().toString() +
+        JavaScriptFragment initFragment = JavaScriptFragment.unsafe(
             "LABKEY.internal.MiniProfiler.init({\n" +
             "  currentId:" + currentId + ",\n" +
             "  ids:" + ids + ",\n" +
@@ -171,9 +171,9 @@ public class MiniProfiler
             "  toggleShortcut:" + jsString(settings.getToggleShortcut() != null ? settings.getToggleShortcut() : "") + ",\n" +
             "  startHidden:" + settings.isStartHidden() + ",\n" +
             "  startMinimized:" + settings.isStartMinimized() + "\n" +
-            "});\n" +
-            "</script>\n"
+            "});"
         );
+        return HttpView.currentPageConfig().buildScriptTagBlock(initFragment);
     }
 
     public static void addObject(Object object)
