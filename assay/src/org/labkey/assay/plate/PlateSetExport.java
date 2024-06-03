@@ -88,7 +88,7 @@ public class PlateSetExport
 
         List<ColumnDescriptor> metadataColumns = includedMetadataCols
                 .stream()
-                .map(fk -> new ColumnDescriptor(fk.getCaption()))
+                .map(fk -> new ColumnDescriptor(fk.getParts().size() > 2 ? fk.getParent().getCaption() : fk.getCaption()))
                 .toList();
 
         baseColumns.addAll(metadataColumns);

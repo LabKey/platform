@@ -7907,4 +7907,18 @@ public class ExperimentController extends SpringActionController
 
         }
    }
+
+    @RequiresPermission(AdminPermission.class)
+    public static class MissingFilesCheckAction extends ReadOnlyApiAction<Object>
+    {
+        @Override
+        public Object execute(Object o, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            response.put("success", true);
+            response.put("result", ExperimentServiceImpl.get().doMissingFilesCheck(getUser(), getContainer()));
+            return response;
+        }
+    }
+
 }

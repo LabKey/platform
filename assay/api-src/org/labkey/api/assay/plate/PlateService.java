@@ -215,13 +215,6 @@ public interface PlateService
     Position createPosition(Container container, int row, int column);
 
     /**
-     * Deletes all plate and template data from the specified container.
-     * Typically used only when a container is deleted.
-     * @param container The container from which to delete all plate data.
-     */
-    void deleteAllPlateData(Container container);
-
-    /**
      * Deletes a single plate object.
      * @param container The object's container.
      * @param rowid The row id of the plate object to be deleted.
