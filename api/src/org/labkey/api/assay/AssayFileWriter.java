@@ -186,27 +186,28 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
         int uniquifier = 0;
         do
         {
-            String prefix;
-            String suffix;
-
-            int index = originalFilename.indexOf('.');
-            if (index != -1)
-            {
-                prefix = originalFilename.substring(0, index);
-                suffix = originalFilename.substring(index);
-            }
-            else
-            {
-                prefix = originalFilename;
-                suffix = "";
-            }
-            String fullName = prefix + (uniquifier == 0 ? "" : "-" + uniquifier) + suffix;
+            String fullName = getAppendedFileName(originalFilename, uniquifier);
             file = dir.resolve(fullName);
             uniquifier++;
         }
         while (Files.exists(file));
 
         return file;
+    }
+
+    public static String getAppendedFileName(String originalFilename, int uniquifier)
+    {
+        String prefix = originalFilename;
+        String suffix = "";
+
+        int index = originalFilename.indexOf('.');
+        if (index != -1)
+        {
+            prefix = originalFilename.substring(0, index);
+            suffix = originalFilename.substring(index);
+        }
+
+        return prefix + (uniquifier == 0 ? "" : "-" + uniquifier) + suffix;
     }
 
     protected File getFileTargetDir(ContextType context) throws ExperimentException

@@ -75,6 +75,16 @@ public class AssayResultsFileWriter<ContextType extends AssayRunUploadContext<? 
         return null;
     }
 
+    // since results file upload can support uploading directories of files, some browsers retain path information
+    // so we strip off the path and just return the file name
+    public static String getFileNameWithoutPath(String originalName)
+    {
+        if (null == originalName)
+            return null;
+        int slash = Math.max(originalName.lastIndexOf("/"), originalName.lastIndexOf("\\"));
+        return originalName.substring(slash+1);
+    }
+
     @Override
     protected File getFileTargetDir(ContextType context) throws ExperimentException
     {
@@ -107,13 +117,8 @@ public class AssayResultsFileWriter<ContextType extends AssayRunUploadContext<? 
     @Override
     public String getFileName(MultipartFile file)
     {
-        // since results file upload can support uploading directories of files, some browsers retain path info
         String filename = file.getOriginalFilename();
-        if (null == filename)
-            return null;
-        int slash = Math.max(filename.lastIndexOf("/"), filename.lastIndexOf("\\"));
-        filename = filename.substring(slash+1);
-        return filename;
+        return getFileNameWithoutPath(filename);
     }
 
     public Map<String, File> savePostedFiles(ContextType context) throws ExperimentException, IOException
