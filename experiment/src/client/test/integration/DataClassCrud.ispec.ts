@@ -7,6 +7,7 @@ import {
     getDataClassRowIdByName,
     initProject
 } from './utils';
+import { DATA_CLASS_DESIGNER_ROLE } from '@labkey/components';
 const server = hookServer(process.env);
 const PROJECT_NAME = 'DataClassCrudJestProject';
 
@@ -22,7 +23,6 @@ let subfolder1Options;
 let subfolder2Options;
 
 async function getDataClassRowId(dataClassName: string, folderOptions: RequestOptions) {
-    mock.restore();
     return getDataClassRowIdByName(server, dataClassName, folderOptions);
 }
 
@@ -35,7 +35,7 @@ async function deleteDataClass(dataTypeRowId: number, folderOptions: RequestOpti
 }
 
 beforeAll(async () => {
-    const options = await initProject(server, PROJECT_NAME);
+    const options = await initProject(server, PROJECT_NAME, DATA_CLASS_DESIGNER_ROLE);
 
     topFolderOptions = options.topFolderOptions;
     subfolder1Options = options.subfolder1Options;
@@ -150,7 +150,7 @@ describe('Data Class Designer - Permissions', () => {
             await createData(dataType, 'Data2', {...topFolderOptions, ...editorUserOptions});
 
             // verify data exist in Top prevent designer from delete design
-            deleteResult = await deleteDataClass(dataTypeRowId, topFolderOptions, designerReaderOptions);
+            deleteResult = await deleteDataClass(dataTypeRowId, topFolderOptions, designerEditorOptions);
             expect(deleteResult.status).toEqual(403);
 
             failedRemoveddataType = await getDataClassRowId(dataType, topFolderOptions);

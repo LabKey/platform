@@ -1,7 +1,14 @@
 import mock from 'mock-fs';
 import { PermissionRoles } from '@labkey/api';
 import { hookServer, RequestOptions, successfulResponse } from '@labkey/test';
-import { getAssayResults, getAssayRunMovedAuditLogs, importRun, runExists, uploadAssayFile, } from './utils';
+import {
+    getAssayDesignPayload,
+    getAssayResults,
+    getAssayRunMovedAuditLogs,
+    importRun,
+    runExists,
+    uploadAssayFile,
+} from './utils';
 import { caseInsensitive } from '@labkey/components';
 
 
@@ -19,46 +26,6 @@ let subEditorUserOptions: RequestOptions;
 let noPermsUserOptions: RequestOptions;
 
 let assayAId, assayWithRunFileId, assayWithResultFileId;
-
-const getAssayDesignPayload = (name: string, runFields: any[], resultFields: any[]) => {
-    return {
-        "allowEditableResults": true,
-        "editableResults": true,
-        "editableRuns": true,
-        "domains": [
-            {
-                "name": "Batch Fields",
-                "domainURI": "urn:lsid:${LSIDAuthority}:AssayDomain-Batch.Folder-${Container.RowId}:${AssayName}",
-                "domainId": 0,
-                "fields": [],
-                "indices": [],
-                "mandatoryFieldNames": [],
-                "domainKindName": "Assay",
-            },
-            {
-                "name": "Run Fields",
-                "domainURI": "urn:lsid:${LSIDAuthority}:AssayDomain-Run.Folder-${Container.RowId}:${AssayName}",
-                "domainId": 0,
-                "fields": runFields,
-                "indices": [],
-                "mandatoryFieldNames": [],
-                "domainKindName": "Assay",
-            },
-            {
-                "name": "Data Fields",
-                "domainURI": "urn:lsid:${LSIDAuthority}:AssayDomain-Data.Folder-${Container.RowId}:${AssayName}",
-                "domainId": 0,
-                "fields": resultFields,
-                "indices": [],
-                "domainKindName": "Assay",
-            }
-        ],
-        "name": name,
-        "protocolId": null,
-        "providerName": "General",
-        "status": "Active",
-    }
-}
 
 beforeAll(async () => {
     await server.init(PROJECT_NAME, {

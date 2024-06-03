@@ -7,6 +7,7 @@ import {
     getSampleTypeRowIdByName,
     initProject
 } from './utils';
+import { SAMPLE_TYPE_DESIGNER_ROLE } from '@labkey/components';
 const server = hookServer(process.env);
 const PROJECT_NAME = 'SampleTypeCrudJestProject';
 
@@ -22,7 +23,6 @@ let subfolder1Options;
 let subfolder2Options;
 
 async function getSampleTypeRowId(sampleType: string, folderOptions: RequestOptions) {
-    mock.restore();
     return getSampleTypeRowIdByName(server, sampleType, folderOptions);
 }
 
@@ -35,7 +35,7 @@ async function deleteSampleTypeByRowId(sampleTypeRowId: number, folderOptions: R
 }
 
 beforeAll(async () => {
-    const options = await initProject(server, PROJECT_NAME);
+    const options = await initProject(server, PROJECT_NAME, SAMPLE_TYPE_DESIGNER_ROLE);
 
     topFolderOptions = options.topFolderOptions;
     subfolder1Options = options.subfolder1Options;
@@ -150,7 +150,7 @@ describe('Sample Type Designer - Permissions', () => {
             await createASample(sampleType, 'SampleData2', {...topFolderOptions, ...editorUserOptions});
 
             // verify data exist in Top prevent designer from delete design
-            deleteResult = await deleteSampleTypeByRowId(sampleTypeRowId, topFolderOptions, designerReaderOptions);
+            deleteResult = await deleteSampleTypeByRowId(sampleTypeRowId, topFolderOptions, designerEditorOptions);
             expect(deleteResult.status).toEqual(403);
 
             failedRemovedSampleType = await getSampleTypeRowId(sampleType, topFolderOptions);

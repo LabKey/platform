@@ -4622,7 +4622,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (selectedProtocolIds.length == 0)
             return;
 
-        List<ExpRunImpl> runs = getExpRunsForProtocolIds(false, selectedProtocolIds);//
+        List<ExpRunImpl> runs = getExpRunsForProtocolIds(false, selectedProtocolIds);
 
         String protocolIds = StringUtils.join(ArrayUtils.toObject(selectedProtocolIds), ", ");
 
