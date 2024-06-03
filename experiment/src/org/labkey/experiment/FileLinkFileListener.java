@@ -243,15 +243,23 @@ public class FileLinkFileListener implements FileListener
     @Override
     public SQLFragment listFilesQuery()
     {
+        return listFilesQuery(false);
+    }
+
+    public SQLFragment listFilesQuery(boolean skipCreatedModified)
+    {
         final SQLFragment frag = new SQLFragment();
 
         // Object property files
         frag.append("SELECT\n");
         frag.append("  o.Container,\n");
-        frag.append("  NULL AS Created,\n");
-        frag.append("  NULL AS CreatedBy,\n");
-        frag.append("  NULL AS Modified,\n");
-        frag.append("  NULL AS ModifiedBy,\n");
+        if (!skipCreatedModified)
+        {
+            frag.append("  NULL AS Created,\n");
+            frag.append("  NULL AS CreatedBy,\n");
+            frag.append("  NULL AS Modified,\n");
+            frag.append("  NULL AS ModifiedBy,\n");
+        }
         frag.append("  op.StringValue AS FilePath,\n");
         frag.append("  o.ObjectId AS SourceKey,\n");
         frag.append("  'exp.object' AS SourceName\n");
@@ -271,7 +279,7 @@ public class FileLinkFileListener implements FileListener
             SQLFragment containerFrag = new SQLFragment("?", containerId);
             TableUpdaterFileListener updater = new TableUpdaterFileListener(table, pathColumn.getColumnName(), TableUpdaterFileListener.Type.filePath, null, containerFrag);
             frag.append("UNION\n");
-            frag.append(updater.listFilesQuery());
+            frag.append(updater.listFilesQuery(skipCreatedModified));
         });
 
         return frag;

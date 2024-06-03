@@ -293,6 +293,7 @@ import org.labkey.api.writer.ZipFile;
 import org.labkey.api.writer.ZipUtil;
 import org.labkey.bootstrap.ExplodedModuleService;
 import org.labkey.core.admin.miniprofiler.MiniProfilerController;
+import org.labkey.core.admin.sitevalidation.SiteValidationJob;
 import org.labkey.core.admin.sql.SqlScriptController;
 import org.labkey.core.portal.CollaborationFolderType;
 import org.labkey.core.portal.ProjectController;
@@ -482,7 +483,6 @@ public class AdminController extends SpringActionController
         addTab(TYPE.FolderManagement,"Files", "files", FOLDERS_AND_PROJECTS, FileRootsAction.class);
         addTab(TYPE.FolderManagement,"Formats", "settings", FOLDERS_ONLY, FolderSettingsAction.class);
         addTab(TYPE.FolderManagement,"Information", "info", NOT_ROOT, FolderInformationAction.class);
-        addTab(TYPE.FolderManagement,"Validate", "validate", EVERY_CONTAINER, ConfigureSiteValidationAction.class);
         addTab(TYPE.FolderManagement,"R Config", "rConfig", NOT_ROOT, RConfigurationAction.class);
 
         addTab(TYPE.ProjectSettings, "Properties", "properties", PROJECTS_ONLY, ProjectSettingsAction.class);
@@ -1495,10 +1495,10 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class ConfigureSiteValidationAction extends FolderManagementViewAction
+    public class ConfigureSiteValidationAction extends SimpleViewAction<Object>
     {
         @Override
-        protected JspView<?> getTabView()
+        public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             return new JspView<>("/org/labkey/core/admin/sitevalidation/configureSiteValidation.jsp");
         }
@@ -1513,8 +1513,19 @@ public class AdminController extends SpringActionController
 
     public static class SiteValidationForm
     {
-        private boolean _includeSubfolders = false;
         private List<String> _providers;
+        private boolean _includeSubfolders = false;
+        private transient Consumer<String> _logger = s -> {}; // No-op by default
+
+        public List<String> getProviders()
+        {
+            return _providers;
+        }
+
+        public void setProviders(List<String> providers)
+        {
+            _providers = providers;
+        }
 
         public boolean isIncludeSubfolders()
         {
@@ -1526,14 +1537,14 @@ public class AdminController extends SpringActionController
             _includeSubfolders = includeSubfolders;
         }
 
-        public List<String> getProviders()
+        public Consumer<String> getLogger()
         {
-            return _providers;
+            return _logger;
         }
 
-        public void setProviders(List<String> providers)
+        public void setLogger(Consumer<String> logger)
         {
-            _providers = providers;
+            _logger = logger;
         }
     }
 
@@ -1551,6 +1562,84 @@ public class AdminController extends SpringActionController
         {
             setHelpTopic("siteValidation");
             addAdminNavTrail(root, (getContainer().isRoot() ? "Site" : "Folder") + " Validation", getClass());
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public static class SiteValidationBackgroundAction extends FormHandlerAction<SiteValidationForm>
+    {
+        private ActionURL _redirectUrl;
+
+        @Override
+        public void validateCommand(SiteValidationForm form, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(SiteValidationForm form, BindException errors) throws PipelineValidationException
+        {
+            ViewBackgroundInfo vbi = new ViewBackgroundInfo(getContainer(), getUser(), null);
+            PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
+            SiteValidationJob job = new SiteValidationJob(vbi, root, form);
+            PipelineService.get().queueJob(job);
+            String jobGuid = job.getJobGUID();
+
+            if (null == jobGuid)
+                throw new NotFoundException("Unable to determine pipeline job GUID");
+
+            Integer jobId = PipelineService.get().getJobId(getUser(), getContainer(), jobGuid);
+
+            if (null == jobId)
+                throw new NotFoundException("Unable to determine pipeline job ID");
+
+            PipelineStatusUrls urls = urlProvider(PipelineStatusUrls.class);
+            _redirectUrl = urls.urlDetails(getContainer(), jobId);
+
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(SiteValidationForm form)
+        {
+            return _redirectUrl;
+        }
+    }
+
+    public static class ViewValidationResultsForm
+    {
+        private String _fileName;
+
+        public String getFileName()
+        {
+            return _fileName;
+        }
+
+        @SuppressWarnings("unused")
+        public void setFileName(String fileName)
+        {
+            _fileName = fileName;
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public class ViewValidationResultsAction extends SimpleViewAction<ViewValidationResultsForm>
+    {
+        @Override
+        public ModelAndView getView(ViewValidationResultsForm form, BindException errors) throws Exception
+        {
+            PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
+            File results = new File(root.getLogDirectory(), form.getFileName());
+            if (!results.isFile())
+                throw new NotFoundException("File not found: " + form.getFileName());
+
+            return new HtmlView(HtmlString.unsafe(PageFlowUtil.getFileContentsAsString(results)));
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            setHelpTopic("siteValidation");
+            addAdminNavTrail(root, "View " + (getContainer().isRoot() ? "Site" : "Folder") + " Validation Results", getClass());
         }
     }
 

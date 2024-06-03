@@ -342,6 +342,11 @@ public class TableUpdaterFileListener implements FileListener
     @Override
     public SQLFragment listFilesQuery()
     {
+        return listFilesQuery(false);
+    }
+
+    public SQLFragment listFilesQuery(boolean skipCreatedModified)
+    {
         SqlDialect dialect = _table.getSqlDialect();
         SQLFragment selectFrag = new SQLFragment();
         selectFrag.append("SELECT\n");
@@ -355,25 +360,28 @@ public class TableUpdaterFileListener implements FileListener
         else
             selectFrag.append("  NULL AS Container,\n");
 
-        if (_table.getColumn("Created") != null)
-            selectFrag.append("  Created,\n");
-        else
-            selectFrag.append("  NULL AS Created,\n");
+        if (!skipCreatedModified)
+        {
+            if (_table.getColumn("Created") != null)
+                selectFrag.append("  Created,\n");
+            else
+                selectFrag.append("  NULL AS Created,\n");
 
-        if (_table.getColumn("CreatedBy") != null)
-            selectFrag.append("  CreatedBy,\n");
-        else
-            selectFrag.append("  NULL AS CreatedBy,\n");
+            if (_table.getColumn("CreatedBy") != null)
+                selectFrag.append("  CreatedBy,\n");
+            else
+                selectFrag.append("  NULL AS CreatedBy,\n");
 
-        if (_table.getColumn("Modified") != null)
-            selectFrag.append("  Modified,\n");
-        else
-            selectFrag.append("  NULL AS Modified,\n");
+            if (_table.getColumn("Modified") != null)
+                selectFrag.append("  Modified,\n");
+            else
+                selectFrag.append("  NULL AS Modified,\n");
 
-        if (_table.getColumn("ModifiedBy") != null)
-            selectFrag.append("  ModifiedBy,\n");
-        else
-            selectFrag.append("  NULL AS ModifiedBy,\n");
+            if (_table.getColumn("ModifiedBy") != null)
+                selectFrag.append("  ModifiedBy,\n");
+            else
+                selectFrag.append("  NULL AS ModifiedBy,\n");
+        }
 
         selectFrag.append("  ").appendIdentifier(dialect.makeLegalIdentifier(_pathColumn)).append(" AS FilePath,\n");
 

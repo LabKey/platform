@@ -41,7 +41,6 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
-import org.labkey.api.assay.plate.PlateService;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -118,8 +117,6 @@ public class DilutionManager
         // Delete the rows in NASpecimen hat match those runIdFilter
         TableInfo nabTableInfo = getSchema().getTable(NAB_SPECIMEN_TABLE_NAME);
         Table.delete(nabTableInfo, runIdFilter);
-
-        PlateService.get().deleteAllPlateData(container);
     }
 
     public int insertNabSpecimenRow(User user, Map<String, Object> fields)

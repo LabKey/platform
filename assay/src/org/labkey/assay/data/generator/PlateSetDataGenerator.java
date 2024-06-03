@@ -43,7 +43,7 @@ import static org.labkey.assay.plate.PlateManager.CreatePlateSetPlate;
 public class PlateSetDataGenerator extends DataGenerator<PlateSetDataGenerator.Config>
 {
     private static final int MAX_LINEAGE_DEPTH = 10;
-    private static final int MAX_PLATESETS_PER_LEVEL = 10;
+    private static final int MAX_PLATE_SETS_PER_LEVEL = 10;
     private PlateType _plateType;
     private int _plateSetsCreated = 0;
     private final List<String> _wellProperties = new ArrayList<>();
@@ -128,15 +128,15 @@ public class PlateSetDataGenerator extends DataGenerator<PlateSetDataGenerator.C
             return false;
         }
 
-        if ((config.getPrimaryPlateSetsPerLevel() + config.getAssayPlateSetsPerLevel()) > MAX_PLATESETS_PER_LEVEL)
+        if ((config.getPrimaryPlateSetsPerLevel() + config.getAssayPlateSetsPerLevel()) > MAX_PLATE_SETS_PER_LEVEL)
         {
-            _log.error(String.format("The max number of plate sets per level cannot exceed %d", MAX_PLATESETS_PER_LEVEL));
+            _log.error(String.format("The max number of plate sets per level cannot exceed %d", MAX_PLATE_SETS_PER_LEVEL));
             return false;
         }
 
         if (config.getMinCustomProperties() > config.getMaxCustomProperties())
         {
-            _log.error(String.format("The max number of plate sets per level cannot exceed %d", MAX_PLATESETS_PER_LEVEL));
+            _log.error(String.format("The max number of plate sets per level cannot exceed %d", MAX_PLATE_SETS_PER_LEVEL));
             return false;
         }
 
@@ -259,7 +259,7 @@ public class PlateSetDataGenerator extends DataGenerator<PlateSetDataGenerator.C
                     Position position = PlateManager.get().createPosition(getContainer(), row, col);
                     Map<String, Object> rowMap = new HashMap<>();
 
-                    rowMap.put("wellLocation", position.getDescription());
+                    rowMap.put(WellTable.WELL_LOCATION, position.getDescription());
                     rowMap.put(WellTable.Column.Type.name(), WellGroup.Type.SAMPLE.name());
                     rowMap.put(WellTable.Column.SampleId.name(), ids.get(sampleIdx++));
 
