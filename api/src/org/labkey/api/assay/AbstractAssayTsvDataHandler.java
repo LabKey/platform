@@ -1187,6 +1187,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 }
                 catch (ExperimentException e)
                 {
+                    LOG.error("Failed to resolve participant visit information", e);
                     ValidationException ve = new ValidationException("Failed to resolve participant visit information");
                     ve.setRowNumber(rowNum);
                     ve.initCause(e);
