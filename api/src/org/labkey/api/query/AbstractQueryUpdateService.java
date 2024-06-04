@@ -102,7 +102,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -943,13 +942,13 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     public static Object saveFile(User user, Container container, String name, Object value, @Nullable String dirName) throws ValidationException, QueryUpdateServiceException
     {
         Path path = AssayFileWriter.getUploadDirectoryPath(container, dirName);
-        return saveFile(user, container, name, value, path, false);
+        return saveFile(user, container, name, value, path);
     }
 
     /**
      * Save uploaded file to dirName directory under file or pipeline root.
      */
-    public static Object saveFile(User user, Container container, String name, Object value, @Nullable Path dirPath, boolean useExistingFile) throws ValidationException, QueryUpdateServiceException
+    public static Object saveFile(User user, Container container, String name, Object value, @Nullable Path dirPath) throws ValidationException, QueryUpdateServiceException
     {
         File file = null;
         if (value instanceof MultipartFile)
@@ -963,16 +962,9 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                     throw new ValidationException("File " + multipartFile.getOriginalFilename() + " for field " + name + " has no content");
                 }
                 File dir = AssayFileWriter.ensureUploadDirectory(dirPath);
-                if (useExistingFile && dir != null && Files.exists(dir.toPath().resolve(multipartFile.getOriginalFilename())))
-                {
-                    file = dir.toPath().resolve(multipartFile.getOriginalFilename()).toFile();
-                }
-                else
-                {
-                    file = AssayFileWriter.findUniqueFileName(multipartFile.getOriginalFilename(), dir);
-                    file = checkFileUnderRoot(container, file);
-                    multipartFile.transferTo(file);
-                }
+                file = AssayFileWriter.findUniqueFileName(multipartFile.getOriginalFilename(), dir);
+                file = checkFileUnderRoot(container, file);
+                multipartFile.transferTo(file);
             }
             catch (ExperimentException | IOException e)
             {
@@ -985,16 +977,9 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             try
             {
                 File dir = AssayFileWriter.ensureUploadDirectory(dirPath);
-                if (useExistingFile && dir != null && Files.exists(dir.toPath().resolve(saf.getFilename())))
-                {
-                    file = dir.toPath().resolve(saf.getFilename()).toFile();
-                }
-                else
-                {
-                    file = AssayFileWriter.findUniqueFileName(saf.getFilename(), dir);
-                    file = checkFileUnderRoot(container, file);
-                    saf.saveTo(file);
-                }
+                file = AssayFileWriter.findUniqueFileName(saf.getFilename(), dir);
+                file = checkFileUnderRoot(container, file);
+                saf.saveTo(file);
             }
             catch (IOException | ExperimentException e)
             {

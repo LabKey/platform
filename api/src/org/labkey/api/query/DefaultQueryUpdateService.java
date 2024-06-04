@@ -19,7 +19,6 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -85,6 +84,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
      */
     private final Supplier<Map<String, ColumnInfo>> _tableMapSupplier = new CachingSupplier<>(() -> DataIteratorUtil.createTableMap(getQueryTable(), true));
     private final ValidatorContext _validatorContext;
+    private final FileColumnValueMapper _fileColumnValueMapping = new FileColumnValueMapper();
 
     public DefaultQueryUpdateService(@NotNull TableInfo queryTable, TableInfo dbTable)
     {
@@ -718,13 +718,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         convertTypes(user, c, row,  getDbTable(), null);
     }
 
-    final protected void convertTypes(User user, Container c, Map<String,Object> row, TableInfo t, @Nullable String fileLinkDirName) throws ValidationException
-    {
-        Path path = AssayFileWriter.getUploadDirectoryPath(c, fileLinkDirName);
-        convertTypes(user, c, row, t, path, false);
-    }
-
-    protected void convertTypes(User user, Container c, Map<String,Object> row, TableInfo t, @Nullable Path fileLinkDirPath, boolean useExistingFile) throws ValidationException
+    protected void convertTypes(User user, Container c, Map<String,Object> row, TableInfo t, @Nullable Path fileLinkDirPath) throws ValidationException
     {
         for (ColumnInfo col : t.getColumns())
         {
@@ -740,9 +734,8 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                         case DATE, TIME, TIMESTAMP -> row.put(col.getName(), value instanceof Date ? value : ConvertUtils.convert(value.toString(), Date.class));
                         default -> {
                             if (PropertyType.FILE_LINK == col.getPropertyType() && (value instanceof MultipartFile || value instanceof AttachmentFile))
-                            {
-                                value = saveFile(user, c, col.getName(), value, fileLinkDirPath, useExistingFile);
-                            }
+                                value = _fileColumnValueMapping.saveFileColumnValue(user, c, fileLinkDirPath, col.getName(), value);
+
                             row.put(col.getName(), ConvertUtils.convert(value.toString(), col.getJdbcType().getJavaClass()));
                         }
                     }

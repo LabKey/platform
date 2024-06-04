@@ -83,7 +83,7 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
 
         // Assay results use FILE_LINK not FILE_ATTACHMENT, use convertTypes() to handle directing the posted files to the run specific directory
         Path assayResultsRunDir = AssayResultsFileWriter.getAssayFilesDirectoryPath(run);
-        convertTypes(user, container, row, getDbTable(), assayResultsRunDir, true);
+        convertTypes(user, container, row, getDbTable(), assayResultsRunDir);
 
         Map<String, Object> result = super.updateRow(user, container, row, oldRow, configParameters);
 
