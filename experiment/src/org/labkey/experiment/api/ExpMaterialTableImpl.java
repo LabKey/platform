@@ -78,6 +78,7 @@ import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.data.xml.TableType;
@@ -97,8 +98,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.Lock;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -1172,8 +1175,12 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         protected void incrementalUpdateBeforeSelect(Materialized m)
         {
             _Materialized materialized = (_Materialized) m;
+
+            boolean lockAcquired = false;
             try
             {
+                lockAcquired = materialized.getLock().tryLock(1, TimeUnit.MINUTES);
+
                 if (!materialized.incrementalDeleteCheck.stillValid(0))
                     executeIncrementalDelete();
                 if (!materialized.incrementalRollupCheck.stillValid(0))
@@ -1181,13 +1188,18 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 if (!materialized.incrementalInsertCheck.stillValid(0))
                     executeIncrementalInsert();
             }
-            catch (RuntimeException re)
+            catch (RuntimeException|InterruptedException re)
             {
                 // The only time I'd expect and error is due to a schema change race-condition, but that can happen in any code path.
                 // Ensure that next refresh starts clean
                 _materializedQueries.remove(_lsid);
                 getInvalidateCounters(_lsid).update.incrementAndGet();
-                throw re;
+                throw UnexpectedException.wrap(re);
+            }
+            finally
+            {
+                if (lockAcquired)
+                    materialized.getLock().unlock();
             }
         }
 
@@ -1265,6 +1277,11 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             incrementalInsertCheck.stillValid(now);
             incrementalRollupCheck.stillValid(now);
             incrementalDeleteCheck.stillValid(now);
+        }
+
+        Lock getLock()
+        {
+            return _loadingLock;
         }
     }
 

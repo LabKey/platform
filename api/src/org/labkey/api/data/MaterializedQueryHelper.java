@@ -63,7 +63,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         private final String _tableName;
         private final ArrayList<Invalidator> _invalidators = new ArrayList<>(3);
 
-        private final Lock _loadingLock = new ReentrantLock();
+        protected final Lock _loadingLock = new ReentrantLock();
         enum LoadingState { BEFORELOAD, LOADING, LOADED, ERROR };
         private final AtomicReference<LoadingState> _loadingState = new AtomicReference<>(LoadingState.BEFORELOAD);
         private RuntimeException _loadException = null;
@@ -411,8 +411,6 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
     public SQLFragment getFromSql(@NotNull SQLFragment selectQuery, boolean isSelectInto, String tableAlias)
     {
         Materialized materialized = getMaterializedAndLoad(selectQuery, isSelectInto);
-
-        // CONSIDER: should we set materialized into LOADING status (with locks and everything???).  That may be overkill;
         incrementalUpdateBeforeSelect(materialized);
 
         _lastUsed.set(HeartBeat.currentTimeMillis());
