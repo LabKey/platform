@@ -1191,20 +1191,26 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             }
         }
 
+        void upsertWithRetry(SQLFragment sql)
+        {
+            // not actually read-only, but we don't want to start an explicit transaction
+            _scope.executeWithRetryReadOnly((tx) -> upsert(sql));
+        }
+
         void executeIncrementalInsert()
         {
             SQLFragment incremental = new SQLFragment("INSERT INTO temp.${NAME}\n")
                     .append("SELECT * FROM (")
                     .append(getViewSourceSql()).append(") viewsource_\n")
                     .append("WHERE rowid > (SELECT COALESCE(MAX(rowid),0) FROM temp.${NAME})");
-            upsert(incremental);
+            upsertWithRetry(incremental);
         }
 
         void executeIncrementalDelete()
         {
             SQLFragment incremental = new SQLFragment("DELETE FROM temp.${NAME}\n")
                     .append("WHERE rowid NOT IN (SELECT rowid FROM exp.material)");
-            upsert(incremental);
+            upsertWithRetry(incremental);
         }
 
         void executeIncrementalRollup()
@@ -1232,7 +1238,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     .append("    st.availablealiquotvolume IS DISTINCT FROM expm.availablealiquotvolume OR ")
                     .append("    st.aliquotunit IS DISTINCT FROM expm.aliquotunit")
                     .append(")");
-            upsert(incremental);
+            upsertWithRetry(incremental);
         }
     }
 
