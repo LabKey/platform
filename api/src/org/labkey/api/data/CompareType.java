@@ -68,16 +68,13 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * Comparison operators that can be used to create filters over columns.
- *
  * WARNING: Keep in sync and in order with all other client apis and docs:
  * - server: CompareType.java
  * - java: Filter.java
  * - js: Filter.js
  * - R: makeFilter.R, makeFilter.Rd
  * - SAS: labkeymakefilter.sas, labkey.org SAS docs
- * - Python & Perl don't have an filter operator enum
- * User: brittp
- * Date: Oct 10, 2006
+ * - Python & Perl don't have a filter operator enum
  */
 public abstract class CompareType
 {
@@ -1207,7 +1204,7 @@ public abstract class CompareType
         {
             JdbcType type = getColumnType(columnMap);
             if (type == null)
-                throw new IllegalArgumentException("Column " + _fieldKey.toDisplayString() + " not found in column map.");
+                throw new IllegalArgumentException("Filter column '" + _fieldKey.toDisplayString() + "' not found.");
             Object[] params = getParamVals();
             if (params == null || params.length == 0)
                 return sql;
@@ -1263,7 +1260,7 @@ public abstract class CompareType
             {
                 value = ((Parameter.TypedValue)value).getJdbcParameterValue();
             }
-            return value == null || (value instanceof String && ((String)value).length() == 0);
+            return value == null || (value instanceof String && ((String) value).isEmpty());
         }
 
         protected void appendColumnName(StringBuilder sb, ColumnNameFormatter formatter)

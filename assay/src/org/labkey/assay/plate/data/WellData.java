@@ -27,7 +27,7 @@ public class WellData
     {
         Map<String, Object> data = new CaseInsensitiveHashMap<>();
         if (_position != null)
-            data.put("WellLocation", _position);
+            data.put(WellTable.WELL_LOCATION, _position);
         if (_sampleId != null)
             data.put(WellTable.Column.SampleId.name(), _sampleId);
         if (_type != null)

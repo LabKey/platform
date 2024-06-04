@@ -8,7 +8,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
-import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.assay.AssayProtocolSchema;
@@ -80,6 +79,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.labkey.api.assay.AssayResultDomainKind.WELL_LSID_COLUMN_NAME;
 
@@ -1026,69 +1026,66 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         private static User user;
 
         @BeforeClass
-        public static void setupTest()
+        public static void setup()
         {
+            JunitUtil.deleteTestContainer();
+
             container = JunitUtil.getTestContainer();
             user = TestContext.get().getUser();
-
-            PlateService.get().deleteAllPlateData(container);
-        }
-
-        @After
-        public void cleanupTest()
-        {
-            PlateManager.get().deleteAllPlateData(container);
         }
 
         @Test
         public void testGridAnnotations() throws Exception
         {
-            // create a plate set
-            PlateSetImpl plateSet = new PlateSetImpl();
             PlateType plateType = PlateManager.get().getPlateType(8, 12);
+            assertNotNull("Expected 8x12 plate type to resolve", plateType);
+
             List<PlateManager.CreatePlateSetPlate> plates = List.of(
-                    new PlateManager.CreatePlateSetPlate(null, plateType.getRowId(), null, Collections.emptyList()),
-                    new PlateManager.CreatePlateSetPlate(null, plateType.getRowId(), null, Collections.emptyList())
+                new PlateManager.CreatePlateSetPlate(null, plateType.getRowId(), null, Collections.emptyList()),
+                new PlateManager.CreatePlateSetPlate(null, plateType.getRowId(), null, Collections.emptyList())
             );
-            plateSet = PlateManager.get().createPlateSet(container, user, plateSet, plates, null);
-            List<Plate> platesetPlates = PlateManager.get().getPlatesForPlateSet(plateSet);
+
+            PlateSet plateSet = PlateManager.get().createPlateSet(container, user, new PlateSetImpl(), plates, null);
+            List<Plate> plateSetPlates = PlateManager.get().getPlatesForPlateSet(plateSet);
+            assertEquals("Expected two plates to be created.", 2, plateSetPlates.size());
+            Plate plate = plateSetPlates.get(0);
 
             PlateGridInfo gridInfo = new PlateGridInfo(
-                    new PlateUtils.GridInfo(new double[8][12], List.of(platesetPlates.get(0).getPlateId())),
+                    new PlateUtils.GridInfo(new double[8][12], List.of(plate.getPlateId())),
                     plateSet);
-            assertEquals("Expected plate to resolve on annotation", platesetPlates.get(0).getRowId(), gridInfo.getPlate().getRowId());
+            assertEquals("Expected plate to resolve on annotation", plate.getRowId(), gridInfo.getPlate().getRowId());
 
             gridInfo = new PlateGridInfo(
-                    new PlateUtils.GridInfo(new double[8][12], List.of(platesetPlates.get(0).getName())),
+                    new PlateUtils.GridInfo(new double[8][12], List.of(plate.getName())),
                     plateSet);
-            assertEquals("Expected plate to resolve on annotation", platesetPlates.get(0).getRowId(), gridInfo.getPlate().getRowId());
+            assertEquals("Expected plate to resolve on annotation", plate.getRowId(), gridInfo.getPlate().getRowId());
 
             gridInfo = new PlateGridInfo(
-                    new PlateUtils.GridInfo(new double[8][12], List.of(platesetPlates.get(0).getRowId().toString())),
+                    new PlateUtils.GridInfo(new double[8][12], List.of(plate.getRowId().toString())),
                     plateSet);
-            assertEquals("Expected plate to resolve on annotation", platesetPlates.get(0).getRowId(), gridInfo.getPlate().getRowId());
+            assertEquals("Expected plate to resolve on annotation", plate.getRowId(), gridInfo.getPlate().getRowId());
 
             // test for multiple annotations
             gridInfo = new PlateGridInfo(
-                    new PlateUtils.GridInfo(new double[8][12], List.of(platesetPlates.get(0).getPlateId(), "Density")),
+                    new PlateUtils.GridInfo(new double[8][12], List.of(plate.getPlateId(), "Density")),
                     plateSet);
             assertNull("Expected plate to not resolve on annotation without a prefix", gridInfo.getPlate());
             assertNull("Expected measure to not resolve on annotation without a prefix", gridInfo.getMeasureName());
 
             gridInfo = new PlateGridInfo(
-                    new PlateUtils.GridInfo(new double[8][12], List.of("PLATE:" + platesetPlates.get(0).getPlateId(), "Density")),
+                    new PlateUtils.GridInfo(new double[8][12], List.of("PLATE:" + plate.getPlateId(), "Density")),
                     plateSet);
-            assertEquals("Expected plate to resolve on annotation with a prefix", platesetPlates.get(0).getRowId(), gridInfo.getPlate().getRowId());
+            assertEquals("Expected plate to resolve on annotation with a prefix", plate.getRowId(), gridInfo.getPlate().getRowId());
             assertNull("Expected measure to not resolve on annotation without a prefix", gridInfo.getMeasureName());
 
             gridInfo = new PlateGridInfo(
-                    new PlateUtils.GridInfo(new double[8][12], List.of("plate:" + platesetPlates.get(0).getPlateId(), "MEASURE : Density")),
+                    new PlateUtils.GridInfo(new double[8][12], List.of("plate:" + plate.getPlateId(), "MEASURE : Density")),
                     plateSet);
-            assertEquals("Expected plate to resolve on annotation with a prefix", platesetPlates.get(0).getRowId(), gridInfo.getPlate().getRowId());
+            assertEquals("Expected plate to resolve on annotation with a prefix", plate.getRowId(), gridInfo.getPlate().getRowId());
             assertEquals("Expected measure to resolve on annotation with a prefix", "Density", gridInfo.getMeasureName());
 
             gridInfo = new PlateGridInfo(
-                    new PlateUtils.GridInfo(new double[8][12], List.of(platesetPlates.get(0).getPlateId(), "measure : Density")),
+                    new PlateUtils.GridInfo(new double[8][12], List.of(plate.getPlateId(), "measure : Density")),
                     plateSet);
             assertNull("Expected plate to not resolve on annotation without a prefix", gridInfo.getPlate());
             assertEquals("Expected measure to resolve on annotation with a prefix", "Density", gridInfo.getMeasureName());

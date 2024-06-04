@@ -5,8 +5,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.plate.Plate;
-import org.labkey.api.assay.plate.PlateCustomField;
-import org.labkey.api.assay.plate.PlateSet;
 import org.labkey.api.assay.plate.PositionImpl;
 import org.labkey.api.assay.plate.Well;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -58,10 +56,8 @@ import org.labkey.assay.plate.data.WellTriggerFactory;
 import org.labkey.assay.query.AssayDbSchema;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -72,6 +68,7 @@ import static org.labkey.api.query.ExprColumn.STR_TABLE_ALIAS;
 public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
 {
     public static final String NAME = "Well";
+    public static final String WELL_LOCATION = "WellLocation";
     public static final String WELL_PROPERTIES_TABLE = "WellProperties";
 
     public enum Column
@@ -91,7 +88,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         WellGroup
     }
 
-    private static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
+    private static final Set<FieldKey> defaultVisibleColumns = new LinkedHashSet<>();
     private static final Set<String> ignoredColumns = new CaseInsensitiveHashSet();
     private final Map<FieldKey, ColumnInfo> _provisionedFieldMap = new HashMap<>();
     private final boolean _allowInsertDelete;
@@ -304,19 +301,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
     @Override
     public List<FieldKey> getDefaultVisibleColumns()
     {
-        return defaultVisibleColumns;
-    }
-
-    public static List<FieldKey> getMetadataColumns(@NotNull PlateSet plateSet, User user)
-    {
-        Set<FieldKey> includedMetadataCols = new HashSet<>();
-        for (Plate plate : plateSet.getPlates(user))
-        {
-            for (PlateCustomField field : plate.getCustomFields())
-                includedMetadataCols.add(FieldKey.fromParts(Column.Properties.name(), field.getName()));
-        }
-
-        return includedMetadataCols.stream().sorted(Comparator.comparing(FieldKey::getName)).toList();
+        return defaultVisibleColumns.stream().toList();
     }
 
 /*

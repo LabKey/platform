@@ -36,9 +36,6 @@ import java.util.Set;
 
 /**
  * Basic support for importing and fetching individual proteins
- *
- * User: jeckels
- * Date: May 3, 2012
  */
 public interface ProteinService
 {
@@ -53,7 +50,6 @@ public interface ProteinService
     }
 
     int ensureProtein(String sequence, String organism, String name, String description);
-    int ensureProtein(String sequence, int orgId, String name, String description);
 
     /**
      *
@@ -80,16 +76,8 @@ public interface ProteinService
 
     WebPartView<?> getProteinCoverageViewWithSettings(int seqId, List<PeptideCharacteristic> combinedPeptideCharacteristics, int aaRowWidth, boolean showEntireFragmentInCoverage, @Nullable String accessionForFeatures, List<Replicate> replicates, List<PeptideCharacteristic> modifiedPeptideCharacteristics, boolean showStackedPeptides);
 
-    /** @return a web part with all of the annotations and identifiers we know for a given protein */
+    /** @return a web part with all the annotations and identifiers we know for a given protein */
     WebPartView<?> getAnnotationsView(int seqId, Map<String, Collection<HtmlString>> extraAnnotations);
-
-    String getProteinSequence(int seqId);
-
-    /** Get seqId for the sequence and organism */
-    Integer getProteinSeqId(String sequence, int organismId);
-
-    /** Get seqId for the sequence -- there may be more than one if organism matches */
-    List<Integer> getProteinSeqId(String sequence);
 
     TableInfo getSequencesTable();
 
@@ -97,6 +85,8 @@ public interface ProteinService
     {
         WebPartView createView(ViewContext viewContext, FormType form);
     }
+
+    List<ProteinFeature> getProteinFeatures(String accession) throws IOException, ParserConfigurationException, SAXException;
 
     abstract class PeptideSearchForm extends QueryViewAction.QueryExportForm
     {
@@ -272,7 +262,4 @@ public interface ProteinService
             _location = location;
         }
     }
-
-    List<ProteinFeature> getProteinFeatures(String accession) throws IOException, ParserConfigurationException, SAXException;
-
 }

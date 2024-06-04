@@ -79,7 +79,6 @@ import org.labkey.assay.plate.PlateSetExport;
 import org.labkey.assay.plate.PlateSetImpl;
 import org.labkey.assay.plate.PlateUrls;
 import org.labkey.assay.plate.TsvPlateLayoutHandler;
-import org.labkey.assay.plate.query.WellTable;
 import org.labkey.assay.view.AssayGWTView;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -1358,8 +1357,19 @@ public class PlateController extends SpringActionController
 
     public static class WorklistForm
     {
+        private ContainerFilter.Type _containerFilter;
         private int _sourcePlateSetId;
         private int _destinationPlateSetId;
+
+        public ContainerFilter.Type getContainerFilter()
+        {
+            return _containerFilter;
+        }
+
+        public void setContainerFilter(ContainerFilter.Type containerFilter)
+        {
+            _containerFilter = containerFilter;
+        }
 
         public int getSourcePlateSetId()
         {
@@ -1395,8 +1405,12 @@ public class PlateController extends SpringActionController
                 if (plateSetSource == null || plateSetDestination == null)
                     throw new NotFoundException("Unable to resolve Plate Set.");
 
-                List<FieldKey> sourceIncludedMetadataCols = WellTable.getMetadataColumns(plateSetSource, getUser());
-                List<FieldKey> destinationIncludedMetadataCols = WellTable.getMetadataColumns(plateSetDestination, getUser());
+                ContainerFilter cf = ContainerFilter.Type.Current.create(getViewContext());
+                if (form.getContainerFilter() != null)
+                    cf = form.getContainerFilter().create(getViewContext());
+
+                List<FieldKey> sourceIncludedMetadataCols = PlateManager.get().getMetadataColumns(plateSetSource, getContainer(), getUser(), cf);
+                List<FieldKey> destinationIncludedMetadataCols = PlateManager.get().getMetadataColumns(plateSetDestination, getContainer(), getUser(), cf);
 
                 ColumnDescriptor[] sourceXlCols = PlateSetExport.getColumnDescriptors(PlateSetExport.SOURCE, sourceIncludedMetadataCols);
                 ColumnDescriptor[] destinationXlCols = PlateSetExport.getColumnDescriptors(PlateSetExport.DESTINATION, destinationIncludedMetadataCols);
@@ -1421,7 +1435,18 @@ public class PlateController extends SpringActionController
 
     public static class InstrumentInstructionForm
     {
+        private ContainerFilter.Type _containerFilter;
         private int _plateSetId;
+
+        public ContainerFilter.Type getContainerFilter()
+        {
+            return _containerFilter;
+        }
+
+        public void setContainerFilter(ContainerFilter.Type containerFilter)
+        {
+            _containerFilter = containerFilter;
+        }
 
         public int getPlateSetId()
         {
@@ -1448,7 +1473,11 @@ public class PlateController extends SpringActionController
                 if (plateSet.getType() != PlateSetType.assay)
                     throw new ValidationException("Instrument Instructions cannot be generated for non-Assay Plate Sets.");
 
-                List<FieldKey> includedMetadataCols = WellTable.getMetadataColumns(plateSet, getUser());
+                ContainerFilter cf = ContainerFilter.Type.Current.create(getViewContext());
+                if (form.getContainerFilter() != null)
+                    cf = form.getContainerFilter().create(getViewContext());
+
+                List<FieldKey> includedMetadataCols = PlateManager.get().getMetadataColumns(plateSet, getContainer(), getUser(), cf);
                 ColumnDescriptor[] xlCols = PlateSetExport.getColumnDescriptors("", includedMetadataCols);
                 List<Object[]> plateDataRows = PlateManager.get().getInstrumentInstructions(form.getPlateSetId(), includedMetadataCols, getContainer(), getUser());
 

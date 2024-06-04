@@ -89,7 +89,7 @@ Ext4.define('LABKEY.ext4.panel.FolderManagement', {
             rename : 'renameFolder',
             reorder: 'reorderFolders',
             revert : this.revertAction,
-            validate : 'siteValidation'
+            validate : 'configureSiteValidation'
         };
 
 
