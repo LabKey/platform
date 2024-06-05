@@ -798,11 +798,6 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         return ret;
     }
 
-    public void onSamplesChanged(User user, List<Material> materials)
-    {
-        onSamplesChanged(user, materials, SampleTypeServiceImpl.SampleChangeType.update);
-    }
-
     public void onSamplesChanged(User user, List<Material> materials, SampleTypeServiceImpl.SampleChangeType reason)
     {
         SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(this, reason);
