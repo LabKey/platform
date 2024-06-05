@@ -601,6 +601,7 @@ mediumtext
 member
 memory
 merge
+merge_action
 message_length
 message_octet_length
 message_text
@@ -984,6 +985,7 @@ spatial
 specific
 specific_name
 specifictype
+split
 sql
 sql_after_gtids
 sql_after_mts_gaps
@@ -1072,6 +1074,7 @@ table_name
 tables
 tablesample
 tablespace
+target
 temp
 template
 temporary

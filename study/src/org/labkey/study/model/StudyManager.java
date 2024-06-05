@@ -26,6 +26,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.Constants;
 import org.labkey.api.annotations.Migrate;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.attachments.Attachment;
@@ -37,9 +38,9 @@ import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.Activity;
 import org.labkey.api.data.ColumnInfo;
@@ -48,6 +49,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbScope.CommitTaskOption;
@@ -142,11 +144,13 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.location.LocationCache;
+import org.labkey.api.specimen.model.SpecimenTablesProvider;
 import org.labkey.api.study.AssaySpecimenConfig;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.DataspaceContainerFilter;
 import org.labkey.api.study.QueryHelper;
+import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyCache;
 import org.labkey.api.study.StudyService;
@@ -205,7 +209,6 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -238,16 +241,23 @@ public class StudyManager
     private final QueryHelper<CohortImpl> _cohortHelper;
     private final BlockingCache<Container, Set<PropertyDescriptor>> _sharedProperties;
 
+    private final BlockingCache<Container, Map<String, Participant>> _participantCache = DatabaseCache.get(StudySchema.getInstance().getScope(), Constants.getMaxContainers(), CacheManager.HOUR, "Participants", (c, argument) -> {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
+        return Collections.unmodifiableMap(
+            new TableSelector(StudySchema.getInstance().getTableInfoParticipant(), filter, new Sort("ParticipantId"))
+                .stream(Participant.class)
+                .collect(LabKeyCollectors.toLinkedMap(Participant::getParticipantId, participant -> participant))
+        );
+    });
+
     private static final String LSID_REQUIRED = "LSID_REQUIRED";
 
-
-    protected StudyManager()
+    private StudyManager()
     {
-        // prevent external construction with a private default constructor
         _studyHelper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoStudy(), StudyImpl.class)
         {
             @Override
-            public List<StudyImpl> get(final Container c, SimpleFilter filterArg, final String sortString)
+            public List<StudyImpl> getList(final Container c, SimpleFilter filterArg, final String sortString)
             {
                 assert filterArg == null && sortString == null;
                 String cacheId = getCacheId(filterArg);
@@ -332,48 +342,46 @@ public class StudyManager
             @Override
             public void clearCache(StudyImpl obj)
             {
-                super.clearCache(obj);
+                clearCache(obj.getContainer()); // Need to clear <cid>/~ALL plus <cid>/<filter> entries
                 clearCachedStudies();
             }
         };
 
         _visitHelper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoVisit(), VisitImpl.class);
-
         _assaySpecimenHelper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoAssaySpecimen(), AssaySpecimenConfigImpl.class);
-
         _cohortHelper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoCohort(), CohortImpl.class);
 
-        /* Whenever we explicitly invalidate a dataset, unmaterialize it as well
-         * this is probably a little overkill, e.g. name change doesn't need to unmaterialize
-         * however, this is the best choke point
+        /*
+         * Whenever we explicitly invalidate a dataset, unmaterialize it as well this is probably a little overkill,
+         *  e.g. name change doesn't need to unmaterialize however, this is the best choke point
          */
         _datasetHelper = new DatasetHelper();
 
         // Cache of PropertyDescriptors found in the Shared container for datasets in the given study Container.
         // The shared properties cache will be cleared when the _datasetHelper cache is cleared.
         _sharedProperties = CacheManager.getBlockingCache(1000, CacheManager.UNLIMITED, "Study shared properties",
-                (key, argument) ->
+            (key, argument) ->
+            {
+                Container sharedContainer = ContainerManager.getSharedContainer();
+                assert key != sharedContainer;
+
+                List<DatasetDefinition> defs = _datasetHelper.getList(key);
+                if (defs == null)
+                    return Collections.emptySet();
+
+                Set<PropertyDescriptor> set = new LinkedHashSet<>();
+                for (DatasetDefinition def : defs)
                 {
-                    Container sharedContainer = ContainerManager.getSharedContainer();
-                    assert key != sharedContainer;
+                    Domain domain = def.getDomain();
+                    if (domain == null)
+                        continue;
 
-                    List<DatasetDefinition> defs = _datasetHelper.get(key);
-                    if (defs == null)
-                        return Collections.emptySet();
-
-                    Set<PropertyDescriptor> set = new LinkedHashSet<>();
-                    for (DatasetDefinition def : defs)
-                    {
-                        Domain domain = def.getDomain();
-                        if (domain == null)
-                            continue;
-
-                        for (DomainProperty dp : domain.getProperties())
-                            if (dp.getContainer().equals(sharedContainer))
-                                set.add(dp.getPropertyDescriptor());
-                    }
-                    return Collections.unmodifiableSet(set);
+                    for (DomainProperty dp : domain.getProperties())
+                        if (dp.getContainer().equals(sharedContainer))
+                            set.add(dp.getPropertyDescriptor());
                 }
+                return Collections.unmodifiableSet(set);
+            }
         );
 
         ViewCategoryManager.addCategoryListener(new CategoryListener(this));
@@ -398,18 +406,11 @@ public class StudyManager
                 DatasetDefinition.class)
         {
             @Override
-            public void clearCache(Container c)
-            {
-                super.clearCache(c);
-            }
-
-            @Override
             public void clearCache(DatasetDefinition obj)
             {
                 super.clearCache(obj.getContainer());
             }
         };
-
 
         private DatasetHelper()
         {
@@ -436,6 +437,11 @@ public class StudyManager
             clearProperties(def);
         }
 
+        public void clearCache()
+        {
+            helper.clearCache();
+        }
+
         public DatasetDefinition create(User user, DatasetDefinition obj)
         {
             return helper.create(user, obj);
@@ -446,19 +452,14 @@ public class StudyManager
             return helper.update(user, obj, pk);
         }
 
-        public List<DatasetDefinition> get(Container c)
+        public List<DatasetDefinition> getList(Container c)
         {
-            return toSharedInstance(helper.get(c));
+            return toSharedInstance(helper.getList(c));
         }
 
-        public List<DatasetDefinition> get(Container c, SimpleFilter filter)
+        public List<DatasetDefinition> getList(Container c, SimpleFilter filter)
         {
-            return toSharedInstance(helper.get(c, filter));
-        }
-
-        public List<DatasetDefinition> get(Container c, @Nullable SimpleFilter filterArg, @Nullable String sortString)
-        {
-            return toSharedInstance(helper.get(c, filterArg, sortString));
+            return toSharedInstance(helper.getList(c, filter));
         }
 
         public DatasetDefinition get(Container c, int rowId)
@@ -473,7 +474,7 @@ public class StudyManager
             ArrayList<DatasetDefinition> ret = new ArrayList<>(in.size());
             for (DatasetDefinition dsIn : in)
             {
-                DatasetDefinition dsRet = (DatasetDefinition) StudyCache.getCached(t, dsIn.getContainer(), dsIn.getEntityId());
+                DatasetDefinition dsRet = (DatasetDefinition) getCached(t, dsIn.getContainer(), dsIn.getEntityId());
                 if (null == dsRet)
                 {
                     dsRet = dsIn;
@@ -489,7 +490,7 @@ public class StudyManager
             if (null == dsIn)
                 return null;
             TableInfo t = getTableInfo();
-            DatasetDefinition dsRet = (DatasetDefinition) StudyCache.getCached(t, dsIn.getContainer(), dsIn.getEntityId());
+            DatasetDefinition dsRet = (DatasetDefinition) getCached(t, dsIn.getContainer(), dsIn.getEntityId());
             if (null == dsRet)
             {
                 dsRet = dsIn;
@@ -497,8 +498,12 @@ public class StudyManager
             }
             return dsRet;
         }
-    }
 
+        private static Object getCached(TableInfo tinfo, Container c, Object cacheKey)
+        {
+            return StudyCache.getCache(tinfo).get(StudyCache.getCacheName(c, cacheKey));
+        }
+    }
 
     public static StudyManager getInstance()
     {
@@ -513,8 +518,8 @@ public class StudyManager
 
         while (true)
         {
-            List<StudyImpl> studies = _studyHelper.get(c);
-            if (studies == null || studies.size() == 0)
+            List<StudyImpl> studies = _studyHelper.getList(c);
+            if (studies == null || studies.isEmpty())
                 return null;
             else if (studies.size() > 1)
                 throw new IllegalStateException("Only one study is allowed per container");
@@ -855,10 +860,10 @@ public class StudyManager
             if (!old.getName().equals(datasetDefinition.getName()))
             {
                 nameChange = new QueryChangeListener.QueryPropertyChange<>(
-                        QueryService.get().getUserSchema(user, datasetDefinition.getContainer(), StudyQuerySchema.SCHEMA_NAME).getQueryDefForTable(datasetDefinition.getName()),
-                        QueryChangeListener.QueryProperty.Name,
-                        old.getName(),
-                        datasetDefinition.getName()
+                    QueryService.get().getUserSchema(user, datasetDefinition.getContainer(), StudyQuerySchema.SCHEMA_NAME).getQueryDefForTable(datasetDefinition.getName()),
+                    QueryChangeListener.QueryProperty.Name,
+                    old.getName(),
+                    datasetDefinition.getName()
                 );
             }
             final QueryChangeListener.QueryPropertyChange change = nameChange;
@@ -933,11 +938,11 @@ public class StudyManager
             else
                 remove.add("showByDefault");
 
-
             // update the override map
             Container c = datasetDefinition.getContainer();
             String category = "dataset-overrides:" + datasetDefinition.getDatasetId();
             PropertyManager.PropertyMap map = null;
+
             if (!add.isEmpty())
             {
                 map = PropertyManager.getWritableProperties(c, category, true);
@@ -1733,16 +1738,13 @@ public class StudyManager
 
     public void updateParticipant(User user, Participant participant)
     {
-        Table.update(user,
-                SCHEMA.getTableInfoParticipant(),
-                participant,
-                new Object[]{participant.getContainer().getId(), participant.getParticipantId()}
-        );
+        Table.update(user, SCHEMA.getTableInfoParticipant(), participant, new Object[]{participant.getContainer().getId(), participant.getParticipantId()});
+        _participantCache.remove(participant.getContainer());
     }
 
     public List<AssaySpecimenConfigImpl> getAssaySpecimenConfigs(Container container, String sortCol)
     {
-        return _assaySpecimenHelper.get(container, sortCol);
+        return _assaySpecimenHelper.getList(container, sortCol);
     }
 
     public List<VisitImpl> getVisitsForAssaySchedule(Container container)
@@ -1850,7 +1852,7 @@ public class StudyManager
                 filter.addWhereClause("(CohortId IS NULL OR CohortId = ?)", new Object[]{cohort.getRowId()});
         }
 
-        return _visitHelper.get(visitStudy.getContainer(), filter, order.getSortColumns());
+        return _visitHelper.getList(visitStudy.getContainer(), filter, order.getSortColumns());
     }
 
     public void clearParticipantVisitCaches(Study study)
@@ -1862,7 +1864,7 @@ public class StudyManager
         if (!study.equals(visitStudy))
             _visitHelper.clearCache(visitStudy.getContainer());
 
-        DbCache.clear(StudySchema.getInstance().getTableInfoParticipant());
+        _participantCache.remove(study.getContainer());
         for (StudyImpl substudy : StudyManager.getInstance().getAncillaryStudies(study.getContainer()))
             clearParticipantVisitCaches(substudy);
     }
@@ -2104,7 +2106,7 @@ public class StudyManager
     public List<CohortImpl> getCohorts(Container container, User user)
     {
         assertCohortsViewable(container, user);
-        return _cohortHelper.get(container, "Label");
+        return _cohortHelper.getList(container, "Label");
     }
 
     public CohortImpl getCurrentCohortForParticipant(Container container, User user, String participantId)
@@ -2128,7 +2130,7 @@ public class StudyManager
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         filter.addCondition(FieldKey.fromParts("Label"), label);
 
-        List<CohortImpl> cohorts = _cohortHelper.get(container, filter);
+        List<CohortImpl> cohorts = _cohortHelper.getList(container, filter);
         if (cohorts != null && cohorts.size() == 1)
             return cohorts.get(0);
 
@@ -2334,7 +2336,7 @@ public class StudyManager
         }
 
         // Make a copy (it's immutable) so that we can sort it. See issue 17875
-        return new ArrayList<>(_datasetHelper.get(study.getContainer(), filter, null));
+        return new ArrayList<>(_datasetHelper.getList(study.getContainer(), filter));
     }
 
 
@@ -2383,7 +2385,7 @@ public class StudyManager
         SimpleFilter filter = SimpleFilter.createContainerFilter(s.getContainer());
         filter.addWhereClause("LOWER(Label) = ?", new Object[]{label.toLowerCase()}, FieldKey.fromParts("Label"));
 
-        List<DatasetDefinition> defs = _datasetHelper.get(s.getContainer(), filter);
+        List<DatasetDefinition> defs = _datasetHelper.getList(s.getContainer(), filter);
         if (defs.size() == 1)
             return defs.get(0);
 
@@ -2397,7 +2399,7 @@ public class StudyManager
         SimpleFilter filter = SimpleFilter.createContainerFilter(s.getContainer());
         filter.addCondition(FieldKey.fromParts("EntityId"), entityId);
 
-        List<DatasetDefinition> defs = _datasetHelper.get(s.getContainer(), filter);
+        List<DatasetDefinition> defs = _datasetHelper.getList(s.getContainer(), filter);
         if (defs.size() == 1)
             return defs.get(0);
 
@@ -2411,7 +2413,7 @@ public class StudyManager
         SimpleFilter filter = SimpleFilter.createContainerFilter(s.getContainer());
         filter.addWhereClause("LOWER(Name) = LOWER(?)", new Object[]{name}, FieldKey.fromParts("Name"));
 
-        List<DatasetDefinition> defs = _datasetHelper.get(s.getContainer(), filter);
+        List<DatasetDefinition> defs = _datasetHelper.getList(s.getContainer(), filter);
         if (defs.size() == 1)
             return defs.get(0);
 
@@ -2533,17 +2535,17 @@ public class StudyManager
         return map;
     }
 
-    private static final String VISITMAP_JOIN_BY_VISIT = "SELECT d.*, vm.Required\n" +
-            "FROM study.Visit v, study.DataSet d, study.VisitMap vm\n" +
-            "WHERE v.RowId = vm.VisitRowId and vm.DataSetId = d.DataSetId and " +
-            "v.Container = vm.Container and vm.Container = d.Container " +
-            "and v.Container = ? and v.RowId = ?\n" +
-            "ORDER BY d.DisplayOrder,d.DataSetId";
+    private static final String VISITMAP_JOIN_BY_VISIT = """
+        SELECT d.*, vm.Required FROM study.Visit v, study.DataSet d, study.VisitMap vm
+        WHERE v.RowId = vm.VisitRowId AND vm.DataSetId = d.DataSetId AND v.Container = vm.Container AND
+            vm.Container = d.Container AND v.Container = ? AND v.RowId = ?
+        ORDER BY d.DisplayOrder, d.DataSetId""";
 
-    private static final String VISITMAP_JOIN_BY_DATASET = "SELECT vm.VisitRowId, vm.Required\n" +
-            "FROM study.VisitMap vm JOIN study.Visit v ON vm.VisitRowId = v.RowId\n" +
-            "WHERE vm.Container = ? AND vm.DataSetId = ?\n" +
-            "ORDER BY v.DisplayOrder, v.RowId";
+    private static final String VISITMAP_JOIN_BY_DATASET = """
+        SELECT vm.VisitRowId, vm.Required
+        FROM study.VisitMap vm JOIN study.Visit v ON vm.VisitRowId = v.RowId
+        WHERE vm.Container = ? AND vm.DataSetId = ?
+        ORDER BY v.DisplayOrder, v.RowId""";
 
     List<VisitDataset> getMapping(final VisitImpl visit)
     {
@@ -2553,11 +2555,11 @@ public class StudyManager
         final List<VisitDataset> visitDatasets = new ArrayList<>();
 
         new SqlSelector(StudySchema.getInstance().getSchema(), VISITMAP_JOIN_BY_VISIT,
-                visit.getContainer(), visit.getRowId()).forEach(rs -> {
-                    int datasetId = rs.getInt("DataSetId");
-                    boolean isRequired = rs.getBoolean("Required");
-                    visitDatasets.add(new VisitDataset(visit.getContainer(), datasetId, visit.getRowId(), isRequired));
-                });
+            visit.getContainer(), visit.getRowId()).forEach(rs -> {
+                int datasetId = rs.getInt("DataSetId");
+                boolean isRequired = rs.getBoolean("Required");
+                visitDatasets.add(new VisitDataset(visit.getContainer(), datasetId, visit.getRowId(), isRequired));
+            });
 
         return visitDatasets;
     }
@@ -2700,7 +2702,6 @@ public class StudyManager
         unindexDataset(ds);
     }
 
-
     /** delete a dataset type and data
      *  does not clear typeURI as we're about to delete the dataset
      */
@@ -2729,7 +2730,6 @@ public class StudyManager
         }
     }
 
-
     // Any container can be passed here (whether it contains a study or not).
     public void clearCaches(Container c, boolean unmaterializeDatasets)
     {
@@ -2742,9 +2742,11 @@ public class StudyManager
         if (unmaterializeDatasets && null != study)
             for (DatasetDefinition def : getDatasetDefinitions(study))
                 uncache(def);
-        _datasetHelper.clearCache(c);
-
-        DbCache.clear(StudySchema.getInstance().getTableInfoParticipant());
+        // Aggressive, but datasets are cached with container objects that might go stale, for example, when moving a
+        // folder tree to another parent, the datasets in subfolders will be left with invalid paths. See FolderTest.
+        _datasetHelper.clearCache();
+        _cohortHelper.clearCache(c);
+        _participantCache.remove(c);
 
         for (StudyImpl substudy : StudyManager.getInstance().getAncillaryStudies(c))
             clearCaches(substudy.getContainer(), unmaterializeDatasets);
@@ -2787,7 +2789,13 @@ public class StudyManager
             //
             // specimens
             //
-            SpecimenManager.get().deleteAllSpecimenData(c, deletedTables, user);
+            SpecimenService ss = SpecimenService.get();
+            if (null != ss)
+                ss.deleteAllSpecimenData(c, deletedTables, user);
+
+            // Since study creates these tables, study needs to delete them
+            new SpecimenTablesProvider(c, null, null).deleteTables();
+            LocationCache.clear(c);
 
             //
             // assay schedule
@@ -2795,6 +2803,7 @@ public class StudyManager
             Table.delete(SCHEMA.getTableInfoAssaySpecimenVisit(), containerFilter);
             assert deletedTables.add(SCHEMA.getTableInfoAssaySpecimenVisit());
             Table.delete(_assaySpecimenHelper.getTableInfo(), containerFilter);
+            _assaySpecimenHelper.clearCache(c);
             assert deletedTables.add(_assaySpecimenHelper.getTableInfo());
 
             //
@@ -2805,17 +2814,20 @@ public class StudyManager
             Table.delete(StudySchema.getInstance().getTableInfoUploadLog(), containerFilter);
             assert deletedTables.add(StudySchema.getInstance().getTableInfoUploadLog());
             Table.delete(_datasetHelper.getTableInfo(), containerFilter);
+            _datasetHelper.clearCache(c);
             assert deletedTables.add(_datasetHelper.getTableInfo());
             Table.delete(_visitHelper.getTableInfo(), containerFilter);
+            _visitHelper.clearCache(c);
             assert deletedTables.add(_visitHelper.getTableInfo());
             Table.delete(_studyHelper.getTableInfo(), containerFilter);
+            _studyHelper.clearCache(c);
             assert deletedTables.add(_studyHelper.getTableInfo());
 
             // participant lists
-            Table.delete(ParticipantGroupManager.getInstance().getTableInfoParticipantGroupMap(), containerFilter);
-            assert deletedTables.add(ParticipantGroupManager.getInstance().getTableInfoParticipantGroupMap());
-            Table.delete(ParticipantGroupManager.getInstance().getTableInfoParticipantGroup(), containerFilter);
-            assert deletedTables.add(ParticipantGroupManager.getInstance().getTableInfoParticipantGroup());
+            Table.delete(ParticipantGroupManager.getTableInfoParticipantGroupMap(), containerFilter);
+            assert deletedTables.add(ParticipantGroupManager.getTableInfoParticipantGroupMap());
+            Table.delete(ParticipantGroupManager.getTableInfoParticipantGroup(), containerFilter);
+            assert deletedTables.add(ParticipantGroupManager.getTableInfoParticipantGroup());
             Table.delete(StudySchema.getInstance().getTableInfoParticipantCategory(), containerFilter);
             assert deletedTables.add(StudySchema.getInstance().getTableInfoParticipantCategory());
             ParticipantGroupManager.getInstance().clearCache(c);
@@ -2830,8 +2842,10 @@ public class StudyManager
             Table.delete(StudySchema.getInstance().getTableInfoVisitAliases(), containerFilter);
             assert deletedTables.add(StudySchema.getInstance().getTableInfoVisitAliases());
             Table.delete(SCHEMA.getTableInfoParticipant(), containerFilter);
+            _participantCache.remove(c);
             assert deletedTables.add(SCHEMA.getTableInfoParticipant());
-            Table.delete(StudySchema.getInstance().getTableInfoCohort(), containerFilter);
+            Table.delete(_cohortHelper.getTableInfo(), containerFilter);
+            _cohortHelper.clearCache(c);
             assert deletedTables.add(StudySchema.getInstance().getTableInfoCohort());
             Table.delete(StudySchema.getInstance().getTableInfoParticipantView(), containerFilter);
             assert deletedTables.add(StudySchema.getInstance().getTableInfoParticipantView());
@@ -3394,6 +3408,7 @@ public class StudyManager
         SQLFragment sql = new SQLFragment("UPDATE ").append(SCHEMA.getTableInfoParticipant()).append(" SET AlternateId = ? WHERE Container = ? AND ParticipantId = ?")
                 .addAll(alternateId, containerId, participantId);
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
+        StudyManager.getInstance().clearParticipantCache(study.getContainer());
     }
 
     private void setAlternateIdAndDateOffset(Study study, String participantId, @Nullable String alternateId, @Nullable Integer dateOffset)
@@ -3419,6 +3434,7 @@ public class StudyManager
             sql.add(study.getContainer());
             sql.add(participantId);
             new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
+            StudyManager.getInstance().clearParticipantCache(study.getContainer());
         }
     }
 
@@ -4096,24 +4112,17 @@ public class StudyManager
     /** non-permission checking, non-recursive */
     private Map<String, Participant> getParticipantMap(Study study)
     {
-        Map<String, Participant> participantMap = (Map<String, Participant>) DbCache.get(StudySchema.getInstance().getTableInfoParticipant(), getParticipantCacheKey(study.getContainer()));
-        if (participantMap == null)
-        {
-            SimpleFilter filter = SimpleFilter.createContainerFilter(study.getContainer());
-            ArrayList<Participant> participants = new TableSelector(StudySchema.getInstance().getTableInfoParticipant(),
-                    filter, new Sort("ParticipantId")).getArrayList(Participant.class);
-            participantMap = new LinkedHashMap<>();
-            for (Participant participant : participants)
-                participantMap.put(participant.getParticipantId(), participant);
-            participantMap = Collections.unmodifiableMap(participantMap);
-            DbCache.put(StudySchema.getInstance().getTableInfoParticipant(), getParticipantCacheKey(study.getContainer()), participantMap, CacheManager.HOUR);
-        }
-        return participantMap;
+        return _participantCache.get(study.getContainer());
     }
 
     public void clearParticipantCache(Container container)
     {
-        DbCache.remove(StudySchema.getInstance().getTableInfoParticipant(), getParticipantCacheKey(container));
+        _participantCache.remove(container);
+    }
+
+    public void clearAssaySpecimenCache(Container container)
+    {
+        _assaySpecimenHelper.clearCache(container);
     }
 
     public Collection<Participant> getParticipants(Study study)
@@ -4148,7 +4157,7 @@ public class StudyManager
         TableInfo table = StudySchema.getInstance().getTableInfoParticipant();
         ArrayList<String> containers = new SqlSelector(table.getSchema(), new SQLFragment("SELECT container FROM study.participant WHERE participantid=?",ptid))
                 .getArrayList(String.class);
-        if (containers.size() == 0)
+        if (containers.isEmpty())
             return null;
         else if (containers.size() == 1)
             return ContainerManager.getForId(containers.get(0));
@@ -4210,8 +4219,6 @@ public class StudyManager
         String getParticipantId();
 
         int getDatasetId();
-
-        String getRedirectUrl();
 
         Map<String, String> getAliases();
     }
@@ -4432,7 +4439,7 @@ public class StudyManager
 
     public static void indexParticipants(final IndexTask task, @NotNull final Container c, @Nullable List<String> ptids, @Nullable Date modifiedSince)
     {
-        if (null != ptids && ptids.size() == 0)
+        if (null != ptids && ptids.isEmpty())
             return;
 
         final StudyImpl study = StudyManager.getInstance().getStudy(c);
@@ -4754,7 +4761,7 @@ public class StudyManager
                 {
                     SimpleFilter filter = SimpleFilter.createContainerFilter(study.getContainer());
                     filter.addCondition(FieldKey.fromParts("CategoryId"), category.getRowId());
-                    return _instance._datasetHelper.get(study.getContainer(), filter);
+                    return _instance._datasetHelper.getList(study.getContainer(), filter);
                 }
             }
 
@@ -4833,6 +4840,7 @@ public class StudyManager
          * Issue : 46986. Move the study design domains to the project folder (if not already there), since
          * their URI references the project folder already.
          */
+        @SuppressWarnings("unused")
         public static void moveDesignDomains(ModuleContext ctx)
         {
             if (ctx.isNewInstall())

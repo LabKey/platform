@@ -62,9 +62,6 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-/**
- * Created by klum on 1/24/14.
- */
 public class DefaultStudyDesignImporter
 {
     /**
@@ -72,7 +69,8 @@ public class DefaultStudyDesignImporter
      */
     protected void deleteData(Container container, TableInfo tableInfo) throws ImportException
     {
-        try {
+        try
+        {
             if (tableInfo instanceof FilteredTable)
             {
                 Table.delete(((FilteredTable)tableInfo).getRealTable(), SimpleFilter.createContainerFilter(container));

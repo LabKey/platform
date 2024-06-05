@@ -33,6 +33,7 @@
 <%@ page import="org.labkey.api.gwt.client.model.PropertyValidatorType" %>
 <%@ page import="org.labkey.api.module.FolderTypeManager" %>
 <%@ page import="org.labkey.api.qc.DataState" %>
+<%@ page import="org.labkey.api.qc.QCStateManager" %>
 <%@ page import="org.labkey.api.query.BatchValidationException" %>
 <%@ page import="org.labkey.api.query.FieldKey" %>
 <%@ page import="org.labkey.api.query.QueryService" %>
@@ -74,7 +75,6 @@
 <%@ page import="static org.junit.Assert.*" %>
 <%@ page import="static org.labkey.study.model.StudyManager.TEST_LOGGER" %>
 <%@ page import="static org.labkey.study.dataset.DatasetAuditProvider.DATASET_AUDIT_EVENT" %>
-<%@ page import="org.labkey.api.qc.QCStateManager" %>
 <%@ page extends="org.labkey.api.jsp.JspTest.DRT" %>
 
 
@@ -265,7 +265,7 @@ public void test() throws Throwable
     catch (BatchValidationException x)
     {
         List<ValidationException> l = x.getRowErrors();
-        if (null != l && l.size() > 0)
+        if (!l.isEmpty())
             throw l.get(0);
         throw x;
     }
@@ -274,7 +274,6 @@ public void test() throws Throwable
 //        tearDown();
     }
 }
-
 
 private void _testDatasetUpdateService(StudyImpl study) throws Throwable
 {
@@ -290,10 +289,9 @@ private void _testDatasetUpdateService(StudyImpl study) throws Throwable
     List<Map<String, Object>> rows = new ArrayList<>();
 
     // insert one row
-    rows.clear(); errors.clear();
     rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++this.counterRow), "Value", 1.0));
     List<Map<String,Object>> ret = qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null, null);
-    String msg = errors.getRowErrors().size() > 0 ? errors.getRowErrors().get(0).toString() : "no message";
+    String msg = !errors.getRowErrors().isEmpty() ? errors.getRowErrors().get(0).toString() : "no message";
     assertFalse(msg, errors.hasErrors());
     Map<String,Object> firstRowMap = ret.get(0);
     String lsidRet = (String)firstRowMap.get("lsid");
@@ -391,7 +389,6 @@ private void _testDatasetUpdateService(StudyImpl study) throws Throwable
     qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null, null);
     assertFalse(errors.hasErrors());
 
-
     // validation test
     rows.clear(); errors.clear();
     rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", 1, "Number", 101));
@@ -431,7 +428,6 @@ private void _testDatasetUpdateService(StudyImpl study) throws Throwable
     assert(ret.size() == 1);
 }
 
-
 private void _testDatasetDetailedLogging(StudyImpl study) throws Throwable
 {
     // first get last audit record
@@ -450,15 +446,15 @@ private void _testDatasetDetailedLogging(StudyImpl study) throws Throwable
 
     Date Jan1 = new Date(DateUtil.parseISODateTime("2011-01-01"));
     Date Feb1 = new Date(DateUtil.parseISODateTime("2011-02-01"));
-    List<Map<String, Object>> rows = new ArrayList<>();
 
-    Map<Enum,Object> config = Map.of(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, AuditBehaviorType.DETAILED);
+    Map<Enum, Object> config = Map.of(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, AuditBehaviorType.DETAILED);
 
     // INSERT
-    rows.clear(); errors.clear();
+    List<Map<String, Object>> rows = new ArrayList<>();
+    errors.clear();
     rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Jan1, "Measure", "Initial", "Value", 1.0));
     List<Map<String,Object>> ret = qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, config, null);
-    String msg = errors.getRowErrors().size() > 0 ? errors.getRowErrors().get(0).toString() : "no message";
+    String msg = !errors.getRowErrors().isEmpty() ? errors.getRowErrors().get(0).toString() : "no message";
     assertFalse(msg, errors.hasErrors());
     Map<String,Object> firstRowMap = ret.get(0);
     String lsidRet = (String)firstRowMap.get("lsid");
@@ -500,7 +496,7 @@ private void _testDatasetDetailedLogging(StudyImpl study) throws Throwable
     // and since merge is a different code path...
     rows.clear(); errors.clear();
     rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Jan1, "Measure", "Merged", "Value", 3.0));
-    int count = qus.mergeRows(_context.getUser(), study.getContainer(), new ListofMapsDataIterator(null,rows), errors, config, null);
+    int count = qus.mergeRows(_context.getUser(), study.getContainer(), new ListofMapsDataIterator(null, rows), errors, config, null);
     assertEquals(1, count);
 
     events = AuditLogService.get().getAuditEvents(study.getContainer(),_context.getUser(),DATASET_AUDIT_EVENT,f,new Sort("-RowId"));
@@ -532,7 +528,7 @@ private void _testImportDatasetDataAllowImportGuid(Study study) throws Throwable
     List<Map<String, Object>> rows = new ArrayList<>();
 
     String guid = "GUUUUID";
-    Map map = PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", 1.0, "SequenceNum", sequenceNum++, "GUID", guid);
+    Map<String, Object> map = Map.of("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", 1.0, "SequenceNum", sequenceNum++, "GUID", guid);
     importRowVerifyGuid(def, map, tt, TEST_LOGGER);
 
     // duplicate row
@@ -544,16 +540,16 @@ private void _testImportDatasetDataAllowImportGuid(Study study) throws Throwable
 //                assertTrue(-1 != errors.get(0).indexOf("duplicate key value violates unique constraint"));
 
     //same participant, guid, different sequenceNum
-    importRowVerifyGuid(def, PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", 1.0, "SequenceNum", sequenceNum++, "GUID", guid), tt, TEST_LOGGER);
+    importRowVerifyGuid(def, Map.of("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", 1.0, "SequenceNum", sequenceNum++, "GUID", guid), tt, TEST_LOGGER);
 
     //  same GUID,sequenceNum, different different participant
-    importRowVerifyGuid(def, PageFlowUtil.map("SubjectId", "B2", "Date", Jan1, "Measure", "Test"+(counterRow), "Value", 2.0, "SequenceNum", sequenceNum, "GUID", guid), tt, TEST_LOGGER);
+    importRowVerifyGuid(def, Map.of("SubjectId", "B2", "Date", Jan1, "Measure", "Test"+(counterRow), "Value", 2.0, "SequenceNum", sequenceNum, "GUID", guid), tt, TEST_LOGGER);
 
     //same subject, sequenceNum, GUID not provided
-    importRowVerifyGuid(def, PageFlowUtil.map("SubjectId", "B2", "Date", Jan1, "Measure", "Test"+(counterRow), "Value", 2.0, "SequenceNum", sequenceNum), tt, TEST_LOGGER);
+    importRowVerifyGuid(def, Map.of("SubjectId", "B2", "Date", Jan1, "Measure", "Test"+(counterRow), "Value", 2.0, "SequenceNum", sequenceNum), tt, TEST_LOGGER);
 
     //repeat:  should still work
-    importRowVerifyGuid(def, PageFlowUtil.map("SubjectId", "B2", "Date", Jan1, "Measure", "Test"+(counterRow), "Value", 2.0, "SequenceNum", sequenceNum), tt, TEST_LOGGER);
+    importRowVerifyGuid(def, Map.of("SubjectId", "B2", "Date", Jan1, "Measure", "Test"+(counterRow), "Value", 2.0, "SequenceNum", sequenceNum), tt, TEST_LOGGER);
 }
 
 private void _testImportDatasetData(Study study) throws Throwable
@@ -566,11 +562,10 @@ private void _testImportDatasetData(Study study) throws Throwable
 
     Date Jan1 = new Date(DateUtil.parseISODateTime("2011-01-01"));
     Date Feb1 = new Date(DateUtil.parseISODateTime("2011-02-01"));
-    List<Map<String, Object>> rows = new ArrayList<>();
 
     // insert one row
-    rows.clear();
-    rows.add((Map)PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counterRow), "Value", 1.0, "SequenceNum", sequenceNum++));
+    List<Map<String, Object>> rows = new ArrayList<>();
+    rows.add(Map.of("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counterRow), "Value", 1.0, "SequenceNum", sequenceNum++));
     importRows(def, rows);
 
     try (Results results = new TableSelector(tt).getResults())
@@ -584,35 +579,35 @@ private void _testImportDatasetData(Study study) throws Throwable
     importRows(def, rows, "Duplicates were found");
 
     // different participant
-    Map map2 = PageFlowUtil.map("SubjectId", "B2", "Date", Jan1, "Measure", "Test"+(counterRow), "Value", 2.0, "SequenceNum", sequenceNum++);
+    Map<String, Object> map2 = Map.of("SubjectId", "B2", "Date", Jan1, "Measure", "Test"+(counterRow), "Value", 2.0, "SequenceNum", sequenceNum++);
     importRow(def, map2);
-    importRow(def, PageFlowUtil.map("SubjectId", "B2", "Date", Jan1, "Measure", "Test"+(counterRow), "Value", 2.0, "SequenceNum", sequenceNum++));
+    importRow(def, Map.of("SubjectId", "B2", "Date", Jan1, "Measure", "Test"+(counterRow), "Value", 2.0, "SequenceNum", sequenceNum++));
 
     // different date
-    importRow(def, PageFlowUtil.map("SubjectId", "A1", "Date", Feb1, "Measure", "Test"+(counterRow), "Value", "X", "SequenceNum", sequenceNum++));
+    importRow(def, Map.of("SubjectId", "A1", "Date", Feb1, "Measure", "Test"+(counterRow), "Value", "X", "SequenceNum", sequenceNum++));
 
     // different measure
-    importRow(def, PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", "X", "SequenceNum", sequenceNum++));
+    importRow(def, Map.of("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", "X", "SequenceNum", sequenceNum++));
 
     // duplicates in batch
     rows.clear();
-    rows.add((Map)PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counterRow), "Value", 1.0, "SequenceNum", sequenceNum));
-    rows.add((Map)PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(counterRow), "Value", 1.0, "SequenceNum", sequenceNum++));
+    rows.add(Map.of("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counterRow), "Value", 1.0, "SequenceNum", sequenceNum));
+    rows.add(Map.of("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(counterRow), "Value", 1.0, "SequenceNum", sequenceNum++));
     //study:Label: Only one row is allowed for each Subject/Visit/Measure Triple.  Duplicates were found in the database or imported data.; Duplicate: Subject = A1Date = Sat Jan 01 00:00:00 PST 2011, Measure = Test3
     importRows(def, rows, "Duplicates were found in the database or imported data");
 
     // missing participantid
-    importRow(def, PageFlowUtil.map("SubjectId", null, "Date", Jan1, "Measure", "Test"+(++counterRow), "Value", 1.0, "SequenceNum", sequenceNum++), "required", "SubjectID");
+    importRow(def, PageFlowUtil.mapInsensitive("SubjectId", null, "Date", Jan1, "Measure", "Test"+(++counterRow), "Value", 1.0, "SequenceNum", sequenceNum++), "required", "SubjectID");
 
     // missing date
     if (study==_studyDateBased) //irrelevant for sequential visits
-        importRow(def, PageFlowUtil.map("SubjectId", "A1", "Date", null, "Measure", "Test"+(++counterRow), "Value", 1.0, "SequenceNum", sequenceNum++), "required", "date");
+        importRow(def, PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", null, "Measure", "Test"+(++counterRow), "Value", 1.0, "SequenceNum", sequenceNum++), "required", "date");
 
     // missing required property field
-    importRow(def, PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", null, "Value", 1.0, "SequenceNum", sequenceNum++), "required", "Measure");
+    importRow(def, PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Jan1, "Measure", null, "Value", 1.0, "SequenceNum", sequenceNum++), "required", "Measure");
 
     // legal MV indicator
-    importRow(def, PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counterRow), "Value", "X", "SequenceNum", sequenceNum++));
+    importRow(def, Map.of("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counterRow), "Value", "X", "SequenceNum", sequenceNum++));
 
     // count rows with "X"
     final MutableInt Xcount = new MutableInt(0);
@@ -622,7 +617,7 @@ private void _testImportDatasetData(Study study) throws Throwable
     });
 
     // legal MV indicator
-    importRow(def, PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counterRow), "Value", null, "ValueMVIndicator", "X", "SequenceNum", sequenceNum++));
+    importRow(def, PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counterRow), "Value", null, "ValueMVIndicator", "X", "SequenceNum", sequenceNum++));
 
     // should have two rows with "X"
     final MutableInt XcountAgain = new MutableInt(0);
@@ -633,18 +628,18 @@ private void _testImportDatasetData(Study study) throws Throwable
     assertEquals(Xcount.intValue() + 1, XcountAgain.intValue());
 
     // illegal MV indicator
-    importRow(def, PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counterRow), "Value", "N/A", "SequenceNum", sequenceNum++), "Value");
+    importRow(def, Map.of("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counterRow), "Value", "N/A", "SequenceNum", sequenceNum++), "Value");
 
     // conversion test
-    importRow(def, PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counterRow), "Value", "100", "SequenceNum", sequenceNum++));
+    importRow(def, Map.of("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counterRow), "Value", "100", "SequenceNum", sequenceNum++));
 
     // validation test
-    importRow(def, PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counterRow), "Value", 1, "Number", 101, "SequenceNum", sequenceNum++), "is invalid");
+    importRow(def, Map.of("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counterRow), "Value", 1, "Number", 101, "SequenceNum", sequenceNum++), "is invalid");
 
-    importRow(def, PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(counterRow), "Value", 1, "Number", 99, "SequenceNum", sequenceNum++));
+    importRow(def, Map.of("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(counterRow), "Value", 1, "Number", 99, "SequenceNum", sequenceNum++));
 }
 
-private void importRowVerifyKey(Dataset def, Map map, TableInfo tt, String key, @NotNull Logger logger, String... expectedErrors)  throws Exception
+private void importRowVerifyKey(Dataset def, Map<String, Object> map, TableInfo tt, String key, @NotNull Logger logger, String... expectedErrors)  throws Exception
 {
     importRow(def, map, logger, expectedErrors);
     String expectedKey = (String) map.get(key);
@@ -656,7 +651,7 @@ private void importRowVerifyKey(Dataset def, Map map, TableInfo tt, String key, 
     }
 }
 
-private void importRowVerifyGuid(Dataset def, Map map, TableInfo tt, @NotNull Logger logger, String... expectedErrors)  throws Exception
+private void importRowVerifyGuid(Dataset def, Map<String, Object> map, TableInfo tt, @NotNull Logger logger, String... expectedErrors)  throws Exception
 {
     if (map.containsKey("GUID"))
         importRowVerifyKey(def, map, tt, "GUID", logger, expectedErrors);
@@ -668,7 +663,7 @@ private void importRowVerifyGuid(Dataset def, Map map, TableInfo tt, @NotNull Lo
         {
             rs.last();
             String actualKey = rs.getString("GUID");
-            assertTrue("No GUID generated when null GUID provided", actualKey.length() > 0);
+            assertFalse("No GUID generated when null GUID provided", actualKey.isEmpty());
         }
     }
 }
@@ -703,12 +698,12 @@ private void importRows(Dataset def, List<Map<String, Object>> rows, @Nullable L
     }
 }
 
-private void importRow(Dataset def, Map map, String... expectedErrors)  throws Exception
+private void importRow(Dataset def, Map<String, Object> map, String... expectedErrors)  throws Exception
 {
     importRow(def, map, null, expectedErrors);
 }
 
-private void importRow(Dataset def, Map map, @Nullable Logger logger, String... expectedErrors)  throws Exception
+private void importRow(Dataset def, Map<String, Object> map, @Nullable Logger logger, String... expectedErrors)  throws Exception
 {
     importRows(def, Arrays.asList(map), logger, expectedErrors);
 }
@@ -720,14 +715,13 @@ private void _testImportDemographicDatasetData(Study study) throws Throwable
     TableInfo tt = def.getTableInfo(_context.getUser());
 
     Date Feb1 = new Date(DateUtil.parseISODateTime("2011-02-01"));
-    List rows = new ArrayList();
-
     TimepointType time = study.getTimepointType();
+    List<Map<String, Object>> rows = new ArrayList<>();
 
     if (time == TimepointType.VISIT)
     {
         // insert one row w/visit
-        importRow(def, PageFlowUtil.map("SubjectId", "A1", "SequenceNum", 1.0, "Measure", "Test"+(++counterRow), "Value", 1.0));
+        importRow(def, Map.of("SubjectId", "A1", "SequenceNum", 1.0, "Measure", "Test"+(++counterRow), "Value", 1.0));
 
         try (ResultSet rs = new TableSelector(tt).getResultSet())
         {
@@ -736,8 +730,7 @@ private void _testImportDemographicDatasetData(Study study) throws Throwable
         }
 
         // insert one row w/o visit
-        rows.clear();
-        rows.add(PageFlowUtil.map("SubjectId", "A2", "Measure", "Test"+(++counterRow), "Value", 1.0));
+        rows.add(Map.of("SubjectId", "A2", "Measure", "Test"+(++counterRow), "Value", 1.0));
         importRows(def, rows);
 
         try (ResultSet rs = new TableSelector(tt).getResultSet())
@@ -753,8 +746,7 @@ private void _testImportDemographicDatasetData(Study study) throws Throwable
     else
     {
         // insert one row w/ date
-        rows.clear();
-        rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Feb1, "Measure", "Test"+(++counterRow), "Value", 1.0));
+        rows.add(Map.of("SubjectId", "A1", "Date", Feb1, "Measure", "Test"+(++counterRow), "Value", 1.0));
         importRows(def, rows);
 
         try (ResultSet rs = new TableSelector(tt).getResultSet())
@@ -763,7 +755,7 @@ private void _testImportDemographicDatasetData(Study study) throws Throwable
             assertEquals(Feb1, new java.util.Date(rs.getTimestamp("date").getTime()));
         }
 
-        Map map = PageFlowUtil.map("SubjectId", "A2", "Measure", "Test"+(++counterRow), "Value", 1.0);
+        Map<String, Object> map = Map.of("SubjectId", "A2", "Measure", "Test"+(++counterRow), "Value", 1.0);
         importRow(def, map);
 
         try (ResultSet rs = new TableSelector(tt).getResultSet())
@@ -771,7 +763,7 @@ private void _testImportDemographicDatasetData(Study study) throws Throwable
             assertTrue(rs.next());
             // issue 47344 : demographics date no longer required or initialized with the study start date
             if ("A2".equals(rs.getString("SubjectId")))
-                assertEquals(null, rs.getTimestamp("date"));
+                assertNull(rs.getTimestamp("date"));
         }
     }
 }
@@ -781,27 +773,26 @@ private void _testImportDemographicDatasetData(Study study) throws Throwable
  */
 private void _testDaysSinceStartCalculation(Study study) throws Throwable
 {
-    StudyQuerySchema ss = StudyQuerySchema.createSchema((StudyImpl) study, _context.getUser());
-    Dataset dem = createDataset(study, "Dem", true);
-    Dataset ds = createDataset(study, "DS", false);
-
-    TableInfo tableInfo = ss.getTable(ds.getName());
-    QueryUpdateService qus = tableInfo.getUpdateService();
-
-    Date Feb1 = new Date(DateUtil.parseISODateTime("2016-02-01"));
-    List rows = new ArrayList();
-    List<String> errors = new ArrayList<>();
-
     TimepointType time = study.getTimepointType();
-
-    Map<String, Integer> validValues = new HashMap<>();
-    validValues.put("A1", 0);
-    validValues.put("A2", 1);
 
     if (time == TimepointType.DATE)
     {
+        StudyQuerySchema ss = StudyQuerySchema.createSchema((StudyImpl) study, _context.getUser());
+        Dataset dem = createDataset(study, "Dem", true);
+        Dataset ds = createDataset(study, "DS", false);
+
+        TableInfo tableInfo = ss.getTable(ds.getName());
+        QueryUpdateService qus = tableInfo.getUpdateService();
+
+        Date Feb1 = new Date(DateUtil.parseISODateTime("2016-02-01"));
+        List<String> errors = new ArrayList<>();
+
+        Map<String, Integer> validValues = new HashMap<>();
+        validValues.put("A1", 0);
+        validValues.put("A2", 1);
+
         // insert rows with a startDate
-        rows.clear();
+        List<Map<String, Object>> rows = new ArrayList<>();
         errors.clear();
         rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Feb1, "Measure", "Test"+(++counterRow), "Value", 1.0, "StartDate", Feb1));
         rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A2", "Date", Feb1, "Measure", "Test"+(++counterRow), "Value", 1.0, "StartDate", Feb1));
@@ -814,7 +805,7 @@ private void _testDaysSinceStartCalculation(Study study) throws Throwable
         rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A2", "Date", "2016-02-02 10:00", "Measure", "Test"+(++counterRow), "Value", 1.0));
 
         List<Map<String,Object>> ret = qus.insertRows(_context.getUser(), study.getContainer(), rows, qusErrors, null, null);
-        String msg = qusErrors.getRowErrors().size() > 0 ? qusErrors.getRowErrors().get(0).toString() : "no message";
+        String msg = !qusErrors.getRowErrors().isEmpty() ? qusErrors.getRowErrors().get(0).toString() : "no message";
         assertFalse(msg, qusErrors.hasErrors());
 
         try (ResultSet rs = new TableSelector(tableInfo).getResultSet())
@@ -846,7 +837,7 @@ private void  _testDatasetTransformExport(Study study) throws Throwable
     assertNotNull(qus);
 
     // insert one row
-    List rows = new ArrayList();
+    List<Map<String, Object>> rows = new ArrayList<>();
     Date jan1 = new Date(DateUtil.parseISODateTime("2012-01-01"));
     rows.add(PageFlowUtil.mapInsensitive("SubjectId", "DS1", "Date", jan1, "Measure", "Test" + (++this.counterRow), "Value", 0.0));
     List<Map<String,Object>> ret = qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null, null);

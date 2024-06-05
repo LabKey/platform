@@ -32,7 +32,6 @@ import org.labkey.api.attachments.ImageServlet;
 import org.labkey.api.attachments.LookAndFeelResourceType;
 import org.labkey.api.attachments.SecureDocumentType;
 import org.labkey.api.cache.BlockingCache;
-import org.labkey.api.cache.CachingTestCase;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -139,7 +138,32 @@ import org.labkey.api.settings.AppPropsTestCase;
 import org.labkey.api.settings.ExperimentalFeatureStartupListener;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
-import org.labkey.api.util.*;
+import org.labkey.api.util.ChecksumUtil;
+import org.labkey.api.util.Compress;
+import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.DomTestCase;
+import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.ExtUtil;
+import org.labkey.api.util.FileType;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.JSoupUtil;
+import org.labkey.api.util.JsonUtil;
+import org.labkey.api.util.JspTestCase;
+import org.labkey.api.util.MailHelper;
+import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.MimeMap;
+import org.labkey.api.util.NumberUtilsLabKey;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
+import org.labkey.api.util.Path;
+import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.SessionHelper;
+import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.SystemMaintenance;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FileServlet;
@@ -367,7 +391,6 @@ public class ApiModule extends CodeOnlyModule
             AppPropsTestCase.class,
             AtomicDatabaseInteger.TestCase.class,
             BlockingCache.BlockingCacheTest.class,
-            CachingTestCase.class,
             CompareType.TestCase.class,
             ContainerDisplayColumn.TestCase.class,
             ContainerFilter.TestCase.class,

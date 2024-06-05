@@ -32,11 +32,6 @@ import org.labkey.api.security.User;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * User: brittp
- * Date: Feb 24, 2006
- * Time: 2:04:14 PM
- */
 public class QueryHelper<K extends StudyCachable>
 {
     private final Class<K> _objectClass;
@@ -48,22 +43,22 @@ public class QueryHelper<K extends StudyCachable>
         _objectClass = objectClass;
     }
 
-    public List<K> get(Container c)
+    public List<K> getList(Container c)
     {
-        return get(c, null, null);
+        return getList(c, null, null);
     }
 
-    public List<K> get(Container c, String sortString)
+    public List<K> getList(Container c, String sortString)
     {
-        return get(c, null, sortString);
+        return getList(c, null, sortString);
     }
 
-    public List<K> get(Container c, SimpleFilter filter)
+    public List<K> getList(Container c, SimpleFilter filter)
     {
-        return get(c, filter, null);
+        return getList(c, filter, null);
     }
 
-    public List<K> get(final Container c, @Nullable final SimpleFilter filterArg, @Nullable final String sortString)
+    public List<K> getList(final Container c, @Nullable final SimpleFilter filterArg, @Nullable final String sortString)
     {
         String cacheId = getCacheId(filterArg);
         if (sortString != null)
@@ -97,19 +92,9 @@ public class QueryHelper<K extends StudyCachable>
         return (List<K>)StudyCache.get(getTableInfo(), c, cacheId, loader);
     }
 
-    public K get(Container c, double rowId)
-    {
-        return get(c, (Object)rowId, "RowId");
-    }
-
     public K get(Container c, int rowId)
     {
         return get(c, (Object)rowId, "RowId");
-    }
-
-    public K get(Container c, double rowId, String rowIdColumnName)
-    {
-        return get(c, (Object)rowId, rowIdColumnName);
     }
 
     public K get(Container c, int rowId, String rowIdColumnName)
@@ -122,7 +107,7 @@ public class QueryHelper<K extends StudyCachable>
         CacheLoader<String, Object> loader = (key, argument) -> {
             SimpleFilter filter = SimpleFilter.createContainerFilter(c);
             filter.addCondition(rowIdColumnName, rowId);
-            StudyCachable obj = new TableSelector(getTableInfo(), filter, null).getObject(_objectClass);
+            StudyCachable<K> obj = new TableSelector(getTableInfo(), filter, null).getObject(_objectClass);
             if (obj != null)
                 obj.lock();
             return obj;
@@ -133,8 +118,9 @@ public class QueryHelper<K extends StudyCachable>
 
     public K create(User user, K obj)
     {
+        K ret = Table.insert(user, getTableInfo(), obj);
         clearCache(obj);
-        return Table.insert(user, getTableInfo(), obj);
+        return ret;
     }
 
     public K update(User user, K obj)
@@ -144,14 +130,15 @@ public class QueryHelper<K extends StudyCachable>
 
     public K update(User user, K obj, Object... pk)
     {
+        K ret = Table.update(user, getTableInfo(), obj, pk);
         clearCache(obj);
-        return Table.update(user, getTableInfo(), obj, pk);
+        return ret;
     }
 
     public void delete(K obj)
     {
-        clearCache(obj);
         Table.delete(getTableInfo(), obj.getPrimaryKey());
+        clearCache(obj);
     }
 
     public TableInfo getTableInfo()
@@ -169,7 +156,12 @@ public class QueryHelper<K extends StudyCachable>
         StudyCache.uncache(getTableInfo(), obj.getContainer(), obj.getPrimaryKey().toString());
     }
 
-    protected String getCacheId(Filter filter)
+    public void clearCache()
+    {
+        StudyCache.clearCache(getTableInfo());
+    }
+
+    protected String getCacheId(@Nullable Filter filter)
     {
         if (filter == null)
             return "~ALL";

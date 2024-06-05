@@ -622,7 +622,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
             groupInClause.append(")");
 
             SQLFragment sql = new SQLFragment();
-            sql.append(" SELECT DISTINCT(ParticipantId), ? FROM ").append(ParticipantGroupManager.getInstance().getTableInfoParticipantGroupMap(), "");
+            sql.append(" SELECT DISTINCT ParticipantId, ? FROM ").append(ParticipantGroupManager.getInstance().getTableInfoParticipantGroupMap(), "");
             sql.append(" WHERE GroupId IN ").append(groupInClause);
             sql.add(getDstContainer());
             SqlSelector selector = new SqlSelector(schema.getSchema(), sql);
@@ -673,7 +673,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
             SQLFragment sql = new SQLFragment();
 
             sql.append("INSERT INTO ").append(schema.getTableInfoParticipant()).append(" (ParticipantId, Container)");
-            sql.append(" SELECT DISTINCT(").append(columnName).append("), ? FROM ").append(ParticipantGroupManager.getInstance().getTableInfoParticipantGroupMap(), "gm");
+            sql.append(" SELECT DISTINCT ").append(columnName).append(", ? FROM ").append(ParticipantGroupManager.getInstance().getTableInfoParticipantGroupMap(), "gm");
             sql.add(getDstContainer());
 
             if (useAlternateParticipantIds)
@@ -683,6 +683,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
             sql.add(sourceStudy.getContainer());
 
             new SqlExecutor(schema.getSchema()).execute(sql);
+            StudyManager.getInstance().clearParticipantCache(getDstContainer());
         }
     }
 }

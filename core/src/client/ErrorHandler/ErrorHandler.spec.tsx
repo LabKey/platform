@@ -1,19 +1,20 @@
 import React from 'react';
-import { mount, shallow } from 'enzyme';
+import { shallow } from 'enzyme';
 
+import { mountWithServerContext } from '@labkey/components'
 import { getServerContext } from '@labkey/api';
 
-import { ErrorHandler } from './ErrorHandler';
+import { ErrorHandlerImpl } from './ErrorHandler';
 import { ErrorDetails, ErrorType } from './model';
 
-describe('ErrorHandler', () => {
+describe('ErrorHandlerImpl', () => {
     test('Not found exception', () => {
         const errorDetails: ErrorDetails = {
             errorType: ErrorType.notFound,
             errorCode: '123XYZ',
             message: 'This is a not found exception',
         };
-        const wrapper = mount(<ErrorHandler context={{ errorDetails }} />);
+        const wrapper = mountWithServerContext(<ErrorHandlerImpl context={{ errorDetails }} />);
         expect(wrapper.find('.labkey-error-heading').text().includes(errorDetails.message)).toBeTruthy();
         expect(wrapper.find('.error-details-container')).toHaveLength(0);
 
@@ -31,7 +32,7 @@ describe('ErrorHandler', () => {
             message: 'This is a configuration exception',
         };
         const subheading = 'The requested page cannot be found.';
-        const wrapper = mount(<ErrorHandler context={{ errorDetails }} />);
+        const wrapper = mountWithServerContext(<ErrorHandlerImpl context={{ errorDetails }} />);
         expect(wrapper.find('.labkey-error-subheading').text().includes(subheading)).toBeTruthy();
         expect(wrapper.find('.error-details-container')).toHaveLength(0);
 
@@ -54,7 +55,7 @@ describe('ErrorHandler', () => {
         getServerContext().impersonatingUser = { displayName: impersonatedUser };
         getServerContext().user = { displayName: realUser, isSignedIn: true };
 
-        const wrapper = shallow(<ErrorHandler context={{ errorDetails }} />);
+        const wrapper = shallow(<ErrorHandlerImpl context={{ errorDetails }} />);
         expect(wrapper.find('.labkey-error-subheading').text().includes(errorDetails.message)).toBeTruthy();
         expect(wrapper.find('.error-details-container')).toHaveLength(0);
 
@@ -76,7 +77,7 @@ describe('ErrorHandler', () => {
             message: 'This is a execution exception',
             stackTrace: expectedStackTrace,
         };
-        const wrapper = shallow(<ErrorHandler context={{ errorDetails }} />);
+        const wrapper = shallow(<ErrorHandlerImpl context={{ errorDetails }} />);
         expect(wrapper.find('.labkey-error-subheading').text().includes(errorDetails.message)).toBeTruthy();
         expect(wrapper.find('.error-details-container')).toHaveLength(0);
 

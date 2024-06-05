@@ -1,7 +1,6 @@
 package org.labkey.specimen.view;
 
 import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
-import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.security.permissions.ManageStudyPermission;
 import org.labkey.api.study.view.StudyToolsWebPart;
@@ -13,6 +12,7 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.specimen.actions.ShowSearchAction;
 import org.labkey.specimen.actions.SpecimenController.AutoReportListAction;
 import org.labkey.specimen.actions.SpecimenController.ShowCreateSpecimenRequestAction;
+import org.labkey.specimen.settings.SettingsManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,7 +37,7 @@ public class SpecimenToolsWebPartFactory extends ToolsWebPartFactory
         ActionURL vialSearchURL = ShowSearchAction.getShowSearchURL(portalCtx.getContainer(), true);
         items.add(new StudyToolsWebPart.Item("Vial Search", iconBase + "specimen_search.png", vialSearchURL));
 
-        if (SettingsManager.get().isSpecimenRequestEnabled(portalCtx.getContainer()))
+        if (SettingsManager.get().isSpecimenRequestEnabled(portalCtx.getContainer(), portalCtx.getUser()))
         {
             if (portalCtx.getContainer().hasPermission(portalCtx.getUser(), RequestSpecimensPermission.class))
                 items.add(new StudyToolsWebPart.Item("New Request", iconBase + "specimen_request.png", new ActionURL(ShowCreateSpecimenRequestAction.class, portalCtx.getContainer())));

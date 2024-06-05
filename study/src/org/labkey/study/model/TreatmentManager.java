@@ -62,7 +62,7 @@ import java.util.Set;
  */
 public class TreatmentManager
 {
-    private static TreatmentManager _instance = new TreatmentManager();
+    private static final TreatmentManager _instance = new TreatmentManager();
 
     private TreatmentManager()
     {
@@ -171,9 +171,7 @@ public class TreatmentManager
         TableInfo ti = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.TREATMENT_TABLE_NAME);
 
         //Using a user schema so containerFilter will be created for us later (so don't need SimpleFilter.createContainerFilter)
-        SimpleFilter filter = new SimpleFilter();
-        if (filterRowIds != null && !filterRowIds.isEmpty())
-            filter.addCondition(FieldKey.fromParts("RowId"), filterRowIds, CompareType.NOT_IN);
+        SimpleFilter filter = new SimpleFilter().addCondition(FieldKey.fromParts("RowId"), filterRowIds, CompareType.NOT_IN);
 
         return new TableSelector(ti, filter, new Sort("RowId")).getArrayList(TreatmentImpl.class);
     }
@@ -377,7 +375,9 @@ public class TreatmentManager
     public Integer saveAssaySpecimen(Container container, User user, AssaySpecimenConfigImpl assaySpecimen) throws Exception
     {
         TableInfo assaySpecimenTable = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.ASSAY_SPECIMEN_TABLE_NAME);
-        return saveStudyDesignRow(container, user, assaySpecimenTable, assaySpecimen.serialize(), assaySpecimen.isNew() ? null : assaySpecimen.getRowId(), "RowId", true);
+        Integer ret = saveStudyDesignRow(container, user, assaySpecimenTable, assaySpecimen.serialize(), assaySpecimen.isNew() ? null : assaySpecimen.getRowId(), "RowId", true);
+        StudyManager.getInstance().clearAssaySpecimenCache(container);
+        return ret;
     }
 
     public Integer saveAssaySpecimenVisit(Container container, User user, AssaySpecimenVisitImpl assaySpecimenVisit) throws Exception

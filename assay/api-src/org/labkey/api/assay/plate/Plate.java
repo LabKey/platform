@@ -38,6 +38,8 @@ public interface Plate extends PropertySet, Identifiable
 
     int getPlateNumber();
 
+    boolean isArchived();
+
     boolean isTemplate();
 
     @NotNull PlateType getPlateType();
@@ -72,7 +74,7 @@ public interface Plate extends PropertySet, Identifiable
 
     @NotNull WellGroup addWellGroup(String name, WellGroup.Type type, List<Position> positions);
 
-    @Nullable Integer getRowId();
+    Integer getRowId();
 
     @NotNull Position getPosition(int row, int col);
 
@@ -100,4 +102,6 @@ public interface Plate extends PropertySet, Identifiable
     @Nullable Integer getRunCount();
 
     boolean isIdentifierMatch(String id);
+
+    boolean isNew();
 }

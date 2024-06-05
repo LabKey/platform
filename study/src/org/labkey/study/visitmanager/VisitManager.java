@@ -46,6 +46,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.study.Visit;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ResultSetUtil;
@@ -182,12 +183,10 @@ public abstract class VisitManager
         return errors;
     }
 
-
     public String getLabel()
     {
         return "Visit";
     }
-
 
     public String getPluralLabel()
     {
@@ -633,6 +632,7 @@ public abstract class VisitManager
         Parameter.TypedValue startDateParam = new Parameter.TypedValue(getStudy().getStartDate(), JdbcType.TIMESTAMP);
 
         new SqlExecutor(schema).execute(sqlUpdateStartDates, startDateParam, getStudy().getContainer());
+        StudyManager.getInstance().clearParticipantCache(getStudy().getContainer());
     }
 
     protected static TableInfo getSpecimenTable(StudyImpl study, User user)
@@ -718,7 +718,14 @@ public abstract class VisitManager
         // SQLExceptions. Shut off automatic logging of exceptions in the data access layer; caller will catch the exceptions
         // and retry if appropriate.
         SqlExecutor executor = new SqlExecutor(schema).setExceptionFramework(ExceptionFramework.JDBC).setLogLevel(Level.OFF);
-        return executor.execute(del);
+        try
+        {
+            return executor.execute(del);
+        }
+        finally
+        {
+            StudyManager.getInstance().clearParticipantCache(c);
+        }
     }
 
 
@@ -754,6 +761,12 @@ public abstract class VisitManager
     StudyImpl getStudy()
     {
         return _study;
+    }
+
+    public String getVisitLabelUrlFilterKey(Container container, String dataRegionName)
+    {
+        String participantVisitTableName = StudyService.get().getSubjectVisitTableName(container);
+        return new CompareType.CompareClause(FieldKey.fromParts(participantVisitTableName, "Visit", "Label"), CompareType.EQUAL, false).toURLParam( dataRegionName + ".").getKey();
     }
 
     private static class ParticipantPurgeContextListener implements ShutdownListener

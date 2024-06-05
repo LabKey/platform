@@ -162,7 +162,8 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
             good("PostgreSQL", 14.0, 15.0, "", connectionUrl, null, PostgreSql_14_Dialect.class);
             good("PostgreSQL", 15.0, 16.0, "", connectionUrl, null, PostgreSql_15_Dialect.class);
             good("PostgreSQL", 16.0, 17.0, "", connectionUrl, null, PostgreSql_16_Dialect.class);
-            good("PostgreSQL", 17.0, 18.0, "", connectionUrl, null, PostgreSql_16_Dialect.class);
+            good("PostgreSQL", 17.0, 18.0, "", connectionUrl, null, PostgreSql_17_Dialect.class);
+            good("PostgreSQL", 18.0, 19.0, "", connectionUrl, null, PostgreSql_17_Dialect.class);
         }
     }
 

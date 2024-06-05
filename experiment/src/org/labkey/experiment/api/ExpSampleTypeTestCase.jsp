@@ -538,6 +538,7 @@ public void testBlankRows() throws Exception
 
     allSamples = st.getSamples(c);
     assertEquals("Expected 3 total samples", 3, allSamples.size());
+    assertEquals(0, allSamples.get(0).getAliquotCount());
 
     //
     // insert as if we pasted a tsv in the "upload samples" page -- blank rows should be skipped
@@ -558,6 +559,7 @@ public void testBlankRows() throws Exception
         throw errors;
 
     assertEquals("Expected to insert 2 samples, got: " + insertedRows.size(), 2, insertedRows.size());
+    assertEquals(0, insertedRows.get(0).get("AliquotCount"));
 
     ExpMaterial material1 = ExperimentService.get().getExpMaterial((Integer)insertedRows.get(0).get("rowid"));
     Map<PropertyDescriptor, Object> map = material1.getPropertyValues();
@@ -765,12 +767,14 @@ public void testParentColAndDataInputDerivation() throws Exception
     opts.setDepth(2);
 
     ExpMaterial A = st.getSample(c, "A");
+    assertEquals(0, A.getAliquotCount());
     assertNotNull(A);
     ExpLineage lineage = ExperimentService.get().getLineage(c, user, A, opts);
     assertTrue(lineage.getMaterials().isEmpty());
     assertNull(A.getRunId());
 
     ExpMaterial B = st.getSample(c, "B");
+    assertEquals(0, A.getAliquotCount());
     assertNotNull(B);
     lineage = ExperimentService.get().getLineage(c, user, B, opts);
     assertEquals(1, lineage.getMaterials().size());
@@ -778,12 +782,14 @@ public void testParentColAndDataInputDerivation() throws Exception
     assertNotNull(B.getRunId());
 
     ExpMaterial C = st.getSample(c, "C");
+    assertEquals(0, A.getAliquotCount());
     assertNotNull(C);
     lineage = ExperimentService.get().getLineage(c, user, C, opts);
     assertEquals(1, lineage.getMaterials().size());
     assertTrue("Expected 'C' to be derived from 'B'", lineage.getMaterials().contains(B));
 
     ExpMaterial D = st.getSample(c, "D");
+    assertEquals(0, A.getAliquotCount());
     assertNotNull(D);
     lineage = ExperimentService.get().getLineage(c, user, D, opts);
     assertEquals(2, lineage.getMaterials().size());
@@ -970,6 +976,8 @@ public void testDetailedAuditLog() throws Exception
     Map<String,String> newRecordMap = new CaseInsensitiveHashMap<>(PageFlowUtil.mapFromQueryString(events.get(0).getNewRecordMap()));
     assertEquals("Initial", newRecordMap.get("Measure"));
     assertEquals("1.0", newRecordMap.get("Value"));
+    assertEquals("0", newRecordMap.get("AliquotCount"));
+    assertEquals("0.0", newRecordMap.get("AliquotVolume"));
 
     // UPDATE
     rows.clear(); errors.clear();
@@ -1133,8 +1141,20 @@ public void testInsertOptionUpdate() throws Exception
     assertEquals(count,3);
     var rows = getSampleRows(sampleTypeName);
     assertEquals("S-1", rows.get(0).get("name"));
+    assertEquals(1, rows.get(0).get("aliquotcount"));
+    assertEquals(0.0, rows.get(0).get("aliquotvolume"));
+    assertEquals(0, rows.get(0).get("availablealiquotcount"));
+    assertEquals(0.0, rows.get(0).get("availablealiquotvolume"));
     assertEquals(10, rows.get(1).get("intVal"));
+    assertNull(rows.get(1).get("aliquotcount"));
+    assertNull(rows.get(1).get("aliquotvolume"));
+    assertNull(rows.get(1).get("availablealiquotcount"));
+    assertNull(rows.get(1).get("availablealiquotvolume"));
     assertEquals("b", rows.get(2).get("RequriedCol"));
+    assertEquals(0, rows.get(2).get("aliquotcount"));
+    assertEquals(0.0, rows.get(2).get("aliquotvolume"));
+    assertEquals(0, rows.get(2).get("availablealiquotcount"));
+    assertEquals(0.0, rows.get(2).get("availablealiquotvolume"));
 
     // Update samples using data iterator
     // -- AliquotedFrom is not needed for update
@@ -1152,6 +1172,10 @@ public void testInsertOptionUpdate() throws Exception
     rows = getSampleRows(sampleTypeName);
     // test existing row value is updated
     assertEquals(100, rows.get(0).get("intVal"));
+    assertEquals(1, rows.get(0).get("aliquotcount"));
+    assertEquals(0.0, rows.get(0).get("aliquotvolume"));
+    assertEquals(0, rows.get(0).get("availablealiquotcount"));
+    assertEquals(0.0, rows.get(0).get("availablealiquotvolume"));
     assertEquals(100, rows.get(1).get("intVal"));
     assertEquals("a", rows.get(1).get("RequriedCol")); // absent columns are not blanked out
     final String aliquotedFromLSID = (String) rows.get(1).get("AliquotedFromLSID");
@@ -1159,6 +1183,10 @@ public void testInsertOptionUpdate() throws Exception
     assertEquals(100, rows.get(1).get("intVal"));
     assertEquals(200, rows.get(2).get("intVal"));
     assertEquals("b", rows.get(2).get("RequriedCol")); // absent columns are not blanked out
+    assertEquals(0, rows.get(2).get("aliquotcount"));
+    assertEquals(0.0, rows.get(2).get("aliquotvolume"));
+    assertEquals(0, rows.get(2).get("availablealiquotcount"));
+    assertEquals(0.0, rows.get(2).get("availablealiquotvolume"));
 
     // update a sample that doesn't exist should throw error
     rowsToUpdate = new ArrayList<>();

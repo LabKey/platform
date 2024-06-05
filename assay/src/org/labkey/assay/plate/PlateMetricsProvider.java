@@ -40,7 +40,7 @@ public class PlateMetricsProvider implements UsageMetricsProvider
     {
         SQLFragment sql = plateSetPlatesSQL(plateSetTable, plateTable);
         SQLFragment inner = sql.append(" HAVING COUNT(p.rowId) > ? AND COUNT(p.rowId) < ?").add(above).add(below);
-        return new SQLFragment("SELECT COUNT(*) FROM (").append(inner).append(")");
+        return new SQLFragment("SELECT COUNT(*) FROM (").append(inner).append(") as pc");
     }
 
     private Long plateSetPlatesCountBetween(DbSchema schema, TableInfo plateSetTable, TableInfo plateTable, int above, int below)
@@ -157,7 +157,7 @@ public class PlateMetricsProvider implements UsageMetricsProvider
         Long assayPlateSetCount = new SqlSelector(schema.getSchema(), new SQLFragment("SELECT COUNT(*) FROM ").append(plateSetTable, "ps").append(" WHERE type =?").add(PlateSetType.assay)).getObject(Long.class);
         Long standAlonePlateSetCount = new SqlSelector(schema.getSchema(), new SQLFragment("SELECT COUNT(*) FROM ").append(plateSetTable, "ps").append(" WHERE type =?").add(PlateSetType.assay).append(" AND rootplatesetid IS NULL")).getObject(Long.class);
         SQLFragment plateSetNoPlates = plateSetPlatesSQL(plateSetTable, plateTable).append(" HAVING COUNT(p.rowId) = ?").add(0);
-        Long plateSetNoPlatesCount = new SqlSelector(schema.getSchema(), new SQLFragment("SELECT COUNT(*) FROM (").append(plateSetNoPlates).append(")")).getObject(Long.class);
+        Long plateSetNoPlatesCount = new SqlSelector(schema.getSchema(), new SQLFragment("SELECT COUNT(*) FROM (").append(plateSetNoPlates).append(") as np")).getObject(Long.class);
 
         plateMetrics.put("plateSets", Map.of(
                 "plateSetCount", plateSetCount,
@@ -175,7 +175,7 @@ public class PlateMetricsProvider implements UsageMetricsProvider
         TableInfo wellTable = schema.getTableInfoWell();
         plateMetrics.put("plates", Map.of(
                 "platesCount", platesCount,
-                "distinctPlatedSamples", new SqlSelector(schema.getSchema(), new SQLFragment("SELECT COUNT(*) FROM (SELECT DISTINCT sampleId FROM ").append(wellTable, "w").append(" WHERE sampleId IS NOT NULL)")).getObject(Long.class),
+                "distinctPlatedSamples", new SqlSelector(schema.getSchema(), new SQLFragment("SELECT COUNT(*) FROM (SELECT DISTINCT sampleId FROM ").append(wellTable, "w").append(" WHERE sampleId IS NOT NULL) as ds")).getObject(Long.class),
                 "12WellCount", plateTypeCount(schema.getSchema(), plateTable, plateTypeTable, 4, 3),
                 "24WellCount", plateTypeCount(schema.getSchema(), plateTable, plateTypeTable, 6, 4),
                 "48WellCount", plateTypeCount(schema.getSchema(), plateTable, plateTypeTable, 8, 6),

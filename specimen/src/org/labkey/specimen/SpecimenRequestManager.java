@@ -32,13 +32,9 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.specimen.SpecimenManagerNew;
 import org.labkey.api.specimen.SpecimenQuerySchema;
-import org.labkey.api.specimen.SpecimenRequestException;
-import org.labkey.api.specimen.SpecimenRequestStatus;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
-import org.labkey.api.specimen.importer.RequestabilityManager;
 import org.labkey.api.specimen.importer.RollupHelper;
 import org.labkey.api.specimen.importer.RollupInstance;
 import org.labkey.api.specimen.importer.VialSpecimenRollup;
@@ -54,6 +50,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ReentrantLockWithName;
 import org.labkey.api.view.ActionURL;
+import org.labkey.specimen.importer.RequestabilityManager;
 import org.labkey.specimen.model.SpecimenRequestEvent;
 import org.labkey.specimen.requirements.SpecimenRequest;
 import org.labkey.specimen.requirements.SpecimenRequestRequirement;
@@ -72,6 +69,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -99,7 +97,7 @@ public class SpecimenRequestManager
 
     public List<SpecimenRequestStatus> getRequestStatuses(Container c, User user)
     {
-        List<SpecimenRequestStatus> statuses = _requestStatusHelper.get(c, "SortOrder");
+        List<SpecimenRequestStatus> statuses = _requestStatusHelper.getList(c, "SortOrder");
         // if the 'not-yet-submitted' status doesn't exist, create it here, with sort order -1,
         // so it's always first.
         if (statuses == null || statuses.isEmpty() || statuses.get(0).getSortOrder() != -1)
@@ -113,8 +111,9 @@ public class SpecimenRequestManager
             try (var ignore = SpringActionController.ignoreSqlUpdates())
             {
                 Table.insert(user, _requestStatusHelper.getTableInfo(), notYetSubmittedStatus);
+                _requestStatusHelper.clearCache(c);
             }
-            statuses = _requestStatusHelper.get(c, "SortOrder");
+            statuses = _requestStatusHelper.getList(c, "SortOrder");
         }
         return statuses;
     }
@@ -157,16 +156,11 @@ public class SpecimenRequestManager
 
     public Set<Integer> getRequestStatusIdsInUse(Container c)
     {
-        List<SpecimenRequest> requests = _requestHelper.get(c);
+        List<SpecimenRequest> requests = _requestHelper.getList(c);
         Set<Integer> uniqueStatuses = new HashSet<>();
         for (SpecimenRequest request : requests)
             uniqueStatuses.add(request.getStatusId());
         return uniqueStatuses;
-    }
-
-    public List<SpecimenRequestEvent> getRequestEvents(Container c)
-    {
-        return _requestEventHelper.get(c);
     }
 
     public SpecimenRequestEvent getRequestEvent(Container c, int rowId)
@@ -303,7 +297,7 @@ public class SpecimenRequestManager
         String parentObjectLsid = getRequestInputObjectLsid(container);
         Map<String,ObjectProperty> resourceProperties = OntologyManager.getPropertyObjects(container, parentObjectLsid);
         SpecimenRequestInput[] inputs = new SpecimenRequestInput[0];
-        if (resourceProperties == null || resourceProperties.size() == 0)
+        if (resourceProperties == null || resourceProperties.isEmpty())
         {
             if (createIfMissing)
             {
@@ -429,10 +423,7 @@ public class SpecimenRequestManager
 
     private String getSafeString(String str)
     {
-        if (str == null)
-            return "";
-        else
-            return str;
+        return Objects.requireNonNullElse(str, "");
     }
 
     public void createRequestStatus(User user, SpecimenRequestStatus status)
@@ -467,11 +458,6 @@ public class SpecimenRequestManager
         if (createEvent)
             createRequestEvent(user, requirement, RequestEventType.REQUIREMENT_REMOVED, requirement.getRequirementSummary(), null);
         requirement.delete();
-    }
-
-    public void createRequestRequirement(User user, SpecimenRequestRequirement requirement, boolean createEvent) throws AttachmentService.DuplicateFilenameException
-    {
-        createRequestRequirement(user, requirement, createEvent, false);
     }
 
     public void createRequestRequirement(User user, SpecimenRequestRequirement requirement, boolean createEvent, boolean force) throws AttachmentService.DuplicateFilenameException
@@ -547,7 +533,7 @@ public class SpecimenRequestManager
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Hidden"), Boolean.FALSE);
         if (user != null)
             filter.addCondition(FieldKey.fromParts("CreatedBy"), user.getUserId());
-        return _requestHelper.get(c, filter, "-Created");
+        return _requestHelper.getList(c, filter, "-Created");
     }
 
     public SpecimenRequest getRequest(Container c, int rowId)
@@ -572,7 +558,7 @@ public class SpecimenRequestManager
 
             // update specimen states
             List<Vial> vials = request.getVials();
-            if (vials.size() > 0)
+            if (!vials.isEmpty())
             {
                 SpecimenRequestStatus status = getRequestStatus(request.getContainer(), request.getStatusId());
                 updateSpecimenStatus(vials, user, status.isSpecimensLocked());
@@ -586,7 +572,7 @@ public class SpecimenRequestManager
     public void createRequestSpecimenMapping(User user, SpecimenRequest request, List<Vial> vials, boolean createEvents, boolean createRequirements)
             throws RequestabilityManager.InvalidRuleException, AttachmentService.DuplicateFilenameException, SpecimenRequestException
     {
-        if (vials == null || vials.size() == 0)
+        if (vials == null || vials.isEmpty())
             return;
 
         DbScope scope = SpecimenSchema.get().getScope();
@@ -633,13 +619,13 @@ public class SpecimenRequestManager
             Table.update(user, SpecimenSchema.get().getTableInfoVial(vial.getContainer()), vial.getRowMap(), vial.getRowId());
         }
         updateRequestabilityAndCounts(vials, user);
-        if (vials.size() > 0)
+        if (!vials.isEmpty())
             clearCaches(getContainer(vials));
     }
 
     private void updateRequestabilityAndCounts(List<Vial> vials, User user) throws RequestabilityManager.InvalidRuleException
     {
-        if (vials.size() == 0)
+        if (vials.isEmpty())
             return;
         Container container = getContainer(vials);
 
@@ -748,7 +734,7 @@ public class SpecimenRequestManager
 
         updateSql.append("\tFROM ").append(tableInfoVialSelectName).append("\n");
 
-        if (vials != null && vials.size() > 0)
+        if (vials != null && !vials.isEmpty())
         {
             Set<Long> specimenIds = new HashSet<>();
             for (Vial vial : vials)
@@ -789,7 +775,22 @@ public class SpecimenRequestManager
         clearGroupedValuesForColumn(c);
     }
 
-    private static class GroupedValueColumnHelper
+    void clearRequestStatusHelper(Container c)
+    {
+        _requestStatusHelper.clearCache(c);
+    }
+
+    void clearRequestHelper(Container c)
+    {
+        _requestHelper.clearCache(c);
+    }
+
+    void clearRequestEventHelper(Container c)
+    {
+        _requestEventHelper.clearCache(c);
+    }
+
+    public static class GroupedValueColumnHelper
     {
         private final String _viewColumnName;
         private final String _sqlColumnName;
@@ -804,24 +805,9 @@ public class SpecimenRequestManager
             _joinColumnName = joinColumnName;
         }
 
-        public String getViewColumnName()
-        {
-            return _viewColumnName;
-        }
-
-        public String getSqlColumnName()
-        {
-            return _sqlColumnName;
-        }
-
         public String getUrlFilterName()
         {
             return _urlFilterName;
-        }
-
-        public String getJoinColumnName()
-        {
-            return _joinColumnName;
         }
 
         public FieldKey getFieldKey()
@@ -1145,11 +1131,11 @@ public class SpecimenRequestManager
     public void deleteRequestSpecimenMappings(User user, SpecimenRequest request, List<Long> vialIds, boolean createEvents)
             throws RequestabilityManager.InvalidRuleException, AttachmentService.DuplicateFilenameException
     {
-        if (vialIds == null || vialIds.size() == 0)
+        if (vialIds == null || vialIds.isEmpty())
             return;
 
         Set<Long> vialRowIds = new HashSet<>(vialIds);
-        List<Vial> vials = SpecimenManagerNew.get().getVials(request.getContainer(), user, vialRowIds);
+        List<Vial> vials = SpecimenManager.get().getVials(request.getContainer(), user, vialRowIds);
         List<String> globalUniqueIds = new ArrayList<>(vials.size());
         List<String> descriptions = new ArrayList<>();
         for (Vial vial : vials)
@@ -1232,7 +1218,7 @@ public class SpecimenRequestManager
     private void deleteRequestEvents(SpecimenRequest request)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RequestId"), request.getRowId());
-        List<SpecimenRequestEvent> events = _requestEventHelper.get(request.getContainer(), filter);
+        List<SpecimenRequestEvent> events = _requestEventHelper.getList(request.getContainer(), filter);
         for (SpecimenRequestEvent event : events)
         {
             AttachmentService.get().deleteAttachments(event);
@@ -1242,7 +1228,7 @@ public class SpecimenRequestManager
 
     public RequestedSpecimens getRequestableBySpecimenHash(Container c, User user, Set<String> formValues, Integer preferredLocation) throws AmbiguousLocationException
     {
-        Map<String, List<Vial>> vialsByHash = SpecimenManagerNew.get().getVialsForSpecimenHashes(c, user, formValues, true);
+        Map<String, List<Vial>> vialsByHash = SpecimenManager.get().getVialsForSpecimenHashes(c, user, formValues, true);
 
         if (vialsByHash == null || vialsByHash.isEmpty())
             return new RequestedSpecimens(Collections.emptyList());

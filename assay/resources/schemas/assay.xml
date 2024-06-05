@@ -90,6 +90,8 @@
       </column>
       <column columnName="Template">
         <description>Boolean indicating whether each plate is a template versus an uploaded instance of a plate template.</description>
+        <isHidden>true</isHidden>
+        <isUserEditable>false</isUserEditable>
         <shownInUpdateView>false</shownInUpdateView>
       </column>
       <column columnName="DataFileId">
@@ -98,6 +100,90 @@
       </column>
       <column columnName="AssayType">
         <description>A text label of the plate assay type ("NAb", for example).</description>
+      </column>
+      <column columnName="Archived">
+        <isHidden>true</isHidden>
+        <isUserEditable>false</isUserEditable>
+      </column>
+    </columns>
+  </table>
+  <table tableName="PlateProperty" tableDbType="TABLE">
+    <columns>
+      <column columnName="RowId"/>
+      <column columnName="PlateId"/>
+      <column columnName="PropertyURI"/>
+      <column columnName="PropertyId"/>
+    </columns>
+  </table>
+  <table tableName="PlateSet" tableDbType="TABLE">
+    <description>Contains one row per plate set.</description>
+    <columns>
+      <column columnName="RowId"/>
+      <column columnName="Name"/>
+      <column columnName="Description"/>
+      <column columnName="PlateSetId">
+        <columnTitle>Plate Set ID</columnTitle>
+        <isUserEditable>false</isUserEditable>
+      </column>
+      <column columnName="Container"/>
+      <column columnName="CreatedBy"/>
+      <column columnName="Created"/>
+      <column columnName="ModifiedBy"/>
+      <column columnName="Modified"/>
+      <column columnName="Archived"/>
+      <column columnName="Type"/>
+      <column columnName="PrimaryPlateSetId">
+        <description>
+          The nearest parent "primary" plate set in this plate set's lineage. When blank it means the plate set does
+          not participate in a lineage (a.k.a. stand-alone plate set).
+        </description>
+        <isHidden>true</isHidden>
+      </column>
+      <column columnName="RootPlateSetId">
+        <description>
+          The root (a.k.a. top-level) plate set that this plate set is derived from. All plate sets in a lineage
+          share the same RootPlateSetId. When blank it means the plate set does not participate in a lineage
+          (a.k.a stand-alone plate set). For top-level "primary" plate sets this will always refer to itself.
+        </description>
+        <isHidden>true</isHidden>
+      </column>
+      <column columnName="Template">
+        <isHidden>true</isHidden>
+        <isUserEditable>false</isUserEditable>
+      </column>
+    </columns>
+  </table>
+  <table tableName="PlateType" tableDbType="TABLE">
+    <description>Contains one row per plate type.</description>
+    <columns>
+      <column columnName="RowId">
+        <isHidden>true</isHidden>
+      </column>
+      <column columnName="Rows"/>
+      <column columnName="Columns"/>
+      <column columnName="Description"/>
+      <column columnName="Archived"/>
+    </columns>
+  </table>
+  <table tableName="PlateSetEdge" tableDbType="TABLE">
+    <description>Contains one row per relationship between two plate sets.</description>
+    <columns>
+      <column columnName="FromPlateSetId"/>
+      <column columnName="ToPlateSetId"/>
+      <column columnName="RootPlateSetId"/>
+    </columns>
+  </table>
+  <table tableName="Hit" tableDbType="TABLE">
+    <description>Contains one row per hit assay result.</description>
+    <columns>
+      <column columnName="Container"/>
+      <column columnName="ProtocolId"/>
+      <column columnName="ResultId"/>
+      <column columnName="RowId"/>
+      <column columnName="RunId"/>
+      <column columnName="WellLsid"/>
+      <column columnName="PlateSetPath">
+        <isHidden>true</isHidden>
       </column>
     </columns>
   </table>
@@ -155,95 +241,25 @@
       </column>
       <column columnName="TypeName">
         <columnTitle>Type</columnTitle>
-        <description>The type of each well group.  For example, "CONTROL", "REPLICATE", or "SPECIMEN".</description>
+        <description>The type of each well group.  For example, "CONTROL", "REPLICATE", or "SAMPLE".</description>
+        <fk>
+          <fkDbSchema>plate</fkDbSchema>
+          <fkTable>WellGroupType</fkTable>
+          <fkColumnName>Value</fkColumnName>
+          <fkDisplayColumnName>Label</fkDisplayColumnName>
+        </fk>
       </column>
       <column columnName="Template">
         <description>Boolean indicating whether each well group is part of a plate template (versus a plate instance).</description>
       </column>
     </columns>
   </table>
-  <table tableName="wellGroupPositions" tableDbType="TABLE">
+  <table tableName="WellGroupPositions" tableDbType="TABLE">
     <description>Contains well to well group association.</description>
     <columns>
       <column columnName="RowId"/>
       <column columnName="WellId"/>
       <column columnName="WellGroupId"/>
-    </columns>
-  </table>
-  <table tableName="PlateProperty" tableDbType="TABLE">
-    <columns>
-      <column columnName="RowId"/>
-      <column columnName="PlateId"/>
-      <column columnName="PropertyURI"/>
-      <column columnName="PropertyId"/>
-    </columns>
-  </table>
-  <table tableName="PlateSet" tableDbType="TABLE">
-    <description>Contains one row per plate set.</description>
-    <columns>
-      <column columnName="RowId"/>
-      <column columnName="Name"/>
-      <column columnName="Description"/>
-      <column columnName="PlateSetId">
-        <columnTitle>Plate Set ID</columnTitle>
-        <isUserEditable>false</isUserEditable>
-      </column>
-      <column columnName="Container"/>
-      <column columnName="CreatedBy"/>
-      <column columnName="Created"/>
-      <column columnName="ModifiedBy"/>
-      <column columnName="Modified"/>
-      <column columnName="Archived"/>
-      <column columnName="Type"/>
-      <column columnName="PrimaryPlateSetId">
-        <description>
-          The nearest parent "primary" plate set in this plate set's lineage. When blank it means the plate set does
-          not participate in a lineage (a.k.a. stand-alone plate set).
-        </description>
-        <isHidden>true</isHidden>
-      </column>
-      <column columnName="RootPlateSetId">
-        <description>
-          The root (a.k.a. top-level) plate set that this plate set is derived from. All plate sets in a lineage
-          share the same RootPlateSetId. When blank it means the plate set does not participate in a lineage
-          (a.k.a stand-alone plate set). For top-level "primary" plate sets this will always refer to itself.
-        </description>
-        <isHidden>true</isHidden>
-      </column>
-    </columns>
-  </table>
-  <table tableName="PlateType" tableDbType="TABLE">
-    <description>Contains one row per plate type.</description>
-    <columns>
-      <column columnName="RowId">
-        <isHidden>true</isHidden>
-      </column>
-      <column columnName="Rows"/>
-      <column columnName="Columns"/>
-      <column columnName="Description"/>
-      <column columnName="Archived"/>
-    </columns>
-  </table>
-  <table tableName="PlateSetEdge" tableDbType="TABLE">
-    <description>Contains one row per relationship between two plate sets.</description>
-    <columns>
-      <column columnName="FromPlateSetId"/>
-      <column columnName="ToPlateSetId"/>
-      <column columnName="RootPlateSetId"/>
-    </columns>
-  </table>
-  <table tableName="Hit" tableDbType="TABLE">
-    <description>Contains one row per hit assay result.</description>
-    <columns>
-      <column columnName="Container"/>
-      <column columnName="ProtocolId"/>
-      <column columnName="ResultId"/>
-      <column columnName="RowId"/>
-      <column columnName="RunId"/>
-      <column columnName="WellLsid"/>
-      <column columnName="PlateSetPath">
-        <isHidden>true</isHidden>
-      </column>
     </columns>
   </table>
 </tables>

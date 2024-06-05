@@ -16,6 +16,8 @@
 
 package org.labkey.study.controllers;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -165,7 +167,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.specimen.SpecimenManager;
-import org.labkey.api.specimen.importer.RequestabilityManager;
+import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.study.CohortFilter;
@@ -289,6 +291,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
@@ -299,10 +303,6 @@ import static org.labkey.study.model.QCStateSet.getQCUrlFilterValue;
 import static org.labkey.study.model.QCStateSet.selectedQCStateLabelFromUrl;
 import static org.labkey.study.query.DatasetQueryView.EXPERIMENTAL_ALLOW_MERGE_WITH_MANAGED_KEYS;
 
-/**
- * User: Karl Lum
- * Date: Nov 28, 2007
- */
 public class StudyController extends BaseStudyController
 {
     private static final Logger _log = LogManager.getLogger(StudyController.class);
@@ -366,7 +366,7 @@ public class StudyController extends BaseStudyController
         @Override
         public ActionURL getDatasetURL(Container container, int datasetId)
         {
-            return new ActionURL(DatasetAction.class, container).addParameter(Dataset.DATASETKEY, datasetId);
+            return new ActionURL(DatasetAction.class, container).addParameter(Dataset.DATASET_KEY, datasetId);
         }
 
         @Override
@@ -473,7 +473,7 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class BeginAction extends SimpleViewAction
+    public class BeginAction extends SimpleViewAction<Object>
     {
         private Study _study;
 
@@ -697,8 +697,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-
-    static class QueryReportForm extends QueryViewAction.QueryExportForm
+    public static class QueryReportForm extends QueryViewAction.QueryExportForm
     {
         ReportIdentifier _reportId;
 
@@ -794,14 +793,14 @@ public class StudyController extends BaseStudyController
                 return HttpView.redirect(createRedirectURLfrom(DatasetAction.class, context));
             }
 
-            int datasetId = NumberUtils.toInt((String)context.get(Dataset.DATASETKEY), -1);
+            int datasetId = NumberUtils.toInt((String)context.get(Dataset.DATASET_KEY), -1);
             Dataset def = StudyManager.getInstance().getDatasetDefinition(getStudyRedirectIfNull(), datasetId);
 
             if (def != null)
             {
                 ActionURL url = getViewContext().cloneActionURL().setAction(StudyController.DatasetAction.class).
                                         replaceParameter(DATASET_REPORT_ID_PARAMETER_NAME, report.getDescriptor().getReportId().toString()).
-                                        replaceParameter(Dataset.DATASETKEY, def.getDatasetId());
+                                        replaceParameter(Dataset.DATASET_KEY, def.getDatasetId());
 
                 return HttpView.redirect(url);
             }
@@ -821,8 +820,6 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(ReadPermission.class)
     public class DatasetAction extends QueryViewAction<DatasetFilterForm, QueryView>
     {
-        private CohortFilter _cohortFilter;
-        private int _visitId;
         private DatasetDefinition _def;
 
         public DatasetAction()
@@ -834,11 +831,10 @@ public class StudyController extends BaseStudyController
         {
             if (null == _def)
             {
-                Object datasetKeyObject = getViewContext().get(Dataset.DATASETKEY);
-                if (datasetKeyObject instanceof List)
+                Object datasetKeyObject = getViewContext().get(Dataset.DATASET_KEY);
+                if (datasetKeyObject instanceof List<?> list)
                 {
                     // bug 7365: It's been specified twice -- once in the POST, once in the GET. Just need one of them.
-                    List<?> list = (List<?>)datasetKeyObject;
                     datasetKeyObject = list.get(0);
                 }
                 if (null != datasetKeyObject)
@@ -871,7 +867,6 @@ public class StudyController extends BaseStudyController
             ActionURL url = getViewContext().getActionURL();
             String viewName = url.getParameter(DATASET_VIEW_NAME_PARAMETER_NAME);
 
-
             // if the view name refers to a report id (legacy style), redirect to use the newer report id parameter
             if (NumberUtils.isDigits(viewName))
             {
@@ -898,28 +893,19 @@ public class StudyController extends BaseStudyController
         {
             // the full resultset is a join of all datasets for each participant
             // each dataset is determined by a visitid/datasetid
-            Study study = getStudyRedirectIfNull();
+
+            // Ensure a study is present
+            getStudyRedirectIfNull();
             ViewContext context = getViewContext();
 
             String export = StringUtils.trimToNull(context.getActionURL().getParameter("export"));
 
-            String viewName = (String)context.get(DATASET_VIEW_NAME_PARAMETER_NAME);
             DatasetDefinition def = getDatasetDefinition();
             if (null == def)
                 return new TypeNotFoundAction().getView(form, errors);
             String typeURI = def.getTypeURI();
             if (null == typeURI)
                 return new TypeNotFoundAction().getView(form, errors);
-
-            _visitId = NumberUtils.toInt((String)context.get(VisitImpl.VISITKEY), 0);
-            VisitImpl visit;
-            if (_visitId != 0)
-            {
-                assert study.getTimepointType() != TimepointType.CONTINUOUS;
-                visit = StudyManager.getInstance().getVisitForRowId(study, _visitId);
-                if (null == visit)
-                    throw new NotFoundException();
-            }
 
             boolean showEditLinks = !QueryService.get().isQuerySnapshot(getContainer(), StudySchema.getInstance().getSchemaName(), def.getName()) &&
                 !def.isPublishedData();
@@ -930,24 +916,22 @@ public class StudyController extends BaseStudyController
             settings.setShowEditLinks(showEditLinks);
             settings.setShowSourceLinks(true);
 
-            QueryView queryView = schema.createView(getViewContext(), settings, errors);
-            if (queryView instanceof StudyQueryView)
-                _cohortFilter = ((StudyQueryView)queryView).getCohortFilter();
-
             final ActionURL url = context.getActionURL();
 
             // clear the property map cache and the sort map cache
             getParticipantPropsMap(context).clear();
             getDatasetSortColumnMap(context).clear();
 
+            QueryView queryView = schema.createView(getViewContext(), settings, errors);
             final TableInfo table = queryView.getTable();
             if (table != null)
             {
                 setColumnURL(url, queryView, schema, def);
 
-                // Clear any cached participant lists, since the filter/sort may have changed
-                String qcParam = QCStateSet.getQCParameter(DatasetQueryView.DATAREGION, url);
-                removeParticipantListFromCache(context, def.getDatasetId(), viewName, _cohortFilter, qcParam != null ? url.getParameter(qcParam) : null);
+                // Clear any cached participant lists... not really necessary, since the cache key is now the entire
+                // query string (including all filters & sorts), but it doesn't really hurt. List is regenerated only if
+                // user navigates to an individual participant.
+                removeParticipantListFromSession(context);
                 getExpandedState(context, def.getDatasetId()).clear();
             }
 
@@ -963,8 +947,9 @@ public class StudyController extends BaseStudyController
             HtmlStringBuilder sb = HtmlStringBuilder.of();
             if (def.getDescription() != null && !def.getDescription().isEmpty())
                 sb.unsafeAppend(PageFlowUtil.filter(def.getDescription(), true, true)).unsafeAppend("<br/>");
-            if (_cohortFilter != null)
-                sb.unsafeAppend("<br/><span><b>Cohort :</b> ").append(_cohortFilter.getDescription(getContainer(), getUser())).unsafeAppend("</span>");
+            CohortFilter cohortFilter = queryView instanceof StudyQueryView studyQueryView ? studyQueryView.getCohortFilter() : null;
+            if (cohortFilter != null)
+                sb.unsafeAppend("<br/><span><b>Cohort:</b> ").append(cohortFilter.getDescription(getContainer(), getUser())).unsafeAppend("</span>");
 
             if (QCStateManager.getInstance().showStates(getContainer()))
             {
@@ -1055,10 +1040,9 @@ public class StudyController extends BaseStudyController
         public void addNavTrail(NavTree root)
         {
             setHelpTopic("gridBasics");
-            _addNavTrail(root, getDatasetDefinition().getDatasetId(), _visitId, _cohortFilter);
+            _addNavTrail(root, getDatasetDefinition().getDatasetId(), getViewContext().getActionURL());
         }
     }
-
 
     @RequiresNoPermission
     public static class ExpandStateNotifyAction extends SimpleViewAction
@@ -1068,7 +1052,7 @@ public class StudyController extends BaseStudyController
         {
             final ActionURL url = getViewContext().getActionURL();
             final String collapse = url.getParameter("collapse");
-            final int datasetId = NumberUtils.toInt(url.getParameter(Dataset.DATASETKEY), -1);
+            final int datasetId = NumberUtils.toInt(url.getParameter(Dataset.DATASET_KEY), -1);
             final int id = NumberUtils.toInt(url.getParameter("id"), -1);
 
             if (datasetId != -1 && id != -1)
@@ -1108,12 +1092,10 @@ public class StudyController extends BaseStudyController
         return participant;
     }
 
-
     @RequiresPermission(ReadPermission.class)
     public class ParticipantAction extends SimpleViewAction<ParticipantForm>
     {
         private ParticipantForm _bean;
-        private CohortFilter _cohortFilter;
 
         @Override
         public ModelAndView getView(ParticipantForm form, BindException errors)
@@ -1128,7 +1110,7 @@ public class StudyController extends BaseStudyController
                 throw new NotFoundException("No " + study.getSubjectNounSingular() + " specified");
             }
 
-            Participant participant = null;
+            Participant participant;
             try
             {
                 participant = findParticipant(study, form.getParticipantId());
@@ -1142,38 +1124,32 @@ public class StudyController extends BaseStudyController
 
             String viewName = (String) getViewContext().get(DATASET_VIEW_NAME_PARAMETER_NAME);
 
-            _cohortFilter = CohortFilterFactory.getFromURL(getContainer(), getUser(), getViewContext().getActionURL(), DatasetQueryView.DATAREGION);
+            CohortFilter cohortFilter = CohortFilterFactory.getFromURL(getContainer(), getUser(), getViewContext().getActionURL(), DatasetQueryView.DATAREGION);
             // display the next and previous buttons only if we have a cached participant index
-            if (_cohortFilter != null && !StudyManager.getInstance().showCohorts(getContainer(), getUser()))
+            if (cohortFilter != null && !StudyManager.getInstance().showCohorts(getContainer(), getUser()))
                 throw new UnauthorizedException("User does not have permission to view cohort information");
 
-            final ActionURL url = getViewContext().getActionURL();
-            String qcParam = QCStateSet.getQCParameter(DatasetQueryView.DATAREGION, url);
-            List<String> participants = getParticipantListFromCache(getViewContext(), form.getDatasetId(), viewName,
-                    _cohortFilter, qcParam != null ? url.getParameter(qcParam) : null);
+            List<String> participants = getParticipantListFromSession(getViewContext(), form.getDatasetId(), viewName);
 
-            if (participants != null)
+            if (isDebug())
             {
-                if (isDebug())
+                _log.info("Cached participants: {}", participants);
+            }
+            int idx = participants.indexOf(form.getParticipantId());
+            if (idx != -1)
+            {
+                if (idx > 0)
                 {
-                    _log.info("Cached participants: " + participants);
+                    final String ptid = participants.get(idx-1);
+                    previousParticipantURL = getViewContext().cloneActionURL();
+                    previousParticipantURL.replaceParameter("participantId", ptid);
                 }
-                int idx = participants.indexOf(form.getParticipantId());
-                if (idx != -1)
-                {
-                    if (idx > 0)
-                    {
-                        final String ptid = participants.get(idx-1);
-                        previousParticipantURL = getViewContext().cloneActionURL();
-                        previousParticipantURL.replaceParameter("participantId", ptid);
-                    }
 
-                    if (idx < participants.size()-1)
-                    {
-                        final String ptid = participants.get(idx+1);
-                        nextParticipantURL = getViewContext().cloneActionURL();
-                        nextParticipantURL.replaceParameter("participantId", ptid);
-                    }
+                if (idx < participants.size()-1)
+                {
+                    final String ptid = participants.get(idx+1);
+                    nextParticipantURL = getViewContext().cloneActionURL();
+                    nextParticipantURL.replaceParameter("participantId", ptid);
                 }
             }
 
@@ -1201,11 +1177,10 @@ public class StudyController extends BaseStudyController
         public void addNavTrail(NavTree root)
         {
             setHelpTopic("participantViews");
-            _addNavTrail(root, _bean.getDatasetId(), 0, _cohortFilter);
+            _addNavTrail(root, _bean.getDatasetId(), _bean.getReturnActionURL());
             root.addChild(StudyService.get().getSubjectNounSingular(getContainer()) + " - " + id(_bean.getParticipantId()));
         }
     }
-
 
     public static class Participant2Form
     {
@@ -1449,7 +1424,7 @@ public class StudyController extends BaseStudyController
             study.setSubjectColumnName(form.getSubjectColumnName());
             study.setAssayPlan(form.getAssayPlan());
             study.setDescription(form.getDescription());
-            study.setDefaultTimepointDuration(form.getDefaultTimepointDuration() < 1 ? 1 : form.getDefaultTimepointDuration());
+            study.setDefaultTimepointDuration(Math.max(form.getDefaultTimepointDuration(), 1));
             if (form.getDescriptionRendererType() != null)
                 study.setDescriptionRendererType(form.getDescriptionRendererType());
             study.setGrant(form.getGrant());
@@ -1468,7 +1443,9 @@ public class StudyController extends BaseStudyController
             }
 
             study = StudyManager.getInstance().createStudy(user, study);
-            RequestabilityManager.getInstance().setDefaultRules(c, user);
+            SpecimenMigrationService sms = SpecimenMigrationService.get();
+            if (null != sms)
+                sms.setDefaultRequestabilityRules(c, user);
         }
         return study;
     }
@@ -2590,7 +2567,7 @@ public class StudyController extends BaseStudyController
         public ActionURL getSuccessURL(ImportDatasetForm form)
         {
             ActionURL url = new ActionURL(DatasetAction.class, getContainer()).
-                    addParameter(Dataset.DATASETKEY, form.getDatasetId());
+                    addParameter(Dataset.DATASET_KEY, form.getDatasetId());
             return url;
         }
 
@@ -2599,7 +2576,7 @@ public class StudyController extends BaseStudyController
         {
             root.addChild(_study.getLabel(), new ActionURL(BeginAction.class, getContainer()));
             ActionURL datasetURL = new ActionURL(DatasetAction.class, getContainer()).
-                    addParameter(Dataset.DATASETKEY, _form.getDatasetId());
+                    addParameter(Dataset.DATASET_KEY, _form.getDatasetId());
             root.addChild(_def.getName(), datasetURL);
             root.addChild("Import Data");
         }
@@ -2732,7 +2709,7 @@ public class StudyController extends BaseStudyController
             SimpleFilter filter = SimpleFilter.createContainerFilter(getContainer());
             if (form.getId() != 0)
             {
-                filter.addCondition(Dataset.DATASETKEY, form.getId());
+                filter.addCondition(Dataset.DATASET_KEY, form.getId());
                 DatasetDefinition dsd = StudyManager.getInstance().getDatasetDefinition(getStudyRedirectIfNull(), form.getId());
                 if (dsd != null)
                     _datasetLabel = dsd.getLabel();
@@ -2999,7 +2976,7 @@ public class StudyController extends BaseStudyController
         public ActionURL getSuccessURL(DeleteDatasetRowsForm form)
         {
             return new ActionURL(DatasetAction.class, getContainer()).
-                    addParameter(Dataset.DATASETKEY, form.getDatasetId());
+                    addParameter(Dataset.DATASET_KEY, form.getDatasetId());
         }
     }
 
@@ -3092,7 +3069,7 @@ public class StudyController extends BaseStudyController
         public ActionURL getSuccessURL(DeleteDatasetRowsForm form)
         {
             return new ActionURL(DatasetAction.class, getContainer()).
-                    addParameter(Dataset.DATASETKEY, form.getDatasetId());
+                    addParameter(Dataset.DATASET_KEY, form.getDatasetId());
         }
     }
 
@@ -3128,19 +3105,17 @@ public class StudyController extends BaseStudyController
 
         // push any filter, sort params, and viewname
         ActionURL base = new ActionURL(ParticipantAction.class, querySchema.getContainer());
-        base.addParameter(Dataset.DATASETKEY, Integer.toString(def.getDatasetId()));
+        base.addParameter(Dataset.DATASET_KEY, Integer.toString(def.getDatasetId()));
         for (Pair<String, String> param : url.getParameters())
         {
             if ((param.getKey().contains(".sort")) ||
                 (param.getKey().contains("~")) ||
-//                (CohortFilterFactory.isCohortFilterParameterName(param.getKey(), queryView.getDataRegionName())) ||
                 (DATASET_VIEW_NAME_PARAMETER_NAME.equals(param.getKey())))
             {
                 base.addParameter(param.getKey(), param.getValue());
             }
         }
-        if (queryView instanceof StudyQueryView && null != ((StudyQueryView)queryView).getCohortFilter())
-            ((StudyQueryView)queryView).getCohortFilter().addURLParameters(getStudyThrowIfNull(), base, null);
+        base.addReturnURL(url); // Set current URL so participant page can navigate back (nav trail)
 
         for (DisplayColumn col : columns)
         {
@@ -3154,14 +3129,6 @@ public class StudyController extends BaseStudyController
                 col.setURLExpression(dets);
             }
         }
-    }
-
-    private boolean hasSourceLsids(TableInfo datasetTable)
-    {
-        SimpleFilter sourceLsidFilter = new SimpleFilter();
-        sourceLsidFilter.addCondition(FieldKey.fromParts("SourceLsid"), null, CompareType.NONBLANK);
-
-        return new TableSelector(datasetTable, Collections.singleton("SourceLsid"), sourceLsidFilter, null).exists();
     }
 
     public static ActionURL getProtocolDocumentDownloadURL(Container c, String name)
@@ -3259,33 +3226,34 @@ public class StudyController extends BaseStudyController
         return new CaseInsensitiveHashMap<>(sortMap);
     }
 
-    private static String getParticipantListCacheKey(int dataset, String viewName, CohortFilter cohortFilter, String encodedQCState)
+    private static String getParticipantListCacheKey(ViewContext context)
     {
-        String key = Integer.toString(dataset);
-        // if there is also a view associated with the dataset, incorporate it into the key as well
-        if (viewName != null && !StringUtils.isEmpty(viewName))
-            key = key + viewName;
-        if (cohortFilter != null)
-            key = key + "cohort" + cohortFilter.getCacheKey();
-        if (encodedQCState != null)
-            key = key + "qcState" + encodedQCState;
-        return key;
+        // The query string includes all parameters that affect the participant list: dataset id, filters, sorts, etc.
+        // But need to strip off the participant ID parameter.
+        return context.cloneActionURL().deleteParameter("participantId").getQueryString();
     }
 
-    public static void removeParticipantListFromCache(ViewContext context, int dataset, String viewName, CohortFilter cohortFilter, String encodedQCState)
+    public static void removeParticipantListFromSession(ViewContext context)
     {
-        Map<String, List<String>> map = getParticipantMapFromCache(context);
-        map.remove(getParticipantListCacheKey(dataset, viewName, cohortFilter, encodedQCState));
+        Cache<String, List<String>> cache = getParticipantMapFromSession(context);
+        String key = getParticipantListCacheKey(context);
+        // Guava Cache doesn't tolerate null keys
+        if (key != null)
+        {
+            _log.debug("Invalidate participant list with key: {}", key);
+            cache.invalidate(key);
+        }
     }
 
     @SuppressWarnings("unchecked")
-    private static Map<String, List<String>> getParticipantMapFromCache(ViewContext context)
+    private static Cache<String, List<String>> getParticipantMapFromSession(ViewContext context)
     {
         HttpSession session = context.getRequest().getSession(true);
-        Map<String, List<String>> map = (Map<String, List<String>>) session.getAttribute(PARTICIPANT_CACHE_PREFIX);
+        Cache<String, List<String>> map = (Cache<String, List<String>>) session.getAttribute(PARTICIPANT_CACHE_PREFIX);
         if (map == null)
         {
-            map = new HashMap<>();
+            // Use a cache to limit the size (10) and to keep entries for no more than 10 minutes after last access
+            map = CacheBuilder.newBuilder().maximumSize(10).expireAfterAccess(10, TimeUnit.MINUTES).build();
             session.setAttribute(PARTICIPANT_CACHE_PREFIX, map);
         }
         return map;
@@ -3302,31 +3270,35 @@ public class StudyController extends BaseStudyController
             session.setAttribute(EXPAND_CONTAINERS_KEY, map);
         }
 
-        Map<Integer, String> expandedMap = map.get(datasetId);
-        if (expandedMap == null)
-        {
-            expandedMap = new HashMap<>();
-            map.put(datasetId, expandedMap);
-        }
-        return expandedMap;
+        return map.computeIfAbsent(datasetId, k -> new HashMap<>());
     }
 
-    public static List<String> getParticipantListFromCache(ViewContext context, int dataset, String viewName, CohortFilter cohortFilter, String encodedQCState)
+    public static @NotNull List<String> getParticipantListFromSession(ViewContext context, int dataset, String viewName)
     {
-        Map<String, List<String>> map = getParticipantMapFromCache(context);
-        String key = getParticipantListCacheKey(dataset, viewName, cohortFilter, encodedQCState);
-        List<String> plist = map.get(key);
-        if (plist == null)
+        Cache<String, List<String>> cache = getParticipantMapFromSession(context);
+        String key = getParticipantListCacheKey(context);
+        List<String> ret = Collections.emptyList();
+
+        // Short-circuit for navigation from somewhere other than a dataset... esp. since Guava Cache doesn't tolerate null keys
+        if (null != key && dataset > 0)
         {
-            // not in cache, or session expired, try to regenerate the list
-            plist = generateParticipantListFromURL(context, dataset, viewName, cohortFilter);
-            map.put(key, plist);
+            try
+            {
+                ret = cache.get(key, () -> generateParticipantListFromURL(context, dataset, viewName));
+            }
+            catch (ExecutionException ignored)
+            {
+                // Shouldn't ever happen since our loader doesn't throw exceptions
+            }
+            _log.debug("Get participant list of size {} with key: {}", ret.size(), key);
         }
-        return plist;
+
+        return ret;
     }
 
-    private static List<String> generateParticipantListFromURL(ViewContext context, int dataset, String viewName, CohortFilter cohortFilter)
+    private static List<String> generateParticipantListFromURL(ViewContext context, int dataset, String viewName)
     {
+        List<String> ret;
         try
         {
             final StudyManager studyMgr = StudyManager.getInstance();
@@ -3339,27 +3311,22 @@ public class StudyController extends BaseStudyController
             if (null == typeURI)
                 return Collections.emptyList();
 
-            int visitRowId = null == context.get(VisitImpl.VISITKEY) ? 0 : Integer.parseInt((String) context.get(VisitImpl.VISITKEY));
-            if (visitRowId != 0)
-            {
-                VisitImpl visit = studyMgr.getVisitForRowId(study, visitRowId);
-                if (null == visit)
-                    return Collections.emptyList();
-            }
-
             StudyQuerySchema querySchema = StudyQuerySchema.createSchema(study, context.getUser());
             QuerySettings qs = querySchema.getSettings(context, DatasetQueryView.DATAREGION, def.getName());
             qs.setViewName(viewName);
 
             QueryView queryView = querySchema.createView(context, qs, null);
 
-            return generateParticipantList(queryView);
+            ret = generateParticipantList(queryView);
         }
-        catch (Exception e)
+        catch (Exception ignored)
         {
-            _log.error(e);
+            ret = Collections.emptyList();
         }
-        return Collections.emptyList();
+
+        _log.debug("Generate participant list of size {}", ret.size());
+
+        return ret;
     }
 
     public static List<String> generateParticipantList(QueryView queryView)
@@ -3603,7 +3570,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    public static class UpdateQCStateForm
+    public static class UpdateQCStateForm extends ReturnUrlForm
     {
         private String _comments;
         private boolean _update;
@@ -3687,14 +3654,14 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(QCAnalystPermission.class)
     public class UpdateQCStateAction extends FormViewAction<UpdateQCStateForm>
     {
-        private int _datasetId;
+        private UpdateQCStateForm _form;
 
         @Override
         public void validateCommand(UpdateQCStateForm updateQCForm, Errors errors)
         {
             if (updateQCForm.isUpdate())
             {
-                if (updateQCForm.getComments() == null || updateQCForm.getComments().length() == 0)
+                if (updateQCForm.getComments() == null || updateQCForm.getComments().isEmpty())
                     errors.reject(null, "Comments are required.");
             }
         }
@@ -3703,11 +3670,12 @@ public class StudyController extends BaseStudyController
         public ModelAndView getView(UpdateQCStateForm updateQCForm, boolean reshow, BindException errors)
         {
             StudyImpl study = getStudyRedirectIfNull();
-            _datasetId = updateQCForm.getDatasetId();
-            DatasetDefinition def = StudyManager.getInstance().getDatasetDefinition(study, _datasetId);
+            _form = updateQCForm;
+            int datasetId = updateQCForm.getDatasetId();
+            DatasetDefinition def = StudyManager.getInstance().getDatasetDefinition(study, datasetId);
             if (def == null)
             {
-                throw new NotFoundException("No dataset found for id: " + _datasetId);
+                throw new NotFoundException("No dataset found for id: " + datasetId);
             }
             Set<String> lsids = null;
             if (isPost())
@@ -3781,8 +3749,13 @@ public class StudyController extends BaseStudyController
         @Override
         public ActionURL getSuccessURL(UpdateQCStateForm updateQCForm)
         {
-            ActionURL url = new ActionURL(DatasetAction.class, getContainer());
-            url.addParameter(Dataset.DATASETKEY, updateQCForm.getDatasetId());
+            ActionURL url = updateQCForm.getReturnActionURL();
+            if (null == url)
+            {
+                // We've lost the returnUrl... at least redirect back to the dataset
+                url = new ActionURL(DatasetAction.class, getContainer());
+                url.addParameter(Dataset.DATASET_KEY, updateQCForm.getDatasetId());
+            }
             if (updateQCForm.getNewState() != null)
                 url.replaceParameter(getQCUrlFilterKey(CompareType.EQUAL, updateQCForm.getDataRegionName()), QCStateManager.getInstance().getStateForRowId(getContainer(), updateQCForm.getNewState().intValue()).getLabel());
             return url;
@@ -3791,7 +3764,7 @@ public class StudyController extends BaseStudyController
         @Override
         public void addNavTrail(NavTree root)
         {
-            root = _addNavTrail(root, _datasetId, -1);
+            root = _addNavTrail(root, _form.getDatasetId(), _form.getReturnActionURL());
             root.addChild("Change QC State");
         }
     }
@@ -3852,13 +3825,13 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class DefaultDatasetReportAction extends SimpleRedirectAction
+    public class DefaultDatasetReportAction extends SimpleRedirectAction<Object>
     {
         @Override
         public ActionURL getRedirectURL(Object o)
         {
             ViewContext context = getViewContext(); //_study.isShowPrivateDataByDefault()
-            Object unparsedDatasetId = context.get(Dataset.DATASETKEY);
+            Object unparsedDatasetId = context.get(Dataset.DATASET_KEY);
 
             try
             {
@@ -3915,7 +3888,7 @@ public class StudyController extends BaseStudyController
     {
         // Issue 26030: we don't distinguish null vs empty string for url parameters.
         // Empty string will be converted to null for beans so "" shouldn't be used as the url param for Default Grid View.
-        return new ActionURL(ViewPreferencesAction.class, c).addParameter(Dataset.DATASETKEY, id).addParameter("defaultView", viewName != null ? (viewName.equals("") ? "defaultGrid": viewName) : null);
+        return new ActionURL(ViewPreferencesAction.class, c).addParameter(Dataset.DATASET_KEY, id).addParameter("defaultView", viewName != null ? (viewName.equals("") ? "defaultGrid": viewName) : null);
     }
 
     public static class ViewPreferencesForm extends DatasetController.DatasetIdForm
@@ -4331,7 +4304,7 @@ public class StudyController extends BaseStudyController
                 Integer cohortId = null;
                 if (form.getCohort() != null && form.getCohort()[i] != -1)
                     cohortId = form.getCohort()[i];
-                Character type = typeStr != null && typeStr.length() > 0 ? typeStr.charAt(0) : null;
+                Character type = typeStr != null && !typeStr.isEmpty() ? typeStr.charAt(0) : null;
                 if (def.isShowByDefault() != show || !nullSafeEqual(label, def.getLabel()) || type != def.getTypeCode() || !nullSafeEqual(cohortId, def.getCohortId()))
                 {
                     def = def.createMutable();
@@ -4805,13 +4778,13 @@ public class StudyController extends BaseStudyController
             if (form.isReshow())
             {
                 ActionURL reshowURL = new ActionURL(CustomizeParticipantViewAction.class, getContainer());
-                if (form.getParticipantId() != null && form.getParticipantId().length() > 0)
+                if (form.getParticipantId() != null && !form.getParticipantId().isEmpty())
                     reshowURL.addParameter("participantId", form.getParticipantId());
-                if (form.getReturnUrl() != null && form.getReturnUrl().length() > 0)
+                if (form.getReturnUrl() != null && !form.getReturnUrl().isEmpty())
                     reshowURL.addParameter(ActionURL.Param.returnUrl, form.getReturnUrl());
                 return reshowURL;
             }
-            else if (form.getReturnUrl() != null && form.getReturnUrl().length() > 0)
+            else if (form.getReturnUrl() != null && !form.getReturnUrl().isEmpty())
                 return new ActionURL(form.getReturnUrl());
             else
                 return urlProvider(ReportUrls.class).urlManageViews(getContainer());
@@ -4941,7 +4914,7 @@ public class StudyController extends BaseStudyController
                 deletePreviousDatasetDefinition(form);
 
                 // if this snapshot is being created from an existing dataset, copy key field settings
-                int datasetId = NumberUtils.toInt(getViewContext().getActionURL().getParameter(Dataset.DATASETKEY), -1);
+                int datasetId = NumberUtils.toInt(getViewContext().getActionURL().getParameter(Dataset.DATASET_KEY), -1);
                 String additionalKey = null;
                 DatasetDefinition.KeyManagementType keyManagementType = KeyManagementType.None;
                 boolean isDemographicData = false;
@@ -5443,13 +5416,7 @@ public class StudyController extends BaseStudyController
 
         public int getReportId(){return reportId;}
         public void setReportId(int reportId){this.reportId = reportId;}
-
-        @Override
-        public String getRedirectUrl() { return _redirectUrl; }
-
-        public void setRedirectUrl(String redirectUrl) { _redirectUrl = redirectUrl; }
     }
-
 
     public static class StudyPropertiesForm extends ReturnUrlForm
     {
@@ -6903,7 +6870,7 @@ public class StudyController extends BaseStudyController
                                 .setCategoryId(categoryId));
                         def.provisionTable();
 
-                        ActionURL redirect = new ActionURL(EditTypeAction.class, getContainer()).addParameter(Dataset.DATASETKEY, def.getDatasetId());
+                        ActionURL redirect = new ActionURL(EditTypeAction.class, getContainer()).addParameter(Dataset.DATASET_KEY, def.getDatasetId());
                         response.put("redirectUrl", redirect.getLocalURIString());
                         break;
                     case placeHolder:
@@ -6928,7 +6895,7 @@ public class StudyController extends BaseStudyController
                             // add a cancel url to rollback either the manual link or import from file link
                             ActionURL cancelURL = new ActionURL(CancelDefineDatasetAction.class, getContainer()).addParameter("expectationDataset", form.getExpectationDataset());
 
-                            redirect = new ActionURL(EditTypeAction.class, getContainer()).addParameter(Dataset.DATASETKEY, form.getExpectationDataset());
+                            redirect = new ActionURL(EditTypeAction.class, getContainer()).addParameter(Dataset.DATASET_KEY, form.getExpectationDataset());
                             redirect.addCancelURL(cancelURL);
                             response.put("redirectUrl", redirect.getLocalURIString());
                         }

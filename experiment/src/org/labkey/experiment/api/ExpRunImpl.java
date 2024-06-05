@@ -22,7 +22,6 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayFileWriter;
-import org.labkey.api.cache.DbCache;
 import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
@@ -328,6 +327,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     {
         assert ensureObject;
         super.save(user, table, true);
+        ExperimentServiceImpl.get().invalidateExperimentRun(getLSID());
     }
 
     @Override
@@ -547,7 +547,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         final ExperimentServiceImpl svc = ExperimentServiceImpl.get();
         final SqlDialect dialect = svc.getSchema().getSqlDialect();
 
-        DbCache.remove(svc.getTinfoExperimentRun(), svc.getCacheKey(getLSID()));
+        ExperimentServiceImpl.get().invalidateExperimentRun(getLSID());
 
         deleteProtocolApplicationProvenance();
 
@@ -928,7 +928,6 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         sql.add(getRowId());
         return ExpDataImpl.fromDatas(new SqlSelector(ExperimentServiceImpl.get().getSchema(), sql).getArrayList(Data.class));
     }
-
 
     public void clearCache()
     {

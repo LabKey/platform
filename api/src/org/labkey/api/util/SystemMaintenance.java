@@ -187,6 +187,28 @@ public class SystemMaintenance
         setTimer();
     }
 
+    public static void enableTask(String taskToEnable)
+    {
+        PropertyManager.PropertyMap writableProps = PropertyManager.getWritableProperties(SET_NAME, true);
+        String disabled = writableProps.get(DISABLED_TASKS_PROPERTY_NAME);
+        String enabled = writableProps.get(ENABLED_TASKS_PROPERTY_NAME);
+
+        Set<String> disabledTasks = new HashSet<>();
+        Set<String> enabledTasks = new HashSet<>();
+        if (disabled != null)
+            disabledTasks.addAll(Arrays.asList(disabled.split(",")));
+        if (enabled != null)
+            enabledTasks.addAll(Arrays.asList(enabled.split(",")));
+
+        disabledTasks.remove(taskToEnable);
+        enabledTasks.add(taskToEnable);
+
+        writableProps.put(DISABLED_TASKS_PROPERTY_NAME, StringUtils.join(disabledTasks, ","));
+        writableProps.put(ENABLED_TASKS_PROPERTY_NAME, StringUtils.join(enabledTasks, ","));
+
+        writableProps.save();
+    }
+
     public static class SystemMaintenanceProperties
     {
         private final Date _systemMaintenanceTime;

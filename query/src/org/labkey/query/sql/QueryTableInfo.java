@@ -70,7 +70,7 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
     @Override
     public SQLFragment getFromSQL(String alias)
     {
-        try (var recursion = _relation._query.queryRecursionCheck("Too many tables used in this query.  Query may be recursive.", null))
+        try (var recursion = Query.queryRecursionCheck("Too many tables used in this query.  Query may be recursive.", null))
         {
             SQLFragment sql = _relation.getSql();
             if (null == sql)

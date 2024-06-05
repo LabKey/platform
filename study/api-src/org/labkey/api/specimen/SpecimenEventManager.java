@@ -9,9 +9,6 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 
 // Methods extracted from SpecimenManager to assist with migration. TODO: remove these or recombine with SpecimenManager
@@ -65,46 +62,7 @@ public class SpecimenEventManager
         return dateOrderedEvents.get(dateOrderedEvents.size() - 1);
     }
 
-    public Integer getProcessingLocationId(List<SpecimenEvent> dateOrderedEvents)
-    {
-        SpecimenEvent firstEvent = getFirstEvent(dateOrderedEvents);
-        return firstEvent != null ? firstEvent.getLabId() : null;
-    }
-
-    public String getFirstProcessedByInitials(List<SpecimenEvent> dateOrderedEvents)
-    {
-        SpecimenEvent firstEvent = getFirstEvent(dateOrderedEvents);
-        return firstEvent != null ? firstEvent.getProcessedByInitials() : null;
-    }
-
-    public List<SpecimenEvent> getSpecimenEvents(@NotNull Vial vial)
-    {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("VialId"), vial.getRowId());
-        return getSpecimenEvents(vial.getContainer(), filter);
-    }
-
-    public List<SpecimenEvent> getSpecimenEvents(List<Vial> vials, boolean includeObsolete)
-    {
-        if (vials == null || vials.size() == 0)
-            return Collections.emptyList();
-        Collection<Long> vialIds = new HashSet<>();
-        Container container = null;
-        for (Vial vial : vials)
-        {
-            vialIds.add(vial.getRowId());
-            if (container == null)
-                container = vial.getContainer();
-            else if (!container.equals(vial.getContainer()))
-                throw new IllegalArgumentException("All specimens must be from the same container");
-        }
-        SimpleFilter filter = new SimpleFilter();
-        filter.addInClause(FieldKey.fromString("VialId"), vialIds);
-        if (!includeObsolete)
-            filter.addCondition(FieldKey.fromString("Obsolete"), false);
-        return getSpecimenEvents(container, filter);
-    }
-
-    private List<SpecimenEvent> getSpecimenEvents(final Container container, Filter filter)
+    public List<SpecimenEvent> getSpecimenEvents(final Container container, Filter filter)
     {
         final List<SpecimenEvent> specimenEvents = new ArrayList<>();
         TableInfo tableInfo = SpecimenSchema.get().getTableInfoSpecimenEvent(container);
@@ -123,5 +81,11 @@ public class SpecimenEventManager
         eventList.addAll(events);
         eventList.sort(SpecimenEventDateComparator.get());
         return eventList;
+    }
+
+    private List<SpecimenEvent> getSpecimenEvents(@NotNull Vial vial)
+    {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("VialId"), vial.getRowId());
+        return getSpecimenEvents(vial.getContainer(), filter);
     }
 }

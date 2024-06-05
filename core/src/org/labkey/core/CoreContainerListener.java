@@ -38,11 +38,6 @@ import java.beans.PropertyChangeEvent;
 import java.util.Collection;
 import java.util.Collections;
 
-/**
- * User: adam
- * Date: Nov 5, 2008
- * Time: 2:00:32 PM
- */
 public class CoreContainerListener implements ContainerManager.ContainerListener
 {
     private static final Logger _log = LogManager.getLogger(CoreContainerListener.class);

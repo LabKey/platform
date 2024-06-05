@@ -32,10 +32,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 
-/**
- * User: jeckels
- * Date: Sep 26, 2007
- */
 public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> extends ExpObjectImpl
 {
     protected Type _object;
@@ -131,12 +127,12 @@ public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> ext
         {
             if (ensureObject)
             {
-                assert !(_object instanceof IdentifiableEntity) || null == ((IdentifiableEntity)_object).getObjectId();
+                assert !(_object instanceof IdentifiableEntity) || null == _object.getObjectId();
                 _objectId = OntologyManager.ensureObject(getContainer(), getLSID(), getParentObjectId());
                 _object.setObjectId(_objectId);
             }
             _object = Table.insert(user, table, _object);
-            assert !ensureObject || !(_object instanceof IdentifiableEntity) || _objectId == ((IdentifiableEntity)_object).getObjectId();
+            assert !ensureObject || !(_object instanceof IdentifiableEntity) || _objectId == _object.getObjectId();
         }
         else
         {

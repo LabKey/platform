@@ -25,11 +25,6 @@ import org.labkey.api.data.ContainerManager;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-/**
- * User: brittp
- * Date: Oct 31, 2006
- * Time: 2:37:56 PM
- */
 public class PositionImpl implements Position
 {
     public static final String[] ALPHABET = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P",
@@ -202,7 +197,7 @@ public class PositionImpl implements Position
     public static final class TestCase
     {
         @Test
-        public void testParsePositions() throws Exception
+        public void testParsePositions()
         {
             Container c = ContainerManager.getSharedContainer();
             // verify we can parse A1 through AF48

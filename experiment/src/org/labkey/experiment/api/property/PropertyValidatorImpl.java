@@ -33,11 +33,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-/*
-* User: Karl Lum
-* Date: Aug 11, 2008
-* Time: 1:20:17 PM
-*/
 public class PropertyValidatorImpl implements IPropertyValidator
 {
     private PropertyValidator _validator;
@@ -178,14 +173,14 @@ public class PropertyValidatorImpl implements IPropertyValidator
             if (0 == _validator.getPropertyId())
                 throw new IllegalStateException("Validator requires a valid propertyId");
             setContainer(container.getId());
-            return new PropertyValidatorImpl(Table.insert(user, DomainPropertyManager.get().getTinfoValidator(), _validator));
+            return new PropertyValidatorImpl(Table.insert(user, DomainPropertyManager.getTinfoValidator(), _validator));
         }
         else
         {
             String cid = _validator.getContainer();
             int propid = _validator.getPropertyId();
             int rowid = _validator.getRowId();
-            return new PropertyValidatorImpl(Table.update(user, DomainPropertyManager.get().getTinfoValidator(), _validator, new Object[] {cid, propid, rowid}));
+            return new PropertyValidatorImpl(Table.update(user, DomainPropertyManager.getTinfoValidator(), _validator, new Object[] {cid, propid, rowid}));
         }
     }
 

@@ -70,6 +70,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.regex.Pattern;
 
 /**
  * Data loader for Excel files -- can infer columns and return rows of data
@@ -83,6 +84,8 @@ public class ExcelLoader extends DataLoader
     static {
         FILE_TYPE.setExtensionsMutuallyExclusive(false);
     }
+
+    private static final Pattern EXCEL_TIME_PATTERN = Pattern.compile("^[\\[\\]hHmMsS :]+0*[ampAMP/]*(;@)?$");
 
     public static class Factory extends AbstractDataLoaderFactory
     {
@@ -1006,6 +1009,11 @@ public class ExcelLoader extends DataLoader
             return DateUtil.formatIsoDateLongTime(getDateFromExcelDouble(value));
         }
 
+        private boolean isTimeFormat(String dateFormatString)
+        {
+            return EXCEL_TIME_PATTERN.matcher(dateFormatString).matches();
+        }
+
         /*
            * (non-Javadoc)
            * @see org.xml.sax.helpers.DefaultHandler#endElement(java.lang.String, java.lang.String, java.lang.String)
@@ -1059,7 +1067,7 @@ public class ExcelLoader extends DataLoader
                         boolean isNumberFormat = null != this.formatString && !isDateFormat && !this.formatString.equals("General") && !this.formatString.equals("@"); // i18n???
                         boolean isTimeFormat = false;
                         if (isDateFormat)
-                            isTimeFormat = DateUtil.isExcelTimeFormat(this.formatString);
+                            isTimeFormat = isTimeFormat(this.formatString);
 
                         if (StringUtils.isBlank(value))
                             thisValue = "";

@@ -18,6 +18,7 @@ package org.labkey.experiment.api.property;
 import org.apache.commons.collections4.MultiMapUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.Constants;
 import org.labkey.api.cache.BlockingCache;
@@ -38,8 +39,10 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 
 import java.util.ArrayList;
@@ -49,14 +52,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/*
-* User: Karl Lum
-* Date: Aug 14, 2008
-* Time: 9:46:07 AM
-*/
 public class DomainPropertyManager
 {
     private static final DomainPropertyManager _instance = new DomainPropertyManager();
+    private static final Logger LOG = LogHelper.getLogger(DomainPropertyManager.class, "Problems with property validators");
 
     private static class ConditionalFormatLoader implements CacheLoader<Container, List<ConditionalFormatWithPropertyId>>
     {
@@ -87,7 +86,7 @@ public class DomainPropertyManager
 
     private static DbSchema getExpSchema()
     {
-        return ExperimentServiceImpl.get().getExpSchema();
+        return ExperimentServiceImpl.getExpSchema();
     }
 
     static public TableInfo getTinfoValidator()
@@ -169,7 +168,18 @@ public class DomainPropertyManager
 
         final MultiValuedMap<Integer, PropertyValidator> validators = new ArrayListValuedHashMap<>();
 
-        new SqlSelector(getExpSchema(), sql, container).forEach(PropertyValidator.class, pv -> validators.put(pv.getPropertyId(), pv));
+        new SqlSelector(getExpSchema(), sql, container).forEach(PropertyValidator.class, pv -> {
+            // Warn and skip property validators have unknown type URIs. Some instances in the field failed to run
+            // upgrade code that cleared out obsolete 'urn:lsid:labkey.com:PropertyValidator:length' rows.
+            if (PropertyService.get().getValidatorKind(pv.getTypeURI()) == null)
+            {
+                LOG.error("Invalid property validator typeUri: {}", pv.getTypeURI());
+            }
+            else
+            {
+                validators.put(pv.getPropertyId(), pv);
+            }
+        });
 
         return validators.isEmpty() ? MultiMapUtils.emptyMultiValuedMap() : MultiMapUtils.unmodifiableMultiValuedMap(validators);
     };
@@ -187,8 +197,6 @@ public class DomainPropertyManager
         Collection<PropertyValidator> coll = validators.get(propertyId); // No validators for propertyId -> empty collection
         return Collections.unmodifiableCollection(coll);
     }
-
-
 
     /**
      * Remove a domain property reference to a validator and delete the validator if there are

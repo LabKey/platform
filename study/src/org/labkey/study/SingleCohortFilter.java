@@ -157,7 +157,7 @@ public class SingleCohortFilter extends BaseCohortFilter
             {
                 url.replaceParameter
                 (
-                    dataregion + "." + (new FieldKey(cohortFK.getParent(),"Label")).toString() + "~eq",
+                    dataregion + "." + (new FieldKey(cohortFK.getParent(),"Label")) + "~eq",
                     _label
                 );
             }

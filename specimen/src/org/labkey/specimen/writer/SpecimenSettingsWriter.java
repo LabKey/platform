@@ -17,11 +17,8 @@ package org.labkey.specimen.writer;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.security.GroupManager;
-import org.labkey.api.specimen.SpecimenRequestStatus;
-import org.labkey.api.specimen.importer.RequestabilityManager;
 import org.labkey.api.specimen.settings.DisplaySettings;
 import org.labkey.api.specimen.settings.RepositorySettings;
-import org.labkey.api.specimen.settings.RequestNotificationSettings;
 import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.specimen.settings.StatusSettings;
 import org.labkey.api.study.Location;
@@ -32,10 +29,13 @@ import org.labkey.security.xml.GroupType;
 import org.labkey.security.xml.GroupsType;
 import org.labkey.specimen.SpecimenRequestManager;
 import org.labkey.specimen.SpecimenRequestManager.SpecimenRequestInput;
+import org.labkey.specimen.SpecimenRequestStatus;
 import org.labkey.specimen.actions.ManageReqsBean;
+import org.labkey.specimen.importer.RequestabilityManager;
 import org.labkey.specimen.model.SpecimenRequestActor;
 import org.labkey.specimen.requirements.SpecimenRequestRequirement;
 import org.labkey.specimen.requirements.SpecimenRequestRequirementProvider;
+import org.labkey.specimen.settings.RequestNotificationSettings;
 import org.labkey.study.xml.DefaultRequirementType;
 import org.labkey.study.xml.DefaultRequirementsType;
 import org.labkey.study.xml.SpecimenRepositoryType;
@@ -49,10 +49,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * User: kevink
- * Date: 6/13/13
- */
 public class SpecimenSettingsWriter extends AbstractSpecimenWriter
 {
     private static final String DEFAULT_SETTINGS_FILE = "specimen_settings.xml";
@@ -119,7 +115,7 @@ public class SpecimenSettingsWriter extends AbstractSpecimenWriter
     private void writeSpecimenGroupings(SpecimenSettingsType specimenSettingsType, RepositorySettings repositorySettings)
     {
         ArrayList<String[]> groupings = repositorySettings.getSpecimenWebPartGroupings();
-        if (groupings.size() > 0)
+        if (!groupings.isEmpty())
         {
             SpecimenSettingsType.WebPartGroupings xmlWebPartGroupings = specimenSettingsType.addNewWebPartGroupings();
             for (String[] grouping : groupings)
@@ -134,7 +130,7 @@ public class SpecimenSettingsWriter extends AbstractSpecimenWriter
     {
         SpecimenSettingsType.RequestStatuses xmlRequestStatuses = null;
         List<SpecimenRequestStatus> statuses = SpecimenRequestManager.get().getRequestStatuses(study.getContainer(), ctx.getUser());
-        if (statuses.size() > 0)
+        if (!statuses.isEmpty())
         {
             for (SpecimenRequestStatus status : statuses)
             {
@@ -288,7 +284,7 @@ public class SpecimenSettingsWriter extends AbstractSpecimenWriter
     private void writeNotifications(SpecimenSettingsType specimenSettingsType, SimpleStudyExportContext ctx)
     {
         ctx.getLogger().info("Exporting specimen notification settings");
-        RequestNotificationSettings notifications = SettingsManager.get().getRequestNotificationSettings(ctx.getContainer());
+        RequestNotificationSettings notifications = org.labkey.specimen.settings.SettingsManager.get().getRequestNotificationSettings(ctx.getContainer());
         SpecimenSettingsType.Notifications xmlNotifications = specimenSettingsType.addNewNotifications();
 
         if (notifications.getReplyTo() != null)

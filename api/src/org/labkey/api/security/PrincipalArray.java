@@ -1,60 +1,81 @@
 package org.labkey.api.security;
 
+import com.google.common.primitives.Ints;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 import java.util.stream.Stream;
 
 /*
-    Simple wrapper that limits the ability to mutate the int[] and ensures it's sorted, searched efficiently, etc.
+    Immutable wrapper that manages a list of principal IDs, ensuring it's sorted, searched efficiently, etc.
     Can represent a group's membership list OR user's list of group memberships.
  */
-public class PrincipalArray
+public class PrincipalArray implements Iterable<Integer>
 {
     private static final PrincipalArray EMPTY_PRINCIPAL_ARRAY = new PrincipalArray(Collections.emptyList());
 
-    private final int[] _principals; // Always sorted
+    // The set of principal IDs is fixed at construction time, so sort it and hold it in both array and list form
+    // for convenience and performance.
+    private final int[] _array;
+    private final List<Integer> _list;
 
     public PrincipalArray(Collection<Integer> principals)
     {
-        _principals = new int[principals.size()];
+        _array = new int[principals.size()];
         int i = 0;
-        for (int group : principals)
-            _principals[i++] = group;
-        Arrays.sort(_principals);
+        for (int principal : principals)
+            _array[i++] = principal;
+        Arrays.sort(_array);
+        _list = Collections.unmodifiableList(Ints.asList(_array));
     }
 
     // Needed for pipeline deserialization
     public PrincipalArray()
     {
-        _principals = null;
+        _array = null;
+        _list = null;
     }
 
     public boolean contains(int groupId)
     {
-        return Arrays.binarySearch(_principals, groupId) >= 0;
+        return Arrays.binarySearch(_array, groupId) >= 0;
     }
 
-    // Package private: for now, security classes can access underlying int[] for performance
-    int[] getPrincipals()
-    {
-        return _principals;
-    }
-
-    // Preferred method for accessing the principal IDs
     public Stream<Integer> stream()
     {
-        return Arrays.stream(_principals).boxed();
-    }
-
-    public static PrincipalArray getEmptyPrincipalArray()
-    {
-        return EMPTY_PRINCIPAL_ARRAY;
+        return _list.stream();
     }
 
     @Override
     public String toString()
     {
-        return "PrincipalArray" + Arrays.toString(_principals);
+        return "PrincipalArray" + Arrays.toString(_array);
+    }
+
+    public int size()
+    {
+        return _list.size();
+    }
+
+    @NotNull
+    @Override
+    public Iterator<Integer> iterator()
+    {
+        return _list.iterator();
+    }
+
+    // Returns an immutable list of principals
+    public List<Integer> getList()
+    {
+        return _list;
+    }
+
+    public static PrincipalArray getEmptyPrincipalArray()
+    {
+        return EMPTY_PRINCIPAL_ARRAY;
     }
 }

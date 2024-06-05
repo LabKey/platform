@@ -25,8 +25,10 @@ import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.pages.DesignerController.DesignerTester;
 import org.labkey.test.pages.study.DatasetDesignerPage;
+import org.labkey.test.params.FieldDefinition;
+import org.labkey.test.params.FieldDefinition.ColumnType;
+import org.labkey.test.params.list.IntListDefinition;
 import org.labkey.test.util.DataRegionTable;
-import org.labkey.test.util.ListHelper;
 import org.labkey.test.util.PortalHelper;
 
 import java.io.File;
@@ -46,7 +48,7 @@ public class VaccineProtocolTest extends BaseWebDriverTest
     private final PortalHelper portalHelper = new PortalHelper(this);
 
     @Test
-    public void testSteps()
+    public void testSteps() throws Exception
     {
         _containerHelper.createProject(PROJECT_NAME, null);
         _containerHelper.createSubfolder(PROJECT_NAME, PROJECT_NAME, FOLDER_NAME, "None", null);
@@ -164,16 +166,19 @@ public class VaccineProtocolTest extends BaseWebDriverTest
         clickButton("Update Folder");
 
         portalHelper.addWebPart("Lists");
-        clickAndWait(Locator.linkWithText("manage lists"));
 
-        ListHelper.ListColumn valueColumn = new ListHelper.ListColumn("Value", "Value", ListHelper.ListColumnType.String, "Vaccine Value");
-        _listHelper.createList(getProjectName() + "/" + FOLDER_NAME + "/" + STUDY_FOLDER, LIST_NAME, ListHelper.ListColumnType.Integer, "Key", valueColumn);
-        goToManageLists();
-        clickAndWait(Locator.linkWithText(LIST_NAME));
-        DataRegionTable.findDataRegion(this).clickInsertNewRow();
-        setFormElement(Locator.name("quf_Key"), "1");
-        setFormElement(Locator.name("quf_Value"), "One");
-        submit();
+        new IntListDefinition(LIST_NAME)
+                .setFields(List.of(
+                        new FieldDefinition("Key", ColumnType.Integer),
+                        new FieldDefinition("Value", ColumnType.String).setDescription("Vaccine Value")))
+                .create(createDefaultConnection(), getProjectName() + "/" + FOLDER_NAME + "/" + STUDY_FOLDER);
+
+        goToManageLists().getGrid()
+                .viewListData(LIST_NAME)
+                .clickInsertNewRow()
+                .setField("Key", "1")
+                .setField("Value", "One")
+                .submit();
 
         setupPipeline(getProjectName());
         defineAssay(getProjectName());
@@ -257,14 +262,6 @@ public class VaccineProtocolTest extends BaseWebDriverTest
     }
 
     protected static final String TEST_ASSAY = "TestAssay1";
-    protected static final String TEST_ASSAY_DESC = "Description for assay 1";
-    protected static final String TEST_ASSAY_SET_PROP_EDIT = "NewTargetStudy";
-    protected static final String TEST_ASSAY_SET_PROP_NAME = "testAssaySetProp";
-    protected static final int TEST_ASSAY_SET_PREDEFINED_PROP_COUNT = 2;
-    protected static final int TEST_ASSAY_DATA_PREDEFINED_PROP_COUNT = 4;
-    protected static final String[] TEST_ASSAY_DATA_PROP_NAMES = {"Value" };
-    protected static final ListHelper.ListColumnType[] TEST_ASSAY_DATA_PROP_TYPES = { ListHelper.ListColumnType.Integer };
-    // protected final static int WAIT_FOR_JAVASCRIPT = 5000;  uncomment to override base class
 
     /**
      * Sets up the data pipeline for the specified project. This can be called from any page.

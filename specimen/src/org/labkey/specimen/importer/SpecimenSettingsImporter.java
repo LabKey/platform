@@ -20,13 +20,10 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.specimen.SpecimenRequestStatus;
-import org.labkey.api.specimen.importer.RequestabilityManager;
 import org.labkey.api.specimen.location.LocationCache;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.settings.DisplaySettings;
 import org.labkey.api.specimen.settings.RepositorySettings;
-import org.labkey.api.specimen.settings.RequestNotificationSettings;
 import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.specimen.settings.StatusSettings;
 import org.labkey.api.study.StudyService;
@@ -36,12 +33,14 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.security.xml.GroupType;
 import org.labkey.specimen.SpecimenRequestManager;
 import org.labkey.specimen.SpecimenRequestManager.SpecimenRequestInput;
+import org.labkey.specimen.SpecimenRequestStatus;
 import org.labkey.specimen.actions.ManageReqsBean;
 import org.labkey.specimen.model.SpecimenRequestActor;
 import org.labkey.specimen.requirements.RequirementType;
 import org.labkey.specimen.requirements.SpecimenRequestRequirement;
 import org.labkey.specimen.requirements.SpecimenRequestRequirementProvider;
 import org.labkey.specimen.requirements.SpecimenRequestRequirementType;
+import org.labkey.specimen.settings.RequestNotificationSettings;
 import org.labkey.specimen.writer.SpecimenArchiveDataTypes;
 import org.labkey.study.xml.DefaultRequirementType;
 import org.labkey.study.xml.DefaultRequirementsType;
@@ -62,16 +61,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * User: kevink
- * Date: 6/13/13
- */
 public class SpecimenSettingsImporter implements SimpleStudyImporter
 {
     @Override
     public Timing getTiming()
     {
-        return Timing.Late; // Can't setup specimen request actors until the locations have been created
+        return Timing.Late; // Can't set up specimen request actors until the locations have been created
     }
 
     @Override
@@ -160,7 +155,7 @@ public class SpecimenSettingsImporter implements SimpleStudyImporter
             reposSettings.setEnableRequests(xmlSettings.getEnableRequests());
         if (xmlSettings.isSetEditableRepository())
             reposSettings.setSpecimenDataEditable(xmlSettings.getEditableRepository());
-        SettingsManager.get().saveRepositorySettings(c, reposSettings);
+        org.labkey.specimen.settings.SettingsManager.get().saveRepositorySettings(c, reposSettings);
 
         // location types
         SpecimenSettingsType.LocationTypes xmlLocationTypes = xmlSettings.getLocationTypes();
@@ -234,7 +229,7 @@ public class SpecimenSettingsImporter implements SimpleStudyImporter
                 if (settings.isUseShoppingCart() != xmlRequestStatuses.getMultipleSearch())
                 {
                     settings.setUseShoppingCart(xmlRequestStatuses.getMultipleSearch());
-                    SettingsManager.get().saveStatusSettings(ctx.getContainer(), settings);
+                    org.labkey.specimen.settings.SettingsManager.get().saveStatusSettings(ctx.getContainer(), settings);
                 }
             }
         }
@@ -350,12 +345,12 @@ public class SpecimenSettingsImporter implements SimpleStudyImporter
 
     private void createDefaultRequirement(DefaultRequirementsType xmlReqs, SimpleStudyImportContext ctx, RequirementType type)
     {
-        if (xmlReqs != null && xmlReqs.getRequirementArray().length > 0)
+        if (xmlReqs != null)
         {
             for (DefaultRequirementType xmlReq : xmlReqs.getRequirementArray())
             {
                 List<SpecimenRequestActor> matchingActors = SpecimenRequestRequirementProvider.get().getActorsByLabel(ctx.getContainer(), xmlReq.getActor());
-                if (matchingActors.size() > 0)
+                if (!matchingActors.isEmpty())
                 {
                     SpecimenRequestRequirement requirement = new SpecimenRequestRequirement();
                     requirement.setContainer(ctx.getContainer());
@@ -392,7 +387,7 @@ public class SpecimenSettingsImporter implements SimpleStudyImporter
                 display.setZeroVials(warnings.getZeroVials());
             }
 
-            SettingsManager.get().saveDisplaySettings(ctx.getContainer(), display);
+            org.labkey.specimen.settings.SettingsManager.get().saveDisplaySettings(ctx.getContainer(), display);
         }
     }
 
@@ -461,7 +456,7 @@ public class SpecimenSettingsImporter implements SimpleStudyImporter
             if (xmlNotifications.getSpecimensAttachment() != null)
                 notifications.setSpecimensAttachment(xmlNotifications.getSpecimensAttachment());
 
-            SettingsManager.get().saveRequestNotificationSettings(ctx.getContainer(), notifications);
+            org.labkey.specimen.settings.SettingsManager.get().saveRequestNotificationSettings(ctx.getContainer(), notifications);
         }
     }
 

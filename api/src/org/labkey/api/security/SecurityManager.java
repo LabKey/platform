@@ -16,6 +16,12 @@
 
 package org.labkey.api.security;
 
+import jakarta.mail.Message;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+import jakarta.websocket.server.HandshakeRequest;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
@@ -119,12 +125,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
-import jakarta.mail.Message;
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
-import jakarta.websocket.server.HandshakeRequest;
 import java.beans.PropertyChangeListener;
 import java.io.Closeable;
 import java.io.UnsupportedEncodingException;
@@ -941,6 +941,12 @@ public class SecurityManager
         return (null == getVerification(email));
     }
 
+    // Test if user has been verified for database authentication. Use only when email address could be invalid ().
+    public static boolean isVerified(String email)
+    {
+        return (null == getVerification(email));
+    }
+
     public static boolean verify(ValidEmail email, String verification)
     {
         String dbVerification = getVerification(email);
@@ -956,7 +962,12 @@ public class SecurityManager
 
     public static String getVerification(ValidEmail email)
     {
-        return new SqlSelector(core.getSchema(), "SELECT Verification FROM " + core.getTableInfoLogins() + " WHERE Email = ?", email.getEmailAddress()).getObject(String.class);
+        return getVerification(email.getEmailAddress());
+    }
+
+    private static String getVerification(String email)
+    {
+        return new SqlSelector(core.getSchema(), "SELECT Verification FROM " + core.getTableInfoLogins() + " WHERE Email = ?", email).getObject(String.class);
     }
 
     public static class NewUserStatus
@@ -1012,7 +1023,6 @@ public class SecurityManager
             return null != _verification;
         }
     }
-
 
     public static class UserManagementException extends Exception
     {
@@ -1337,8 +1347,8 @@ public class SecurityManager
         return getPasswordHash(email.getEmailAddress());
     }
 
-    // Look up email in Logins table and return the corresponding password hash
-    private static String getPasswordHash(String email)
+    // For internal use only, plus database login and change email workflows, where existing email address could be invalid (i.e., non-conforming per RFC 822)
+    public static String getPasswordHash(String email)
     {
         SqlSelector selector = new SqlSelector(core.getSchema(), new SQLFragment("SELECT Crypt FROM " + core.getTableInfoLogins() + " WHERE Email = ?", email));
         return selector.getObject(String.class);
@@ -1358,8 +1368,8 @@ public class SecurityManager
             return Crypt.MD5.matches(password, hash);
     }
 
-    // Used only in the case of email change... current email address might be invalid
-    static boolean loginExists(String email)
+    // Used in the case of set password or email change... current email address could be invalid (i.e., non-conforming per RFC 822)
+    public static boolean loginExists(String email)
     {
         return (null != getPasswordHash(email));
     }
@@ -1428,7 +1438,7 @@ public class SecurityManager
         return null != getGroupId(c, groupName, ownerId, false);
     }
 
-    public static Group renameGroup(Group group, String newName, User currentUser)
+    public static void renameGroup(Group group, String newName, User currentUser)
     {
         if (group.isSystemGroup())
             throw new IllegalArgumentException("System groups may not be renamed!");
@@ -1443,8 +1453,6 @@ public class SecurityManager
 
         Table.update(currentUser, core.getTableInfoPrincipals(), Collections.singletonMap("name", newName), group.getUserId());
         GroupCache.uncache(group.getUserId());
-
-        return getGroup(getGroupId(c, newName));
     }
 
     public static void deleteGroup(Group group)
@@ -1463,9 +1471,6 @@ public class SecurityManager
 
         try (Transaction transaction = core.getScope().ensureTransaction())
         {
-            // Need to invalidate all computed group lists. This isn't quite right, but it gets the job done.
-            GroupMembershipCache.handleGroupChange(group, group);
-
             // NOTE: Most code can not tell the difference between a non-existent SecurityPolicy and an empty SecurityPolicy
             // NOTE: Both are treated as meaning "inherit", we don't want to accidentally create an empty security policy
             // TODO: create an explicit inherit bit on policy (or distinguish undefined/empty)
@@ -1503,6 +1508,8 @@ public class SecurityManager
                 ProjectAndSiteGroupsCache.uncache(c);
                 // 20329 SecurityPolicy cache still has the role assignments for deleted groups.
                 SecurityPolicyManager.notifyPolicyChanges(resources);
+                // Invalidate all computed group lists
+                GroupMembershipCache.handleGroupChange(group, group);
             }, CommitTaskOption.IMMEDIATE, CommitTaskOption.POSTCOMMIT, CommitTaskOption.POSTROLLBACK);
 
             if (!group.isProjectGroup())
@@ -1521,22 +1528,10 @@ public class SecurityManager
             throw new IllegalArgumentException("Should not call deleteGroups() on the root");
 
         String typeString = (null == type ? "%" : String.valueOf(type.getTypeChar()));
-
-        SqlExecutor executor = new SqlExecutor(core.getSchema());
-        executor.execute("DELETE FROM " + core.getTableInfoRoleAssignments() + "\n"+
-                "WHERE UserId in (SELECT UserId FROM " + core.getTableInfoPrincipals() +
-                "\tWHERE Container=? and Type LIKE ?)", c, typeString);
-        executor.execute("DELETE FROM " + core.getTableInfoMembers() + "\n"+
-                "WHERE GroupId in (SELECT UserId FROM " + core.getTableInfoPrincipals() +
-                "\tWHERE Container=? and Type LIKE ?)", c, typeString);
-        executor.execute("DELETE FROM " + core.getTableInfoPrincipals() +
-                "\tWHERE Container=? AND Type LIKE ?", c, typeString);
-
-        // Consider: query for groups in this container and uncache just those.
-        GroupCache.uncacheAll();
-        ProjectAndSiteGroupsCache.uncache(c);
+        new SqlSelector(core.getSchema(), "SELECT UserId FROM " + core.getTableInfoPrincipals() +
+            "\tWHERE Container=? AND Type LIKE ?", c, typeString).stream(Integer.class)
+            .forEach(SecurityManager::deleteGroup);
     }
-
 
     public static void deleteMembers(Group group, Collection<UserPrincipal> membersToDelete)
     {
@@ -1678,9 +1673,8 @@ public class SecurityManager
         {
             int id = recurse.removeFirst();
             groupSet.add(id);
-            int[] groups = GroupMembershipCache.getGroupMemberships(id).getPrincipals();
 
-            for (int g : groups)
+            for (int g : GroupMembershipCache.getGroupMemberships(id))
             {
                 if (g == root.getUserId())
                     return true;
@@ -1830,26 +1824,13 @@ public class SecurityManager
      */
     public static List<Group> getGroups(@NotNull Container c, User u)
     {
-        Container proj = c.getProject();
-        if (null == proj)
-            proj = c;
-        int[] groupIds = u.getGroups().getPrincipals();
-        List<Group> groupList = new ArrayList<>();
+        final Container proj = c.isRoot() ? c : c.getProject();
 
-        for (int groupId : groupIds)
-        {
-            //ignore user as group
-            if (groupId != u.getUserId())
-            {
-                Group g = SecurityManager.getGroup(groupId);
-
-                // Only global groups or groups in this project
-                if (null != g && (null == g.getContainer() || g.getContainer().equals(proj.getId())))
-                    groupList.add(g);
-            }
-        }
-
-        return groupList;
+        return u.getGroups().stream()
+            .filter(id -> id != u.getUserId()) //ignore user as group
+            .map(SecurityManager::getGroup)
+            .filter(g -> null != g && (null == g.getContainer() || g.getContainer().equals(proj.getId()))) // Only global groups or groups in this project
+            .toList();
     }
 
     // Returns comma-separated list of group names this user belongs to in this container
@@ -1860,12 +1841,10 @@ public class SecurityManager
         if (null == proj || u == null)
             return HtmlString.EMPTY_STRING;
 
-        int[] groupIds = u.getGroups().getPrincipals();
-
         StringBuilder groupList = new StringBuilder();
         String sep = "";
 
-        for (int groupId : groupIds)
+        for (int groupId : u.getGroups())
         {
             // Ignore Guest, Users, Admins, and user's own id
             if (groupId > 0 && groupId != u.getUserId())
@@ -1925,13 +1904,7 @@ public class SecurityManager
                 // group always returned empty set. Allow a special case of returning real set if explicitly requested.
                 if (next.isUsers() && returnSiteUsers)
                 {
-                    List<Integer> userIds = UserManager.getUserIds();
-                    int[] ids = new int[userIds.size()];
-                    for (int i = 0; i < userIds.size(); i++)
-                    {
-                        ids[i] = userIds.get(i);
-                    }
-                    addMembers(members, ids, memberType);
+                    addMembers(members, UserManager.getUserIds(), memberType);
                 }
                 else
                 {
@@ -1946,19 +1919,17 @@ public class SecurityManager
         return members;
     }
 
-    private static <P extends UserPrincipal> void addMembers(Collection<P> principals, int[] ids, MemberType<P> memberType)
+    private static <P extends UserPrincipal> void addMembers(Collection<P> principals, List<Integer> ids, MemberType<P> memberType)
     {
-        for (int id : ids)
-        {
-            P principal = memberType.getPrincipal(id);
-            if (null != principal)
-                principals.add(principal);
-        }
+        ids.stream()
+            .map(memberType::getPrincipal)
+            .filter(Objects::nonNull)
+            .forEach(principals::add);
     }
 
     private static <P extends UserPrincipal> void addMembers(Collection<P> principals, PrincipalArray members, MemberType<P> memberType)
     {
-        addMembers(principals, members.getPrincipals(), memberType);
+        addMembers(principals, members.getList(), memberType);
     }
 
     // get the list of group members that do not need to be direct members because they are a member of a member group (i.e. groups-in-groups)
@@ -3364,7 +3335,6 @@ public class SecurityManager
 
         abstract boolean accept(Set<Class<? extends Permission>> granted, Set<Class<? extends Permission>> required);
     }
-
 
     public static class TestCase extends Assert
     {

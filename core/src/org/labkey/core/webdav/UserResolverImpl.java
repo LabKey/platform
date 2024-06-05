@@ -176,15 +176,15 @@ public class UserResolverImpl extends AbstractWebdavResolver
         public Collection<? extends WebdavResource> list()
         {
             User user = getCurrentUser();
-            WebdavResource res = find(user.getEmail());
+            WebdavResource res = find(Path.toPathPart(user.getEmail()));
             return Collections.singletonList(res);
         }
 
         @Override
-        public WebdavResource find(String child)
+        public WebdavResource find(Path.Part child)
         {
             User user = getCurrentUser();
-            if (null == user || !child.equalsIgnoreCase(user.getName()))
+            if (null == user || !child.toString().equalsIgnoreCase(user.getName()))
                 return null;
 
             Result<File> r = UserManager.getHomeDirectory(user);
@@ -200,7 +200,7 @@ public class UserResolverImpl extends AbstractWebdavResolver
                 new Date()
             );
 
-            return new FileSystemResource(this, user.getName(), fileRoot, p);
+            return new FileSystemResource(this, Path.toPathPart(user.getName()), fileRoot, p);
         }
 
 

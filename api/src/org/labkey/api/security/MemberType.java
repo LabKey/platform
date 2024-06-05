@@ -17,12 +17,6 @@ package org.labkey.api.security;
 
 import org.jetbrains.annotations.Nullable;
 
-/**
- * User: adam
- * Date: 11/12/12
- * Time: 8:30 AM
- */
-
 // This is a "generic enum"... it was a true enum (SecurityManager.GroupMemberType), but the interface / implementation approach
 // better supports generics and cleans up getGroupMembers(), getAllGroupMembers(), etc. Standard enums don't support generics.
 
@@ -31,43 +25,23 @@ public interface MemberType<P extends UserPrincipal>
 {
     @Nullable P getPrincipal(int id);
 
-    static MemberType<Group> GROUPS = new MemberType<Group>() {
-        @Override
-        public Group getPrincipal(int id)
-        {
-            return SecurityManager.getGroup(id);
-        }
-    };
+    MemberType<Group> GROUPS = SecurityManager::getGroup;
 
-    static MemberType<User> ACTIVE_AND_INACTIVE_USERS = new MemberType<User>() {
-        @Override
-        public User getPrincipal(int id)
-        {
-            return UserManager.getUser(id);
-        }
-    };
+    MemberType<User> ACTIVE_AND_INACTIVE_USERS = UserManager::getUser;
 
-    static MemberType<User> ACTIVE_USERS = new MemberType<User>() {
-        @Override
-        public User getPrincipal(int id)
-        {
-            User user = UserManager.getUser(id);
+    MemberType<User> ACTIVE_USERS = id -> {
+        User user = UserManager.getUser(id);
 
-            return (null != user && user.isActive() ? user : null);
-        }
+        return (null != user && user.isActive() ? user : null);
     };
 
     // All groups and all users (including inactive)
-    static MemberType<UserPrincipal> ALL_GROUPS_AND_USERS = new MemberType<UserPrincipal>() {
-        @Override
-        public UserPrincipal getPrincipal(int id)
-        {
-            User user = ACTIVE_AND_INACTIVE_USERS.getPrincipal(id);
+    MemberType<UserPrincipal> ALL_GROUPS_AND_USERS = id -> {
+        User user = ACTIVE_AND_INACTIVE_USERS.getPrincipal(id);
 
-            if (null != user)
-                return user;
+        if (null != user)
+            return user;
 
-            return GROUPS.getPrincipal(id);
-        }
+        return GROUPS.getPrincipal(id);
     };
 }

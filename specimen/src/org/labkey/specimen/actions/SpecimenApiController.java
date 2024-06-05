@@ -31,10 +31,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.specimen.SpecimenManagerNew;
-import org.labkey.api.specimen.SpecimenRequestException;
-import org.labkey.api.specimen.SpecimenRequestStatus;
 import org.labkey.api.specimen.Vial;
-import org.labkey.api.specimen.importer.RequestabilityManager;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.specimen.model.PrimaryType;
@@ -48,7 +45,10 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.specimen.RequestedSpecimens;
 import org.labkey.specimen.SpecimenManager;
+import org.labkey.specimen.SpecimenRequestException;
 import org.labkey.specimen.SpecimenRequestManager;
+import org.labkey.specimen.SpecimenRequestStatus;
+import org.labkey.specimen.importer.RequestabilityManager;
 import org.labkey.specimen.model.AdditiveType;
 import org.labkey.specimen.model.DerivativeType;
 import org.labkey.specimen.requirements.SpecimenRequest;
@@ -126,7 +126,7 @@ public class SpecimenApiController extends SpringActionController
             vialProperties.put("primaryTypeId", vial.getPrimaryTypeId());
             if (vial.getPrimaryTypeId() != null)
             {
-                PrimaryType primaryType = SpecimenManagerNew.get().getPrimaryType(vial.getContainer(), vial.getPrimaryTypeId());
+                PrimaryType primaryType = SpecimenManager.get().getPrimaryType(vial.getContainer(), vial.getPrimaryTypeId());
                 if (primaryType != null)
                     vialProperties.put("primaryType", primaryType.getPrimaryType());
             }
@@ -331,7 +331,7 @@ public class SpecimenApiController extends SpringActionController
         @Override
         public ApiResponse execute(GetProvidingLocationsForm form, BindException errors)
         {
-            Map<String, List<Vial>> vialsByHash = SpecimenManagerNew.get().getVialsForSpecimenHashes(getContainer(), getUser(),
+            Map<String, List<Vial>> vialsByHash = SpecimenManager.get().getVialsForSpecimenHashes(getContainer(), getUser(),
                     PageFlowUtil.set(form.getSpecimenHashes()), true);
             Collection<Integer> preferredLocations = StudyUtils.getPreferredProvidingLocations(vialsByHash.values());
             final Map<String, Object> response = new HashMap<>();
@@ -486,13 +486,13 @@ public class SpecimenApiController extends SpringActionController
     {
         Vial vial;
         if (IdTypes.GlobalUniqueId.name().equals(idType))
-            vial = SpecimenManagerNew.get().getVial(getContainer(), getUser(), vialId);
+            vial = SpecimenManager.get().getVial(getContainer(), getUser(), vialId);
         else if (IdTypes.RowId.name().equals(idType))
         {
             try
             {
                 int id = Integer.parseInt(vialId);
-                vial = SpecimenManagerNew.get().getVial(getContainer(), getUser(), id);
+                vial = SpecimenManager.get().getVial(getContainer(), getUser(), id);
             }
             catch (NumberFormatException e)
             {

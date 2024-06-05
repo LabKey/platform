@@ -13,11 +13,15 @@ public interface PlateSet
 
     Container getContainer();
 
+    String getDescription();
+
     String getName();
 
     String getPlateSetId();
 
     boolean isArchived();
+
+    boolean isTemplate();
 
     List<Plate> getPlates(User user);
 

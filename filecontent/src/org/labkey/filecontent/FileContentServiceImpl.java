@@ -910,7 +910,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
                             else
                             {
                                 // local -> cloud; source starts under @files
-                                File filesSrc = new File(src, FILES_LINK);
+                                File filesSrc = FileUtil.appendName(src, FILES_LINK);
                                 if (filesSrc.exists())
                                     moveFileRoot(filesSrc.toPath(), dest, user, c);
                                 FileUtil.deleteDir(src);        // moveFileRoot will delete @files, but we need to delete its parent

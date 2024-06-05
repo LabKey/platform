@@ -76,12 +76,23 @@ public class DataStatesTableInfo extends FilteredTable<CoreQuerySchema>
 
     static class DataStatesService extends DefaultQueryUpdateService
     {
+        private DataState _dataState = null;
         public DataStatesService(FilteredTable table) { super(table, table.getRealTable()); }
+
+        private DataState getDataState(Map<String, Object> row, Container container)
+        {
+            if (_dataState == null)
+                _dataState = DataStateManager.getInstance().getStateForRowId(container, (Integer) row.get("rowid"));
+            return _dataState;
+        }
 
         private boolean validateQCStateNotInUse(Map<String, Object> oldRowMap, Container container)
         {
             Map<String, DataStateHandler> registeredHandlers = DataStateManager.getInstance().getRegisteredDataHandlers();
-            DataState QCToDelete = DataStateManager.getInstance().getStateForRowId(container, (Integer) oldRowMap.get("rowid"));
+            DataState QCToDelete = getDataState(oldRowMap, container);
+
+            if (QCToDelete == null) // not in use if it doesn't exist; avoid NPE
+                return true;
 
             for (DataStateHandler handler : registeredHandlers.values())
             {
@@ -94,7 +105,7 @@ public class DataStatesTableInfo extends FilteredTable<CoreQuerySchema>
         private String validateQCStateChangeAllowed(Map<String, Object> row, Container container)
         {
             Map<String, DataStateHandler> registeredHandlers = DataStateManager.getInstance().getRegisteredDataHandlers();
-            DataState qcChanging = DataStateManager.getInstance().getStateForRowId(container, (Integer) row.get("rowid"));
+            DataState qcChanging = getDataState(row, container);
 
             for (DataStateHandler handler : registeredHandlers.values())
             {
@@ -150,6 +161,8 @@ public class DataStatesTableInfo extends FilteredTable<CoreQuerySchema>
         @Override
         protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRowMap) throws InvalidKeyException, QueryUpdateServiceException, SQLException
         {
+            if (getDataState(oldRowMap, container) == null)
+                throw new QueryUpdateServiceException("State '" + oldRowMap.get("label") + "' could not be found.");
             if (!validateQCStateNotInUse(oldRowMap, container))
                 throw new QueryUpdateServiceException("State '" + oldRowMap.get("label") + "' cannot be deleted as it is currently in use.");
 

@@ -19,6 +19,7 @@ package org.labkey.assay.plate;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Test;
@@ -34,12 +35,16 @@ import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Transient;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryRowReference;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.assay.PlateController;
 import org.labkey.assay.plate.model.PlateBean;
+import org.labkey.assay.plate.query.PlateSchema;
+import org.labkey.assay.plate.query.PlateTable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -56,52 +61,51 @@ import static org.junit.Assert.assertTrue;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
 {
-    private String _name;
-    private Integer _rowId;
-    private int _createdBy;
+    private boolean _archived;
+    private String _assayType = TsvPlateLayoutHandler.TYPE;
     private long _created;
-    private int _modifiedBy;
-    private long _modified;
-    private String _dataFileId;
-    private String _assayType;
-    private boolean _isTemplate;
-    private String _description;
-    private String _plateId;
-    private PlateType _plateType;
-    private PlateSet _plateSet;
-
-    private Map<WellGroup.Type, Map<String, WellGroupImpl>> _groups;
-    private List<WellGroupImpl> _deletedGroups;
-
-    private WellImpl[][] _wells;
-    private Map<Integer, Well> _wellMap;
-
-    private int _runId;      // NO_RUNID means no run yet, well data comes from file, dilution data must be calculated
-    private int _plateNumber;
+    private int _createdBy;
     private List<PlateCustomField> _customFields = Collections.emptyList();
+    private String _dataFileId;
+    private List<WellGroupImpl> _deletedGroups;
+    private String _description;
+    private Map<WellGroup.Type, Map<String, WellGroupImpl>> _groups;
+    private long _modified;
+    private int _modifiedBy;
+    private String _name;
+    private String _plateId;
+    private int _plateNumber = 1;
+    private PlateSet _plateSet;
+    private PlateType _plateType;
+    private Integer _rowId;
+    private Integer _runCount;
+    private int _runId = PlateService.NO_RUNID; // NO_RUNID means no run yet, well data comes from file, dilution data must be calculated
+    private boolean _template;
+    private WellImpl[][] _wells = null;
+    private Map<Integer, Well> _wellMap;
     private Integer _metadataDomainId;
 
-    private Integer _runCount;
-
+    // no-param constructor for reflection
     public PlateImpl()
     {
-        // no-param constructor for reflection
-        _wells = null;
-        _runId = PlateService.NO_RUNID;
-        _plateNumber = 1;
     }
 
     public PlateImpl(Container container, String name, String assayType, @NotNull PlateType plateType)
     {
         super(container);
-        _name = name;
-        _assayType = assayType;
-        _container = container;
+        _name = StringUtils.trimToNull(name);
+        if (StringUtils.trimToNull(assayType) != null)
+            _assayType = assayType;
         _dataFileId = GUID.makeGUID();
         _plateType = plateType;
     }
 
-    public PlateImpl(PlateImpl plate, double[][] wellValues, boolean[][] excluded, int runId, int plateNumber)
+    public PlateImpl(Container container, String name, @NotNull PlateType plateType)
+    {
+        this(container, name, null, plateType);
+    }
+
+    public PlateImpl(@NotNull PlateImpl plate, double[][] wellValues, boolean[][] excluded, int runId, int plateNumber)
     {
         this(plate.getContainer(), plate.getName(), plate.getAssayType(), plate.getPlateType());
 
@@ -126,8 +130,6 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
 
         for (WellGroup group : plate.getWellGroups())
             addWellGroup(new WellGroupImpl(this, (WellGroupImpl) group));
-
-        setContainer(plate.getContainer());
     }
 
     public static PlateImpl from(PlateBean bean)
@@ -142,6 +144,7 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
         plate.setDataFileId(bean.getDataFileId());
         plate.setAssayType(bean.getAssayType());
         plate.setPlateId(bean.getPlateId());
+        plate.setArchived(bean.getArchived());
         plate.setDescription(bean.getDescription());
 
         // entity fields
@@ -179,7 +182,9 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     @Override
     public @Nullable QueryRowReference getQueryRowReference()
     {
-        return null;
+        if (isNew())
+            return null;
+        return new QueryRowReference(getContainer(), SchemaKey.fromParts(PlateSchema.SCHEMA_NAME), PlateTable.NAME, FieldKey.fromParts("rowId"), getRowId());
     }
 
     @JsonIgnore
@@ -191,7 +196,7 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     }
 
     @Override
-    public WellGroup addWellGroup(String name, WellGroup.Type type, Position upperLeft, Position lowerRight)
+    public @NotNull WellGroup addWellGroup(String name, WellGroup.Type type, Position upperLeft, Position lowerRight)
     {
         int regionWidth = lowerRight.getColumn() - upperLeft.getColumn() + 1;
         int regionHeight = lowerRight.getRow() - upperLeft.getRow();
@@ -206,7 +211,7 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
 
     @JsonIgnore
     @Override
-    public WellGroupImpl addWellGroup(String name, WellGroup.Type type, List<Position> positions)
+    public @NotNull WellGroupImpl addWellGroup(String name, WellGroup.Type type, List<Position> positions)
     {
         return storeWellGroup(createWellGroup(name, type, positions));
     }
@@ -261,27 +266,33 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
 
     @JsonIgnore
     @Override
-    public List<WellGroup> getWellGroups(Position position)
+    public @NotNull List<WellGroup> getWellGroups(Position position)
     {
+        List<WellGroup> wellGroups = getWellGroups();
+        if (wellGroups.isEmpty())
+            return Collections.emptyList();
+
         List<WellGroup> groups = new ArrayList<>();
-        for (WellGroup group : getWellGroups())
+        for (WellGroup group : wellGroups)
         {
             if (group.contains(position))
                 groups.add(group);
         }
+
         return groups;
     }
 
     @JsonIgnore
     @Override
-    public List<WellGroup> getWellGroups()
+    public @NotNull List<WellGroup> getWellGroups()
     {
+        if (_groups == null)
+            return Collections.emptyList();
+
         List<WellGroup> allGroups = new ArrayList<>();
-        if (_groups != null)
-        {
-            for (Map<String, WellGroupImpl> groups : _groups.values())
-                allGroups.addAll(groups.values());
-        }
+        for (Map<String, WellGroupImpl> groups : _groups.values())
+            allGroups.addAll(groups.values());
+
         return allGroups;
     }
 
@@ -298,32 +309,45 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
 
     @JsonIgnore
     @Override
-    public List<WellGroup> getWellGroups(WellGroup.Type type)
+    public @NotNull List<WellGroup> getWellGroups(WellGroup.Type type)
     {
+        if (_groups == null)
+            return Collections.emptyList();
+
         List<WellGroup> allGroups = new ArrayList<>();
-        if (_groups != null)
-        {
-            var typedGroups = _groups.get(type);
-            if (typedGroups != null && !typedGroups.isEmpty())
-                allGroups.addAll(typedGroups.values());
-        }
+        var typedGroups = _groups.get(type);
+        if (typedGroups != null && !typedGroups.isEmpty())
+            allGroups.addAll(typedGroups.values());
+
         return allGroups;
     }
 
     @JsonIgnore
     @Override
-    public Map<WellGroup.Type, Map<String, WellGroup>> getWellGroupMap()
+    public @NotNull Map<WellGroup.Type, Map<String, WellGroup>> getWellGroupMap()
     {
+        if (_groups == null)
+            return Collections.emptyMap();
+
         Map<WellGroup.Type, Map<String, WellGroup>> wellgroupTypeMap = new HashMap<>();
-        if (_groups != null)
+        for (Map.Entry<WellGroup.Type, Map<String, WellGroupImpl>> groupEntry : _groups.entrySet())
         {
-            for (Map.Entry<WellGroup.Type, Map<String, WellGroupImpl>> groupEntry : _groups.entrySet())
-            {
-                Map<String, WellGroup> groupMap = new HashMap<>(groupEntry.getValue());
-                wellgroupTypeMap.put(groupEntry.getKey(), groupMap);
-            }
+            Map<String, WellGroup> groupMap = new HashMap<>(groupEntry.getValue());
+            wellgroupTypeMap.put(groupEntry.getKey(), groupMap);
         }
+
         return wellgroupTypeMap;
+    }
+
+    @Override
+    public boolean isArchived()
+    {
+        return _archived;
+    }
+
+    public void setArchived(boolean archived)
+    {
+        _archived = archived;
     }
 
     @Override
@@ -351,7 +375,8 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     }
 
     @JsonIgnore
-    public PositionImpl getPosition(int row, int col)
+    @Override
+    public @NotNull PositionImpl getPosition(int row, int col)
     {
         return new PositionImpl(_container, row, col);
     }
@@ -501,15 +526,13 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
 
     @JsonIgnore
     @Override
-    public WellImpl getWell(int row, int col)
+    public @NotNull WellImpl getWell(int row, int col)
     {
         if (_wells != null)
             return _wells[row][col];
-        else
-        {
-            // there is no data associated with this plate, return a well will no data.
-            return new WellImpl(this, row, col, null, false);
-        }
+
+        // there is no data associated with this plate, return a well will no data.
+        return new WellImpl(this, row, col, null, false);
     }
 
     @Override
@@ -554,7 +577,7 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
 
     @JsonIgnore
     @Override
-    public List<Well> getWells()
+    public @NotNull List<Well> getWells()
     {
         if (_wellMap != null)
             return _wellMap.values().stream().toList();
@@ -566,19 +589,19 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
                     wells.add(getWell(row, col));
             return wells;
         }
-        else
-            return Collections.emptyList();
+
+        return Collections.emptyList();
     }
 
     @Override
     public boolean isTemplate()
     {
-        return _isTemplate;
+        return _template;
     }
 
     public void setTemplate(boolean template)
     {
-        _isTemplate = template;
+        _template = template;
     }
 
     @Override
@@ -649,11 +672,12 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
         _customFields = customFields;
     }
 
+    @Override
     public PlateImpl copy()
     {
         try
         {
-            return (PlateImpl)super.clone();
+            return (PlateImpl) super.clone();
         }
         catch (CloneNotSupportedException e)
         {
@@ -701,6 +725,12 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     public boolean isIdentifierMatch(String id)
     {
         return id != null && !id.isEmpty() && (id.equals(getRowId() + "") || id.equalsIgnoreCase(getPlateId()) || id.equalsIgnoreCase(getName()));
+    }
+
+    @Override
+    public boolean isNew()
+    {
+        return _rowId == null || _rowId <= 0;
     }
 
     public static final class TestCase

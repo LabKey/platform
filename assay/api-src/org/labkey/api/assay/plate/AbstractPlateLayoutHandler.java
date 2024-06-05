@@ -26,16 +26,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-/**
- * User: klum
- * Date: Jun 13, 2012
- */
 public abstract class AbstractPlateLayoutHandler implements PlateLayoutHandler
 {
     Map<Pair<Integer, Integer>, PlateType> _plateTypeMap;
 
     @Override
-    public void validateTemplate(Container container, User user, Plate template) throws ValidationException
+    public void validatePlate(Container container, User user, Plate plate) throws ValidationException
     {
     }
 

@@ -89,6 +89,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpDataProtocolInputTable;
 import org.labkey.api.exp.query.ExpInputTable;
 import org.labkey.api.exp.query.ExpMaterialProtocolInputTable;
+import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.exp.xar.LSIDRelativizer;
@@ -180,6 +181,7 @@ import org.labkey.api.view.DataViewSnapshotSelectionForm;
 import org.labkey.api.view.DetailsView;
 import org.labkey.api.view.HBox;
 import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.InsertView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -725,9 +727,8 @@ public class ExperimentController extends SpringActionController
                     {
                         String editLink = updateURL.toString();
                         ActionButton updateButton = new ActionButton("Edit Type");
-                        updateButton.setURL("javascript:void(0)");
                         updateButton.setActionType(ActionButton.Action.SCRIPT);
-                        updateButton.setScript("javascript: if (window.confirm('This sample type is defined in the " + _sampleType.getContainer().getPath() + " folder. Would you still like to edit it?')) { window.location = '" + editLink + "' }");
+                        updateButton.setScript("if (window.confirm('This sample type is defined in the " + _sampleType.getContainer().getPath() + " folder. Would you still like to edit it?')) { window.location = '" + editLink + "' }");
                         detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(updateButton);
                     }
                     else
@@ -1088,9 +1089,8 @@ public class ExperimentController extends SpringActionController
                 else if (_dataClass.getContainer().hasPermission(getUser(), DesignDataClassPermission.class))
                 {
                     ActionButton updateButton = new ActionButton("Edit Data Class");
-                    updateButton.setURL("javascript:void(0)");
                     updateButton.setActionType(ActionButton.Action.SCRIPT);
-                    updateButton.setScript("javascript: if (window.confirm('This data class is defined in the " + _dataClass.getContainer().getPath() + " folder. Would you still like to edit it?')) { window.location = '" + updateURL + "' }");
+                    updateButton.setScript("if (window.confirm('This data class is defined in the " + _dataClass.getContainer().getPath() + " folder. Would you still like to edit it?')) { window.location = '" + updateURL + "' }");
                     updateButton.setPrimary(true);
                     bb.add(updateButton);
                 }
@@ -4059,6 +4059,14 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
+        protected Map<String, String> getRenamedColumns()
+        {
+            Map<String, String> renamedColumns = super.getRenamedColumns();
+            renamedColumns.putAll(SampleTypeUpdateServiceDI.SAMPLE_ALT_IMPORT_NAME_COLS);
+            return renamedColumns;
+        }
+
+        @Override
         protected int importData(
             DataLoader dl,
             FileStream file,
@@ -4171,7 +4179,6 @@ public class ExperimentController extends SpringActionController
 
                 renameColumns.put(paramName.substring(renameParamPrefix.length()), (String) pv.getValue());
             }
-
             return renameColumns;
         }
 
@@ -6106,19 +6113,29 @@ public class ExperimentController extends SpringActionController
             ActionURL moveURL = new ActionURL(MoveRunsAction.class, getContainer());
             PipelineRootContainerTree ct = new PipelineRootContainerTree(getUser(), moveURL)
             {
+                private boolean _clickHandlerRegistered = false;
+
                 @Override
                 protected void renderCellContents(StringBuilder html, Container c, ActionURL url, boolean hasRoot)
                 {
-                    if (hasRoot && !c.equals(getContainer()))
+                    boolean renderLink = hasRoot && !c.equals(getContainer());
+
+                    if (renderLink)
                     {
-                        html.append("<a href=\"javascript:moveTo('");
-                        html.append(c.getId());
-                        html.append("')\">");
+                        html.append("<a class=\"move-target-container\" data-objectid=\"");
+                        html.append(PageFlowUtil.filter(c.getId()));
+                        html.append("\">");
                     }
                     html.append(PageFlowUtil.filter(c.getName()));
-                    if (hasRoot)
+                    if (renderLink)
                     {
                         html.append("</a>");
+                    }
+
+                    if (!_clickHandlerRegistered)
+                    {
+                        HttpView.currentPageConfig().addHandlerForQuerySelector("a.move-target-container", "click", "moveTo(this.attributes.getNamedItem('data-objectid').value);" );
+                        _clickHandlerRegistered = true;
                     }
                 }
             };
@@ -7888,4 +7905,18 @@ public class ExperimentController extends SpringActionController
 
         }
    }
+
+    @RequiresPermission(AdminPermission.class)
+    public static class MissingFilesCheckAction extends ReadOnlyApiAction<Object>
+    {
+        @Override
+        public Object execute(Object o, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            response.put("success", true);
+            response.put("result", ExperimentServiceImpl.get().doMissingFilesCheck(getUser(), getContainer()));
+            return response;
+        }
+    }
+
 }

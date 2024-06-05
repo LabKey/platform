@@ -1137,6 +1137,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             String labkeyContextPath = AppProps.getInstance().getContextPath();
             results.put("webappContextPath", labkeyContextPath);
             results.put("embeddedTomcat", AppProps.getInstance().isEmbeddedTomcat());
+            boolean customLog4JConfig = false;
+            if (ModuleLoader.getServletContext() != null)
+            {
+                customLog4JConfig = Boolean.parseBoolean(ModuleLoader.getServletContext().getInitParameter("org.labkey.customLog4JConfig"));
+            }
+            results.put("customLog4JConfig", customLog4JConfig);
             results.put("runtimeMode", AppProps.getInstance().isDevMode() ? "development" : "production");
             Set<String> deployedApps = new HashSet<>(CoreWarningProvider.collectAllDeployedApps());
             deployedApps.remove(labkeyContextPath);
@@ -1162,6 +1168,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             cal.set(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), 1, 0, 0, 0);
             results.put("uniqueUserCountThisMonth", UserManager.getUniqueUsersCount(cal.getTime()));
             results.put("scriptEngines", LabKeyScriptEngineManager.get().getScriptEngineMetrics());
+            results.put("customLabels", CustomLabelService.get().getCustomLabelMetrics());
             return results;
         });
 
@@ -1182,9 +1189,20 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         {
             MarkdownService.setInstance(new MarkdownServiceImpl());
         }
-        catch (Error e)
+        catch (RuntimeException | Error e)
         {
-            LOG.error("Error registering MarkdownServiceImpl", e);
+            if (AppProps.getInstance().isDevMode())
+            {
+                // Be tolerant of inability to render Markdown in dev mode, as
+                // redeploying the webapp without bouncing Tomcat causes problems
+                // with Graal's JNI registration. See issue 50315
+                LOG.error("Error registering MarkdownServiceImpl", e);
+            }
+            else
+            {
+                // In production mode, treat this as a fatal error
+                throw e;
+            }
         }
 
         // initialize email preference service and listeners

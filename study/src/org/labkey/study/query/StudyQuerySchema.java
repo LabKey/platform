@@ -45,11 +45,11 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.specimen.SpecimenManager;
+import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenQuerySchema;
 import org.labkey.api.specimen.query.SpecimenPivotByDerivativeType;
 import org.labkey.api.specimen.query.SpecimenPivotByPrimaryType;
 import org.labkey.api.specimen.query.SpecimenPivotByRequestingLocation;
-import org.labkey.api.specimen.query.SpecimenQueryView;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.DatasetTable;
 import org.labkey.api.study.SpecimenService;
@@ -74,7 +74,26 @@ import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
-import org.labkey.study.query.studydesign.*;
+import org.labkey.study.query.studydesign.AbstractStudyDesignDomainKind;
+import org.labkey.study.query.studydesign.DoseAndRouteTable;
+import org.labkey.study.query.studydesign.StudyDesignAssaysTable;
+import org.labkey.study.query.studydesign.StudyDesignChallengeTypesTable;
+import org.labkey.study.query.studydesign.StudyDesignGenesTable;
+import org.labkey.study.query.studydesign.StudyDesignImmunogenTypesTable;
+import org.labkey.study.query.studydesign.StudyDesignLabsTable;
+import org.labkey.study.query.studydesign.StudyDesignRoutesTable;
+import org.labkey.study.query.studydesign.StudyDesignSampleTypesTable;
+import org.labkey.study.query.studydesign.StudyDesignSubTypesTable;
+import org.labkey.study.query.studydesign.StudyDesignUnitsTable;
+import org.labkey.study.query.studydesign.StudyProductAntigenDomainKind;
+import org.labkey.study.query.studydesign.StudyProductAntigenTable;
+import org.labkey.study.query.studydesign.StudyProductDomainKind;
+import org.labkey.study.query.studydesign.StudyProductTable;
+import org.labkey.study.query.studydesign.StudyTreatmentDomainKind;
+import org.labkey.study.query.studydesign.StudyTreatmentProductDomainKind;
+import org.labkey.study.query.studydesign.StudyTreatmentProductTable;
+import org.labkey.study.query.studydesign.StudyTreatmentTable;
+import org.labkey.study.query.studydesign.StudyTreatmentVisitMapTable;
 import org.labkey.study.visualization.StudyVisualizationProvider;
 import org.springframework.validation.BindException;
 
@@ -103,8 +122,7 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
     public static final String SCHEMA_NAME = "study";
     public static final String DATASETS_SCHEMA_NAME = "Datasets";
     public static final String DESIGN_SCHEMA_NAME = "Design";
-    public static final String SPECIMENTS_SCHEMA_NAME = "Specimens";
-
+    public static final String SPECIMENS_SCHEMA_NAME = "Specimens";
 
     public static final String SCHEMA_DESCRIPTION = "Contains all data related to the study, including subjects, cohorts, visits, datasets, specimens, etc.";
     public static final String SIMPLE_SPECIMEN_TABLE_NAME = "SimpleSpecimen";
@@ -241,7 +259,7 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
             return Set.of();
         var ret = new LinkedHashSet<>(Arrays.asList(DATASETS_SCHEMA_NAME, DESIGN_SCHEMA_NAME));
         if (null != SpecimenService.get())
-            ret.add(SPECIMENTS_SCHEMA_NAME);
+            ret.add(SPECIMENS_SCHEMA_NAME);
         return ret;
     }
 
@@ -252,7 +270,7 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
             return new DatasetSchema(this);
         if (StringUtils.equalsIgnoreCase(DESIGN_SCHEMA_NAME, name))
             return new DesignSchema(this);
-        if (StringUtils.equalsIgnoreCase(SPECIMENTS_SCHEMA_NAME,name))
+        if (StringUtils.equalsIgnoreCase(SPECIMENS_SCHEMA_NAME,name))
             return new SpecimenSchema(this);
         return super.getSchema(name);
     }
@@ -1017,7 +1035,9 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
 
             if ("SpecimenDetail".equalsIgnoreCase(queryName))
             {
-                return SpecimenQueryView.createView(context, settings, SpecimenQueryView.ViewType.VIALS);
+                SpecimenMigrationService sms = SpecimenMigrationService.get();
+                if (null != sms)
+                    return sms.getSpecimenQueryView(context, settings);
             }
 
             if ("Cohort".equalsIgnoreCase(queryName))

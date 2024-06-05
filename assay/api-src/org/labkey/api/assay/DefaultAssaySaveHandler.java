@@ -298,17 +298,13 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
 
             if (rawPlateMetadata != null)
             {
-                AssayPlateMetadataService svc = AssayPlateMetadataService.getService(PlateMetadataDataHandler.DATA_TYPE);
-                if (svc != null)
+                try
                 {
-                    try
-                    {
-                        factory.setRawPlateMetadata(svc.parsePlateMetadata(rawPlateMetadata));
-                    }
-                    catch(ExperimentException e)
-                    {
-                        throw new RuntimeException(e);
-                    }
+                    factory.setRawPlateMetadata(AssayPlateMetadataService.get().parsePlateMetadata(rawPlateMetadata));
+                }
+                catch (ExperimentException e)
+                {
+                    throw new RuntimeException(e);
                 }
             }
             factory.setInputDatas(inputData);

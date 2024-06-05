@@ -27,11 +27,11 @@ import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.reader.Readers;
+import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
 import org.labkey.pipeline.AbstractPipelineStartup;
 import org.labkey.pipeline.mule.test.DummyPipelineJob;
@@ -51,8 +51,6 @@ import java.util.concurrent.TimeUnit;
 /**
  * Entry point for pipeline jobs that are invoked on a cluster node. After completion of the job, the process
  * should exit with a zero exit code in the case of success.
- * User: jeckels
- * Date: Apr 8, 2008
  */
 public class ClusterStartup extends AbstractPipelineStartup
 {
@@ -161,6 +159,7 @@ public class ClusterStartup extends AbstractPipelineStartup
         //System.exit(0);
     }
 
+    @TestWhen(TestWhen.When.BVT)
     public static class TestCase
     {
         private File _tempDir;

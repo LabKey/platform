@@ -201,6 +201,12 @@ LABKEY.vis.GenericChartHelper = new function(){
 
     var _queryColumnMetadata = function(queryConfig, columnList, successCallback, callbackScope)
     {
+        var columns = columnList.columns.all;
+        if (queryConfig.savedColumns) {
+            // make sure all savedColumns from the chart are included as options, they may not be in the view anymore
+            columns = columns.concat(queryConfig.savedColumns);
+        }
+
         LABKEY.Query.selectRows({
             maxRows: 0, // use maxRows 0 so that we just get the query metadata
             schemaName: queryConfig.schemaName,
@@ -208,7 +214,7 @@ LABKEY.vis.GenericChartHelper = new function(){
             viewName: queryConfig.viewName,
             parameters: queryConfig.parameters,
             requiredVersion: 9.1,
-            columns: columnList.columns.all,
+            columns: columns,
             method: 'POST', // Issue 31744: use POST as the columns list can be very long and cause a 400 error
             success: function(response){
                 var columnMetadata = _updateAndSortQueryFields(queryConfig, columnList, response.metaData.fields);

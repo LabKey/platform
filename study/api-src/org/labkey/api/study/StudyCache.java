@@ -16,22 +16,33 @@
 
 package org.labkey.api.study;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.util.Path;
 
-/**
- * User: brittp
- * Date: Feb 21, 2006
- * Time: 10:19:30 AM
- */
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 public class StudyCache
 {
-    private static String getCacheName(Container c, @Nullable Object cacheKey)
+    // TODO: Fix generics. Get rid of cache() method and switch to BlockingCaches. Cache (and invalidate)
+    // a single map per Container for all object types.
+    private static final Map<Path, DatabaseCache<String, Object>> CACHES = new ConcurrentHashMap<>(10);
+
+    public static @NotNull DatabaseCache<String, Object> getCache(TableInfo tinfo)
+    {
+        Path cacheKey = tinfo.getNotificationKey();
+        assert null != cacheKey : "StudyCache not supported for " + tinfo;
+        return CACHES.computeIfAbsent(cacheKey, key -> new DatabaseCache(tinfo.getSchema().getScope(), tinfo.getCacheSize(), "StudyCache: " + tinfo.getName()));
+    }
+
+    public static String getCacheName(Container c, @Nullable Object cacheKey)
     {
         return c.getId() + "/" + (null != cacheKey ? cacheKey : "");
     }
@@ -40,30 +51,29 @@ public class StudyCache
     {
         if (cachable != null)
             cachable.lock();
-        DbCache.put(tinfo, getCacheName(c, objectId), cachable, CacheManager.HOUR);
+        getCache(tinfo).put(getCacheName(c, objectId), cachable, CacheManager.HOUR);
     }
 
+    // TODO: this method is broken/inconsistent -- the cacheKey passed in doesn't match the put() keys
     public static void uncache(TableInfo tinfo, Container c, Object cacheKey)
     {
-        DbCache.remove(tinfo, getCacheName(c, cacheKey));
-    }
-
-    public static Object getCached(TableInfo tinfo, Container c, Object cacheKey)
-    {
-        return DbCache.get(tinfo, getCacheName(c, cacheKey));
+        DatabaseCache<String, Object> cache = getCache(tinfo);
+        cache.remove(getCacheName(c, cacheKey));
+        cache.clear();
     }
 
     public static Object get(TableInfo tinfo, Container c, Object cacheKey, CacheLoader<String, Object> loader)
     {
-        // Don't use a BlockingCache as that can cause deadlocks when needing to do a
-        // load when all other DB connections are in use in threads, including one
-        // that holds the BlockingCache's lock
-        DatabaseCache<String, Object> cache = DbCache.getCache(tinfo, true);
-        return cache.get(getCacheName(c, cacheKey), null, loader);
+        return getCache(tinfo).get(getCacheName(c, cacheKey), null, loader);
     }
 
     public static void clearCache(TableInfo tinfo, Container c)
     {
-        DbCache.removeUsingPrefix(tinfo, getCacheName(c, null));
+        getCache(tinfo).removeUsingFilter(new Cache.StringPrefixFilter(getCacheName(c, null)));
+    }
+
+    public static void clearCache(TableInfo tinfo)
+    {
+        getCache(tinfo).clear();
     }
 }

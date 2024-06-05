@@ -16,6 +16,7 @@
 
 package org.labkey.assay.plate.query;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -43,7 +44,8 @@ public class PlateSchema extends SimpleUserSchema
         PlateSetTable.NAME,
         PlateTypeTable.NAME,
         WellTable.NAME,
-        WellGroupTable.NAME
+        WellGroupTable.NAME,
+        WellGroupTypeTable.NAME
     ));
 
     public PlateSchema(User user, Container container)
@@ -64,7 +66,7 @@ public class PlateSchema extends SimpleUserSchema
         if (PlateTable.NAME.equalsIgnoreCase(name))
             return new PlateTable(this, cf).init();
         if (WellTable.NAME.equalsIgnoreCase(name))
-            return new WellTable(this, cf).init();
+            return new WellTable(this, cf, false).init();
         if (PlateSetTable.NAME.equalsIgnoreCase(name))
             return new PlateSetTable(this, cf).init();
         if (PlateTypeTable.NAME.equalsIgnoreCase(name))
@@ -79,8 +81,16 @@ public class PlateSchema extends SimpleUserSchema
             if (domain != null)
                 return new WellTable.WellPropertiesTable(domain,this, cf);
         }
+        if (WellGroupTypeTable.NAME.equalsIgnoreCase(name))
+            return new WellGroupTypeTable(this);
 
         return null;
+    }
+
+    public static TableInfo getWellTable(Container container, User user, @Nullable ContainerFilter cf)
+    {
+        PlateSchema plateSchema = new PlateSchema(user, container);
+        return new WellTable(plateSchema, cf, true).init();
     }
 
     static public void register(Module module)

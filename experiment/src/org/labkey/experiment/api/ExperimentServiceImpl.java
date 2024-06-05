@@ -52,8 +52,8 @@ import org.labkey.api.audit.ExperimentAuditEvent;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.audit.provider.ContainerAuditProvider;
 import org.labkey.api.cache.Cache;
+import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
@@ -171,6 +171,7 @@ import org.labkey.api.exp.xar.LSIDRelativizer;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.exp.xar.XarConstants;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.files.FileListener;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
@@ -199,6 +200,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;
@@ -225,6 +227,7 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.experiment.ExperimentAuditProvider;
+import org.labkey.experiment.FileLinkFileListener;
 import org.labkey.experiment.XarExportType;
 import org.labkey.experiment.XarExporter;
 import org.labkey.experiment.XarReader;
@@ -246,6 +249,7 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -298,6 +302,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     private final Cache<String, ExpProtocolImpl> PROTOCOL_LSID_CACHE = DatabaseCache.get(getExpSchema().getScope(), CacheManager.UNLIMITED, CacheManager.HOUR, "Protocol by LSID",
         (key, argument) -> toExpProtocol(new TableSelector(getTinfoProtocol(), new SimpleFilter(FieldKey.fromParts("LSID"), key), null).getObject(Protocol.class)));
+    private final Cache<String, ExperimentRun> EXPERIMENT_RUN_CACHE = DatabaseCache.get(getExpSchema().getScope(), getTinfoExperimentRun().getCacheSize(), "Experiment Run by LSID", new ExperimentRunCacheLoader());
 
     private final Cache<String, SortedSet<DataClass>> dataClassCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Data classes", (containerId, argument) ->
     {
@@ -4140,19 +4145,19 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return ExpExperimentImpl.fromExperiments(new TableSelector(getTinfoExperiment(), filter, sort).getArray(Experiment.class));
     }
 
-    public ExperimentRun getExperimentRun(String LSID)
+    public ExperimentRun getExperimentRun(String lsid)
     {
-        //Use main cache so updates/deletes through table layer get handled
-        String cacheKey = getCacheKey(LSID);
-        ExperimentRun run = (ExperimentRun) DbCache.get(getTinfoExperimentRun(), cacheKey);
-        if (null != run)
-            return run;
+        return EXPERIMENT_RUN_CACHE.get(lsid);
+    }
 
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("LSID"), LSID);
-        run = new TableSelector(getTinfoExperimentRun(), filter, null).getObject(ExperimentRun.class);
-        if (null != run)
-            DbCache.put(getTinfoExperimentRun(), cacheKey, run);
-        return run;
+    private class ExperimentRunCacheLoader implements CacheLoader<String, ExperimentRun>
+    {
+        @Override
+        public ExperimentRun load(@NotNull String lsid, @Nullable Object argument)
+        {
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("LSID"), lsid);
+            return new TableSelector(getTinfoExperimentRun(), filter, null).getObject(ExperimentRun.class);
+        }
     }
 
     @Override
@@ -4163,6 +4168,19 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         PROTOCOL_ROW_ID_CACHE.clear();
         PROTOCOL_LSID_CACHE.clear();
         DomainPropertyManager.clearCaches();
+        clearExperimentRunCache();
+    }
+
+    @Override
+    public void clearExperimentRunCache()
+    {
+        EXPERIMENT_RUN_CACHE.clear();
+    }
+
+    @Override
+    public void invalidateExperimentRun(String lsid)
+    {
+        EXPERIMENT_RUN_CACHE.remove(lsid);
     }
 
     @Override
@@ -6802,12 +6820,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     public ExpRun saveSimpleExperimentRun(
         ExpRun run,
         Map<? extends ExpMaterial, String> inputMaterials,
-        Map<? extends ExpData, String> inputDatas, 
+        Map<? extends ExpData, String> inputDatas,
         Map<ExpMaterial, String> outputMaterials,
-        Map<ExpData, String> outputDatas, 
-        Map<ExpData, String> transformedDatas, 
-        ViewBackgroundInfo info, 
-        Logger log, 
+        Map<ExpData, String> outputDatas,
+        Map<ExpData, String> transformedDatas,
+        ViewBackgroundInfo info,
+        Logger log,
         boolean loadDataFiles
     ) throws ExperimentException
     {
@@ -9670,6 +9688,69 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
     }
 
+    public Map<String, Map<String, Set<String>>> doMissingFilesCheck(User user, Container container) throws SQLException
+    {
+        if (container == null)
+            container = ContainerManager.getRoot();
+
+        if (!container.hasPermission(user, AdminPermission.class))
+            throw new UnauthorizedException("You don't have the required permission to perform this action");
+
+        ContainerFilter cf;
+        if (container.isRoot())
+        {
+            cf = new ContainerFilter.AllFolders(user);
+        }
+        else
+            cf = ContainerFilter.Type.CurrentAndSubfolders.create(container, user);
+
+        FileLinkFileListener fileListener = new FileLinkFileListener();
+
+        Map<String, Map<String, Set<String>>> missingFiles = new HashMap<>();
+        SQLFragment unionSql = fileListener.listFilesQuery(true);
+        Collection<GUID> containerIds = cf.getIds();
+        SQLFragment selectSql;
+        if (containerIds == null || containerIds.isEmpty())
+            selectSql = unionSql;
+        else
+            selectSql = new SQLFragment("SELECT * FROM (").append(unionSql).append(") WHERE Container ").appendInClause(cf.getIds(), CoreSchema.getInstance().getSchema().getSqlDialect());
+        final int MAX_MISSING_COUNT = 1000;
+        int missingCount = 0;
+        try (ResultSet rs = new SqlSelector(CoreSchema.getInstance().getSchema(), selectSql).getResultSet(false))
+        {
+            while (rs.next())
+            {
+                String filePath = rs.getString("FilePath");
+                if (StringUtils.isEmpty(filePath))
+                    continue;
+
+                File file;
+                // TODO: Issue 50538: support s3 files
+                if (filePath.startsWith("file:"))
+                    file = new File(URI.create(filePath));
+                else
+                    file = new File(filePath);
+
+                if (!file.exists())
+                {
+                    missingCount++;
+                    String containerId = rs.getString("Container");
+                    String sourceName = rs.getString("SourceName");
+                    if (!missingFiles.containsKey(containerId))
+                        missingFiles.put(containerId, new HashMap<>());
+                    if (!missingFiles.get(containerId).containsKey(sourceName))
+                        missingFiles.get(containerId).put(sourceName, new HashSet<>());
+
+                    missingFiles.get(containerId).get(sourceName).add(filePath);
+                }
+
+                if (missingCount >= MAX_MISSING_COUNT)
+                    break;
+            }
+        }
+        return missingFiles;
+    }
+
     public static class TestCase extends Assert
     {
         final Logger log = LogManager.getLogger(ExperimentServiceImpl.class);
@@ -9859,10 +9940,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         static public final int A11 = startId+8;
         static public final int AZ = startId+9;
         static public final int Z21 = startId+10;
-        
+
         static edge e(int a,int b) {return new edge(a,b);};
         static public final List<edge> edges = List.of(
-                e(Q,QQ), 
+                e(Q,QQ),
                 e(A1,A), e(A2,A), e(A2, Q), e(Z1, Q), e(Z1, Z), e(Z2, Z),
                 e(A11, A1), e(AZ,A2), e(AZ, Z1), e(Z21, Z2)
         );

@@ -15,6 +15,9 @@
  */
 package org.labkey.pipeline.api;
 
+import jakarta.mail.Address;
+import jakarta.mail.Message;
+import jakarta.mail.internet.MimeMessage;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -25,7 +28,6 @@ import org.json.JSONObject;
 import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
@@ -81,9 +83,6 @@ import org.labkey.pipeline.status.StatusController;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
-import jakarta.mail.Address;
-import jakarta.mail.Message;
-import jakarta.mail.internet.MimeMessage;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -221,8 +220,8 @@ public class PipelineManager
 
         try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
         {
-            DbCache.clear(ExperimentService.get().getTinfoExperimentRun());
             new SqlExecutor(PipelineSchema.getInstance().getSchema()).execute(sql);
+            ExperimentService.get().clearCaches();
 
             ContainerUtil.purgeTable(pipeline.getTableInfoStatusFiles(), container, "Container");
 

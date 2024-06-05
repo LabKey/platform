@@ -24,7 +24,6 @@ import org.labkey.api.assay.actions.DesignerAction;
 import org.labkey.api.assay.actions.UploadWizardAction;
 import org.labkey.api.assay.pipeline.AssayRunAsyncContext;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
-import org.labkey.api.assay.plate.PlateMetadataDataHandler;
 import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.ActionButton;
@@ -143,10 +142,6 @@ import java.util.function.Supplier;
 import static org.labkey.api.data.CompareType.IN;
 import static org.labkey.api.util.PageFlowUtil.jsString;
 
-/**
- * User: jeckels
- * Date: Sep 14, 2007
- */
 public abstract class AbstractAssayProvider implements AssayProvider
 {
     public static final String ASSAY_NAME_SUBSTITUTION = "${AssayName}";
@@ -911,15 +906,13 @@ public abstract class AbstractAssayProvider implements AssayProvider
         sortDomainList(domains);
 
         // see if there is a plate metadata domain associated with this protocol
-        if (AssayPlateMetadataService.getService(PlateMetadataDataHandler.DATA_TYPE) != null)
+        Domain plateDomain = AssayPlateMetadataService.get().getPlateDataDomain(protocol);
+        if (plateDomain != null)
         {
-            Domain plateDomain = AssayPlateMetadataService.getService(PlateMetadataDataHandler.DATA_TYPE).getPlateDataDomain(protocol);
-            if (plateDomain != null)
-            {
-                Map<DomainProperty, Object> values = DefaultValueService.get().getDefaultValues(plateDomain.getContainer(), plateDomain);
-                domains.add(new Pair<>(plateDomain, values));
-            }
+            Map<DomainProperty, Object> values = DefaultValueService.get().getDefaultValues(plateDomain.getContainer(), plateDomain);
+            domains.add(new Pair<>(plateDomain, values));
         }
+
         return domains;
     }
 
