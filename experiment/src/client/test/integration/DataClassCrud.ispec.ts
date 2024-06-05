@@ -73,16 +73,24 @@ describe('Data Class Designer - Permissions', () => {
     });
 
     describe('Create/update/delete designs', () => {
-        it('Designer can create, update and delete empty design', async () => {
+        it('Designer can create, update and delete empty design, reader and editors cannot create/update/delete design', async () => {
             const dataType = "ToDelete";
             let domainId = -1, domainURI = '';
-            await server.post('property', 'createDomain', {
+            const createPayload = {
                 kind: 'DataClass',
                 domainDesign: { name: dataType, fields: [{ name: 'Prop' }] },
                 options: {
                     name: dataType,
                 }
-            }, {...topFolderOptions, ...designerReaderOptions}).expect((result) => {
+            };
+
+            await server.post('property', 'createDomain', createPayload,
+                {...topFolderOptions, ...readerUserOptions}).expect(403);
+            await server.post('property', 'createDomain', createPayload,
+                {...topFolderOptions, ...editorUserOptions}).expect(403);
+
+            await server.post('property', 'createDomain', createPayload,
+                {...topFolderOptions, ...designerReaderOptions}).expect((result) => {
                 const domain = JSON.parse(result.text);
                 domainId = domain.domainId;
                 domainURI = domain.domainURI;
@@ -91,16 +99,27 @@ describe('Data Class Designer - Permissions', () => {
 
             const dataTypeRowId = await getDataClassRowId(dataType, topFolderOptions);
 
-            await server.post('property', 'saveDomain', {
+            const updatePayload = {
                 domainId,
                 domainDesign: { name: dataType, domainId, domainURI },
                 options: {
                     name: dataType,
                     nameExpression: 'Source-${genId}'
                 }
-            }, {...topFolderOptions, ...designerReaderOptions}).expect(successfulResponse);
+            };
+            await server.post('property', 'saveDomain', updatePayload, {...topFolderOptions, ...readerUserOptions})
+                .expect(403);
+            await server.post('property', 'saveDomain', updatePayload, {...topFolderOptions, ...editorUserOptions})
+                .expect(403);
 
-            const deleteResult = await deleteDataClass(dataTypeRowId, topFolderOptions, designerReaderOptions);
+            await server.post('property', 'saveDomain', updatePayload, {...topFolderOptions, ...designerReaderOptions}).expect(successfulResponse);
+
+            let deleteResult = await deleteDataClass(dataTypeRowId, topFolderOptions, readerUserOptions);
+            expect(deleteResult.status).toEqual(403);
+            deleteResult = await deleteDataClass(dataTypeRowId, topFolderOptions, editorUserOptions);
+            expect(deleteResult.status).toEqual(403);
+
+            deleteResult = await deleteDataClass(dataTypeRowId, topFolderOptions, designerReaderOptions);
             expect(deleteResult.status).toEqual(302);
 
             const removeddataType = await getDataClassRowId(dataType, topFolderOptions);
@@ -142,6 +161,10 @@ describe('Data Class Designer - Permissions', () => {
             // verify data exist in child prevent designer from delete design
             let deleteResult = await deleteDataClass(dataTypeRowId, topFolderOptions, designerReaderOptions);
             expect(deleteResult.status).toEqual(403);
+            deleteResult = await deleteDataClass(dataTypeRowId, topFolderOptions, readerUserOptions);
+            expect(deleteResult.status).toEqual(403);
+            deleteResult = await deleteDataClass(dataTypeRowId, topFolderOptions, editorUserOptions);
+            expect(deleteResult.status).toEqual(403);
 
             let failedRemoveddataType = await getDataClassRowId(dataType, topFolderOptions);
             expect(failedRemoveddataType).toEqual(dataTypeRowId);
@@ -151,6 +174,10 @@ describe('Data Class Designer - Permissions', () => {
 
             // verify data exist in Top prevent designer from delete design
             deleteResult = await deleteDataClass(dataTypeRowId, topFolderOptions, designerEditorOptions);
+            expect(deleteResult.status).toEqual(403);
+            deleteResult = await deleteDataClass(dataTypeRowId, topFolderOptions, readerUserOptions);
+            expect(deleteResult.status).toEqual(403);
+            deleteResult = await deleteDataClass(dataTypeRowId, topFolderOptions, editorUserOptions);
             expect(deleteResult.status).toEqual(403);
 
             failedRemoveddataType = await getDataClassRowId(dataType, topFolderOptions);

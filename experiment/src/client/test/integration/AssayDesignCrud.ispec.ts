@@ -92,13 +92,28 @@ describe('Assay Designer - Permissions', () => {
     });
 
     describe('Create/update/delete designs', () => {
-        it('Designer can create, update and delete empty design', async () => {
-            const dataType = "ToDelete";
+        it('Designer can create, update and delete empty design, reader and editors cannot create/update/delete design.', async () => {
+            const dataType = "ToBeDeleted";
             const assayDesignPaylod = getAssayDesignPayload(dataType, [], []);
+
             await server.post(
                 'assay',
                 'saveProtocol.api',
-                getAssayDesignPayload(dataType, [], []),
+                assayDesignPaylod,
+                {...topFolderOptions, ...readerUserOptions}
+            ).expect(403);
+
+            await server.post(
+                'assay',
+                'saveProtocol.api',
+                assayDesignPaylod,
+                {...topFolderOptions, ...editorUserOptions}
+            ).expect(403);
+
+            await server.post(
+                'assay',
+                'saveProtocol.api',
+                assayDesignPaylod,
                 {...topFolderOptions, ...designerReaderOptions}
             ).expect((res) => {
                 const result = JSON.parse(res.text);
@@ -119,13 +134,32 @@ describe('Assay Designer - Permissions', () => {
                 'assay',
                 'saveProtocol.api',
                 assayDesignPaylod,
+                {...topFolderOptions, ...readerUserOptions}
+            ).expect(403);
+
+            await server.post(
+                'assay',
+                'saveProtocol.api',
+                assayDesignPaylod,
+                {...topFolderOptions, ...editorUserOptions}
+            ).expect(403);
+
+            await server.post(
+                'assay',
+                'saveProtocol.api',
+                assayDesignPaylod,
                 {...topFolderOptions, ...designerReaderOptions}
             ).expect(successfulResponse);
 
             const dataTypeRowId = await getAssayDesignRowIdByName(server, dataType, topFolderOptions);
             expect(dataTypeRowId).toBe(assayDesignPaylod.protocolId);
 
-            const deleteResult = await deleteAssayDesign(server, assayDesignPaylod.protocolId, topFolderOptions, designerReaderOptions);
+            let deleteResult = await deleteAssayDesign(server, assayDesignPaylod.protocolId, topFolderOptions, readerUserOptions);
+            expect(deleteResult.status).toEqual(403);
+            deleteResult = await deleteAssayDesign(server, assayDesignPaylod.protocolId, topFolderOptions, editorUserOptions);
+            expect(deleteResult.status).toEqual(403);
+
+            deleteResult = await deleteAssayDesign(server, assayDesignPaylod.protocolId, topFolderOptions, designerReaderOptions);
             expect(deleteResult.status).toEqual(200);
 
             const removeddataType = await getAssayDesignRowIdByName(server, dataType, topFolderOptions);
@@ -168,7 +202,11 @@ describe('Assay Designer - Permissions', () => {
 
             // verify data exist in child prevent designer from delete design
             let deleteResult = await deleteAssayDesign(server, assayDesignPaylod.protocolId, topFolderOptions, designerReaderOptions);
-            expect(deleteResult.status).toEqual(500);
+            expect(deleteResult.status).toEqual(403);
+            deleteResult = await deleteAssayDesign(server, assayDesignPaylod.protocolId, topFolderOptions, readerUserOptions);
+            expect(deleteResult.status).toEqual(403);
+            deleteResult = await deleteAssayDesign(server, assayDesignPaylod.protocolId, topFolderOptions, editorUserOptions);
+            expect(deleteResult.status).toEqual(403);
 
             let failedRemoveddataType = await getAssayDesignRowIdByName(server, dataType, topFolderOptions);
             expect(failedRemoveddataType).toEqual(assayDesignPaylod.protocolId);
@@ -178,7 +216,11 @@ describe('Assay Designer - Permissions', () => {
 
             // verify data exist in Top prevent designer from delete design
             deleteResult = await deleteAssayDesign(server, assayDesignPaylod.protocolId, topFolderOptions, designerEditorOptions);
-            expect(deleteResult.status).toEqual(500);
+            expect(deleteResult.status).toEqual(403);
+            deleteResult = await deleteAssayDesign(server, assayDesignPaylod.protocolId, topFolderOptions, readerUserOptions);
+            expect(deleteResult.status).toEqual(403);
+            deleteResult = await deleteAssayDesign(server, assayDesignPaylod.protocolId, topFolderOptions, editorUserOptions);
+            expect(deleteResult.status).toEqual(403);
 
             failedRemoveddataType = await getAssayDesignRowIdByName(server, dataType, topFolderOptions);
             expect(failedRemoveddataType).toEqual(assayDesignPaylod.protocolId);
