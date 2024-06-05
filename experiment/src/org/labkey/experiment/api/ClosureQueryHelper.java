@@ -81,9 +81,9 @@ public class ClosureQueryHelper
                     COALESCE(material.rowid, data.rowid) as ancestorRowId,
                     COALESCE('m' || CAST(materialsource.rowid AS VARCHAR), 'd' || CAST(dataclass.rowid AS VARCHAR)) as ancestorTypeId
                 FROM CTE_
-                    LEFT OUTER JOIN exp.material ON End_ = material.objectId  LEFT OUTER JOIN exp.materialsource ON material.cpasType = materialsource.lsid
+                    LEFT OUTER JOIN exp.material ON End_ = material.objectId LEFT OUTER JOIN exp.materialsource ON material.cpasType = materialsource.lsid
                     LEFT OUTER JOIN exp.data on End_ = data.objectId LEFT OUTER JOIN exp.dataclass ON data.cpasType = dataclass.lsid
-                WHERE Depth_ > 0 AND materialsource.rowid IS NOT NULL OR dataclass.rowid IS NOT NULL) _inner_
+                WHERE Depth_ > 0 AND (materialsource.rowid IS NOT NULL OR dataclass.rowid IS NOT NULL)) _inner_
             GROUP BY ancestorTypeId, RowId
             """;
 
@@ -111,7 +111,7 @@ public class ClosureQueryHelper
                 FROM DCTE_
                     LEFT OUTER JOIN exp.material ON End_ = material.objectId  LEFT OUTER JOIN exp.materialsource ON material.cpasType = materialsource.lsid
                     LEFT OUTER JOIN exp.data on End_ = data.objectId LEFT OUTER JOIN exp.dataclass ON data.cpasType = dataclass.lsid
-                WHERE Depth_ > 0 AND materialsource.rowid IS NOT NULL OR dataclass.rowid IS NOT NULL
+                WHERE Depth_ > 0 AND (materialsource.rowid IS NOT NULL OR dataclass.rowid IS NOT NULL)
             """;
 
     static String mssqlAncestorClosureCTE = String.format("""
@@ -142,7 +142,7 @@ public class ClosureQueryHelper
                 FROM CTE_
                     LEFT OUTER JOIN exp.material ON End_ = material.objectId  LEFT OUTER JOIN exp.materialsource ON material.cpasType = materialsource.lsid
                     LEFT OUTER JOIN exp.data on End_ = data.objectId LEFT OUTER JOIN exp.dataclass ON data.cpasType = dataclass.lsid
-                WHERE Depth_ > 0 AND materialsource.rowid IS NOT NULL OR dataclass.rowid IS NOT NULL) _inner_
+                WHERE Depth_ > 0 AND (materialsource.rowid IS NOT NULL OR dataclass.rowid IS NOT NULL)) _inner_
             GROUP BY ancestorTypeId, RowId
             """;
 
