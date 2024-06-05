@@ -4623,9 +4623,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (selectedProtocolIds.length == 0)
             return;
 
-        if (c.hasPermission(user, DesignAssayPermission.class))
-            throw new UnauthorizedException("You do not have sufficient permissions to delete the protocol" + (selectedProtocolIds.length > 1 ? "s" : "") + ".");
-
         List<ExpRunImpl> runs = getExpRunsForProtocolIds(false, selectedProtocolIds);
 
         String protocolIds = StringUtils.join(ArrayUtils.toObject(selectedProtocolIds), ", ");

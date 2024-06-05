@@ -3379,6 +3379,9 @@ public class ExperimentController extends SpringActionController
         {
             for (ExpProtocol protocol : getProtocolsForDeletion(form))
             {
+                if (!protocol.getContainer().hasPermission(getUser(), DesignAssayPermission.class))
+                    throw new UnauthorizedException("You do not have sufficient permissions to delete this assay design.");
+
                 protocol.delete(getUser(), form.getUserComment());
             }
 
@@ -3423,6 +3426,9 @@ public class ExperimentController extends SpringActionController
             {
                 for (ExpProtocol protocol : protocols)
                 {
+                    if (!protocol.getContainer().hasPermission(getUser(), DesignAssayPermission.class))
+                        throw new UnauthorizedException("You do not have sufficient permissions to delete this assay design.");
+
                     if (AssayService.get().getProvider(protocol) == null)
                     {
                         noun = "Protocol";
