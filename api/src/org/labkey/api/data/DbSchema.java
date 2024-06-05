@@ -182,10 +182,14 @@ public class DbSchema
 //        return type.createDbSchema(scope, metaDataName, module);
     }
 
+    public boolean existsInDatabase()
+    {
+        return SchemaNameCache.get().getSchemaNameMap(getScope()).containsKey(getName());
+    }
 
     /**
-     * Queries JDBC meta data to retrieve the list of tables in this schema, ignoring any temp tables.
-     * Returns a case-insensitive map of table names to canonical (meta data) names.
+     * Queries JDBC metadata to retrieve the list of tables in this schema, ignoring any temp tables.
+     * Returns a case-insensitive map of table names to canonical (metadata) names.
      *
      * Note: Do not call this unless you really know what you're doing! You should probably be calling DbSchema.getTables()
      * instead, to ensure you get the cached version.
@@ -218,7 +222,7 @@ public class DbSchema
     }
 
 
-    // Base class that pulls table meta data from the database, based on a supplied table pattern. This lets us share
+    // Base class that pulls table metadata from the database, based on a supplied table pattern. This lets us share
     // code between schema load (when we capture just the table names for all tables) and table load (when we capture
     // all properties of just a single table). We want consistent transaction, exception, and filtering behavior in
     // both cases.
