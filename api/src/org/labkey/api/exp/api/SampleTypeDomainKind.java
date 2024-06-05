@@ -343,12 +343,14 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     @Override
     public boolean canDeleteDefinition(User user, Domain domain)
     {
+        if (!domain.getContainer().hasPermission(user, DesignSampleTypePermission.class))
+            return false;
         if (!domain.getContainer().hasPermission(user, AdminPermission.class))
         {
             ExpSampleType st = getSampleType(domain);
             return !st.hasData();
         }
-        return domain.getContainer().hasPermission(user, DesignSampleTypePermission.class);
+        return true;
     }
 
     @Override

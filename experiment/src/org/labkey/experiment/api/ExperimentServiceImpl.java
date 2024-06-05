@@ -44,6 +44,7 @@ import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.AssayTableMetadata;
 import org.labkey.api.assay.AssayWellExclusionService;
 import org.labkey.api.assay.DefaultAssayRunCreator;
+import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
@@ -4622,6 +4623,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (selectedProtocolIds.length == 0)
             return;
 
+        if (c.hasPermission(user, DesignAssayPermission.class))
+            throw new UnauthorizedException("You do not have sufficient permissions to delete the protocol" + (selectedProtocolIds.length > 1 ? "s" : "") + ".");
+
         List<ExpRunImpl> runs = getExpRunsForProtocolIds(false, selectedProtocolIds);
 
         String protocolIds = StringUtils.join(ArrayUtils.toObject(selectedProtocolIds), ", ");
@@ -4634,6 +4638,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         sql.append(" OR ParentProtocolId IN (").append(protocolIds).append(") )");
         Integer[] actionIds = new SqlSelector(getExpSchema(), sql).getArray(Integer.class);
         List<ExpProtocolImpl> expProtocols = Arrays.stream(protocols).map(ExpProtocolImpl::new).collect(toList());
+
+        if (!c.hasPermission(user, AdminPermission.class) && !runs.isEmpty())
+            throw new UnauthorizedException("You do not have sufficient permissions to delete '" + (expProtocols.size() == 1 ? expProtocols.get(0).getName() : "the protocols") + "'.");
 
         AssayService assayService = AssayService.get();
 
@@ -4679,9 +4686,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 {
                     for (Protocol protocol : protocols)
                     {
-                        if (!c.hasPermission(user, AdminPermission.class) && runs.size() > 0)
-                            throw new UnauthorizedException("You do not have sufficient permissions to delete '" + protocol.getName() + "'.");
-
                         ExpProtocol protocolToDelete = new ExpProtocolImpl(protocol);
                         AssayProvider provider = assayService.getProvider(protocolToDelete);
                         if (provider != null)

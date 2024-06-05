@@ -1171,9 +1171,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             results.put("scriptEngines", LabKeyScriptEngineManager.get().getScriptEngineMetrics());
             results.put("customLabels", CustomLabelService.get().getCustomLabelMetrics());
             Map<String, Long> roleAssignments = new HashMap<>();
-            roleAssignments.put("assayDesignerCount", new SqlSelector(CoreSchema.getInstance().getSchema(), "SELECT COUNT(*) FROM core.RoleAssignments WHERE userid > 0 AND role = ?", "org.labkey.assay.security.AssayDesignerRole").getObject(Long.class));
-            roleAssignments.put("dataClassDesignerCount", new SqlSelector(CoreSchema.getInstance().getSchema(), "SELECT COUNT(*) FROM core.RoleAssignments WHERE userid > 0 AND role = ?", "org.labkey.experiment.security.DataClassDesignerRole").getObject(Long.class));
-            roleAssignments.put("sampleTypeDesignerCount", new SqlSelector(CoreSchema.getInstance().getSchema(), "SELECT COUNT(*) FROM core.RoleAssignments WHERE userid > 0 AND role = ?", "org.labkey.experiment.security.SampleTypeDesignerRole").getObject(Long.class));
+            final String roleCountSql = "SELECT COUNT(*) FROM core.RoleAssignments WHERE userid > 0 AND role = ?";
+            roleAssignments.put("assayDesignerCount", new SqlSelector(CoreSchema.getInstance().getSchema(), roleCountSql, "org.labkey.assay.security.AssayDesignerRole").getObject(Long.class));
+            roleAssignments.put("dataClassDesignerCount", new SqlSelector(CoreSchema.getInstance().getSchema(), roleCountSql, "org.labkey.experiment.security.DataClassDesignerRole").getObject(Long.class));
+            roleAssignments.put("sampleTypeDesignerCount", new SqlSelector(CoreSchema.getInstance().getSchema(), roleCountSql, "org.labkey.experiment.security.SampleTypeDesignerRole").getObject(Long.class));
             results.put("roleAssignments", roleAssignments);
             return results;
         });

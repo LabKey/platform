@@ -294,13 +294,16 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     @Override
     public boolean canDeleteDefinition(User user, Domain domain)
     {
+        if (!domain.getContainer().hasPermission(user, DesignDataClassPermission.class))
+            return false;
+
         if (!domain.getContainer().hasPermission(user, AdminPermission.class))
         {
             ExpDataClass dataClass = getDataClass(domain);
             if (dataClass != null)
                 return !dataClass.hasData();
         }
-        return domain.getContainer().hasPermission(user, DesignDataClassPermission.class);
+        return true;
     }
 
     private @NotNull ValidationException getNamePatternValidationResult(String dataClassName, String patten, List<? extends GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, Container container)
