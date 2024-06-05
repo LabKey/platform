@@ -172,7 +172,6 @@ import org.labkey.api.exp.xar.LSIDRelativizer;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.exp.xar.XarConstants;
 import org.labkey.api.files.FileContentService;
-import org.labkey.api.files.FileListener;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
@@ -3839,17 +3838,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         // Note: At the moment, FlowRun is the only example of an ExpRun attachment parent, but we're keeping this general
         // so other cases can be added in the future
         AttachmentService.get().deleteAttachments(new ExpRunAttachmentParent(run));
-
-        // Delete the run specific results file directory
-        try
-        {
-            AssayResultsFileWriter resultsFileWriter = new AssayResultsFileWriter(run.getProtocol(), run, null);
-            resultsFileWriter.cleanupPostedFiles(run.getContainer(), false);
-        }
-        catch (ExperimentException e)
-        {
-            LOG.warn("Unable to delete empty results file directory for run " + run.getRowId(), e);
-        }
 
         // remove edges prior to deleting protocol applications
         // Calling deleteProtocolApplications calls ExperimentService.beforeDeleteData() which
@@ -9519,20 +9507,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 for (List<AbstractAssayProvider.AssayFileMoveData> runFileRenameData : assayMoveData.fileMovesByRunId().values())
                 {
                     for (AbstractAssayProvider.AssayFileMoveData renameData : runFileRenameData)
-                    {
                         moveFile(renameData);
-
-                        // if we moved the last results file, clean up the source container runId dir
-                        try
-                        {
-                            AssayResultsFileWriter resultsFileWriter = new AssayResultsFileWriter(renameData.run().getProtocol(), renameData.run(), null);
-                            resultsFileWriter.cleanupPostedFiles(renameData.sourceContainer(), true);
-                        }
-                        catch (ExperimentException e)
-                        {
-                            LOG.warn("Unable to delete empty results file directory for run " + renameData.run().getRowId(), e);
-                        }
-                    }
                 }
             }, POSTCOMMIT);
 
