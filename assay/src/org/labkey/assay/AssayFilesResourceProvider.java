@@ -6,6 +6,7 @@ import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
@@ -111,7 +112,7 @@ public class AssayFilesResourceProvider implements WebdavService.Provider
         @Override
         protected boolean hasAccess(User user)
         {
-            return false;
+            return getPermissions(user).contains(AdminPermission.class);
         }
 
         @Override

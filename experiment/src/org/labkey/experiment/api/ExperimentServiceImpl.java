@@ -39,7 +39,6 @@ import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.assay.AssayProvider;
-import org.labkey.api.assay.AssayResultsFileWriter;
 import org.labkey.api.assay.AssaySchema;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.AssayTableMetadata;
