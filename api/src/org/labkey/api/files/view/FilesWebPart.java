@@ -360,7 +360,8 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             FileContentService.CLOUD_LINK,
             FileContentService.FILE_SETS_LINK,
             FileContentService.FILES_LINK,
-            FileContentService.PIPELINE_LINK
+            FileContentService.PIPELINE_LINK,
+            FileContentService.ASSAY_FILES
     ));
 
     public static String getRootPath(Container c, @Nullable String davName)

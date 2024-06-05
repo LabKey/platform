@@ -25,6 +25,7 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
@@ -254,7 +255,7 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
         return file.getOriginalFilename();
     }
 
-    public Map<String, File> savePostedFiles(ContextType context, Set<String> parameterNames, boolean allowMultiple) throws ExperimentException, IOException
+    public Map<String, File> savePostedFiles(ContextType context, Set<String> parameterNames, boolean allowMultiple, boolean ensureExpData) throws ExperimentException, IOException
     {
         Map<String, File> files = new TreeMap<>();
         Set<String> originalFileNames = new HashSet<>();
@@ -292,6 +293,9 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
                             {
                                 overflowFiles.add(file);
                             }
+
+                            if (ensureExpData)
+                                AbstractQueryUpdateService.ensureExpData(context.getUser(), context.getContainer(), file);
                         }
                     }
                 }

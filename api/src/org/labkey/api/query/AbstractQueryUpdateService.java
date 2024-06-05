@@ -990,6 +990,12 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         if (file == null)
             return value;
 
+        ensureExpData(user, container, file);
+        return file;
+    }
+
+    public static ExpData ensureExpData(User user, Container container, File file)
+    {
         ExpData existingData = ExperimentService.get().getExpDataByURL(file, container);
         // create exp.data record
         if (existingData == null)
@@ -1003,9 +1009,9 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                 // If the path is too long to store, bail out without creating an exp.data row
                 data.save(user);
             }
+            return data;
         }
-
-        return file;
+        return  existingData;
     }
 
     // For security reasons, make sure the user hasn't tried to reference a file that's not under

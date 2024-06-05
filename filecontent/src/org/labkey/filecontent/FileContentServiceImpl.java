@@ -83,6 +83,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.URIUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -1320,13 +1321,21 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
         return _containerListener;
     }
 
-    public Set<Map<String, Object>> getNodes(boolean isShowOverridesOnly, @Nullable String browseUrl, @Nullable String showAdminUrl, Container c)
+    public Set<Map<String, Object>> getNodes(boolean isShowOverridesOnly, @Nullable String browseUrl, Container c)
     {
         Set<Map<String, Object>> children = new LinkedHashSet<>();
 
         try {
-            AttachmentDirectory root = getMappedAttachmentDirectory(c, false);
+            java.nio.file.Path assayFilesRoot = getFileRootPath(c, ContentType.assayfiles);
+            if (assayFilesRoot != null && Files.exists(assayFilesRoot))
+            {
+                Map<String, Object> node = createFileSetNode(c, ASSAY_FILES, assayFilesRoot);
+                node.put("default", false);
+                node.put("webdavURL", FilesWebPart.getRootPath(c, ASSAY_FILES));
+                children.add(node);
+            }
 
+            AttachmentDirectory root = getMappedAttachmentDirectory(c, false);
             if (root != null)
             {
                 boolean isDefault = isUseDefaultRoot(c);
@@ -1396,25 +1405,31 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
 
     @Nullable
     @Override
-    public String getWebDavUrl(java.nio.file.@NotNull Path path, @NotNull Container container, @NotNull PathType type)
+    public String getWebDavUrl(@NotNull java.nio.file.Path path, @NotNull Container container, @NotNull PathType type)
     {
         PipeRoot root = PipelineService.get().getPipelineRootSetting(container);
-
-        if (root == null)
-            return null;
+        java.nio.file.Path assayFilesPath = getFileRootPath(container, ContentType.assayfiles);
+        path = path.toAbsolutePath();
+        String relPath = null;
+        String rootWebDavUrl = null;
 
         try
         {
-            path = path.toAbsolutePath();
-
             // currently, only report if the file is under the parent container
-            if (root.isUnderRoot(path))
+            if (root != null && root.isUnderRoot(path))
             {
-                String relPath = root.relativePath(path);
-                if (relPath == null)
-                    return null;
+                relPath = root.relativePath(path);
+                rootWebDavUrl = root.getWebdavURL();
+            }
+            else if (assayFilesPath != null && URIUtil.isDescendant(assayFilesPath.toUri(), path.toUri()))
+            {
+                relPath = assayFilesPath.relativize(path).toString();
+                rootWebDavUrl = FilesWebPart.getRootPath(container, ASSAY_FILES);
+            }
 
-                if(!isCloudRoot(container))
+            if (relPath != null)
+            {
+                if (!isCloudRoot(container))
                 {
                     relPath = Path.parse(FilenameUtils.separatorsToUnix(relPath)).encode();
                 }
@@ -1425,11 +1440,11 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
                 }
 
                 return switch (type)
-                        {
-                            case folderRelative -> relPath;
-                            case serverRelative -> Path.parse(root.getWebdavURL()).encode() + relPath;
-                            case full -> AppProps.getInstance().getBaseServerUrl() + Path.parse(root.getWebdavURL()).encode() + relPath;
-                        };
+                {
+                    case folderRelative -> relPath;
+                    case serverRelative -> Path.parse(rootWebDavUrl).encode() + relPath;
+                    case full -> AppProps.getInstance().getBaseServerUrl() + Path.parse(rootWebDavUrl).encode() + relPath;
+                };
             }
         }
         catch (InvalidPathException e)
@@ -1443,7 +1458,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
     @Override
     public String getDataFileRelativeFileRootPath(@NotNull String dataFileUrl, Container container)
     {
-        Set<Map<String, Object>> children = getNodes(false, null, null, container);
+        Set<Map<String, Object>> children = getNodes(false, null, container);
         String filesRoot = null; // the path for @files
         for (Map<String, Object> child : children)
         {
@@ -1495,7 +1510,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
 
         List<String> existingDataFileUrls = getDataFileUrls(container);
         Collection<AttachmentDirectory> filesets = getRegisteredDirectories(container);
-        Set<Map<String, Object>> children = getNodes(false, null, null, container);
+        Set<Map<String, Object>> children = getNodes(false, null, container);
         String filesRoot = null; // the path for @files
         for (Map<String, Object> child : children)
         {

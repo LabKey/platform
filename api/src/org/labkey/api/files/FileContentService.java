@@ -330,7 +330,7 @@ public interface FileContentService
     void setWebfilesEnabled(boolean enabled, User user);
 
     /**
-     * Return file's virtual folder path that's relative to container's file root. Roots are matched in order of @files, @pipeline and then each @filesets.
+     * Return file's virtual folder path that's relative to container's file root. Roots are matched in order of @assayfiles, @files, @pipeline and then each @filesets.
      * @param dataFileUrl The data file Url of file
      * @param container Container in the file system
      * @return folder relative to file root
