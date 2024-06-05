@@ -2217,16 +2217,53 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             }
             else
             {
-                // RETURNS TABLE AS RETURN ( ... )
-                if (!"RETURNS".equalsIgnoreCase(tokens[idx - 1]))
+                // Currently supporting two RETURNS TABLE options:
+                // - RETURNS TABLE AS RETURN ( ... )
+                // - RETURNS @returnTableName TABLE ( ... ) AS BEGIN ... END
+                if (!"RETURNS".equalsIgnoreCase(tokens[idx - 1]) && !"RETURNS".equalsIgnoreCase(tokens[idx - 2]))
                     return Collections.singleton("Stored procedure definition " + procedureName + " doesn't seem to have a RETURNS keyword in the right spot");
 
-                skipToSet = PARENS;
-                firstToken = Token.OPEN_PAREN;
-                idx = skipToToken(tokens, idx + 1, new CaseInsensitiveHashSet("("));
+                // Skip optional TABLE definition after TABLE AS RETURN
+                if (tokens[idx + 1].equals("("))
+                {
+                    int open = 1;
+                    idx = idx + 2;
+                    while (open > 0 && idx < tokens.length)
+                    {
+                        String token = tokens[idx];
+                        if (token.equals("("))
+                            open++;
+                        else if (token.equals(")"))
+                            open--;
+                        idx++;
+                    }
 
-                if (-1 == idx)
-                    return Collections.singleton("Stored procedure definition " + procedureName + " doesn't have an opening (");
+                    if (idx == tokens.length)
+                        return Collections.singleton("Stored procedure definition " + procedureName + " TABLE declaration doesn't have a closing )");
+
+                    idx = assertNextTokens(tokens, idx, "AS BEGIN");
+                }
+                else
+                {
+                    idx = assertNextTokens(tokens, idx, "TABLE AS RETURN (");
+                }
+            }
+
+            if ("BEGIN".equalsIgnoreCase(tokens[idx]))
+            {
+                // BEGIN ... END
+                firstToken = Token.BEGIN;
+                skipToSet = BEGIN_END;
+            }
+            else if ("(".equals(tokens[idx]))
+            {
+                // ( ... )
+                firstToken = Token.OPEN_PAREN;
+                skipToSet = PARENS;
+            }
+            else
+            {
+                return Collections.singleton("Stored procedure definition " + procedureName + " doesn't have an opening BEGIN or (");
             }
 
             Stack<Token> stack = new Stack<>();
@@ -2261,6 +2298,15 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         }
 
         return Collections.emptyList();
+    }
+
+    private int assertNextTokens(String[] tokens, int idx, String expected)
+    {
+        for (String token : expected.split(" "))
+            if (!token.equalsIgnoreCase(tokens[idx++]))
+                throw new IllegalArgumentException("Unexpected tokens before stored procedure definition");
+
+        return idx - 1; // Stay on the last token
     }
 
     private final static CaseInsensitiveHashSet CREATE = new CaseInsensitiveHashSet("CREATE", "ALTER");
