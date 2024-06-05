@@ -23,7 +23,6 @@ import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
-import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.data.BeanViewForm;
@@ -44,6 +43,7 @@ import org.springframework.web.servlet.ModelAndView;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 
 @Marshal(Marshaller.Jackson)
 public class MiniProfilerController extends SpringActionController
@@ -216,7 +216,7 @@ public class MiniProfilerController extends SpringActionController
         }
     }
 
-    public static class ReportForm
+    public static class RequestForm
     {
         private long _id;
 
@@ -234,10 +234,10 @@ public class MiniProfilerController extends SpringActionController
 
     @RequiresNoPermission // permissions will be checked in the action
     @IgnoresAllocationTracking
-    public static class ReportAction extends MutatingApiAction<ReportForm>
+    public static class ReportAction extends MutatingApiAction<RequestForm>
     {
         @Override
-        public Object execute(ReportForm form, BindException errors)
+        public Object execute(RequestForm form, BindException errors)
         {
             if (!MiniProfiler.isEnabled(getViewContext()))
                 throw new UnauthorizedException();
@@ -249,31 +249,45 @@ public class MiniProfilerController extends SpringActionController
             LinkedHashSet<Long> ids = new LinkedHashSet<>(MemTracker.get().getUnviewed(getUser()));
             getViewContext().getResponse().setHeader("X-MiniProfiler-Ids", ids.toString());
 
+            if (req != null && !getUser().equals(req.getUser()) && !getUser().hasApplicationAdminPermission())
+            {
+                throw new UnauthorizedException();
+            }
+
             return req;
         }
     }
 
     @RequiresNoPermission // permissions will be checked in the action
     @IgnoresAllocationTracking
-    public static class RecentRequestsAction extends SimpleViewAction<Object>
+    public static class SessionRequestsAction extends ReadOnlyApiAction<RequestForm>
     {
         @Override
-        public ModelAndView getView(Object o, BindException errors)
+        public Object execute(RequestForm o, BindException errors)
         {
-            if (!MiniProfiler.isEnabled(getViewContext()))
-                throw new UnauthorizedException();
+            String sessionId = getViewContext().getSession().getId();
+            List<RequestInfo> requests = MemTracker.getInstance()
+                    .getNewRequests(o.getId()).stream()
+                    .filter(requestInfo -> sessionId.equals(requestInfo.getSessionId()))
+                    .toList();
 
-            setHelpTopic(MiniProfiler.getHelpTopic());
-
-            // TODO: filter requests by user/session if not site admin
-            List<RequestInfo> requests = MemTracker.getInstance().getNewRequests(0);
-            //return new JspView<List<RequestInfo>>("...");
-            return null;
+            return Map.of("requests", requests);
         }
+    }
 
+    @RequiresPermission(TroubleshooterPermission.class)
+    @IgnoresAllocationTracking
+    public static class RecentRequestsAction extends ReadOnlyApiAction<RequestForm>
+    {
         @Override
-        public void addNavTrail(NavTree root)
+        public Object execute(RequestForm o, BindException errors)
         {
+            List<RequestInfo> requests = MemTracker.getInstance()
+                    .getNewRequests(o.getId()).stream()
+                    .filter(req -> getUser().equals(req.getUser()) || getUser().hasApplicationAdminPermission())
+                    .toList();
+
+            return Map.of("requests", requests);
         }
     }
 }

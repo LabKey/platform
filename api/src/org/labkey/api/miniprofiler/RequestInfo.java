@@ -48,6 +48,9 @@ public class RequestInfo implements AutoCloseable
     // User that initiated the request.
     private final Principal _user;
 
+    // Session ID for the request
+    private final String _sessionId;
+
     // The ignore flag may be set after profiling starts.  Timings won't be collected and will be marked as already viewed when the request is complete.
     private boolean _ignored = false;
 
@@ -55,12 +58,13 @@ public class RequestInfo implements AutoCloseable
     // Will be null when the request is complete or cancelled.
     /*package*/ Timing _current;
 
-    public RequestInfo(@Nullable String url, @Nullable Principal user, @Nullable String name)
+    public RequestInfo(@Nullable String url, @Nullable Principal user, @Nullable String name, @Nullable String sessionId)
     {
         _url = url;
         _current = _root = new Timing(this, null, name == null ? "root" : name);
         _name = name;
         _user = user;
+        _sessionId = sessionId;
     }
 
     @Override
@@ -194,4 +198,9 @@ public class RequestInfo implements AutoCloseable
         return _root;
     }
 
+    @JsonIgnore
+    public String getSessionId()
+    {
+        return _sessionId;
+    }
 }

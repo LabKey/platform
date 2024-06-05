@@ -7074,7 +7074,7 @@ public class QueryController extends SpringActionController
         private String _getUrl;
         private String _postUrl;
         private String _postData;
-        private String _response;
+        private String _apiResponse;
 
         public String getGetUrl()
         {
@@ -7096,14 +7096,14 @@ public class QueryController extends SpringActionController
             _postUrl = postUrl;
         }
 
-        public String getResponse()
+        public String getApiResponse()
         {
-            return _response;
+            return _apiResponse;
         }
 
-        public void setResponse(String response)
+        public void setApiResponse(String apiResponse)
         {
-            _response = response;
+            _apiResponse = apiResponse;
         }
 
         public String getPostData()
@@ -7152,7 +7152,7 @@ public class QueryController extends SpringActionController
 
                 test.setUrl(uri);
             }
-            test.setResponse(form.getResponse());
+            test.setResponse(form.getApiResponse());
 
             XmlOptions opts = new XmlOptions();
             opts.setSaveCDataEntityCountThreshold(0);
