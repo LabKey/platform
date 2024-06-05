@@ -64,9 +64,9 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         private final ArrayList<Invalidator> _invalidators = new ArrayList<>(3);
 
         protected final Lock _loadingLock = new ReentrantLock();
-        enum LoadingState { BEFORELOAD, LOADING, LOADED, ERROR };
-        private final AtomicReference<LoadingState> _loadingState = new AtomicReference<>(LoadingState.BEFORELOAD);
-        private RuntimeException _loadException = null;
+        public enum LoadingState { BEFORELOAD, LOADING, LOADED, ERROR };
+        public final AtomicReference<LoadingState> _loadingState = new AtomicReference<>(LoadingState.BEFORELOAD);
+        public RuntimeException _loadException = null;
 
 
         public Materialized(MaterializedQueryHelper parent, String tableName, String cacheKey, long created, String sql)
@@ -159,8 +159,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
             }
             catch (RuntimeException rex)
             {
-                _loadException = rex;
-                _loadingState.set(LoadingState.ERROR);
+                setError(rex);
                 throw _loadException;
             }
             finally
@@ -168,6 +167,12 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
                 if (lockAcquired)
                     _loadingLock.unlock();
             }
+        }
+
+        public void setError(RuntimeException rex)
+        {
+            _loadException = rex;
+            _loadingState.set(LoadingState.ERROR);
         }
     }
 

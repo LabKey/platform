@@ -1180,6 +1180,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             try
             {
                 lockAcquired = materialized.getLock().tryLock(1, TimeUnit.MINUTES);
+                if (Materialized.LoadingState.ERROR == materialized._loadingState.get())
+                    throw materialized._loadException;
 
                 if (!materialized.incrementalDeleteCheck.stillValid(0))
                     executeIncrementalDelete();
@@ -1188,13 +1190,15 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 if (!materialized.incrementalInsertCheck.stillValid(0))
                     executeIncrementalInsert();
             }
-            catch (RuntimeException|InterruptedException re)
+            catch (RuntimeException|InterruptedException ex)
             {
+                RuntimeException rex = UnexpectedException.wrap(ex);
+                materialized.setError(rex);
                 // The only time I'd expect and error is due to a schema change race-condition, but that can happen in any code path.
                 // Ensure that next refresh starts clean
                 _materializedQueries.remove(_lsid);
                 getInvalidateCounters(_lsid).update.incrementAndGet();
-                throw UnexpectedException.wrap(re);
+                throw rex;
             }
             finally
             {
