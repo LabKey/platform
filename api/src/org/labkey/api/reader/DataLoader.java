@@ -322,6 +322,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
             for (int f = 0; f < nCols; f++)
             {
                 List<Class> classesToTest = new ArrayList<>(Arrays.asList(CONVERT_CLASSES));
+                Class knownColumnClass = null; // Issue 49830: if we know the column class based on the columnInfoMap, fall back to using that class instead of defaulting to String
 
                 int classIndex = -1;
                 //NOTE: this means we have a header row
@@ -334,11 +335,13 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                         if (_columnInfoMap.containsKey(name))
                         {
                             //preferentially use this class if it matches
-                            classesToTest.add(0, _columnInfoMap.get(name).getJavaClass());
+                            knownColumnClass = _columnInfoMap.get(name).getJavaClass();
+                            classesToTest.add(0, knownColumnClass);
                         }
                         else if (renamedColumns.containsKey(name) && _columnInfoMap.containsKey(renamedColumns.get(name)))
                         {
-                            classesToTest.add(0, _columnInfoMap.get(renamedColumns.get(name)).getJavaClass());
+                            knownColumnClass = _columnInfoMap.get(renamedColumns.get(name)).getJavaClass();
+                            classesToTest.add(0, knownColumnClass);
                         }
                     }
                 }
@@ -374,7 +377,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                         }
                     }
                 }
-                colDescs[f].clazz = classIndex == -1 ? String.class : classesToTest.get(classIndex);
+                colDescs[f].clazz = classIndex == -1 ? (knownColumnClass != null ? knownColumnClass : String.class) : classesToTest.get(classIndex);
             }
         }
 
