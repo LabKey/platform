@@ -37,7 +37,7 @@ public class AssayResultsFileConverter extends ExpDataFileConverter
                 for (int i = 0; i < 5; i++) // try up to 5 times to find a case-sensitive match
                 {
                     String resultsFileName = AssayFileWriter.getAppendedFileName(valueStr, i);
-                    File resultsFile = new File(runRoot, resultsFileName);
+                    File resultsFile = FileUtil.appendName(runRoot, resultsFileName);
                     if (!resultsFile.exists() || !URIUtil.isDescendant(runRoot.toURI(), resultsFile.toURI()))
                         break;
 
