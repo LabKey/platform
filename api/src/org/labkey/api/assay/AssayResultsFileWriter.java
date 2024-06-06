@@ -2,6 +2,11 @@ package org.labkey.api.assay;
 
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.Nullable;
+import org.jmock.Expectations;
+import org.jmock.Mockery;
+import org.jmock.lib.legacy.ClassImposteriser;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -147,5 +152,55 @@ public class AssayResultsFileWriter<ContextType extends AssayRunUploadContext<? 
             cleanupPostedFiles(container, true);
 
         return files;
+    }
+
+    public static class TestCase extends Assert
+    {
+        private Mockery _context;
+        private ExpRun _run;
+        private ExpProtocol _protocol;
+
+        public TestCase()
+        {
+            _context = new Mockery();
+            _context.setImposteriser(ClassImposteriser.INSTANCE);
+
+            _protocol = _context.mock(ExpProtocol.class);
+            _context.checking(new Expectations() {{
+                allowing(_protocol).getRowId();
+                will(returnValue(123));
+            }});
+
+            _run = _context.mock(ExpRun.class);
+            _context.checking(new Expectations() {{
+                allowing(_run).getProtocol();
+                will(returnValue(_protocol));
+            }});
+            _context.checking(new Expectations() {{
+                allowing(_run).getRowId();
+                will(returnValue(456));
+            }});
+        }
+
+        @Test
+        public void testGetRunResultsFileDir()
+        {
+            assertEquals("AssayId_123/RunId_456", getRunResultsFileDir(_run));
+        }
+
+        @Test
+        public void testGetPipelineResultsFileDir()
+        {
+            assertEquals("AssayId_123/Job_789", getPipelineResultsFileDir(_protocol, "789"));
+        }
+
+        @Test
+        public void testGetFileNameWithoutPath()
+        {
+            assertNull(getFileNameWithoutPath(null));
+            assertEquals("file.txt", getFileNameWithoutPath("C:\\path\\to\\file.txt"));
+            assertEquals("file.txt", getFileNameWithoutPath("C:/path/to/file.txt"));
+            assertEquals("file.txt", getFileNameWithoutPath("file.txt"));
+        }
     }
 }

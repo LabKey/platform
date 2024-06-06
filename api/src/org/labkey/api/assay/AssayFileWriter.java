@@ -20,6 +20,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -330,6 +332,18 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
         catch (IOException e)
         {
             throw new ExperimentException(e);
+        }
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testGetAppendedFileName()
+        {
+            String originalFilename = "test.txt";
+            assertEquals("test.txt", getAppendedFileName(originalFilename, 0));
+            assertEquals("test-1.txt", getAppendedFileName(originalFilename, 1));
+            assertEquals("test-2.txt", getAppendedFileName(originalFilename, 2));
         }
     }
 }
