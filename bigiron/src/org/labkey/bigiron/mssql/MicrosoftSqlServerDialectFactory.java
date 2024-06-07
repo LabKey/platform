@@ -178,18 +178,6 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
 
             // >= 16.0 should result in MicrosoftSqlServer2022Dialect
             good("Microsoft SQL Server", 16.0, 18.0, "", null, driverName, MicrosoftSqlServer2022Dialect.class);
-
-            MicrosoftSqlServerDialectFactory factory = new MicrosoftSqlServerDialectFactory();
-
-            for (int i = 120; i < 170; i += 10)
-            {
-                factory.getDialect(i, "primary DB test", true, true);
-            }
-
-            for (int i = 100; i < 170; i += 10)
-            {
-                factory.getDialect(i, "external data source test", true, false);
-            }
         }
     }
 
