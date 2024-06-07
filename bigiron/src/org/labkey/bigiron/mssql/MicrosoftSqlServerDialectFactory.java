@@ -94,21 +94,26 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
 
         if (logWarnings)
         {
-            // It's an old version being used as an external schema... we allow this but still warn to encourage upgrades
+            // Extract the SQL Server year from the enum name and include it in warning messages
+            String displayVersion = ssv.name().substring(11) + " (" + databaseProductVersion + ")";
+
+            // It's an old version being used as an external data source... we allow this but still warn to encourage upgrades
             if (!ssv.isAllowedAsPrimaryDataSource())
             {
-                LOG.warn(getStandardWarningMessage("no longer supports", databaseProductVersion));
+                LOG.warn(getStandardWarningMessage("no longer supports", displayVersion));
             }
-
-            if (!ssv.isTested())
+            else
             {
-                LOG.warn(getStandardWarningMessage("has not been tested against", databaseProductVersion));
-            }
-            else if (ssv.isDeprecated())
-            {
-                String deprecationWarning = getStandardWarningMessage("no longer supports", databaseProductVersion);
-                LOG.warn(deprecationWarning);
-                dialect.setAdminWarning(HtmlString.of(deprecationWarning));
+                if (!ssv.isTested())
+                {
+                    LOG.warn(getStandardWarningMessage("has not been tested against", displayVersion));
+                }
+                else if (ssv.isDeprecated())
+                {
+                    String deprecationWarning = getStandardWarningMessage("no longer supports", displayVersion);
+                    LOG.warn(deprecationWarning);
+                    dialect.setAdminWarning(HtmlString.of(deprecationWarning));
+                }
             }
         }
 
@@ -117,7 +122,7 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
 
     public static String getStandardWarningMessage(String warning, String databaseProductVersion)
     {
-        return "LabKey Server " + warning + " " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED;
+        return "LabKey Server " + warning + " " + PRODUCT_NAME + " " + databaseProductVersion + ". " + RECOMMENDED;
     }
 
     @Override
@@ -173,6 +178,18 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
 
             // >= 16.0 should result in MicrosoftSqlServer2022Dialect
             good("Microsoft SQL Server", 16.0, 18.0, "", null, driverName, MicrosoftSqlServer2022Dialect.class);
+
+            MicrosoftSqlServerDialectFactory factory = new MicrosoftSqlServerDialectFactory();
+
+            for (int i = 120; i < 170; i += 10)
+            {
+                factory.getDialect(i, "primary DB test", true, true);
+            }
+
+            for (int i = 100; i < 170; i += 10)
+            {
+                factory.getDialect(i, "external data source test", true, false);
+            }
         }
     }
 
