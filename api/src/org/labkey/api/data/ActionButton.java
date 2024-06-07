@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.util.Button;
+import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
@@ -336,13 +337,13 @@ public class ActionButton extends DisplayElement implements Cloneable
             // We pass in the plural text first since some javascript usages of verifySelected() pass in only a single (plural)
             // confirmation message.
             return "return verifySelected(" +
-                        (_encodedSubmitForm != null ? _encodedSubmitForm : "this.form") + ", " +
-                        "\"" + getURL(ctx) + "\", " +
-                        "\"" + _actionType.toString() + "\", " +
-                        "\"rows\"" +
-                        (_pluralConfirmText != null ? ", \"" + PageFlowUtil.filter(_pluralConfirmText) + "\"" : "") +
-                        (_singularConfirmText != null ? ", \"" + PageFlowUtil.filter(_singularConfirmText) + "\"" : "") +
-                    ")";
+                (_encodedSubmitForm != null ? _encodedSubmitForm : "this.form") + ", " +
+                JavaScriptFragment.asString(getURL(ctx)) + ", " +
+                JavaScriptFragment.asString(_actionType.toString()) + ", " +
+                JavaScriptFragment.asString("rows") +
+                (_pluralConfirmText != null ? ", " + JavaScriptFragment.asString(_pluralConfirmText) : "") +
+                (_singularConfirmText != null ? ", " + JavaScriptFragment.asString(_singularConfirmText) : "") +
+            ")";
         }
         else
         {
@@ -395,11 +396,11 @@ public class ActionButton extends DisplayElement implements Cloneable
         lock();
 
         Button.ButtonBuilder button = PageFlowUtil.button(getCaption(ctx))
-                .disableOnClick(_disableOnClick)
-                .iconCls(getIconCls())
-                .tooltip(getTooltip())
-                .enabled(_enabled)
-                .id(_id);
+            .disableOnClick(_disableOnClick)
+            .iconCls(getIconCls())
+            .tooltip(getTooltip())
+            .enabled(_enabled)
+            .id(_id);
 
         if (_primary != null)
             button.primary(_primary);
