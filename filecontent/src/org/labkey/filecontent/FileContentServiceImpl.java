@@ -1241,13 +1241,19 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
     @Override
     public int fireFileMoveEvent(@NotNull java.nio.file.Path src, @NotNull java.nio.file.Path dest, @Nullable User user, @Nullable Container container)
     {
+        return fireFileMoveEvent(src, dest, user, container, null);
+    }
+
+    @Override
+    public int fireFileMoveEvent(@NotNull java.nio.file.Path src, @NotNull java.nio.file.Path dest, @Nullable User user, @Nullable Container sourceContainer, @Nullable Container targetContainer)
+    {
         // Make sure that we've got the best representation of the file that we can
-        java.nio.file.Path absSrc = FileUtil.getAbsoluteCaseSensitivePath(container, src);
-        java.nio.file.Path absDest = FileUtil.getAbsoluteCaseSensitivePath(container, dest);
+        java.nio.file.Path absSrc = FileUtil.getAbsoluteCaseSensitivePath(sourceContainer, src);
+        java.nio.file.Path absDest = FileUtil.getAbsoluteCaseSensitivePath(targetContainer != null ? targetContainer : sourceContainer, dest);
         int result = 0;
         for (FileListener fileListener : _fileListeners)
         {
-            result += fileListener.fileMoved(absSrc, absDest, user, container);
+            result += fileListener.fileMoved(absSrc, absDest, user, sourceContainer, targetContainer);
         }
         return result;
     }

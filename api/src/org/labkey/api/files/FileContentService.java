@@ -298,6 +298,10 @@ public interface FileContentService
             return fireFileMoveEvent(src.toFile(), dest.toFile(), user, container);
         return 0;
     }
+    default int fireFileMoveEvent(@NotNull Path src, @NotNull Path dest, @Nullable User user, @Nullable Container sourceContainer, @Nullable Container targetContainer)
+    {
+        return fireFileMoveEvent(src, dest, user, sourceContainer);
+    }
 
     /** Notifies all registered FileListeners that a file or directory has been replaced */
     default void fireFileReplacedEvent(@NotNull Path replaced, @Nullable User user, @Nullable Container container){}

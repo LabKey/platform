@@ -1926,7 +1926,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                         Integer runId = run.getRowId();
                         movedFiles.putIfAbsent(runId, new ArrayList<>());
                         movedFiles.get(runId).add(new AssayFileMoveData(run, run.getContainer(), fileProp.getName(), sourceFile, updatedFile));
-                        fileContentService.fireFileMoveEvent(sourceFile, updatedFile, user, targetContainer);
+                        fileContentService.fireFileMoveEvent(sourceFile.toPath(), updatedFile.toPath(), user, sourceContainer, targetContainer);
                     }
                 }
             }
@@ -1987,7 +1987,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     Integer runId = run.getRowId();
                     movedFiles.putIfAbsent(runId, new ArrayList<>());
                     movedFiles.get(runId).add(new AssayFileMoveData(run, run.getContainer(), fileProp.getName(), sourceFile, updatedFile));
-                    fileContentService.fireFileMoveEvent(sourceFile, updatedFile, user, targetContainer);
+                    fileContentService.fireFileMoveEvent(sourceFile.toPath(), updatedFile.toPath(), user, sourceContainer, targetContainer);
                 }
             }
         }
@@ -2029,7 +2029,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     ExpRun run = runMap.get(runId);
                     movedFiles.putIfAbsent(runId, new ArrayList<>());
                     movedFiles.get(runId).add(new AssayFileMoveData(run, run.getContainer(), null, sourceFile, updatedFile));
-                    fileContentService.fireFileMoveEvent(sourceFile, updatedFile, user, targetContainer);
+                    fileContentService.fireFileMoveEvent(sourceFile.toPath(), updatedFile.toPath(), user, sourceContainer, targetContainer);
                 }
             }
             catch (Exception e)
@@ -2104,7 +2104,20 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     movedFiles.putIfAbsent(resultRunId, new ArrayList<>());
                     movedFiles.get(resultRunId).add(new AssayFileMoveData(run, run.getContainer(), fileField, sourceFile, updatedFile));
 
-                    SQLFragment updateSql = new SQLFragment("UPDATE ").append(assayResultTable.getRealTable())
+                    // update the exp.Object row for the file results row
+                    TableInfo expDataTable = ExperimentService.get().getTinfoData();
+                    TableInfo expObjectTable = OntologyManager.getTinfoObject();
+                    SQLFragment updateSql = new SQLFragment("UPDATE ").append(expObjectTable)
+                            .append(" SET container = ").appendValue(targetContainer.getEntityId())
+                            .append(" WHERE objecturi IN ( SELECT lsid FROM ")
+                            .append(expDataTable)
+                            .append(" WHERE datafileurl = ").appendValue(FileUtil.pathToString(sourceFile.toPath()));
+                    updateSql.append(")");
+                    new SqlExecutor(expObjectTable.getSchema()).execute(updateSql);
+
+                    fileContentService.fireFileMoveEvent(sourceFile.toPath(), updatedFile.toPath(), user, sourceContainer, targetContainer);
+
+                    updateSql = new SQLFragment("UPDATE ").append(assayResultTable.getRealTable())
                             .append(" SET ")
                             .append(columnName)
                             .append(" = ").appendValue(updatedFile.getAbsolutePath())
