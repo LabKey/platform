@@ -66,10 +66,9 @@ public class SqlScriptRunner
         }
     }
 
-    // Throws SQLException only if getRunScripts() fails -- script failures are handled more gracefully
     public void runScripts(Module module, List<SqlScript> scripts) throws SqlScriptException
     {
-        _log.info("Running " + scripts.toString());
+        _log.info("Running {}", scripts.toString());
 
         synchronized(SCRIPT_LOCK)
         {
@@ -90,7 +89,7 @@ public class SqlScriptRunner
             }
         }
 
-        // Clear caches to invalidate previously loaded meta data (upgrade scripts we just ran may have changed them)
+        // Clear caches to invalidate previously loaded metadata (upgrade scripts we just ran may have changed them)
         // and invalidate potentially stale objects that have been cached.
         CacheManager.clearAllKnownCaches();
 

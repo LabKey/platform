@@ -16,7 +16,7 @@
 
 package org.labkey.api.data;
 
-import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheManager;
@@ -29,6 +29,7 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.sql.Connection;
 import java.util.ArrayList;
@@ -48,6 +49,7 @@ import java.util.Set;
  */
 public abstract class SqlScriptManager
 {
+    private static final Logger LOG = LogHelper.getLogger(SqlScriptManager.class, "Status of SQL upgrade script execution");
     protected final SqlScriptProvider _provider;
     protected final DbSchema _schema;
 
@@ -170,6 +172,7 @@ public abstract class SqlScriptManager
         return runScripts;
     }
 
+    private static final String SKIP_SCRIPT_ANNOTATION = "@SkipScriptIfSchemaExists";
 
     public void runScript(@Nullable User user, SqlScript script, ModuleContext moduleContext, @Nullable Connection conn) throws SqlScriptException
     {
@@ -193,9 +196,16 @@ public abstract class SqlScriptManager
         try
         {
             dialect.checkSqlScript(contents);
-            LogManager.getLogger(SqlScriptManager.class).info("start running script : " + script.getDescription());
-            dialect.runSql(schema, contents, script.getProvider().getUpgradeCode(), moduleContext, conn);
-            LogManager.getLogger(SqlScriptManager.class).info("finished running script : " + script.getDescription());
+            LOG.info("Starting to run script: {}", script.getDescription());
+            if (contents.contains(SKIP_SCRIPT_ANNOTATION) && schema.existsInDatabase())
+            {
+                LOG.info("Script specified " + SKIP_SCRIPT_ANNOTATION + " and schema exists; skipping script: {}", script.getDescription());
+            }
+            else
+            {
+                dialect.runSql(schema, contents, script.getProvider().getUpgradeCode(), moduleContext, conn);
+                LOG.info("Finished running script: {}", script.getDescription());
+            }
         }
         catch(Throwable t)
         {
@@ -204,14 +214,14 @@ public abstract class SqlScriptManager
 
         if (script.isValidName())
         {
-            // TODO: Seems like a pointless check... we never run scripts twice!
+            // Should never be true, unless getNewScripts() isn't doing its job. TODO: Remove update() branch below.
+            assert !hasBeenRun(script);
             if (hasBeenRun(script))
                 update(user, script);
             else
                 insert(user, script);
         }
     }
-
 
     @NotNull
     public Collection<String> getPreviouslyRunSqlScriptNames()
@@ -229,7 +239,6 @@ public abstract class SqlScriptManager
 
         return new TableSelector(tinfo, Collections.singleton(fileNameColumn), filter, null).getCollection(String.class);
     }
-
 
     public boolean hasBeenRun(SqlScript script)
     {
