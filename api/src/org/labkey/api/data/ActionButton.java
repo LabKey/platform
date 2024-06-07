@@ -78,7 +78,6 @@ public class ActionButton extends DisplayElement implements Cloneable
     private StringExpression _actionName;
     private StringExpression _url;
     private StringExpression _script;
-    private StringExpression _title;
     private String _iconCls;
     private String _target;
     private String _tooltip;
@@ -146,23 +145,6 @@ public class ActionButton extends DisplayElement implements Cloneable
     {
         this(caption);
         setActionType(actionType);
-    }
-
-    // TODO: Delete? Unused?
-    public ActionButton(ActionButton ab)
-    {
-        _actionName = ab._actionName;
-        _actionType = ab._actionType;
-        _caption = ab._caption;
-        _script = ab._script;
-        _title = ab._title;
-        _url = ab._url;
-        _target = ab._target;
-        _requiresSelection = ab._requiresSelection;
-        _pluralConfirmText = ab._pluralConfirmText;
-        _singularConfirmText = ab._singularConfirmText;
-        _noFollow = ab._noFollow;
-        _enabled = ab._enabled;
     }
 
     public String getActionType()
@@ -347,10 +329,10 @@ public class ActionButton extends DisplayElement implements Cloneable
         }
         else
         {
-            return "this.form.action=\"" +
-                    getURL(ctx) +
-                    "\";this.form.method=\"" +
-                    _actionType.toString() + "\";";
+            return "this.form.action=" +
+                JavaScriptFragment.asString(getURL(ctx)) +
+                ";this.form.method=" +
+                JavaScriptFragment.asString(_actionType.toString()) + ";";
         }
     }
 
@@ -435,8 +417,8 @@ public class ActionButton extends DisplayElement implements Cloneable
                 onClickScript.append(getScript(ctx));
 
             button.onClick(onClickScript.toString())
-                    .submit(true)
-                    .name(getActionName(ctx));
+                .submit(true)
+                .name(getActionName(ctx));
         }
         else if (_actionType.equals(Action.LINK))
         {
