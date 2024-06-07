@@ -94,8 +94,8 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
 
         if (logWarnings)
         {
-            // Extract the SQL Server year from the enum name and include it in warning messages
-            String displayVersion = ssv.name().substring(11) + " (" + databaseProductVersion + ")";
+            // Display product year and numeric version in warning messages
+            String displayVersion = ssv.getYear() + " (" + databaseProductVersion + ")";
 
             // It's an old version being used as an external data source... we allow this but still warn to encourage upgrades
             if (!ssv.isAllowedAsPrimaryDataSource())
