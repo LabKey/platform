@@ -138,7 +138,7 @@ public class MutatingSqlDetector
             "EXEC", true,
             "EXECUTE", true,
             "IF", true,   // Typically IF EXISTS followed by mutating action
-            "MUTATE", true,
+            "MERGE", true,
             "SET", true,
             "sp_rename", true
         ));
