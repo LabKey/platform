@@ -1448,7 +1448,7 @@ public class DbScope
         return getTableInfoCache(options.getSchema().getType()).get(options);
     }
 
-    /** This is expensive... use only for debugging and troubleshooting */
+    /** This is expensive... use only for local debugging and troubleshooting */
     public <OptionType extends SchemaTableOptions> boolean isCached(OptionType options)
     {
         return getTableInfoCache(options.getSchema().getType()).isCached(options);
@@ -1770,7 +1770,7 @@ public class DbScope
         }
         catch (SQLException e)
         {
-            throw new RuntimeException(e);
+            throw new RuntimeSQLException(e);
         }
     }
 
@@ -1795,8 +1795,8 @@ public class DbScope
                 if (count != 0)
                 {
                     String message = "There " + (1 == count ? "is " : "are ") + StringUtilsLabKey.pluralize(count, "other connection") +
-                            " to database \"" + databaseName + "\" with the application name \"" + applicationName +
-                            "\"! This likely means another LabKey Server instance is already using this database.";
+                        " to database \"" + databaseName + "\" with the application name \"" + applicationName + "\"! " +
+                        "This likely means another LabKey Server instance is already using this database.";
                     LOG.fatal("{} Information about existing connections:\n{}", message, ResultSetUtil.getData(rs));
                     boolean terminate = Boolean.valueOf(Objects.toString(System.getProperty("terminateOnExistingConnections"), "true"));
                     if (terminate)
