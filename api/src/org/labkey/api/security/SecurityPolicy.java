@@ -198,17 +198,6 @@ public class SecurityPolicy
         return _assignments.isEmpty();
     }
 
-
-    /**
-     * Callers outside this package should use SecurityManager.hasAllPermissions() or Container.hasPermission[s]() or SecurableResource.hasPermission().
-     * If you are modifying a SecurityPolicy you should use getOwnPermissions() or getAssignments()
-     */
-    @Deprecated
-    public boolean hasPermission(@NotNull UserPrincipal principal, @NotNull Class<? extends Permission> permission)
-    {
-        return SecurityManager.hasAllPermissions(null, this, principal, Set.of(permission), Set.of());
-    }
-
     // Throttle that limits warning logging to once per hour per permission class
     private static final Throttle<Class<? extends Permission>> NOT_REGISTERED_PERMISSION_THROTTLE = new Throttle<>("unregistered permissions", 100, CacheManager.HOUR, permission -> LOG.warn(permission + " is not registered!"));
 
@@ -346,7 +335,6 @@ public class SecurityPolicy
         return json;
     }
 
-
     /**
      * Create a map of the roleAssignments with the key as the role name and the value as a map
      * between the principalType and the list of UserPrincipals of that type assigned the particular role
@@ -377,7 +365,6 @@ public class SecurityPolicy
         }
         return assignmentsMap;
     }
-
 
     public boolean hasNonInheritedPermission(@NotNull UserPrincipal principal, Class<? extends Permission> perm)
     {

@@ -987,12 +987,6 @@ public class SecurityManager
             return _email;
         }
 
-        @Deprecated // Left behind for backwards compatibility. Remove once mGAP adjusts usages.
-        public boolean isLdapEmail()
-        {
-            return isLdapOrSsoEmail();
-        }
-
         public boolean isLdapOrSsoEmail()
         {
             return AuthenticationManager.isLdapOrSsoEmail(_email);
@@ -3217,14 +3211,6 @@ public class SecurityManager
         return validRecipients;
     }
 
-
-    /**
-     * This is a choke point for checking permissions.
-     * It handles SecurityPolicy permissions, impersonation (via User object), locked projects, and contextual roles.
-     *
-     * This lets the SecurityPolicy object just handle its own ACL-like functionality e.g. computing the
-     * permissions that it explicitly assigns (resolving roles and groups).
-     */
     public static boolean hasAllPermissions(@Nullable String logMsg, SecurityPolicy policy, UserPrincipal principal, Set<Class<? extends Permission>> perms, Set<Role> contextualRoles)
     {
         return hasPermissions(logMsg, policy, principal, perms, contextualRoles, HasPermissionOption.ALL);
@@ -3233,6 +3219,30 @@ public class SecurityManager
     public static boolean hasAnyPermissions(@Nullable String logMsg, SecurityPolicy policy, UserPrincipal principal, Set<Class<? extends Permission>> perms, Set<Role> contextualRoles)
     {
         return hasPermissions(logMsg, policy, principal, perms, contextualRoles, HasPermissionOption.ANY);
+    }
+
+    /**
+     * This is a choke point for checking permissions. It handles SecurityPolicy permissions, impersonation (via User
+     * object), locked projects, and contextual roles. This lets the SecurityPolicy object just handle its own ACL-like
+     * functionality e.g. computing the permissions that it explicitly assigns (resolving roles and groups).
+     */
+    private static boolean hasPermissions(@Nullable String logMsg, SecurityPolicy policy, UserPrincipal principal, Set<Class<? extends Permission>> permissions, Set<Role> contextualRoles, HasPermissionOption opt)
+    {
+        try
+        {
+            SecurityLogger.indent(logMsg);
+            permissions.forEach(SecurityPolicy::testPermissionIsRegistered);
+
+            var granted = getPermissions(policy, principal, contextualRoles);
+            boolean ret = opt.accept(granted, permissions);
+            SecurityLogger.log("SecurityPolicy.hasPermissions " + permissions, principal, policy, ret);
+
+            return ret;
+        }
+        finally
+        {
+            SecurityLogger.outdent();
+        }
     }
 
     public static Set<Class<? extends Permission>> getPermissions(SecurityPolicy policy, UserPrincipal principal, Set<Role> contextualRoles)
@@ -3256,25 +3266,6 @@ public class SecurityManager
             permissions = user.getImpersonationContext().filterPermissions(permissions);
 
         return permissions.collect(Collectors.toSet());
-    }
-
-    private static boolean hasPermissions(@Nullable String logMsg, SecurityPolicy policy, UserPrincipal principal, Set<Class<? extends Permission>> permissions, Set<Role> contextualRoles, HasPermissionOption opt)
-    {
-        try
-        {
-            SecurityLogger.indent(logMsg);
-            permissions.forEach(SecurityPolicy::testPermissionIsRegistered);
-
-            var granted = getPermissions(policy, principal, contextualRoles);
-            boolean ret = opt.accept(granted, permissions);
-            SecurityLogger.log("SecurityPolicy.hasPermissions " + permissions, principal, policy, ret);
-
-            return ret;
-        }
-        finally
-        {
-            SecurityLogger.outdent();
-        }
     }
 
     @NotNull
@@ -3574,7 +3565,7 @@ public class SecurityManager
             };
 
             // Test Site User and Guest groups
-            MutableSecurityPolicy policy = new MutableSecurityPolicy(testFolder);
+            TestSecurityPolicy policy = new TestSecurityPolicy(testFolder);
             assertFalse("no permission check", policy.hasPermission(user, ReadPermission.class));
 
             policy.addRoleAssignment(user, ReaderRole.class);
@@ -3583,12 +3574,14 @@ public class SecurityManager
             assertFalse("no update permission", policy.hasPermission(user, UpdatePermission.class));
 
             Group guestGroup = SecurityManager.getGroup(Group.groupGuests);
+            Assert.assertNotNull(guestGroup);
             policy.addRoleAssignment(guestGroup, ReaderRole.class);
             assertTrue("read permission", policy.hasPermission(user, ReadPermission.class));
             assertFalse("no insert permission", policy.hasPermission(user, InsertPermission.class));
             assertFalse("no update permission", policy.hasPermission(user, UpdatePermission.class));
 
             Group userGroup = SecurityManager.getGroup(Group.groupUsers);
+            Assert.assertNotNull(userGroup);
             policy.addRoleAssignment(userGroup, EditorRole.class);
             assertTrue("read permission", policy.hasPermission(user, ReadPermission.class));
             assertTrue("insert permission", policy.hasPermission(user, InsertPermission.class));
@@ -3601,7 +3594,7 @@ public class SecurityManager
 
 
             // again with SecurityManager.hasPermissions
-            policy = new MutableSecurityPolicy(testFolder);
+            policy = new TestSecurityPolicy(testFolder);
             // Test Site User and Guest groups
             assertFalse("no permission check", SecurityManager.hasAllPermissions(null, policy, user, Set.of(ReadPermission.class), Set.of()));
 
