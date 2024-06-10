@@ -36,13 +36,9 @@ import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.pipeline.PipeRoot;
-import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.products.ProductRegistry;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.reports.Report;
-import org.labkey.api.reports.ReportService;
 import org.labkey.api.security.HasPermission;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityManager;
@@ -485,7 +481,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return project;
     }
 
-
     // Note: don't use the security policy directly unless you really have to... call hasPermission() or hasOneOf()
     // instead, to ensure proper behavior during impersonation.
     public @NotNull SecurityPolicy getPolicy()
@@ -493,53 +488,46 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return SecurityPolicyManager.getPolicy(this);
     }
 
-
     public boolean hasPermission(String logMsg, @NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        return SecurityManager.hasAllPermissions(logMsg, getPolicy(), user, Set.of(perm), Set.of());
+        return SecurityManager.hasAllPermissions(logMsg, this, user, Set.of(perm), Set.of());
     }
-
 
     @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        return SecurityManager.hasAllPermissions(null, getPolicy(), user, Set.of(perm), Set.of());
+        return SecurityManager.hasAllPermissions(null, this, user, Set.of(perm), Set.of());
     }
-
 
     public boolean hasPermission(String logMsg, @NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm, @Nullable Set<Role> contextualRoles)
     {
-        return SecurityManager.hasAllPermissions(logMsg, getPolicy(), user, Set.of(perm), contextualRoles);
+        return SecurityManager.hasAllPermissions(logMsg, this, user, Set.of(perm), contextualRoles);
     }
-
 
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm, @Nullable Set<Role> contextualRoles)
     {
-        return SecurityManager.hasAllPermissions(null, getPolicy(), user, Set.of(perm), contextualRoles);
+        return SecurityManager.hasAllPermissions(null, this, user, Set.of(perm), contextualRoles);
     }
-
 
     public boolean hasPermissions(@NotNull UserPrincipal user, @NotNull Set<Class<? extends Permission>> permissions)
     {
-        return SecurityManager.hasAllPermissions(null, getPolicy(), user, permissions, Set.of());
+        return SecurityManager.hasAllPermissions(null, this, user, permissions, Set.of());
     }
 
     public boolean hasPermissions(@NotNull UserPrincipal user, @NotNull Set<Class<? extends Permission>> permissions, @Nullable Set<Role> contextualRoles)
     {
-        return SecurityManager.hasAllPermissions(null, getPolicy(), user, permissions, contextualRoles);
+        return SecurityManager.hasAllPermissions(null, this, user, permissions, contextualRoles);
     }
-
 
     public boolean hasOneOf(@NotNull UserPrincipal user, @NotNull Set<Class<? extends Permission>> perms)
     {
-        return SecurityManager.hasAnyPermissions(null, getPolicy(), user, perms, Set.of());
+        return SecurityManager.hasAnyPermissions(null, this, user, perms, Set.of());
     }
-
 
     @SafeVarargs
     public final boolean hasOneOf(@NotNull User user, @NotNull Class<? extends Permission>... perms)
     {
-        return SecurityManager.hasAnyPermissions(null, getPolicy(), user, new HashSet<>(Arrays.asList(perms)), Set.of());
+        return SecurityManager.hasAnyPermissions(null, this, user, new HashSet<>(Arrays.asList(perms)), Set.of());
     }
 
     public boolean isForbiddenProject(User user)

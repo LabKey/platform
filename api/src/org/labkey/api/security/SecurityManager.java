@@ -94,7 +94,6 @@ import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.usageMetrics.UsageMetricsProvider;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.GUID;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
@@ -206,7 +205,7 @@ public class SecurityManager
                 Role role = assignment.getRole();
                 if (siteRoles.contains(role))
                 {
-                    UserPrincipal principal = SecurityManager.getPrincipal(assignment.getUserId());
+                    UserPrincipal principal = getPrincipal(assignment.getUserId());
                     if (principal != null && principal.isActive())
                     {
                         switch (principal.getPrincipalType())
@@ -511,7 +510,7 @@ public class SecurityManager
         User sessionUser = getSessionUser(request.getSession(false));
         if (sessionUser != null && !sessionUser.isActive())
         {
-            SecurityManager.logoutUser(request, sessionUser, null);
+            logoutUser(request, sessionUser, null);
             return null;
         }
         return sessionUser;
@@ -624,7 +623,7 @@ public class SecurityManager
                         // If impersonating, stop so it gets logged
                         if (sessionUser.isImpersonated())
                         {
-                            SecurityManager.stopImpersonating(request, factory);
+                            stopImpersonating(request, factory);
                             sessionUser = sessionUser.getImpersonatingUser(); // Need to log out the admin
                         }
 
@@ -1100,7 +1099,7 @@ public class SecurityManager
         {
             if (createLogin && !status.isLdapOrSsoEmail())
             {
-                String verification = SecurityManager.createLogin(email);
+                String verification = createLogin(email);
                 status.setVerification(verification);
             }
 
@@ -1257,8 +1256,8 @@ public class SecurityManager
     public static String createLogin(ValidEmail email) throws UserManagementException
     {
         // Create a placeholder password hash and a separate email verification key that will get emailed to the new user
-        String tempPassword = SecurityManager.createTempPassword();
-        String verification = SecurityManager.createTempPassword();
+        String tempPassword = createTempPassword();
+        String verification = createTempPassword();
 
         String crypt = Crypt.MD5.digestWithPrefix(tempPassword);
 
@@ -1322,7 +1321,7 @@ public class SecurityManager
 
         for (String hash : history)
         {
-            if (SecurityManager.matchPassword(password, hash))
+            if (matchPassword(password, hash))
                 return true;
         }
 
@@ -1691,7 +1690,7 @@ public class SecurityManager
         // don't suggest groups that will result in errors (i.e. circular relation, already member, etc.)
         for (K candidate : candidates)
         {
-            if (null == SecurityManager.getAddMemberError(group, candidate))
+            if (null == getAddMemberError(group, candidate))
                 valid.add(candidate);
         }
 
@@ -1843,7 +1842,7 @@ public class SecurityManager
             // Ignore Guest, Users, Admins, and user's own id
             if (groupId > 0 && groupId != u.getUserId())
             {
-                Group g = SecurityManager.getGroup(groupId);
+                Group g = getGroup(groupId);
 
                 if (null == g)
                     continue;
@@ -1991,7 +1990,7 @@ public class SecurityManager
      */
     private static void checkForMembership(UserPrincipal principal, Group group, LinkedList<UserPrincipal> visited, Set<List<UserPrincipal>> memberships)
     {
-        for (UserPrincipal member : SecurityManager.getGroupMembers(group, MemberType.ALL_GROUPS_AND_USERS))
+        for (UserPrincipal member : getGroupMembers(group, MemberType.ALL_GROUPS_AND_USERS))
         {
             if (visited.contains(member))
                 continue;
@@ -2005,7 +2004,7 @@ public class SecurityManager
             }
         }
 
-        for (Group member : SecurityManager.getGroupMembers(group, MemberType.GROUPS))
+        for (Group member : getGroupMembers(group, MemberType.GROUPS))
         {
             if (visited.contains(member) || member.equals(principal))
                 continue;
@@ -2056,7 +2055,7 @@ public class SecurityManager
     // TODO: Cache this set
     public static Set<Integer> getProjectUsersIds(Container c)
     {
-        SQLFragment sql = SecurityManager.getProjectUsersSQL(c.getProject());
+        SQLFragment sql = getProjectUsersSQL(c.getProject());
         sql.insert(0, "SELECT DISTINCT members.UserId ");
 
         Selector selector = new SqlSelector(core.getSchema(), sql);
@@ -2120,7 +2119,7 @@ public class SecurityManager
         SecurityPolicy policy = c.getPolicy();
 
         //don't filter if all site users is playing a role
-        Group allSiteUsers = SecurityManager.getGroup(Group.groupUsers);
+        Group allSiteUsers = getGroup(Group.groupUsers);
         if (!policy.getAssignedRoles(allSiteUsers).isEmpty())
         {
             // Just select all users
@@ -2179,9 +2178,8 @@ public class SecurityManager
     public static List<User> getUsersWithPermissions(Container c, boolean includeInactive, Set<Class<? extends Permission>> perms)
     {
         // No cache right now, but performance seems fine. After the user list and policy are cached, no other queries occur.
-        SecurityPolicy policy = c.getPolicy();
         return UserManager.getUsers(includeInactive).stream()
-            .filter(user -> SecurityManager.hasAllPermissions(null, policy, user, perms, Set.of()))
+            .filter(user -> hasAllPermissions(null, c, user, perms, Set.of()))
             .toList();
     }
 
@@ -2198,16 +2196,15 @@ public class SecurityManager
      */
     public static List<User> getUsersWithOneOf(Container c, Set<Class<? extends Permission>> perms)
     {
-        SecurityPolicy policy = c.getPolicy();
         return UserManager.getActiveUsers().stream()
-            .filter(user -> SecurityManager.hasAnyPermissions(null, policy, user, perms, Set.of()))
+            .filter(user -> hasAnyPermissions(null, c, user, perms, Set.of()))
             .toList();
     }
 
     /** Returns both users and groups, but direct members only (not recursive) */
     public static List<Pair<Integer, String>> getGroupMemberNamesAndIds(String path, boolean includeInactive)
     {
-        Integer groupId = SecurityManager.getGroupId(path);
+        Integer groupId = getGroupId(path);
         if (groupId == null)
             return Collections.emptyList();
         else
@@ -2469,7 +2466,7 @@ public class SecurityManager
 
         try
         {
-            newUserStatus = SecurityManager.addUser(email, currentUser);
+            newUserStatus = addUser(email, currentUser);
 
             if (newUserStatus.getHasLogin() && sendMail)
             {
@@ -2522,7 +2519,7 @@ public class SecurityManager
             if (null != newUser)
                 UserManager.addToUserHistory(newUser, newUser.getEmail() + " was added to the system. Sending the verification email failed.");
         }
-        catch (SecurityManager.UserManagementException e)
+        catch (UserManagementException e)
         {
             message.append("Failed to create user ").append(email.toString()).append(": ").append(e.getMessage());
         }
@@ -2557,26 +2554,26 @@ public class SecurityManager
 
         ActionURL verificationURL = createModuleVerificationURL(context.getContainer(), email, newUserStatus.getVerification(), extraParameters, provider, isAddUser);
 
-        SecurityManager.sendEmail(c, currentUser, getRegistrationMessage(mailPrefix, false), email.getEmailAddress(), verificationURL);
+        sendEmail(c, currentUser, getRegistrationMessage(mailPrefix, false), email.getEmailAddress(), verificationURL);
         if (!currentUser.isGuest() && !currentUser.getEmail().equals(email.getEmailAddress()))
         {
             SecurityMessage msg = getRegistrationMessage(mailPrefix, true);
             msg.setTo(email.getEmailAddress());
-            SecurityManager.sendEmail(c, currentUser, msg, currentUser.getEmail(), verificationURL);
+            sendEmail(c, currentUser, msg, currentUser.getEmail(), verificationURL);
         }
     }
 
     public static void addSelfRegisteredUser(ViewContext context, ValidEmail email, @Nullable List<Pair<String, String>> extraParameters, @Nullable String registrationProviderName) throws Exception
     {
         User currentUser = context.getUser();
-        SecurityManager.NewUserStatus newUserStatus = SecurityManager.addUser(email, currentUser);
+        NewUserStatus newUserStatus = addUser(email, currentUser);
 
         User newUser = newUserStatus.getUser();
         if (newUserStatus.getHasLogin())
         {
             try
             {
-                SecurityManager.sendRegistrationEmail(context, email, null, newUserStatus, extraParameters, registrationProviderName, true);
+                sendRegistrationEmail(context, email, null, newUserStatus, extraParameters, registrationProviderName, true);
                 UserManager.addToUserHistory(newUser, newUser.getEmail() + " was added to the system via self-registration. Verification email was sent successfully.");
             }
             catch (ConfigurationException e)
@@ -2625,7 +2622,7 @@ public class SecurityManager
 
         // Create default groups
         //Note: we are no longer creating the project-level Administrators group
-        Group userGroup = SecurityManager.createGroup(project, "Users");
+        Group userGroup = createGroup(project, "Users");
 
         // Set default permissions
         Role noPermsRole = RoleManager.getRole(NoPermissionsRole.class);
@@ -2659,7 +2656,7 @@ public class SecurityManager
         //if policy is still empty, add the guests group to the no perms role so that
         //we don't end up with an empty (i.e., inheriting policy)
         if (policy.isEmpty())
-            policy.addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), NoPermissionsRole.class);
+            policy.addRoleAssignment(getGroup(Group.groupGuests), NoPermissionsRole.class);
 
         SecurityPolicyManager.savePolicy(policy, user);
     }
@@ -2709,7 +2706,7 @@ public class SecurityManager
         /* when demoting a project to a regular folder, delete the project groups */
         if (oldProject == c)
         {
-            SecurityManager.deleteGroups(c, PrincipalType.GROUP);
+            deleteGroups(c, PrincipalType.GROUP);
         }
 
         /*
@@ -2886,7 +2883,7 @@ public class SecurityManager
     {
         // We let admins create passwords (i.e., entries in the logins table) if they don't already exist.
         // This addresses SSO and LDAP scenarios, see #10374.
-        boolean loginExists = SecurityManager.loginExists(email);
+        boolean loginExists = loginExists(email);
         String pastVerb = loginExists ? "reset" : "created";
         String infinitiveVerb = loginExists ? "reset" : "create";
 
@@ -2898,25 +2895,25 @@ public class SecurityManager
             {
                 // Create a placeholder password that's impossible to guess and a separate email
                 // verification key that gets emailed.
-                verification = SecurityManager.createTempPassword();
-                SecurityManager.setPassword(email, SecurityManager.createTempPassword());
-                SecurityManager.setVerification(email, verification);
+                verification = createTempPassword();
+                setPassword(email, createTempPassword());
+                setVerification(email, verification);
             }
             else
             {
-                verification = SecurityManager.createLogin(email);
+                verification = createLogin(email);
             }
 
             try
             {
-                ActionURL verificationURL = SecurityManager.createVerificationURL(c, email, verification, null);
-                SecurityManager.sendEmail(c, user, SecurityManager.getResetMessage(false), email.getEmailAddress(), verificationURL);
+                ActionURL verificationURL = createVerificationURL(c, email, verification, null);
+                sendEmail(c, user, getResetMessage(false), email.getEmailAddress(), verificationURL);
 
                 if (!user.getEmail().equals(email.getEmailAddress()))
                 {
-                    SecurityMessage msg = SecurityManager.getResetMessage(true);
+                    SecurityMessage msg = getResetMessage(true);
                     msg.setTo(email.getEmailAddress());
-                    SecurityManager.sendEmail(c, user, msg, user.getEmail(), verificationURL);
+                    sendEmail(c, user, msg, user.getEmail(), verificationURL);
                 }
                 UserManager.addToUserHistory(UserManager.getUser(email), user.getEmail() + " " + pastVerb + " the password.");
             }
@@ -2927,7 +2924,7 @@ public class SecurityManager
                 UserManager.addToUserHistory(UserManager.getUser(email), user.getEmail() + " " + pastVerb + " the password, but sending the email failed.");
             }
         }
-        catch (SecurityManager.UserManagementException e)
+        catch (UserManagementException e)
         {
             errors.addError(new LabKeyError(new Exception("Failed to reset password due to: " + e.getMessage(), e)));
             UserManager.addToUserHistory(UserManager.getUser(email), user.getEmail() + " attempted to " + infinitiveVerb + " the password, but the " + infinitiveVerb + " failed: " + e.getMessage());
@@ -2983,7 +2980,7 @@ public class SecurityManager
                         {
                             try
                             {
-                                group = SecurityManager.createGroup(rootContainer, groupName, PrincipalType.GROUP);
+                                group = createGroup(rootContainer, groupName, PrincipalType.GROUP);
                             }
                             catch (IllegalArgumentException e)
                             {
@@ -2992,10 +2989,10 @@ public class SecurityManager
                         }
                         try
                         {
-                            String canUserBeAddedToGroup = SecurityManager.getAddMemberError(group, user);
+                            String canUserBeAddedToGroup = getAddMemberError(group, user);
                             if (null == canUserBeAddedToGroup)
                             {
-                                SecurityManager.addMember(group, user);
+                                addMember(group, user);
                             }
                             else
                             {
@@ -3051,7 +3048,7 @@ public class SecurityManager
                 {
                     try
                     {
-                        group = SecurityManager.createGroup(rootContainer, prop.getName(), PrincipalType.GROUP);
+                        group = createGroup(rootContainer, prop.getName(), PrincipalType.GROUP);
                     }
                     catch (IllegalArgumentException e)
                     {
@@ -3150,7 +3147,7 @@ public class SecurityManager
             User user = UserManager.getUser(userEmail);
             if (null == user)
             {
-                SecurityManager.NewUserStatus userStatus = SecurityManager.addUser(userEmail, currentUser);
+                NewUserStatus userStatus = addUser(userEmail, currentUser);
 
                 user = userStatus.getUser();
                 UserManager.addToUserHistory(user, user.getEmail() + " was added to the system via startup properties.");
@@ -3161,7 +3158,7 @@ public class SecurityManager
         {
             throw new ConfigurationException("Invalid email address specified in startup properties for creating new user: " + email, e);
         }
-        catch (SecurityManager.UserManagementException e)
+        catch (UserManagementException e)
         {
             throw new ConfigurationException("Unable to add new user for: " + email, e);
         }
@@ -3216,9 +3213,14 @@ public class SecurityManager
         return hasPermissions(logMsg, policy, principal, perms, contextualRoles, HasPermissionOption.ALL);
     }
 
-    public static boolean hasAnyPermissions(@Nullable String logMsg, SecurityPolicy policy, UserPrincipal principal, Set<Class<? extends Permission>> perms, Set<Role> contextualRoles)
+    public static boolean hasAllPermissions(@Nullable String logMsg, SecurableResource resource, UserPrincipal principal, Set<Class<? extends Permission>> perms, Set<Role> contextualRoles)
     {
-        return hasPermissions(logMsg, policy, principal, perms, contextualRoles, HasPermissionOption.ANY);
+        return hasPermissions(logMsg, SecurityPolicyManager.getPolicy(resource), principal, perms, contextualRoles, HasPermissionOption.ALL);
+    }
+
+    public static boolean hasAnyPermissions(@Nullable String logMsg, SecurableResource resource, UserPrincipal principal, Set<Class<? extends Permission>> perms, Set<Role> contextualRoles)
+    {
+        return hasPermissions(logMsg, SecurityPolicyManager.getPolicy(resource), principal, perms, contextualRoles, HasPermissionOption.ANY);
     }
 
     /**
@@ -3271,7 +3273,7 @@ public class SecurityManager
     @NotNull
     public static List<String> getPermissionNames(SecurityPolicy policy, @NotNull UserPrincipal principal)
     {
-        Set<Class<? extends Permission>> perms = SecurityManager.getPermissions(policy, principal, null);
+        Set<Class<? extends Permission>> perms = getPermissions(policy, principal, null);
         List<String> names = new ArrayList<>(perms.size());
         for (Class<? extends Permission> perm : perms)
         {
@@ -3344,24 +3346,24 @@ public class SecurityManager
         public void setUp()
         {
             project = JunitUtil.getTestContainer().getProject();
-            groupA = SecurityManager.createGroup(project, "a");
-            groupB = SecurityManager.createGroup(project, "b");
+            groupA = createGroup(project, "a");
+            groupB = createGroup(project, "b");
         }
         //            try{tearDown();} catch(Exception e){};
         @After
         public void tearDown()
         {
-            SecurityManager.deleteGroup(groupA);
-            try{SecurityManager.deleteGroup(groupB);}catch(Exception ignored){}
+            deleteGroup(groupA);
+            try{deleteGroup(groupB);}catch(Exception ignored){}
         }
 
         @Test
         public void testRenameGroup()
         {
-//            Group g1 = SecurityManager.createGroup(project, "group 1");
+//            Group g1 = createGroup(project, "group 1");
             String newName  = groupB.getName() + "new";
             int oldGroupId = getGroupId(project, groupB.getName());
-            SecurityManager.renameGroup(groupB, newName, null);
+            renameGroup(groupB, newName, null);
             assertEquals(oldGroupId, getGroupId(project, newName).intValue());
             groupB.setName(newName);
         }
@@ -3485,7 +3487,7 @@ public class SecurityManager
                 rawEmail = "test_" + Math.round(Math.random() * 10000) + "@localhost.xyz";
                 email = new ValidEmail(rawEmail);
             }
-            while (SecurityManager.loginExists(email));
+            while (loginExists(email));
 
             User user = null;
 
@@ -3496,13 +3498,13 @@ public class SecurityManager
                 user = status.getUser();
                 assertTrue("addUser", user.getUserId() != 0);
 
-                boolean success = SecurityManager.verify(email, status.getVerification());
+                boolean success = verify(email, status.getVerification());
                 assertTrue("verify", success);
 
-                SecurityManager.setVerification(email, null);
+                setVerification(email, null);
 
                 String password = generateStrongPassword(user);
-                SecurityManager.setPassword(email, password);
+                setPassword(email, password);
 
                 User user2 = AuthenticationManager.authenticate(ViewServlet.mockRequest("GET", new ActionURL(), null, null, null), rawEmail, password);
                 assertNotNull("\"" + rawEmail + "\" failed to authenticate with password \"" + password + "\"; check labkey.log around timestamp " + DateUtil.formatDateTime(new Date(), "HH:mm:ss,SSS") + " for the reason", user2);
@@ -3573,14 +3575,14 @@ public class SecurityManager
             assertFalse("no insert permission", policy.hasPermission(user, InsertPermission.class));
             assertFalse("no update permission", policy.hasPermission(user, UpdatePermission.class));
 
-            Group guestGroup = SecurityManager.getGroup(Group.groupGuests);
+            Group guestGroup = getGroup(Group.groupGuests);
             Assert.assertNotNull(guestGroup);
             policy.addRoleAssignment(guestGroup, ReaderRole.class);
             assertTrue("read permission", policy.hasPermission(user, ReadPermission.class));
             assertFalse("no insert permission", policy.hasPermission(user, InsertPermission.class));
             assertFalse("no update permission", policy.hasPermission(user, UpdatePermission.class));
 
-            Group userGroup = SecurityManager.getGroup(Group.groupUsers);
+            Group userGroup = getGroup(Group.groupUsers);
             Assert.assertNotNull(userGroup);
             policy.addRoleAssignment(userGroup, EditorRole.class);
             assertTrue("read permission", policy.hasPermission(user, ReadPermission.class));
@@ -3591,72 +3593,64 @@ public class SecurityManager
             assertTrue("read permission", policy.hasPermission(User.guest, ReadPermission.class));
             assertFalse("no insert permission", policy.hasPermission(User.guest, InsertPermission.class));
             assertFalse("no update permission", policy.hasPermission(User.guest, UpdatePermission.class));
+        }
 
-
-            // again with SecurityManager.hasPermissions
-            policy = new TestSecurityPolicy(testFolder);
-            // Test Site User and Guest groups
-            assertFalse("no permission check", SecurityManager.hasAllPermissions(null, policy, user, Set.of(ReadPermission.class), Set.of()));
-
-            policy.addRoleAssignment(user, ReaderRole.class);
-            assertTrue("read permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(ReadPermission.class), Set.of()));
-            assertFalse("no insert permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(InsertPermission.class), Set.of()));
-            assertFalse("no update permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(UpdatePermission.class), Set.of()));
-
-            policy.addRoleAssignment(guestGroup, ReaderRole.class);
-            assertTrue("read permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(ReadPermission.class), Set.of()));
-            assertFalse("no insert permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(InsertPermission.class), Set.of()));
-            assertFalse("no update permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(UpdatePermission.class), Set.of()));
-
-            policy.addRoleAssignment(userGroup, EditorRole.class);
-            assertTrue("read permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(ReadPermission.class), Set.of()));
-            assertTrue("insert permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(InsertPermission.class), Set.of()));
-            assertTrue("update permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(UpdatePermission.class), Set.of()));
-
-            // Guest
-            assertTrue("read permission", SecurityManager.hasAllPermissions(null, policy, User.guest, Set.of(ReadPermission.class), Set.of()));
-            assertFalse("no insert permission", SecurityManager.hasAllPermissions(null, policy, User.guest, Set.of(InsertPermission.class), Set.of()));
-            assertFalse("no update permission", SecurityManager.hasAllPermissions(null, policy, User.guest, Set.of(UpdatePermission.class), Set.of()));
+        private void addRoleAssignment(MutableSecurityPolicy policy, UserPrincipal principal, Class<? extends Role> roleClass, User testUser)
+        {
+            policy.addRoleAssignment(principal, roleClass);
+            SecurityPolicyManager.savePolicy(policy, testUser);
         }
 
         @Test
-        public void testReadOnlyImpersonate()
+        public void testReadOnlyImpersonate() throws InvalidEmailException, UserManagementException
         {
-            Container testFolder = JunitUtil.getTestContainer();
+            Container parentFolder = JunitUtil.getTestContainer();
 
             // Ignore all contextual roles for the test user
-            final User testuser = TestContext.get().getUser();
+            final User testUser = TestContext.get().getUser();
             // this user is subsetted to only permit read permissions (see AllowedForReadOnlyUser)
-            User user = new User(testuser.getEmail(), 1000000);
+            User user = addUser(new ValidEmail("impersonate@test.net"), null, false).getUser();
             user.setImpersonationContext(new ReadOnlyImpersonatingContext());
 
-            MutableSecurityPolicy policy = new MutableSecurityPolicy(testFolder);
-            // Test Site User and Guest groups
-            assertFalse("no permission check", SecurityManager.hasAllPermissions(null, policy, user, Set.of(ReadPermission.class), Set.of()));
+            Container testFolder = null;
 
-            policy.addRoleAssignment(user, ReaderRole.class);
-            assertTrue("read permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(ReadPermission.class), Set.of()));
-            assertFalse("no insert permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(InsertPermission.class), Set.of()));
-            assertFalse("no update permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(UpdatePermission.class), Set.of()));
+            try
+            {
+                testFolder = ContainerManager.createContainer(parentFolder, "impersonate_subfolder", testUser);
+                // Test Site User and Guest groups
+                assertFalse("no permission check", hasAllPermissions(null, testFolder, user, Set.of(ReadPermission.class), Set.of()));
 
-            Group guestGroup = SecurityManager.getGroup(Group.groupGuests);
-            policy.addRoleAssignment(guestGroup, ReaderRole.class);
-            assertTrue("read permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(ReadPermission.class), Set.of()));
-            assertFalse("no insert permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(InsertPermission.class), Set.of()));
-            assertFalse("no update permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(UpdatePermission.class), Set.of()));
+                MutableSecurityPolicy policy = new MutableSecurityPolicy(testFolder);
+                addRoleAssignment(policy, user, ReaderRole.class, testUser);
+                assertTrue("read permission", hasAllPermissions(null, testFolder, user, Set.of(ReadPermission.class), Set.of()));
+                assertFalse("no insert permission", hasAllPermissions(null, testFolder, user, Set.of(InsertPermission.class), Set.of()));
+                assertFalse("no update permission", hasAllPermissions(null, testFolder, user, Set.of(UpdatePermission.class), Set.of()));
 
-            Group userGroup = SecurityManager.getGroup(Group.groupUsers);
-            policy.addRoleAssignment(userGroup, EditorRole.class);
-            assertTrue("read permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(ReadPermission.class), Set.of()));
-            assertFalse("insert permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(InsertPermission.class), Set.of()));
-            assertFalse("update permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(UpdatePermission.class), Set.of()));
+                Group guestGroup = getGroup(Group.groupGuests);
+                Assert.assertNotNull(guestGroup);
+                addRoleAssignment(policy, guestGroup, ReaderRole.class, testUser);
+                assertTrue("read permission", hasAllPermissions(null, testFolder, user, Set.of(ReadPermission.class), Set.of()));
+                assertFalse("no insert permission", hasAllPermissions(null, testFolder, user, Set.of(InsertPermission.class), Set.of()));
+                assertFalse("no update permission", hasAllPermissions(null, testFolder, user, Set.of(UpdatePermission.class), Set.of()));
 
-            // Guest
-            assertTrue("read permission", SecurityManager.hasAllPermissions(null, policy, User.guest, Set.of(ReadPermission.class), Set.of()));
-            assertFalse("no insert permission", SecurityManager.hasAllPermissions(null, policy, User.guest, Set.of(InsertPermission.class), Set.of()));
-            assertFalse("no update permission", SecurityManager.hasAllPermissions(null, policy, User.guest, Set.of(UpdatePermission.class), Set.of()));
+                Group userGroup = getGroup(Group.groupUsers);
+                Assert.assertNotNull(userGroup);
+                addRoleAssignment(policy, userGroup, EditorRole.class, testUser);
+                assertTrue("read permission", hasAllPermissions(null, testFolder, user, Set.of(ReadPermission.class), Set.of()));
+                assertFalse("insert permission", hasAllPermissions(null, testFolder, user, Set.of(InsertPermission.class), Set.of()));
+                assertFalse("update permission", hasAllPermissions(null, testFolder, user, Set.of(UpdatePermission.class), Set.of()));
+
+                // Guest
+                assertTrue("read permission", hasAllPermissions(null, testFolder, User.guest, Set.of(ReadPermission.class), Set.of()));
+                assertFalse("no insert permission", hasAllPermissions(null, testFolder, User.guest, Set.of(InsertPermission.class), Set.of()));
+                assertFalse("no update permission", hasAllPermissions(null, testFolder, User.guest, Set.of(UpdatePermission.class), Set.of()));
+            }
+            finally
+            {
+                ContainerManager.delete(testFolder, testUser);
+                UserManager.deleteUser(user.getUserId());
+            }
         }
-
 
         @Test
         public void testEmailValidation()
@@ -3681,7 +3675,6 @@ public class SecurityManager
             testEmail("<@bar.com", false);
             testEmail(displayName + " <personal>", false);  // Can't combine personal name with default domain
         }
-
 
         private ValidEmail testEmail(String rawEmail, boolean valid)
         {
@@ -3821,7 +3814,7 @@ public class SecurityManager
             Container rootContainer = ContainerManager.getRoot();
             User user = UserManager.getUser(userEmail);
             Group group = GroupManager.getGroup(rootContainer, TEST_USER_2_GROUP_NAME, GroupEnumType.SITE);
-            assertEquals("The user defined in the startup properties: " + TEST_USER_2_EMAIL + " did not have the specified group: " + TEST_USER_2_GROUP_NAME, "Principal is already a member of this group", SecurityManager.getAddMemberError(group, user));
+            assertEquals("The user defined in the startup properties: " + TEST_USER_2_EMAIL + " did not have the specified group: " + TEST_USER_2_GROUP_NAME, "Principal is already a member of this group", getAddMemberError(group, user));
 
             // delete the test user that was added
             UserManager.deleteUser(user.getUserId());
@@ -3830,8 +3823,11 @@ public class SecurityManager
         @Test
         public void testGetUsersWithPermissions() throws Exception
         {
-            Container parent = JunitUtil.getTestContainer();
-            Container test;
+            final Container parentFolder = JunitUtil.getTestContainer();
+            final User testUser = TestContext.get().getUser();
+
+            Container testFolder = null;
+
             Pair<ValidEmail, User> userAB  = new Pair<>(new ValidEmail("AB@localhost.test"), null);
             Pair<ValidEmail, User> userAC  = new Pair<>(new ValidEmail("AC@localhost.test"), null);
             Pair<ValidEmail, User> userABC = new Pair<>(new ValidEmail("ABC@localhost.test"), null);
@@ -3845,49 +3841,33 @@ public class SecurityManager
                         addUser(p.getKey(), null, false);
                     p.setValue(UserManager.getUser(p.getKey()));
                 }
-                // Create a mock container
-                String id = GUID.makeGUID();
-                test = new Container(parent, "test" + id, id, -1, 0, new Date(), 0, false)
-                {
-                    MutableSecurityPolicy p = null;
-                    @Override
-                    public @NotNull SecurityPolicy getPolicy()
-                    {
-                        if (null == p)
-                            p = new MutableSecurityPolicy(this);
-                        return p;
-                    }
-                    @Override
-                    public boolean isForbiddenProject(User user)
-                    {
-                        return false;
-                    }
-                };
-                MutableSecurityPolicy policy = (MutableSecurityPolicy)test.getPolicy();
-                policy.addAssignment(new RoleAssignment(id,userAB.getValue(),new RoleAB()));
-                policy.addAssignment(new RoleAssignment(id,userAC.getValue(),new RoleAC()));
-                policy.addAssignment(new RoleAssignment(id,userABC.getValue(),new RoleAB()));
-                policy.addAssignment(new RoleAssignment(id,userABC.getValue(),new RoleAC()));
 
-                var usersWithAll = new HashSet<>(SecurityManager.getUsersWithPermissions(test, Set.of(PermissionA.class)));
+                testFolder = ContainerManager.createContainer(parentFolder, "getusers_subfolder", testUser);
+                MutableSecurityPolicy policy = new MutableSecurityPolicy(testFolder);
+                addRoleAssignment(policy, userAB.getValue(), new RoleAB(), testUser);
+                addRoleAssignment(policy, userAC.getValue(), new RoleAC(), testUser);
+                addRoleAssignment(policy, userABC.getValue(), new RoleAB(), testUser);
+                addRoleAssignment(policy, userABC.getValue(), new RoleAC(), testUser);
+
+                var usersWithAll = new HashSet<>(getUsersWithPermissions(testFolder, Set.of(PermissionA.class)));
                 assertEquals(3, usersWithAll.size());
                 assertTrue(usersWithAll.contains(userAB.getValue()));
                 assertTrue(usersWithAll.contains(userAC.getValue()));
                 assertTrue(usersWithAll.contains(userABC.getValue()));
-                var usersWithAny = new HashSet<>(SecurityManager.getUsersWithOneOf(test, Set.of(PermissionA.class)));
+                var usersWithAny = new HashSet<>(getUsersWithOneOf(testFolder, Set.of(PermissionA.class)));
                 assertEquals(usersWithAll, usersWithAny);
 
-                usersWithAll = new HashSet<>(SecurityManager.getUsersWithPermissions(test, Set.of(PermissionB.class)));
+                usersWithAll = new HashSet<>(getUsersWithPermissions(testFolder, Set.of(PermissionB.class)));
                 assertEquals(2, usersWithAll.size());
                 assertTrue(usersWithAll.contains(userAB.getValue()));
                 assertTrue(usersWithAll.contains(userABC.getValue()));
-                usersWithAny = new HashSet<>(SecurityManager.getUsersWithOneOf(test, Set.of(PermissionB.class)));
+                usersWithAny = new HashSet<>(getUsersWithOneOf(testFolder, Set.of(PermissionB.class)));
                 assertEquals(usersWithAll, usersWithAny);
 
-                usersWithAll = new HashSet<>(SecurityManager.getUsersWithPermissions(test, Set.of(PermissionB.class, PermissionC.class)));
+                usersWithAll = new HashSet<>(getUsersWithPermissions(testFolder, Set.of(PermissionB.class, PermissionC.class)));
                 assertEquals(1, usersWithAll.size());
                 assertTrue(usersWithAll.contains(userABC.getValue()));
-                usersWithAny = new HashSet<>(SecurityManager.getUsersWithOneOf(test, Set.of(PermissionB.class, PermissionC.class)));
+                usersWithAny = new HashSet<>(getUsersWithOneOf(testFolder, Set.of(PermissionB.class, PermissionC.class)));
                 assertEquals(3, usersWithAny.size());
                 assertTrue(usersWithAny.contains(userAB.getValue()));
                 assertTrue(usersWithAny.contains(userAC.getValue()));
@@ -3898,7 +3878,17 @@ public class SecurityManager
                 for (var p : Arrays.asList(userAB, userAC, userABC))
                     if (null != p.getValue())
                         UserManager.deleteUser(p.getValue().getUserId());
+
+                ContainerManager.delete(testFolder, testUser);
             }
+        }
+
+        private void addRoleAssignment(MutableSecurityPolicy policy, UserPrincipal principal, Role role, User testUser)
+        {
+            if (!RoleManager.isPermissionRegistered((Class<? extends Permission>) role.getClass()))
+                RoleManager.registerRole(role, false);
+            policy.addRoleAssignment(principal, role);
+            SecurityPolicyManager.savePolicy(policy, testUser);
         }
     }
 
@@ -3909,6 +3899,7 @@ public class SecurityManager
             super("RoleAB", "RoleAB", PermissionA.class, PermissionB.class);
         }
     }
+
     static class RoleAC extends AbstractRole implements Role.TestRole
     {
         RoleAC()
@@ -3916,6 +3907,7 @@ public class SecurityManager
             super("RoleAC", "RoleAC", PermissionA.class, PermissionC.class);
         }
     }
+
     static class PermissionA extends AbstractPermission implements Permission.TestPermission
     {
         PermissionA()
@@ -3923,6 +3915,7 @@ public class SecurityManager
             super("PermissionA","PermissionA");
         }
     }
+
     static class PermissionB extends AbstractPermission implements Permission.TestPermission
     {
         PermissionB()
@@ -3930,6 +3923,7 @@ public class SecurityManager
             super("PermissionB","PermissionB");
         }
     }
+
     static class PermissionC extends AbstractPermission implements Permission.TestPermission
     {
         PermissionC()
