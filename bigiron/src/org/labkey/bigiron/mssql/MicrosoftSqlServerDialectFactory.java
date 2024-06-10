@@ -94,21 +94,26 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
 
         if (logWarnings)
         {
-            // It's an old version being used as an external schema... we allow this but still warn to encourage upgrades
+            // Display product year and numeric version in warning messages
+            String displayVersion = ssv.getYear() + " (" + databaseProductVersion + ")";
+
+            // It's an old version being used as an external data source... we allow this but still warn to encourage upgrades
             if (!ssv.isAllowedAsPrimaryDataSource())
             {
-                LOG.warn(getStandardWarningMessage("no longer supports", databaseProductVersion));
+                LOG.warn(getStandardWarningMessage("no longer supports", displayVersion));
             }
-
-            if (!ssv.isTested())
+            else
             {
-                LOG.warn(getStandardWarningMessage("has not been tested against", databaseProductVersion));
-            }
-            else if (ssv.isDeprecated())
-            {
-                String deprecationWarning = getStandardWarningMessage("no longer supports", databaseProductVersion);
-                LOG.warn(deprecationWarning);
-                dialect.setAdminWarning(HtmlString.of(deprecationWarning));
+                if (!ssv.isTested())
+                {
+                    LOG.warn(getStandardWarningMessage("has not been tested against", displayVersion));
+                }
+                else if (ssv.isDeprecated())
+                {
+                    String deprecationWarning = getStandardWarningMessage("no longer supports", displayVersion);
+                    LOG.warn(deprecationWarning);
+                    dialect.setAdminWarning(HtmlString.of(deprecationWarning));
+                }
             }
         }
 
@@ -117,7 +122,7 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
 
     public static String getStandardWarningMessage(String warning, String databaseProductVersion)
     {
-        return "LabKey Server " + warning + " " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED;
+        return "LabKey Server " + warning + " " + PRODUCT_NAME + " " + databaseProductVersion + ". " + RECOMMENDED;
     }
 
     @Override
