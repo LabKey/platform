@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS core.PrincipalRelations;
+EXEC core.fn_dropifexists 'PrincipalRelations', 'core', 'TABLE', NULL

@@ -19,5 +19,5 @@
 -- NOTE: Don't remove any of these drop statements, even if we stop re-creating the view in *-create.sql. Drop statements must
 -- remain in place so we can correctly upgrade from older versions, which we commit to for two years after each release.
 
-DROP VIEW IF EXISTS core.ActiveUsers;
-DROP VIEW IF EXISTS core.Users;
+EXEC core.fn_dropifexists 'ActiveUsers', 'core', 'VIEW', NULL;
+EXEC core.fn_dropifexists 'Users', 'core', 'VIEW', NULL;
