@@ -39,6 +39,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.products.ProductRegistry;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.security.ACL;
 import org.labkey.api.security.HasPermission;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityManager;
@@ -47,9 +48,12 @@ import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.EnableRestrictedModules;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
@@ -524,6 +528,31 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return SecurityManager.hasAnyPermissions(null, this, user, new HashSet<>(Arrays.asList(perms)), Set.of());
     }
 
+    /**
+     * This is purely for backwards compatibility with HTTP APIs--Do not use for new code!
+     * Does not respect impersonation, etc.
+     * @param principal the user/group
+     * @return old-style bitmask for basic permissions
+     */
+    @Deprecated // TODO: Let's remove this!
+    public int getPermsAsOldBitMask(UserPrincipal principal)
+    {
+        int perms = 0;
+        Set<Class<? extends Permission>> permClasses = SecurityManager.getPermissions(this, principal, Set.of());
+        if (permClasses.contains(ReadPermission.class))
+            perms |= ACL.PERM_READ;
+        if (permClasses.contains(InsertPermission.class))
+            perms |= ACL.PERM_INSERT;
+        if (permClasses.contains(UpdatePermission.class))
+            perms |= ACL.PERM_UPDATE;
+        if (permClasses.contains(DeletePermission.class))
+            perms |= ACL.PERM_DELETE;
+        if (permClasses.contains(AdminPermission.class))
+            perms |= ACL.PERM_ADMIN;
+
+        return perms;
+    }
+
     public boolean isForbiddenProject(User user)
     {
         return handleForbiddenProject(user, false);
@@ -573,12 +602,10 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return _path.size() == 1;
     }
 
-
     public boolean isRoot()
     {
-        return _path.size() == 0;
+        return _path.isEmpty();
     }
-
 
     public boolean shouldDisplay(User user)
     {
@@ -586,7 +613,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
             return false;
 
         String name = _path.getName();
-        if (name.length() == 0)
+        if (name.isEmpty())
             return true; // Um, I guess we should display it?
         char c = name.charAt(0);
         if (c == '_' || c == '.')
@@ -1371,7 +1398,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
             if (includePermissions)
             {
-                containerProps.put("userPermissions", getPolicy().getPermsAsOldBitMask(user));
+                containerProps.put("userPermissions", getPermsAsOldBitMask(user));
                 containerProps.put("effectivePermissions", SecurityManager.getPermissionNames(this, user));
             }
 

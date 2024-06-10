@@ -3208,7 +3208,7 @@ public class SecurityManager
         return validRecipients;
     }
 
-    @Deprecated // TODO: Migrate the three remaining callers
+    @Deprecated // TODO: Migrate two remaining callers in AbstractWebdavResource
     public static boolean hasAllPermissions(@Nullable String logMsg, SecurityPolicy policy, UserPrincipal principal, Set<Class<? extends Permission>> perms, Set<Role> contextualRoles)
     {
         return hasPermissions(logMsg, policy, principal, perms, contextualRoles, HasPermissionOption.ALL);
@@ -3234,7 +3234,7 @@ public class SecurityManager
      * object), locked projects, and contextual roles. This lets the SecurityPolicy object just handle its own ACL-like
      * functionality e.g. computing the permissions that it explicitly assigns (resolving roles and groups).
      */
-    @Deprecated // Migrate to the SecurableResource variant above
+    @Deprecated // TODO: dependent on AbstractWebdavResource migration (see above)
     private static boolean hasPermissions(@Nullable String logMsg, SecurityPolicy policy, UserPrincipal principal, Set<Class<? extends Permission>> permissions, Set<Role> contextualRoles, HasPermissionOption opt)
     {
         try
@@ -3259,7 +3259,7 @@ public class SecurityManager
         return getPermissions(SecurityPolicyManager.getPolicy(resource), principal, contextualRoles);
     }
 
-    @Deprecated
+    @Deprecated // TODO: dependent on AbstractWebdavResource migration
     public static Set<Class<? extends Permission>> getPermissions(SecurityPolicy policy, UserPrincipal principal, Set<Role> contextualRoles)
     {
         if (policy == null)
@@ -3298,9 +3298,8 @@ public class SecurityManager
     }
 
     /**
-     * Returns the roles the principal is playing, either due to
-     * direct assignment, or due to membership in a group that is
-     * assigned the role.
+     * Returns the roles the principal is playing, either due to direct assignment, or due to membership in a group
+     * that is assigned the role.
      * @param principal The principal
      * @return The roles this principal is playing
      */
@@ -3311,11 +3310,11 @@ public class SecurityManager
     }
 
     @NotNull
-    public static Set<Role> getEffectiveRoles(@NotNull SecurityPolicy policy, @NotNull UserPrincipal principal, boolean includeContextualRoles)
+    public static Set<Role> getEffectiveRoles(@NotNull SecurityPolicy policy, @NotNull UserPrincipal principal, boolean includeDirectlyAssignedRoles)
     {
         Set<Role> roles = policy.getRoles(principal.getGroups());
         roles.addAll(policy.getAssignedRoles(principal));
-        if (includeContextualRoles)
+        if (includeDirectlyAssignedRoles)
             roles.addAll(principal.getAssignedRoles(policy));
         return roles;
     }
