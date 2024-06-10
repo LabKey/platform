@@ -115,11 +115,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-/**
- * User: adam
- * Date: Jan 3, 2007
- * Time: 7:13:28 PM
- */
 public class AttachmentServiceImpl implements AttachmentService, ContainerManager.ContainerListener
 {
     private static final String UPLOAD_LOG = ".upload.log";
@@ -134,7 +129,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
     @Override
     public void download(HttpServletResponse response, AttachmentParent parent, String filename, @Nullable String alias, boolean inlineIfPossible) throws ServletException, IOException
     {
-        if (null == filename || 0 == filename.length())
+        if (null == filename || filename.isEmpty())
         {
             throw new NotFoundException();
         }
@@ -1718,7 +1713,8 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         SecurityPolicy securityPolicy = attachmentParent.getSecurityPolicy();
         if (null != securityPolicy)
         {
-            if (null == user || !securityPolicy.hasPermission(user, ReadPermission.class))
+            // TODO: Temporary check... push SecurableResource into AttachmentParent (in place of SecurityPolicy) and call SR-based method
+            if (null == user || !SecurityManager.hasAllPermissions(null, securityPolicy, user, Set.of(ReadPermission.class), Set.of()))
                 throw new UnauthorizedException("User does not have permission to access this secure resource.");
         }
     }

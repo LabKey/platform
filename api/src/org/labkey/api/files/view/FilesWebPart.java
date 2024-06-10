@@ -221,9 +221,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
 
     protected void init()
     {
-        // Determine the security policy for this webpart
-        SecurityPolicy policy = SecurityPolicyManager.getPolicy(getSecurableResource());
-        getConfiguredForm(policy);
+        getConfiguredForm(getSecurableResource());
     }
 
 
@@ -234,8 +232,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             getModelBean().setAutoResize(b);
     }
 
-
-    protected List<FilesForm.actions> getConfiguredActions(SecurityPolicy policy)
+    protected List<FilesForm.actions> getConfiguredActions(SecurableResource resource)
     {
         List<FilesForm.actions> actions = new ArrayList<>();
         ViewContext context = getViewContext();
@@ -247,21 +244,21 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         actions.add(FilesForm.actions.refresh);
 
         // Actions not based on the current selection
-        if (policy.hasPermission(user, InsertPermission.class))
+        if (resource.hasPermission(user, InsertPermission.class))
             actions.add(FilesForm.actions.createDirectory);
 
         // Actions based on the current selection
         actions.add(FilesForm.actions.download);
-        if (policy.hasPermission(user, DeletePermission.class))
+        if (resource.hasPermission(user, DeletePermission.class))
             actions.add(FilesForm.actions.deletePath);
 
-        if (policy.hasPermission(user, UpdatePermission.class))
+        if (resource.hasPermission(user, UpdatePermission.class))
         {
             actions.add(FilesForm.actions.renamePath);
             actions.add(FilesForm.actions.movePath);
         }
 
-        if (policy.hasPermission(user, InsertPermission.class))
+        if (resource.hasPermission(user, InsertPermission.class))
         {
             actions.add(FilesForm.actions.editFileProps);
             if (!PremiumService.get().isFileUploadDisabled())
@@ -292,7 +289,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         return actions;
     }
 
-    protected FilesForm getConfiguredForm(SecurityPolicy policy)
+    protected FilesForm getConfiguredForm(SecurableResource resource)
     {
         FilesForm form = getModelBean();
         ViewContext context = getViewContext();
@@ -327,7 +324,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         form.setEnabled(!svc.isFileRootDisabled(rootContextContainer));
         form.setContentId("fileContent" + System.identityHashCode(this));
 
-        if (policy.hasPermission(user, InsertPermission.class))
+        if (resource.hasPermission(user, InsertPermission.class))
         {
             FilesAdminOptions options = svc.getAdminOptions(container);
             boolean expandUpload = BooleanUtils.toBooleanDefaultIfNull(options.getExpandFileUpload(), false);
@@ -350,7 +347,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             form.setRunEditors(editorMap);
         }
 
-        List<FilesForm.actions> actions = getConfiguredActions(policy);
+        List<FilesForm.actions> actions = getConfiguredActions(resource);
         form.setButtonConfig(actions.toArray(new FilesForm.actions[actions.size()]));
 
         return form;
