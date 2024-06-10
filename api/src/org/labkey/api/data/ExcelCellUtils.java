@@ -201,6 +201,9 @@ public class ExcelCellUtils
         int simpleType = getSimpleType(displayColumn);
         String formatString = displayColumn.getExcelFormatString();
 
+        if (displayColumn.getColumnInfo().isLookup() && displayColumn.getColumnInfo().getDisplayField() != null)
+            formatString = displayColumn.getColumnInfo().getDisplayField().getExcelFormatString();
+
         if (formatString == null)
             formatString = displayColumn.getFormatString();
 

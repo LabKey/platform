@@ -118,6 +118,16 @@ public class PlateMapExcelWriter extends ExcelWriter
         return cellStyle;
     }
 
+    private String getDisplayColumnAlias(DisplayColumn displayColumn)
+    {
+        ColumnInfo ci = displayColumn.getColumnInfo();
+
+        if (ci.isLookup() && ci.getDisplayField() != null)
+            ci = ci.getDisplayField();
+
+        return ci.getAlias();
+    }
+
     protected void renderGridRow(Sheet sheet, List<DisplayColumn> displayColumns)
     {
         Row excelRow = getOrCreateRow(sheet);
@@ -149,7 +159,9 @@ public class PlateMapExcelWriter extends ExcelWriter
                 if (displayColumns.size() == 1)
                 {
                     DisplayColumn displayColumn = displayColumns.get(0);
-                    Object value = well.get(displayColumn.getColumnInfo().getAlias());
+                    String alias = getDisplayColumnAlias(displayColumn);
+                    Object value = well.get(alias);
+
                     if (value != null)
                         ExcelCellUtils.writeCell(sheet.getWorkbook(), cell, displayColumn, value);
                 }
@@ -161,10 +173,13 @@ public class PlateMapExcelWriter extends ExcelWriter
                     // this to users.
                     List<String> values = displayColumns.stream()
                             .map(dc -> {
-                                var value = well.get(dc.getColumnInfo().getAlias());
+                                var value = well.get(getDisplayColumnAlias(dc));
 
                                 if (value == null)
                                     value = "";
+
+                                if (dc.getTsvFormat() != null)
+                                    return dc.getTsvFormat().format(value);
 
                                 return value;
                             })
