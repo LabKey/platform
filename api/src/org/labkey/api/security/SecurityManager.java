@@ -3284,9 +3284,9 @@ public class SecurityManager
     }
 
     @NotNull
-    public static List<String> getPermissionNames(SecurityPolicy policy, @NotNull UserPrincipal principal)
+    public static List<String> getPermissionNames(SecurableResource resource, @NotNull UserPrincipal principal)
     {
-        Set<Class<? extends Permission>> perms = getPermissions(policy, principal, null);
+        Set<Class<? extends Permission>> perms = getPermissions(resource, principal, null);
         List<String> names = new ArrayList<>(perms.size());
         for (Class<? extends Permission> perm : perms)
         {

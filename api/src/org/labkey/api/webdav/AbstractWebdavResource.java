@@ -423,7 +423,6 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         return perms.contains(UpdatePermission.class) || perms.contains(DeletePermission.class);
     }
 
-
     @Override
     public boolean canRename(User user, boolean forRename)
     {
