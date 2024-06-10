@@ -3216,12 +3216,17 @@ public class SecurityManager
 
     public static boolean hasAllPermissions(@Nullable String logMsg, SecurableResource resource, UserPrincipal principal, Set<Class<? extends Permission>> perms, Set<Role> contextualRoles)
     {
-        return hasPermissions(logMsg, SecurityPolicyManager.getPolicy(resource), principal, perms, contextualRoles, HasPermissionOption.ALL);
+        return hasPermissions(logMsg, resource, principal, perms, contextualRoles, HasPermissionOption.ALL);
     }
 
     public static boolean hasAnyPermissions(@Nullable String logMsg, SecurableResource resource, UserPrincipal principal, Set<Class<? extends Permission>> perms, Set<Role> contextualRoles)
     {
-        return hasPermissions(logMsg, SecurityPolicyManager.getPolicy(resource), principal, perms, contextualRoles, HasPermissionOption.ANY);
+        return hasPermissions(logMsg, resource, principal, perms, contextualRoles, HasPermissionOption.ANY);
+    }
+
+    private static boolean hasPermissions(@Nullable String logMsg, SecurableResource resource, UserPrincipal principal, Set<Class<? extends Permission>> permissions, Set<Role> contextualRoles, HasPermissionOption opt)
+    {
+        return hasPermissions(logMsg, SecurityPolicyManager.getPolicy(resource), principal, permissions, contextualRoles, opt);
     }
 
     /**
@@ -3229,6 +3234,7 @@ public class SecurityManager
      * object), locked projects, and contextual roles. This lets the SecurityPolicy object just handle its own ACL-like
      * functionality e.g. computing the permissions that it explicitly assigns (resolving roles and groups).
      */
+    @Deprecated // Migrate to the SecurableResource variant above
     private static boolean hasPermissions(@Nullable String logMsg, SecurityPolicy policy, UserPrincipal principal, Set<Class<? extends Permission>> permissions, Set<Role> contextualRoles, HasPermissionOption opt)
     {
         try
@@ -3248,6 +3254,12 @@ public class SecurityManager
         }
     }
 
+    public static Set<Class<? extends Permission>> getPermissions(SecurableResource resource, UserPrincipal principal, Set<Role> contextualRoles)
+    {
+        return getPermissions(SecurityPolicyManager.getPolicy(resource), principal, contextualRoles);
+    }
+
+    @Deprecated
     public static Set<Class<? extends Permission>> getPermissions(SecurityPolicy policy, UserPrincipal principal, Set<Role> contextualRoles)
     {
         if (policy == null)

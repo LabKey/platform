@@ -17,21 +17,10 @@
 package org.labkey.api.attachments;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.security.SecurityPolicy;
 
-/**
- * User: adam
- * Date: Jan 18, 2007
- * Time: 5:00:10 PM
- */
 public interface AttachmentParent
 {
     String getEntityId();
     String getContainerId();
     @NotNull AttachmentType getAttachmentType();
-
-    default SecurityPolicy getSecurityPolicy()
-    {
-        return null;
-    }
 }

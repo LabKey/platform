@@ -16,6 +16,8 @@
 
 package org.labkey.core.attachment;
 
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -35,7 +37,28 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ColumnRenderProperties;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DatabaseTableType;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.Parameter;
+import org.labkey.api.data.ResultSetView;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SchemaTableInfo;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.MissingRootDirectoryException;
@@ -45,12 +68,11 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.AuthenticationLogoAttachmentParent;
+import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ContainerUtil;
@@ -87,8 +109,6 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.validation.BindException;
 import org.springframework.web.multipart.MultipartFile;
 
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletResponse;
 import java.beans.PropertyChangeEvent;
 import java.io.File;
 import java.io.FileInputStream;
@@ -666,7 +686,6 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         return ret;
     }
 
-
     /** Collection resource with all attachments for this parent */
     @Override
     public WebdavResource getAttachmentResource(Path path, AttachmentParent parent)
@@ -678,9 +697,8 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         if (null == c)
             return null;
 
-        return new AttachmentCollection(path, parent, c.getPolicy());
+        return new AttachmentCollection(path, parent, c);
     }
-
 
     @Override
     public WebdavResource getDocumentResource(Path path, ActionURL downloadURL, String displayTitle, AttachmentParent parent, String name, SearchService.SearchCategory cat)
@@ -688,7 +706,6 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         checkSecurityPolicy(parent);
         return new AttachmentResource(path, downloadURL, displayTitle, parent, name, cat);
     }
-
 
     private Attachment attachmentFromFile(AttachmentParent parent, File file)
     {
@@ -701,7 +718,6 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
 
         return attachment;
     }
-
 
     @Override
     public void registerAttachmentType(AttachmentType type)
@@ -1246,11 +1262,11 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
     {
         private final AttachmentParent _parent;
 
-        AttachmentCollection(Path path, AttachmentParent parent, SecurityPolicy policy)
+        AttachmentCollection(Path path, AttachmentParent parent, SecurableResource resource)
         {
             super(path);
             _parent = parent;
-            setPolicy(policy);
+            setSecurableResource(resource);
         }
 
 
@@ -1354,7 +1370,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             Container c = ContainerManager.getForId(parent.getContainerId());
             _containerId = parent.getContainerId();
             if (null != c)
-                setPolicy(c.getPolicy());
+                setSecurableResource(c);
             _downloadUrl = downloadURL;
             _parent = parent;
             _name = name;
@@ -1398,7 +1414,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             _folder = folder;
             Container c = ContainerManager.getForId(parent.getContainerId());
             if (c != null)
-                setPolicy(c.getPolicy());
+                setSecurableResource(c);
             _name = name;
             _parent = parent;
             _docid = makeDocId(parent,name);
@@ -1640,7 +1656,6 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             return super.getPermissions(user);
         }
 
-
 		@Override
         public File getFile()
         {
@@ -1691,34 +1706,13 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
 
     private void checkSecurityPolicy(AttachmentParent attachmentParent) throws UnauthorizedException
     {
-        if (null != attachmentParent.getSecurityPolicy())
-        {
-            User user = null;
-            try
-            {
-                ViewContext context = HttpView.currentContext();
-                if (context != null)
-                    user = context.getUser();
-            }
-            catch (RuntimeException e)
-            {
-                throw new UnauthorizedException("Cannot get user to check against secure resource's policy.");       // We have a policy but can't get user, so fail
-            }
-            checkSecurityPolicy(user, attachmentParent);
-        }
+        // No-op: AttachmentParent no longer provides getSecurityPolicy()
     }
 
     private void checkSecurityPolicy(User user, AttachmentParent attachmentParent) throws UnauthorizedException
     {
-        SecurityPolicy securityPolicy = attachmentParent.getSecurityPolicy();
-        if (null != securityPolicy)
-        {
-            // TODO: Temporary check... push SecurableResource into AttachmentParent (in place of SecurityPolicy) and call SR-based method
-            if (null == user || !SecurityManager.hasAllPermissions(null, securityPolicy, user, Set.of(ReadPermission.class), Set.of()))
-                throw new UnauthorizedException("User does not have permission to access this secure resource.");
-        }
+        // No-op: AttachmentParent no longer provides getSecurityPolicy()
     }
-
 
     //
     //JUnit TestCase

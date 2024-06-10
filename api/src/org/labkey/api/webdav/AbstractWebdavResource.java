@@ -32,9 +32,11 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.resource.AbstractResource;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -68,20 +70,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * User: matthewb
- * Date: Oct 21, 2008
- * Time: 10:00:49 AM
- */
 public abstract class AbstractWebdavResource extends AbstractResource implements WebdavResource
 {
     private static final String FOLDER_FONT_CLS = "fa fa-folder-o";
-    private SecurityPolicy _policy;
-    protected String _containerId;
 
+    private SecurityPolicy _policy;
+    private SecurableResource _resource;
+    private List<ExpData> _data = null;
+
+    protected String _containerId;
     protected String _etag = null;
     protected Map<String, Object> _properties = null;
-    private List<ExpData> _data = null;
 
     protected AbstractWebdavResource(Path path)
     {
@@ -337,28 +336,35 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         return true;
     }
 
-
+    @Deprecated
     protected SecurityPolicy getPolicy()
     {
-        return _policy;
+        return _resource != null ? SecurityPolicyManager.getPolicy(_resource) : _policy;
     }
 
-
+    @Deprecated
     protected void setPolicy(SecurityPolicy policy)
     {
         _policy = policy;
     }
 
+    protected SecurableResource getSecurableResource()
+    {
+        return _resource;
+    }
+
+    protected void setSecurableResource(SecurableResource resource)
+    {
+        _resource = resource;
+    }
+
     /** permissions */
-
-
 
     @Override
     public boolean canList(User user, boolean forRead)
     {
         return canRead(user, forRead);
     }
-
 
     @Override
     public boolean canRead(User user, boolean forRead)
@@ -381,7 +387,6 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         }
     }
 
-
     @Override
     public boolean canWrite(User user, boolean forWrite)
     {
@@ -389,7 +394,6 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         return hasAccess(user) && !user.isGuest() &&
                 SecurityManager.hasAllPermissions(null, getPolicy(), user, Set.of(UpdatePermission.class), roles);
     }
-
 
     @Override
     public boolean canCreate(User user, boolean forCreate)
@@ -426,12 +430,10 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         return hasAccess(user) && !user.isGuest() && canCreate(user, forRename) && canDelete(user, forRename, null);
     }
 
-
     public Set<Class<? extends Permission>> getPermissions(User user)
     {
         return SecurityManager.getPermissions(getPolicy(), user, Set.of());
     }
-
 
     @Override
     public boolean delete(User user) throws IOException

@@ -49,11 +49,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * User: matthewb
- * Date: Feb 4, 2009
- * Time: 11:17:57 AM
- */
 public class QueryWebdavProvider implements WebdavService.Provider
 {
 	final String QUERY_NAME = "@query";
@@ -91,7 +86,7 @@ public class QueryWebdavProvider implements WebdavService.Provider
 		{
 			super(parent.getPath(), QUERY_NAME);
 			_c = parent.getContainer();
-			setPolicy(_c.getPolicy());
+			setSecurableResource(_c);
 		}
 		
 		@Override
@@ -148,7 +143,7 @@ public class QueryWebdavProvider implements WebdavService.Provider
 		{
 			super(parent.getPath(), schemaName);
 			_parent = parent;
-			setPolicy(_parent._c.getPolicy());
+			setSecurableResource(_parent._c);
 		}
 		
 		@Override
@@ -204,7 +199,7 @@ public class QueryWebdavProvider implements WebdavService.Provider
 		{
 			super(parent.getPath(), query.getName() + ".sql");
 			_parent = parent;
-			setPolicy(_parent._parent._c.getPolicy());
+			setSecurableResource(_parent._parent._c);
 			_q = query;
 			if (_q instanceof QueryDefinitionImpl)
 				_qdef = ((QueryDefinitionImpl)_q).getQueryDef();

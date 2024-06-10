@@ -40,6 +40,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.LimitedUser;
+import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
@@ -123,7 +124,7 @@ public class FileSystemResource extends AbstractWebdavResource
     {
         this(folder.getPath(), name);
         _folder = folder;
-        setPolicy(folder.getPolicy());
+        setSecurableResource(folder.getSecurableResource());
 
         _files = new ArrayList<>(folder._files.size());
         _files.addAll(folder._files.stream()
@@ -152,6 +153,12 @@ public class FileSystemResource extends AbstractWebdavResource
         return null==_folder ? null : _folder.getContainerId();
     }
 
+    @Override
+    protected void setSecurableResource(SecurableResource resource)
+    {
+        super.setSecurableResource(resource);
+        setSearchProperty(SearchService.PROPERTY.securableResourceId, resource.getResourceId());
+    }
 
     @Override
     protected void setPolicy(SecurityPolicy policy)

@@ -186,7 +186,7 @@ public abstract class AbstractWebdavResolver implements WebdavResolver
             _resolver = resolver;
             _c = c;
             _containerId = c.getId();
-            setPolicy(c.getPolicy());
+            setSecurableResource(c);
         }
 
         @Override

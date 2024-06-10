@@ -177,7 +177,7 @@ public class FileWebdavProvider implements WebdavService.Provider
         {
             super(folder, FileContentService.FILE_SETS_LINK);
             _c = c;
-            setPolicy(_c.getPolicy());
+            setSecurableResource(_c);
             
             FileContentService svc = FileContentService.get();
             for (AttachmentDirectory dir : svc.getRegisteredDirectories(_c))
