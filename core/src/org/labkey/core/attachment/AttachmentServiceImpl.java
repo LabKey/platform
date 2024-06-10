@@ -524,7 +524,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
                     if (parent instanceof AttachmentDirectory parentDir)
                     {
                         File currentDir = parentDir.getFileSystemDirectoryPath().toFile();
-                        File newDir =  parentDir.getFileSystemDirectoryPath(newContainer).toFile();
+                        File newDir =  parentDir.getFileSystemDirectoryPath(newContainer, true).toFile();
                         File src = new File(currentDir, filename);
                         File dest = new File(newDir, filename);
                         if (!src.exists())

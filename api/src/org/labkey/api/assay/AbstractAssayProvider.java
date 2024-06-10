@@ -1751,7 +1751,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return supportsPlateMetadata() && Boolean.TRUE.equals(getBooleanProperty(protocol, PLATE_METADATA_PROPERTY_SUFFIX));
     }
 
-    public record AssayFileMoveData(ExpRun run, String fieldName, File sourceFile, File targetFile) {}
+    public record AssayFileMoveData(ExpRun run, Container sourceContainer, String fieldName, File sourceFile, File targetFile) {}
 
     public record AssayMoveData(Map<String, Integer> counts, Map<Integer, List<AssayFileMoveData>> fileMovesByRunId) {}
 
@@ -1925,8 +1925,8 @@ public abstract class AbstractAssayProvider implements AssayProvider
                         ExpRun run = batchRun.get(experiment.getRowId());
                         Integer runId = run.getRowId();
                         movedFiles.putIfAbsent(runId, new ArrayList<>());
-                        movedFiles.get(runId).add(new AssayFileMoveData(run, fileProp.getName(), sourceFile, updatedFile));
-                        fileContentService.fireFileMoveEvent(sourceFile, updatedFile, user, targetContainer);
+                        movedFiles.get(runId).add(new AssayFileMoveData(run, run.getContainer(), fileProp.getName(), sourceFile, updatedFile));
+                        fileContentService.fireFileMoveEvent(sourceFile.toPath(), updatedFile.toPath(), user, sourceContainer, targetContainer);
                     }
                 }
             }
@@ -1986,8 +1986,8 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 {
                     Integer runId = run.getRowId();
                     movedFiles.putIfAbsent(runId, new ArrayList<>());
-                    movedFiles.get(runId).add(new AssayFileMoveData(run, fileProp.getName(), sourceFile, updatedFile));
-                    fileContentService.fireFileMoveEvent(sourceFile, updatedFile, user, targetContainer);
+                    movedFiles.get(runId).add(new AssayFileMoveData(run, run.getContainer(), fileProp.getName(), sourceFile, updatedFile));
+                    fileContentService.fireFileMoveEvent(sourceFile.toPath(), updatedFile.toPath(), user, sourceContainer, targetContainer);
                 }
             }
         }
@@ -2026,9 +2026,10 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 File updatedFile = fileContentService.getMoveTargetFile(sourceFile.getAbsolutePath(), sourceContainer, targetContainer);
                 if (updatedFile != null)
                 {
+                    ExpRun run = runMap.get(runId);
                     movedFiles.putIfAbsent(runId, new ArrayList<>());
-                    movedFiles.get(runId).add(new AssayFileMoveData(runMap.get(runId), null, sourceFile, updatedFile));
-                    fileContentService.fireFileMoveEvent(sourceFile, updatedFile, user, targetContainer);
+                    movedFiles.get(runId).add(new AssayFileMoveData(run, run.getContainer(), null, sourceFile, updatedFile));
+                    fileContentService.fireFileMoveEvent(sourceFile.toPath(), updatedFile.toPath(), user, sourceContainer, targetContainer);
                 }
             }
             catch (Exception e)
@@ -2098,11 +2099,27 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 if (updatedFile != null)
                 {
                     File sourceFile = new File(sourceFileName);
+                    ExpRun run = runMap.get(resultRunId);
 
                     movedFiles.putIfAbsent(resultRunId, new ArrayList<>());
-                    movedFiles.get(resultRunId).add(new AssayFileMoveData(runMap.get(resultRunId), fileField, sourceFile, updatedFile));
+                    movedFiles.get(resultRunId).add(new AssayFileMoveData(run, run.getContainer(), fileField, sourceFile, updatedFile));
 
-                    SQLFragment updateSql = new SQLFragment("UPDATE ").append(assayResultTable.getRealTable())
+                    // update the exp.Object row for the file results row
+                    // TODO refactor so that the updates to the related exp.Object rows are done in the ExpDataFileListener (see similar updates in moveRuns() and moveRunsBatch())
+                    // TODO also use exp.data.objectId instead of objecturi
+                    TableInfo expDataTable = ExperimentService.get().getTinfoData();
+                    TableInfo expObjectTable = OntologyManager.getTinfoObject();
+                    SQLFragment updateSql = new SQLFragment("UPDATE ").append(expObjectTable)
+                            .append(" SET container = ").appendValue(targetContainer.getEntityId())
+                            .append(" WHERE objecturi IN ( SELECT lsid FROM ")
+                            .append(expDataTable)
+                            .append(" WHERE datafileurl = ").appendValue(FileUtil.pathToString(sourceFile.toPath()));
+                    updateSql.append(")");
+                    new SqlExecutor(expObjectTable.getSchema()).execute(updateSql);
+
+                    fileContentService.fireFileMoveEvent(sourceFile.toPath(), updatedFile.toPath(), user, sourceContainer, targetContainer);
+
+                    updateSql = new SQLFragment("UPDATE ").append(assayResultTable.getRealTable())
                             .append(" SET ")
                             .append(columnName)
                             .append(" = ").appendValue(updatedFile.getAbsolutePath())
