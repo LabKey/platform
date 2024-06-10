@@ -1567,7 +1567,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 manageMenu.addChild("Copy assay design", copyURL.toString());
         }
 
-        if (allowDelete(context, protocol)) //
+        if (allowDelete(context, protocol))
         {
             manageMenu.addChild("Delete assay design", PageFlowUtil.urlProvider(ExperimentUrls.class).getDeleteProtocolURL(protocol, PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(contextContainer)));
         }
