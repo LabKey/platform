@@ -17,9 +17,6 @@
 package org.labkey.wiki;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -36,23 +33,18 @@ import java.util.Set;
 
 /**
  * Encapsulates permission testing for wikis, handling the UPDATEOWN and DELETEOWN cases
- *
  * Extend this class to do other kinds of permission checking.
- *
- * User: Dave
- * Date: Nov 7, 2007
- * Time: 4:01:58 PM
  */
 public class BaseWikiPermissions
 {
     private final User _user;
-    private final SecurityPolicy _policy;
+    private final Container _container;
 
     public BaseWikiPermissions(User user, Container container)
     {
         assert(null != user && null != container);
         _user = user;
-        _policy = SecurityPolicyManager.getPolicy(container);
+        _container = container;
     }
 
     protected Set<Role> getContextualRoles(Wiki wiki)
@@ -65,38 +57,32 @@ public class BaseWikiPermissions
 
     public boolean allowRead()
     {
-        return SecurityManager.hasAllPermissions("wiki",
-                _policy, _user, Set.of(ReadPermission.class), Set.of());
+        return _container.hasPermission("wiki", _user, ReadPermission.class);
     }
 
     public boolean allowRead(Wiki wiki)
     {
-        return SecurityManager.hasAllPermissions("wiki: " + wiki.getName(),
-                _policy, _user, Set.of(ReadPermission.class), getContextualRoles(wiki));
+        return _container.hasPermission("wiki: " + wiki.getName(), _user, ReadPermission.class, getContextualRoles(wiki));
     }
 
     public boolean allowInsert()
     {
-        return SecurityManager.hasAllPermissions("wiki",
-                _policy, _user, Set.of(InsertPermission.class), Set.of());
+        return _container.hasPermission("wiki", _user, InsertPermission.class);
     }
 
     public boolean allowUpdate(Wiki wiki)
     {
-        return SecurityManager.hasAllPermissions("wiki: " + wiki.getName(),
-                _policy, _user, Set.of(UpdatePermission.class), getContextualRoles(wiki));
+        return _container.hasPermission("wiki: " + wiki.getName(), _user, UpdatePermission.class, getContextualRoles(wiki));
     }
 
     public boolean allowDelete(Wiki wiki)
     {
-        return SecurityManager.hasAllPermissions("wiki: " + wiki.getName(),
-                _policy, _user, Set.of(DeletePermission.class), getContextualRoles(wiki));
+        return _container.hasPermission("wiki: " + wiki.getName(), _user, DeletePermission.class, getContextualRoles(wiki));
     }
 
     public boolean allowAdmin()
     {
-        return SecurityManager.hasAllPermissions("wiki",
-                _policy, _user, Set.of(AdminPermission.class), Set.of());
+        return _container.hasPermission("wiki", _user, AdminPermission.class);
     }
 
     public boolean userIsCreator(Wiki wiki)

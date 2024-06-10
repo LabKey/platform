@@ -60,7 +60,6 @@ Any user with READ access to this folder may view some summary data. However, ac
             <th style="min-width:24px; text-align:center;">&nbsp;</th>
         </tr>
     <%
-    SecurityPolicy folderPolicy = getContainer().getPolicy();
     SecurityPolicy studyPolicy = SecurityPolicyManager.getPolicy(study);
     List<Group> groups = SecurityManager.getGroups(study.getContainer().getProject(), true);
     for (Group group : groups)
@@ -70,7 +69,7 @@ Any user with READ access to this folder may view some summary data. However, ac
         String name = group.getName();
         if (group.getUserId() == Group.groupUsers)
             name = "All site users";
-        boolean hasFolderRead = folderPolicy.hasPermission(group, ReadPermission.class);
+        boolean hasFolderRead = getContainer().hasPermission(group, ReadPermission.class);
         boolean hasUpdatePerm = studyPolicy.hasNonInheritedPermission(group, UpdatePermission.class);
         boolean hasReadSomePerm = studyPolicy.hasNonInheritedPermission(group, ReadSomePermission.class);
         boolean hasReadAllPerm = (!hasUpdatePerm) && studyPolicy.hasNonInheritedPermission(group, ReadPermission.class);

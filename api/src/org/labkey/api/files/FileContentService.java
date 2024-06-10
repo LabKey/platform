@@ -53,6 +53,7 @@ public interface FileContentService
     String PIPELINE_LINK = "@pipeline";
     String SCRIPTS_LINK = "@scripts";
     String CLOUD_LINK = "@cloud";
+    String ASSAY_FILES = "@assayfiles";
 
     String CLOUD_ROOT_PREFIX = "/@cloud";
 
@@ -206,7 +207,8 @@ public interface FileContentService
         files,
         pipeline,
         assay,
-        scripts
+        scripts,
+        assayfiles
     }
 
     String getFolderName(ContentType type);
@@ -296,6 +298,10 @@ public interface FileContentService
             return fireFileMoveEvent(src.toFile(), dest.toFile(), user, container);
         return 0;
     }
+    default int fireFileMoveEvent(@NotNull Path src, @NotNull Path dest, @Nullable User user, @Nullable Container sourceContainer, @Nullable Container targetContainer)
+    {
+        return fireFileMoveEvent(src, dest, user, sourceContainer);
+    }
 
     /** Notifies all registered FileListeners that a file or directory has been replaced */
     default void fireFileReplacedEvent(@NotNull Path replaced, @Nullable User user, @Nullable Container container){}
@@ -328,7 +334,7 @@ public interface FileContentService
     void setWebfilesEnabled(boolean enabled, User user);
 
     /**
-     * Return file's virtual folder path that's relative to container's file root. Roots are matched in order of @files, @pipeline and then each @filesets.
+     * Return file's virtual folder path that's relative to container's file root. Roots are matched in order of @assayfiles, @files, @pipeline and then each @filesets.
      * @param dataFileUrl The data file Url of file
      * @param container Container in the file system
      * @return folder relative to file root

@@ -714,8 +714,7 @@ public class FileContentController extends SpringActionController
                 c = ContainerManager.getRoot();
 
             ActionURL browse = new ActionURL(BeginAction.class, c);
-            ActionURL config = new ActionURL(FileContentController.ShowAdminAction.class, c);
-            Set<Map<String, Object>> children = FileContentServiceImpl.getInstance().getNodes(form.isShowOverridesOnly(), browse.getEncodedLocalURIString(), config.getEncodedLocalURIString(), c);
+            Set<Map<String, Object>> children = FileContentServiceImpl.getInstance().getNodes(form.isShowOverridesOnly(), browse.getEncodedLocalURIString(), c);
 
             for (Container child : c.getChildren())
             {

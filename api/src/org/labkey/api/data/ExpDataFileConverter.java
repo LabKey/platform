@@ -224,6 +224,7 @@ public class ExpDataFileConverter implements Converter
             {
                 // Strip out ".." and "."
                 f = FileUtil.resolveFile(f);
+
                 PipeRoot root = PipelineService.get().getPipelineRootSetting(container);
                 if (root != null)
                 {

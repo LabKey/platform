@@ -97,11 +97,11 @@ public class FileSystemAttachmentParent implements AttachmentDirectory
     @Override
     public Path getFileSystemDirectoryPath()
     {
-        return getFileSystemDirectoryPath(c);
+        return getFileSystemDirectoryPath(c, true);
     }
 
     @Override
-    public Path getFileSystemDirectoryPath(Container container)
+    public Path getFileSystemDirectoryPath(Container container, boolean create)
     {
         FileContentService svc = FileContentService.get();
         if (null == svc)
@@ -129,7 +129,7 @@ public class FileSystemAttachmentParent implements AttachmentDirectory
                 Path root = dir.resolve(svc.getFolderName(_contentType));
 
                 // Issue 49963: avoid FileAlreadyExistsExceptions on certain file systems
-                if (!Files.exists(root) && Files.isWritable(dir))
+                if (!Files.exists(root) && Files.isWritable(dir) && create)
                 {
                     FileUtil.createDirectories(root);
                 }

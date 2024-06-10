@@ -455,7 +455,7 @@ public class GroupManager
         {
             // Each User's groups are fixed on first read, so we'll clone before the changes
             User user = _testUser.cloneUser();
-            MutableSecurityPolicy policy = new MutableSecurityPolicy(_project);
+            TestSecurityPolicy policy = new TestSecurityPolicy(_project);
             assertFalse(policy.hasPermission(user, ReadPermission.class));
             policy.addRoleAssignment(_groupA, ReaderRole.class);
             assertTrue(policy.hasPermission(_groupA, ReadPermission.class));
@@ -514,11 +514,11 @@ public class GroupManager
         public void testPlatformDeveloperRole() throws Exception
         {
             User user = _testUser.cloneUser();
-            MutableSecurityPolicy policy = new MutableSecurityPolicy(_root);
-            assertFalse(policy.hasPermission(user, PlatformDeveloperPermission.class));
-            assertFalse(policy.hasPermission(user, TrustedPermission.class));
-            assertFalse(policy.hasPermission(user, AnalystPermission.class));
+            assertFalse(_root.hasPermission(user, PlatformDeveloperPermission.class));
+            assertFalse(_root.hasPermission(user, TrustedPermission.class));
+            assertFalse(_root.hasPermission(user, AnalystPermission.class));
 
+            TestSecurityPolicy policy = new TestSecurityPolicy(_root);
             policy.addRoleAssignment(user, PlatformDeveloperRole.class);
             assertTrue(policy.hasPermission(user, PlatformDeveloperPermission.class));
             assertTrue(policy.hasPermission(user, TrustedPermission.class));
@@ -539,14 +539,14 @@ public class GroupManager
         public void testTrustedAnalystRole()
         {
             User user = _testUser.cloneUser();
-            MutableSecurityPolicy policy = new MutableSecurityPolicy(_root);
-            assertFalse(policy.hasPermission(user, PlatformDeveloperPermission.class));
-            assertFalse(policy.hasPermission(user, TrustedPermission.class));
-            assertFalse(policy.hasPermission(user, AnalystPermission.class));
+            assertFalse(_root.hasPermission(user, PlatformDeveloperPermission.class));
+            assertFalse(_root.hasPermission(user, TrustedPermission.class));
+            assertFalse(_root.hasPermission(user, AnalystPermission.class));
 
             Role r = RoleManager.getRole("org.labkey.api.security.roles.TrustedAnalystRole");
             if (null != r)
             {
+                TestSecurityPolicy policy = new TestSecurityPolicy(_root);
                 policy.addRoleAssignment(user, r);
                 assertFalse(policy.hasPermission(user, PlatformDeveloperPermission.class));
                 assertTrue(policy.hasPermission(user, TrustedPermission.class));
@@ -559,10 +559,9 @@ public class GroupManager
         public void testAnalystRole()
         {
             User user = _testUser.cloneUser();
-            MutableSecurityPolicy policy = new MutableSecurityPolicy(_root);
-            assertFalse(policy.hasPermission(user, PlatformDeveloperPermission.class));
-            assertFalse(policy.hasPermission(user, TrustedPermission.class));
-            assertFalse(policy.hasPermission(user, AnalystPermission.class));
+            assertFalse(_root.hasPermission(user, PlatformDeveloperPermission.class));
+            assertFalse(_root.hasPermission(user, TrustedPermission.class));
+            assertFalse(_root.hasPermission(user, AnalystPermission.class));
 
 /*
             policy.addRoleAssignment(user, AnalystRole.class);
@@ -572,7 +571,6 @@ public class GroupManager
             policy.clearAssignedRoles(user);
 */
         }
-
 
         @Test
         public void testCopyGroupToContainer() throws Exception
@@ -593,17 +591,18 @@ public class GroupManager
 
             Group newGroupA = GroupManager.copyGroupToContainer(_groupA, newProject);
             Group newGroupB = SecurityManager.getGroup(SecurityManager.getGroupId(newProject, "b"));
+            Assert.assertNotNull(newGroupB);
 
             MutableSecurityPolicy np = new MutableSecurityPolicy(newProject);
             np.addRoleAssignment(newGroupA, ReaderRole.class);
             SecurityPolicyManager.savePolicyForTests(np, getUser());
 
             //should be copied from the previous project though groupB membership
-            assertTrue(np.hasPermission(getUser(), ReadPermission.class));
+            assertTrue(newProject.hasPermission(getUser(), ReadPermission.class));
 
             //groups were copied, so the originals should not have read permission
-            assertFalse(np.hasPermission(_groupA, ReadPermission.class));
-            assertFalse(np.hasPermission(_groupB, ReadPermission.class));
+            assertFalse(newProject.hasPermission(_groupA, ReadPermission.class));
+            assertFalse(newProject.hasPermission(_groupB, ReadPermission.class));
 
             PrincipalArray groups = GroupManager.getAllGroupsForPrincipal(newGroupB);
             assertTrue(groups.contains(newGroupA.getUserId()));
@@ -611,8 +610,8 @@ public class GroupManager
             groups = GroupManager.getAllGroupsForPrincipal(getUser());
             assertTrue(groups.contains(newGroupB.getUserId()));
 
-            assertTrue(np.hasPermission(newGroupA, ReadPermission.class));
-            assertTrue(np.hasPermission(newGroupB, ReadPermission.class));
+            assertTrue(newProject.hasPermission(newGroupA, ReadPermission.class));
+            assertTrue(newProject.hasPermission(newGroupB, ReadPermission.class));
 
             //cleanup
             SecurityManager.deleteGroup(newGroupA);

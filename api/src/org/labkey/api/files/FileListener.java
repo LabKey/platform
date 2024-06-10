@@ -63,6 +63,10 @@ public interface FileListener
             return fileMoved(src.toFile(), dest.toFile(), user, container);
         return 0;
     }
+    default int fileMoved(@NotNull Path src, @NotNull Path dest, @Nullable User user, @Nullable Container sourceContainer, @Nullable Container targetContainer)
+    {
+        return fileMoved(src, dest, user, sourceContainer);
+    }
 
     default void fileReplaced(@NotNull Path replaced, @Nullable User user, @Nullable Container container){}
 

@@ -145,8 +145,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
             List<ReportDescriptor> ret = new ArrayList<>();
             for (Report report : ReportService.get().getReports(u, c))
             {
-                SecurityPolicy policy = SecurityPolicyManager.getPolicy(report.getDescriptor());
-                if (policy.hasPermission(u, AdminPermission.class))
+                if (report.getDescriptor().hasPermission(u, AdminPermission.class))
                     ret.add(report.getDescriptor());
             }
             return ret;
