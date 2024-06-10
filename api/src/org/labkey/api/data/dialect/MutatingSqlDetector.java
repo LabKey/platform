@@ -112,6 +112,7 @@ public class MutatingSqlDetector
             "DELETE", true,
             "DROP", true,
             "INSERT", true,
+                "MERGE", true,
             "TRUNCATE", true,
             "UPDATE", true
         ));
@@ -138,7 +139,6 @@ public class MutatingSqlDetector
             "EXEC", true,
             "EXECUTE", true,
             "IF", true,   // Typically IF EXISTS followed by mutating action
-            "MERGE", true,
             "SET", true,
             "sp_rename", true
         ));
