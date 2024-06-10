@@ -3208,6 +3208,7 @@ public class SecurityManager
         return validRecipients;
     }
 
+    @Deprecated // TODO: Migrate the three remaining callers
     public static boolean hasAllPermissions(@Nullable String logMsg, SecurityPolicy policy, UserPrincipal principal, Set<Class<? extends Permission>> perms, Set<Role> contextualRoles)
     {
         return hasPermissions(logMsg, policy, principal, perms, contextualRoles, HasPermissionOption.ALL);

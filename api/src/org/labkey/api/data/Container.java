@@ -493,12 +493,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return SecurityManager.hasAllPermissions(logMsg, this, user, Set.of(perm), Set.of());
     }
 
-    @Override
-    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
-    {
-        return SecurityManager.hasAllPermissions(null, this, user, Set.of(perm), Set.of());
-    }
-
     public boolean hasPermission(String logMsg, @NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm, @Nullable Set<Role> contextualRoles)
     {
         return SecurityManager.hasAllPermissions(logMsg, this, user, Set.of(perm), contextualRoles);

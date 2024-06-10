@@ -150,7 +150,7 @@ public class SecurityApiActions
             containerPerms.put("isInheritingPerms", container.isInheritedAcl());
             containerPerms.put("groups", getGroupPerms(container, policy, groups));
 
-            if(recurse && container.hasChildren())
+            if (recurse && container.hasChildren())
             {
                 List<Map<String, Object>> childPerms = new ArrayList<>();
                 for (Container child : container.getChildren())
@@ -192,7 +192,7 @@ public class SecurityApiActions
                 groupPerms.put("permissions", perms);
 
                 SecurityManager.PermissionSet role = SecurityManager.PermissionSet.findPermissionSet(perms);
-                if(null != role)
+                if (null != role)
                 {
                     groupPerms.put("role", role.toString());
                     groupPerms.put("roleLabel", role.getLabel());
@@ -332,7 +332,7 @@ public class SecurityApiActions
 
             //see if those match a given role name
             SecurityManager.PermissionSet role = SecurityManager.PermissionSet.findPermissionSet(perms);
-            if(null != role)
+            if (null != role)
             {
                 permsInfo.put("role", role.toString());
                 permsInfo.put("roleLabel", role.getLabel());
@@ -345,7 +345,7 @@ public class SecurityApiActions
 
             //effective roles
             List<String> effectiveRoles = new ArrayList<>();
-            for(Role effectiveRole : SecurityManager.getEffectiveRoles(policy,user))
+            for (Role effectiveRole : SecurityManager.getEffectiveRoles(policy,user))
             {
                 effectiveRoles.add(effectiveRole.getUniqueName());
             }
@@ -356,7 +356,7 @@ public class SecurityApiActions
             List<Group> groups = SecurityManager.getGroups(container, user);
             List<Map<String, Object>> groupsInfo = new ArrayList<>();
 
-            for(Group group : groups)
+            for (Group group : groups)
             {
                 Map<String, Object> groupInfo = new HashMap<>();
                 groupInfo.put("id", group.getUserId());
@@ -374,7 +374,7 @@ public class SecurityApiActions
 
                 //effective roles
                 List<String> groupEffectiveRoles = new ArrayList<>();
-                for(Role effectiveRole : SecurityManager.getEffectiveRoles(policy, group))
+                for (Role effectiveRole : SecurityManager.getEffectiveRoles(policy, group))
                 {
                     groupEffectiveRoles.add(effectiveRole.getUniqueName());
                 }
@@ -386,10 +386,10 @@ public class SecurityApiActions
             permsInfo.put("groups", groupsInfo);
 
             //recurse children if desired
-            if(recurse && container.hasChildren())
+            if (recurse && container.hasChildren())
             {
                 List<Map<String, Object>> childPerms = new ArrayList<>();
-                for(Container child : container.getChildren())
+                for (Container child : container.getChildren())
                 {
                     if (child.hasPermission(getUser(), ReadPermission.class))
                     {
@@ -459,14 +459,14 @@ public class SecurityApiActions
         {
             ArrayList<Map<String, Object>> rolesProps = new ArrayList<>();
 
-            for(Role role : RoleManager.getAllRoles())
+            for (Role role : RoleManager.getAllRoles())
             {
-                if(role.isAssignable())
+                if (role.isAssignable())
                     rolesProps.add(getRoleProps(role));
             }
 
             List<Map<String, Object>> permsProps = new ArrayList<>();
-            for(Permission perm : _allPermissions)
+            for (Permission perm : _allPermissions)
             {
                 permsProps.add(getPermissionProps(perm));
             }
@@ -487,7 +487,7 @@ public class SecurityApiActions
                 props.put("sourceModule", role.getSourceModule().getName());
 
             List<String> permissions = new ArrayList<>();
-            for(Class<? extends Permission> permClass : role.getPermissions())
+            for (Class<? extends Permission> permClass : role.getPermissions())
             {
                 Permission perm = RoleManager.getPermission(permClass);
                 _allPermissions.add(perm);
@@ -497,7 +497,7 @@ public class SecurityApiActions
             props.put("permissions", permissions);
 
             List<Integer> excludedPrincipals = new ArrayList<>();
-            for(UserPrincipal principal : role.getExcludedPrincipals())
+            for (UserPrincipal principal : role.getExcludedPrincipals())
             {
                 excludedPrincipals.add(principal.getUserId());
             }
@@ -610,7 +610,7 @@ public class SecurityApiActions
         protected List<Map<String, Object>> getChildrenProps(SecurableResource resource)
         {
             List<Map<String, Object>> childProps = new ArrayList<>();
-            for(SecurableResource child : resource.getChildResources(getUser()))
+            for (SecurableResource child : resource.getChildResources(getUser()))
             {
                 if (_includeSubfolders || !(child instanceof Container))
                     childProps.add(getResourceProps(child));
