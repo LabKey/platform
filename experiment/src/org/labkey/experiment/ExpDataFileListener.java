@@ -50,16 +50,22 @@ public class ExpDataFileListener extends TableUpdaterFileListener
     @Override
     public int fileMoved(@NotNull Path src, @NotNull Path dest, @Nullable User user, @Nullable Container c)
     {
-        ExpData data = ExperimentService.get().getExpDataByURL(src, c);
+        return fileMoved(src, dest, user, c, null);
+    }
+
+    @Override
+    public int fileMoved(@NotNull Path src, @NotNull Path dest, @Nullable User user, @Nullable Container sourceContainer, @Nullable Container targetContainer)
+    {
+        ExpData data = ExperimentService.get().getExpDataByURL(src, sourceContainer);
 
         if (data == null)
         {
-            data = ExperimentService.get().getExpDataByURL(dest, c);
+            data = ExperimentService.get().getExpDataByURL(dest, sourceContainer);
         }
-            // Do not create a new ExpData for directories
-        if (data == null && !Files.isDirectory(dest) && c != null)
+        // Do not create a new ExpData for directories
+        if (data == null && !Files.isDirectory(dest) && targetContainer != null)
         {
-            data = ExperimentService.get().createData(c, UPLOADED_FILE);
+            data = ExperimentService.get().createData(targetContainer, UPLOADED_FILE);
         }
 
         int extra = 0;
@@ -67,10 +73,13 @@ public class ExpDataFileListener extends TableUpdaterFileListener
         {
             // The file has been renamed, so rename the exp.data row if its name matches
             data.setName(FileUtil.getFileName(dest));
+            // if the data object moved containers, set that as well
+            if (targetContainer != null && !targetContainer.equals(sourceContainer))
+                data.setContainer(targetContainer);
             data.save(user);
             extra = 1;
         }
 
-        return super.fileMoved(src, dest, user, c) + extra;
+        return super.fileMoved(src, dest, user, sourceContainer) + extra;
     }
 }

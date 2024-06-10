@@ -26,6 +26,8 @@ import org.json.JSONObject;
 import org.labkey.api.action.ApiXmlWriter;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.SubfolderWriter;
+import org.labkey.api.assay.AssayFileWriter;
+import org.labkey.api.assay.AssayResultsFileWriter;
 import org.labkey.api.assay.ReplacedRunFilter;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.ImageServlet;
@@ -163,6 +165,7 @@ import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.SystemMaintenance;
+import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.view.ActionURL;
@@ -366,7 +369,10 @@ public class ApiModule extends CodeOnlyModule
             TSVWriter.TestCase.class,
             TabLoader.HeaderMatchTest.class,
             Table.IsSelectTestCase.class,
-            ValidEmail.TestCase.class
+            ValidEmail.TestCase.class,
+            URIUtil.TestCase.class,
+            AssayFileWriter.TestCase.class,
+            AssayResultsFileWriter.TestCase.class
         );
     }
 

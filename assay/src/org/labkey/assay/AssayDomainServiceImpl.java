@@ -620,15 +620,13 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
     {
         Container c = getContainer();
         User u = getUser();
-        SecurityPolicy policy = c.getPolicy();
-        return policy.hasPermission(u, DesignAssayPermission.class);
+        return c.hasPermission(u, DesignAssayPermission.class);
     }
 
     private boolean canUpdateTransformationScript()
     {
         Container c = getContainer();
         User u = getUser();
-        SecurityPolicy policy = c.getPolicy();
-        return policy.hasPermission(u, PlatformDeveloperPermission.class);
+        return c.hasPermission(u, PlatformDeveloperPermission.class);
     }
 }

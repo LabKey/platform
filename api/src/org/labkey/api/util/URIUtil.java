@@ -18,6 +18,8 @@ package org.labkey.api.util;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hc.core5.net.URIBuilder;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -31,6 +33,10 @@ public class URIUtil
 {
     static public boolean isDescendant(URI base, URI descendant)
     {
+        // to protect against paths that are trying to escape the base, return false if the descendant includes "/../"
+        if (descendant.getPath().contains("/../"))
+            return false;
+
         if (!descendant.getScheme().equalsIgnoreCase(base.getScheme()))
             return false;
         return descendant.getPath().startsWith(base.getPath());
@@ -212,4 +218,52 @@ public class URIUtil
         return StringUtils.containsAny(propertyURI, ':', '/', '#', '%', '?') && propertyURI.startsWith("urn:");
     }
 
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testTrimTrailingSlash()
+        {
+            assertEquals("foo", trimTrailingSlash("foo"));
+            assertEquals("foo", trimTrailingSlash("foo/"));
+            assertEquals("foo/bar", trimTrailingSlash("foo/bar"));
+            assertEquals("foo/bar", trimTrailingSlash("foo/bar/"));
+        }
+
+        @Test
+        public void testHasURICharacters()
+        {
+            assertTrue(hasURICharacters("urn:foo"));
+            assertFalse(hasURICharacters("foo"));
+            assertTrue(hasURICharacters("urn:foo:bar"));
+            assertFalse(hasURICharacters("foo:bar"));
+            assertTrue(hasURICharacters("urn:foo/bar"));
+            assertFalse(hasURICharacters("foo/bar"));
+            assertTrue(hasURICharacters("urn:foo/bar#baz"));
+            assertFalse(hasURICharacters("foo/bar#baz"));
+            assertTrue(hasURICharacters("urn:foo/bar#baz?qux"));
+            assertFalse(hasURICharacters("foo/bar#baz?qux"));
+            assertTrue(hasURICharacters("urn:foo/bar#baz?qux%quux"));
+            assertFalse(hasURICharacters("foo/bar#baz?qux%quux"));
+        }
+
+        @Test
+        public void testGetFilename()
+        {
+            assertEquals("myfile.txt", getFilename(URI.create("file:///data/myfile.txt")));
+            assertEquals("myfile.txt", getFilename(URI.create("file:///data/myfile.txt/")));
+            assertEquals("myfile.txt", getFilename(URI.create("data/myfile.txt")));
+            assertEquals("myfile.txt", getFilename(URI.create("myfile.txt")));
+        }
+
+        @Test
+        public void testIsDescendant()
+        {
+            URI base = URI.create("file:///a/b/c/");
+            assertTrue(isDescendant(base, URI.create("file:///a/b/c/myfile.txt")));
+            assertTrue(isDescendant(base, URI.create("file:///a/b/c/d/myfile.txt")));
+            assertFalse(isDescendant(base, URI.create("file:///a/b/c/../c/myfile.txt")));
+            assertFalse(isDescendant(base, URI.create("file:///a/b/c/../myfile.txt")));
+            assertFalse(isDescendant(base, URI.create("file:///a/b/myfile.txt")));
+        }
+    }
 }

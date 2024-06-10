@@ -73,9 +73,9 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -95,10 +95,12 @@ public class FileUtil
 
     private static final ThreadLocal<HashSet<Path>> tempPaths = ThreadLocal.withInitial(HashSet::new);
 
+
     public static void startRequest()
     {
         tempPaths.get().clear();
     }
+
 
     @SuppressWarnings("RedundantOperationOnEmptyContainer")
     public static void stopRequest()
@@ -133,10 +135,12 @@ public class FileUtil
         }
     }
 
+
     public static boolean deleteDirectoryContents(Path dir) throws IOException
     {
         return deleteDirectoryContents(dir, null);
     }
+
 
     public static boolean deleteDirectoryContents(Path dir, @Nullable Logger log) throws IOException
     {
@@ -150,7 +154,7 @@ public class FileUtil
 
             for (String aChildren : children)
             {
-                boolean success = deleteDir(new File(dirFile, aChildren), log);
+                boolean success = deleteDir(FileUtil.appendName(dirFile, aChildren), log);
                 if (!success)
                 {
                     return false;
@@ -159,6 +163,7 @@ public class FileUtil
         }
         return true;
     }
+
 
     public static boolean deleteSubDirs(File dir)
     {
@@ -183,6 +188,7 @@ public class FileUtil
         return true;
     }
 
+
     /** File.delete() will only delete a directory if it's empty, but this will
      * delete all the contents and the directory */
     public static boolean deleteDir(File dir)
@@ -190,11 +196,13 @@ public class FileUtil
         return deleteDir(dir, null);
     }
 
+
     @Deprecated
     public static boolean deleteDir(@NotNull File dir, Logger log)
     {
         return deleteDir(dir.toPath(), log);
     }
+
 
     public static boolean deleteDir(Path dir, Logger log)
     {
@@ -214,7 +222,7 @@ public class FileUtil
             }
             catch (IOException e)
             {
-                log.debug(String.format("Unable to clean dir [%1$s]", dir.toString()), e);
+                log.debug(String.format("Unable to clean dir [%1$s]", dir), e);
                 return false;
             }
         }
@@ -242,6 +250,7 @@ public class FileUtil
         return false;
     }
 
+
     public static void deleteDir(@NotNull Path dir) throws IOException
     {
         if (Files.exists(dir))
@@ -264,6 +273,7 @@ public class FileUtil
         }
     }
 
+
     public static void copyDirectory(Path srcPath, Path destPath) throws IOException
     {
         // Will replace existing files
@@ -271,7 +281,7 @@ public class FileUtil
             FileUtil.createDirectory(destPath);
         try (Stream<Path> list = Files.list(srcPath))
         {
-            for (Path srcChild : list.collect(Collectors.toList()))
+            for (Path srcChild : list.toList())
             {
                 Path destChild = destPath.resolve(getFileName(srcChild));
                 if (Files.isDirectory(srcChild))
@@ -281,6 +291,7 @@ public class FileUtil
             }
         }
     }
+
 
     public static String isAllowedFileName(String s)
     {
@@ -299,6 +310,7 @@ public class FileUtil
         return null;
     }
 
+
     public static void checkAllowedFileName(String s) throws IOException
     {
         String msg = isAllowedFileName(s);
@@ -316,13 +328,16 @@ public class FileUtil
     {
         if (checkFileName)
             checkAllowedFileName(file.getName());
+        //noinspection SSBasedInspection
         return file.mkdir();
     }
+
 
     public static boolean mkdirs(File file) throws IOException
     {
         return mkdirs(file, AppProps.getInstance().isInvalidFilenameBlocked());
     }
+
 
     public static boolean mkdirs(File file, boolean checkFileName) throws IOException
     {
@@ -333,27 +348,33 @@ public class FileUtil
                 checkAllowedFileName(parent.getName());
             parent = parent.getParentFile();
         }
+        //noinspection SSBasedInspection
         return file.mkdirs();
     }
+
 
     public static Path createDirectory(Path path) throws IOException
     {
         return createDirectory(path, AppProps.getInstance().isInvalidFilenameBlocked());
     }
 
+
     public static Path createDirectory(Path path, boolean checkFileName) throws IOException
     {
         if (checkFileName)
             checkAllowedFileName(getFileName(path));
         if (!Files.exists(path))
+            //noinspection SSBasedInspection
             return Files.createDirectory(path);
         return path;
     }
+
 
     public static Path createDirectories(Path path) throws IOException
     {
         return createDirectories(path, AppProps.getInstance().isInvalidFilenameBlocked());
     }
+
 
     public static Path createDirectories(Path path, boolean checkFileName) throws IOException
     {
@@ -364,25 +385,31 @@ public class FileUtil
                 checkAllowedFileName(getFileName(parent));
             parent = parent.getParent();
         }
+        //noinspection SSBasedInspection
         return Files.createDirectories(path);
     }
+
 
     public static boolean createNewFile(File file) throws IOException
     {
         return createNewFile(file, AppProps.getInstance().isInvalidFilenameBlocked());
     }
 
+
     public static boolean createNewFile(File file, boolean checkFileName) throws IOException
     {
         if (checkFileName)
             checkAllowedFileName(file.getName());
+        //noinspection SSBasedInspection
         return file.createNewFile();
     }
+
 
     public static Path createFile(Path path, FileAttribute<?>... attrs) throws IOException
     {
         return createFile(path, AppProps.getInstance().isInvalidFilenameBlocked(), attrs);
     }
+
 
     public static Path createFile(Path path, boolean checkFileName, FileAttribute<?>... attrs) throws IOException
     {
@@ -390,6 +417,7 @@ public class FileUtil
             checkAllowedFileName(getFileName(path));
         return Files.createFile(path, attrs);
     }
+
 
     // return true if file exists and is not a directory
     public static boolean isFileAndExists(@Nullable Path path)
@@ -404,6 +432,7 @@ public class FileUtil
             return false;
         }
     }
+
 
     /**
      * Remove text right of a specific number of periods, including the periods, from a file's name.
@@ -425,6 +454,7 @@ public class FileUtil
         return baseName;
     }
 
+
     /**
      * Remove text right of and including the last period in a file's name.
      * @param fileName name of the file
@@ -434,6 +464,7 @@ public class FileUtil
     {
         return getBaseName(fileName, 1);
     }
+
 
     /**
      * Remove text right of a specific number of periods, including the periods, from a file's name.
@@ -452,6 +483,7 @@ public class FileUtil
         return getBaseName(file.getName(), dots);
     }
 
+
     /**
      * Remove text right of and including the last period in a file's name.
      * @param file file from which to get the name
@@ -462,6 +494,7 @@ public class FileUtil
         return getBaseName(file, 1);
     }
 
+
     /**
      * Returns the file name extension without the dot, null if there
      * isn't one.
@@ -471,6 +504,7 @@ public class FileUtil
     {
         return getExtension(file.getName());
     }
+
 
     /**
      * Returns the file name extension without the dot, null if there
@@ -486,6 +520,7 @@ public class FileUtil
         return null;
     }
 
+
     public static boolean hasCloudScheme(Path path)
     {
         try
@@ -498,15 +533,18 @@ public class FileUtil
         }
     }
 
+
     public static boolean hasCloudScheme(URI uri)
     {
         return "s3".equalsIgnoreCase(uri.getScheme());
     }
 
+
     public static boolean hasCloudScheme(String url)
     {
         return url.toLowerCase().startsWith("s3://");
     }
+
 
     public static String getAbsolutePath(Path path)
     {
@@ -517,11 +555,13 @@ public class FileUtil
 
     }
 
+
     @Nullable
     public static String getAbsolutePath(Container container, Path path)
     {   // Returned string is NOT necessarily a URI (i.e. it is not encoded)
         return getAbsolutePath(container, path.toUri());
     }
+
 
     @Nullable
     public static String getAbsolutePath(Container container, URI uri)
@@ -534,6 +574,7 @@ public class FileUtil
             return getAbsolutePathWithoutAccessIdFromCloudUrl(container, uri);
     }
 
+
     @Nullable
     public static String getAbsoluteCaseSensitivePathString(Container container, URI uri)
     {
@@ -544,6 +585,7 @@ public class FileUtil
         else
             return getAbsolutePathWithoutAccessIdFromCloudUrl(container, uri);
     }
+
 
     @Nullable
     public static Path getAbsoluteCaseSensitivePath(Container container, URI uri)
@@ -556,6 +598,7 @@ public class FileUtil
             return getAbsolutePathFromCloudUrl(container, uri);
     }
 
+
     @Nullable
     private static String getAbsolutePathWithoutAccessIdFromCloudUrl(Container container, URI uri)
     {
@@ -563,12 +606,14 @@ public class FileUtil
         return null != path ? getPathStringWithoutAccessId(path.toAbsolutePath().toUri()) : null;
     }
 
+
     @Nullable
     private static Path getAbsolutePathFromCloudUrl(Container container, URI uri)
     {
-        Path path = CloudStoreService.get().getPathFromUrl(container, uri.toString());
+        Path path = Objects.requireNonNull(CloudStoreService.get()).getPathFromUrl(container, uri.toString());
         return null != path ? path.toAbsolutePath() : null;
     }
+
 
     public static Path getAbsoluteCaseSensitivePath(Container container, Path path)
     {
@@ -578,6 +623,7 @@ public class FileUtil
             return path.toAbsolutePath();
     }
 
+
     @Nullable
     public static Path getPath(Container container, URI uri)
     {
@@ -586,13 +632,15 @@ public class FileUtil
         else if (!FileUtil.hasCloudScheme(uri))
             return new File(uri).toPath();
         else
-            return CloudStoreService.get().getPathFromUrl(container, uri.toString());
+            return Objects.requireNonNull(CloudStoreService.get()).getPathFromUrl(container, uri.toString());
     }
+
 
     public static URI createUri(String str)
     {
         return createUri(str, true);
     }
+
 
     public static URI createUri(String str, boolean isEncoded)
     {
@@ -649,6 +697,7 @@ public class FileUtil
         path = path.normalize();
         if (path.size() > 0 && "..".equals(path.get(0)))
             throw new IllegalArgumentException(path.toString());
+        @SuppressWarnings("SSBasedInspection")
         var ret = new File(dir, path.toString());
         if (!URIUtil.isDescendant(dir.toURI(), ret.toURI()))
             throw new IllegalArgumentException(path.toString());
@@ -664,22 +713,19 @@ public class FileUtil
 
 
     /* Only returns an immediate child */
-    public static File appendName(File dir, String... parts)
+    public static File appendName(File dir, String name)
     {
-        File ret = dir;
+        if (StringUtils.contains(name, '/'))
+            throw new IllegalArgumentException(name);
+        if (StringUtils.contains(name, File.separatorChar))
+            throw new IllegalArgumentException(name);
+        if (".".equals(name) || "..".equals(name))
+            throw new IllegalArgumentException(name);
+        @SuppressWarnings("SSBasedInspection")
+        var ret = new File(dir, name);
 
-        for (String name : parts)
-        {
-            if (StringUtils.contains(name, '/'))
-                throw new IllegalArgumentException(name);
-            if (StringUtils.contains(name, File.separatorChar))
-                throw new IllegalArgumentException(name);
-            if (".".equals(name) || "..".equals(name))
-                throw new IllegalArgumentException(name);
-            ret = new File(dir, name);
-        }
         if (!URIUtil.isDescendant(dir.toURI(), ret.toURI()))
-            throw new IllegalArgumentException(StringUtils.join(parts,File.separatorChar));
+            throw new IllegalArgumentException(name);
         return ret;
     }
 
@@ -689,33 +735,39 @@ public class FileUtil
         return str.replace("%20", " ");
     }
 
+
     public static String pathToString(Path path)
     {   // Returns a URI string (encoded)
         return getPathStringWithoutAccessId(path.toUri());
     }
+
 
     public static String uriToString(URI uri)
     {
         return getPathStringWithoutAccessId(uri);
     }
 
+
     public static Path stringToPath(Container container, String str)
     {
         return stringToPath(container, str, true);
     }
+
 
     public static Path stringToPath(Container container, String str, boolean isEncoded)
     {
         if (!FileUtil.hasCloudScheme(str))
             return new File(createUri(str, isEncoded)).toPath();
         else
-            return CloudStoreService.get().getPathFromUrl(container, PageFlowUtil.decode(str)/*decode everything not just the space*/);
+            return Objects.requireNonNull(CloudStoreService.get()).getPathFromUrl(container, PageFlowUtil.decode(str)/*decode everything not just the space*/);
     }
+
 
     public static String getCloudRootPathString(String cloudName)
     {
         return FileContentService.CLOUD_ROOT_PREFIX + "/" + cloudName;
     }
+
 
     @Nullable
     private static String getPathStringWithoutAccessId(URI uri)
@@ -727,7 +779,7 @@ public class FileUtil
             {
                 try
                 {
-                    return URIUtil.normalizeUri(uri).toString();
+                    return Objects.requireNonNull(URIUtil.normalizeUri(uri)).toString();
                 }
                 catch (URISyntaxException e)
                 {
@@ -738,6 +790,7 @@ public class FileUtil
         else
             return null;
     }
+
 
     /**
      * Get relative path of File 'file' with respect to 'home' directory
@@ -771,6 +824,7 @@ public class FileUtil
         return matchPathLists(getPathList(home), getPathList(file));
     }
 
+
     /**
      * Get a relative path of File 'file' with respect to 'home' directory,
      * forcing Unix (i.e. URI) forward slashes for directory separators.
@@ -786,12 +840,14 @@ public class FileUtil
         return relativize(home, f, canonicalize).replace('\\', '/');
     }
 
+
     public static String relativizeUnix(Path home, Path f, boolean canonicalize) throws IOException
     {
         if (!hasCloudScheme(home) && !hasCloudScheme(f))
             return relativizeUnix(home.toFile(), f.toFile(), canonicalize);
         return getPathStringWithoutAccessId(home.toUri().relativize(f.toUri()));
     }
+
 
     /**
      * Break a path down into individual elements and add to a list.
@@ -871,13 +927,13 @@ public class FileUtil
         }
     }
 
+
     // FileUtil.copyFile() does not use transferTo() or sync()
-    public static void copyFile(ReadableByteChannel in, long size, File dst) throws IOException
+    public static void copyFile(ReadableByteChannel in, long expected, File dst) throws IOException
     {
         createNewFile(dst);
 
         boolean success = false;
-        long expected = size;
         long actual = 0;
         long bytesCopied;
 
@@ -913,6 +969,7 @@ public class FileUtil
         }
     }
 
+
     /**
      * Copies an entire file system branch to another location, including the root directory itself
      * @param src The source file root
@@ -923,6 +980,7 @@ public class FileUtil
     {
         copyBranch(src, dest, false);
     }
+
 
     /**
      * Copies an entire file system branch to another location
@@ -935,21 +993,21 @@ public class FileUtil
     public static void copyBranch(File src, File dest, boolean contentsOnly) throws IOException
     {
         //if src is just a file, copy it and return
-        if(src.isFile())
+        if (src.isFile())
         {
-            File destFile = new File(dest, src.getName());
+            File destFile = FileUtil.appendName(dest, src.getName());
             copyFile(src, destFile);
             return;
         }
 
         //if copying the src root directory as well, make that
         //within the dest and re-assign dest to the new directory
-        if(!contentsOnly)
+        if (!contentsOnly)
         {
-            dest = new File(dest, src.getName());
+            dest =  FileUtil.appendName(dest, src.getName());
             mkdirs(dest);
             if(!dest.isDirectory())
-                throw new IOException("Unable to create the directory " + dest.toString() + "!");
+                throw new IOException("Unable to create the directory " + dest + "!");
         }
 
         File[] children = src.listFiles();
@@ -962,6 +1020,7 @@ public class FileUtil
             copyBranch(file, dest, false);
         }
     }
+
 
     /**
      * always returns path starting with /.  Tries to leave trailing '/' as is
@@ -1069,20 +1128,18 @@ quickScan:
         return res.toString();
     }
 
+
     static boolean startsWith(String s, char ch)
     {
         return s.length() > 0 && s.charAt(0) == ch;
     }
 
-    static boolean endsWith(String s, char ch)
-    {
-        return s.length() > 0 && s.charAt(s.length()-1) == ch;
-    }
 
     static boolean equals(String s, char ch)
     {
         return s.length() == 1 && s.charAt(0) == ch;
     }
+
 
     public static String relativePath(String dir, String filePath)
     {
@@ -1114,6 +1171,7 @@ quickScan:
         }
     }
 
+
     public static String sha1sum(InputStream is) throws IOException
     {
         try
@@ -1131,15 +1189,12 @@ quickScan:
         }
     }
 
+
     public static String sha1sum(byte[] bytes) throws IOException
     {
         return sha1sum(new ByteArrayInputStream(bytes));
     }
 
-    public static String sha1sum(File file) throws IOException
-    {
-        return sha1sum(new FileInputStream(file));
-    }
 
     public static String md5sum(InputStream is) throws IOException
     {
@@ -1158,10 +1213,6 @@ quickScan:
         }
     }
 
-    public static String md5sum(File file) throws IOException
-    {
-        return md5sum(new FileInputStream(file));
-    }
 
     public static String md5sum(byte[] bytes) throws IOException
     {
@@ -1176,6 +1227,7 @@ quickScan:
             return FileUtil.readHeader(is, len);
         }
     }
+
 
     public static byte[] readHeader(@NotNull InputStream is, int len) throws IOException
     {
@@ -1258,6 +1310,7 @@ quickScan:
             os.write(buf,0,r);
     }
 
+
     private static final char[] ILLEGAL_CHARS = {'/','\\',':','?','<','>','*','|','"','^', '\n', '\r', '\''};
     private static final String ILLEGAL_CHARS_STRING = new String(ILLEGAL_CHARS);
 
@@ -1272,19 +1325,18 @@ quickScan:
         return !StringUtils.containsAny(name, ILLEGAL_CHARS);
     }
 
-    public static String makeLegalName(String originalName)
+
+    public static String makeLegalName(String name)
     {
-        if (originalName == null)
+        if (name == null)
         {
             return "__null__";
         }
 
-        if (originalName.isEmpty())
+        if (name.isEmpty())
         {
             return "__empty__";
         }
-
-        String name = originalName;
 
         //limit to 255 chars (FAT and OS X)
         //replace illegal chars
@@ -1329,10 +1381,11 @@ quickScan:
         String result = new String(ret);
 
         assert !AppProps.getWriteableInstance().isInvalidFilenameBlocked() || isAllowedFileName(result) == null :
-                "Failed to make filename safe. Original: " + originalName + ", transformed: " + result + ", error: " + isAllowedFileName(result);
+                "Failed to make filename safe. Original: " + name + ", transformed: " + result + ", error: " + isAllowedFileName(result);
 
         return new String(ret);
     }
+
 
     /**
      * Returns the absolute path to a file. On Windows and Mac, corrects casing in file paths to match the
@@ -1362,6 +1415,7 @@ quickScan:
         return file.getAbsoluteFile();
     }
 
+
     public static boolean isCaseInsensitiveFileSystem()
     {
         // FileSystem case sensitivity cannot be inferred from OS, for example mac os defaults to case-insensitive but can be configured to be case-sensitive
@@ -1369,6 +1423,7 @@ quickScan:
         String osName = System.getProperty("os.name").toLowerCase();
         return (osName.startsWith("windows") || osName.startsWith("mac os"));
     }
+
 
     /**
      * Strips out ".." and "." from the path
@@ -1402,8 +1457,9 @@ quickScan:
             file = file.getParentFile();
             parent = file.getParentFile();
         }
-        return new File(resolveFile(parent), file.getName());
+        return FileUtil.appendName(resolveFile(parent), file.getName());
     }
+
 
     public static Path createTempDirectory(@Nullable String prefix) throws IOException
     {
@@ -1432,17 +1488,20 @@ quickScan:
         return _tempDir;
     }
 
+
     // Use this instead of File.createTempFile() (see Issue #46794)
     public static File createTempFile(@Nullable String prefix, @Nullable String suffix, File directory) throws IOException
     {
         return Files.createTempFile(directory.toPath(), prefix, suffix).toFile();
     }
 
+
     // Use this instead of File.createTempFile() (see Issue #46794)
     public static File createTempFile(@Nullable String prefix, @Nullable String suffix) throws IOException
     {
         return createTempFile(prefix, suffix, false);
     }
+
 
     public static File createTempFile(@Nullable String prefix, @Nullable String suffix, boolean threadLocal) throws IOException
     {
@@ -1499,6 +1558,7 @@ quickScan:
         return makeLegalName(prefix + "_" + getTimestamp() + (extension == null ? "" : ("." + extension)));
     }
 
+
     public static String makeFileNameWithTimestamp(String prefix)
     {
         return makeLegalName(prefix + "_" + getTimestamp());
@@ -1530,6 +1590,7 @@ quickScan:
         return time;
     }
 
+
     private static String indent(LinkedList<Boolean> hasMoreFlags)
     {
         StringBuilder sb = new StringBuilder();
@@ -1544,6 +1605,7 @@ quickScan:
 
         return sb.toString();
     }
+
 
     private static void printTree(StringBuilder sb, Path node, LinkedList<Boolean> hasMoreFlags) throws IOException
     {
@@ -1573,6 +1635,7 @@ quickScan:
         });
     }
 
+
     private static void appendFileLogEntry(StringBuilder sb, Path node, LinkedList<Boolean> hasMoreFlags) throws IOException
     {
         if (hasMoreFlags.isEmpty())
@@ -1587,6 +1650,7 @@ quickScan:
         sb.append("\n");
     }
 
+
     public static String printTree(Path root) throws IOException
     {
         StringBuilder sb = new StringBuilder();
@@ -1594,12 +1658,6 @@ quickScan:
         return sb.toString();
     }
 
-    public static String printTree(File root) throws IOException
-    {
-        StringBuilder sb = new StringBuilder();
-        printTree(sb, root.toPath(), new LinkedList<>());
-        return sb.toString();
-    }
 
     public static String getUnencodedAbsolutePath(Container container, Path path)
     {
@@ -1734,7 +1792,7 @@ quickScan:
                     if (0 < _charBuffer.remaining())
                     {
                         var l = Math.min(len, _charBuffer.remaining());
-                        var ret = _charBuffer.get(cbuf, off, l);
+                        _charBuffer.get(cbuf, off, l);
                         return l;
                     }
                     if (null == _fileReader && null != _tmpFile)
@@ -1782,6 +1840,7 @@ quickScan:
     }
 
 
+    @SuppressWarnings("SSBasedInspection")
     public static class TestCase extends Assert
     {
         private static final File ROOT;
