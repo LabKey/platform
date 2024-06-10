@@ -1567,7 +1567,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 manageMenu.addChild("Copy assay design", copyURL.toString());
         }
 
-        if (allowDelete(context, protocol))
+        if (allowDelete(context, protocol)) //
         {
             manageMenu.addChild("Delete assay design", PageFlowUtil.urlProvider(ExperimentUrls.class).getDeleteProtocolURL(protocol, PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(contextContainer)));
         }
@@ -1616,8 +1616,10 @@ public abstract class AbstractAssayProvider implements AssayProvider
     protected boolean allowDelete(ViewContext viewContext, ExpProtocol protocol)
     {
         Container container = protocol.getContainer();
-        //deleting will delete data as well as design, so user must have both design assay and delete perms
-        return container.hasPermissions(viewContext.getUser(), Set.of(DesignAssayPermission.class, DeletePermission.class));
+        // Just need to check DesignAssayPermission here.
+        // Experiment/ConfirmDelete.jsp checks for getRunsWithoutPermission
+        // ExperimentServiceImpl.deleteProtocolByRowIds checks for AdminPermission for assay runs
+        return container.hasPermissions(viewContext.getUser(), Set.of(DesignAssayPermission.class));
     }
 
     @Override
