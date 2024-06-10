@@ -2105,6 +2105,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     movedFiles.get(resultRunId).add(new AssayFileMoveData(run, run.getContainer(), fileField, sourceFile, updatedFile));
 
                     // update the exp.Object row for the file results row
+                    // TODO refactor so that the updates to the related exp.Object rows are done in the ExpDataFileListener (see similar updates in moveRuns() and moveRunsBatch())
                     TableInfo expDataTable = ExperimentService.get().getTinfoData();
                     TableInfo expObjectTable = OntologyManager.getTinfoObject();
                     SQLFragment updateSql = new SQLFragment("UPDATE ").append(expObjectTable)
