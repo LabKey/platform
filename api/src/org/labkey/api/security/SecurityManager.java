@@ -3833,6 +3833,8 @@ public class SecurityManager
             Pair<ValidEmail, User> userAC  = new Pair<>(new ValidEmail("AC@localhost.test"), null);
             Pair<ValidEmail, User> userABC = new Pair<>(new ValidEmail("ABC@localhost.test"), null);
 
+            List<Role> createdRoles = new LinkedList<>();
+
             try
             {
                 // Create real users
@@ -3845,10 +3847,10 @@ public class SecurityManager
 
                 testFolder = ContainerManager.createContainer(parentFolder, "getusers_subfolder", testUser);
                 MutableSecurityPolicy policy = new MutableSecurityPolicy(testFolder);
-                addRoleAssignment(policy, userAB.getValue(), new RoleAB(), testUser);
-                addRoleAssignment(policy, userAC.getValue(), new RoleAC(), testUser);
-                addRoleAssignment(policy, userABC.getValue(), new RoleAB(), testUser);
-                addRoleAssignment(policy, userABC.getValue(), new RoleAC(), testUser);
+                createdRoles.add(addRoleAssignment(policy, userAB.getValue(), new RoleAB(), testUser));
+                createdRoles.add(addRoleAssignment(policy, userAC.getValue(), new RoleAC(), testUser));
+                createdRoles.add(addRoleAssignment(policy, userABC.getValue(), new RoleAB(), testUser));
+                createdRoles.add(addRoleAssignment(policy, userABC.getValue(), new RoleAC(), testUser));
 
                 var usersWithAll = new HashSet<>(getUsersWithPermissions(testFolder, Set.of(PermissionA.class)));
                 assertEquals(3, usersWithAll.size());
@@ -3876,6 +3878,8 @@ public class SecurityManager
             }
             finally
             {
+                createdRoles.forEach(RoleManager::unregisterRole);
+
                 for (var p : Arrays.asList(userAB, userAC, userABC))
                     if (null != p.getValue())
                         UserManager.deleteUser(p.getValue().getUserId());
@@ -3884,12 +3888,14 @@ public class SecurityManager
             }
         }
 
-        private void addRoleAssignment(MutableSecurityPolicy policy, UserPrincipal principal, Role role, User testUser)
+        private Role addRoleAssignment(MutableSecurityPolicy policy, UserPrincipal principal, Role role, User testUser)
         {
             if (!RoleManager.isPermissionRegistered((Class<? extends Permission>) role.getClass()))
                 RoleManager.registerRole(role, false);
             policy.addRoleAssignment(principal, role);
             SecurityPolicyManager.savePolicy(policy, testUser);
+
+            return role;
         }
     }
 
@@ -3909,25 +3915,25 @@ public class SecurityManager
         }
     }
 
-    static class PermissionA extends AbstractPermission implements Permission.TestPermission
+    public static class PermissionA extends AbstractPermission implements Permission.TestPermission
     {
-        PermissionA()
+        public PermissionA()
         {
             super("PermissionA","PermissionA");
         }
     }
 
-    static class PermissionB extends AbstractPermission implements Permission.TestPermission
+    public static class PermissionB extends AbstractPermission implements Permission.TestPermission
     {
-        PermissionB()
+        public PermissionB()
         {
             super("PermissionB","PermissionB");
         }
     }
 
-    static class PermissionC extends AbstractPermission implements Permission.TestPermission
+    public static class PermissionC extends AbstractPermission implements Permission.TestPermission
     {
-        PermissionC()
+        public PermissionC()
         {
             super("PermissionC","PermissionC");
         }

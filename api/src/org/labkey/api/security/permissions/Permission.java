@@ -22,8 +22,6 @@ import org.labkey.api.security.roles.Role;
 /**
  * Represents a particular permission defined by a module. The most granular level of access that a user might be allowed.
  * Permissions are assigned to {@link org.labkey.api.security.UserPrincipal} via the assignment of {@link org.labkey.api.security.roles.Role}.
- * User: Dave
- * Date: Apr 9, 2009
  */
 public interface Permission extends Role
 {
@@ -33,7 +31,7 @@ public interface Permission extends Role
      */
     @Override
     @NotNull
-    public String getName();
+    String getName();
 
     /**
      * Returns a longer description for the permission suitable for a user interface.
@@ -41,7 +39,7 @@ public interface Permission extends Role
      */
     @Override
     @NotNull
-    public String getDescription();
+    String getDescription();
 
     /**
      * Returns a reference to the module in which this permission is defined.
@@ -49,7 +47,7 @@ public interface Permission extends Role
      */
     @Override
     @NotNull
-    public Module getSourceModule();
+    Module getSourceModule();
 
     interface TestPermission extends Permission {}
 }
