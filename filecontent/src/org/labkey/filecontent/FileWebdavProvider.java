@@ -25,7 +25,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.MissingRootDirectoryException;
-import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileUtil;
@@ -116,7 +116,7 @@ public class FileWebdavProvider implements WebdavService.Provider
                 AttachmentDirectory dir = service.getMappedAttachmentDirectory(c, false);
                 if (dir != null)
                 {
-                    return new _FilesResource(parent, Path.toPathPart(name), dir.getFileSystemDirectory(), c.getPolicy());
+                    return new _FilesResource(parent, Path.toPathPart(name), dir.getFileSystemDirectory(), c);
                 }
             }
             catch (MissingRootDirectoryException e)
@@ -130,9 +130,9 @@ public class FileWebdavProvider implements WebdavService.Provider
 
     static class _FilesResource extends FileSystemResource
     {
-        public _FilesResource(WebdavResource folder, Path.Part name, File file, SecurityPolicy policy)
+        public _FilesResource(WebdavResource folder, Path.Part name, File file, SecurableResource resource)
         {
-            super(folder, name, file, policy);
+            super(folder, name, file, resource);
         }
 
         public _FilesResource(FileSystemResource folder, Path.Part name)

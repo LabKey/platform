@@ -111,12 +111,22 @@ public class FileSystemResource extends AbstractWebdavResource
         this(folder.append(name));
     }
 
+    @Deprecated // Down to one caller. TODO: Migrate
     public FileSystemResource(WebdavResource folder, Path.Part name, File file, SecurityPolicy policy)
     {
         this(folder.getPath(), name);
         _folder = folder;
         _name = name.toString();
         setPolicy(policy);
+        _files = Collections.singletonList(new FileInfo(FileUtil.getAbsoluteCaseSensitiveFile(file)));
+    }
+
+    public FileSystemResource(WebdavResource folder, Path.Part name, File file, SecurableResource resource)
+    {
+        this(folder.getPath(), name);
+        _folder = folder;
+        _name = name.toString();
+        setSecurableResource(resource);
         _files = Collections.singletonList(new FileInfo(FileUtil.getAbsoluteCaseSensitiveFile(file)));
     }
 
@@ -132,11 +142,19 @@ public class FileSystemResource extends AbstractWebdavResource
             .toList());
     }
 
+    @Deprecated // Used only by tests. TODO: Migrate callers to SecurableResource variant
     public FileSystemResource(Path path, File file, SecurityPolicy policy)
     {
         this(path);
         _files = Collections.singletonList(new FileInfo(file));
         setPolicy(policy);
+    }
+
+    public FileSystemResource(Path path, File file, SecurableResource resource)
+    {
+        this(path);
+        _files = Collections.singletonList(new FileInfo(file));
+        setSecurableResource(resource);
     }
 
     @Override

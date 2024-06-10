@@ -203,7 +203,6 @@ public class UserResolverImpl extends AbstractWebdavResolver
             return new FileSystemResource(this, Path.toPathPart(user.getName()), fileRoot, p);
         }
 
-
         @Override
         public Set<Class<? extends Permission>> getPermissions(User user)
         {
