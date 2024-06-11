@@ -22,6 +22,7 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -107,6 +108,7 @@ import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.SampleTypeAuditProvider;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -763,7 +765,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         keys = new Object[]{lsid};
         TableInfo t = _sampleType.getTinfo();
         // Sample type uses FILE_LINK not FILE_ATTACHMENT, use convertTypes() to handle posted files
-        convertTypes(user, c, validRowCopy, t, "sampletype");
+        Path path = AssayFileWriter.getUploadDirectoryPath(c, "sampletype");
+        convertTypes(user, c, validRowCopy, t, path);
         if (t.getColumnNameSet().stream().anyMatch(validRowCopy::containsKey))
         {
             ret.putAll(Table.update(user, t, validRowCopy, t.getColumn("lsid"), keys, null, Level.DEBUG));
@@ -1639,7 +1642,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         private NameGenerator.SampleNameExpressionSummary getSampleNameExpressionSummary(@NotNull NameGenerator nameGen, @NotNull NameGenerator aliquotNameGen)
         {
-            if (sampleType == null)
+            if (sampleType == null || nameGen.getExpressionSummary() == null)
                 return null;
 
             boolean hasProjectSampleCounter = false;

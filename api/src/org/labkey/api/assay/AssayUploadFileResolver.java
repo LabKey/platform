@@ -20,11 +20,14 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.util.URIUtil;
 
 import java.io.File;
+import java.nio.file.Path;
 
 /**
  * Created by klum on 6/2/2017.
@@ -65,7 +68,13 @@ public class AssayUploadFileResolver
             if (fileToResolve != null)
             {
                 // For security reasons, make sure the user hasn't tried to reference a file that's not under
-                // the pipeline root. Otherwise, they could get access to any file on the server
+                // the pipeline root or @assayfiles root. Otherwise, they could get access to any file on the server
+
+                Path assayFilesRoot = FileContentService.get().getFileRootPath(container, FileContentService.ContentType.assayfiles);
+                if (assayFilesRoot != null && URIUtil.isDescendant(assayFilesRoot.toUri(), fileToResolve.toURI()))
+                {
+                    return null; // return null since we do not need to convert the file path
+                }
 
                 PipeRoot root = PipelineService.get().findPipelineRoot(container);
                 if (root == null)

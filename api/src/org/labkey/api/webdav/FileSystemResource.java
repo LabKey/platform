@@ -78,7 +78,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 /**
  *  Base class for file-system based resources
@@ -128,8 +127,8 @@ public class FileSystemResource extends AbstractWebdavResource
 
         _files = new ArrayList<>(folder._files.size());
         _files.addAll(folder._files.stream()
-                .map(file -> new FileInfo(FileUtil.appendName(file.getFile(), name)))
-                .collect(Collectors.toList()));
+            .map(file -> new FileInfo(FileUtil.appendName(file.getFile(), name)))
+            .toList());
     }
 
     public FileSystemResource(Path path, File file, SecurityPolicy policy)

@@ -55,6 +55,7 @@ import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DesignDataClassPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.logging.LogHelper;
@@ -293,7 +294,16 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     @Override
     public boolean canDeleteDefinition(User user, Domain domain)
     {
-        return domain.getContainer().hasPermission(user, DesignDataClassPermission.class);
+        if (!domain.getContainer().hasPermission(user, DesignDataClassPermission.class))
+            return false;
+
+        if (!domain.getContainer().hasPermission(user, AdminPermission.class))
+        {
+            ExpDataClass dataClass = getDataClass(domain);
+            if (dataClass != null)
+                return !dataClass.hasData();
+        }
+        return true;
     }
 
     private @NotNull ValidationException getNamePatternValidationResult(String dataClassName, String patten, List<? extends GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, Container container)

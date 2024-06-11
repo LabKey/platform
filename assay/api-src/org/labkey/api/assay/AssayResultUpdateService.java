@@ -42,6 +42,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.view.UnauthorizedException;
 
+import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.Objects;
@@ -79,6 +80,10 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
 
         if (!run.getContainer().equals(container))
             throw new UnauthorizedException("Assay results being updated are from a different container.");
+
+        // Assay results use FILE_LINK not FILE_ATTACHMENT, use convertTypes() to handle directing the posted files to the run specific directory
+        Path assayResultsRunDir = AssayResultsFileWriter.getAssayFilesDirectoryPath(run);
+        convertTypes(user, container, row, getDbTable(), assayResultsRunDir);
 
         Map<String, Object> result = super.updateRow(user, container, row, oldRow, configParameters);
 

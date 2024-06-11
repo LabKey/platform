@@ -1448,7 +1448,7 @@ public class DbScope
         return getTableInfoCache(options.getSchema().getType()).get(options);
     }
 
-    /** This is expensive... use only for debugging and troubleshooting */
+    /** This is expensive... use only for local debugging and troubleshooting */
     public <OptionType extends SchemaTableOptions> boolean isCached(OptionType options)
     {
         return getTableInfoCache(options.getSchema().getType()).isCached(options);
@@ -1558,8 +1558,6 @@ public class DbScope
         }
     }
 
-    private static String _applicationName = null;
-
     // Enumerate each jdbc DataSource and initialize them
     public static void initializeDataSources()
     {
@@ -1598,7 +1596,7 @@ public class DbScope
             labkeyDsName = primaryDS.getDsName();
             // Now that we've tagged the primary datasource we can prepare them all
             dataSources.values().forEach(ds -> ds.getDialect().prepare(ds));
-            _applicationName = ensureDatabase(primaryDS);
+            ensureDatabase(primaryDS);
         }
         catch (Exception e)
         {
@@ -1652,7 +1650,7 @@ public class DbScope
                 addScope(dsName, ds);
             }
 
-            _labkeyScope = getDbScope(labkeyDsName, DbScope::detectOtherLabKeyInstances);
+            _labkeyScope = getDbScope(labkeyDsName);
 
             if (null == _labkeyScope)
             {
@@ -1687,11 +1685,11 @@ public class DbScope
         return _escape;
     }
 
-    // Ensure we can connect to the specified datasource. If the connection fails with a "database doesn't exist"
-    // exception then attempt to create the database. Throw if some other exception occurs (e.g., connection fails
-    // repeatedly with something other than "database doesn't exist" or database can't be created). Return the
-    // application name that is expected on all subsequent connections.
-    public static String ensureDatabase(LabKeyDataSource ds) throws ServletException
+    // Ensure we can connect to the specified datasource. If successful, and this is the primary datasource, attempt to
+    // detect if there are existing LabKey connections to this database. If the connection fails with a "database doesn't
+    // exist" exception then attempt to create the database. Throw if some other exception occurs (e.g., connection
+    // fails repeatedly with something other than "database doesn't exist" or database can't be created).
+    public static void ensureDatabase(LabKeyDataSource ds) throws ServletException
     {
         SqlDialect dialect = ds.getDialect(); // Not versioned with the database server version
         SQLException lastException = null;
@@ -1701,7 +1699,7 @@ public class DbScope
         {
             if (i > 0)
             {
-                LOG.warn("Retrying connection to \"" + ds.getDsName() + "\" at " + ds.getUrl() + " in 10 seconds");
+                LOG.warn("Retrying connection to \"{}\" at {} in 10 seconds", ds.getDsName(), ds.getUrl());
 
                 try
                 {
@@ -1716,19 +1714,26 @@ public class DbScope
             // Create non-pooled connection... don't want to pool a failed connection
             try (Connection conn = getRawConnection(ds.getUrl(), ds))
             {
-                LOG.debug("Successful connection to \"" + ds.getDsName() + "\" at " + ds.getUrl());
-                return ensureApplicationName(conn, ds);
+                LOG.debug("Successful connection to \"{}\" at {}", ds.getDsName(), ds.getUrl());
+
+                if (ds.isPrimary())
+                {
+                    String applicationName = ensureApplicationName(conn, ds);
+                    detectOtherLabKeyInstances(conn, ds, applicationName);
+                }
+
+                return;
             }
             catch (SQLException e)
             {
                 if (dialect.isNoDatabaseException(e))
                 {
-                    return createDataBase(dialect, ds);
+                    createDataBase(dialect, ds);
                 }
                 else
                 {
-                    LOG.warn("Connection to \"" + ds.getDsName() + "\" at " + ds.getUrl() + " failed with the following error:");
-                    LOG.warn("Message: " + e.getMessage() + " SQLState: " + e.getSQLState() + " ErrorCode: " + e.getErrorCode(), e);
+                    LOG.warn("Connection to \"{}\" at {} failed with the following error:", ds.getDsName(), ds.getUrl());
+                    LOG.warn("Message: {} SQLState: {} ErrorCode: {}", e.getMessage(), e.getSQLState(), e.getErrorCode(), e);
                     lastException = e;
                 }
             }
@@ -1746,58 +1751,63 @@ public class DbScope
     private static final boolean MOCK_EXISTING_CONNECTIONS = false;
 
     // Called on primary data source only
-    private static void detectOtherLabKeyInstances(DbScope primaryScope)
+    private static void detectOtherLabKeyInstances(Connection conn, LabKeyDataSource ds, String applicationName) throws ServletException
     {
-        if (MOCK_EXISTING_CONNECTIONS)
+        try
         {
-            // For testing purposes only - create a couple unexpected connections
-            try (Connection ignored1 = primaryScope.getPooledConnection(); Connection ignored2 = primaryScope.getPooledConnection())
+            if (MOCK_EXISTING_CONNECTIONS)
             {
-                detectUnexpectedConnections(primaryScope);
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeException(e);
-            }
-        }
-        else
-        {
-            detectUnexpectedConnections(primaryScope);
-        }
-    }
-
-    private static void detectUnexpectedConnections(DbScope primaryScope)
-    {
-        assert _applicationName != null;
-
-        SqlDialect dialect = primaryScope.getSqlDialect();
-        String databaseName = primaryScope.getDatabaseName();
-        String sql = dialect.getApplicationConnectionsSql();
-        assert sql != null : "Need to implement both getApplicationName() and getApplicationConnectionCountSql() (or neither of them)";
-
-        int count;
-        ConfigurationException exception = null;
-        SqlSelector selector = new SqlSelector(primaryScope, new SQLFragment(sql, databaseName, _applicationName));
-
-        // This creates the first pooled connection on the primary scope
-        try (TableResultSet rs = selector.getResultSet())
-        {
-            count = rs.getSize();
-            if (count != 0)
-            {
-                String message = "There " + (1 == count ? "is " : "are ") + StringUtilsLabKey.pluralize(count, "other connection") +
-                    " to database \"" + databaseName + "\" with the application name \"" + _applicationName +
-                    "\"! This likely means another LabKey Server instance is already using this database.";
-                LOG.fatal(message + " Information about existing connections:\n" + ResultSetUtil.getData(rs));
-                boolean terminate = Boolean.valueOf(Objects.toString(System.getProperty("terminateOnExistingConnections"), "true"));
-                if (terminate)
+                // For testing purposes only - create a couple unexpected connections
+                try (Connection ignored1 = getRawConnection(ds.getUrl(), ds); Connection ignored2 = getRawConnection(ds.getUrl(), ds))
                 {
-                    exception = new ConfigurationException(message);
+                    detectUnexpectedConnections(conn, ds, applicationName);
                 }
             }
             else
             {
-                LOG.info("No other connections to database \"" + databaseName + "\" with the application name \"" + _applicationName + "\" were detected");
+                detectUnexpectedConnections(conn, ds, applicationName);
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
+
+    private static void detectUnexpectedConnections(Connection conn, LabKeyDataSource ds, String applicationName) throws ServletException, SQLException
+    {
+        SqlDialect dialect = ds.getDialect();
+        String databaseName = dialect.getDatabaseName(ds.getUrl());
+        String applicationConnectionsSql = dialect.getApplicationConnectionsSql();
+        assert applicationConnectionsSql != null : "Need to implement both getApplicationName() and getApplicationConnectionCountSql() (or neither of them)";
+
+        int count;
+        ConfigurationException exception = null;
+
+        try (PreparedStatement stmt = conn.prepareStatement(applicationConnectionsSql))
+        {
+            stmt.setString(1, databaseName);
+            stmt.setString(2, applicationName);
+
+            try (CachedResultSet rs = CachedResultSets.create(stmt.executeQuery(), true, 1000))
+            {
+                count = rs.getSize();
+                if (count != 0)
+                {
+                    String message = "There " + (1 == count ? "is " : "are ") + StringUtilsLabKey.pluralize(count, "other connection") +
+                        " to database \"" + databaseName + "\" with the application name \"" + applicationName + "\"! " +
+                        "This likely means another LabKey Server instance is already using this database.";
+                    LOG.fatal("{} Information about existing connections:\n{}", message, ResultSetUtil.getData(rs));
+                    boolean terminate = Boolean.valueOf(Objects.toString(System.getProperty("terminateOnExistingConnections"), "true"));
+                    if (terminate)
+                    {
+                        exception = new ConfigurationException(message);
+                    }
+                }
+                else
+                {
+                    LOG.info("No other connections to database \"{}\" with the application name \"{}\" were detected", databaseName, applicationName);
+                }
             }
         }
         catch (Exception e)
@@ -1816,7 +1826,7 @@ public class DbScope
     {
         String applicationName = null;
 
-        // For now, set application name only on primary data sources
+        // For now, set application name only on primary data source
         if (ds.isPrimary())
         {
             SqlDialect dialect = ds.getDialect();
@@ -1895,12 +1905,12 @@ public class DbScope
         return driver.connect(url, props);
     }
 
-    private static String createDataBase(SqlDialect dialect, LabKeyDataSource ds) throws ServletException
+    private static void createDataBase(SqlDialect dialect, LabKeyDataSource ds) throws ServletException
     {
         String url = ds.getUrl();
         String dbName = dialect.getDatabaseName(url);
 
-        LOG.info("Attempting to create database \"" + dbName + "\"");
+        LOG.info("Attempting to create database \"{}\"", dbName);
 
         String defaultUrl = StringUtils.replace(url, dbName, dialect.getDefaultDatabaseName());
         String createSql = "(undefined)";
@@ -1914,18 +1924,14 @@ public class DbScope
             try (PreparedStatement stmt = conn.prepareStatement(createSql))
             {
                 stmt.execute();
-                LOG.info("Database \"" + dbName + "\" created");
+                LOG.info("Database \"{}\" created", dbName);
             }
-
-            return ensureApplicationName(conn, ds);
         }
         catch (SQLException e)
         {
-            LOG.error("Create database failed, SQL: " + createSql, e);
+            LOG.error("Create database failed, SQL: {}", createSql, e);
             dialect.handleCreateDatabaseException(e);
         }
-
-        return null;
     }
 
     // Store the initial failure message for each data source
@@ -1959,12 +1965,6 @@ public class DbScope
     @Nullable
     public static DbScope getDbScope(String dsName)
     {
-        return getDbScope(dsName, DbScopeLoader.NO_OP_CONSUMER);
-    }
-
-    @Nullable
-    public static DbScope getDbScope(String dsName, Consumer<DbScope> firstConnectionConsumer)
-    {
         DbScopeLoader loader;
 
         synchronized (_scopeLoaders)
@@ -1972,7 +1972,7 @@ public class DbScope
             loader = _scopeLoaders.get(dsName);
         }
 
-        return null != loader ? loader.get(firstConnectionConsumer) : null;
+        return null != loader ? loader.get() : null;
     }
 
     private static @NotNull Collection<DbScopeLoader> getLoaders()

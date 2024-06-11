@@ -139,6 +139,8 @@ import org.labkey.experiment.samples.SampleStatusFolderImporter;
 import org.labkey.experiment.samples.SampleTimelineAuditProvider;
 import org.labkey.experiment.samples.SampleTypeFolderImporter;
 import org.labkey.experiment.samples.SampleTypeFolderWriter;
+import org.labkey.experiment.security.DataClassDesignerRole;
+import org.labkey.experiment.security.SampleTypeDesignerRole;
 import org.labkey.experiment.types.TypesController;
 import org.labkey.experiment.xar.FolderXarImporterFactory;
 import org.labkey.experiment.xar.FolderXarWriterFactory;
@@ -240,6 +242,8 @@ public class ExperimentModule extends SpringModule
         }
 
         RoleManager.registerPermission(new DesignVocabularyPermission(), true);
+        RoleManager.registerRole(new SampleTypeDesignerRole());
+        RoleManager.registerRole(new DataClassDesignerRole());
 
         AttachmentService.get().registerAttachmentType(ExpRunAttachmentType.get());
         AttachmentService.get().registerAttachmentType(ExpProtocolAttachmentType.get());
