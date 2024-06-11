@@ -3247,13 +3247,10 @@ public class SecurityManager
         if (null == resource || null == principal)
             return Set.of();
 
-        Container c = resource.getResourceContainer();
-        if (principal instanceof User user && c.isForbiddenProject(user))
+        if (principal instanceof User user && resource.getResourceContainer().isForbiddenProject(user))
             return Set.of();
 
-        SecurityPolicy policy = SecurityPolicyManager.getPolicy(resource);
-
-        Stream<Role> roles = principal.getAssignedRoles(policy).stream()
+        Stream<Role> roles = principal.getAssignedRoles(resource).stream()
             .filter(Objects::nonNull);
 
         if (null != contextualRoles && !contextualRoles.isEmpty())
