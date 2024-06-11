@@ -16,6 +16,7 @@
 
 package org.labkey.announcements;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
@@ -133,7 +134,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -756,19 +756,16 @@ public class AnnouncementsController extends SpringActionController
         public SelectBuilder assignedToSelect;
     }
 
-
     private boolean hasEditorPerm(int groupId)
     {
         Role editorRole = RoleManager.getRole(EditorRole.class);
         Group group = SecurityManager.getGroup(groupId);
-        return null != group && SecurityManager.hasAllPermissions(null, getContainer().getPolicy(), group, editorRole.getPermissions(), Set.of());
+        return null != group && SecurityManager.hasAllPermissions(null, getContainer(), group, editorRole.getPermissions(), Set.of());
     }
-
 
     @RequiresAnyOf({InsertMessagePermission.class, InsertPermission.class})
     public abstract class BaseInsertAction extends FormViewAction<AnnouncementForm>
     {
-        private URLHelper _returnURL;
         protected HttpView _attachmentErrorView;
 
         protected abstract ModelAndView getInsertUpdateView(AnnouncementForm announcementForm, boolean reshow, BindException errors);
@@ -847,13 +844,12 @@ public class AnnouncementsController extends SpringActionController
             }
 
             _attachmentErrorView = AttachmentService.get().getErrorView(files, errors, returnURL);
-            _returnURL = returnURL;
 
             boolean success = (null == _attachmentErrorView);
 
             // Can't use getSuccessURL since this is a URLHelper, not an ActionURL
             if (success)
-                throw new RedirectException(_returnURL);
+                throw new RedirectException(returnURL);
 
             return false;
         }

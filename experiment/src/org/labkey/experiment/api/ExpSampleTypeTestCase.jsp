@@ -1116,7 +1116,7 @@ public void testInsertOptionUpdate() throws Exception
     List<GWTPropertyDescriptor> props = new ArrayList<>();
     props.add(new GWTPropertyDescriptor("name", "string"));
     props.add(new GWTPropertyDescriptor("intVal", "int"));
-    var requiredCol = new GWTPropertyDescriptor("RequriedCol", "string");
+    var requiredCol = new GWTPropertyDescriptor("RequiredCol", "string");
     requiredCol.setRequired(true);
     props.add(requiredCol);
 
@@ -1129,9 +1129,9 @@ public void testInsertOptionUpdate() throws Exception
 
     // import samples
     List<Map<String, Object>> rowsToAdd = new ArrayList<>();
-    rowsToAdd.add(CaseInsensitiveHashMap.of("name", "S-1", "intVal", 10, "AliquotedFrom", null, "RequriedCol", "a"));
-    rowsToAdd.add(CaseInsensitiveHashMap.of("name", null, "intVal", null, "AliquotedFrom", "S-1", "RequriedCol", null));
-    rowsToAdd.add(CaseInsensitiveHashMap.of("name", "S-2", "intVal", 20, "AliquotedFrom", null, "RequriedCol", "b"));
+    rowsToAdd.add(CaseInsensitiveHashMap.of("name", "S-1", "intVal", 10, "AliquotedFrom", null, "RequiredCol", "a"));
+    rowsToAdd.add(CaseInsensitiveHashMap.of("name", null, "intVal", null, "AliquotedFrom", "S-1", "RequiredCol", null));
+    rowsToAdd.add(CaseInsensitiveHashMap.of("name", "S-2", "intVal", 20, "AliquotedFrom", null, "RequiredCol", "b"));
 
     DataIteratorContext context = new DataIteratorContext();
     context.setInsertOption(QueryUpdateService.InsertOption.IMPORT);
@@ -1145,12 +1145,16 @@ public void testInsertOptionUpdate() throws Exception
     assertEquals(0.0, rows.get(0).get("aliquotvolume"));
     assertEquals(0, rows.get(0).get("availablealiquotcount"));
     assertEquals(0.0, rows.get(0).get("availablealiquotvolume"));
+
+    assertEquals("S-1-1", rows.get(1).get("name"));
     assertEquals(10, rows.get(1).get("intVal"));
     assertNull(rows.get(1).get("aliquotcount"));
     assertNull(rows.get(1).get("aliquotvolume"));
     assertNull(rows.get(1).get("availablealiquotcount"));
     assertNull(rows.get(1).get("availablealiquotvolume"));
-    assertEquals("b", rows.get(2).get("RequriedCol"));
+
+    assertEquals("S-2", rows.get(2).get("name"));
+    assertEquals("b", rows.get(2).get("RequiredCol"));
     assertEquals(0, rows.get(2).get("aliquotcount"));
     assertEquals(0.0, rows.get(2).get("aliquotvolume"));
     assertEquals(0, rows.get(2).get("availablealiquotcount"));
@@ -1177,12 +1181,12 @@ public void testInsertOptionUpdate() throws Exception
     assertEquals(0, rows.get(0).get("availablealiquotcount"));
     assertEquals(0.0, rows.get(0).get("availablealiquotvolume"));
     assertEquals(100, rows.get(1).get("intVal"));
-    assertEquals("a", rows.get(1).get("RequriedCol")); // absent columns are not blanked out
+    assertEquals("a", rows.get(1).get("RequiredCol")); // absent columns are not blanked out
     final String aliquotedFromLSID = (String) rows.get(1).get("AliquotedFromLSID");
     assertEquals(true, rows.get(1).get("IsAliquot"));
     assertEquals(100, rows.get(1).get("intVal"));
     assertEquals(200, rows.get(2).get("intVal"));
-    assertEquals("b", rows.get(2).get("RequriedCol")); // absent columns are not blanked out
+    assertEquals("b", rows.get(2).get("RequiredCol")); // absent columns are not blanked out
     assertEquals(0, rows.get(2).get("aliquotcount"));
     assertEquals(0.0, rows.get(2).get("aliquotvolume"));
     assertEquals(0, rows.get(2).get("availablealiquotcount"));

@@ -15,6 +15,7 @@
  */
 package org.labkey.api.action;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.IgnoresForbiddenProjectCheck;
@@ -31,8 +32,6 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.TroubleshooterPermission;
@@ -47,7 +46,6 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.springframework.web.servlet.mvc.Controller;
 
-import jakarta.servlet.http.HttpServletResponse;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -55,9 +53,6 @@ import java.util.Set;
 
 import static org.labkey.api.util.HttpUtil.Method;
 
-/**
- * Created by adam on 3/25/2016.
- */
 public abstract class PermissionCheckableAction implements Controller, PermissionCheckable, HasViewContext
 {
     private static final HttpUtil.Method[] arrayGetPost = new HttpUtil.Method[] {Method.GET, Method.POST};
@@ -216,10 +211,9 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
             contextualRoles = RoleManager.mergeContextualRoles(context, rolesAnnotation.value(), contextualRoles);
         }
 
-        // Policy must have all permissions in permissionsRequired
-        SecurityPolicy policy = SecurityPolicyManager.getPolicy(c);
+        // Must have all permissions in permissionsRequired
         if (!SecurityManager.hasAllPermissions(this.getClass().getName()+"_checkActionPermissions",
-                policy, user, permissionsRequired, contextualRoles))
+                c, user, permissionsRequired, contextualRoles))
             throw new UnauthorizedException();
 
         CSRF.Method csrfCheck = actionClass.isAnnotationPresent(CSRF.class) ? actionClass.getAnnotation(CSRF.class).value() : CSRF.Method.POST;
@@ -232,8 +226,8 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
         {
             permissionsAnyOf = new HashSet<>();
             Collections.addAll(permissionsAnyOf, requiresAnyOf.value());
-            if (!SecurityManager.hasAnyPermissions(this.getClass().getName()+"_checkActionPermissions",
-                    policy, user, permissionsAnyOf, contextualRoles))
+            if (!SecurityManager.hasAnyPermissions(this.getClass().getName() + "_checkActionPermissions",
+                    c, user, permissionsAnyOf, contextualRoles))
                 throw new UnauthorizedException();
         }
 

@@ -54,47 +54,49 @@ import static org.labkey.api.test.TestWhen.When.BVT;
  */
 public class MaterializedQueryHelper implements CacheListener, AutoCloseable
 {
-    private class Materialized
+    public static class Materialized
     {
+        MaterializedQueryHelper _mqh;
         private final long _created;
         private final String _cacheKey;
         private final String _fromSql;
         private final String _tableName;
         private final ArrayList<Invalidator> _invalidators = new ArrayList<>(3);
 
-        private final Lock _loadingLock = new ReentrantLock();
-        enum LoadingState { BEFORELOAD, LOADING, LOADED, ERROR };
-        private final AtomicReference<LoadingState> _loadingState = new AtomicReference<>(LoadingState.BEFORELOAD);
-        private RuntimeException _loadException = null;
+        protected final Lock _loadingLock = new ReentrantLock();
+        public enum LoadingState { BEFORELOAD, LOADING, LOADED, ERROR };
+        public final AtomicReference<LoadingState> _loadingState = new AtomicReference<>(LoadingState.BEFORELOAD);
+        public RuntimeException _loadException = null;
 
 
-        Materialized(String tableName, String cacheKey, long created, String sql)
+        public Materialized(MaterializedQueryHelper parent, String tableName, String cacheKey, long created, String sql)
         {
+            _mqh = parent;
             _created = created;
             _cacheKey = cacheKey;
             _tableName = tableName;
             _fromSql = sql;
         }
 
-        void addUpToDateQuery(SQLFragment uptodate)
+        public void addUpToDateQuery(SQLFragment uptodate)
         {
             if (null != uptodate)
-                _invalidators.add(new SqlInvalidator(uptodate));
+                _invalidators.add(new SqlInvalidator(_mqh, uptodate));
         }
 
-        void addMaxTimeToCache(long max)
+        public void addMaxTimeToCache(long max)
         {
             if (max != CacheManager.UNLIMITED)
                 _invalidators.add(new TimeInvalidator(max));
         }
 
-        void addInvalidator(Supplier<String> sup)
+        public void addInvalidator(Supplier<String> sup)
         {
             if (null != sup)
                 _invalidators.add(new SupplierInvalidator(sup));
         }
 
-        void reset()
+        public void reset()
         {
             long now = HeartBeat.currentTimeMillis();
             for (Invalidator i : _invalidators)
@@ -142,13 +144,13 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
                     selectInto.append(selectQuery);
                     selectInto.append("\n) _sql_");
                 }
-                new SqlExecutor(_scope).execute(selectInto);
+                new SqlExecutor(_mqh._scope).execute(selectInto);
 
                 try (var ignored = SpringActionController.ignoreSqlUpdates())
                 {
-                    for (String index : _indexes)
+                    for (String index : _mqh._indexes)
                     {
-                        new SqlExecutor(_scope).execute(StringUtils.replace(index, "${NAME}", _tableName));
+                        new SqlExecutor(_mqh._scope).execute(StringUtils.replace(index, "${NAME}", _tableName));
                     }
                 }
 
@@ -157,8 +159,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
             }
             catch (RuntimeException rex)
             {
-                _loadException = rex;
-                _loadingState.set(LoadingState.ERROR);
+                setError(rex);
                 throw _loadException;
             }
             finally
@@ -166,6 +167,12 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
                 if (lockAcquired)
                     _loadingLock.unlock();
             }
+        }
+
+        public void setError(RuntimeException rex)
+        {
+            _loadException = rex;
+            _loadingState.set(LoadingState.ERROR);
         }
     }
 
@@ -181,11 +188,11 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         INVALID         // invalid
     }
 
-    private abstract class Invalidator
+    public static abstract class Invalidator
     {
         private int _coalesceDelay = 0;
 
-        CacheCheck checkValid(long createdTime)
+        public CacheCheck checkValid(long createdTime)
         {
             boolean valid = stillValid(createdTime);
             if (valid)
@@ -194,26 +201,28 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
                 return CacheCheck.INVALID;
             return CacheCheck.COALESCE;
         }
-        abstract boolean stillValid(long createdTime);
+        public abstract boolean stillValid(long createdTime);
     }
 
 
-    private class SqlInvalidator extends Invalidator
+    private static class SqlInvalidator extends Invalidator
     {
+        final MaterializedQueryHelper mqh;
         final SQLFragment upToDateSql;
         final AtomicReference<String> result = new AtomicReference<>();
 
-        SqlInvalidator(SQLFragment sql)
+        SqlInvalidator(MaterializedQueryHelper mqh, SQLFragment sql)
         {
+            this.mqh = mqh;
             this.upToDateSql = sql;
         }
 
         /* Has anything changed since last time stillValid() was called, this method must keep its own state */
         @Override
-        boolean stillValid(long createdTime)
+        public boolean stillValid(long createdTime)
         {
             String prevResult = result.get();
-            String newResult = new SqlSelector(_scope, _uptodateQuery).getObject(String.class);
+            String newResult = new SqlSelector(mqh._scope, mqh._uptodateQuery).getObject(String.class);
             if (StringUtils.equals(prevResult,newResult))
                 return true;
             result.set(newResult);
@@ -222,7 +231,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
     }
 
 
-    private class TimeInvalidator extends Invalidator
+    private static class TimeInvalidator extends Invalidator
     {
         private final long _maxTime;
 
@@ -232,25 +241,25 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         }
 
         @Override
-        boolean stillValid(long createdTime)
+        public boolean stillValid(long createdTime)
         {
             return _maxTime != -1 && createdTime + _maxTime > HeartBeat.currentTimeMillis();
         }
     }
 
 
-    private class SupplierInvalidator extends Invalidator
+    public static class SupplierInvalidator extends Invalidator
     {
         private final Supplier<String> _supplier;
         private final AtomicReference<String> _result = new AtomicReference<>();
 
-        SupplierInvalidator(Supplier<String> sup)
+        public SupplierInvalidator(Supplier<String> sup)
         {
             _supplier = sup;
         }
 
         @Override
-        boolean stillValid(long createdTime)
+        public boolean stillValid(long createdTime)
         {
             String prevResult = _result.get();
             String newResult = _supplier.get();
@@ -268,14 +277,14 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
     }
 
 
-    private final String _prefix;
-    private final DbScope _scope;
+    protected final String _prefix;
+    protected final DbScope _scope;
     private final SQLFragment _selectQuery;
     private final boolean _isSelectIntoSql;
-    private final SQLFragment _uptodateQuery;
-    private final Supplier<String> _supplier;
+    protected final SQLFragment _uptodateQuery;
+    protected final Supplier<String> _supplier;
     private final List<String> _indexes = new ArrayList<>();
-    private final long _maxTimeToCache;
+    protected final long _maxTimeToCache;
     private final Map<String, Materialized> _map = Collections.synchronizedMap(new LinkedHashMap<>()
     {
         @Override
@@ -295,7 +304,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
 
     private boolean _closed = false;
 
-    private MaterializedQueryHelper(String prefix, DbScope scope, SQLFragment select, @Nullable SQLFragment uptodate, Supplier<String> supplier, @Nullable Collection<String> indexes, long maxTimeToCache,
+    protected MaterializedQueryHelper(String prefix, DbScope scope, SQLFragment select, @Nullable SQLFragment uptodate, Supplier<String> supplier, @Nullable Collection<String> indexes, long maxTimeToCache,
                                     boolean isSelectIntoSql)
     {
         _prefix = StringUtils.defaultString(prefix,"mat");
@@ -367,25 +376,33 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         return getFromSql(_selectQuery, _isSelectIntoSql, tableAlias);
     }
 
+    public SQLFragment getViewSourceSql()
+    {
+        return new SQLFragment(_selectQuery);
+    }
 
-    public void upsert(SQLFragment sqlf)
+
+    public int upsert(SQLFragment sqlf)
     {
         // We want to avoid materializing the table if it has never been used.
         if (null == _map.get(makeKey(null)))
         {
             var tx = _scope.getCurrentTransaction();
             if (null == tx || null == _map.get(makeKey(tx)))
-                return;
+                return -1;
         }
-        // We also don't want to execute the update if it will be materialized by the next user (e.g. after invalidtion check)
+        // We also don't want to execute the update if it will be materialized by the next user (e.g. after invalidation check)
         Materialized m = getMaterialized(true);
         if (Materialized.LoadingState.BEFORELOAD == m._loadingState.get())
-            return;
+            return -1;
 
         // execute incremental update
         SQLFragment copy = new SQLFragment(sqlf);
         copy.setSqlUnsafe(sqlf.getSQL().replace("${NAME}", m._tableName));
-        new SqlExecutor(_scope).execute(copy);
+        try (var ignored = SpringActionController.ignoreSqlUpdates())
+        {
+            return new SqlExecutor(_scope).execute(copy);
+        }
     }
 
 
@@ -399,6 +416,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
     public SQLFragment getFromSql(@NotNull SQLFragment selectQuery, boolean isSelectInto, String tableAlias)
     {
         Materialized materialized = getMaterializedAndLoad(selectQuery, isSelectInto);
+        incrementalUpdateBeforeSelect(materialized);
 
         _lastUsed.set(HeartBeat.currentTimeMillis());
         SQLFragment sqlf = new SQLFragment(materialized._fromSql);
@@ -409,6 +427,10 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         return sqlf;
     }
 
+
+    protected void incrementalUpdateBeforeSelect(Materialized m)
+    {
+    }
 
 
     /**
@@ -508,19 +530,22 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         throw new IllegalStateException("Failed to create materialized table");
     }
 
-
-    Materialized createMaterialized(String txCacheKey)
+    protected Materialized createMaterialized(String txCacheKey)
     {
         DbSchema temp = DbSchema.getTemp();
         String name = _prefix + "_" + GUID.makeHash();
-        Materialized materialized = new Materialized(name, txCacheKey, HeartBeat.currentTimeMillis(), "\"" + temp.getName() + "\".\"" + name + "\"");
+        Materialized materialized = new Materialized(this, name, txCacheKey, HeartBeat.currentTimeMillis(), "\"" + temp.getName() + "\".\"" + name + "\"");
+        initMaterialized(materialized);
+        return materialized;
+    }
+
+    protected void initMaterialized(Materialized materialized)
+    {
         materialized.addMaxTimeToCache(_maxTimeToCache);
         materialized.addUpToDateQuery(_uptodateQuery);
         materialized.addInvalidator(_supplier);
         materialized.reset();
-        return materialized;
     }
-
 
     /**
      *  To be consistent with CacheManager maxTimeToCache==0 means UNLIMITED, so we use maxTimeToCache==-1 to mean no caching, just materialize and return
@@ -550,15 +575,15 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
 
     public static class Builder implements org.labkey.api.data.Builder<MaterializedQueryHelper>
     {
-        private final String _prefix;
-        private final DbScope _scope;
-        private final SQLFragment _select;
+        protected final String _prefix;
+        protected final DbScope _scope;
+        protected final SQLFragment _select;
 
-        private boolean _isSelectInto = false;
-        private long _max = CacheManager.UNLIMITED;
-        private SQLFragment _uptodate = null;
-        private Supplier<String> _supplier = null;
-        private Collection<String> _indexes = new ArrayList<>();
+        protected boolean _isSelectInto = false;
+        protected long _max = CacheManager.UNLIMITED;
+        protected SQLFragment _uptodate = null;
+        protected Supplier<String> _supplier = null;
+        protected Collection<String> _indexes = new ArrayList<>();
 
         public Builder(String prefix, DbScope scope, SQLFragment select)
         {

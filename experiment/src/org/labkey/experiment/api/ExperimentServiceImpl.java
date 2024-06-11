@@ -44,6 +44,7 @@ import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.AssayTableMetadata;
 import org.labkey.api.assay.AssayWellExclusionService;
 import org.labkey.api.assay.DefaultAssayRunCreator;
+import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
@@ -171,7 +172,6 @@ import org.labkey.api.exp.xar.LSIDRelativizer;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.exp.xar.XarConstants;
 import org.labkey.api.files.FileContentService;
-import org.labkey.api.files.FileListener;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
@@ -292,6 +292,7 @@ import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ProtocolApplica
 import static org.labkey.api.exp.api.NameExpressionOptionService.NAME_EXPRESSION_REQUIRED_MSG;
 import static org.labkey.api.exp.api.NameExpressionOptionService.NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS;
 import static org.labkey.api.exp.api.ProvenanceService.PROVENANCE_PROTOCOL_LSID;
+import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.rollup;
 
 public class ExperimentServiceImpl implements ExperimentService, ObjectReferencer, SearchService.DocumentProvider
 {
@@ -4635,6 +4636,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         Integer[] actionIds = new SqlSelector(getExpSchema(), sql).getArray(Integer.class);
         List<ExpProtocolImpl> expProtocols = Arrays.stream(protocols).map(ExpProtocolImpl::new).collect(toList());
 
+        if (!c.hasPermission(user, AdminPermission.class) && !runs.isEmpty())
+            throw new UnauthorizedException("You do not have sufficient permissions to delete '" + (expProtocols.size() == 1 ? expProtocols.get(0).getName() : "the protocols") + "'.");
+
         AssayService assayService = AssayService.get();
 
         try (DbScope.Transaction transaction = ensureTransaction())
@@ -4680,7 +4684,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     for (Protocol protocol : protocols)
                     {
                         ExpProtocol protocolToDelete = new ExpProtocolImpl(protocol);
-
                         AssayProvider provider = assayService.getProvider(protocolToDelete);
                         if (provider != null)
                             provider.deleteProtocol(protocolToDelete, user, auditUserComment);
@@ -5108,7 +5111,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     {
                         ExpSampleType parentSampleType = sampleTypeRoots.getKey();
                         Set<Integer> rootSampleIds = sampleTypeRoots.getValue();
-                        SampleTypeService.get().recomputeSamplesRollup(rootSampleIds, parentSampleType.getMetricUnit(), container);
+                        int recomputeCount = SampleTypeService.get().recomputeSamplesRollup(rootSampleIds, parentSampleType.getMetricUnit(), container);
+                        if (0 < recomputeCount)
+                            SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(parentSampleType, rollup);
                     }
                 }
                 catch (SQLException e)
@@ -5120,7 +5125,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             // since we don't call onSamplesChanged() for deleted rows, need to tell someone to refresh the materialized view (if any)
             for (var st : sampleTypes.values())
                 if (null != st)
-                    SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(st, false);
+                    SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(st, SampleTypeServiceImpl.SampleChangeType.delete);
 
             // On successful commit, start task to remove items from search index
             final SearchService ss = SearchService.get();
@@ -6153,6 +6158,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         Domain d = dataClass.getDomain();
         Container dcContainer = dataClass.getContainer();
+        if (!dcContainer.hasPermission(user, AdminPermission.class))
+        {
+            if (dataClass.hasData())
+                throw new UnauthorizedException("You do not have sufficient permissions to delete this data class.");
+        }
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {

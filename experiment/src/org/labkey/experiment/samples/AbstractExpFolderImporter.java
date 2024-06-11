@@ -53,6 +53,8 @@ import java.util.function.Supplier;
 
 import static org.labkey.api.admin.FolderImportContext.IS_NEW_FOLDER_IMPORT_KEY;
 import static org.labkey.api.exp.XarContext.XAR_JOB_ID_NAME;
+import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.insert;
+import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.update;
 import static org.labkey.experiment.samples.AbstractExpFolderWriter.XAR_RUNS_NAME;
 import static org.labkey.experiment.samples.AbstractExpFolderWriter.XAR_RUNS_XML_NAME;
 
@@ -150,8 +152,9 @@ public abstract class AbstractExpFolderImporter implements FolderImporter
                     // handle aliquot rollup calculation for all sample types, this is a noop for the data class importer
                     for (ExpSampleType sampleType : typesReader.getSampleTypes())
                     {
-                        SampleTypeService.get().recomputeSampleTypeRollup(sampleType, ctx.getContainer());
-                        SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(sampleType, false);
+                        int count = SampleTypeService.get().recomputeSampleTypeRollup(sampleType, ctx.getContainer());
+                        SampleTypeServiceImpl.SampleChangeType reason = count > 0 ? update : insert;
+                        SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(sampleType, reason);
                     }
                 }
                 else

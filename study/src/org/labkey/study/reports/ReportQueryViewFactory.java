@@ -113,7 +113,7 @@ public class ReportQueryViewFactory
         if (policy.isEmpty())
             return true;    // normal permission checking
 
-        if (!policy.hasPermission(user, perm))
+        if (!descriptor.hasPermission(user, perm))
             throw new UnauthorizedException();
 
         return false;   // user is OK, don't check permissions

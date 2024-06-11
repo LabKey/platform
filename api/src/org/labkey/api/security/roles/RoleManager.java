@@ -227,6 +227,16 @@ public class RoleManager
         SecurityPolicyManager.removeAll();
     }
 
+    // Unregisters the role, but not the associated permissions, since that could be dangerous, in theory. At the
+    // moment, though, this only used in tests. Consider adding an unregisterPermissions flag and/or unregistering only
+    // permissions that implement TestPermission.
+    public static void unregisterRole(Role role)
+    {
+        removeFromMaps(role);
+        _roles.remove(role);
+        SecurityPolicyManager.removeAll();
+    }
+
     private static void addToMaps(Role role, Predicate<Role> nameVerifier)
     {
         _classToRoleMap.put(role.getClass(), role);
@@ -236,12 +246,26 @@ public class RoleManager
             .forEach(alias-> addToNameToRoleMap(alias, role, nameVerifier));
     }
 
+    private static void removeFromMaps(Role role)
+    {
+        _classToRoleMap.remove(role.getClass());
+        removeFromNameToRoleMap(role.getUniqueName());
+
+        role.getSerializationAliases()
+            .forEach(RoleManager::removeFromNameToRoleMap);
+    }
+
     private static void addToNameToRoleMap(String name, Role role, Predicate<Role> nameVerifier)
     {
         Role previous = _nameToRoleMap.put(name, role);
 
         if (!nameVerifier.test(previous))
             throw new IllegalStateException("A role was already registered with name \"" + name + "\" by " + previous);
+    }
+
+    private static void removeFromNameToRoleMap(String name)
+    {
+        _nameToRoleMap.remove(name);
     }
 
     /**

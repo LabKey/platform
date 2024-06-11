@@ -537,7 +537,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
     private WebdavResource getWebdavUrlFromAbsoluteFilePath(@NotNull String absoluteFilePath, Container container)
     {
         WebdavResource targetResource = null;
-        Set<Map<String, Object>> children = FileContentServiceImpl.getInstance().getNodes(false, null, null, container);
+        Set<Map<String, Object>> children = FileContentServiceImpl.getInstance().getNodes(false, null, container);
         for (Map<String, Object> child : children)
         {
             String rootName = (String) child.get("name");

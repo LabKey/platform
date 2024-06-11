@@ -596,7 +596,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             return true;
 
         // only the tabular formats will have the well location field
-        return !data.get(0).containsKey(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME);
+        return !data.get(0).containsKey(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME) && !data.get(0).containsKey("Well Location");
     }
 
     private Supplier<ValidatingDataRowIterator> parsePlateRows(

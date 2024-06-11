@@ -20,6 +20,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
+import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -79,9 +80,9 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.SampleStatusService;
-import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.FileColumnValueMapper;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryKey;
@@ -109,6 +110,7 @@ import org.labkey.experiment.api.ExpDataClassDataTableImpl;
 import org.labkey.experiment.api.ExpMaterialTableImpl;
 import org.labkey.experiment.api.ExpSampleTypeImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
+import org.labkey.experiment.api.SampleTypeServiceImpl;
 import org.labkey.experiment.api.SampleTypeUpdateServiceDI;
 import org.labkey.experiment.controllers.exp.RunInputOutputBean;
 import org.springframework.web.multipart.MultipartFile;
@@ -116,6 +118,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.sql.SQLException;
 import java.sql.Time;
 import java.util.ArrayList;
@@ -164,6 +167,7 @@ import static org.labkey.api.exp.query.ExpMaterialTable.Column.SampleState;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.StoredAmount;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Units;
 import static org.labkey.api.query.AbstractQueryImportAction.configureLoader;
+import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.insert;
 import static org.labkey.experiment.api.SampleTypeUpdateServiceDI.PARENT_RECOMPUTE_NAME_SET;
 import static org.labkey.experiment.api.SampleTypeUpdateServiceDI.ROOT_RECOMPUTE_ROWID_COL;
 import static org.labkey.experiment.api.SampleTypeUpdateServiceDI.PARENT_RECOMPUTE_NAME_COL;
@@ -618,8 +622,10 @@ public class ExpDataIterators
             if (!hasNext)
             {
                 StudyPublishService sps = StudyPublishService.get();
-                if (sps != null)
+                if (sps != null && (!_derivativeKeys.isEmpty() || !_rows.isEmpty()))
                 {
+                    // Make sure the sampletype invalidate (POSTCOMMIT task) is queued before the autoLink task.
+                    SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(_sampleType, insert);
                     _schema.getDbSchema().getScope().getCurrentTransaction().addCommitTask(() -> {
                         try
                         {
@@ -2066,8 +2072,9 @@ public class ExpDataIterators
     {
         Supplier<Object>[] suppliers;
         String[] savedFileName;
+        FileColumnValueMapper fileColumnValueMapping = new FileColumnValueMapper();
 
-        FileLinkDataIterator(final DataIterator in, final DataIteratorContext context, Container c, User user, String file_link_dir_name)
+        FileLinkDataIterator(final DataIterator in, final DataIteratorContext context, Container c, User user, String fileLinkDirName)
         {
             super(in);
             suppliers = new Supplier[in.getColumnCount() + 1];
@@ -2091,7 +2098,8 @@ public class ExpDataIterators
                         {
                             try
                             {
-                                Object file = AbstractQueryUpdateService.saveFile(user, c, col.getName(), value, file_link_dir_name);
+                                Path path = AssayFileWriter.getUploadDirectoryPath(c, fileLinkDirName);
+                                Object file = fileColumnValueMapping.saveFileColumnValue(user, c, path, col.getName(), value);
                                 assert file instanceof File;
                                 value = ((File)file).getPath();
                                 savedFileName[index] = (String)value;
