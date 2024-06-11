@@ -112,7 +112,7 @@ public class MutatingSqlDetector
             "DELETE", true,
             "DROP", true,
             "INSERT", true,
-                "MERGE", true,
+            "MERGE", true,
             "TRUNCATE", true,
             "UPDATE", true
         ));
