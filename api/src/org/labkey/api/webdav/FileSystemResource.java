@@ -142,14 +142,6 @@ public class FileSystemResource extends AbstractWebdavResource
             .toList());
     }
 
-    @Deprecated // Used only by tests. TODO: Migrate callers to SecurableResource variant
-    public FileSystemResource(Path path, File file, SecurityPolicy policy)
-    {
-        this(path);
-        _files = Collections.singletonList(new FileInfo(file));
-        setPolicy(policy);
-    }
-
     public FileSystemResource(Path path, File file, SecurableResource resource)
     {
         this(path);

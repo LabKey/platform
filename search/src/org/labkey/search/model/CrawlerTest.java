@@ -21,14 +21,11 @@ import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurableResource;
-import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
-import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.webdav.FileSystemResource;
@@ -48,7 +45,7 @@ public class CrawlerTest extends Assert
     public void test()
     {
         DavCrawler cr = new DavCrawler();
-        cr.setResolver(new TestResolver(ModuleLoader.getInstance().getCoreModule().getExplodedPath()));
+        cr.setResolver(new TestResolver(ModuleLoader.getInstance().getCoreModule().getExplodedPath(), JunitUtil.getTestContainer()));
         cr.startFull(Path.rootPath, true);
     }
 
@@ -57,16 +54,13 @@ public class CrawlerTest extends Assert
     //
     class TestResolver implements WebdavResolver, SecurableResource
     {
-        final File _base;
-        final SecurityPolicy _policy;
+        private final File _base;
+        private final Container _c;
 
-        TestResolver(File f)
+        TestResolver(File f, Container c)
         {
             _base = f;
-            MutableSecurityPolicy policy = new MutableSecurityPolicy(this);
-            policy.addRoleAssignment(UserManager.getGuestUser(), ReaderRole.class);
-            policy.addRoleAssignment(User.getSearchUser(), ReaderRole.class);
-            _policy = policy;
+            _c = c;
         }
         
         @Override
@@ -84,7 +78,7 @@ public class CrawlerTest extends Assert
         @Override
         public WebdavResource lookup(Path path)
         {
-            return new FileSystemResource(path, FileUtil.appendPath(_base, path), _policy);
+            return new FileSystemResource(path, FileUtil.appendPath(_base, path), _c);
         }
 
         @Override
@@ -140,7 +134,7 @@ public class CrawlerTest extends Assert
         @NotNull
         public Container getResourceContainer()
         {
-            return null;
+            return _c;
         }
 
         @Override
