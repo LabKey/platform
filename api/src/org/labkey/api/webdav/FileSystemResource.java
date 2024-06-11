@@ -175,7 +175,7 @@ public class FileSystemResource extends AbstractWebdavResource
     protected void setSecurableResource(SecurableResource resource)
     {
         super.setSecurableResource(resource);
-        setSearchProperty(SearchService.PROPERTY.securableResourceId, resource.getResourceId());
+        setSearchProperty(SearchService.PROPERTY.securableResourceId, null != resource ? resource.getResourceId() : null);
     }
 
     @Override
@@ -184,7 +184,6 @@ public class FileSystemResource extends AbstractWebdavResource
         super.setPolicy(policy);
         setSearchProperty(SearchService.PROPERTY.securableResourceId, policy.getResourceId());
     }
-
 
     @Override
     public boolean exists()
@@ -197,7 +196,6 @@ public class FileSystemResource extends AbstractWebdavResource
 
         return getType() != FileType.notpresent;
     }
-
 
     private FileType getType()
     {
@@ -216,7 +214,6 @@ public class FileSystemResource extends AbstractWebdavResource
         return FileType.notpresent;
     }
 
-
     @Override
     public boolean isCollection()
     {
@@ -226,13 +223,11 @@ public class FileSystemResource extends AbstractWebdavResource
         return exists() && getPath().isDirectory();
     }
 
-
     @Override
     public boolean isFile()
     {
         return _files != null && getType() == FileType.file;
     }
-
 
     protected FileInfo getFileInfo()
     {
@@ -250,7 +245,6 @@ public class FileSystemResource extends AbstractWebdavResource
         return _files.get(0);
     }
 
-
     @Override
     public File getFile()
     {
@@ -259,7 +253,6 @@ public class FileSystemResource extends AbstractWebdavResource
             return null;
         return f.getFile();
     }
-
 
     @Override
     public FileStream getFileStream(User user) throws IOException
@@ -270,7 +263,6 @@ public class FileSystemResource extends AbstractWebdavResource
             return null;
         return new FileStream.FileFileStream(getFile());
     }
-
 
     @Override
     public InputStream getInputStream(User user) throws IOException

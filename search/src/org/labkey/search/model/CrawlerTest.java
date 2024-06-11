@@ -27,6 +27,7 @@ import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
@@ -41,29 +42,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-/**
- * User: matthewb
- * Date: Dec 12, 2009
- * Time: 3:51:51 PM
- */
 public class CrawlerTest extends Assert
 {
-
     @Test
     public void test()
     {
         DavCrawler cr = new DavCrawler();
         cr.setResolver(new TestResolver(ModuleLoader.getInstance().getCoreModule().getExplodedPath()));
         cr.startFull(Path.rootPath, true);
-
-        long start = System.currentTimeMillis();
     }
 
-    
     //
     // TEST
     //
-
     class TestResolver implements WebdavResolver, SecurableResource
     {
         final File _base;
@@ -93,7 +84,7 @@ public class CrawlerTest extends Assert
         @Override
         public WebdavResource lookup(Path path)
         {
-            return new FileSystemResource(path, new File(_base, path.toString()), _policy);
+            return new FileSystemResource(path, FileUtil.appendPath(_base, path), _policy);
         }
 
         @Override
@@ -109,7 +100,7 @@ public class CrawlerTest extends Assert
         }
 
         // SecurableResource
-        String _guid = GUID.makeGUID();
+        private final String _guid = GUID.makeGUID();
 
         @Override
         @NotNull
@@ -166,7 +157,6 @@ public class CrawlerTest extends Assert
         }
     }
 
-
     class TestSavePaths implements DavCrawler.SavePaths
     {
         Map<Path, Pair<Date,Date>> collections = new HashMap<>();
@@ -221,14 +211,12 @@ public class CrawlerTest extends Assert
             return ret;
         }
 
-
         @Override
         public Date getNextCrawl()
         {
             return new Date(System.currentTimeMillis());
         }
         
-
         @Override
         public synchronized Map<String, DavCrawler.ResourceInfo> getFiles(Path path)
         {
