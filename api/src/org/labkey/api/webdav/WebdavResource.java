@@ -32,11 +32,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-/**
- * User: matthewb
- * Date: Apr 28, 2008
- * Time: 11:42:10 AM
- */
 public interface WebdavResource extends Resource
 {
     @Override

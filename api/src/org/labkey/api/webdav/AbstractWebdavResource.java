@@ -35,8 +35,6 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -329,13 +327,6 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         return true;
     }
 
-    @Deprecated
-    protected SecurityPolicy getPolicy()
-    {
-        assert _resource != null;
-        return SecurityPolicyManager.getPolicy(_resource);
-    }
-
     protected SecurableResource getSecurableResource()
     {
         return _resource;
@@ -357,6 +348,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     @Override
     public boolean canRead(User user, boolean forRead)
     {
+        // TODO: This looks wrong
         if ("/".equals(getPath()))
             return true;
         try
@@ -380,14 +372,14 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     {
         Set<Role> roles = user.equals(getCreatedBy()) ? RoleManager.roleSet(OwnerRole.class) : Set.of();
         return hasAccess(user) && !user.isGuest() &&
-                SecurityManager.hasAllPermissions(null, getPolicy(), user, Set.of(UpdatePermission.class), roles);
+                SecurityManager.hasAllPermissions(null, getSecurableResource(), user, Set.of(UpdatePermission.class), roles);
     }
 
     @Override
     public boolean canCreate(User user, boolean forCreate)
     {
         return hasAccess(user) && !user.isGuest() &&
-                SecurityManager.hasAllPermissions(null, getPolicy(), user, Set.of(InsertPermission.class), Set.of());
+                SecurityManager.hasAllPermissions(null, getSecurableResource(), user, Set.of(InsertPermission.class), Set.of());
     }
 
     @Override
@@ -419,7 +411,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
 
     public Set<Class<? extends Permission>> getPermissions(User user)
     {
-        return SecurityManager.getPermissions(getPolicy(), user, Set.of());
+        return SecurityManager.getPermissions(getSecurableResource(), user, Set.of());
     }
 
     @Override

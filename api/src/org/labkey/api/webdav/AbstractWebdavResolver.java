@@ -48,7 +48,7 @@ public abstract class AbstractWebdavResolver implements WebdavResolver
         Path path = getRootPath().relativize(fullPath).normalize();
 
         WebdavResource root = getRoot();
-        if (path.size() == 0)
+        if (path.isEmpty())
             return new LookupResult(this,root);
 
         // start at the root and work down, to avoid lots of cache misses
@@ -173,7 +173,6 @@ public abstract class AbstractWebdavResolver implements WebdavResolver
         }
     }
 
-
     public abstract class AbstractWebFolderResource extends AbstractWebdavResourceCollection implements WebdavResolver.WebFolder
     {
         protected WebdavResolver _resolver;
@@ -264,7 +263,6 @@ public abstract class AbstractWebdavResolver implements WebdavResolver
             return _children;
         }
 
-
         @Override
         public boolean canCreateCollection(User user, boolean forCreate)
         {
@@ -296,7 +294,6 @@ public abstract class AbstractWebdavResolver implements WebdavResolver
             return false;
         }
 
-
         @Override
         @NotNull
         public Collection<String> listNames()
@@ -308,7 +305,6 @@ public abstract class AbstractWebdavResolver implements WebdavResolver
             Collections.sort(list);
             return list;
         }
-
     }
 
     public abstract class AbstractWebdavListener extends ContainerManager.AbstractContainerListener
@@ -373,20 +369,18 @@ public abstract class AbstractWebdavResolver implements WebdavResolver
             }
         }
 
-
         Path getParentPath(Container c)
         {
             Path p = c.getParsedPath();
-            if (p.size() == 0)
+            if (p.isEmpty())
                 throw new IllegalArgumentException();
             return p.getParent();
         }
 
-
         Path resolveSibling(Container c, String name)
         {
             Path p = c.getParsedPath();
-            if (p.size() == 0)
+            if (p.isEmpty())
                 throw new IllegalArgumentException();
             return p.getParent().append(name);
         }

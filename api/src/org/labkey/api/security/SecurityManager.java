@@ -3208,12 +3208,6 @@ public class SecurityManager
         return validRecipients;
     }
 
-    @Deprecated // TODO: Migrate two remaining callers in AbstractWebdavResource
-    public static boolean hasAllPermissions(@Nullable String logMsg, SecurityPolicy policy, UserPrincipal principal, Set<Class<? extends Permission>> perms, Set<Role> contextualRoles)
-    {
-        return hasPermissions(logMsg, policy, principal, perms, contextualRoles, HasPermissionOption.ALL);
-    }
-
     public static boolean hasAllPermissions(@Nullable String logMsg, SecurableResource resource, UserPrincipal principal, Set<Class<? extends Permission>> perms, Set<Role> contextualRoles)
     {
         return hasPermissions(logMsg, resource, principal, perms, contextualRoles, HasPermissionOption.ALL);
@@ -3224,27 +3218,21 @@ public class SecurityManager
         return hasPermissions(logMsg, resource, principal, perms, contextualRoles, HasPermissionOption.ANY);
     }
 
-    private static boolean hasPermissions(@Nullable String logMsg, SecurableResource resource, UserPrincipal principal, Set<Class<? extends Permission>> permissions, Set<Role> contextualRoles, HasPermissionOption opt)
-    {
-        return hasPermissions(logMsg, SecurityPolicyManager.getPolicy(resource), principal, permissions, contextualRoles, opt);
-    }
-
     /**
      * This is a choke point for checking permissions. It handles SecurityPolicy permissions, impersonation (via User
      * object), locked projects, and contextual roles. This lets the SecurityPolicy object just handle its own ACL-like
      * functionality e.g. computing the permissions that it explicitly assigns (resolving roles and groups).
      */
-    @Deprecated // TODO: dependent on AbstractWebdavResource migration (see above)
-    private static boolean hasPermissions(@Nullable String logMsg, SecurityPolicy policy, UserPrincipal principal, Set<Class<? extends Permission>> permissions, Set<Role> contextualRoles, HasPermissionOption opt)
+    private static boolean hasPermissions(@Nullable String logMsg, SecurableResource resource, UserPrincipal principal, Set<Class<? extends Permission>> permissions, Set<Role> contextualRoles, HasPermissionOption opt)
     {
         try
         {
             SecurityLogger.indent(logMsg);
             permissions.forEach(SecurityPolicy::testPermissionIsRegistered);
 
-            var granted = getPermissions(policy, principal, contextualRoles);
+            var granted = getPermissions(resource, principal, contextualRoles);
             boolean ret = opt.accept(granted, permissions);
-            SecurityLogger.log("SecurityPolicy.hasPermissions " + permissions, principal, policy, ret);
+            SecurityLogger.log("SecurityPolicy.hasPermissions " + permissions, principal, resource, ret);
 
             return ret;
         }
@@ -3256,18 +3244,14 @@ public class SecurityManager
 
     public static Set<Class<? extends Permission>> getPermissions(SecurableResource resource, UserPrincipal principal, Set<Role> contextualRoles)
     {
-        return getPermissions(SecurityPolicyManager.getPolicy(resource), principal, contextualRoles);
-    }
-
-    @Deprecated // TODO: dependent on AbstractWebdavResource migration
-    public static Set<Class<? extends Permission>> getPermissions(SecurityPolicy policy, UserPrincipal principal, Set<Role> contextualRoles)
-    {
-        if (policy == null)
+        if (null == resource || null == principal)
             return Set.of();
 
-        Container c = ContainerManager.getForId(policy.getContainerId());
-        if (null == principal || (null != c && (principal instanceof User && c.isForbiddenProject((User) principal))))
+        Container c = resource.getResourceContainer();
+        if (principal instanceof User user && c.isForbiddenProject(user))
             return Set.of();
+
+        SecurityPolicy policy = SecurityPolicyManager.getPolicy(resource);
 
         Stream<Role> roles = principal.getAssignedRoles(policy).stream()
             .filter(Objects::nonNull);

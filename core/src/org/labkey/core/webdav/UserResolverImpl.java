@@ -17,13 +17,9 @@ package org.labkey.core.webdav;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.security.RoleAssignment;
-import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.roles.EditorRole;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.Result;
 import org.labkey.api.view.HttpView;
@@ -34,16 +30,11 @@ import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResource;
 
 import java.io.File;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
-/**
- * Created by iansigmon on 6/20/16.
- */
 public class UserResolverImpl extends AbstractWebdavResolver
 {
     private static final UserResolverImpl _instance = new UserResolverImpl(Path.parse(UsersCollectionResource.USERS_LINK));
@@ -181,16 +172,8 @@ public class UserResolverImpl extends AbstractWebdavResolver
             if (!r.success() || !r.get().isDirectory())
                 return null;
             File fileRoot = r.get();
-            SecurityPolicy p = new SecurityPolicy
-            (
-                user.getEntityId(),
-                User.class.getName(),
-                ContainerManager.getRoot().getId(),
-                Arrays.asList(new RoleAssignment(user.getEntityId(), user, RoleManager.getRole(EditorRole.class))),
-                new Date()
-            );
 
-            return new FileSystemResource(this, Path.toPathPart(user.getName()), fileRoot, p);
+            return new FileSystemResource(this, Path.toPathPart(user.getName()), fileRoot, ContainerManager.getForId(getContainerId()));
         }
 
         @Override

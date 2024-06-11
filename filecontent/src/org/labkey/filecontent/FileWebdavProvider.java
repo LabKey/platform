@@ -166,7 +166,6 @@ public class FileWebdavProvider implements WebdavService.Provider
         }
     }
 
-
     static class _FilesetsFolder extends AbstractWebdavResourceCollection
     {
         Container _c;

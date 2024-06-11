@@ -28,8 +28,6 @@ import java.util.List;
 
 /**
  * Convenience base class for WebDav entities that contain other collections or file-style resources.
- * User: matthewb
- * Date: Oct 22, 2008
  */
 public abstract class AbstractWebdavResourceCollection extends AbstractWebdavResource
 {
@@ -104,12 +102,5 @@ public abstract class AbstractWebdavResourceCollection extends AbstractWebdavRes
                 list.add(r);
         }
         return list;
-    }
-
-    @Override
-    @NotNull
-    public Collection<WebdavResolver.History> getHistory()
-    {
-        return Collections.emptyList();
     }
 }

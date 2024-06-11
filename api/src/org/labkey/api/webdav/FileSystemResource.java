@@ -43,8 +43,6 @@ import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.CanSeeAuditLogRole;
@@ -112,16 +110,6 @@ public class FileSystemResource extends AbstractWebdavResource
         this(folder.append(name));
     }
 
-    @Deprecated // Down to one caller. TODO: Migrate
-    public FileSystemResource(WebdavResource folder, Path.Part name, File file, SecurityPolicy policy)
-    {
-        this(folder.getPath(), name);
-        _folder = folder;
-        _name = name.toString();
-        setPolicy(policy);
-        _files = Collections.singletonList(new FileInfo(FileUtil.getAbsoluteCaseSensitiveFile(file)));
-    }
-
     public FileSystemResource(WebdavResource folder, Path.Part name, File file, SecurableResource resource)
     {
         this(folder.getPath(), name);
@@ -169,23 +157,6 @@ public class FileSystemResource extends AbstractWebdavResource
     {
         super.setSecurableResource(resource);
         setSearchProperty(SearchService.PROPERTY.securableResourceId, null != resource ? resource.getResourceId() : null);
-    }
-
-    @Override
-    protected SecurityPolicy getPolicy()
-    {
-        SecurableResource resource = getSecurableResource();
-        return resource != null ? SecurityPolicyManager.getPolicy(resource) : _policy;
-    }
-
-    @Deprecated
-    private SecurityPolicy _policy;
-
-    @Deprecated
-    protected void setPolicy(SecurityPolicy policy)
-    {
-        _policy = policy;
-        setSearchProperty(SearchService.PROPERTY.securableResourceId, policy.getResourceId());
     }
 
     @Override
@@ -332,14 +303,12 @@ public class FileSystemResource extends AbstractWebdavResource
         }
     }
 
-
     @Override
     public void moveFrom(User user, WebdavResource src) throws IOException, DavException
     {
         super.moveFrom(user, src);
         resetMetadata();
     }
-
 
     private void resetMetadata()
     {
@@ -375,7 +344,6 @@ public class FileSystemResource extends AbstractWebdavResource
         return result;
     }
 
-
     @Override
     public Collection<WebdavResource> list()
     {
@@ -390,14 +358,12 @@ public class FileSystemResource extends AbstractWebdavResource
         return resources;
     }
 
-
     @Override
     public WebdavResource find(Path.Part name)
     {
         return new FileSystemResource(this, name);
     }
 
-    
     @Override
     public long getCreated()
     {
