@@ -17,7 +17,6 @@
 package org.labkey.experiment.api;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -800,9 +799,9 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         return ret;
     }
 
-    public void onSamplesChanged(User user, List<Material> materials)
+    public void onSamplesChanged(User user, List<Material> materials, SampleTypeServiceImpl.SampleChangeType reason)
     {
-        SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(this, false);
+        SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(this, reason);
 
         ExpProtocol[] protocols = getProtocols(user);
         if (protocols.length != 0)
