@@ -1194,7 +1194,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             {
                 RuntimeException rex = UnexpectedException.wrap(ex);
                 materialized.setError(rex);
-                // The only time I'd expect and error is due to a schema change race-condition, but that can happen in any code path.
+                // The only time I'd expect an error is due to a schema change race-condition, but that can happen in any code path.
+
                 // Ensure that next refresh starts clean
                 _materializedQueries.remove(_lsid);
                 getInvalidateCounters(_lsid).update.incrementAndGet();
