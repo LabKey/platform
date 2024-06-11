@@ -38,7 +38,7 @@ public interface AttachmentDirectory extends AttachmentParent
     @Deprecated
     File getFileSystemDirectory() throws MissingRootDirectoryException;
     Path getFileSystemDirectoryPath() throws MissingRootDirectoryException;
-    Path getFileSystemDirectoryPath(Container container) throws MissingRootDirectoryException;
+    Path getFileSystemDirectoryPath(Container container, boolean create) throws MissingRootDirectoryException;
 
     void addAttachment(User user, AttachmentFile attachment) throws IOException;
     void deleteAttachment(User user, @Nullable String name);

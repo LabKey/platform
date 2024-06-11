@@ -37,8 +37,6 @@ import org.labkey.api.module.Module;
 import org.labkey.api.search.SearchScope;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurableResource;
-import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.MultiPhaseCPUTimer.InvocationTimer;
@@ -51,11 +49,6 @@ import java.util.Set;
 
 import static org.apache.lucene.search.DocIdSetIterator.NO_MORE_DOCS;
 
-/*
-* User: adam
-* Date: Dec 16, 2009
-* Time: 1:36:39 PM
-*/
 class SecurityQuery extends Query
 {
     private final User _user;
@@ -176,8 +169,7 @@ class SecurityQuery extends Query
         if (null == canRead)
         {
             SecurableResource sr = new _SecurableResource(resourceId, _containerIds.get(containerId));
-            SecurityPolicy p = SecurityPolicyManager.getPolicy(sr);
-            canRead = p.hasPermission(_user, ReadPermission.class);
+            canRead = sr.hasPermission(_user, ReadPermission.class);
             _securableResourceIds.put(resourceId, canRead);
         }
 

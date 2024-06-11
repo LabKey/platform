@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -2033,7 +2034,16 @@ public class NameGenerator
                         ColumnInfo pkCol = pkCols.get(0);
                         // convert the rootValue to the target pkColumn type
                         if (rootValue instanceof String && !pkCol.isStringType())
-                            rootValue = ConvertUtils.convert((String)rootValue, pkCol.getJavaClass());
+                        {
+                            try
+                            {
+                                rootValue = ConvertUtils.convert((String)rootValue, pkCol.getJavaClass());
+                            }
+                            catch (ConversionException x)
+                            {
+                                throw new IllegalArgumentException(x);
+                            }
+                        }
 
                         // Cache lookupValues by (rootName, rootValue, fieldKey) -> lookupValue
                         // CONSIDER: Cache key could be (lookupSchema, lookupQuery, lookupColName, value)

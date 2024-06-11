@@ -20,30 +20,37 @@ public enum MicrosoftSqlServerVersion
         - http://sqlserverbuilds.blogspot.se/
      */
 
-    // We support 2014 and higher as the primary data source, but allow 2012/2008/2008R2 as an external data source
-    SQL_SERVER_UNSUPPORTED(Integer.MIN_VALUE, true, false, false, null),
-    SQL_SERVER_2008(100, false, true, false, MicrosoftSqlServer2008R2Dialect::new),
-    SQL_SERVER_2012(110, false, true, false, MicrosoftSqlServer2012Dialect::new),
-    SQL_SERVER_2014(120, false, true, true, MicrosoftSqlServer2014Dialect::new),
-    SQL_SERVER_2016(130, false, true, true, MicrosoftSqlServer2016Dialect::new),
-    SQL_SERVER_2017(140, false, true, true, MicrosoftSqlServer2017Dialect::new),
-    SQL_SERVER_2019(150, false, true, true, MicrosoftSqlServer2019Dialect::new),
-    SQL_SERVER_2022(160, false, true, true, MicrosoftSqlServer2022Dialect::new),
-    SQL_SERVER_FUTURE(170, false, false, true, MicrosoftSqlServer2022Dialect::new);
+    // We support 2014 and higher as the primary data source, but allow 2008+ as an external data source
+    SQL_SERVER_UNSUPPORTED(Integer.MIN_VALUE, "Unknown", true, false, false, null),
+    SQL_SERVER_2008(100, "2008", true, true, false, MicrosoftSqlServer2008R2Dialect::new),
+    SQL_SERVER_2012(110, "2012", true, true, false, MicrosoftSqlServer2012Dialect::new),
+    SQL_SERVER_2014(120, "2014", true, true, true, MicrosoftSqlServer2014Dialect::new),
+    SQL_SERVER_2016(130, "2016", false, true, true, MicrosoftSqlServer2016Dialect::new),
+    SQL_SERVER_2017(140, "2017", false, true, true, MicrosoftSqlServer2017Dialect::new),
+    SQL_SERVER_2019(150, "2019", false, true, true, MicrosoftSqlServer2019Dialect::new),
+    SQL_SERVER_2022(160, "2022", false, true, true, MicrosoftSqlServer2022Dialect::new),
+    SQL_SERVER_FUTURE(170, "Unknown", false, false, true, MicrosoftSqlServer2022Dialect::new);
 
     private final int _version;
+    private final String _year;
     private final boolean _deprecated;
     private final boolean _tested;
     private final boolean _allowedAsPrimaryDataSource;
     private final Supplier<? extends MicrosoftSqlServer2008R2Dialect> _dialectFactory;
 
-    MicrosoftSqlServerVersion(int version, boolean deprecated, boolean tested, boolean allowedAsPrimaryDataSource, Supplier<? extends MicrosoftSqlServer2008R2Dialect> dialectFactory)
+    MicrosoftSqlServerVersion(int version, String year, boolean deprecated, boolean tested, boolean allowedAsPrimaryDataSource, Supplier<? extends MicrosoftSqlServer2008R2Dialect> dialectFactory)
     {
         _version = version;
+        _year = year;
         _deprecated = deprecated;
         _tested = tested;
         _allowedAsPrimaryDataSource = allowedAsPrimaryDataSource;
         _dialectFactory = dialectFactory;
+    }
+
+    public String getYear()
+    {
+        return _year;
     }
 
     // Should LabKey warn administrators that support for this SQL Server version will be removed soon?

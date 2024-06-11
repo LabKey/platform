@@ -101,7 +101,7 @@ public class TsvDataSerializer implements DataExchangeHandler.DataSerializer
         DataLoaderSettings loaderSettings = new DataLoaderSettings();
         loaderSettings.setAllowUnexpectedColumns(true);
 
-        try (DataLoader loader = AbstractAssayTsvDataHandler.createLoaderForImport(runData, dataDomain, loaderSettings, shouldInferTypes))
+        try (DataLoader loader = AbstractAssayTsvDataHandler.createLoaderForImport(runData, null, dataDomain, loaderSettings, shouldInferTypes))
         {
             return loader.load();
         }

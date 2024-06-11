@@ -760,7 +760,7 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
     }
 
     @Override
-    public PipelineStatusFile getStatusFile(int rowId)
+    public PipelineStatusFileImpl getStatusFile(int rowId)
     {
         return PipelineStatusManager.getStatusFile(rowId);
     }
@@ -968,6 +968,17 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
             return null;
         }
         return statusFile.getRowId();
+    }
+
+    @Override
+    public String getJobGUID(User u, Container c, int rowId)
+    {
+        PipelineStatusFileImpl statusFile = getStatusFile(rowId);
+        if (statusFile == null || !statusFile.getContainerId().equalsIgnoreCase(c.getId()))
+        {
+            return null;
+        }
+        return statusFile.getJobId();
     }
 
     @Override

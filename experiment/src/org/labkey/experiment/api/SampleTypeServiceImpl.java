@@ -1047,16 +1047,17 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             }
 
             errors = DomainUtil.updateDomainDescriptor(original, update, container, user, hasNameChange, auditComment);
-            if (hasNameChange)
-                ExperimentService.get().addObjectLegacyName(st.getObjectId(), ExperimentServiceImpl.getNamespacePrefix(ExpSampleType.class), oldSampleTypeName, user);
-
-            if (options != null && options.getExcludedContainerIds() != null)
-                ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.SampleType, options.getExcludedContainerIds(), st.getRowId(), user);
-            if (options != null && options.getExcludedDashboardContainerIds() != null)
-                ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.DashboardSampleType, options.getExcludedDashboardContainerIds(), st.getRowId(), user);
 
             if (!errors.hasErrors())
             {
+                if (hasNameChange)
+                    ExperimentService.get().addObjectLegacyName(st.getObjectId(), ExperimentServiceImpl.getNamespacePrefix(ExpSampleType.class), oldSampleTypeName, user);
+
+                if (options != null && options.getExcludedContainerIds() != null)
+                    ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.SampleType, options.getExcludedContainerIds(), st.getRowId(), user);
+                if (options != null && options.getExcludedDashboardContainerIds() != null)
+                    ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.DashboardSampleType, options.getExcludedDashboardContainerIds(), st.getRowId(), user);
+
                 boolean finalHasMetricUnitChanged = hasMetricUnitChanged;
                 transaction.addCommitTask(() -> {
                     clearMaterialSourceCache(container);

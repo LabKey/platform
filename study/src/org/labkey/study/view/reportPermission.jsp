@@ -56,7 +56,6 @@
 
     Study study = StudyManager.getInstance().getStudy(getContainer());
     Container c = study != null ? study.getContainer() : getContainer();
-    SecurityPolicy containerPolicy = c.getPolicy();
     SecurityPolicy reportPolicy = SecurityPolicyManager.getPolicy(bean.getDescriptor(), false);
 
     Container project = c.getProject();
@@ -157,8 +156,8 @@
             <%
             }
             //if (g.isAdministrators()) continue;
-            boolean checked = reportPolicy.hasPermission(g, ReadPermission.class) || g.isAdministrators();
-            boolean disabled = !containerPolicy.hasPermission(g, ReadPermission.class) || g.isAdministrators();
+            boolean checked = bean.getDescriptor().hasPermission(g, ReadPermission.class) || g.isAdministrators();
+            boolean disabled = !c.hasPermission(g, ReadPermission.class) || g.isAdministrators();
             %><tr class="labkey-row">
                 <td><font color=<%=unsafe(disabled ? "gray" : "black")%>><%=h(g.getName())%></font></td>
                 <td height="22" width="20" align="center"><input name=group value="<%=g.getUserId()%>" type=checkbox<%=checked(checked)%><%=disabled(disabled)%>></td>
@@ -166,7 +165,7 @@
         }
     %></table><%
 
-        if (projectGroups.size() > 0)
+        if (!projectGroups.isEmpty())
         {
             %><br/>
             <table class="labkey-data-region-legacy labkey-show-borders" style="width: 350px;">
@@ -176,8 +175,8 @@
                 </tr><%
             for (Group g : projectGroups)
             {
-                boolean checked = reportPolicy.hasPermission(g, ReadPermission.class);
-                boolean disabled = !containerPolicy.hasPermission(g, ReadPermission.class);
+                boolean checked = bean.getDescriptor().hasPermission(g, ReadPermission.class);
+                boolean disabled = !c.hasPermission(g, ReadPermission.class);
                 %><tr class="labkey-row">
                     <td><font color=<%=unsafe(disabled?"gray":"black")%>><%=h(g.getName())%></font></td>
                     <td height=22 width="20" align="center"><input name=group value="<%=g.getUserId()%>" type=checkbox<%=checked(checked)%><%=disabled(disabled)%>></td>
@@ -186,7 +185,7 @@
             %></table><%
         }
 
-        if (reportSharedUsers.size() > 0)
+        if (!reportSharedUsers.isEmpty())
         {
             %><br/>
             <table class="labkey-data-region-legacy labkey-show-borders" style="width: 350px;">
@@ -196,8 +195,8 @@
                 </tr><%
             for (User u : reportSharedUsers)
             {
-                boolean checked = reportPolicy.hasPermission(u, ReadPermission.class);
-                boolean disabled = !containerPolicy.hasPermission(u, ReadPermission.class);
+                boolean checked = bean.getDescriptor().hasPermission(u, ReadPermission.class);
+                boolean disabled = !c.hasPermission(u, ReadPermission.class);
                 %><tr class="labkey-row">
                     <td><font color=<%=unsafe(disabled?"gray":"black")%>><%=h(u.getName())%></font></td>
                     <td height=22 width="20" align="center"><input name=user value="<%=u.getUserId()%>" type=checkbox<%=checked(checked)%><%=disabled(disabled)%>></td>

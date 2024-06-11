@@ -200,7 +200,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             }
         }
 
-        try (DataLoader loader = createLoaderForImport(dataFile, dataDomain, settings, true))
+        try (DataLoader loader = createLoaderForImport(dataFile, data.getRun(), dataDomain, settings, true))
         {
             Map<DataType, List<Map<String, Object>>> datas = new HashMap<>();
             List<Map<String, Object>> dataRows = loader.load();
@@ -284,7 +284,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
      * Creates a DataLoader that can handle missing value indicators if the columns on the domain
      * are configured to support it.
      */
-    public static DataLoader createLoaderForImport(File dataFile, @Nullable Domain dataDomain, DataLoaderSettings settings, boolean shouldInferTypes) throws ExperimentException
+    public static DataLoader createLoaderForImport(File dataFile, ExpRun run, @Nullable Domain dataDomain, DataLoaderSettings settings, boolean shouldInferTypes) throws ExperimentException
     {
         Map<String, DomainProperty> aliases = new HashMap<>();
         Set<String> mvEnabledColumns = Sets.newCaseInsensitiveHashSet();
@@ -352,6 +352,9 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     column.errorValues = DataLoader.ERROR_VALUE_USE_ORIGINAL;
                 else
                     column.errorValues = ERROR_VALUE;
+
+                if (run != null && column.clazz == File.class)
+                    column.converter = new AssayResultsFileConverter(run);
             }
             return loader;
 

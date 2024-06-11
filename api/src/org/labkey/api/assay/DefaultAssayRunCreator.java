@@ -70,6 +70,7 @@ import org.labkey.api.qc.TransformDataHandler;
 import org.labkey.api.qc.TransformResult;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.PropertyValidationError;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
@@ -209,6 +210,9 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                     primaryFile);
 
             context.setPipelineJobGUID(pipelineJob.getJobGUID());
+
+            AssayResultsFileWriter resultsFileWriter = new AssayResultsFileWriter(context.getProtocol(), null, pipelineJob.getJobGUID());
+            resultsFileWriter.savePostedFiles(context);
 
             // Don't queue the job until the transaction is committed, since otherwise the thread
             // that's running the job might start before it can access the job's row in the database.
@@ -368,6 +372,9 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             else
                 savePropertyObject(run, container, runProperties, context.getUser());
 
+            AssayResultsFileWriter resultsFileWriter = new AssayResultsFileWriter(context.getProtocol(), run, null);
+            resultsFileWriter.savePostedFiles(context);
+
             importResultData(context, run, inputDatas, outputDatas, info, xarContext, transformResult, insertedDatas);
 
             Integer reRunId = context.getReRunId();
@@ -431,6 +438,17 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             ExperimentService.get().queueSyncRunEdges(run);
 
             return batch;
+        }
+        catch (ExperimentException | IOException e)
+        {
+            // clean up the run results file dir here if it was created, for non-async imports
+            AssayResultsFileWriter resultsFileWriter = new AssayResultsFileWriter(context.getProtocol(), run, null);
+            resultsFileWriter.cleanupPostedFiles(context.getContainer(), false);
+
+            if (e instanceof ExperimentException)
+                throw (ExperimentException)e;
+            else
+                throw new ExperimentException(e);
         }
         catch (BatchValidationException e)
         {

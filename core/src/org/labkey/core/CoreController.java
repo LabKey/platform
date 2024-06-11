@@ -77,6 +77,7 @@ import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeManager;
@@ -142,6 +143,7 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
@@ -473,7 +475,9 @@ public class CoreController extends SpringActionController
             if (!root.hasPermission(getContainer(), getUser(), ReadPermission.class))
                 throw new UnauthorizedException();
 
-            if (!root.isUnderRoot(file))
+            java.nio.file.Path assayFilesRoot = FileContentService.get().getFileRootPath(getContainer(), FileContentService.ContentType.assayfiles);
+
+            if (!root.isUnderRoot(file) && (assayFilesRoot != null && !URIUtil.isDescendant(assayFilesRoot.toUri(), file.toURI())))
                 throw new NotFoundException("Cannot download file that isn't under the pipeline root for container " + getContainer().getPath());
 
             if (!file.exists())

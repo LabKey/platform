@@ -20,11 +20,14 @@ import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
@@ -81,30 +84,36 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
         return subDir;
     }
 
+    public static Path getUploadDirectoryPath(Container container, String dirName)
+    {
+        if (dirName == null)
+            dirName = "";
+        PipeRoot root = getPipelineRoot(container);
+        return root.resolveToNioPath(dirName);
+    }
+
     public static File ensureUploadDirectory(Container container, String dirName) throws ExperimentException
     {
-        Path path = ensureUploadDirectoryPath(container, dirName);
+        Path dir = getUploadDirectoryPath(container, dirName);
+        return ensureUploadDirectory(dir);
+    }
+
+    public static File ensureUploadDirectory(Path dir) throws ExperimentException
+    {
+        Path path = ensureUploadDirectoryPath(dir);
         if (null != path && !FileUtil.hasCloudScheme(path))
             return path.toFile();
         return null;
     }
 
     /** Make sure there's a subdirectory of the specified name available for this container */
-    public static Path ensureUploadDirectoryPath(Container container, String dirName) throws ExperimentException
+    public static Path ensureUploadDirectoryPath(Path dir) throws ExperimentException
     {
-        if (dirName == null)
-        {
-            dirName = "";
-        }
-
-        PipeRoot root = getPipelineRoot(container);
-
-        Path dir = root.resolveToNioPath(dirName);
         if (null != dir && !Files.exists(dir))
         {
             try
             {
-                dir = FileUtil.createDirectory(dir);
+                dir = FileUtil.createDirectories(dir);
             }
             catch (IOException e)
             {
@@ -180,27 +189,28 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
         int uniquifier = 0;
         do
         {
-            String prefix;
-            String suffix;
-
-            int index = originalFilename.indexOf('.');
-            if (index != -1)
-            {
-                prefix = originalFilename.substring(0, index);
-                suffix = originalFilename.substring(index);
-            }
-            else
-            {
-                prefix = originalFilename;
-                suffix = "";
-            }
-            String fullName = prefix + (uniquifier == 0 ? "" : "-" + uniquifier) + suffix;
+            String fullName = getAppendedFileName(originalFilename, uniquifier);
             file = dir.resolve(fullName);
             uniquifier++;
         }
         while (Files.exists(file));
 
         return file;
+    }
+
+    public static String getAppendedFileName(String originalFilename, int uniquifier)
+    {
+        String prefix = originalFilename;
+        String suffix = "";
+
+        int index = originalFilename.indexOf('.');
+        if (index != -1)
+        {
+            prefix = originalFilename.substring(0, index);
+            suffix = originalFilename.substring(index);
+        }
+
+        return prefix + (uniquifier == 0 ? "" : "-" + uniquifier) + suffix;
     }
 
     protected File getFileTargetDir(ContextType context) throws ExperimentException
@@ -242,14 +252,18 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
         return savedFiles;
     }
 
-    public Map<String, File> savePostedFiles(ContextType context, Set<String> parameterNames) throws ExperimentException, IOException
+    public String getFileName(MultipartFile file)
+    {
+        return file.getOriginalFilename();
+    }
+
+    public Map<String, File> savePostedFiles(ContextType context, Set<String> parameterNames, boolean allowMultiple, boolean ensureExpData) throws ExperimentException, IOException
     {
         Map<String, File> files = new TreeMap<>();
         Set<String> originalFileNames = new HashSet<>();
         if (context.getRequest() instanceof MultipartHttpServletRequest multipartRequest)
         {
             Iterator<Map.Entry<String, List<MultipartFile>>> iter = multipartRequest.getMultiFileMap().entrySet().iterator();
-            File dir = getFileTargetDir(context);
             Deque<File> overflowFiles = new ArrayDeque<>();  // using a deque for easy removal of single elements
             Set<String> unusedParameterNames = new HashSet<>(parameterNames);
             while (iter.hasNext())
@@ -261,13 +275,14 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
                     boolean isAfterFirstFile = false;
                     for (MultipartFile multipartFile : multipartFiles)
                     {
-                        String fileName = multipartFile.getOriginalFilename();
+                        String fileName = getFileName(multipartFile);
                         if (!fileName.isEmpty() && !originalFileNames.add(fileName))
                         {
                             throw new ExperimentException("The file '" + fileName + " ' was uploaded twice - all files must be unique");
                         }
                         if (!multipartFile.isEmpty())
                         {
+                            File dir = getFileTargetDir(context);
                             File file = findUniqueFileName(fileName, dir);
                             multipartFile.transferTo(file);
                             if (!isAfterFirstFile)  // first file gets stored with multipartFile's name
@@ -280,6 +295,9 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
                             {
                                 overflowFiles.add(file);
                             }
+
+                            if (ensureExpData)
+                                AbstractQueryUpdateService.ensureExpData(context.getUser(), context.getContainer(), file);
                         }
                     }
                 }
@@ -295,7 +313,7 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
                 }
             }
 
-            if (!overflowFiles.isEmpty())  // too many files; shouldn't happen, but if it does, throw an error
+            if (!overflowFiles.isEmpty() && !allowMultiple)  // too many files; shouldn't happen, but if it does, throw an error
                 throw new ExperimentException("Tried to save too many files: number of keys is " + parameterNames.size() +
                         ", but " + overflowFiles.size() + " extra file(s) were found.");
         }
@@ -314,6 +332,18 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
         catch (IOException e)
         {
             throw new ExperimentException(e);
+        }
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testGetAppendedFileName()
+        {
+            String originalFilename = "test.txt";
+            assertEquals("test.txt", getAppendedFileName(originalFilename, 0));
+            assertEquals("test-1.txt", getAppendedFileName(originalFilename, 1));
+            assertEquals("test-2.txt", getAppendedFileName(originalFilename, 2));
         }
     }
 }
