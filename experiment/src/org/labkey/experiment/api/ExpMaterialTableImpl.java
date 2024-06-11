@@ -1166,12 +1166,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
 
         @Override
-        public SQLFragment getFromSql(@NotNull SQLFragment selectQuery, boolean isSelectInto, String tableAlias)
-        {
-            return super.getFromSql(selectQuery, isSelectInto, tableAlias);
-        }
-
-        @Override
         protected void incrementalUpdateBeforeSelect(Materialized m)
         {
             _Materialized materialized = (_Materialized) m;
