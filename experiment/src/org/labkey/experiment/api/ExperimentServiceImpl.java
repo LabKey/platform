@@ -44,6 +44,7 @@ import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.AssayTableMetadata;
 import org.labkey.api.assay.AssayWellExclusionService;
 import org.labkey.api.assay.DefaultAssayRunCreator;
+import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
@@ -4652,6 +4653,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         Integer[] actionIds = new SqlSelector(getExpSchema(), sql).getArray(Integer.class);
         List<ExpProtocolImpl> expProtocols = Arrays.stream(protocols).map(ExpProtocolImpl::new).collect(toList());
 
+        if (!c.hasPermission(user, AdminPermission.class) && !runs.isEmpty())
+            throw new UnauthorizedException("You do not have sufficient permissions to delete '" + (expProtocols.size() == 1 ? expProtocols.get(0).getName() : "the protocols") + "'.");
+
         AssayService assayService = AssayService.get();
 
         try (DbScope.Transaction transaction = ensureTransaction())
@@ -4697,7 +4701,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     for (Protocol protocol : protocols)
                     {
                         ExpProtocol protocolToDelete = new ExpProtocolImpl(protocol);
-
                         AssayProvider provider = assayService.getProvider(protocolToDelete);
                         if (provider != null)
                             provider.deleteProtocol(protocolToDelete, user, auditUserComment);
@@ -6170,6 +6173,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         Domain d = dataClass.getDomain();
         Container dcContainer = dataClass.getContainer();
+        if (!dcContainer.hasPermission(user, AdminPermission.class))
+        {
+            if (dataClass.hasData())
+                throw new UnauthorizedException("You do not have sufficient permissions to delete this data class.");
+        }
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {

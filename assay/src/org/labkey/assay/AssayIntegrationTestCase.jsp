@@ -119,7 +119,7 @@
     }
 
     public Pair<AssayProvider, ExpProtocol> createAssay(ViewContext context, boolean editableRunsAndResults)
-            throws AssayException, ValidationException
+            throws ValidationException
     {
         // create assay design
         AssayDomainService assayDomainService = new AssayDomainServiceImpl(context);

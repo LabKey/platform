@@ -57,6 +57,7 @@ import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DesignSampleTypePermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -342,7 +343,14 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     @Override
     public boolean canDeleteDefinition(User user, Domain domain)
     {
-        return domain.getContainer().hasPermission(user, DesignSampleTypePermission.class);
+        if (!domain.getContainer().hasPermission(user, DesignSampleTypePermission.class))
+            return false;
+        if (!domain.getContainer().hasPermission(user, AdminPermission.class))
+        {
+            ExpSampleType st = getSampleType(domain);
+            return !st.hasData();
+        }
+        return true;
     }
 
     @Override
