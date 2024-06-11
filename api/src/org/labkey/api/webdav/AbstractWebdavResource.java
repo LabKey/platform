@@ -74,7 +74,6 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
 {
     private static final String FOLDER_FONT_CLS = "fa fa-folder-o";
 
-    private SecurityPolicy _policy;
     private SecurableResource _resource;
     private List<ExpData> _data = null;
 
@@ -339,13 +338,8 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     @Deprecated
     protected SecurityPolicy getPolicy()
     {
-        return _resource != null ? SecurityPolicyManager.getPolicy(_resource) : _policy;
-    }
-
-    @Deprecated
-    protected void setPolicy(SecurityPolicy policy)
-    {
-        _policy = policy;
+        assert _resource != null;
+        return SecurityPolicyManager.getPolicy(_resource);
     }
 
     protected SecurableResource getSecurableResource()

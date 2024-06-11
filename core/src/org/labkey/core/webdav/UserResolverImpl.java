@@ -67,14 +67,7 @@ public class UserResolverImpl extends AbstractWebdavResolver
     {
         if (null == _root)
         {
-            _root = new UsersCollectionResource(getRootPath(), this)
-            {
-                @Override
-                public boolean canList(User user, boolean forRead)
-                {
-                    return true;
-                }
-            };
+            _root = new UsersCollectionResource(getRootPath(), this);
         }
         return _root;
     }
@@ -97,10 +90,7 @@ public class UserResolverImpl extends AbstractWebdavResolver
         return "users";
     }
 
-    /**
-     * Created by iansigmon on 6/20/16.
-     */
-    public class UsersCollectionResource extends AbstractWebdavResourceCollection
+    public static class UsersCollectionResource extends AbstractWebdavResourceCollection
     {
         public static final String USERS_LINK = "/_users/";
 

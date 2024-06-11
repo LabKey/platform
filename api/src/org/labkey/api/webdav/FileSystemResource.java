@@ -44,6 +44,7 @@ import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.CanSeeAuditLogRole;
@@ -171,9 +172,19 @@ public class FileSystemResource extends AbstractWebdavResource
     }
 
     @Override
+    protected SecurityPolicy getPolicy()
+    {
+        SecurableResource resource = getSecurableResource();
+        return resource != null ? SecurityPolicyManager.getPolicy(resource) : _policy;
+    }
+
+    @Deprecated
+    private SecurityPolicy _policy;
+
+    @Deprecated
     protected void setPolicy(SecurityPolicy policy)
     {
-        super.setPolicy(policy);
+        _policy = policy;
         setSearchProperty(SearchService.PROPERTY.securableResourceId, policy.getResourceId());
     }
 
