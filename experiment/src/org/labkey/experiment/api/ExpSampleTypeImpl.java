@@ -645,7 +645,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         long current = seq.current();
         if (newSeqValue < current)
         {
-            if (hasSamples())
+            if (hasData())
                 throw new ExperimentException("Unable to set genId to " + newSeqValue + " due to conflict with existing samples.");
 
             seq.setSequenceValue(newSeqValue);
@@ -658,7 +658,8 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         }
     }
 
-    private boolean hasSamples()
+    @Override
+    public boolean hasData()
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("CpasType"), getLSID());
         return new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), Collections.singleton("CpasType"), filter, null).exists();
