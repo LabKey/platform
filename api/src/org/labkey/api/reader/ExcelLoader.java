@@ -631,7 +631,7 @@ public class ExcelLoader extends DataLoader
         }
     }
 
-    private class XlsxIterator extends DataLoaderIterator
+    private class XlsxIterator extends AbstractDataLoaderIterator
     {
         private final AsyncXlsxIterator _asyncIter;
         XlsxIterator() throws IOException, InvalidFormatException
@@ -678,7 +678,7 @@ public class ExcelLoader extends DataLoader
     }
 
 
-    private class ExcelIterator extends DataLoader.DataLoaderIterator
+    private class ExcelIterator extends AbstractDataLoaderIterator
     {
         private final Sheet sheet;
         private final int numRows;
