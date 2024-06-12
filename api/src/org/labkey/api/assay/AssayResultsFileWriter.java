@@ -185,13 +185,19 @@ public class AssayResultsFileWriter<ContextType extends AssayRunUploadContext<? 
         @Test
         public void testGetRunResultsFileDir()
         {
-            assertEquals("AssayId_123/RunId_456", getRunResultsFileDir(_run));
+            String dir = getRunResultsFileDir(_protocol, _run);
+            String[] tokens = dir.split(File.separator);
+            assertEquals("AssayId_123", tokens[0]);
+            assertEquals("RunId_456", tokens[1]);
         }
 
         @Test
         public void testGetPipelineResultsFileDir()
         {
-            assertEquals("AssayId_123/Job_789", getPipelineResultsFileDir(_protocol, "789"));
+            String dir = getPipelineResultsFileDir(_protocol, "789");
+            String[] tokens = dir.split(File.separator);
+            assertEquals("AssayId_123", tokens[0]);
+            assertEquals("Job_789", tokens[1]);
         }
 
         @Test
