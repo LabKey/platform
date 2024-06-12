@@ -38,9 +38,9 @@ public class AssayResultsFileWriter<ContextType extends AssayRunUploadContext<? 
         _pipelineJobGUID = pipelineJobGUID;
     }
 
-    public static String getRunResultsFileDir(ExpRun run)
+    public static String getRunResultsFileDir(ExpProtocol protocol, ExpRun run)
     {
-        return "AssayId_" + run.getProtocol().getRowId() + File.separator + "RunId_" + run.getRowId();
+        return "AssayId_" + protocol.getRowId() + File.separator + "RunId_" + run.getRowId();
     }
 
     public static String getPipelineResultsFileDir(ExpProtocol protocol, String pipelineJobGUID)
@@ -50,7 +50,7 @@ public class AssayResultsFileWriter<ContextType extends AssayRunUploadContext<? 
 
     public static Path getAssayFilesDirectoryPath(ExpRun run)
     {
-        String resultsFilePath = getRunResultsFileDir(run);
+        String resultsFilePath = getRunResultsFileDir(run.getProtocol(), run);
         return getAssayFilesDirectoryPath(run.getContainer(), resultsFilePath);
     }
 
@@ -99,7 +99,7 @@ public class AssayResultsFileWriter<ContextType extends AssayRunUploadContext<? 
 
     private String getFileTargetDirName()
     {
-        return _run != null ? getRunResultsFileDir(_run) : getPipelineResultsFileDir(_protocol, _pipelineJobGUID);
+        return _run != null ? getRunResultsFileDir(_protocol, _run) : getPipelineResultsFileDir(_protocol, _pipelineJobGUID);
     }
 
     public void cleanupPostedFiles(Container container, boolean deleteIfEmptyOnly) throws ExperimentException
