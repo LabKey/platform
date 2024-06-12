@@ -1806,10 +1806,11 @@ boxPlot.render();
             }
         };
 
+        let cushion = 0.0;
         // Handles Y Axis domain when performing percent or standard deviation conversions
         var convertYAxisDomain = function (value, stddev, mean, props) {
             var maxValue, minValue;
-            let cushion = 0.2;
+            cushion = value > 1.0 ? 0.2 : 0.02;
             if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.MovingRange
                     && config.properties.valueConversion === 'percentDeviation') {
                 maxValue = mean * LABKEY.vis.Stat.MOVING_RANGE_UPPER_LIMIT_WEIGHT;
@@ -1824,6 +1825,10 @@ boxPlot.render();
                         maxValue = mean + ((config.properties.upperBound + cushion) * stddev);
                         minValue = mean + ((config.properties.lowerBound - cushion) * stddev);
                     }
+                    else {
+                        maxValue = mean + ((config.properties.upperBound + cushion) * stddev);
+                        minValue = mean + ((config.properties.lowerBound - cushion) * stddev);
+                    }
                 }
                 else if (config.properties.boundType === LABKEY.vis.PlotProperties.BoundType.MeanDeviation) {
                     maxValue = mean + config.properties.upperBound + cushion;
@@ -1833,10 +1838,6 @@ boxPlot.render();
                         maxValue = mean + config.properties.upperBound * 10 + cushion;
                         minValue = mean + config.properties.lowerBound * 10 - cushion;
                     }
-                }
-                else {
-                    maxValue = 3.2;
-                    minValue = -3.2;
                 }
             }
             else if (!config.properties.combined && stddev) {
@@ -1947,6 +1948,7 @@ boxPlot.render();
                 // Handle value conversions
                 convertValues(config.properties.valueConversion);
                 if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.LeveyJennings) {
+
                     if (config.properties.boundType === LABKEY.vis.PlotProperties.BoundType.Absolute) {
                         row.upperBound = config.properties.upperBound;
                         row.lowerBound = config.properties.lowerBound;
@@ -1988,12 +1990,13 @@ boxPlot.render();
                             }
                         }
                     }
+
                     if (config.properties.yAxisDomain) {
                         if (config.properties.yAxisDomain[0] > row.lowerBound) {
-                            config.properties.yAxisDomain[0] = row.lowerBound - 0.2;
+                            config.properties.yAxisDomain[0] = row.lowerBound - cushion;
                         }
                         if (config.properties.yAxisDomain[1] < row.upperBound) {
-                            config.properties.yAxisDomain[1] = row.upperBound + 0.2;
+                            config.properties.yAxisDomain[1] = row.upperBound + cushion;
                         }
                     }
                 }
