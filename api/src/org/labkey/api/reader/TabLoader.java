@@ -638,7 +638,7 @@ public class TabLoader extends DataLoader
     }
 
 
-    public class TabLoaderIterator extends DataLoaderIterator
+    public class TabLoaderIterator extends AbstractDataLoaderIterator
     {
         private final TabBufferedReader reader;
 
