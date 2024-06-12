@@ -110,6 +110,7 @@ import org.labkey.experiment.api.ExpDataClassDataTableImpl;
 import org.labkey.experiment.api.ExpMaterialTableImpl;
 import org.labkey.experiment.api.ExpSampleTypeImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
+import org.labkey.experiment.api.SampleTypeServiceImpl;
 import org.labkey.experiment.api.SampleTypeUpdateServiceDI;
 import org.labkey.experiment.controllers.exp.RunInputOutputBean;
 import org.springframework.web.multipart.MultipartFile;
@@ -166,6 +167,7 @@ import static org.labkey.api.exp.query.ExpMaterialTable.Column.SampleState;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.StoredAmount;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Units;
 import static org.labkey.api.query.AbstractQueryImportAction.configureLoader;
+import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.insert;
 import static org.labkey.experiment.api.SampleTypeUpdateServiceDI.PARENT_RECOMPUTE_NAME_SET;
 import static org.labkey.experiment.api.SampleTypeUpdateServiceDI.ROOT_RECOMPUTE_ROWID_COL;
 import static org.labkey.experiment.api.SampleTypeUpdateServiceDI.PARENT_RECOMPUTE_NAME_COL;
@@ -620,8 +622,10 @@ public class ExpDataIterators
             if (!hasNext)
             {
                 StudyPublishService sps = StudyPublishService.get();
-                if (sps != null)
+                if (sps != null && (!_derivativeKeys.isEmpty() || !_rows.isEmpty()))
                 {
+                    // Make sure the sampletype invalidate (POSTCOMMIT task) is queued before the autoLink task.
+                    SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(_sampleType, insert);
                     _schema.getDbSchema().getScope().getCurrentTransaction().addCommitTask(() -> {
                         try
                         {

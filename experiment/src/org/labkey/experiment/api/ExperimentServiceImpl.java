@@ -292,6 +292,7 @@ import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ProtocolApplica
 import static org.labkey.api.exp.api.NameExpressionOptionService.NAME_EXPRESSION_REQUIRED_MSG;
 import static org.labkey.api.exp.api.NameExpressionOptionService.NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS;
 import static org.labkey.api.exp.api.ProvenanceService.PROVENANCE_PROTOCOL_LSID;
+import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.rollup;
 
 public class ExperimentServiceImpl implements ExperimentService, ObjectReferencer, SearchService.DocumentProvider
 {
@@ -5128,7 +5129,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     {
                         ExpSampleType parentSampleType = sampleTypeRoots.getKey();
                         Set<Integer> rootSampleIds = sampleTypeRoots.getValue();
-                        SampleTypeService.get().recomputeSamplesRollup(rootSampleIds, parentSampleType.getMetricUnit(), container);
+                        int recomputeCount = SampleTypeService.get().recomputeSamplesRollup(rootSampleIds, parentSampleType.getMetricUnit(), container);
+                        if (0 < recomputeCount)
+                            SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(parentSampleType, rollup);
                     }
                 }
                 catch (SQLException e)
@@ -5140,7 +5143,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             // since we don't call onSamplesChanged() for deleted rows, need to tell someone to refresh the materialized view (if any)
             for (var st : sampleTypes.values())
                 if (null != st)
-                    SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(st, false);
+                    SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(st, SampleTypeServiceImpl.SampleChangeType.delete);
 
             // On successful commit, start task to remove items from search index
             final SearchService ss = SearchService.get();

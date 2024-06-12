@@ -291,6 +291,7 @@ import static org.labkey.api.util.DOM.TR;
 import static org.labkey.api.util.DOM.UL;
 import static org.labkey.api.util.DOM.at;
 import static org.labkey.api.util.DOM.cl;
+import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.update;
 
 public class ExperimentController extends SpringActionController
 {
@@ -7825,7 +7826,8 @@ public class ExperimentController extends SpringActionController
                 {
                     int updatedCount;
                     updatedCount = service.recomputeSampleTypeRollup(sampleType, container);
-                    SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(sampleType, false);
+                    // we could check "if (0 < updatedCount) refresh(rollup)", but since this is a "manual" usage lets just always refresh
+                    SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(sampleType, update);
                     builder.unsafeAppend("<tr><td>")
                             .append(sampleType.getName())
                             .unsafeAppend("</td><td>")

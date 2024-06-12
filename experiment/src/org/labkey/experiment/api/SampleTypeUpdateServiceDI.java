@@ -146,6 +146,9 @@ import static org.labkey.api.exp.query.ExpMaterialTable.Column.SampleState;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.StoredAmount;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Units;
 import static org.labkey.experiment.ExpDataIterators.incrementCounts;
+import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.insert;
+import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.rollup;
+import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.update;
 
 /**
  *
@@ -244,7 +247,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         int ret = _importRowsUsingDIB(user, container, rows, outputRows, getDataIteratorContext(errors, InsertOption.INSERT, finalConfigParameters), extraScriptContext);
         if (ret > 0 && !errors.hasErrors())
         {
-            onSamplesChanged(outputRows, configParameters, container);
+            onSamplesChanged(outputRows, configParameters, container, insert);
             audit(QueryService.AuditAction.INSERT);
         }
         return ret;
@@ -419,7 +422,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (ret > 0 && !context.getErrors().hasErrors() && _sampleType != null)
         {
             boolean isMediaUpdate = _sampleType.isMedia() && context.getInsertOption().updateOnly;
-            onSamplesChanged(!isMediaUpdate ? outputRows : null, context.getConfigParameters(), container);
+            onSamplesChanged(!isMediaUpdate ? outputRows : null, context.getConfigParameters(), container, context.getInsertOption().allowUpdate ? update : insert);
             audit(context.getInsertOption().auditAction);
         }
         return ret;
@@ -432,7 +435,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         int ret = _importRowsUsingDIB(user, container, rows, null, getDataIteratorContext(errors, InsertOption.MERGE, configParameters), extraScriptContext);
         if (ret > 0 && !errors.hasErrors())
         {
-            onSamplesChanged(null, configParameters, container); // mergeRows not really used, skip wiring recalc
+            onSamplesChanged(null, configParameters, container, update); // mergeRows not really used, skip wiring recalc
             audit(QueryService.AuditAction.MERGE);
         }
         return ret;
@@ -450,7 +453,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         if (results != null && !results.isEmpty() && !errors.hasErrors())
         {
-            onSamplesChanged(results, configParameters, container);
+            onSamplesChanged(results, configParameters, container, SampleTypeServiceImpl.SampleChangeType.insert);
             audit(QueryService.AuditAction.INSERT);
         }
         return results;
@@ -488,7 +491,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         if (results != null && !results.isEmpty() && !errors.hasErrors())
         {
-            onSamplesChanged(!_sampleType.isMedia() ? results : null, configParameters, container);
+            onSamplesChanged(!_sampleType.isMedia() ? results : null, configParameters, container, update);
             audit(QueryService.AuditAction.UPDATE);
         }
 
@@ -1271,7 +1274,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return getMaterialMap(getMaterialRowId(keys), getMaterialLsid(keys), user, container, true);
     }
 
-    private void onSamplesChanged(List<Map<String, Object>> results, Map<Enum, Object> params, Container container)
+    private void onSamplesChanged(List<Map<String, Object>> results, Map<Enum, Object> params, Container container, SampleTypeServiceImpl.SampleChangeType reason)
     {
         var tx = getSchema().getDbSchema().getScope().getCurrentTransaction();
         Pair<Set<Integer>, Set<String>> parentKeys = getSampleParentsForRecalc(results);
@@ -1296,7 +1299,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 boolean finalUseBackgroundRecalc = useBackgroundRecalc;
                 boolean finalSkipRecalc = skipRecalc;
                 tx.addCommitTask(() -> {
-                    fireSamplesChanged();
+                    fireSamplesChanged(reason);
                     if (finalUseBackgroundRecalc && !finalSkipRecalc)
                         handleRecalc(parentKeys.first, parentKeys.second, true, container);
                 }, DbScope.CommitTaskOption.POSTCOMMIT);
@@ -1306,23 +1309,20 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         }
         else
         {
-            fireSamplesChanged();
+            fireSamplesChanged(reason);
         }
     }
 
     private void handleRecalc(Set<Integer> rootRowIds, Set<String> parentNames, boolean useBackgroundThread, Container container)
     {
-        // The caller of this handleRecalc() should generally be calling refreshSampleTypeMaterializedView().
-        // However, we also need to call it after this async process runs
-        // Also, it's harmless to call it twice, so we can call it in the synchronous case as well.
-
         Runnable runRecalc = () -> {
             try
             {
                 if (_sampleType != null)
                 {
-                    SampleTypeService.get().recomputeSampleTypeRollup(_sampleType, rootRowIds, parentNames, container);
-                    SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(_sampleType, false);
+                    var count = SampleTypeService.get().recomputeSampleTypeRollup(_sampleType, rootRowIds, parentNames, container);
+                    if (count > 0)
+                        SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(_sampleType, rollup);
                 }
             }
             catch (SQLException e)
@@ -1341,10 +1341,10 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         }
     }
 
-    private void fireSamplesChanged()
+    private void fireSamplesChanged(SampleTypeServiceImpl.SampleChangeType reason)
     {
         if (_sampleType != null)
-            _sampleType.onSamplesChanged(getUser(), null);
+            _sampleType.onSamplesChanged(getUser(), null, reason);
     }
 
     void audit(QueryService.AuditAction auditAction)
