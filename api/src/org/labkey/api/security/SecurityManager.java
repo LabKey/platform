@@ -3218,11 +3218,6 @@ public class SecurityManager
         return hasPermissions(logMsg, resource, principal, perms, contextualRoles, HasPermissionOption.ANY);
     }
 
-    /**
-     * This is a choke point for checking permissions. It handles SecurityPolicy permissions, impersonation (via User
-     * object), locked projects, and contextual roles. This lets the SecurityPolicy object just handle its own ACL-like
-     * functionality e.g. computing the permissions that it explicitly assigns (resolving roles and groups).
-     */
     private static boolean hasPermissions(@Nullable String logMsg, SecurableResource resource, UserPrincipal principal, Set<Class<? extends Permission>> permissions, Set<Role> contextualRoles, HasPermissionOption opt)
     {
         try
@@ -3242,6 +3237,11 @@ public class SecurityManager
         }
     }
 
+    /**
+     * This is a choke point for computing permissions. It handles SecurityPolicy permissions, impersonation (via User
+     * object), locked projects, and contextual roles. This lets the SecurityPolicy object just handle its own ACL-like
+     * functionality e.g. computing the permissions that it explicitly assigns (resolving roles and groups).
+     */
     public static Set<Class<? extends Permission>> getPermissions(SecurableResource resource, UserPrincipal principal, Set<Role> contextualRoles)
     {
         if (null == resource || null == principal)
@@ -3279,25 +3279,14 @@ public class SecurityManager
     }
 
     /**
-     * Returns the roles the principal is playing, either due to direct assignment, or due to membership in a group
-     * that is assigned the role.
+     * Returns the roles the principal is playing in this securable resource, either due to direct assignment or due
+     * to membership in a group that is assigned the role.
      * @param principal The principal
-     * @return The roles this principal is playing
+     * @return The roles this principal is playing in the securable resource
      */
-    @NotNull
-    public static Set<Role> getEffectiveRoles(@NotNull SecurityPolicy policy, @NotNull UserPrincipal principal)
+    public static Set<Role> getEffectiveRoles(@NotNull SecurableResource resource, @NotNull UserPrincipal principal)
     {
-        return getEffectiveRoles(policy, principal, true);
-    }
-
-    @NotNull
-    public static Set<Role> getEffectiveRoles(@NotNull SecurityPolicy policy, @NotNull UserPrincipal principal, boolean includeDirectlyAssignedRoles)
-    {
-        Set<Role> roles = policy.getRoles(principal.getGroups());
-        roles.addAll(policy.getAssignedRoles(principal));
-        if (includeDirectlyAssignedRoles)
-            roles.addAll(principal.getAssignedRoles(policy));
-        return roles;
+        return principal.getAssignedRoles(resource);
     }
 
     private enum HasPermissionOption

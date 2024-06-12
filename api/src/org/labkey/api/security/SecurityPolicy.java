@@ -224,6 +224,12 @@ public class SecurityPolicy
         return roles;
     }
 
+    /* Does not inspect any contextual roles, just the roles explicitly given by this SecurityPolicy */
+    public boolean hasRole(UserPrincipal principal, Class<? extends Role> roleClass)
+    {
+        return getRoles(principal.getGroups()).contains(RoleManager.getRole(roleClass));
+    }
+
     private void handleRoles(PrincipalArray principalArray, Consumer<Role> consumer)
     {
         List<Integer> principals = principalArray.getList();

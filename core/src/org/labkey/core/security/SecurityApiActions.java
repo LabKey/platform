@@ -64,6 +64,7 @@ import org.labkey.api.security.permissions.SeeGroupDetailsPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.permissions.UpdateUserPermission;
 import org.labkey.api.security.permissions.UserManagementPermission;
+import org.labkey.api.security.roles.ApplicationAdminRole;
 import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.security.roles.ReaderRole;
@@ -195,7 +196,7 @@ public class SecurityApiActions
                 }
 
                 //add effective roles array
-                Set<Role> effectiveRoles = SecurityManager.getEffectiveRoles(container.getPolicy(), group);
+                Set<Role> effectiveRoles = SecurityManager.getEffectiveRoles(container, group);
                 ArrayList<String> effectiveRoleList = new ArrayList<>();
                 for (Role effectiveRole : effectiveRoles)
                 {
@@ -340,7 +341,7 @@ public class SecurityApiActions
 
             //effective roles
             List<String> effectiveRoles = new ArrayList<>();
-            for (Role effectiveRole : SecurityManager.getEffectiveRoles(container.getPolicy(), user))
+            for (Role effectiveRole : SecurityManager.getEffectiveRoles(container, user))
             {
                 effectiveRoles.add(effectiveRole.getUniqueName());
             }
@@ -369,7 +370,7 @@ public class SecurityApiActions
 
                 //effective roles
                 List<String> groupEffectiveRoles = new ArrayList<>();
-                for (Role effectiveRole : SecurityManager.getEffectiveRoles(container.getPolicy(), group))
+                for (Role effectiveRole : SecurityManager.getEffectiveRoles(container, group))
                 {
                     groupEffectiveRoles.add(effectiveRole.getUniqueName());
                 }
@@ -741,7 +742,7 @@ public class SecurityApiActions
 
             //if root container permissions update, check for app admin removal
             if (container.isRoot() && resourceId.equals(container.getId()) && user.hasApplicationAdminPermission() && !user.hasSiteAdminPermission()
-                    && !user.hasApplicationAdminForPolicy(policy) && !form.isConfirm())
+                    && !policy.hasRole(user, ApplicationAdminRole.class) && !form.isConfirm())
             {
                 Map<String, Object> props = new HashMap<>();
                 props.put("success", false);
