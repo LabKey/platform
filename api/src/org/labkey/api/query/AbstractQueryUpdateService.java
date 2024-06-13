@@ -951,9 +951,11 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     public static Object saveFile(User user, Container container, String name, Object value, @Nullable Path dirPath) throws ValidationException, QueryUpdateServiceException
     {
         File file = null;
-        if (value instanceof MultipartFile)
+        try
         {
-            try
+            File dir = AssayFileWriter.ensureUploadDirectory(dirPath);
+
+            if (value instanceof MultipartFile)
             {
                 // Once we've found one, write it to disk and replace the row's value with just the File reference to it
                 MultipartFile multipartFile = (MultipartFile)value;
@@ -961,30 +963,21 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                 {
                     throw new ValidationException("File " + multipartFile.getOriginalFilename() + " for field " + name + " has no content");
                 }
-                File dir = AssayFileWriter.ensureUploadDirectory(dirPath);
                 file = AssayFileWriter.findUniqueFileName(multipartFile.getOriginalFilename(), dir);
                 file = checkFileUnderRoot(container, file);
                 multipartFile.transferTo(file);
             }
-            catch (ExperimentException | IOException e)
+            else if (value instanceof SpringAttachmentFile)
             {
-                throw new QueryUpdateServiceException(e);
-            }
-        }
-        else if (value instanceof SpringAttachmentFile)
-        {
-            SpringAttachmentFile saf = (SpringAttachmentFile)value;
-            try
-            {
-                File dir = AssayFileWriter.ensureUploadDirectory(dirPath);
+                SpringAttachmentFile saf = (SpringAttachmentFile)value;
                 file = AssayFileWriter.findUniqueFileName(saf.getFilename(), dir);
                 file = checkFileUnderRoot(container, file);
                 saf.saveTo(file);
             }
-            catch (IOException | ExperimentException e)
-            {
-                throw new QueryUpdateServiceException(e);
-            }
+        }
+        catch (IOException | ExperimentException e)
+        {
+            throw new QueryUpdateServiceException(e);
         }
 
         if (file == null)

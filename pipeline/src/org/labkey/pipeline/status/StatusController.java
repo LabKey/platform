@@ -23,6 +23,7 @@ import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.LabKeyError;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
+import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleRedirectAction;
@@ -71,6 +72,7 @@ import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.SpringErrorView;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
+import org.labkey.api.view.ViewForm;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.pipeline.PipelineController;
@@ -87,10 +89,12 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.Date;
 import java.util.Set;
 import java.util.TreeSet;
 
+import static java.util.Collections.singleton;
 import static org.labkey.pipeline.api.PipelineStatusManager.cancelStatus;
 import static org.labkey.pipeline.api.PipelineStatusManager.completeStatus;
 import static org.labkey.pipeline.api.PipelineStatusManager.deleteStatus;
@@ -819,6 +823,68 @@ public class StatusController extends SpringActionController
         public void handleSelect(SelectStatusForm form) throws PipelineProvider.HandlerException
         {
             cancelStatus(getViewBackgroundInfo(), DataRegionSelection.getSelectedIntegers(getViewContext(), true));
+        }
+    }
+
+    public static class SelectStatusApiForm extends ViewForm
+    {
+        private String _dataRegionSelectionKey;
+        private Set<Integer> _rowIds;
+
+        public String getDataRegionSelectionKey()
+        {
+            return _dataRegionSelectionKey;
+        }
+
+        public void setDataRegionSelectionKey(String dataRegionSelectionKey)
+        {
+            _dataRegionSelectionKey = dataRegionSelectionKey;
+        }
+
+        public Set<Integer> getRowIds()
+        {
+            return _rowIds;
+        }
+
+        public void setRowIds(Set<Integer> rowIds)
+        {
+            _rowIds = rowIds;
+        }
+
+        public Set<Integer> getIds()
+        {
+            return (_rowIds != null) ? _rowIds : DataRegionSelection.getSelectedIntegers(getViewContext(), getDataRegionSelectionKey(), false);
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public class CancelStatusApiAction extends MutatingApiAction<SelectStatusApiForm>
+    {
+        @Override
+        public void validateForm(SelectStatusApiForm form, Errors errors)
+        {
+            if (form.getDataRegionSelectionKey() == null && form.getRowIds() == null)
+                errors.reject(ERROR_REQUIRED, "You must provide either a set of rowIds or a dataRegionSelectionKey.");
+        }
+
+        @Override
+        public Object execute(SelectStatusApiForm selectStatusForm, BindException errors) throws Exception
+        {
+            getContainerCheckAdmin();
+
+            try
+            {
+                cancelStatus(getViewBackgroundInfo(), selectStatusForm.getIds());
+            }
+            catch (PipelineProvider.HandlerException e)
+            {
+                errors.reject(ERROR_GENERIC, e.getMessage());
+            }
+
+            if (errors.hasErrors())
+                return null;
+
+            return success();
         }
     }
 
