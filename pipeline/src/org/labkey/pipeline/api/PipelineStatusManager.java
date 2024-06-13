@@ -53,6 +53,7 @@ import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.springframework.dao.DataAccessResourceFailureException;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -244,7 +245,7 @@ public class PipelineStatusManager
             }
             return true;
         }
-        catch (ConfigurationException e)
+        catch (ConfigurationException | DataAccessResourceFailureException e)
         {
             // Issue 49822: Pipeline does not show a job as failed if DB fails
             JobStatusRetryJob.queue(job.getJobGUID(), () -> setStatusFile(job, user, status, info, allowInsert), e);
