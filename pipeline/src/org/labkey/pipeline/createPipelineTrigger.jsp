@@ -25,11 +25,9 @@
 <%@ page import="java.util.function.Function" %>
 <%@ page import="java.util.stream.Collectors" %>
 <%@ page import="org.labkey.api.formSchema.FormSchema" %>
-<%@ page import="com.fasterxml.jackson.databind.ObjectMapper" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page import="org.labkey.api.pipeline.trigger.PipelineTriggerRegistry" %>
-<%@ page import="org.labkey.api.util.JsonUtil" %>
 <%@ page import="org.labkey.api.util.JavaScriptFragment" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
