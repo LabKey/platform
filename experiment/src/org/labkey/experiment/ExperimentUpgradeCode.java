@@ -324,7 +324,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
     }
 
     /**
-     * Called from exp-24.001-24.002.sql
+     * Called from exp-24.002-24.003.sql
      */
     public static void populateMaterialAncestors(ModuleContext context)
     {
@@ -335,7 +335,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
     }
 
     /**
-     * Called from exp-24.001-24.002.sql
+     * Called from exp-24.002-24.003.sql
      */
     public static void populateDataAncestors(ModuleContext context)
     {
