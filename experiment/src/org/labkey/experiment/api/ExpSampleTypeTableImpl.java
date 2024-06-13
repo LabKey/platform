@@ -97,8 +97,9 @@ public class ExpSampleTypeTableImpl extends ExpTableImpl<ExpSampleTypeTable.Colu
                 SQLFragment sql = new SQLFragment("(SELECT COUNT(*) FROM " +
                     ExperimentServiceImpl.get().getTinfoMaterial() +
                     " m WHERE m.CpasType = " + ExprColumn.STR_TABLE_ALIAS + ".LSID" +
-                    " AND m.container = ?)")
-                    .add(_userSchema.getContainer().getEntityId());
+                    " AND ")
+                        .append(getContainerFilter().getSQLFragment(getSchema(), new SQLFragment("m.container")))
+                        .append(")");
                 ExprColumn sampleCountColumnInfo = new ExprColumn(this, "SampleCount", sql, JdbcType.INTEGER);
                 sampleCountColumnInfo.setDescription("Contains the number of samples currently stored in this sample type");
                 return sampleCountColumnInfo;

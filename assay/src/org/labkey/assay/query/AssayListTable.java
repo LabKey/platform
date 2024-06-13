@@ -93,7 +93,10 @@ public class AssayListTable extends FilteredTable<AssaySchemaImpl>
 
         var runCountFragment = new SQLFragment("(SELECT COUNT(*) FROM ")
                 .append(ExperimentService.get().getTinfoExperimentRun(), "r")
-                .append(" WHERE r.ProtocolLSID = ").append(ExprColumn.STR_TABLE_ALIAS).append(".LSID)");
+                .append(" WHERE r.ProtocolLSID = ").append(ExprColumn.STR_TABLE_ALIAS).append(".LSID")
+                .append(" AND ")
+                .append(getContainerFilter().getSQLFragment(getSchema(), new SQLFragment("r.container")))
+                .append(")");
         addColumn(new ExprColumn(this, "RunCount", runCountFragment, JdbcType.INTEGER)).setHidden(true);
 
         addWrapColumn(_rootTable.getColumn("Status")).setHidden(true);
