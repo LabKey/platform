@@ -329,40 +329,99 @@ public class ExperimentUpgradeCode implements UpgradeCode
         if (context.isNewInstall())
             return;
         /*
-         UPDATE temp.auditTable z
-         SET sampleTypeId = y.sampleTypeId
-         FROM
-             (SELECT DISTINCT sampleTypeId, sampleId
-                 FROM temp.auditTable t
-                 WHERE t.sampletypeId != 0
-                 AND t.sampleId IN
-                 (SELECT DISTINCT SampleId FROM temp.auditTable WHERE sampletypeid = 0)
-             ) y
-         WHERE z.sampleId IN (SELECT DISTINCT SampleId FROM temp.auditTable WHERE sampletypeid = 0)
-               AND z.sampletypeid=0;
+         UPDATE temp.auditTable
+            SET sampleTypeId = y.sampleTypeId
+            FROM
+                (SELECT sampleTypeId as oldTypeId, sampleId as otherSampleId, rowId as updateRowId
+                 FROM temp.auditTable
+                 WHERE sampletypeid = 0
+                ) w
+                 LEFT JOIN
+                 (SELECT MAX(sampleTypeId) as sampleTypeId, sampleId
+                    FROM temp.auditTable t
+                    GROUP BY sampleId
+                 ) y
+
+                 ON y.sampleId = w.otherSampleid
+
+             WHERE rowId = w.updateRowId;
+
+             UPDATE temp.auditTable
+                SET sampleTypeId = y.materialSourceId
+
+                FROM
+                    (SELECT sampleTypeId as oldTypeId, sampleId as otherSampleId, rowId as updateRowId
+                     FROM temp.auditTable
+                     WHERE sampletypeid = 0
+                    ) w
+                        LEFT JOIN
+                    (SELECT materialSourceId, rowId as sampleRowId
+                     FROM exp.material
+                    ) y
+
+                    ON y.sampleRowId = w.otherSampleid
+
+                WHERE y.materialSourceId IS NOT NULL AND
+                    rowId = w.updateRowId;
          */
 
         DbScope scope = ExperimentService.get().getSchema().getScope();
         List<String> tableNames = new SqlSelector(scope, "SELECT StorageTableName FROM exp.domainDescriptor WHERE StorageSchemaName='audit' AND name='" + SampleTypeAuditProvider.SampleTypeAuditDomainKind.NAME + "'").getArrayList(String.class);
         if (tableNames.size() > 1)
-        {
             LOG.warn("Found " + tableNames.size() + " tables for " + SampleTimelineAuditProvider.SampleTimelineAuditDomainKind.NAME);
+
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
+        {
+            for (String table : tableNames)
+            {
+                long toUpdate = new SqlSelector(scope, new SQLFragment("SELECT COUNT(*) FROM audit.").append(table).append(" WHERE sampleTypeId = 0")).getObject(Long.class);
+                LOG.info("There are " + toUpdate + " audit log entries to be updated in audit." + table + ".");
+                // first update the type id by finding other audit entries that reference the same sample id.
+                if (toUpdate > 0)
+                {
+                    LOG.info("Updating table audit." + table + " via self-join.");
+                    SQLFragment updateSql = new SQLFragment("UPDATE audit.").append(table).append(" a1")
+                            .append(" SET sampleTypeId = a3.sampleTypeId\n")
+                            .append(" FROM\n")
+                            .append("   (SELECT sampleId, rowId as rowIdToUpdate FROM audit.").append(table).append(" WHERE sampleTypeId = 0").append(") a2 ")
+                            .append("   LEFT JOIN\n")
+                            .append("   (SELECT MAX(sampleTypeId) as sampleTypeId, sampleId FROM audit.").append(table).append(" GROUP BY sampleId) a3")
+                            .append("   ON a2.sampleId = a3.sampleId")
+                            .append(" WHERE rowId = a2.rowIdToUpdate");
+                    long start = System.currentTimeMillis();
+                    SqlExecutor executor = new SqlExecutor(scope);
+                    int numRows = executor.execute(updateSql);
+                    long elapsed = System.currentTimeMillis() - start;
+                    LOG.info("Updated " + numRows + " rows via self-join for table " + table + " in " + (elapsed / 1000) + " sec");
+                    toUpdate -= numRows;
+                }
+
+                if (toUpdate > 0)
+                {
+                    // It may have happened that there's only one audit entry for a sample and that entry has a 0 for the type id, in which case we may be able
+                    // to find the type id from the exp.materials table. Since samples may have been deleted, it isn't sufficient to do only this update
+                    LOG.info("Updating table audit." + table + " via exp.materials.");
+                    SQLFragment updateSql = new SQLFragment("UPDATE audit.").append(table).append(" a1")
+                            .append(" SET sampleTypeId = m.materialSourceId\n")
+                            .append(" FROM\n")
+                            .append("   (SELECT sampleId, rowId as rowIdToUpdate FROM audit.").append(table).append(" WHERE sampleTypeId = 0").append(") a2 ")
+                            .append("   LEFT JOIN\n")
+                            .append("   (SELECT materialSourceId, rowId AS sampleRowId FROM exp.material) m")
+                            .append("   ON a2.sampleId = m.sampleRowId")
+                            .append(" WHERE rowId = a2.rowIdToUpdate");
+                    long start = System.currentTimeMillis();
+                    SqlExecutor executor = new SqlExecutor(scope);
+                    int numRows = executor.execute(updateSql);
+                    long elapsed = System.currentTimeMillis() - start;
+                    LOG.info("Updated " + numRows + " rows from exp.material table join in " + (elapsed / 1000) + " sec");
+                }
+                if (toUpdate > 0)
+                {
+                    long remaining = new SqlSelector(scope, new SQLFragment("SELECT COUNT(*) FROM audit.").append(table).append(" WHERE sampleTypeId = 0")).getObject(Long.class);
+                    LOG.info("There are " + remaining + " rows that could not be updated with a proper sample type id.");
+                }
+            }
+            transaction.commit();
         }
-        String table = tableNames.get(0);
-        LOG.info("Updating table " + table);
-        long start = System.currentTimeMillis();
-        SQLFragment missingTypeIdsSql = new SQLFragment("(SELECT DISTINCT SampleID FROM audit.").append(table).append(" WHERE SampleTypeId = 0)");
-        SQLFragment updateSql = new SQLFragment("UPDATE audit.").append(table).append(" a1")
-                .append(" SET sampleTypeId = a3.sampleTypeId\n")
-                .append(" FROM\n")
-                .append("   (SELECT DISTINCT sampleTypeId, sampleId FROM audit.").append(table).append(" a2").append(" WHERE a2.sampleTypeId != 0 AND a2.sampleId IN ")
-                .append(missingTypeIdsSql).append(") a3\n")
-                .append(" WHERE a1.sampleId IN ").append(missingTypeIdsSql).append(" AND a1.sampleTypeId = 0");
-
-        SqlExecutor executor = new SqlExecutor(scope);
-        int numRows = executor.execute(updateSql);
-        long elapsed = System.currentTimeMillis() - start;
-        LOG.info("Updated " + numRows + " rows for table " + table + " in " + (elapsed / 1000) + " sec");
-
     }
 }
