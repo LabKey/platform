@@ -45,6 +45,7 @@ import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.MaterialSource;
 import org.labkey.api.exp.api.SampleTypeDomainKind;
 import org.labkey.experiment.api.SampleTypeServiceImpl;
+import org.labkey.experiment.samples.SampleTimelineAuditProvider;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -320,5 +321,48 @@ public class ExperimentUpgradeCode implements UpgradeCode
 
             tx.commit();
         }
+    }
+
+    // called from exp-24.003-24.004.sql
+    public static void addMissingSampleTypeIdsForSampleTimelineAudit(ModuleContext context)
+    {
+        if (context.isNewInstall())
+            return;
+        /*
+         UPDATE temp.auditTable z
+         SET sampleTypeId = y.sampleTypeId
+         FROM
+             (SELECT DISTINCT sampleTypeId, sampleId
+                 FROM temp.auditTable t
+                 WHERE t.sampletypeId != 0
+                 AND t.sampleId IN
+                 (SELECT DISTINCT SampleId FROM temp.auditTable WHERE sampletypeid = 0)
+             ) y
+         WHERE z.sampleId IN (SELECT DISTINCT SampleId FROM temp.auditTable WHERE sampletypeid = 0)
+               AND z.sampletypeid=0;
+         */
+
+        DbScope scope = ExperimentService.get().getSchema().getScope();
+        List<String> tableNames = new SqlSelector(scope, "SELECT StorageTableName FROM exp.domainDescriptor WHERE StorageSchemaName='audit' AND name='" + SampleTypeAuditProvider.SampleTypeAuditDomainKind.NAME + "'").getArrayList(String.class);
+        if (tableNames.size() > 1)
+        {
+            LOG.warn("Found " + tableNames.size() + " tables for " + SampleTimelineAuditProvider.SampleTimelineAuditDomainKind.NAME);
+        }
+        String table = tableNames.get(0);
+        LOG.info("Updating table " + table);
+        long start = System.currentTimeMillis();
+        SQLFragment missingTypeIdsSql = new SQLFragment("(SELECT DISTINCT SampleID FROM audit.").append(table).append(" WHERE SampleTypeId = 0)");
+        SQLFragment updateSql = new SQLFragment("UPDATE audit.").append(table).append(" a1")
+                .append(" SET sampleTypeId = a3.sampleTypeId\n")
+                .append(" FROM\n")
+                .append("   (SELECT DISTINCT sampleTypeId, sampleId FROM audit.").append(table).append(" a2").append(" WHERE a2.sampleTypeId != 0 AND a2.sampleId IN ")
+                .append(missingTypeIdsSql).append(") a3\n")
+                .append(" WHERE a1.sampleId IN ").append(missingTypeIdsSql).append(" AND a1.sampleTypeId = 0");
+
+        SqlExecutor executor = new SqlExecutor(scope);
+        int numRows = executor.execute(updateSql);
+        long elapsed = System.currentTimeMillis() - start;
+        LOG.info("Updated " + numRows + " rows for table " + table + " in " + (elapsed / 1000) + " sec");
+
     }
 }
