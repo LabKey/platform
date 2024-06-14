@@ -32,20 +32,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import static org.apache.commons.lang3.CharSetUtils.containsAny;
-
 /**
- * User: matthewb
- * Date: Nov 20, 2009
- * Time: 1:03:45 PM
- *
- * This object is used for parsing and manipulating parsed paths (folders, file paths, etc)
- *
- * NOTE: this is object is NOT attached to a filesystem.  It does NOT know the difference between a file
- * and a directory.  The isDirectory() property ONLY indicates that a parsed path originally ended with "/"
- *
- * Path could probably be subclassed, but I think wrapping is probably the way to go for added functionality
- *
+ * This object is used for parsing and manipulating parsed paths (folders, file paths, etc.)
+ * NOTE: this is object is NOT attached to a filesystem. It does NOT know the difference between a file
+ * and a directory. The isDirectory() property ONLY indicates that a parsed path originally ended with "/".
+ * Path could probably be subclassed, but I think wrapping is probably the way to go for added functionality.
  * CONSIDER: support "root"
  * This might be useful for handling webapp context path, or windows drive letter, etc.
  */
@@ -115,8 +106,8 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
     private static Collection<String> getNames(Iterable<java.nio.file.Path> it)
     {
         return StreamSupport.stream(it.spliterator(), false)
-                .map(java.nio.file.Path::toString)
-                .collect(Collectors.toList());
+            .map(java.nio.file.Path::toString)
+            .collect(Collectors.toList());
     }
 
 
@@ -179,18 +170,15 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
         return new Path(arr, arr.length, _abs(path), _dir(path));
     }
 
-
     protected Path createPath(String[] path, int length, boolean abs, boolean dir)
     {
         return new Path(path,length,abs,dir);
     }
 
-
     public boolean isAbsolute()
     {
         return _isAbsolute;
     }
-
 
     public boolean isDirectory()
     {
@@ -212,7 +200,6 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
         return _length - other._length;
     }
 
-
     public boolean endsWith(Path other)
     {
         if (other._length > _length)
@@ -225,7 +212,6 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
         }
         return true;
     }
-
 
     public boolean equals(Object other)
     {
@@ -247,7 +233,6 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
         return true;
     }
 
-
     public boolean contains(String name)
     {
         for (int i=0 ; i<_length ; i++)
@@ -261,30 +246,25 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
         return contains(name.toString());
     }
 
-
     public String getName()
     {
         return _length == 0 ? "" : _path[_length-1];
     }
-
 
     public int size()
     {
         return _length;
     }
 
-
     public boolean isEmpty()
     {
         return 0 == _length;
     }
 
-
     public String get(int i)
     {
         return _path[i];
     }
-
 
     // like java.nio.Path
     public String getName(int i)
@@ -315,7 +295,6 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
         return new Path.Part(_path[_length-1]);
     }
 
-
     // like java.nio.Path
     public int getNameCount()
     {
@@ -334,18 +313,16 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
         return _parent.get();
     }
 
-
     public Path normalize()
     {
         for (int i = 0; i < _length; i++)
         {
             String s = _path[i];
-            if (s.length() == 0 || ".".equals(s) || "..".equals(s))
+            if (s.isEmpty() || ".".equals(s) || "..".equals(s))
                 return _normalize();
         }
         return this;
     }
-
 
     /**
      * CONSIDER: a version that allows a return path that starts with ../
@@ -378,7 +355,6 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
         return createPath(normal, next, isAbsolute(), isDirectory());
     }
 
-
     /**
      * Use only where 'this' is a directory
      */
@@ -410,7 +386,6 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
         return createPath(path, path.length, false, other.isDirectory());
     }
 
-
     /*
      * If other.isAbsolute() then return other.  Otherwise, return a new path by appending other to this path.
      *
@@ -430,7 +405,6 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
         return append(other);
     }
 
-
     /** same as resolve() but ignores isAbsolute() attribute */
     public Path append(Path other)
     {
@@ -444,7 +418,6 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
             ret._parent.set(this);
         return ret;
     }
-
 
     /** NOTE: do not pass in an unparsed path! use .append(Path.parse(path)) to append a path string */
     public Path append(String... names)
@@ -490,7 +463,6 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
         return ret;
     }
 
-
     public boolean startsWith(Path other)
     {
         if (other._length > _length)
@@ -503,7 +475,6 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
         }
         return true;
     }
-
 
     public Path subpath(int begin, int end)
     {
@@ -531,7 +502,6 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
         return toString(null, null);
     }
 
-
     public String toString(String start, String end)
     {
         if (start == null)
@@ -553,13 +523,11 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
         return sb.toString();
     }
 
-
     @Override
     public int hashCode()
     {
         return _hash;
     }
-
 
     public String encode()
     {
@@ -587,24 +555,20 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
         return sb.toString();
     }
 
-
     protected int compareName(String a, String b)
     {
         return a.compareToIgnoreCase(b);
     }
-
 
     protected static String defaultDecodeName(String a)
     {
         return a;
     }
 
-
     protected static String defaultEncodeName(String a)
     {
         return a;
     }
-
 
     @Override
     @NotNull
@@ -613,7 +577,6 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
         return new ArrayIterator<>(_path, 0, _length);
     }
 
-
     private void readObject(java.io.ObjectInputStream in)
             throws IOException, ClassNotFoundException
     {
@@ -621,12 +584,10 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
         _parent = new AtomicReference<>();
     }
 
-
     private static boolean _abs(String path)
     {
         return path.startsWith("/");
     }
-
 
     private static boolean _dir(String path)
     {
@@ -640,7 +601,6 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
     {
         return new Path.Part(name);
     }
-
 
     /**
      * Path.Part is just a wrapper for String.  It only indicates that this String came from a parsed Path, and
@@ -697,7 +657,6 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
             return obj instanceof Part otherPart && this._name.equals(otherPart._name);
         }
     }
-
 
     public static class TestCase extends Assert
     {

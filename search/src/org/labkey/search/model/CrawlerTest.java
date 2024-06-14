@@ -21,13 +21,11 @@ import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurableResource;
-import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
-import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.webdav.FileSystemResource;
@@ -41,41 +39,28 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-/**
- * User: matthewb
- * Date: Dec 12, 2009
- * Time: 3:51:51 PM
- */
 public class CrawlerTest extends Assert
 {
-
     @Test
     public void test()
     {
         DavCrawler cr = new DavCrawler();
-        cr.setResolver(new TestResolver(ModuleLoader.getInstance().getCoreModule().getExplodedPath()));
+        cr.setResolver(new TestResolver(ModuleLoader.getInstance().getCoreModule().getExplodedPath(), JunitUtil.getTestContainer()));
         cr.startFull(Path.rootPath, true);
-
-        long start = System.currentTimeMillis();
     }
 
-    
     //
     // TEST
     //
-
     class TestResolver implements WebdavResolver, SecurableResource
     {
-        final File _base;
-        final SecurityPolicy _policy;
+        private final File _base;
+        private final Container _c;
 
-        TestResolver(File f)
+        TestResolver(File f, Container c)
         {
             _base = f;
-            MutableSecurityPolicy policy = new MutableSecurityPolicy(this);
-            policy.addRoleAssignment(UserManager.getGuestUser(), ReaderRole.class);
-            policy.addRoleAssignment(User.getSearchUser(), ReaderRole.class);
-            _policy = policy;
+            _c = c;
         }
         
         @Override
@@ -93,7 +78,7 @@ public class CrawlerTest extends Assert
         @Override
         public WebdavResource lookup(Path path)
         {
-            return new FileSystemResource(path, new File(_base, path.toString()), _policy);
+            return new FileSystemResource(path, FileUtil.appendPath(_base, path), _c);
         }
 
         @Override
@@ -109,7 +94,7 @@ public class CrawlerTest extends Assert
         }
 
         // SecurableResource
-        String _guid = GUID.makeGUID();
+        private final String _guid = GUID.makeGUID();
 
         @Override
         @NotNull
@@ -149,7 +134,7 @@ public class CrawlerTest extends Assert
         @NotNull
         public Container getResourceContainer()
         {
-            return null;
+            return _c;
         }
 
         @Override
@@ -165,7 +150,6 @@ public class CrawlerTest extends Assert
             return false;
         }
     }
-
 
     class TestSavePaths implements DavCrawler.SavePaths
     {
@@ -221,14 +205,12 @@ public class CrawlerTest extends Assert
             return ret;
         }
 
-
         @Override
         public Date getNextCrawl()
         {
             return new Date(System.currentTimeMillis());
         }
         
-
         @Override
         public synchronized Map<String, DavCrawler.ResourceInfo> getFiles(Path path)
         {

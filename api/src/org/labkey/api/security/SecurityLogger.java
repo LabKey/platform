@@ -47,11 +47,11 @@ public class SecurityLogger extends org.apache.logging.log4j.core.Logger
     }
 
 
-    public static void log(String msg, @Nullable UserPrincipal p, @Nullable SecurityPolicy sp, @Nullable Boolean result)
+    public static void log(String msg, @Nullable UserPrincipal p, @Nullable SecurableResource sr, @Nullable Boolean result)
     {
         String full = indentMsg(msg) +
                 (null==p?"":" " + p.getName()) +
-                (null==sp?"":" "+sp.getResourceClass() + "/" +sp.getResourceId()) +
+                (null==sr?"":" "+sr.getClass() + "/" +sr.getResourceId()) +
                 (null==result?"":result?" TRUE":" FALSE");
         instance.debug(full);
     }
@@ -106,8 +106,6 @@ public class SecurityLogger extends org.apache.logging.log4j.core.Logger
         super((LoggerContext) LogManager.getContext(), name, _log.getMessageFactory());
     }
 
-
-
     private static class ThreadSecurityContext
     {
         final User user;
@@ -119,10 +117,9 @@ public class SecurityLogger extends org.apache.logging.log4j.core.Logger
             this.user = user;
             this.description = desc;
             if (null != prev)
-            this.indent = prev.indent;
+                this.indent = prev.indent;
         }
     }
-
 
     static ThreadLocal<List<ThreadSecurityContext>> threadsecuritycontexts = new ThreadLocal<List<ThreadSecurityContext>>()
     {
@@ -135,7 +132,6 @@ public class SecurityLogger extends org.apache.logging.log4j.core.Logger
         }
     };
 
-
     private static Object indentMsg(Object msg)
     {
         List<ThreadSecurityContext> a = threadsecuritycontexts.get();
@@ -144,8 +140,6 @@ public class SecurityLogger extends org.apache.logging.log4j.core.Logger
             return msg;
         return StringUtils.repeat(' ', indent * 2) + String.valueOf(msg);
     }
-
-
 
     // LoggerWrapper
 

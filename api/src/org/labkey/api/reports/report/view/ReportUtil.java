@@ -54,7 +54,6 @@ import org.labkey.api.resource.Resource;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -426,8 +425,7 @@ public class ReportUtil
 
         if (role != null)
         {
-            SecurityPolicy policy = container.getPolicy();
-            Set<Role> roles = SecurityManager.getEffectiveRoles(policy, user);
+            Set<Role> roles = SecurityManager.getEffectiveRoles(container, user);
 
             return roles.contains(role);
         }

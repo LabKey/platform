@@ -3208,37 +3208,26 @@ public class SecurityManager
         return validRecipients;
     }
 
-    @Deprecated // TODO: Migrate the three remaining callers
-    public static boolean hasAllPermissions(@Nullable String logMsg, SecurityPolicy policy, UserPrincipal principal, Set<Class<? extends Permission>> perms, Set<Role> contextualRoles)
-    {
-        return hasPermissions(logMsg, policy, principal, perms, contextualRoles, HasPermissionOption.ALL);
-    }
-
     public static boolean hasAllPermissions(@Nullable String logMsg, SecurableResource resource, UserPrincipal principal, Set<Class<? extends Permission>> perms, Set<Role> contextualRoles)
     {
-        return hasPermissions(logMsg, SecurityPolicyManager.getPolicy(resource), principal, perms, contextualRoles, HasPermissionOption.ALL);
+        return hasPermissions(logMsg, resource, principal, perms, contextualRoles, HasPermissionOption.ALL);
     }
 
     public static boolean hasAnyPermissions(@Nullable String logMsg, SecurableResource resource, UserPrincipal principal, Set<Class<? extends Permission>> perms, Set<Role> contextualRoles)
     {
-        return hasPermissions(logMsg, SecurityPolicyManager.getPolicy(resource), principal, perms, contextualRoles, HasPermissionOption.ANY);
+        return hasPermissions(logMsg, resource, principal, perms, contextualRoles, HasPermissionOption.ANY);
     }
 
-    /**
-     * This is a choke point for checking permissions. It handles SecurityPolicy permissions, impersonation (via User
-     * object), locked projects, and contextual roles. This lets the SecurityPolicy object just handle its own ACL-like
-     * functionality e.g. computing the permissions that it explicitly assigns (resolving roles and groups).
-     */
-    private static boolean hasPermissions(@Nullable String logMsg, SecurityPolicy policy, UserPrincipal principal, Set<Class<? extends Permission>> permissions, Set<Role> contextualRoles, HasPermissionOption opt)
+    private static boolean hasPermissions(@Nullable String logMsg, SecurableResource resource, UserPrincipal principal, Set<Class<? extends Permission>> permissions, Set<Role> contextualRoles, HasPermissionOption opt)
     {
         try
         {
             SecurityLogger.indent(logMsg);
             permissions.forEach(SecurityPolicy::testPermissionIsRegistered);
 
-            var granted = getPermissions(policy, principal, contextualRoles);
+            var granted = getPermissions(resource, principal, contextualRoles);
             boolean ret = opt.accept(granted, permissions);
-            SecurityLogger.log("SecurityPolicy.hasPermissions " + permissions, principal, policy, ret);
+            SecurityLogger.log("SecurityPolicy.hasPermissions " + permissions, principal, resource, ret);
 
             return ret;
         }
@@ -3248,16 +3237,20 @@ public class SecurityManager
         }
     }
 
-    public static Set<Class<? extends Permission>> getPermissions(SecurityPolicy policy, UserPrincipal principal, Set<Role> contextualRoles)
+    /**
+     * This is a choke point for computing permissions. It handles SecurityPolicy permissions, impersonation (via User
+     * object), locked projects, and contextual roles. This lets the SecurityPolicy object just handle its own ACL-like
+     * functionality e.g. computing the permissions that it explicitly assigns (resolving roles and groups).
+     */
+    public static Set<Class<? extends Permission>> getPermissions(SecurableResource resource, UserPrincipal principal, Set<Role> contextualRoles)
     {
-        if (policy == null)
+        if (null == resource || null == principal)
             return Set.of();
 
-        Container c = ContainerManager.getForId(policy.getContainerId());
-        if (null == principal || (null != c && (principal instanceof User && c.isForbiddenProject((User) principal))))
+        if (principal instanceof User user && resource.getResourceContainer().isForbiddenProject(user))
             return Set.of();
 
-        Stream<Role> roles = principal.getAssignedRoles(policy).stream()
+        Stream<Role> roles = principal.getAssignedRoles(resource).stream()
             .filter(Objects::nonNull);
 
         if (null != contextualRoles && !contextualRoles.isEmpty())
@@ -3272,9 +3265,9 @@ public class SecurityManager
     }
 
     @NotNull
-    public static List<String> getPermissionNames(SecurityPolicy policy, @NotNull UserPrincipal principal)
+    public static List<String> getPermissionNames(SecurableResource resource, @NotNull UserPrincipal principal)
     {
-        Set<Class<? extends Permission>> perms = getPermissions(policy, principal, null);
+        Set<Class<? extends Permission>> perms = getPermissions(resource, principal, null);
         List<String> names = new ArrayList<>(perms.size());
         for (Class<? extends Permission> perm : perms)
         {
@@ -3286,26 +3279,14 @@ public class SecurityManager
     }
 
     /**
-     * Returns the roles the principal is playing, either due to
-     * direct assignment, or due to membership in a group that is
-     * assigned the role.
+     * Returns the roles the principal is playing in this securable resource, either due to direct assignment or due
+     * to membership in a group that is assigned the role.
      * @param principal The principal
-     * @return The roles this principal is playing
+     * @return The roles this principal is playing in the securable resource
      */
-    @NotNull
-    public static Set<Role> getEffectiveRoles(@NotNull SecurityPolicy policy, @NotNull UserPrincipal principal)
+    public static Set<Role> getEffectiveRoles(@NotNull SecurableResource resource, @NotNull UserPrincipal principal)
     {
-        return getEffectiveRoles(policy, principal, true);
-    }
-
-    @NotNull
-    public static Set<Role> getEffectiveRoles(@NotNull SecurityPolicy policy, @NotNull UserPrincipal principal, boolean includeContextualRoles)
-    {
-        Set<Role> roles = policy.getRoles(principal.getGroups());
-        roles.addAll(policy.getAssignedRoles(principal));
-        if (includeContextualRoles)
-            roles.addAll(principal.getAssignedRoles(policy));
-        return roles;
+        return principal.getAssignedRoles(resource);
     }
 
     private enum HasPermissionOption

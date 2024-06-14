@@ -64,6 +64,7 @@ import org.labkey.api.security.permissions.SeeGroupDetailsPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.permissions.UpdateUserPermission;
 import org.labkey.api.security.permissions.UserManagementPermission;
+import org.labkey.api.security.roles.ApplicationAdminRole;
 import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.security.roles.ReaderRole;
@@ -142,13 +143,12 @@ public class SecurityApiActions
 
         protected Map<String, Object> getContainerPerms(Container container, List<Group> groups, boolean recurse)
         {
-            SecurityPolicy policy = container.getPolicy();
             Map<String, Object> containerPerms = new HashMap<>();
             containerPerms.put("path", container.getPath());
             containerPerms.put("id", container.getId());
             containerPerms.put("name", container.getName());
             containerPerms.put("isInheritingPerms", container.isInheritedAcl());
-            containerPerms.put("groups", getGroupPerms(container, policy, groups));
+            containerPerms.put("groups", getGroupPerms(container, groups));
 
             if (recurse && container.hasChildren())
             {
@@ -169,11 +169,8 @@ public class SecurityApiActions
             return containerPerms;
         }
 
-        protected List<Map<String, Object>> getGroupPerms(Container container, SecurityPolicy policy, List<Group> groups)
+        protected List<Map<String, Object>> getGroupPerms(Container container, List<Group> groups)
         {
-            if (null == policy)
-                policy = container.getPolicy();
-
             if (null == groups)
                 return null;
 
@@ -188,7 +185,7 @@ public class SecurityApiActions
                 groupPerms.put("isSystemGroup", group.isSystemGroup());
                 groupPerms.put("isProjectGroup", group.isProjectGroup());
 
-                int perms = policy.getPermsAsOldBitMask(group);
+                int perms = container.getPermsAsOldBitMask(group);
                 groupPerms.put("permissions", perms);
 
                 SecurityManager.PermissionSet role = SecurityManager.PermissionSet.findPermissionSet(perms);
@@ -199,14 +196,14 @@ public class SecurityApiActions
                 }
 
                 //add effective roles array
-                Set<Role> effectiveRoles = SecurityManager.getEffectiveRoles(policy, group);
+                Set<Role> effectiveRoles = SecurityManager.getEffectiveRoles(container, group);
                 ArrayList<String> effectiveRoleList = new ArrayList<>();
                 for (Role effectiveRole : effectiveRoles)
                 {
                     effectiveRoleList.add(effectiveRole.getUniqueName());
                 }
                 groupPerms.put("roles", effectiveRoleList);
-                groupPerms.put("effectivePermissions", SecurityManager.getPermissionNames(container.getPolicy(), group));
+                groupPerms.put("effectivePermissions", SecurityManager.getPermissionNames(container, group));
 
                 if (container.hasPermission(getUser(), AdminPermission.class))
                 {
@@ -326,8 +323,7 @@ public class SecurityApiActions
             permsInfo.put("path", container.getPath());
 
             //add user's effective permissions
-            SecurityPolicy policy = container.getPolicy();
-            int perms = policy.getPermsAsOldBitMask(user);
+            int perms = container.getPermsAsOldBitMask(user);
             permsInfo.put("permissions", perms);
 
             //see if those match a given role name
@@ -345,12 +341,12 @@ public class SecurityApiActions
 
             //effective roles
             List<String> effectiveRoles = new ArrayList<>();
-            for (Role effectiveRole : SecurityManager.getEffectiveRoles(policy,user))
+            for (Role effectiveRole : SecurityManager.getEffectiveRoles(container, user))
             {
                 effectiveRoles.add(effectiveRole.getUniqueName());
             }
             permsInfo.put("roles", effectiveRoles);
-            permsInfo.put("effectivePermissions", SecurityManager.getPermissionNames(container.getPolicy(), user));
+            permsInfo.put("effectivePermissions", SecurityManager.getPermissionNames(container, user));
 
             //add all groups the user belongs to in this container
             List<Group> groups = SecurityManager.getGroups(container, user);
@@ -362,7 +358,7 @@ public class SecurityApiActions
                 groupInfo.put("id", group.getUserId());
                 groupInfo.put("name", SecurityManager.getDisambiguatedGroupName(group));
 
-                int groupPerms = policy.getPermsAsOldBitMask(group);
+                int groupPerms = container.getPermsAsOldBitMask(group);
                 groupInfo.put("permissions", groupPerms);
 
                 SecurityManager.PermissionSet groupRole = SecurityManager.PermissionSet.findPermissionSet(groupPerms);
@@ -374,12 +370,12 @@ public class SecurityApiActions
 
                 //effective roles
                 List<String> groupEffectiveRoles = new ArrayList<>();
-                for (Role effectiveRole : SecurityManager.getEffectiveRoles(policy, group))
+                for (Role effectiveRole : SecurityManager.getEffectiveRoles(container, group))
                 {
                     groupEffectiveRoles.add(effectiveRole.getUniqueName());
                 }
                 groupInfo.put("roles", groupEffectiveRoles);
-                groupInfo.put("effectivePermissions", SecurityManager.getPermissionNames(container.getPolicy(), group));
+                groupInfo.put("effectivePermissions", SecurityManager.getPermissionNames(container, group));
 
                 groupsInfo.add(groupInfo);
             }
@@ -592,8 +588,7 @@ public class SecurityApiActions
                 }
                 else
                 {
-                    SecurityPolicy policy = SecurityPolicyManager.getPolicy(resource);
-                    permissions = SecurityManager.getPermissions(policy, user, Set.of());
+                    permissions = SecurityManager.getPermissions(resource, user, Set.of());
                 }
 
                 for (Class<? extends Permission> permission : permissions)
@@ -747,7 +742,7 @@ public class SecurityApiActions
 
             //if root container permissions update, check for app admin removal
             if (container.isRoot() && resourceId.equals(container.getId()) && user.hasApplicationAdminPermission() && !user.hasSiteAdminPermission()
-                    && !user.hasApplicationAdminForPolicy(policy) && !form.isConfirm())
+                    && !policy.hasRole(user, ApplicationAdminRole.class) && !form.isConfirm())
             {
                 Map<String, Object> props = new HashMap<>();
                 props.put("success", false);

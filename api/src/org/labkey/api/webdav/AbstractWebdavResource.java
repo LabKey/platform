@@ -32,9 +32,9 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.resource.AbstractResource;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -68,20 +68,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * User: matthewb
- * Date: Oct 21, 2008
- * Time: 10:00:49 AM
- */
 public abstract class AbstractWebdavResource extends AbstractResource implements WebdavResource
 {
     private static final String FOLDER_FONT_CLS = "fa fa-folder-o";
-    private SecurityPolicy _policy;
-    protected String _containerId;
 
+    private SecurableResource _resource;
+    private List<ExpData> _data = null;
+
+    protected String _containerId;
     protected String _etag = null;
     protected Map<String, Object> _properties = null;
-    private List<ExpData> _data = null;
 
     protected AbstractWebdavResource(Path path)
     {
@@ -185,7 +181,6 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         return data.get(0).getModifiedBy();
     }
 
-
     @Override
     public void setLastIndexed(long indexed, long modified)
     {
@@ -221,7 +216,6 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         return c(scheme + "://" + host + portStr, getLocalHref(context));
     }
 
-
     @Override
     @NotNull
     public String getLocalHref(ViewContext context)
@@ -233,7 +227,6 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         return href;
     }
 
-
     @Override
     public String getExecuteHref(ViewContext context)
     {
@@ -241,7 +234,6 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         path += (path.endsWith("/")?"":"/") + PageFlowUtil.encode(getPath().getName());
         return path;
     }
-
 
     @Override
     public String getIconHref()
@@ -293,7 +285,6 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         return _etag;
     }
 
-
     @Override
     public String getETag()
     {
@@ -305,7 +296,6 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     {
         return FileUtil.md5sum(getInputStream(user));
     }
-
 
     @Override
     public Map<String, ?> getProperties()
@@ -337,21 +327,17 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         return true;
     }
 
-
-    protected SecurityPolicy getPolicy()
+    protected SecurableResource getSecurableResource()
     {
-        return _policy;
+        return _resource;
     }
 
-
-    protected void setPolicy(SecurityPolicy policy)
+    protected void setSecurableResource(SecurableResource resource)
     {
-        _policy = policy;
+        _resource = resource;
     }
 
     /** permissions */
-
-
 
     @Override
     public boolean canList(User user, boolean forRead)
@@ -359,10 +345,10 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         return canRead(user, forRead);
     }
 
-
     @Override
     public boolean canRead(User user, boolean forRead)
     {
+        // TODO: This looks wrong
         if ("/".equals(getPath()))
             return true;
         try
@@ -370,7 +356,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
             SecurityLogger.indent(getPath() + " AbstractWebdavResource.canRead()");
             if (!hasAccess(user))
             {
-                SecurityLogger.log("hasAccess()==false",user,null,false);
+                SecurityLogger.log("hasAccess()==false", user, null, false);
                 return false;
             }
             return getPermissions(user).contains(ReadPermission.class);
@@ -381,21 +367,19 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         }
     }
 
-
     @Override
     public boolean canWrite(User user, boolean forWrite)
     {
         Set<Role> roles = user.equals(getCreatedBy()) ? RoleManager.roleSet(OwnerRole.class) : Set.of();
         return hasAccess(user) && !user.isGuest() &&
-                SecurityManager.hasAllPermissions(null, getPolicy(), user, Set.of(UpdatePermission.class), roles);
+                SecurityManager.hasAllPermissions(null, getSecurableResource(), user, Set.of(UpdatePermission.class), roles);
     }
-
 
     @Override
     public boolean canCreate(User user, boolean forCreate)
     {
         return hasAccess(user) && !user.isGuest() &&
-                SecurityManager.hasAllPermissions(null, getPolicy(), user, Set.of(InsertPermission.class), Set.of());
+                SecurityManager.hasAllPermissions(null, getSecurableResource(), user, Set.of(InsertPermission.class), Set.of());
     }
 
     @Override
@@ -407,7 +391,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     @Override
     public boolean canDelete(User user, boolean forDelete)
     {
-        return canDelete(user,forDelete,null);
+        return canDelete(user, forDelete, null);
     }
 
     @Override
@@ -419,19 +403,16 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         return perms.contains(UpdatePermission.class) || perms.contains(DeletePermission.class);
     }
 
-
     @Override
     public boolean canRename(User user, boolean forRename)
     {
         return hasAccess(user) && !user.isGuest() && canCreate(user, forRename) && canDelete(user, forRename, null);
     }
 
-
     public Set<Class<? extends Permission>> getPermissions(User user)
     {
-        return SecurityManager.getPermissions(getPolicy(), user, Set.of());
+        return SecurityManager.getPermissions(getSecurableResource(), user, Set.of());
     }
-
 
     @Override
     public boolean delete(User user) throws IOException
@@ -452,7 +433,6 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         return copyFrom(user, r.getFileStream(user));
     }
 
-
     @Override
     public void moveFrom(User user, WebdavResource src) throws IOException, DavException
     {
@@ -460,14 +440,12 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         src.delete(user);
     }
 
-
     @Override
     @NotNull
     public Collection<WebdavResolver.History> getHistory()
     {
         return Collections.emptyList();
     }
-    
 
     @Override
     @NotNull
@@ -521,7 +499,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         for (String name : names)
         {
             String bare = StringUtils.strip(name, "/");
-            if (bare.length() > 0)
+            if (!bare.isEmpty())
                 s.append("/").append(bare);
         }
         return s.toString();
@@ -580,7 +558,6 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     {
         throw new UnsupportedOperationException();
     }
-
 
     //
     // SearchService
