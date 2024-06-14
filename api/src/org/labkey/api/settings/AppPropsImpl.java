@@ -450,18 +450,6 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     }
 
     @Override
-    @Nullable
-    public File getUserFilesRoot()
-    {
-        String userRoot = lookupStringValue(userFileRoot, "");
-        if (!StringUtils.isEmpty(userRoot))
-        {
-            return new File(userRoot);
-        }
-        return null;
-    }
-
-    @Override
     @NotNull
     public UsageReportingLevel getUsageReportingLevel()
     {

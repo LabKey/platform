@@ -188,7 +188,6 @@ public class ContainerManager
         Description,
         SiteRoot,
         StudyChange,
-        UserFilesRoot,
         EndpointDirectory,
     }
 

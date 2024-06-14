@@ -137,8 +137,8 @@ public interface WebdavResource extends Resource
     String getETag();
 
     /**
-     * Calculate MD5sum of this resource.  The default implementation will calculate
-     * the MD5sum by reading the reasource InputStream.
+     * Calculate MD5sum of this resource. The default implementation will calculate
+     * the MD5sum by reading the resource InputStream.
      */
     String getMD5(User user) throws IOException;
 

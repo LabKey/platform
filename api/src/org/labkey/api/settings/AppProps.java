@@ -104,12 +104,6 @@ public interface AppProps
     @Nullable
     File getFileSystemRoot();
 
-    /**
-     * @return directory under which user-specific files will be stored in a user-specific subdirectory
-     */
-    @Nullable
-    File getUserFilesRoot();
-
     @NotNull
     UsageReportingLevel getUsageReportingLevel();
 

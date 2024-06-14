@@ -22,7 +22,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
-import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.logging.log4j.core.config.NullConfiguration;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.module.Module;
@@ -72,7 +71,7 @@ public class ContextListener implements ServletContextListener
         if (isEmbedded)
         {
             // Hack... reload log4j2.xml now that LabKey classes are visible. Not sure if this is needed.
-            Configurator.reconfigure();
+//            Configurator.reconfigure();
         }
 
         getSpringContextListener().contextInitialized(servletContextEvent);

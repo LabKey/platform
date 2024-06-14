@@ -3279,6 +3279,10 @@ public class SecurityManager
     }
 
     /**
+     * Important: Do not use this for permission checking! Doing so will bypass forbidden project checking, permission
+     * filtering done by the impersonation context, etc. Code should use hasPermission() variants to check for the
+     * presence of specific permission classes; it should not be concerned with role assignments. This method is only
+     * appropriate for generating admin reports about role assignments.
      * Returns the roles the principal is playing in this securable resource, either due to direct assignment or due
      * to membership in a group that is assigned the role.
      * @param principal The principal

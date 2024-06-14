@@ -15,12 +15,11 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.apache.commons.lang3.StringUtils"%>
-<%@ page import="org.apache.commons.lang3.SystemUtils" %>
+<%@ page import="org.apache.commons.lang3.SystemUtils"%>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.files.FileContentService" %>
 <%@ page import="org.labkey.api.premium.PremiumService" %>
-<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -30,7 +29,6 @@
 <%@ page import="org.labkey.core.admin.FileSettingsForm" %>
 <%@ page import="org.labkey.core.admin.FilesSiteSettingsAction" %>
 <%@ page import="org.labkey.core.admin.UpdateFilePathsAction" %>
-<%@ page import="org.labkey.api.files.FileContentService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -77,13 +75,6 @@
                 " A site-level file root may be overridden at the project level from 'Project Settings'.")%></td>
             <td><input type="text" name="rootPath" size="64" value="<%=h(bean.getRootPath())%>"></td>
         </tr>
-        <% if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_USER_FOLDERS)) {%>
-        <tr>
-            <td class="labkey-form-label">Home&nbsp;Directory&nbsp;File&nbsp;Root&nbsp;<%=helpPopup("User File Root", "Set the root folder for users personal folders. ")%></td>
-            <td><input type="text" name="userRootPath" size="64" value="<%=h(StringUtils.defaultIfBlank(bean.getUserRootPath(), ""))%>"></td>
-        </tr>
-        <%}%>
-
         <tr>
         <%
             if (bean.isUpgrade()) {

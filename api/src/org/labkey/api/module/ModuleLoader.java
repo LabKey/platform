@@ -160,7 +160,7 @@ public class ModuleLoader implements MemTrackerListener
     private static final String BANNER = """
 
              __                                  \s
-             ||  |  _ |_ |/ _     (\u00af _  _   _  _
+             ||  |  _ |_ |/ _     (¯ _  _   _  _
             (__) |_(_||_)|\\(/_\\/  _)(/_| \\/(/_| \s
                               /                 \s""".indent(2);
 
@@ -460,6 +460,7 @@ public class ModuleLoader implements MemTrackerListener
     private void doInit(Execution execution) throws ServletException
     {
         _log.info(BANNER);
+        _log.info("☃ Hello!!");
 
         AppProps.getInstance().setContextPath(_servletContext.getContextPath());
 

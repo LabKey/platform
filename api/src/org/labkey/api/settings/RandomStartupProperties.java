@@ -78,14 +78,6 @@ public enum RandomStartupProperties implements StartupProperty, SafeToRenderEnum
             }
         }
     },
-    userFileRoot("Enable personal folders for users")
-    {
-        @Override
-        public void setValue(WriteableAppProps writeable, String value)
-        {
-            writeable.setUserFilesRoot(value);
-        }
-    },
     webfilesEnabled("Alternative webfiles root")
     {
         @Override
