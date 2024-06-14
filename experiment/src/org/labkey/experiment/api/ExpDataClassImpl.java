@@ -488,7 +488,7 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
         long current = seq.current();
         if (newSeqValue < current)
         {
-            if (getDatas().isEmpty())
+            if (!hasData())
             {
                 seq.setSequenceValue(newSeqValue);
                 DbSequenceManager.invalidatePreallocatingSequence(c, SEQUENCE_PREFIX, getRowId());
@@ -533,6 +533,13 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
     public void setImportAliasMap(Map<String, String> aliasMap)
     {
         setImportAliasMapJson(ExperimentJSONConverter.getAliasJson(aliasMap, _object.getName()));
+    }
+
+    @Override
+    public boolean hasData()
+    {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ClassId"), _object.getRowId());
+        return new TableSelector(ExperimentService.get().getTinfoData(), filter, null).exists();
     }
 
     public void setImportAliasMapJson(String aliasJson)

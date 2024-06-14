@@ -331,6 +331,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
             if (null != ti)
             {
                 new SqlExecutor(ti.getSchema()).execute("INSERT INTO " + ti + " (rowId, lsid, name) SELECT ?, ?, ? WHERE NOT EXISTS (SELECT lsid FROM " + ti + " WHERE lsid = ?)", getRowId(), getLSID(), getName(), getLSID());
+                SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(st, SampleTypeServiceImpl.SampleChangeType.insert);
             }
         }
         index(null);

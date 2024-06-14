@@ -56,8 +56,9 @@ import org.labkey.assay.plate.data.WellTriggerFactory;
 import org.labkey.assay.query.AssayDbSchema;
 
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -88,9 +89,9 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         WellGroup
     }
 
-    private static final Set<FieldKey> defaultVisibleColumns = new LinkedHashSet<>();
+    private static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
     private static final Set<String> ignoredColumns = new CaseInsensitiveHashSet();
-    private final Map<FieldKey, ColumnInfo> _provisionedFieldMap = new HashMap<>();
+    private final Map<FieldKey, ColumnInfo> _provisionedFieldMap = new LinkedHashMap<>();
     private final boolean _allowInsertDelete;
 
     static
@@ -197,7 +198,6 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
                         continue;
 
                     FieldKey fieldKey = FieldKey.fromParts(Column.Properties.name(), column.getName());
-                    defaultVisibleColumns.add(fieldKey);
                     _provisionedFieldMap.put(fieldKey, column);
                 }
             }
@@ -301,7 +301,12 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
     @Override
     public List<FieldKey> getDefaultVisibleColumns()
     {
-        return defaultVisibleColumns.stream().toList();
+        List<FieldKey> visibleColumns = new ArrayList<>(defaultVisibleColumns);
+
+        for (var entry : _provisionedFieldMap.entrySet())
+            visibleColumns.add(entry.getKey());
+
+        return Collections.unmodifiableList(visibleColumns);
     }
 
 /*

@@ -248,4 +248,6 @@ public interface ExpSampleType extends ExpObject
     long getCurrentGenId();
 
     void ensureMinGenId(long newSeqValue) throws ExperimentException;
+
+    boolean hasData();
 }

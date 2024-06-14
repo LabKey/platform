@@ -23,6 +23,8 @@ import jakarta.servlet.ServletRegistration;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.pdfbox.pdmodel.font.FontMapper;
+import org.apache.pdfbox.pdmodel.font.FontMappers;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -65,6 +67,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfoFactory;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.TabContainerType;
 import org.labkey.api.data.Table;
@@ -169,6 +172,7 @@ import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.MothershipReport;
 import org.labkey.api.util.PageFlowUtil;
@@ -301,6 +305,8 @@ import org.quartz.SchedulerException;
 import org.quartz.impl.StdSchedulerFactory;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.ZonedDateTime;
@@ -1169,6 +1175,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             results.put("uniqueUserCountThisMonth", UserManager.getUniqueUsersCount(cal.getTime()));
             results.put("scriptEngines", LabKeyScriptEngineManager.get().getScriptEngineMetrics());
             results.put("customLabels", CustomLabelService.get().getCustomLabelMetrics());
+            Map<String, Long> roleAssignments = new HashMap<>();
+            final String roleCountSql = "SELECT COUNT(*) FROM core.RoleAssignments WHERE userid > 0 AND role = ?";
+            roleAssignments.put("assayDesignerCount", new SqlSelector(CoreSchema.getInstance().getSchema(), roleCountSql, "org.labkey.assay.security.AssayDesignerRole").getObject(Long.class));
+            roleAssignments.put("dataClassDesignerCount", new SqlSelector(CoreSchema.getInstance().getSchema(), roleCountSql, "org.labkey.experiment.security.DataClassDesignerRole").getObject(Long.class));
+            roleAssignments.put("sampleTypeDesignerCount", new SqlSelector(CoreSchema.getInstance().getSchema(), roleCountSql, "org.labkey.experiment.security.SampleTypeDesignerRole").getObject(Long.class));
+            results.put("roleAssignments", roleAssignments);
             return results;
         });
 
@@ -1267,6 +1279,24 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         // ping, and then once every 24 hours.
         UsageReportingLevel.init();
         TempTableTracker.init();
+
+        // Loading the PDFBox font cache can be very slow on some agents; fill it proactively. Issue 50601
+        JobRunner.getDefault().execute(() -> {
+            try
+            {
+                long start = System.currentTimeMillis();
+                FontMapper mapper = FontMappers.instance();
+                Method method = mapper.getClass().getMethod("getProvider");
+                method.setAccessible(true);
+                method.invoke(mapper);
+                long duration = System.currentTimeMillis() - start;
+                LOG.info("Ensuring PDFBox on-disk font cache took {} seconds", Math.round(duration / 100.0) / 10.0);
+            }
+            catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e)
+            {
+                LOG.warn("Unable to initialize PDFBox font cache", e);
+            }
+        });
     }
 
     @Override

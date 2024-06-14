@@ -290,6 +290,7 @@ import static org.labkey.api.util.DOM.TR;
 import static org.labkey.api.util.DOM.UL;
 import static org.labkey.api.util.DOM.at;
 import static org.labkey.api.util.DOM.cl;
+import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.update;
 
 public class ExperimentController extends SpringActionController
 {
@@ -3371,7 +3372,7 @@ public class ExperimentController extends SpringActionController
         protected abstract void deleteObjects(DeleteForm form) throws Exception;
     }
 
-    @RequiresPermission(DeletePermission.class)
+    @RequiresPermission(DesignAssayPermission.class)
     public class DeleteProtocolByRowIdsAPIAction extends AbstractDeleteAPIAction
     {
         @Override
@@ -3379,6 +3380,9 @@ public class ExperimentController extends SpringActionController
         {
             for (ExpProtocol protocol : getProtocolsForDeletion(form))
             {
+                if (!protocol.getContainer().hasPermission(getUser(), DesignAssayPermission.class))
+                    throw new UnauthorizedException("You do not have sufficient permissions to delete this assay design.");
+
                 protocol.delete(getUser(), form.getUserComment());
             }
 
@@ -3400,7 +3404,7 @@ public class ExperimentController extends SpringActionController
         return protocols;
     }
 
-    @RequiresPermission(DeletePermission.class)
+    @RequiresPermission(DesignAssayPermission.class)
     public class DeleteProtocolByRowIdsAction extends AbstractDeleteAction
     {
         @Override
@@ -3423,6 +3427,9 @@ public class ExperimentController extends SpringActionController
             {
                 for (ExpProtocol protocol : protocols)
                 {
+                    if (!protocol.getContainer().hasPermission(getUser(), DesignAssayPermission.class))
+                        throw new UnauthorizedException("You do not have sufficient permissions to delete this assay design.");
+
                     if (AssayService.get().getProvider(protocol) == null)
                     {
                         noun = "Protocol";
@@ -7805,7 +7812,8 @@ public class ExperimentController extends SpringActionController
                 {
                     int updatedCount;
                     updatedCount = service.recomputeSampleTypeRollup(sampleType, container);
-                    SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(sampleType, false);
+                    // we could check "if (0 < updatedCount) refresh(rollup)", but since this is a "manual" usage lets just always refresh
+                    SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(sampleType, update);
                     builder.unsafeAppend("<tr><td>")
                             .append(sampleType.getName())
                             .unsafeAppend("</td><td>")
