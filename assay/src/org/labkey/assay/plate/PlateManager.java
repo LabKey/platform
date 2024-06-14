@@ -692,14 +692,14 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         {
             for (Plate plate : plateSet.getPlates(user))
             {
-                if (plate.getName().equalsIgnoreCase(name))
+                if (plate.getName() != null && plate.getName().equalsIgnoreCase(name))
                     return true;
             }
             return false;
         }
 
         Plate plate = getPlateByName(c, name);
-        return plate != null && plate.getName().equals(name);
+        return plate != null && plate.getName() != null && plate.getName().equals(name);
     }
 
     public boolean isDuplicatePlateTemplateName(Container container, String name)

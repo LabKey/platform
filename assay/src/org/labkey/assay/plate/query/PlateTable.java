@@ -17,6 +17,7 @@
 package org.labkey.assay.plate.query;
 
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.plate.Plate;
@@ -276,7 +277,7 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
             if (row.containsKey("Name"))
             {
                 String oldName = (String) oldRow.get("Name");
-                String newName = (String) row.get("Name");
+                String newName = StringUtils.trimToNull((String) row.get("Name"));
                 if (newName != null && !newName.equals(oldName))
                 {
                     if (plate.isTemplate() && PlateManager.get().isDuplicatePlateTemplateName(container, newName))
@@ -284,6 +285,10 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
                     if (PlateManager.get().isDuplicatePlateName(container, user, newName, plate.getPlateSet()))
                         throw new QueryUpdateServiceException("Plate with name : " + newName + " already exists.");
                 }
+
+                // Do not allow empty string as the name. Fallback to PlateId.
+                if (newName == null)
+                    row.put("Name", plate.getPlateId());
             }
 
             Map<String, Object> newRow = super.updateRow(user, container, row, oldRow, configParameters);
