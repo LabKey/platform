@@ -1526,6 +1526,11 @@ public class SecurityManager
                         GroupMembershipCache.handleGroupChange(group, member);
                 }, CommitTaskOption.IMMEDIATE, CommitTaskOption.POSTCOMMIT, CommitTaskOption.POSTROLLBACK);
 
+                transaction.addCommitTask( () -> {
+                    for (UserPrincipal member : membersToDelete)
+                        fireDeletePrincipalFromGroup(group.getUserId(), member);
+                }, CommitTaskOption.POSTCOMMIT);
+
                 if (!group.isProjectGroup())
                     ensureAtLeastOneRootAdminExists();
 
