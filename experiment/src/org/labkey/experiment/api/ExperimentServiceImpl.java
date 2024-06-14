@@ -9726,9 +9726,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             selectSql = unionSql;
         else
             selectSql = new SQLFragment("SELECT * FROM (").append(unionSql).append(") WHERE Container ").appendInClause(cf.getIds(), CoreSchema.getInstance().getSchema().getSqlDialect());
-        final int MAX_MISSING_COUNT = 1000;
+        final int MAX_MISSING_COUNT = 1_000;
+        final int MAX_ROWS = 100_000;
         int missingCount = 0;
-        try (ResultSet rs = new SqlSelector(CoreSchema.getInstance().getSchema(), selectSql).getResultSet(false))
+        try (ResultSet rs = new SqlSelector(CoreSchema.getInstance().getSchema(), selectSql).setMaxRows(MAX_ROWS).getResultSet(false))
         {
             while (rs.next())
             {

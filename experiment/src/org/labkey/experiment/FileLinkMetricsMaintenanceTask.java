@@ -71,7 +71,10 @@ public class FileLinkMetricsMaintenanceTask implements SystemMaintenance.Mainten
                     {
                         missingFilesCount += info.get(source).getMissingFilesCount();
 
-                        String schemaName = source.substring(0, source.indexOf('.')); // e.g. 'assayresults.c9043290_test'
+                        // e.g. 'assayresults.c9043290_test'
+                        // note that files from the assay batch and run fields will have "exp" as the schema name here
+                        String schemaName = source.substring(0, source.indexOf('.'));
+
                         long schemaValidFilesCount = validFilesCount.getOrDefault(schemaName, 0L);
                         validFilesCount.put(schemaName, schemaValidFilesCount + info.get(source).getValidFilesCount());
                     }
