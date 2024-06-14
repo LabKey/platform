@@ -1821,10 +1821,6 @@ boxPlot.render();
                         maxValue = config.properties.upperBound + cushion;
                         minValue = config.properties.lowerBound - cushion;
                     }
-                    else if (config.properties.valueConversion === 'percentDeviation' && !config.properties.combined && stddev ) {
-                        maxValue = mean + ((config.properties.upperBound + cushion) * stddev);
-                        minValue = mean + ((config.properties.lowerBound - cushion) * stddev);
-                    }
                     else {
                         maxValue = mean + ((config.properties.upperBound + cushion) * stddev);
                         minValue = mean + ((config.properties.lowerBound - cushion) * stddev);
