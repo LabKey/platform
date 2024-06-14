@@ -64,7 +64,7 @@ public class PlateSchema extends SimpleUserSchema
     public TableInfo createTable(String name, ContainerFilter cf)
     {
         if (PlateTable.NAME.equalsIgnoreCase(name))
-            return new PlateTable(this, cf).init();
+            return new PlateTable(this, cf, false).init();
         if (WellTable.NAME.equalsIgnoreCase(name))
             return new WellTable(this, cf, false).init();
         if (PlateSetTable.NAME.equalsIgnoreCase(name))
@@ -85,6 +85,12 @@ public class PlateSchema extends SimpleUserSchema
             return new WellGroupTypeTable(this);
 
         return null;
+    }
+
+    public static TableInfo getPlateTable(Container container, User user, @Nullable ContainerFilter cf)
+    {
+        PlateSchema plateSchema = new PlateSchema(user, container);
+        return new PlateTable(plateSchema, cf, true).init();
     }
 
     public static TableInfo getWellTable(Container container, User user, @Nullable ContainerFilter cf)

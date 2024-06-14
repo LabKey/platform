@@ -58,6 +58,9 @@ import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.GUID;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.query.AssayDbSchema;
@@ -76,25 +79,44 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
 {
     public static final String NAME = "Plate";
     private static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
+    private final boolean _allowInsert;
+
+    public enum Column
+    {
+        Archived,
+        AssayType,
+        Container,
+        Description,
+        Lsid,
+        Name,
+        PlateId,
+        PlateSet,
+        PlateType,
+        Properties,
+        RowId,
+        Template,
+        WellsFilled
+    }
 
     static
     {
-        defaultVisibleColumns.add(FieldKey.fromParts("Name"));
-        defaultVisibleColumns.add(FieldKey.fromParts("Description"));
-        defaultVisibleColumns.add(FieldKey.fromParts("PlateType"));
-        defaultVisibleColumns.add(FieldKey.fromParts("PlateSet"));
-        defaultVisibleColumns.add(FieldKey.fromParts("AssayType"));
-        defaultVisibleColumns.add(FieldKey.fromParts("WellsFilled"));
+        defaultVisibleColumns.add(FieldKey.fromParts(Column.Name.name()));
+        defaultVisibleColumns.add(FieldKey.fromParts(Column.Description.name()));
+        defaultVisibleColumns.add(FieldKey.fromParts(Column.PlateType.name()));
+        defaultVisibleColumns.add(FieldKey.fromParts(Column.PlateSet.name()));
+        defaultVisibleColumns.add(FieldKey.fromParts(Column.AssayType.name()));
+        defaultVisibleColumns.add(FieldKey.fromParts(Column.WellsFilled.name()));
         defaultVisibleColumns.add(FieldKey.fromParts("Created"));
         defaultVisibleColumns.add(FieldKey.fromParts("CreatedBy"));
         defaultVisibleColumns.add(FieldKey.fromParts("Modified"));
         defaultVisibleColumns.add(FieldKey.fromParts("ModifiedBy"));
     }
 
-    public PlateTable(PlateSchema schema, @Nullable ContainerFilter cf)
+    public PlateTable(PlateSchema schema, @Nullable ContainerFilter cf, boolean allowInsert)
     {
         super(schema, AssayDbSchema.getInstance().getTableInfoPlate(), cf);
-        setTitleColumn("Name");
+        _allowInsert = allowInsert;
+        setTitleColumn(Column.Name.name());
     }
 
     @Override
@@ -110,7 +132,7 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
     {
         super.fixupWrappedColumn(wrap, col);
 
-        if ("Container".equalsIgnoreCase(col.getName()))
+        if (Column.Container.name().equalsIgnoreCase(col.getName()))
         {
             wrap.setFieldKey(FieldKey.fromParts("Folder"));
             wrap.setLabel(getContainer().hasProductProjects() ? "Project" : "Folder");
@@ -125,8 +147,8 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
 
     private MutableColumnInfo createPropertiesColumn()
     {
-        ColumnInfo lsidCol = getColumn("LSID", false);
-        var col = new AliasedColumn(this, "Properties", lsidCol);
+        ColumnInfo lsidCol = getColumn(Column.Lsid.name(), false);
+        var col = new AliasedColumn(this, Column.Properties.name(), lsidCol);
         col.setDescription("Properties associated with this Plate");
         col.setHidden(true);
         col.setUserEditable(false);
@@ -155,9 +177,17 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
                 .append(AssayDbSchema.getInstance().getTableInfoWell(), "")
                 .append(" WHERE PlateId = " + STR_TABLE_ALIAS + ".RowId")
                 .append(" AND sampleId IS NOT NULL)");
-        ExprColumn countCol = new ExprColumn(this, "WellsFilled", sql, JdbcType.INTEGER);
+        ExprColumn countCol = new ExprColumn(this, Column.WellsFilled.name(), sql, JdbcType.INTEGER);
         countCol.setDescription("The number of wells that have samples for this plate.");
         addColumn(countCol);
+    }
+
+    @Override
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
+    {
+        if (!_allowInsert && InsertPermission.class.equals(perm))
+            return false;
+        return super.hasPermission(user, perm);
     }
 
     @Override
@@ -176,14 +206,12 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
         @Override
         public DataIteratorBuilder createImportDIB(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
         {
-            final TableInfo plateTable = getQueryTable();
-
             SimpleTranslator lsidRemover = new SimpleTranslator(data.getDataIterator(context), context);
             lsidRemover.selectAll();
-            if (lsidRemover.getColumnNameMap().containsKey("lsid"))
+            if (lsidRemover.getColumnNameMap().containsKey(Column.Lsid.name()))
             {
                 // remove any furnished lsid since we will be computing one
-                lsidRemover.removeColumn(lsidRemover.getColumnNameMap().get("lsid"));
+                lsidRemover.removeColumn(lsidRemover.getColumnNameMap().get(Column.Lsid.name()));
             }
 
             SimpleTranslator lsidGenerator = new SimpleTranslator(lsidRemover, context);
@@ -191,20 +219,22 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
             lsidGenerator.selectAll();
             final Map<String, Integer> nameMap = lsidGenerator.getColumnNameMap();
 
-            if (!nameMap.containsKey("template"))
+            if (!nameMap.containsKey(Column.Template.name()))
             {
-                context.getErrors().addRowError(new ValidationException("Template is a required field"));
+                context.getErrors().addRowError(new ValidationException(String.format("%s is a required field", Column.Template.name())));
                 return data;
             }
 
-            if (!nameMap.containsKey("plateSet"))
+            if (!nameMap.containsKey(Column.PlateSet.name()))
             {
                 context.getErrors().addRowError(new ValidationException("Plate set is a required field"));
                 return data;
             }
 
+            final TableInfo plateTable = getQueryTable();
+
             // generate a value for the lsid
-            lsidGenerator.addColumn(plateTable.getColumn("lsid"),
+            lsidGenerator.addColumn(plateTable.getColumn(Column.Lsid.name()),
                     (Supplier) () -> PlateManager.get().getLsid(Plate.class, container));
 
             // generate the data file id if not provided
@@ -217,15 +247,15 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
             SimpleTranslator nameExpressionTranslator = new SimpleTranslator(lsidGenerator, context);
             nameExpressionTranslator.setDebugName("nameExpressionTranslator");
             nameExpressionTranslator.selectAll();
-            if (!nameMap.containsKey("name"))
+            if (!nameMap.containsKey(Column.Name.name()))
             {
-                ColumnInfo nameCol = plateTable.getColumn("name");
+                ColumnInfo nameCol = plateTable.getColumn(Column.Name.name());
                 nameExpressionTranslator.addColumn(nameCol, (Supplier) () -> null);
             }
 
-            if (!nameMap.containsKey("plateId"))
+            if (!nameMap.containsKey(Column.PlateId.name()))
             {
-                ColumnInfo nameCol = plateTable.getColumn("plateId");
+                ColumnInfo nameCol = plateTable.getColumn(Column.PlateId.name());
                 nameExpressionTranslator.addColumn(nameCol, (Supplier) () -> null);
             }
 
@@ -240,7 +270,7 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
 
             DataIteratorBuilder dib = StandardDataIteratorBuilder.forInsert(plateTable, di, container, user, context);
             dib = new TableInsertDataIteratorBuilder(dib, plateTable, container)
-                    .setKeyColumns(new CaseInsensitiveHashSet("RowId", "Lsid"));
+                    .setKeyColumns(new CaseInsensitiveHashSet(Column.RowId.name(), Column.Lsid.name()));
             dib = LoggingDataIterator.wrap(dib);
             dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(getQueryTable(), dib, context.getInsertOption(), user, container);
 
@@ -256,7 +286,7 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
         @Override
         protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, @Nullable Map<Enum, Object> configParameters) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
-            Integer plateId = (Integer) oldRow.get("RowId");
+            Integer plateId = (Integer) oldRow.get(Column.RowId.name());
             Plate plate = PlateManager.get().getPlate(container, plateId);
             if (plate == null)
                 return Collections.emptyMap();
@@ -269,15 +299,14 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
                     throw new QueryUpdateServiceException(String.format("%s is used by %d runs and cannot be updated", plate.isTemplate() ? "Plate template" : "Plate", runsInUse));
             }
 
-            // disallow plate type changes
-            if (row.containsKey("plateType") && ObjectUtils.notEqual(oldRow.get("plateType"), row.get("plateType")))
-                throw new QueryUpdateServiceException("Changing the plate type is not allowed.");
+            // disallow updates of certain columns
+            preventUpdates(row, oldRow, Column.AssayType, Column.PlateSet, Column.PlateType);
 
             // if the name is changing, check for duplicates
-            if (row.containsKey("Name"))
+            if (row.containsKey(Column.Name.name()))
             {
-                String oldName = (String) oldRow.get("Name");
-                String newName = StringUtils.trimToNull((String) row.get("Name"));
+                String oldName = (String) oldRow.get(Column.Name.name());
+                String newName = StringUtils.trimToNull((String) row.get(Column.Name.name()));
                 if (newName != null && !newName.equals(oldName))
                 {
                     if (plate.isTemplate() && PlateManager.get().isDuplicatePlateTemplateName(container, newName))
@@ -288,7 +317,7 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
 
                 // Do not allow empty string as the name. Fallback to PlateId.
                 if (newName == null)
-                    row.put("Name", plate.getPlateId());
+                    row.put(Column.Name.name(), plate.getPlateId());
             }
 
             Map<String, Object> newRow = super.updateRow(user, container, row, oldRow, configParameters);
@@ -299,7 +328,7 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
         @Override
         protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRowMap) throws QueryUpdateServiceException, SQLException, InvalidKeyException
         {
-            Integer plateId = (Integer)oldRowMap.get("RowId");
+            Integer plateId = (Integer) oldRowMap.get(Column.RowId.name());
             Plate plate = PlateManager.get().getPlate(container, plateId);
             if (plate == null)
                 return Collections.emptyMap();
@@ -317,6 +346,16 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
                 transaction.commit();
 
                 return returnMap;
+            }
+        }
+
+        private void preventUpdates(Map<String, Object> newRow, Map<String, Object> oldRow, Column... columns) throws QueryUpdateServiceException
+        {
+            for (Column column : columns)
+            {
+                String columnName = column.name();
+                if (newRow.containsKey(columnName) && ObjectUtils.notEqual(oldRow.get(columnName), newRow.get(columnName)))
+                    throw new QueryUpdateServiceException(String.format("Updating \"%s\" is not allowed.", columnName));
             }
         }
     }

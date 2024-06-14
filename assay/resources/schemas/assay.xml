@@ -41,6 +41,7 @@
           <fkTable>PlateSet</fkTable>
           <fkDbSchema>assay</fkDbSchema>
         </fk>
+        <shownInUpdateView>false</shownInUpdateView>
       </column>
       <column columnName="PlateType">
         <description>The plate type of this plate.</description>
@@ -49,6 +50,7 @@
           <fkTable>PlateType</fkTable>
           <fkDbSchema>assay</fkDbSchema>
         </fk>
+        <shownInUpdateView>false</shownInUpdateView>
       </column>
       <column columnName="CreatedBy">
         <datatype>int</datatype>
@@ -100,6 +102,7 @@
       </column>
       <column columnName="AssayType">
         <description>A text label of the plate assay type ("NAb", for example).</description>
+        <shownInUpdateView>false</shownInUpdateView>
       </column>
       <column columnName="Archived">
         <isHidden>true</isHidden>
