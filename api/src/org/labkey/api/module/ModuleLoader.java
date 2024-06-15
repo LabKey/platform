@@ -460,7 +460,6 @@ public class ModuleLoader implements MemTrackerListener
     private void doInit(Execution execution) throws ServletException
     {
         _log.info(BANNER);
-        _log.info("☃ Hello!!");
 
         AppProps.getInstance().setContextPath(_servletContext.getContextPath());
 
