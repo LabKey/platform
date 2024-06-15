@@ -647,21 +647,6 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
         return _problematicFileRootMessage;
     }
 
-    @Override
-    public @NotNull File getUserFilesRoot() throws IOException
-    {
-        // Always on the file system
-        File root = AppProps.getInstance().getUserFilesRoot();
-
-        if (root == null || !root.exists())
-            root = getDefaultRoot();
-
-        if (!root.exists())
-            FileUtil.mkdirs(root);
-
-        return root;
-    }
-
     private @NotNull File getDefaultRoot() throws IOException
     {
         File explodedPath = ModuleLoader.getInstance().getCoreModule().getExplodedPath();
@@ -697,32 +682,6 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
         FileRootManager.get().clearCache();
         ContainerManager.ContainerPropertyChangeEvent evt = new ContainerManager.ContainerPropertyChangeEvent(
                 ContainerManager.getRoot(), ContainerManager.Property.SiteRoot, prevRoot, root);
-        ContainerManager.firePropertyChangeEvent(evt);
-    }
-
-    @Override
-    public void setUserFilesRoot(File root, User user)
-    {
-        if (root == null || !root.exists())
-            throw new IllegalArgumentException("Invalid site root: does not exist");
-
-        File prevRoot;
-        try
-        {
-            prevRoot = getUserFilesRoot();
-        }
-        catch (IOException e)
-        {
-            throw new IllegalArgumentException("Invalid site root: does not exist. ", e);
-        }
-        WriteableAppProps props = AppProps.getWriteableInstance();
-
-        props.setUserFilesRoot(root.getAbsolutePath());
-        props.save(user);
-
-        FileRootManager.get().clearCache();
-        ContainerManager.ContainerPropertyChangeEvent evt = new ContainerManager.ContainerPropertyChangeEvent(
-                ContainerManager.getRoot(), ContainerManager.Property.UserFilesRoot, prevRoot, root);
         ContainerManager.firePropertyChangeEvent(evt);
     }
 
