@@ -128,18 +128,18 @@ public class LimitedUser extends ClonedUser
             testPermissions(ElevatedUser.ensureCanSeeAuditLogRole(c, ElevatedUser.getElevatedUser(new LimitedUser(user, ReaderRole.class), EditorRole.class)), 3, true, true, true, false, true);
 
             int groupCount = user.getGroups().size();
-            int roleCount = user.getAssignedRoles(c.getPolicy()).size();
+            int roleCount = user.getAssignedRoles(c).size();
             int siteRolesCount = user.getSiteRoles().size();
             User elevated = ElevatedUser.getElevatedUser(user);
             assertEquals(groupCount, elevated.getGroups().size());
-            assertEquals(roleCount, elevated.getAssignedRoles(c.getPolicy()).size());
+            assertEquals(roleCount, elevated.getAssignedRoles(c).size());
             assertEquals(siteRolesCount, elevated.getSiteRoles().size());
         }
 
         private void testPermissions(User user, int roleCount, boolean hasRead, boolean hasInsert, boolean hasUpdate, boolean hasAdmin, boolean hasCanSeeAuditLog)
         {
             Container c = JunitUtil.getTestContainer();
-            assertEquals(roleCount, user.getAssignedRoles(c.getPolicy()).size());
+            assertEquals(roleCount, user.getAssignedRoles(c).size());
             assertTrue(user.getSiteRoles().isEmpty());
             assertFalse(user.hasSiteAdminPermission());
             assertEquals(0, user.getGroups().stream().count());
@@ -166,8 +166,7 @@ public class LimitedUser extends ClonedUser
             String serialized = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(admin);
             User reconstitutedAdmin = mapper.readValue(serialized, User.class);
             assertEquals(admin, reconstitutedAdmin);
-            SecurityPolicy rootPolicy = ContainerManager.getRoot().getPolicy();
-            assertEquals(admin.getAssignedRoles(rootPolicy), reconstitutedAdmin.getAssignedRoles(rootPolicy));
+            assertEquals(admin.getAssignedRoles(ContainerManager.getRoot()), reconstitutedAdmin.getAssignedRoles(ContainerManager.getRoot()));
 
             // Serialize/deserialize search user
             User user = User.getSearchUser();

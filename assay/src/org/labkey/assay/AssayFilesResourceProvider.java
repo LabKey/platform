@@ -4,7 +4,7 @@ import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.data.Container;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.MissingRootDirectoryException;
-import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -74,7 +74,7 @@ public class AssayFilesResourceProvider implements WebdavService.Provider
                 if (!Files.exists(path))
                     return null;
 
-                return new AssayFilesResource(parent, Path.toPathPart(name), dir.getFileSystemDirectory(), c.getPolicy());
+                return new AssayFilesResource(parent, Path.toPathPart(name), dir.getFileSystemDirectory(), c);
             }
         }
         catch (MissingRootDirectoryException e)
@@ -93,9 +93,9 @@ public class AssayFilesResourceProvider implements WebdavService.Provider
 
     static class AssayFilesResource extends FileSystemResource
     {
-        public AssayFilesResource(WebdavResource folder, Path.Part name, File file, SecurityPolicy policy)
+        public AssayFilesResource(WebdavResource folder, Path.Part name, File file, SecurableResource resource)
         {
-            super(folder, name, file, policy);
+            super(folder, name, file, resource);
         }
 
         public AssayFilesResource(FileSystemResource folder, Path.Part relativePath)

@@ -49,16 +49,6 @@ public class FileSettingsForm
         _upgrade = upgrade;
     }
 
-    public String getUserRootPath()
-    {
-        return _userRootPath;
-    }
-
-    public void setUserRootPath(String userRootPath)
-    {
-        _userRootPath = userRootPath;
-    }
-
     public boolean isWebfilesEnabled()
     {
         return _webfilesEnabled;
@@ -98,5 +88,4 @@ public class FileSettingsForm
     {
         _invalidFilenameBlocked = invalidFilenameBlocked;
     }
-
 }

@@ -322,6 +322,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
             for (int f = 0; f < nCols; f++)
             {
                 List<Class> classesToTest = new ArrayList<>(Arrays.asList(CONVERT_CLASSES));
+                Class knownColumnClass = null; // Issue 49830: if we know the column class based on the columnInfoMap, use it instead of trying to infer the class based on the data
 
                 int classIndex = -1;
                 //NOTE: this means we have a header row
@@ -331,50 +332,49 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                     {
                         String name = lineFields[0][f];
                         name = name.replaceAll("[\\t\\n\\r]+"," ");
+                        //preferentially use this class if it matches
                         if (_columnInfoMap.containsKey(name))
-                        {
-                            //preferentially use this class if it matches
-                            classesToTest.add(0, _columnInfoMap.get(name).getJavaClass());
-                        }
+                            knownColumnClass = _columnInfoMap.get(name).getJavaClass();
                         else if (renamedColumns.containsKey(name) && _columnInfoMap.containsKey(renamedColumns.get(name)))
-                        {
-                            classesToTest.add(0, _columnInfoMap.get(renamedColumns.get(name)).getJavaClass());
-                        }
+                            knownColumnClass = _columnInfoMap.get(renamedColumns.get(name)).getJavaClass();
                     }
                 }
 
-                for (int line = inferStartLine; line < numLines; line++)
+                if (knownColumnClass == null)
                 {
-                    if (f >= lineFields[line].length)
-                        continue;
-                    String field = lineFields[line][f];
-                    if (missingValueIndicators.contains(field))
+                    for (int line = inferStartLine; line < numLines; line++)
                     {
-                        colDescs[f].setMvEnabled(_mvIndicatorContainer);
-                        continue;
-                    }
-
-                    if ("".equals(field))
-                        continue;
-
-                    for (int c = Math.max(classIndex, 0); c < classesToTest.size(); c++)
-                    {
-                        //noinspection EmptyCatchBlock
-                        try
+                        if (f >= lineFields[line].length)
+                            continue;
+                        String field = lineFields[line][f];
+                        if (missingValueIndicators.contains(field))
                         {
-                            Object o = ConvertUtils.convert(field, classesToTest.get(c));
-                            //We found a type that works. If it is more general than
-                            //what we had before, we must use it.
-                            if (o != null && c > classIndex)
-                                classIndex = c;
-                            break;
+                            colDescs[f].setMvEnabled(_mvIndicatorContainer);
+                            continue;
                         }
-                        catch (Exception x)
+
+                        if ("".equals(field))
+                            continue;
+
+                        for (int c = Math.max(classIndex, 0); c < classesToTest.size(); c++)
                         {
+                            //noinspection EmptyCatchBlock
+                            try
+                            {
+                                Object o = ConvertUtils.convert(field, classesToTest.get(c));
+                                //We found a type that works. If it is more general than
+                                //what we had before, we must use it.
+                                if (o != null && c > classIndex)
+                                    classIndex = c;
+                                break;
+                            }
+                            catch (Exception x)
+                            {
+                            }
                         }
                     }
                 }
-                colDescs[f].clazz = classIndex == -1 ? String.class : classesToTest.get(classIndex);
+                colDescs[f].clazz = knownColumnClass != null ? knownColumnClass : classIndex == -1 ? String.class : classesToTest.get(classIndex);
             }
         }
 

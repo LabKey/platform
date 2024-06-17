@@ -32,11 +32,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-/**
- * User: matthewb
- * Date: Apr 28, 2008
- * Time: 11:42:10 AM
- */
 public interface WebdavResource extends Resource
 {
     @Override
@@ -142,8 +137,8 @@ public interface WebdavResource extends Resource
     String getETag();
 
     /**
-     * Calculate MD5sum of this resource.  The default implementation will calculate
-     * the MD5sum by reading the reasource InputStream.
+     * Calculate MD5sum of this resource. The default implementation will calculate
+     * the MD5sum by reading the resource InputStream.
      */
     String getMD5(User user) throws IOException;
 

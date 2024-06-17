@@ -30,7 +30,7 @@ public class SiteValidationJob extends PipelineJob
     public SiteValidationJob(ViewBackgroundInfo info, PipeRoot pipeRoot, SiteValidationForm form)
     {
         super("SiteValidation", info, pipeRoot);
-        setLogFile(new File(pipeRoot.getLogDirectory(), FileUtil.makeFileNameWithTimestamp("site_validation", "log")).toPath());
+        setLogFile(FileUtil.appendName(pipeRoot.getLogDirectory(), FileUtil.makeFileNameWithTimestamp("site_validation", "log")).toPath());
         _form = form;
     }
 
@@ -59,7 +59,7 @@ public class SiteValidationJob extends PipelineJob
         JspTemplate<SiteValidationForm> template = new JspTemplate<>("/org/labkey/core/admin/sitevalidation/siteValidation.jsp", _form);
         ViewContext context = new ViewContext(getInfo());
         template.setViewContext(context);
-        File results = new File(getPipeRoot().getLogDirectory(), getResultsFileName());
+        File results = FileUtil.appendName(getPipeRoot().getLogDirectory(), getResultsFileName());
 
         try (PrintWriter out = new PrintWriter(results, StringUtilsLabKey.DEFAULT_CHARSET))
         {
@@ -71,7 +71,7 @@ public class SiteValidationJob extends PipelineJob
             finalStatus = TaskStatus.error;
         }
 
-        info("Site validation complete");
+        info("Site validation complete. Click the \"Data\" button to see the results.");
         setStatus(finalStatus);
     }
 

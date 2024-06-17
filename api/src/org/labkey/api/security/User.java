@@ -42,10 +42,8 @@ import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.SiteAdminPermission;
 import org.labkey.api.security.permissions.TrustedPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.security.roles.ApplicationAdminRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.util.GUID;
@@ -283,13 +281,6 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
     public boolean hasApplicationAdminPermission()
     {
         return hasRootPermission(ApplicationAdminPermission.class);
-    }
-
-    // NOTE: most callers should use hasApplicationAdminPermissionForPolicy() instead; only use this if you care specifically about the role itself
-    public boolean hasApplicationAdminForPolicy(SecurityPolicy policy)
-    {
-        Set<Role> assignedRoles = SecurityManager.getEffectiveRoles(policy,this, false);
-        return assignedRoles.contains(RoleManager.getRole(ApplicationAdminRole.class));
     }
 
     private static final Set<Class<? extends Permission>> TRUSTED_ANALYST = Set.of(AnalystPermission.class, TrustedPermission.class);
