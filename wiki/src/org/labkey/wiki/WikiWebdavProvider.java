@@ -28,7 +28,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.module.Module;
 import org.labkey.api.search.SearchService;
-import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.Permission;
@@ -125,7 +124,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
             super(parent.getPath(), WIKI_NAME);
             _c = c;
             _containerId = _c.getId();
-            setPolicy(c.getPolicy());
+            setSecurableResource(c);
         }
 
         @Override
@@ -217,7 +216,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
         {
             super(parent.getPath(), WikiWriterFactory.WIKIS_FILENAME);
             _parent = parent;
-            setPolicy(parent._c.getPolicy());
+            setSecurableResource(parent._c);
         }
 
         @Override
@@ -322,7 +321,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
             super(folder.getPath(), name);
             _c = folder._c;
             _containerId = _c.getId();
-            setPolicy(_c.getPolicy());
+            setSecurableResource(_c);
             _wiki = WikiSelectManager.getWiki(_c, name);
             if (null != _wiki)
                 _attachments = AttachmentService.get().getAttachmentResource(getPath(), _wiki.getAttachmentParent());
@@ -440,7 +439,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
         WikiPageResource(WikiFolder folder, Wiki wiki, String docName)
         {
             super(folder.getPath(), docName);
-            init(folder._c, wiki.getName(), wiki.getEntityId(), folder, folder._c.getPolicy(), new HashMap<>());
+            init(folder._c, wiki.getName(), wiki.getEntityId(), folder, new HashMap<>());
 
             _wiki = wiki;
             WikiVersion v = getWikiVersion();
@@ -458,21 +457,21 @@ public class WikiWebdavProvider implements WebdavService.Provider
         WikiPageResource(Container c, String name, String entityId, String body, WikiRendererType rendererType, Map<String, Object> m)
         {
             super(new Path("wiki", c.getId(), name));
-            init(c, name, entityId, null, c.getPolicy(), m);
+            init(c, name, entityId, null, m);
 
             _type = rendererType;
             setBody(body);
         }
 
 
-        private void init(Container c, String name, String entityId, WikiFolder folder, SecurityPolicy policy, Map<String, Object> properties)
+        private void init(Container c, String name, String entityId, WikiFolder folder, Map<String, Object> properties)
         {
             _c = c;
             _containerId = _c.getId();
             _name = name;
             _entityId = entityId;
             _folder = folder;
-            setPolicy(policy);
+            setSecurableResource(c);
             _properties = properties;
             _properties.put(SearchService.PROPERTY.categories.toString(), WikiManager.searchCategory.getName());
         }

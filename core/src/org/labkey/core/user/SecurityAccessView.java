@@ -22,7 +22,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerType;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.roles.NoPermissionsRole;
@@ -105,8 +104,7 @@ public class SecurityAccessView extends VBox
             if (!child.isContainerFor(ContainerType.DataType.permissions))
                 continue;
 
-            SecurityPolicy policy = child.getPolicy();
-            Collection<Role> allRoles = SecurityManager.getEffectiveRoles(policy,_principal);
+            Collection<Role> allRoles = SecurityManager.getEffectiveRoles(child, _principal);
             allRoles.remove(RoleManager.getRole(NoPermissionsRole.class)); //ignore no perms
 
             List<Role> roles = new ArrayList<>();
@@ -136,7 +134,7 @@ public class SecurityAccessView extends VBox
             {
                 Container project = child.getProject();
                 List<Group> groups = _projectGroupCache.computeIfAbsent(project, k -> SecurityManager.getGroups(project, true));
-                SecurityController.fillUserAccessGroups(_principal, groups, policy, roles, childAccessGroups);
+                SecurityController.fillUserAccessGroups(_principal, groups, child.getPolicy(), roles, childAccessGroups);
             }
 
             if (_showAll || !roles.isEmpty())

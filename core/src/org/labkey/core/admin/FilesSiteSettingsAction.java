@@ -64,13 +64,6 @@ public class FilesSiteSettingsAction extends AbstractFileSiteSettingsAction<File
             if (root.exists())
                 form.setRootPath(FileUtil.getAbsoluteCaseSensitiveFile(root).getAbsolutePath());
 
-            if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_USER_FOLDERS))
-            {
-                File userRoot = _svc.getUserFilesRoot();
-                if (userRoot.exists())
-                    form.setUserRootPath(FileUtil.getAbsoluteCaseSensitiveFile(userRoot).getAbsolutePath());
-            }
-
             form.setWebfilesEnabled(AppProps.getInstance().isWebfilesRootEnabled());
             form.setFileUploadDisabled(AppProps.getInstance().isFileUploadDisabled());
             form.setInvalidUploadBlocked(AppProps.getInstance().isInvalidFilenameUploadBlocked());

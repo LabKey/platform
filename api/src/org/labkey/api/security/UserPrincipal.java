@@ -98,7 +98,16 @@ public abstract class UserPrincipal implements Principal, Parameter.JdbcParamete
     public abstract PrincipalArray getGroups();
 
     /**
+     * @return the roles assigned to this principal in the provided securable resource
+     */
+    public Set<Role> getAssignedRoles(SecurableResource resource)
+    {
+        return getAssignedRoles(SecurityPolicyManager.getPolicy(resource));
+    }
+
+    /**
      * @return the roles assigned to this principal in the provided policy
+     * Outside callers should not use this. TODO: Make protected, or eliminate in favor of SecurableResource variant
      */
     public abstract Set<Role> getAssignedRoles(SecurityPolicy policy);
 
