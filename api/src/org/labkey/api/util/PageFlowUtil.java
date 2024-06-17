@@ -2115,7 +2115,8 @@ public class PageFlowUtil
         }
     }
 
-    public static String documentToString(Document document) {
+    public static String documentToString(Document document)
+    {
         try
         {
             TransformerFactory tf = TransformerFactory.newInstance();
@@ -2160,6 +2161,7 @@ public class PageFlowUtil
         if (null != shared) // not good
             json.put("sharedContainer", shared.getName());
         json.put("hash", getServerSessionHash());
+        json.put("timezone", DateUtil.getTimeZone().getID());
 
         Container container = context.getContainer();
         User user = context.getUser();

@@ -44,7 +44,6 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
-import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -1609,6 +1608,11 @@ Parse:
         int date = fullDate.getDate();
 
         return new Date(year, month, date);
+    }
+
+    public static TimeZone getTimeZone()
+    {
+        return _timezoneDefault;
     }
 
     private final static Date ZERO_TIME = new Date(70, 0, 1, 0, 0, 0);
