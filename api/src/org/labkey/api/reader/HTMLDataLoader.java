@@ -286,7 +286,7 @@ public class HTMLDataLoader extends DataLoader
         _html = null;
     }
 
-    private class Iter extends DataLoaderIterator
+    private class Iter extends AbstractDataLoaderIterator
     {
         Iterator<String[]> iter;
 
