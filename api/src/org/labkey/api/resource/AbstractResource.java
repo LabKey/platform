@@ -24,10 +24,6 @@ import java.io.InputStream;
 import java.util.Collection;
 import java.util.Collections;
 
-/**
- * User: kevink
- * Date: Mar 12, 2010 2:30:54 PM
- */
 abstract public class AbstractResource implements Resource
 {
     @NotNull

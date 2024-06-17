@@ -2003,20 +2003,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
         @SuppressWarnings("unused")
         public void testTika()
         {
-            File root = new File("c:\\");
-            Predicate<WebdavResource> fileFilter = webdavResource -> StringUtils.endsWithIgnoreCase(webdavResource.getName(), ".chm");
-
-            MutableSecurityPolicy policy = new MutableSecurityPolicy(_c);
-            policy.addRoleAssignment(User.getSearchUser(), ReaderRole.class);
-            FileSystemResource rootResource = new FileSystemResource(Path.parse(root.getAbsolutePath()), root, policy)
-            {
-                @Override
-                public String getContainerId()
-                {
-                    return _c.getId();
-                }
-            };
-
+            File root = new File("c:\\temp");
+            Predicate<WebdavResource> fileFilter = webdavResource -> StringUtils.endsWithIgnoreCase(webdavResource.getName(), ".txt");
+            FileSystemResource rootResource = new FileSystemResource(Path.parse(root.getAbsolutePath()), root, _c);
             traverse(rootResource, fileFilter);
         }
 

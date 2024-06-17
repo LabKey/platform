@@ -157,11 +157,6 @@ public class WriteableAppProps extends AppPropsImpl
         storeStringValue(siteFileRoot, root);
     }
 
-    public void setUserFilesRoot(String root)
-    {
-        storeStringValue(userFileRoot, root);
-    }
-
     public void setWebfilesEnabled(boolean b)
     {
         storeBooleanValue(webfilesEnabled, b);

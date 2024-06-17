@@ -463,7 +463,6 @@ public class GroupManager
             SecurityManager.addMember(_groupA, user);
             user = _testUser.cloneUser();
             assertTrue(policy.hasPermission(user, ReadPermission.class));
-            assertEquals(policy.getPermsAsOldBitMask(user), ACL.PERM_READ);
 
             assertFalse(policy.hasPermission(user, UpdatePermission.class));
             policy.addRoleAssignment(_groupB, AuthorRole.class);
@@ -471,7 +470,6 @@ public class GroupManager
             assertTrue(policy.hasPermission(_groupB, InsertPermission.class));
             assertFalse(policy.hasPermission(user, UpdatePermission.class));
             assertFalse(policy.hasPermission(user, InsertPermission.class));
-            assertEquals(policy.getPermsAsOldBitMask(user), ACL.PERM_READ);
 
             SecurityManager.addMember(_groupB, _groupA);
             user = _testUser.cloneUser();
@@ -479,35 +477,30 @@ public class GroupManager
             assertTrue(policy.hasPermission(_groupA, InsertPermission.class));
             assertFalse(policy.hasPermission(user, UpdatePermission.class));
             assertTrue(policy.hasPermission(user, InsertPermission.class));
-            assertEquals(policy.getPermsAsOldBitMask(user), ACL.PERM_READ | ACL.PERM_INSERT);
 
             policy.addRoleAssignment(user, EditorRole.class);
             assertFalse(policy.hasPermission(_groupA, UpdatePermission.class));
             assertFalse(policy.hasPermission(_groupB, UpdatePermission.class));
             assertTrue(policy.hasPermission(user, UpdatePermission.class));
             assertTrue(policy.hasPermission(user, DeletePermission.class));
-            assertEquals(policy.getPermsAsOldBitMask(user), ACL.PERM_READ | ACL.PERM_INSERT | ACL.PERM_UPDATE | ACL.PERM_DELETE);
 
             policy.clearAssignedRoles(user);
             assertFalse(policy.hasPermission(user, UpdatePermission.class));
             assertFalse(policy.hasPermission(user, DeletePermission.class));
             assertTrue(policy.hasPermission(user, InsertPermission.class));
             assertTrue(policy.hasPermission(user, ReadPermission.class));
-            assertEquals(policy.getPermsAsOldBitMask(user), ACL.PERM_READ | ACL.PERM_INSERT);
 
             SecurityManager.deleteMember(_groupB, _groupA);
             user = _testUser.cloneUser();
             assertFalse(policy.hasPermission(user, UpdatePermission.class));
             assertFalse(policy.hasPermission(user, InsertPermission.class));
             assertTrue(policy.hasPermission(user, ReadPermission.class));
-            assertEquals(policy.getPermsAsOldBitMask(user), ACL.PERM_READ);
 
             SecurityManager.deleteMember(_groupA, user);
             user = _testUser.cloneUser();
             assertFalse(policy.hasPermission(user, UpdatePermission.class));
             assertFalse(policy.hasPermission(user, InsertPermission.class));
             assertFalse(policy.hasPermission(user, ReadPermission.class));
-            assertEquals(policy.getPermsAsOldBitMask(user), ACL.PERM_NONE);
         }
 
         @Test

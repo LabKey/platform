@@ -40,9 +40,9 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.LimitedUser;
+import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.CanSeeAuditLogRole;
@@ -110,12 +110,12 @@ public class FileSystemResource extends AbstractWebdavResource
         this(folder.append(name));
     }
 
-    public FileSystemResource(WebdavResource folder, Path.Part name, File file, SecurityPolicy policy)
+    public FileSystemResource(WebdavResource folder, Path.Part name, File file, SecurableResource resource)
     {
         this(folder.getPath(), name);
         _folder = folder;
         _name = name.toString();
-        setPolicy(policy);
+        setSecurableResource(resource);
         _files = Collections.singletonList(new FileInfo(FileUtil.getAbsoluteCaseSensitiveFile(file)));
     }
 
@@ -123,7 +123,7 @@ public class FileSystemResource extends AbstractWebdavResource
     {
         this(folder.getPath(), name);
         _folder = folder;
-        setPolicy(folder.getPolicy());
+        setSecurableResource(folder.getSecurableResource());
 
         _files = new ArrayList<>(folder._files.size());
         _files.addAll(folder._files.stream()
@@ -131,11 +131,11 @@ public class FileSystemResource extends AbstractWebdavResource
             .toList());
     }
 
-    public FileSystemResource(Path path, File file, SecurityPolicy policy)
+    public FileSystemResource(Path path, File file, SecurableResource resource)
     {
         this(path);
         _files = Collections.singletonList(new FileInfo(file));
-        setPolicy(policy);
+        setSecurableResource(resource);
     }
 
     @Override
@@ -152,14 +152,12 @@ public class FileSystemResource extends AbstractWebdavResource
         return null==_folder ? null : _folder.getContainerId();
     }
 
-
     @Override
-    protected void setPolicy(SecurityPolicy policy)
+    protected void setSecurableResource(SecurableResource resource)
     {
-        super.setPolicy(policy);
-        setSearchProperty(SearchService.PROPERTY.securableResourceId, policy.getResourceId());
+        super.setSecurableResource(resource);
+        setSearchProperty(SearchService.PROPERTY.securableResourceId, null != resource ? resource.getResourceId() : null);
     }
-
 
     @Override
     public boolean exists()
@@ -172,7 +170,6 @@ public class FileSystemResource extends AbstractWebdavResource
 
         return getType() != FileType.notpresent;
     }
-
 
     private FileType getType()
     {
@@ -191,7 +188,6 @@ public class FileSystemResource extends AbstractWebdavResource
         return FileType.notpresent;
     }
 
-
     @Override
     public boolean isCollection()
     {
@@ -201,13 +197,11 @@ public class FileSystemResource extends AbstractWebdavResource
         return exists() && getPath().isDirectory();
     }
 
-
     @Override
     public boolean isFile()
     {
         return _files != null && getType() == FileType.file;
     }
-
 
     protected FileInfo getFileInfo()
     {
@@ -225,7 +219,6 @@ public class FileSystemResource extends AbstractWebdavResource
         return _files.get(0);
     }
 
-
     @Override
     public File getFile()
     {
@@ -234,7 +227,6 @@ public class FileSystemResource extends AbstractWebdavResource
             return null;
         return f.getFile();
     }
-
 
     @Override
     public FileStream getFileStream(User user) throws IOException
@@ -245,7 +237,6 @@ public class FileSystemResource extends AbstractWebdavResource
             return null;
         return new FileStream.FileFileStream(getFile());
     }
-
 
     @Override
     public InputStream getInputStream(User user) throws IOException
@@ -312,14 +303,12 @@ public class FileSystemResource extends AbstractWebdavResource
         }
     }
 
-
     @Override
     public void moveFrom(User user, WebdavResource src) throws IOException, DavException
     {
         super.moveFrom(user, src);
         resetMetadata();
     }
-
 
     private void resetMetadata()
     {
@@ -355,7 +344,6 @@ public class FileSystemResource extends AbstractWebdavResource
         return result;
     }
 
-
     @Override
     public Collection<WebdavResource> list()
     {
@@ -370,14 +358,12 @@ public class FileSystemResource extends AbstractWebdavResource
         return resources;
     }
 
-
     @Override
     public WebdavResource find(Path.Part name)
     {
         return new FileSystemResource(this, name);
     }
 
-    
     @Override
     public long getCreated()
     {
