@@ -265,23 +265,20 @@ public class ClosureQueryHelper
     public static SQLFragment getValueSql(boolean isSampleType, @Nullable ExpObject sourceType, SQLFragment sourceRowId, ExpObject target)
     {
         if (target instanceof ExpSampleType st)
-            return getValueSql(isSampleType, sourceType, sourceRowId, "m" + st.getRowId());
+            return getValueSql(isSampleType, sourceRowId, "m" + st.getRowId());
         if (target instanceof ExpDataClass dc)
-            return getValueSql(isSampleType, sourceType, sourceRowId, "d" + dc.getRowId());
+            return getValueSql(isSampleType, sourceRowId, "d" + dc.getRowId());
         throw new IllegalStateException();
     }
 
 
-    private static SQLFragment getValueSql(boolean isSample, @Nullable ExpObject sourceType, SQLFragment sourceRowId, String targetTypeId)
+    private static SQLFragment getValueSql(boolean isSample, SQLFragment sourceRowId, String targetTypeId)
     {
         TableInfo info = isSample ? ExperimentServiceImpl.get().getTinfoMaterialAncestors() : ExperimentServiceImpl.get().getTinfoDataAncestors();
         SQLFragment sql = new SQLFragment()
                 .append("(SELECT ancestorRowId FROM ")
                 .append(info)
                 .append(" WHERE ancestorTypeId=").appendValue(targetTypeId);
-        // TODO would this be useful or not?
-//        if (sourceType != null)
-//            sql.append(" AND typeId=").appendValue(sourceType.getRowId());
         sql.append(" AND RowId=").append(sourceRowId)
             .append(")");
         return sql;
@@ -569,8 +566,6 @@ public class ClosureQueryHelper
                     @Override
                     public SQLFragment getValueSql(String tableAlias)
                     {
-//                        return new SQLFragment(tableAlias);
-                        // TODO here we need to return tableAlias
                         return parent.getValueSql(tableAlias);
                     }
 
