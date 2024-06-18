@@ -3415,7 +3415,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         final Container runContainer;
         boolean deleteFirst = true;
         boolean verifyEdgesNoInsert=false;
-        boolean invalidateClosureCache=true;
+        boolean doIncrementalClosureInvalidation =true;
 
         SyncRunEdges(ExpRun run)
         {
@@ -3445,9 +3445,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             return this;
         }
 
-        SyncRunEdges invalidateClosureCache(boolean i)
+        SyncRunEdges doIncrementalClosureInvalidation(boolean i)
         {
-            invalidateClosureCache = i;
+            doIncrementalClosureInvalidation = i;
             return this;
         }
 
@@ -3656,10 +3656,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             timer.stop();
             LOG.debug("  " + (verifyEdgesNoInsert ? "verified" : "synced") + " edges in " + timer.getDuration());
 
-            if (!verifyEdgesNoInsert && invalidateClosureCache)
+            if (!verifyEdgesNoInsert && doIncrementalClosureInvalidation)
             {
-                materialToCpasTypes.forEach(type -> ClosureQueryHelper.invalidateMaterialsForRun(type, runId));
-                dataToCpasTypes.forEach(type -> ClosureQueryHelper.invalidateDataObjectsForRun(type, runId));
+                materialToCpasTypes.forEach(type -> ClosureQueryHelper.recomputeMaterialAncestorsForRun(type, runId));
+                dataToCpasTypes.forEach(type -> ClosureQueryHelper.recomputeDataAncestorsForRun(type, runId));
             }
         }
     }
@@ -3692,7 +3692,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     new SyncRunEdges(runId, runObjectId, runLsid, runContainer)
                             .deleteFirst(false)
                             .verifyEdgesNoInsert(false)
-                            .invalidateClosureCache(false)      // don't do incremental invalidation calls
+                            .doIncrementalClosureInvalidation(false)      // don't do incremental invalidation calls
                             .sync(cpasTypeToObjectId);
                 }
             }
@@ -3703,7 +3703,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 LOG.debug("Rebuilt all run-based edges: " + timing.getDuration() + " ms");
             }
         }
-        ClosureQueryHelper.invalidateAll();
+        ClosureQueryHelper.truncateAndRecreate();
     }
 
     public void verifyRunEdges(ExpRun run)
@@ -3773,6 +3773,15 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 LOG.info("Verified edges for " + (limit == null ? "all " : "only ") + runCount + " runs: " + timing.getDuration() + " ms");
             }
         }
+    }
+
+    public void clearAncestors(ExpRunItem runItem)
+    {
+        boolean isSample = runItem instanceof ExpMaterial;
+        if (isSample)
+            ClosureQueryHelper.clearAncestorsForMaterial(runItem.getRowId());
+        else
+            ClosureQueryHelper.clearAncestorsForDataObject(runItem.getRowId());
     }
 
     public List<ProtocolApplication> getProtocolApplicationsForRun(int runId)
@@ -3927,6 +3936,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return getExpSchema().getTable("Material");
     }
 
+    @Override
+    public TableInfo getTinfoMaterialAncestors()
+    {
+        return getExpSchema().getTable("MaterialAncestors");
+    }
+
     public TableInfo getTinfoMaterialIndexed()
     {
         return getExpSchema().getTable("MaterialIndexed");
@@ -3966,6 +3981,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     {
         return getExpSchema().getTable("DataInput");
     }
+
+    @Override
+    public TableInfo getTinfoDataAncestors() { return getExpSchema().getTable("DataAncestors"); }
 
     @Override
     public TableInfo getTinfoProtocolInput()

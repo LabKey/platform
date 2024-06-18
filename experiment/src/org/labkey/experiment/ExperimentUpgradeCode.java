@@ -34,6 +34,7 @@ import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.StorageProvisioner;
+import org.labkey.experiment.api.ClosureQueryHelper;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpSchema;
@@ -304,7 +305,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
     }
 
     /**
-     * Called from exp-23.010-23.011.sql
+     * Called from exp-23.011-23.012.sql
      */
     public static void addRowIdToMaterializedSampleTypes(ModuleContext context)
     {
@@ -321,6 +322,28 @@ public class ExperimentUpgradeCode implements UpgradeCode
 
             tx.commit();
         }
+    }
+
+    /**
+     * Called from exp-24.002-24.003.sql
+     */
+    public static void populateMaterialAncestors(ModuleContext context)
+    {
+        if (context.isNewInstall())
+            return;
+
+        ClosureQueryHelper.populateMaterialAncestors(LOG);
+    }
+
+    /**
+     * Called from exp-24.002-24.003.sql
+     */
+    public static void populateDataAncestors(ModuleContext context)
+    {
+        if (context.isNewInstall())
+            return;
+
+        ClosureQueryHelper.populateDataAncestors(LOG);
     }
 
     // called from exp-24.003-24.004.sql
