@@ -105,6 +105,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
         RESERVED_NAMES = new CaseInsensitiveHashSet(BASE_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet()));
         RESERVED_NAMES.addAll(Arrays.asList(ExpDataClassDataTable.Column.values()).stream().map(ExpDataClassDataTable.Column::name).collect(Collectors.toList()));
         RESERVED_NAMES.add("Container");
+        RESERVED_NAMES.add("RunId"); // Issue 50461
 
         FOREIGN_KEYS = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
                 // NOTE: We join to exp.data using LSID instead of rowid for insert performance -- we will generate
