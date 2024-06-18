@@ -351,45 +351,9 @@ public class ExperimentUpgradeCode implements UpgradeCode
     {
         if (context.isNewInstall())
             return;
-        /*
-         UPDATE temp.auditTable
-            SET sampleTypeId = y.sampleTypeId
-            FROM
-                (SELECT sampleTypeId as oldTypeId, sampleId as otherSampleId, rowId as updateRowId
-                 FROM temp.auditTable
-                 WHERE sampletypeid = 0
-                ) w
-                 LEFT JOIN
-                 (SELECT MAX(sampleTypeId) as sampleTypeId, sampleId
-                    FROM temp.auditTable t
-                    GROUP BY sampleId
-                 ) y
-
-                 ON y.sampleId = w.otherSampleid
-
-             WHERE rowId = w.updateRowId;
-
-             UPDATE temp.auditTable
-                SET sampleTypeId = y.materialSourceId
-
-                FROM
-                    (SELECT sampleTypeId as oldTypeId, sampleId as otherSampleId, rowId as updateRowId
-                     FROM temp.auditTable
-                     WHERE sampletypeid = 0
-                    ) w
-                        LEFT JOIN
-                    (SELECT materialSourceId, rowId as sampleRowId
-                     FROM exp.material
-                    ) y
-
-                    ON y.sampleRowId = w.otherSampleid
-
-                WHERE y.materialSourceId IS NOT NULL AND
-                    rowId = w.updateRowId;
-         */
 
         DbScope scope = ExperimentService.get().getSchema().getScope();
-        List<String> tableNames = new SqlSelector(scope, "SELECT StorageTableName FROM exp.domainDescriptor WHERE StorageSchemaName='audit' AND name='" + SampleTypeAuditProvider.SampleTypeAuditDomainKind.NAME + "'").getArrayList(String.class);
+        List<String> tableNames = new SqlSelector(scope, "SELECT StorageTableName FROM exp.domainDescriptor WHERE StorageSchemaName='audit' AND name='" + SampleTimelineAuditProvider.SampleTimelineAuditDomainKind.NAME + "'").getArrayList(String.class);
         if (tableNames.size() > 1)
             LOG.warn("Found " + tableNames.size() + " tables for " + SampleTimelineAuditProvider.SampleTimelineAuditDomainKind.NAME);
 
@@ -397,13 +361,16 @@ public class ExperimentUpgradeCode implements UpgradeCode
         {
             for (String table : tableNames)
             {
-                long toUpdate = new SqlSelector(scope, new SQLFragment("SELECT COUNT(*) FROM audit.").append(table).append(" WHERE sampleTypeId = 0")).getObject(Long.class);
+                SQLFragment countSql = new SQLFragment("SELECT COUNT(*) FROM audit.").append(table).append(" WHERE sampleTypeId = 0");
+                SqlSelector countSelector = new SqlSelector(scope, countSql);
+
+                long toUpdate = countSelector.getObject(Long.class);
                 LOG.info("There are " + toUpdate + " audit log entries to be updated in audit." + table + ".");
                 // first update the type id by finding other audit entries that reference the same sample id.
                 if (toUpdate > 0)
                 {
                     LOG.info("Updating table audit." + table + " via self-join.");
-                    SQLFragment updateSql = new SQLFragment("UPDATE audit.").append(table).append(" a1")
+                    SQLFragment updateSql = new SQLFragment("UPDATE audit.").append(table)
                             .append(" SET sampleTypeId = a3.sampleTypeId\n")
                             .append(" FROM\n")
                             .append("   (SELECT sampleId, rowId as rowIdToUpdate FROM audit.").append(table).append(" WHERE sampleTypeId = 0").append(") a2 ")
@@ -416,15 +383,15 @@ public class ExperimentUpgradeCode implements UpgradeCode
                     int numRows = executor.execute(updateSql);
                     long elapsed = System.currentTimeMillis() - start;
                     LOG.info("Updated " + numRows + " rows via self-join for table " + table + " in " + (elapsed / 1000) + " sec");
-                    toUpdate -= numRows;
                 }
 
+                toUpdate = countSelector.getObject(Long.class);
                 if (toUpdate > 0)
                 {
                     // It may have happened that there's only one audit entry for a sample and that entry has a 0 for the type id, in which case we may be able
                     // to find the type id from the exp.materials table. Since samples may have been deleted, it isn't sufficient to do only this update
                     LOG.info("Updating table audit." + table + " via exp.materials.");
-                    SQLFragment updateSql = new SQLFragment("UPDATE audit.").append(table).append(" a1")
+                    SQLFragment updateSql = new SQLFragment("UPDATE audit.").append(table)
                             .append(" SET sampleTypeId = m.materialSourceId\n")
                             .append(" FROM\n")
                             .append("   (SELECT sampleId, rowId as rowIdToUpdate FROM audit.").append(table).append(" WHERE sampleTypeId = 0").append(") a2 ")
@@ -438,11 +405,8 @@ public class ExperimentUpgradeCode implements UpgradeCode
                     long elapsed = System.currentTimeMillis() - start;
                     LOG.info("Updated " + numRows + " rows from exp.material table join in " + (elapsed / 1000) + " sec");
                 }
-                if (toUpdate > 0)
-                {
-                    long remaining = new SqlSelector(scope, new SQLFragment("SELECT COUNT(*) FROM audit.").append(table).append(" WHERE sampleTypeId = 0")).getObject(Long.class);
-                    LOG.info("There are " + remaining + " rows that could not be updated with a proper sample type id.");
-                }
+                long remaining = countSelector.getObject(Long.class);
+                LOG.info("There are " + remaining + " rows in audit." + table + " that could not be updated with a proper sample type id.");
             }
             transaction.commit();
         }
