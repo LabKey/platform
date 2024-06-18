@@ -172,8 +172,9 @@ public class ExcelCellUtils
                     cell.setCellStyle(style);
                 }
                 //Issue 47268: Export Does Not Include Failed Lookup Values
-                //Set Integer broken lookup values as String
-                else if (columnInfo != null && columnInfo.isLookup() && value.toString().startsWith("<") && value.toString().endsWith(">"))
+                //Set Integer broken lookup values as String.
+                //Issue 50133 - related (not exactly): We also want to export non-empty values when this corresponds to an ancestor field with more than one value (e.g., "2 values")
+                else
                 {
                     cell.setCellValue(value.toString());
                 }

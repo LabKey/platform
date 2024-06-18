@@ -14,6 +14,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.ListofMapsDataIterator;
 import org.labkey.api.exp.ExperimentException;
@@ -332,7 +333,13 @@ public class DataGenerator<T extends DataGenerator.Config>
         }
         List<String> parentTypes = new ArrayList<>(config.getSampleTypeParents());
         boolean hasParentTypes = !parentTypes.isEmpty();
+        // Default to using all types in the container
+        if (!hasParentTypes)
+            parentTypes.addAll(SampleTypeService.get().getSampleTypes(getContainer(), getUser(), false).stream().map(ExpSampleType::getName).toList());
         List<String> dataClassParents = new ArrayList<>(config.getDataClassParents());
+        // Default to using all types in the container
+        if (dataClassParents.isEmpty())
+            dataClassParents.addAll(ExperimentService.get().getDataClasses(getContainer(), getUser(), false).stream().map(ExpDataClass::getName).toList());
         for (ExpSampleType sampleType : getSampleTypes(_config.getSampleTypeNames()))
         {
             _log.info(String.format("Generating %d samples for sample type '%s'.", numSamples, sampleType.getName()));
@@ -522,14 +529,11 @@ public class DataGenerator<T extends DataGenerator.Config>
         if (limit <= 0)
             return null;
 
-        SQLFragment sql = new SQLFragment("SELECT " + columns + " FROM ")
-                .append(tableInfo, "dc")
-                .append(" LIMIT ")
-                .appendValue(limit);
-        if (totalCount > limit)
-            sql.append(" OFFSET ")
-                    .appendValue(randomLong(0, totalCount-limit));
-        return sql;
+        SqlDialect dialect = tableInfo.getSchema().getSqlDialect();
+        SQLFragment sql = new SQLFragment("SELECT " + columns);
+        SQLFragment fromSql = new SQLFragment(" FROM ").append(tableInfo, "dc");
+
+        return dialect.limitRows(sql, fromSql, null, dialect.isSqlServer() ? "ORDER By RowId" : null, null, limit, totalCount > limit ? randomLong(0, totalCount-limit) : 0);
     }
 
     public List<Map<String, Object>> selectExistingSamples(ExpSampleType sampleType, int limit, long totalSampleCount)

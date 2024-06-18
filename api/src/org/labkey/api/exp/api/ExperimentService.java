@@ -665,6 +665,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     TableInfo getTinfoMaterial();
 
+    TableInfo getTinfoMaterialAncestors();
+
     TableInfo getTinfoSampleType();
 
     TableInfo getTinfoProtocol();
@@ -684,6 +686,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
     TableInfo getTinfoMaterialInput();
 
     TableInfo getTinfoDataInput();
+
+    TableInfo getTinfoDataAncestors();
 
     TableInfo getTinfoProtocolInput();
 

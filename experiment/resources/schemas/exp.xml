@@ -440,6 +440,25 @@
     </columns>
     <description>Contains a row per sample type, a collection of samples.</description>
   </table>
+  <table tableName="MaterialAncestors" tableDbType="TABLE">
+    <description>Closure table of sample type and data class ancestor data for each material</description>
+    <columns>
+      <column columnName="rowId">
+        <description>RowId of the material</description>
+        <fk>
+            <fkColumnName>rowId</fkColumnName>
+            <fkDbSchema>exp</fkDbSchema>
+            <fkTable>materials</fkTable>
+        </fk>
+      </column>
+      <column columnName="ancestorRowId">
+        <description>RowId of the ancestor entity in its exp.materials or exp.data table</description>
+      </column>
+      <column columnName="ancestorTypeId">
+        <description>RowId of the type of the ancestor entity, preceded by 'm' or 'd' to distinguish material sources (sample types) and data classes, respectively</description>
+      </column>
+    </columns>
+  </table>
   <table tableName="DataClass" tableDbType="TABLE">
     <description>Defines categories of data object types, each of which can have its own set of fields.</description>
     <gridUrl>/experiment/listDataClass.view</gridUrl>
@@ -475,6 +494,25 @@
             <isUserEditable>false</isUserEditable>
             <isHidden>true</isHidden>
         </column>
+    </columns>
+  </table>
+  <table tableName="DataAncestors" tableDbType="TABLE">
+    <description>Closure table of sample type and data class ancestor data for each data class object</description>
+    <columns>
+      <column columnName="rowId">
+        <description>RowId of the data class object</description>
+        <fk>
+          <fkColumnName>rowId</fkColumnName>
+          <fkDbSchema>exp</fkDbSchema>
+          <fkTable>data</fkTable>
+        </fk>
+      </column>
+      <column columnName="ancestorRowId">
+        <description>RowId of the ancestor entity in its exp.materials or exp.data table</description>
+      </column>
+      <column columnName="ancestorTypeId">
+        <description>RowId of the type of the ancestor entity, preceded by 'm' or 'd' to distinguish material sources (sample types) and data classes, respectively</description>
+      </column>
     </columns>
   </table>
   <table tableName="PropertyDescriptor" tableDbType="TABLE">
