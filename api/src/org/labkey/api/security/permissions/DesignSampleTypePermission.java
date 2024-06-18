@@ -24,7 +24,7 @@ public class DesignSampleTypePermission extends AbstractPermission
 {
     public DesignSampleTypePermission()
     {
-        super("Design Sample Types", "Can create and design new samples types or change existing ones.");
+        super("Design Sample Types", "Can create and design new sample types or change existing ones.");
     }
 
     @Override
