@@ -1224,12 +1224,13 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         void executeIncrementalRollup()
         {
             SQLFragment incremental = new SQLFragment();
-            if (CoreSchema.getInstance().getSchema().getSqlDialect().isPostgreSQL())
+            var d = CoreSchema.getInstance().getSchema().getSqlDialect();
+            if (d.isPostgreSQL())
             {
                 incremental
                         .append("UPDATE temp.${NAME} AS st\n")
                         .append("SET aliquotcount = expm.aliquotcount, availablealiquotcount = expm.availablealiquotcount, aliquotvolume = expm.aliquotvolume, availablealiquotvolume = expm.availablealiquotvolume, aliquotunit = expm.aliquotunit\n")
-                        .append("FROM exp.Material AS expm\n");
+                        .append("FROM exp.Material AS expm WHERE cpastype = ").appendValue(_lsid,d);
             }
             else
             {
@@ -1239,7 +1240,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                         .append("FROM temp.${NAME} st, exp.Material expm\n");
             }
             incremental
-                    .append("WHERE expm.rowid = st.rowid AND (\n")
+                    .append("WHERE expm.rowid = st.rowid AND cpastype = ").appendValue(_lsid,d).append(" AND (\n")
                     .append("    st.aliquotcount IS DISTINCT FROM expm.aliquotcount OR ")
                     .append("    st.availablealiquotcount IS DISTINCT FROM expm.availablealiquotcount OR ")
                     .append("    st.aliquotvolume IS DISTINCT FROM expm.aliquotvolume OR ")
