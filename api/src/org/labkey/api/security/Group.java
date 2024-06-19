@@ -19,7 +19,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.roles.Role;
 
-import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * A group may be scoped to either the entire server or a specific project. It is a collection of users and/or
@@ -127,9 +127,10 @@ public class Group extends UserPrincipal
     }
 
     @Override
-    public Set<Role> getAssignedRoles(SecurityPolicy policy)
+    public Stream<Role> getAssignedRoles(SecurableResource resource)
     {
-        return policy.getRoles(getGroups());
+        SecurityPolicy policy = SecurityPolicyManager.getPolicy(resource);
+        return policy.getRoles(getGroups()).stream();
     }
 
     @Override

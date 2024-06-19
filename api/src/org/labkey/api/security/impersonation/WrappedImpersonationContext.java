@@ -15,17 +15,17 @@
  */
 package org.labkey.api.security.impersonation;
 
+import com.google.common.collect.Streams;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.PrincipalArray;
-import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 
-import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -86,11 +86,9 @@ public class WrappedImpersonationContext implements ImpersonationContext
     }
 
     @Override
-    public Set<Role> getAssignedRoles(User user, SecurityPolicy policy)
+    public Stream<Role> getAssignedRoles(User user, SecurableResource resource)
     {
-        Set<Role> ret = new HashSet<>(_additionalRoles);
-        ret.addAll(_delegate.getAssignedRoles(user, policy));
-        return ret;
+        return Streams.concat(_additionalRoles.stream(), _delegate.getAssignedRoles(user, resource));
     }
 
     @Override

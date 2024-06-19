@@ -2991,7 +2991,7 @@ public class UserController extends SpringActionController
         public ApiResponse execute(Object object, BindException errors)
         {
             ImpersonationContext context = authorizeImpersonateRoles();
-            Set<Role> impersonationRoles = context.isImpersonating() ? context.getAssignedRoles(getUser(), getContainer().getPolicy()) : Collections.emptySet();
+            Set<Role> impersonationRoles = context.isImpersonating() ? context.getAssignedRoles(getUser(), getContainer()).collect(Collectors.toSet()) : Collections.emptySet();
 
             User user = context.isImpersonating() ? context.getAdminUser() : getUser();
             ApiSimpleResponse response = new ApiSimpleResponse();
@@ -3056,7 +3056,7 @@ public class UserController extends SpringActionController
         public String impersonate(ImpersonateRolesForm form)
         {
             ImpersonationContext context = authorizeImpersonateRoles();
-            Set<Role> currentImpersonationRoles = context.isImpersonating() ? context.getAssignedRoles(getUser(), getContainer().getPolicy()) : Collections.emptySet();
+            Set<Role> currentImpersonationRoles = context.isImpersonating() ? context.getAssignedRoles(getUser(), getContainer()).collect(Collectors.toSet()) : Collections.emptySet();
 
             String[] roleNames = form.getRoleNames();
 

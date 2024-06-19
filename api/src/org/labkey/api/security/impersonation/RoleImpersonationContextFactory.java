@@ -18,12 +18,13 @@ package org.labkey.api.security.impersonation;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.apache.commons.collections4.CollectionUtils;
+import jakarta.servlet.http.HttpServletRequest;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.PrincipalArray;
+import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
@@ -40,7 +41,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -301,16 +301,16 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
         }
 
         @Override
-        public Set<Role> getSiteRoles(User user)
+        public Stream<Role> getSiteRoles(User user)
         {
             // Return only site roles that are being impersonated
-            return new HashSet<>(CollectionUtils.intersection(super.getSiteRoles(user), getRoles()));
+            return super.getSiteRoles(user).filter(role -> getRoles().contains(role));
         }
 
         @Override
-        public Set<Role> getAssignedRoles(User user, SecurityPolicy policy)
+        public Stream<Role> getAssignedRoles(User user, SecurableResource resource)
         {
-            return getRoles(); // No filtering - we trust verifyPermissions to validate that the admin is allowed to impersonate the specified roles
+            return getRoles().stream(); // No filtering - we trust verifyPermissions to validate that the admin is allowed to impersonate the specified roles
         }
 
         @Override
