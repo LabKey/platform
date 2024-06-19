@@ -1229,18 +1229,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             if (d.isPostgreSQL())
             {
                 incremental
-                        .append("UPDATE temp.${NAME} AS st\n")
-                        .append("SET aliquotcount = expm.aliquotcount, availablealiquotcount = expm.availablealiquotcount, aliquotvolume = expm.aliquotvolume, availablealiquotvolume = expm.availablealiquotvolume, aliquotunit = expm.aliquotunit\n")
-                        .append("FROM exp.Material AS expm\n");
-            }
-            else
-            {
-                incremental
-                        .append("UPDATE st\n")
-                        .append("SET aliquotcount = expm.aliquotcount, availablealiquotcount = expm.availablealiquotcount, aliquotvolume = expm.aliquotvolume, availablealiquotvolume = expm.availablealiquotvolume, aliquotunit = expm.aliquotunit\n")
-                        .append("FROM temp.${NAME} st, exp.Material expm\n");
-            }
-            incremental
+                    .append("UPDATE temp.${NAME} AS st\n")
+                    .append("SET aliquotcount = expm.aliquotcount, availablealiquotcount = expm.availablealiquotcount, aliquotvolume = expm.aliquotvolume, availablealiquotvolume = expm.availablealiquotvolume, aliquotunit = expm.aliquotunit\n")
+                    .append("FROM exp.Material AS expm\n")
                     .append("WHERE expm.rowid = st.rowid AND expm.cpastype = ").appendValue(_lsid,d).append(" AND (\n")
                     .append("    st.aliquotcount IS DISTINCT FROM expm.aliquotcount OR ")
                     .append("    st.availablealiquotcount IS DISTINCT FROM expm.availablealiquotcount OR ")
@@ -1248,6 +1239,22 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     .append("    st.availablealiquotvolume IS DISTINCT FROM expm.availablealiquotvolume OR ")
                     .append("    st.aliquotunit IS DISTINCT FROM expm.aliquotunit")
                     .append(")");
+            }
+            else
+            {
+                // SQL Server 2022 supports IS DISTINCT FROM
+                incremental
+                    .append("UPDATE st\n")
+                    .append("SET aliquotcount = expm.aliquotcount, availablealiquotcount = expm.availablealiquotcount, aliquotvolume = expm.aliquotvolume, availablealiquotvolume = expm.availablealiquotvolume, aliquotunit = expm.aliquotunit\n")
+                    .append("FROM temp.${NAME} st, exp.Material expm\n")
+                    .append("WHERE expm.rowid = st.rowid AND expm.cpastype = ").appendValue(_lsid,d).append(" AND (\n")
+                    .append("    COALESCE(st.aliquotcount,-2147483648) <> COALESCE(expm.aliquotcount,-2147483648) OR ")
+                    .append("    COALESCE(st.availablealiquotcount,-2147483648) <> COALESCE(expm.availablealiquotcount,-2147483648) OR ")
+                    .append("    COALESCE(st.aliquotvolume,-2147483648) <> COALESCE(expm.aliquotvolume,-2147483648) OR ")
+                    .append("    COALESCE(st.availablealiquotvolume,-2147483648) <> COALESCE(expm.availablealiquotvolume,-2147483648) OR ")
+                    .append("    COALESCE(st.aliquotunit,-2147483648) <> COALESCE(expm.aliquotunit,-2147483648)")
+                    .append(")");
+            }
             upsertWithRetry(incremental);
         }
     }
