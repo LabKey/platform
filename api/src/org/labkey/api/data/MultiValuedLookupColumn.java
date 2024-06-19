@@ -158,6 +158,7 @@ public class MultiValuedLookupColumn extends LookupColumn
                     join = join.replace("LEFT OUTER", "INNER");
                     select.append(join);
                     select.addAll(fragment.getParams());
+                    select.addTempTokens(fragment);
                 }
 
                 select.append(" WHERE ");
