@@ -1252,7 +1252,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     .append("    COALESCE(st.availablealiquotcount,-2147483648) <> COALESCE(expm.availablealiquotcount,-2147483648) OR ")
                     .append("    COALESCE(st.aliquotvolume,-2147483648) <> COALESCE(expm.aliquotvolume,-2147483648) OR ")
                     .append("    COALESCE(st.availablealiquotvolume,-2147483648) <> COALESCE(expm.availablealiquotvolume,-2147483648) OR ")
-                    .append("    COALESCE(st.aliquotunit,-2147483648) <> COALESCE(expm.aliquotunit,-2147483648)")
+                    .append("    COALESCE(st.aliquotunit,'-') <> COALESCE(expm.aliquotunit,'-')")
                     .append(")");
             }
             upsertWithRetry(incremental);
