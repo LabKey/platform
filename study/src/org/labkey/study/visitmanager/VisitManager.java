@@ -16,6 +16,7 @@
 
 package org.labkey.study.visitmanager;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -757,7 +758,6 @@ public abstract class VisitManager
         return new SqlExecutor(study.getScope()).execute(sqlDelete);
     }
 
-
     StudyImpl getStudy()
     {
         return _study;
@@ -765,8 +765,18 @@ public abstract class VisitManager
 
     public String getVisitLabelUrlFilterKey(Container container, String dataRegionName)
     {
-        String participantVisitTableName = StudyService.get().getSubjectVisitTableName(container);
-        return new CompareType.CompareClause(FieldKey.fromParts(participantVisitTableName, "Visit", "Label"), CompareType.EQUAL, false).toURLParam( dataRegionName + ".").getKey();
+        return getVisitUrlFilterKey(container, dataRegionName, "Visit", "Label");
+    }
+
+    public String getVisitRowIdUrlFilterKey(Container container, String dataRegionName)
+    {
+        return getVisitUrlFilterKey(container, dataRegionName, "Visit");
+    }
+
+    private String getVisitUrlFilterKey(Container container, String dataRegionName, String... fieldKeyParts)
+    {
+        fieldKeyParts = ArrayUtils.insert(0, fieldKeyParts, StudyService.get().getSubjectVisitTableName(container));
+        return new CompareType.CompareClause(FieldKey.fromParts(fieldKeyParts), CompareType.EQUAL, "").toURLParam( dataRegionName + ".").getKey();
     }
 
     private static class ParticipantPurgeContextListener implements ShutdownListener
