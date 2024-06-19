@@ -182,6 +182,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         SAMPLE_ALT_IMPORT_NAME_COLS = new CaseInsensitiveHashMap<>();
         SAMPLE_ALT_IMPORT_NAME_COLS.put("SampleId", "Name");
         SAMPLE_ALT_IMPORT_NAME_COLS.put("Sample Id", "Name");
+        SAMPLE_ALT_IMPORT_NAME_COLS.put("ExpirationDate", "MaterialExpDate");
     }
 
     public enum Options
