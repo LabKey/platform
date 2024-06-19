@@ -1231,7 +1231,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 incremental
                         .append("UPDATE temp.${NAME} AS st\n")
                         .append("SET aliquotcount = expm.aliquotcount, availablealiquotcount = expm.availablealiquotcount, aliquotvolume = expm.aliquotvolume, availablealiquotvolume = expm.availablealiquotvolume, aliquotunit = expm.aliquotunit\n")
-                        .append("FROM exp.Material AS expm");
+                        .append("FROM exp.Material AS expm\n");
             }
             else
             {
