@@ -41,7 +41,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.LimitedUser;
-import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.roles.CanSeeAuditLogRole;
 import org.labkey.api.security.roles.ReaderRole;
@@ -583,38 +583,36 @@ public class LinkedSchema extends ExternalSchema
 
     private static class LinkedSchemaUserWrapper extends LimitedUser
     {
-        private final Set<String> _allowedPolicyResourceIds = new HashSet<>();
+        private final Set<String> _allowedResourceIds = new HashSet<>();
 
         public LinkedSchemaUserWrapper(User realUser, Container sourceContainer, String sourceSchemaName)
         {
             super(realUser, getContextualRolesForTargetSchema(sourceSchemaName));
 
-            // Current container policy and (if it exists) current study policy are the only policies that get
-            // overridden here. No need to handle dataset policies; when the study policy claims read, all per-group
-            // and per-dataset checks are skipped.
+            // Current container and (if it exists) current study are the only resources that are allowed. No need to
+            // handle datasets; when the study claims read, all per-group and per-dataset checks are skipped.
 
-            // Must save the policy's (not the container's) resource ID to support inheritance correctly, #45225
-            _allowedPolicyResourceIds.add(sourceContainer.getPolicy().getResourceId());
+            _allowedResourceIds.add(sourceContainer.getResourceId());
 
             StudyService ss = StudyService.get();
             if (null != ss)
             {
                 Study study = ss.getStudy(sourceContainer);
                 if (null != study)
-                    _allowedPolicyResourceIds.add(study.getPolicy().getResourceId());
+                    _allowedResourceIds.add(study.getResourceId());
             }
         }
 
         @Override
-        public Set<Role> getAssignedRoles(SecurityPolicy policy)
+        public Set<Role> getAssignedRoles(SecurableResource resource)
         {
-            // If the policy is allowed (current container or current study) then return the ReaderRole that's set on the LimitedUser
-            if (_allowedPolicyResourceIds.contains(policy.getResourceId()))
+            // If the resource is allowed (current container or current study) then return the ReaderRole that's set on the LimitedUser
+            if (_allowedResourceIds.contains(resource.getResourceId()))
             {
-                return super.getAssignedRoles(policy);
+                return super.getAssignedRoles(resource);
             }
 
-            // For all other containers and policies, no permissions
+            // For all other containers and studies, no permissions
             return Collections.emptySet();
         }
     }
