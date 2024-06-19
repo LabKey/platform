@@ -591,6 +591,7 @@ public class LinkedSchema extends ExternalSchema
 
             // Current container and (if it exists) current study are the only resources that are allowed. No need to
             // handle datasets; when the study claims read, all per-group and per-dataset checks are skipped.
+            // See Issue #45225 and Issue #45251 for some history on our permission checking approach.
 
             _allowedResourceIds.add(sourceContainer.getResourceId());
 
