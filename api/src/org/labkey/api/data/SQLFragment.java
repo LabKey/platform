@@ -866,6 +866,11 @@ public class SQLFragment implements Appendable, CharSequence
         tempTokens.add(tempToken);
     }
 
+    public void addTempTokens(SQLFragment other)
+    {
+        tempTokens.add(other.tempTokens);
+    }
+
     public static SQLFragment prettyPrint(SQLFragment from)
     {
         SQLFragment sqlf = new SQLFragment(from);
