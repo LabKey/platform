@@ -1241,7 +1241,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                         .append("FROM temp.${NAME} st, exp.Material expm\n");
             }
             incremental
-                    .append("WHERE expm.rowid = st.rowid AND cpastype = ").appendValue(_lsid,d).append(" AND (\n")
+                    .append("WHERE expm.rowid = st.rowid AND expm.cpastype = ").appendValue(_lsid,d).append(" AND (\n")
                     .append("    st.aliquotcount IS DISTINCT FROM expm.aliquotcount OR ")
                     .append("    st.availablealiquotcount IS DISTINCT FROM expm.availablealiquotcount OR ")
                     .append("    st.aliquotvolume IS DISTINCT FROM expm.aliquotvolume OR ")
