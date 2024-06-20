@@ -2728,6 +2728,8 @@ public class ExpDataIterators
 
             List<String> keys = new ArrayList<>();
             Set<String> allKeys = _typeFolderDataMap.keySet();
+            if (allKeys.size() == 1)
+                return allKeys;
             // if the parents referenced in the file are not samples that are potentially being created in this file, there is no dependency
             _idsPerType.forEach((typeName, ids) -> {
                 Set<String> parentIds = _parentIdsPerType.get(typeName);

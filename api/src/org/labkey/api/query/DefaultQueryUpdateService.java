@@ -34,6 +34,8 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.ColumnValidators;
+import org.labkey.api.dataiterator.DataIteratorBuilder;
+import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.OntologyObject;
@@ -44,6 +46,8 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.ValidatorContext;
+import org.labkey.api.reader.ColumnDescriptor;
+import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -54,6 +58,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.UnauthorizedException;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -803,5 +808,24 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         if (dp != null)
             return isAttachmentProperty(dp);
         return false;
+    }
+
+    protected void configureCrossFolderImport(DataIteratorBuilder rows, DataIteratorContext context) throws IOException
+    {
+        if (!context.getInsertOption().updateOnly && context.isCrossFolderImport() && rows instanceof DataLoader dataLoader)
+        {
+            boolean hasContainerField = false;
+            for (ColumnDescriptor columnDescriptor : dataLoader.getColumns())
+            {
+                String fieldName = columnDescriptor.getColumnName();
+                if (fieldName.equalsIgnoreCase("Container") || fieldName.equalsIgnoreCase("Folder"))
+                {
+                    hasContainerField = true;
+                    break;
+                }
+            }
+            if (!hasContainerField)
+                context.setCrossFolderImport(false);
+        }
     }
 }
