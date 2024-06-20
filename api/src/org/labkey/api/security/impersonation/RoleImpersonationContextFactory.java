@@ -165,7 +165,6 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
         return UserManager.getUser(_adminUserId);
     }
 
-
     @Override
     public void stopImpersonating(HttpServletRequest request)
     {
@@ -204,7 +203,7 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
 
     private static class RoleImpersonationContext extends AbstractImpersonationContext
     {
-        /** Hold on to the role names and not the Roles themselves for serialization purposes. See issue #15660 */
+        /** Hold on to the role names and not the Roles themselves for serialization purposes. See Issue #15660 */
         // TODO: Hold only Set<Role> and use custom serialization, see below
         private final Set<String> _roleNames;
         private transient Set<Role> _roles;
@@ -310,7 +309,9 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
         @Override
         public Stream<Role> getAssignedRoles(User user, SecurableResource resource)
         {
-            return getRoles().stream(); // No filtering - we trust verifyPermissions to validate that the admin is allowed to impersonate the specified roles
+            // No filtering - we trust verifyPermissions to validate that the admin is allowed to impersonate the
+            // specified roles. See Issue #50248 to understand the Container check.
+            return resource instanceof Container ? getRoles().stream() : Stream.empty();
         }
 
         @Override

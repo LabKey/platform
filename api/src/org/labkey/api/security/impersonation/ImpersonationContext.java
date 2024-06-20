@@ -60,7 +60,7 @@ public interface ImpersonationContext extends Serializable
     {
         Stream<Role> roles = getSiteRoles(user);
         SecurityPolicy policy = SecurityPolicyManager.getPolicy(resource);
-        return Streams.concat(roles, policy.getRoles(user.getGroups()).stream());
+        return Streams.concat(roles, policy.getRoles(user.getGroups()).stream()).distinct();
     }
 
     /**

@@ -88,7 +88,7 @@ public class WrappedImpersonationContext implements ImpersonationContext
     @Override
     public Stream<Role> getAssignedRoles(User user, SecurableResource resource)
     {
-        return Streams.concat(_additionalRoles.stream(), _delegate.getAssignedRoles(user, resource));
+        return Streams.concat(_additionalRoles.stream(), _delegate.getAssignedRoles(user, resource)).distinct();
     }
 
     @Override

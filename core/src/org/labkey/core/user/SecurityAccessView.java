@@ -105,7 +105,7 @@ public class SecurityAccessView extends VBox
                 continue;
 
             Set<Role> allRoles = SecurityManager.getEffectiveRoles(child, _principal)
-                .filter(role -> role instanceof NoPermissionsRole)
+                .filter(role -> !(role instanceof NoPermissionsRole))
                 .collect(Collectors.toSet());
 
             List<Role> roles = new ArrayList<>();
