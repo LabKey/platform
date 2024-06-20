@@ -3293,9 +3293,9 @@ public class SecurityManager
      * @param principal The principal
      * @return The roles this principal is playing in the securable resource
      */
-    public static Set<Role> getEffectiveRoles(@NotNull SecurableResource resource, @NotNull UserPrincipal principal)
+    public static Stream<Role> getEffectiveRoles(@NotNull SecurableResource resource, @NotNull UserPrincipal principal)
     {
-        return principal.getAssignedRoles(resource).collect(Collectors.toSet());
+        return principal.getAssignedRoles(resource);
     }
 
     private enum HasPermissionOption

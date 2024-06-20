@@ -2277,8 +2277,10 @@ public class SecurityController extends SpringActionController
             {
                 user = UserManager.getUser(user.getUserId()); // the cache from UserManager.getUsers might not have the updated groups list
                 Map<String, List<Group>> userAccessGroups = new TreeMap<>();
-                Set<Role> effectiveRoles = SecurityManager.getEffectiveRoles(getContainer(), user);
-                effectiveRoles.remove(RoleManager.getRole(NoPermissionsRole.class)); //ignore no perms
+                Set<Role> effectiveRoles = SecurityManager.getEffectiveRoles(getContainer(), user)
+                    .filter(role -> !(role instanceof NoPermissionsRole))
+                    .collect(Collectors.toSet());
+
                 for (Role role : effectiveRoles)
                 {
                     userAccessGroups.put(role.getName(), new ArrayList<>());

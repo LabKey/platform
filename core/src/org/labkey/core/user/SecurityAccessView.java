@@ -35,7 +35,6 @@ import org.labkey.core.user.UserController.AccessDetail;
 import org.labkey.core.user.UserController.AccessDetailRow;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -44,6 +43,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 // TODO: Reconcile with FolderAccessAction as well
 // TODO: Move AccessDetail, FolderAccessForm, AccessDetail into this class
@@ -104,8 +104,9 @@ public class SecurityAccessView extends VBox
             if (!child.isContainerFor(ContainerType.DataType.permissions))
                 continue;
 
-            Collection<Role> allRoles = SecurityManager.getEffectiveRoles(child, _principal);
-            allRoles.remove(RoleManager.getRole(NoPermissionsRole.class)); //ignore no perms
+            Set<Role> allRoles = SecurityManager.getEffectiveRoles(child, _principal)
+                .filter(role -> role instanceof NoPermissionsRole)
+                .collect(Collectors.toSet());
 
             List<Role> roles = new ArrayList<>();
             if (filterSiteRoles)
