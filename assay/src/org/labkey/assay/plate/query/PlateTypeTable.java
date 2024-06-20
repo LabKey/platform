@@ -20,6 +20,7 @@ public class PlateTypeTable extends SimpleUserSchema.SimpleTable<UserSchema>
 {
     public static final String NAME = "PlateType";
     private static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
+    boolean _allowInsertUpdateDelete;
 
     static
     {
@@ -28,9 +29,10 @@ public class PlateTypeTable extends SimpleUserSchema.SimpleTable<UserSchema>
         defaultVisibleColumns.add(FieldKey.fromParts("Columns"));
     }
 
-    public PlateTypeTable(PlateSchema schema, @Nullable ContainerFilter cf)
+    public PlateTypeTable(PlateSchema schema, @Nullable ContainerFilter cf, boolean allowInsertUpdateDelete)
     {
         super(schema, AssayDbSchema.getInstance().getTableInfoPlateType(), cf);
+        _allowInsertUpdateDelete = allowInsertUpdateDelete;
         setTitleColumn("Description");
     }
 
@@ -43,7 +45,7 @@ public class PlateTypeTable extends SimpleUserSchema.SimpleTable<UserSchema>
     @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        if (InsertPermission.class.equals(perm) || UpdatePermission.class.equals(perm) || DeletePermission.class.equals(perm))
+        if (!_allowInsertUpdateDelete && (InsertPermission.class.equals(perm) || UpdatePermission.class.equals(perm) || DeletePermission.class.equals(perm)))
             return false;
         return super.hasPermission(user, perm);
     }

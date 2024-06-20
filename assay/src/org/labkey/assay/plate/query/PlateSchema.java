@@ -70,7 +70,7 @@ public class PlateSchema extends SimpleUserSchema
         if (PlateSetTable.NAME.equalsIgnoreCase(name))
             return new PlateSetTable(this, cf, false).init();
         if (PlateTypeTable.NAME.equalsIgnoreCase(name))
-            return new PlateTypeTable(this, cf).init();
+            return new PlateTypeTable(this, cf, false).init();
         if (HitTable.NAME.equalsIgnoreCase(name))
             return new HitTable(this, cf, false).init();
         if (WellGroupTable.NAME.equalsIgnoreCase(name))
