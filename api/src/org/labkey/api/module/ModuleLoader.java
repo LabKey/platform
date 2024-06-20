@@ -1074,7 +1074,11 @@ public class ModuleLoader implements MemTrackerListener
         }
 
         for (String e : excludeSet)
-            includedModules.remove(e);
+        {
+            Module module = includedModules.remove(e);
+            if (module != null)
+                _log.info("Excluding module {} since it was specified in the exclude startup property", module.getName());
+        }
 
         return new ArrayList<>(includedModules.values());
     }
