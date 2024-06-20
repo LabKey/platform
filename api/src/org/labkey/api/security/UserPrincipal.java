@@ -30,7 +30,7 @@ import java.util.Set;
 /**
  * A user-oriented principal within the system. This encompasses both {@link User}s and {@link Group}s (of groups and users).
  */
-public abstract class UserPrincipal implements Principal, Parameter.JdbcParameterValue, Serializable
+public abstract class UserPrincipal implements Principal, Parameter.JdbcParameterValue, Serializable, Comparable<UserPrincipal>
 {
     private String _name;
     private int _userId = 0;
@@ -156,5 +156,11 @@ public abstract class UserPrincipal implements Principal, Parameter.JdbcParamete
     {
         // Check for any privileged role assigned to this principal at the root
         return ContainerManager.getRoot().getPolicy().getRoles(getGroups()).stream().anyMatch(Role::isPrivileged);
+    }
+
+    @Override
+    public int compareTo(@NotNull UserPrincipal o)
+    {
+        return getName().compareTo(o.getName());
     }
 }
