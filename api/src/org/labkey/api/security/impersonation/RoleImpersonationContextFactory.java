@@ -35,6 +35,7 @@ import org.labkey.api.security.permissions.CanImpersonateSiteRolesPermission;
 import org.labkey.api.security.roles.AbstractRootContainerRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.security.roles.RoleSet;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ActionURL;
@@ -42,8 +43,6 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -54,8 +53,8 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
 {
     private final @Nullable GUID _projectId;
     private final int _adminUserId;
-    private final Set<String> _roleNames;
-    private final Set<String> _previousRoleNames;
+    private final RoleSet _roles;
+    private final RoleSet _previousRoles;
     @JsonIgnore // Can't be handled by remote pipelines
     private final ActionURL _returnURL;
     private final String _cacheKey;
@@ -64,15 +63,15 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
     protected RoleImpersonationContextFactory(
             @JsonProperty("_projectId") @Nullable GUID projectId,
             @JsonProperty("_adminUserId") int adminUserId,
-            @JsonProperty("_roleNames") Set<String> roleNames,
-            @JsonProperty("_previousRoleNames") Set<String> previousRoleNames,
+            @JsonProperty("_roles") RoleSet roles,
+            @JsonProperty("_previousRoles") RoleSet previousRoles,
             @JsonProperty("_cacheKey") String cacheKey
     )
     {
         _projectId = projectId;
         _adminUserId = adminUserId;
-        _roleNames = roleNames;
-        _previousRoleNames = previousRoleNames;
+        _roles = roles;
+        _previousRoles = previousRoles;
         _returnURL = null;
         _cacheKey = cacheKey;
     }
@@ -85,22 +84,16 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
 
         // Compute the navtree cache key based on role names + project: NavTree will be different for each role set + project combination
         StringBuilder cacheKey = new StringBuilder("/impersonationRole=");
-        Set<String> roleNames = new HashSet<>();
 
         for (Role role : newImpersonationRoles)
         {
             String roleName = role.getUniqueName();
-            roleNames.add(roleName);
-
             cacheKey.append(roleName);
             cacheKey.append("|");
         }
 
-        Set<String> oldRoleNames = new HashSet<>();
-        currentImpersonationRoles.forEach(oldRole -> oldRoleNames.add(oldRole.getUniqueName()));
-        _previousRoleNames = oldRoleNames;
-
-        _roleNames = Collections.unmodifiableSet(roleNames);
+        _roles = new RoleSet(newImpersonationRoles);
+        _previousRoles = new RoleSet(currentImpersonationRoles);
 
         if (null != _projectId)
             cacheKey.append("/impersonationProject=").append(_projectId);
@@ -113,7 +106,7 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
     {
         Container project = (null != _projectId ? ContainerManager.getForId(_projectId) : null);
 
-        return new RoleImpersonationContext(project, getAdminUser(), _roleNames, _returnURL, this, _cacheKey);
+        return new RoleImpersonationContext(project, getAdminUser(), _roles, _returnURL, this, _cacheKey);
     }
 
     @Override
@@ -127,22 +120,22 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
 
         User adminUser = getAdminUser();
 
-        if (!_previousRoleNames.isEmpty())
+        if (!_previousRoles.isEmpty())
         {
             UserManager.UserAuditEvent stopEvent = new UserManager.UserAuditEvent(context.getContainer().getId(),
-                    adminUser.getEmail() + " stopped impersonating role" + getRolesDisplayString(_previousRoleNames), adminUser);
+                    adminUser.getEmail() + " stopped impersonating role" + getRolesDisplayString(_previousRoles), adminUser);
             AuditLogService.get().addEvent(adminUser, stopEvent);
         }
 
         UserManager.UserAuditEvent event = new UserManager.UserAuditEvent(context.getContainer().getId(),
-                adminUser.getEmail() + " impersonated role" + getRolesDisplayString(_roleNames), adminUser);
+                adminUser.getEmail() + " impersonated role" + getRolesDisplayString(_roles), adminUser);
         AuditLogService.get().addEvent(adminUser, event);
     }
 
-    private String getRolesDisplayString(Set<String> roleNames)
+    private String getRolesDisplayString(RoleSet roleSet)
     {
-        Set<String> roleDisplayNames = roleNames.stream()
-            .map(RoleManager::getRole)
+        Set<Role> roles = roleSet.getRoles();
+        Set<String> roleDisplayNames = roles.stream()
             .filter(Objects::nonNull)
             .map(Role::getName)
             .collect(Collectors.toSet());
@@ -172,8 +165,8 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
 
         User adminUser = getAdminUser();
         Container project = null == _projectId ? ContainerManager.getRoot() : ContainerManager.getForId(_projectId);
-        UserManager.UserAuditEvent event = new UserManager.UserAuditEvent(project.getId(),
-                adminUser.getEmail() + " stopped impersonating role" + getRolesDisplayString(_roleNames), adminUser);
+        UserManager.UserAuditEvent event = new UserManager.UserAuditEvent(project.getId(),adminUser.getEmail()
+            + " stopped impersonating role" + getRolesDisplayString(_roles), adminUser);
         AuditLogService.get().addEvent(adminUser, event);
     }
 
@@ -203,35 +196,32 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
 
     private static class RoleImpersonationContext extends AbstractImpersonationContext
     {
-        /** Hold on to the role names and not the Roles themselves for serialization purposes. See Issue #15660 */
-        // TODO: Hold only Set<Role> and use custom serialization, see below
-        private final Set<String> _roleNames;
-        private transient Set<Role> _roles;
+        private final RoleSet _roles;
         private final String _cacheKey;
 
         @JsonCreator
         private RoleImpersonationContext(
                 @JsonProperty("_project") @Nullable Container project,
                 @JsonProperty("_adminUser") User adminUser,
-                @JsonProperty("_roleNames") Set<String> roleNames,
+                @JsonProperty("_roles") RoleSet roles,
                 @JsonProperty("_factory") ImpersonationContextFactory factory,
                 @JsonProperty("_cacheKey") String cacheKey)
         {
-            this(project, adminUser, roleNames, null, factory, cacheKey);
+            this(project, adminUser, roles, null, factory, cacheKey);
         }
 
         private RoleImpersonationContext(
                 @Nullable Container project,
                 User adminUser,
-                Set<String> roleNames,
+                RoleSet roles,
                 ActionURL returnURL,
                 ImpersonationContextFactory factory,
                 String cacheKey)
         {
             super(adminUser, project, returnURL, factory);
-            _roleNames = roleNames;
+            _roles = roles;
             _cacheKey = cacheKey;
-            verifyPermissions(project, adminUser, getRoles());
+            verifyPermissions(project, adminUser, _roles.getRoles());
         }
 
         // Throws if user is not authorized to impersonate all roles
@@ -287,23 +277,11 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
             return PrincipalArray.getEmptyPrincipalArray();
         }
 
-        // TODO: More expensive than it needs to be... should actually hold onto a Set<Roles> and use custom serialization (using unique names)
-        private synchronized Set<Role> getRoles()
-        {
-            if (_roles == null)
-            {
-                _roles = new HashSet<>();
-                for (String name : _roleNames)
-                    _roles.add(RoleManager.getRole(name));
-            }
-            return _roles;
-        }
-
         @Override
         public Stream<Role> getSiteRoles(User user)
         {
             // Return only site roles that are being impersonated
-            return super.getSiteRoles(user).filter(role -> getRoles().contains(role));
+            return super.getSiteRoles(user).filter(_roles::contains);
         }
 
         @Override
@@ -311,7 +289,7 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
         {
             // No filtering - we trust verifyPermissions to validate that the admin is allowed to impersonate the
             // specified roles. See Issue #50248 to understand the Container check.
-            return resource instanceof Container ? getRoles().stream() : Stream.empty();
+            return resource instanceof Container ? _roles.stream() : Stream.empty();
         }
 
         @Override
