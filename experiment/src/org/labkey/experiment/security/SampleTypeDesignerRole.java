@@ -8,7 +8,7 @@ public class SampleTypeDesignerRole extends AbstractRole
 {
     public SampleTypeDesignerRole()
     {
-        super("Sample Type Designer", "Sample type designers can create and design new samples types or change existing ones.", ExperimentModule.class, DesignSampleTypePermission.class);
+        super("Sample Type Designer", "Sample type designers can create and design new sample types or change existing ones.", ExperimentModule.class, DesignSampleTypePermission.class);
 
         excludeGuests();
     }

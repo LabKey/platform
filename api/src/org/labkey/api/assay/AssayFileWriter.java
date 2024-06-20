@@ -101,8 +101,14 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
     public static File ensureUploadDirectory(Path dir) throws ExperimentException
     {
         Path path = ensureUploadDirectoryPath(dir);
-        if (null != path && !FileUtil.hasCloudScheme(path))
-            return path.toFile();
+        if (null != path)
+        {
+            if (!FileUtil.hasCloudScheme(path))
+                return path.toFile();
+            else
+                throw new ExperimentException("Operation not supported for cloud-based file storage.");
+        }
+
         return null;
     }
 
