@@ -825,10 +825,11 @@ public class SimpleFilter implements Filter
                 FilterClause compareClause = CompareType.EQUAL.createFilterClause(getFieldKeys().get(0), params);
                 if (compareClause.meetsCriteria(col, value))
                 {
-                    return true;
+                    var b = 1==1;
+                    return !_negated;
                 }
             }
-            return false;
+            return _negated;
         }
     }
 
