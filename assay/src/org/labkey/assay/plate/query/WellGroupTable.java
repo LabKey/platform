@@ -16,6 +16,7 @@
 
 package org.labkey.assay.plate.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.WellGroup;
@@ -51,6 +52,11 @@ import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.assay.plate.PlateCache;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.query.AssayDbSchema;
@@ -67,6 +73,7 @@ public class WellGroupTable extends SimpleUserSchema.SimpleTable<UserSchema>
 {
     public static final String NAME = "WellGroup";
     private static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
+    boolean _allowInsertUpdateDelete;
 
     static
     {
@@ -75,9 +82,10 @@ public class WellGroupTable extends SimpleUserSchema.SimpleTable<UserSchema>
         defaultVisibleColumns.add(FieldKey.fromParts("TypeName"));
     }
 
-    public WellGroupTable(PlateSchema schema, ContainerFilter cf)
+    public WellGroupTable(PlateSchema schema, ContainerFilter cf, boolean allowInsertUpdateDelete)
     {
         super(schema, AssayDbSchema.getInstance().getTableInfoWellGroup(), cf);
+        _allowInsertUpdateDelete = allowInsertUpdateDelete;
         setTitleColumn("Name");
     }
 
@@ -118,6 +126,14 @@ public class WellGroupTable extends SimpleUserSchema.SimpleTable<UserSchema>
         col.setFk(new PropertyForeignKey(getUserSchema(), getContainerFilter(), map));
 
         return col;
+    }
+
+    @Override
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
+    {
+        if (!_allowInsertUpdateDelete && (InsertPermission.class.equals(perm) || UpdatePermission.class.equals(perm) || DeletePermission.class.equals(perm)))
+            return false;
+        return super.hasPermission(user, perm);
     }
 
     @Override
