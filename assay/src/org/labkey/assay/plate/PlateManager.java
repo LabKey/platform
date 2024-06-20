@@ -1476,9 +1476,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
     private @NotNull QueryUpdateService getPlateSetUpdateService(Container container, User user)
     {
-        UserSchema schema = getPlateUserSchema(container, user);
-        TableInfo tableInfo = schema.getTableOrThrow(PlateSetTable.NAME);
-        QueryUpdateService qus = tableInfo.getUpdateService();
+        TableInfo table = PlateSchema.getPlateSetTable(container, user, null);
+        QueryUpdateService qus = table.getUpdateService();
         if (qus == null)
             throw new IllegalStateException("Unable to resolve QueryUpdateService for PlateSets.");
 

@@ -133,14 +133,19 @@
       <column columnName="Created"/>
       <column columnName="ModifiedBy"/>
       <column columnName="Modified"/>
-      <column columnName="Archived"/>
-      <column columnName="Type"/>
+      <column columnName="Archived">
+        <isUserEditable>false</isUserEditable>
+      </column>
+      <column columnName="Type">
+        <isUserEditable>false</isUserEditable>
+      </column>
       <column columnName="PrimaryPlateSetId">
         <description>
           The nearest parent "primary" plate set in this plate set's lineage. When blank it means the plate set does
           not participate in a lineage (a.k.a. stand-alone plate set).
         </description>
         <isHidden>true</isHidden>
+        <isUserEditable>false</isUserEditable>
       </column>
       <column columnName="RootPlateSetId">
         <description>
@@ -149,6 +154,7 @@
           (a.k.a stand-alone plate set). For top-level "primary" plate sets this will always refer to itself.
         </description>
         <isHidden>true</isHidden>
+        <isUserEditable>false</isUserEditable>
       </column>
       <column columnName="Template">
         <isHidden>true</isHidden>
