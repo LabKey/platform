@@ -1165,8 +1165,8 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                         if (material == null)
                             material = exp.findExpMaterial(lookupContainer, user, byNameSS, ssName, materialName, cache, materialCache);
                     }
-                    else
-                        material = materialCache.computeIfAbsent((Integer)o, (id) -> exp.getExpMaterial(id, containerFilter));
+                    else if (o instanceof Number n)
+                        material = materialCache.computeIfAbsent(n.intValue(), (id) -> exp.getExpMaterial(id, containerFilter));
 
                     if (material != null)
                     {
