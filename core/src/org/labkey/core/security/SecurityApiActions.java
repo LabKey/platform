@@ -195,13 +195,8 @@ public class SecurityApiActions
                     groupPerms.put("roleLabel", role.getLabel());
                 }
 
-                //add effective roles array
-                Set<Role> effectiveRoles = SecurityManager.getEffectiveRoles(container, group);
-                ArrayList<String> effectiveRoleList = new ArrayList<>();
-                for (Role effectiveRole : effectiveRoles)
-                {
-                    effectiveRoleList.add(effectiveRole.getUniqueName());
-                }
+                //add effective roles
+                List<String> effectiveRoleList = SecurityManager.getEffectiveRoles(container, group).map(Role::getUniqueName).toList();
                 groupPerms.put("roles", effectiveRoleList);
                 groupPerms.put("effectivePermissions", SecurityManager.getPermissionNames(container, group));
 
@@ -340,11 +335,7 @@ public class SecurityApiActions
             }
 
             //effective roles
-            List<String> effectiveRoles = new ArrayList<>();
-            for (Role effectiveRole : SecurityManager.getEffectiveRoles(container, user))
-            {
-                effectiveRoles.add(effectiveRole.getUniqueName());
-            }
+            List<String> effectiveRoles = SecurityManager.getEffectiveRoles(container, user).map(Role::getUniqueName).toList();
             permsInfo.put("roles", effectiveRoles);
             permsInfo.put("effectivePermissions", SecurityManager.getPermissionNames(container, user));
 
@@ -369,11 +360,7 @@ public class SecurityApiActions
                 }
 
                 //effective roles
-                List<String> groupEffectiveRoles = new ArrayList<>();
-                for (Role effectiveRole : SecurityManager.getEffectiveRoles(container, group))
-                {
-                    groupEffectiveRoles.add(effectiveRole.getUniqueName());
-                }
+                List<String> groupEffectiveRoles = SecurityManager.getEffectiveRoles(container, group).map(Role::getUniqueName).toList();
                 groupInfo.put("roles", groupEffectiveRoles);
                 groupInfo.put("effectivePermissions", SecurityManager.getPermissionNames(container, group));
 

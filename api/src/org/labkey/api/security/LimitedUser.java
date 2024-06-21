@@ -42,6 +42,8 @@ import org.labkey.api.util.TestContext;
 
 import java.util.Date;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * A cloned user that limits the permissions associated with that user to only the passed in roles.
@@ -73,9 +75,9 @@ public class LimitedUser extends ClonedUser
         }
 
         @Override
-        public Set<Role> getAssignedRoles(User user, SecurityPolicy policy)
+        public Stream<Role> getAssignedRoles(User user, SecurableResource resource)
         {
-            return _roles;
+            return _roles.stream();
         }
     }
 
@@ -128,19 +130,19 @@ public class LimitedUser extends ClonedUser
             testPermissions(ElevatedUser.ensureCanSeeAuditLogRole(c, ElevatedUser.getElevatedUser(new LimitedUser(user, ReaderRole.class), EditorRole.class)), 3, true, true, true, false, true);
 
             int groupCount = user.getGroups().size();
-            int roleCount = user.getAssignedRoles(c).size();
-            int siteRolesCount = user.getSiteRoles().size();
+            int roleCount = (int)user.getAssignedRoles(c).count();
+            int siteRolesCount = (int)user.getSiteRoles().count();
             User elevated = ElevatedUser.getElevatedUser(user);
             assertEquals(groupCount, elevated.getGroups().size());
-            assertEquals(roleCount, elevated.getAssignedRoles(c).size());
-            assertEquals(siteRolesCount, elevated.getSiteRoles().size());
+            assertEquals(roleCount, (int)elevated.getAssignedRoles(c).count());
+            assertEquals(siteRolesCount, (int)elevated.getSiteRoles().count());
         }
 
         private void testPermissions(User user, int roleCount, boolean hasRead, boolean hasInsert, boolean hasUpdate, boolean hasAdmin, boolean hasCanSeeAuditLog)
         {
             Container c = JunitUtil.getTestContainer();
-            assertEquals(roleCount, user.getAssignedRoles(c).size());
-            assertTrue(user.getSiteRoles().isEmpty());
+            assertEquals(roleCount, (int)user.getAssignedRoles(c).count());
+            assertTrue(user.getSiteRoles().findAny().isEmpty());
             assertFalse(user.hasSiteAdminPermission());
             assertEquals(0, user.getGroups().stream().count());
             assertFalse(user.hasPrivilegedRole());
@@ -166,7 +168,10 @@ public class LimitedUser extends ClonedUser
             String serialized = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(admin);
             User reconstitutedAdmin = mapper.readValue(serialized, User.class);
             assertEquals(admin, reconstitutedAdmin);
-            assertEquals(admin.getAssignedRoles(ContainerManager.getRoot()), reconstitutedAdmin.getAssignedRoles(ContainerManager.getRoot()));
+            assertEquals(
+                admin.getAssignedRoles(ContainerManager.getRoot()).collect(Collectors.toSet()),
+                reconstitutedAdmin.getAssignedRoles(ContainerManager.getRoot()).collect(Collectors.toSet())
+            );
 
             // Serialize/deserialize search user
             User user = User.getSearchUser();
