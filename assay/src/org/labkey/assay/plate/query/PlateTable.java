@@ -86,8 +86,12 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
         Archived,
         AssayType,
         Container,
+        Created,
+        CreatedBy,
         Description,
         Lsid,
+        Modified,
+        ModifiedBy,
         Name,
         PlateId,
         PlateSet,
@@ -106,10 +110,10 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
         defaultVisibleColumns.add(FieldKey.fromParts(Column.PlateSet.name()));
         defaultVisibleColumns.add(FieldKey.fromParts(Column.AssayType.name()));
         defaultVisibleColumns.add(FieldKey.fromParts(Column.WellsFilled.name()));
-        defaultVisibleColumns.add(FieldKey.fromParts("Created"));
-        defaultVisibleColumns.add(FieldKey.fromParts("CreatedBy"));
-        defaultVisibleColumns.add(FieldKey.fromParts("Modified"));
-        defaultVisibleColumns.add(FieldKey.fromParts("ModifiedBy"));
+        defaultVisibleColumns.add(FieldKey.fromParts(Column.Created.name()));
+        defaultVisibleColumns.add(FieldKey.fromParts(Column.CreatedBy.name()));
+        defaultVisibleColumns.add(FieldKey.fromParts(Column.Modified.name()));
+        defaultVisibleColumns.add(FieldKey.fromParts(Column.ModifiedBy.name()));
     }
 
     public PlateTable(PlateSchema schema, @Nullable ContainerFilter cf, boolean allowInsert)

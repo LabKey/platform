@@ -1453,7 +1453,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return _plateLayoutHandlers.get(plateTypeName);
     }
     
-    private UserSchema getPlateUserSchema(Container container, User user)
+    public UserSchema getPlateUserSchema(Container container, User user)
     {
         return QueryService.get().getUserSchema(user, container, PlateSchema.SCHEMA_NAME);
     }
@@ -1462,6 +1462,16 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     public TableInfo getPlateTableInfo()
     {
         return AssayDbSchema.getInstance().getTableInfoPlate();
+    }
+
+    public @NotNull TableInfo getPlateTable(Container container, User user)
+    {
+        return getPlateTable(container, user, null);
+    }
+
+    public @NotNull TableInfo getPlateTable(Container container, User user, @Nullable ContainerFilter cf)
+    {
+        return getPlateUserSchema(container, user).getTableOrThrow(PlateTable.NAME, cf);
     }
 
     private @NotNull TableInfo getWellTable(Container container, User user)
@@ -2830,8 +2840,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         Map<Integer, List<Integer>> protocolPlateSets = new HashMap<>();
         Map<Integer, PlateSet> plateSets = lineage.getPlateSetAndDescendents(plateSetId);
         plateSetAssays.setPlateSets(plateSets);
-        UserSchema schema = getPlateUserSchema(container, user);
-        TableInfo plateTable = schema.getTableOrThrow(PlateTable.NAME, cf);
+        TableInfo plateTable = getPlateTable(container, user, cf);
         List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(container, provider)
                 .stream().filter(provider::isPlateMetadataEnabled).toList();
 
