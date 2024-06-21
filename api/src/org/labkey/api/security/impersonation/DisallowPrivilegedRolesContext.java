@@ -19,11 +19,11 @@ package org.labkey.api.security.impersonation;
   A "not impersonating" context that filters out privileged site roles (i.e., Site Admin, Platform Developer)
  */
 
-import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.roles.Role;
 
-import java.util.Set;
+import java.util.stream.Stream;
 
 public class DisallowPrivilegedRolesContext extends NotImpersonatingContext
 {
@@ -45,11 +45,8 @@ public class DisallowPrivilegedRolesContext extends NotImpersonatingContext
     }
 
     @Override
-    public Set<Role> getAssignedRoles(User user, SecurityPolicy policy)
+    public Stream<Role> getAssignedRoles(User user, SecurableResource resource)
     {
-        Set<Role> roles = super.getAssignedRoles(user, policy);
-        roles.removeIf(Role::isPrivileged);
-
-        return roles;
+        return super.getAssignedRoles(user, resource).filter(role -> !role.isPrivileged());
     }
 }

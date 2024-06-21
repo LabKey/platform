@@ -18,14 +18,15 @@ package org.labkey.api.security.impersonation;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.servlet.http.HttpServletRequest;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.PrincipalArray;
+import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -36,10 +37,9 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * Context representing that a user is impersonating another user, and should not be treated as their normal self.
@@ -220,9 +220,9 @@ public class UserImpersonationContextFactory extends AbstractImpersonationContex
         }
 
         @Override
-        public Set<Role> getAssignedRoles(User user, SecurityPolicy policy)
+        public Stream<Role> getAssignedRoles(User user, SecurableResource resource)
         {
-            return getFilteredRoles(super.getAssignedRoles(user, policy));
+            return getFilteredRoles(super.getAssignedRoles(user, resource));
         }
     }
 }

@@ -39,6 +39,9 @@
 <%@ page import="org.labkey.core.security.SecurityController.GroupExportAction" %>
 <%@ page import="org.labkey.core.security.SecurityController.StandardDeleteGroupAction" %>
 <%@ page import="org.labkey.core.user.LimitActiveUsersSettings" %>
+<%@ page import="java.util.Collections" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.util.ArrayList" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -193,7 +196,12 @@ else
             <th width="110px">&nbsp;</th>
         </tr>
     <%
-    for (UserPrincipal member : bean.members)
+
+    // Issue 49845: Sort the members by name
+    List<UserPrincipal> members = new ArrayList<>(bean.members);
+    Collections.sort(members);
+
+    for (UserPrincipal member : members)
     {
         int userId = member.getUserId();
         String memberName = member.getName();

@@ -26,7 +26,7 @@ public class FileLinkMetricsMaintenanceTask implements SystemMaintenance.Mainten
     @Override
     public String getDescription()
     {
-        return "Task to calculate metrics for missing files for File fields.";
+        return "Task to calculate metrics for valid and missing files for File fields";
     }
 
     @Override
@@ -55,22 +55,33 @@ public class FileLinkMetricsMaintenanceTask implements SystemMaintenance.Mainten
     {
         try
         {
-            Map<String, Map<String, Set<String>>> results = ExperimentServiceImpl.get().doMissingFilesCheck(getTaskUser(), ContainerManager.getRoot());
+            Map<String, Map<String, MissingFilesCheckInfo>> results = ExperimentServiceImpl.get().doMissingFilesCheck(getTaskUser(), ContainerManager.getRoot(), false);
             Map<String, Object> missingFilesMetrics = new HashMap<>();
             missingFilesMetrics.put("Run time", new Date());
             Map<String, Object> metrics = new HashMap<>();
             metrics.put(NAME, missingFilesMetrics);
-            long totalCount = 0;
+            long missingFilesCount = 0;
+            Map<String, Long> validFilesCount = new HashMap<>();
             if (null != results)
             {
                 for (String containerId : results.keySet())
                 {
-                    Map<String, Set<String>> missingFiles = results.get(containerId);
-                    for (String source : missingFiles.keySet())
-                        totalCount += missingFiles.get(source).size();
+                    Map<String, MissingFilesCheckInfo> info = results.get(containerId);
+                    for (String source : info.keySet())
+                    {
+                        missingFilesCount += info.get(source).getMissingFilesCount();
+
+                        // e.g. 'assayresults.c9043290_test'
+                        // note that files from the assay batch and run fields will have "exp" as the schema name here
+                        String schemaName = source.substring(0, source.indexOf('.'));
+
+                        long schemaValidFilesCount = validFilesCount.getOrDefault(schemaName, 0L);
+                        validFilesCount.put(schemaName, schemaValidFilesCount + info.get(source).getValidFilesCount());
+                    }
                 }
             }
-            missingFilesMetrics.put("Missing files count", totalCount);
+            missingFilesMetrics.put("Missing files count", missingFilesCount);
+            missingFilesMetrics.put("Valid files count", validFilesCount);
             FileLinkMetricsProvider.getInstance().updateMetrics(metrics);
         }
         catch (Exception e)
@@ -86,7 +97,7 @@ public class FileLinkMetricsMaintenanceTask implements SystemMaintenance.Mainten
                     @Override
                     public String getDescription()
                     {
-                        return "Enable the system maintenance task to calculate metrics for missing files for File fields.";
+                        return "Enable the system maintenance task to calculate metrics for valid and missing files for File fields.";
                     }
                 }
     }

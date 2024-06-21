@@ -25,12 +25,12 @@ import org.labkey.api.security.roles.Role;
 
 import java.io.Serializable;
 import java.security.Principal;
-import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * A user-oriented principal within the system. This encompasses both {@link User}s and {@link Group}s (of groups and users).
  */
-public abstract class UserPrincipal implements Principal, Parameter.JdbcParameterValue, Serializable
+public abstract class UserPrincipal implements Principal, Parameter.JdbcParameterValue, Serializable, Comparable<UserPrincipal>
 {
     private String _name;
     private int _userId = 0;
@@ -100,16 +100,7 @@ public abstract class UserPrincipal implements Principal, Parameter.JdbcParamete
     /**
      * @return the roles assigned to this principal in the provided securable resource
      */
-    public Set<Role> getAssignedRoles(SecurableResource resource)
-    {
-        return getAssignedRoles(SecurityPolicyManager.getPolicy(resource));
-    }
-
-    /**
-     * @return the roles assigned to this principal in the provided policy
-     * Outside callers should not use this. TODO: Make protected, or eliminate in favor of SecurableResource variant
-     */
-    public abstract Set<Role> getAssignedRoles(SecurityPolicy policy);
+    public abstract Stream<Role> getAssignedRoles(SecurableResource resource);
 
     public abstract boolean isInGroup(int group);
 
@@ -156,5 +147,11 @@ public abstract class UserPrincipal implements Principal, Parameter.JdbcParamete
     {
         // Check for any privileged role assigned to this principal at the root
         return ContainerManager.getRoot().getPolicy().getRoles(getGroups()).stream().anyMatch(Role::isPrivileged);
+    }
+
+    @Override
+    public int compareTo(@NotNull UserPrincipal o)
+    {
+        return getName().compareToIgnoreCase(o.getName());
     }
 }

@@ -15,11 +15,14 @@
  */
 package org.labkey.api.security.impersonation;
 
+import com.google.common.collect.Streams;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.PrincipalArray;
+import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.NoPermissionsRole;
@@ -50,21 +53,21 @@ public interface ImpersonationContext extends Serializable
     PrincipalArray getGroups(User user);
 
     /**
-     * @return The roles assigned to this user in the provided policy as well as the root. The roles may be modified
-     * and/or filtered by the impersonation context.
+     * @return The roles assigned to this user in the provided resource's policy as well as the root. The roles may be
+     * modified and/or filtered by the impersonation context.
      */
-    default Set<Role> getAssignedRoles(User user, SecurityPolicy policy)
+    default Stream<Role> getAssignedRoles(User user, SecurableResource resource)
     {
-        Set<Role> roles = getSiteRoles(user);
-        roles.addAll(policy.getRoles(user.getGroups()));
-        return roles;
+        Stream<Role> roles = getSiteRoles(user);
+        SecurityPolicy policy = SecurityPolicyManager.getPolicy(resource);
+        return Streams.concat(roles, policy.getRoles(user.getGroups()).stream()).distinct();
     }
 
     /**
      * @return The roles assigned to this user in the root. The roles may be modified and/or filtered by the
      * impersonation context.
      */
-    default Set<Role> getSiteRoles(User user)
+    default Stream<Role> getSiteRoles(User user)
     {
         Container root = ContainerManager.getRoot();
         SecurityPolicy policy = root.getPolicy();
@@ -73,7 +76,7 @@ public interface ImpersonationContext extends Serializable
         for (Role role : roles)
             assert role.isApplicable(policy, root);
 
-        return roles;
+        return roles.stream();
     }
 
     ImpersonationContextFactory getFactory();

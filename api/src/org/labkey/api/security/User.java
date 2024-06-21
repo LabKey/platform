@@ -53,6 +53,7 @@ import org.labkey.api.view.ActionURL;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * Represents a user in the LabKey system, typically tied to a specific individual, but see {@link GuestUser} for a
@@ -117,9 +118,9 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
 
         @Override
         @JsonIgnore
-        public Set<Role> getAssignedRoles(SecurityPolicy policy)
+        public Stream<Role> getAssignedRoles(SecurableResource resource)
         {
-            return super.getAssignedRoles(policy);
+            return super.getAssignedRoles(resource);
         }
     }
 
@@ -344,9 +345,9 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
     }
 
     @Override
-    public Set<Role> getAssignedRoles(SecurityPolicy policy)
+    public Stream<Role> getAssignedRoles(SecurableResource resource)
     {
-        return _impersonationContext.getAssignedRoles(this, policy);
+        return _impersonationContext.getAssignedRoles(this, resource);
     }
 
     public JSONObject getUserProps()
@@ -354,7 +355,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
         return User.getUserProps(this);
     }
 
-    public Set<Role> getSiteRoles()
+    public final Stream<Role> getSiteRoles()
     {
         return _impersonationContext.getSiteRoles(this);
     }

@@ -102,7 +102,7 @@ public final class PlateManagerTest
     }
 
     @Test
-    public void createPlateTemplate() throws Exception
+    public void testCreatePlateTemplate() throws Exception
     {
         //
         // INSERT
@@ -495,7 +495,7 @@ public final class PlateManagerTest
     }
 
     @Test
-    public void getWellSampleData()
+    public void testGetWellSampleData()
     {
         // Act
         List<Integer> sampleIds = List.of(0, 3, 5, 8, 10, 11, 12, 13, 15, 17, 19);
@@ -533,7 +533,7 @@ public final class PlateManagerTest
     }
 
     @Test
-    public void getInstrumentInstructions() throws Exception
+    public void testGetInstrumentInstructions() throws Exception
     {
         // Arrange
         ContainerFilter cf = ContainerFilter.Type.CurrentAndSubfolders.create(ContainerManager.getSharedContainer(), user);
@@ -584,7 +584,7 @@ public final class PlateManagerTest
     }
 
     @Test
-    public void getWorklist() throws Exception
+    public void testGetWorklist() throws Exception
     {
         // Arrange
         ContainerFilter cf = ContainerFilter.Type.CurrentAndSubfolders.create(ContainerManager.getSharedContainer(), user);
