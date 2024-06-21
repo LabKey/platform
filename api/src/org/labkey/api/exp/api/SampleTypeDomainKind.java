@@ -659,4 +659,10 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
 
         return false;
     }
+
+    @Override
+    public boolean supportsPhiLevel()
+    {
+        return true;
+    }
 }

@@ -470,4 +470,10 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     {
         return true;
     }
+
+    @Override
+    public boolean supportsPhiLevel()
+    {
+        return true;
+    }
 }

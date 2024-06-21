@@ -806,4 +806,10 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
             }
         }
     }
+
+    @Override
+    public boolean supportsPhiLevel()
+    {
+        return true;
+    }
 }

@@ -122,4 +122,10 @@ public class FilePropertiesDomainKind extends BaseAbstractDomainKind
     {
         return DefaultValueType.FIXED_EDITABLE;
     }
+
+    @Override
+    public boolean supportsPhiLevel()
+    {
+        return true;
+    }
 }

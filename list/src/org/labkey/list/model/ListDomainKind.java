@@ -727,4 +727,10 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
     {
         var props = getBaseProperties(d);
     }
+
+    @Override
+    public boolean supportsPhiLevel()
+    {
+        return true;
+    }
 }
