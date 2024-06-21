@@ -14,6 +14,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
+/**
+ * Similar to a standard java.util.Iterator but capable of throwing ValidationExceptions and offering
+ * some other specialized methods
+ */
 public interface ValidatingDataRowIterator extends Closeable
 {
     boolean hasNext() throws ValidationException;
