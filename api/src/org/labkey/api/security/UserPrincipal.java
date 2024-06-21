@@ -161,6 +161,6 @@ public abstract class UserPrincipal implements Principal, Parameter.JdbcParamete
     @Override
     public int compareTo(@NotNull UserPrincipal o)
     {
-        return getName().compareTo(o.getName());
+        return getName().compareToIgnoreCase(o.getName());
     }
 }
