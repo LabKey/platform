@@ -425,9 +425,7 @@ public class ReportUtil
 
         if (role != null)
         {
-            Set<Role> roles = SecurityManager.getEffectiveRoles(container, user);
-
-            return roles.contains(role);
+            return SecurityManager.getEffectiveRoles(container, user).anyMatch(r -> r.equals(role));
         }
         return false;
     }

@@ -3255,7 +3255,7 @@ public class SecurityManager
         if (principal instanceof User user && resource.getResourceContainer().isForbiddenProject(user))
             return Set.of();
 
-        Stream<Role> roles = principal.getAssignedRoles(resource).stream()
+        Stream<Role> roles = principal.getAssignedRoles(resource)
             .filter(Objects::nonNull);
 
         if (null != contextualRoles && !contextualRoles.isEmpty())
@@ -3293,7 +3293,7 @@ public class SecurityManager
      * @param principal The principal
      * @return The roles this principal is playing in the securable resource
      */
-    public static Set<Role> getEffectiveRoles(@NotNull SecurableResource resource, @NotNull UserPrincipal principal)
+    public static Stream<Role> getEffectiveRoles(@NotNull SecurableResource resource, @NotNull UserPrincipal principal)
     {
         return principal.getAssignedRoles(resource);
     }
@@ -3539,9 +3539,10 @@ public class SecurityManager
                 }
 
                 @Override
-                public Set<Role> getAssignedRoles(SecurityPolicy policy)
+                public Stream<Role> getAssignedRoles(SecurableResource resource)
                 {
-                    return policy.getRoles(getGroups());
+                    SecurityPolicy policy = SecurityPolicyManager.getPolicy(resource);
+                    return policy.getRoles(getGroups()).stream();
                 }
 
                 @Override
