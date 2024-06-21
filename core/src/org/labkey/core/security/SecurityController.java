@@ -15,6 +15,8 @@
  */
 package org.labkey.core.security;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -150,8 +152,6 @@ import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.servlet.ModelAndView;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
@@ -2277,8 +2277,7 @@ public class SecurityController extends SpringActionController
             {
                 user = UserManager.getUser(user.getUserId()); // the cache from UserManager.getUsers might not have the updated groups list
                 Map<String, List<Group>> userAccessGroups = new TreeMap<>();
-                SecurityPolicy policy = SecurityPolicyManager.getPolicy(getContainer());
-                Set<Role> effectiveRoles = SecurityManager.getEffectiveRoles(policy, user);
+                Set<Role> effectiveRoles = SecurityManager.getEffectiveRoles(getContainer(), user);
                 effectiveRoles.remove(RoleManager.getRole(NoPermissionsRole.class)); //ignore no perms
                 for (Role role : effectiveRoles)
                 {
@@ -2287,7 +2286,7 @@ public class SecurityController extends SpringActionController
 
                 if (!effectiveRoles.isEmpty())
                 {
-                    fillUserAccessGroups(user, groups, policy, effectiveRoles, userAccessGroups);
+                    fillUserAccessGroups(user, groups, getContainer().getPolicy(), effectiveRoles, userAccessGroups);
                 }
 
                 if (showAll || !userAccessGroups.isEmpty())

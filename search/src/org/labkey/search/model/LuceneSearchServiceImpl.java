@@ -933,9 +933,10 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             // Tika flags some files as "zip bombs"
             logAsWarning(r, "Can't parse this file", rootMessage);
         }
-        else if (topMessage.equals("Unable to unpack document stream"))
+        // "org.apache.commons.compress.archivers.ArchiveException: No Archiver found for the stream signature" OR
+        // "org.tukaani.xz.UnsupportedOptionsException: LZMA dictionary is too big for this implementation"
+        else if (topMessage.equals("Unable to unpack document stream") || rootMessage.equals("LZMA dictionary is too big for this implementation"))
         {
-            // Usually "org.apache.commons.compress.archivers.ArchiveException: No Archiver found for the stream signature"
             logAsWarning(r, "Can't decompress this file", rootMessage);
         }
         else if (StringUtils.endsWithIgnoreCase(r.getName(), ".chm"))
@@ -2003,20 +2004,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
         @SuppressWarnings("unused")
         public void testTika()
         {
-            File root = new File("c:\\");
-            Predicate<WebdavResource> fileFilter = webdavResource -> StringUtils.endsWithIgnoreCase(webdavResource.getName(), ".chm");
-
-            MutableSecurityPolicy policy = new MutableSecurityPolicy(_c);
-            policy.addRoleAssignment(User.getSearchUser(), ReaderRole.class);
-            FileSystemResource rootResource = new FileSystemResource(Path.parse(root.getAbsolutePath()), root, policy)
-            {
-                @Override
-                public String getContainerId()
-                {
-                    return _c.getId();
-                }
-            };
-
+            File root = new File("c:\\temp");
+            Predicate<WebdavResource> fileFilter = webdavResource -> StringUtils.endsWithIgnoreCase(webdavResource.getName(), ".txt");
+            FileSystemResource rootResource = new FileSystemResource(Path.parse(root.getAbsolutePath()), root, _c);
             traverse(rootResource, fileFilter);
         }
 

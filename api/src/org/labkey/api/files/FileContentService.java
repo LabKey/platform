@@ -32,9 +32,8 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.webdav.WebdavResource;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Path;
 import java.net.URI;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -129,14 +128,9 @@ public interface FileContentService
 
     void setSiteDefaultRoot(File root, User user);
 
-    public void setFileRootSetViaStartupProperty(boolean fileRootSetViaStartupProperty);
+    void setFileRootSetViaStartupProperty(boolean fileRootSetViaStartupProperty);
 
     boolean isFileRootSetViaStartupProperty();
-
-    @NotNull
-    File getUserFilesRoot() throws IOException;
-
-    void setUserFilesRoot(File root, User user);
 
     /**
      * Create an attachmentParent object that will allow storing files in the file system

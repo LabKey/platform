@@ -64,17 +64,17 @@ public class PlateSchema extends SimpleUserSchema
     public TableInfo createTable(String name, ContainerFilter cf)
     {
         if (PlateTable.NAME.equalsIgnoreCase(name))
-            return new PlateTable(this, cf).init();
+            return new PlateTable(this, cf, false).init();
         if (WellTable.NAME.equalsIgnoreCase(name))
             return new WellTable(this, cf, false).init();
         if (PlateSetTable.NAME.equalsIgnoreCase(name))
-            return new PlateSetTable(this, cf).init();
+            return new PlateSetTable(this, cf, false).init();
         if (PlateTypeTable.NAME.equalsIgnoreCase(name))
-            return new PlateTypeTable(this, cf).init();
+            return new PlateTypeTable(this, cf, false).init();
         if (HitTable.NAME.equalsIgnoreCase(name))
             return new HitTable(this, cf, false).init();
         if (WellGroupTable.NAME.equalsIgnoreCase(name))
-            return new WellGroupTable(this, cf).init();
+            return new WellGroupTable(this, cf, false).init();
         if (WellTable.WELL_PROPERTIES_TABLE.equalsIgnoreCase(name))
         {
             Domain domain = PlateManager.get().getPlateMetadataDomain(getContainer(), getUser());
@@ -85,6 +85,24 @@ public class PlateSchema extends SimpleUserSchema
             return new WellGroupTypeTable(this);
 
         return null;
+    }
+
+    public static TableInfo getPlateSetTable(Container container, User user, @Nullable ContainerFilter cf)
+    {
+        PlateSchema plateSchema = new PlateSchema(user, container);
+        return new PlateSetTable(plateSchema, cf, true).init();
+    }
+
+    public static TableInfo getPlateTable(Container container, User user, @Nullable ContainerFilter cf)
+    {
+        PlateSchema plateSchema = new PlateSchema(user, container);
+        return new PlateTable(plateSchema, cf, true).init();
+    }
+
+    public static TableInfo getWellGroupTable(Container container, User user, @Nullable ContainerFilter cf)
+    {
+        PlateSchema plateSchema = new PlateSchema(user, container);
+        return new WellGroupTable(plateSchema, cf, true).init();
     }
 
     public static TableInfo getWellTable(Container container, User user, @Nullable ContainerFilter cf)

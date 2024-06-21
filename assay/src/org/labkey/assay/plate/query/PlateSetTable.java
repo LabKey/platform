@@ -1,5 +1,6 @@
 package org.labkey.assay.plate.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateSet;
@@ -31,6 +32,9 @@ import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.query.AssayDbSchema;
 
@@ -46,6 +50,7 @@ public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>
 {
     public static final String NAME = "PlateSet";
     private static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
+    private final boolean _allowInsert;
 
     static
     {
@@ -60,9 +65,10 @@ public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>
         defaultVisibleColumns.add(FieldKey.fromParts("ModifiedBy"));
     }
 
-    public PlateSetTable(PlateSchema schema, @Nullable ContainerFilter cf)
+    public PlateSetTable(PlateSchema schema, @Nullable ContainerFilter cf, boolean allowInsert)
     {
         super(schema, AssayDbSchema.getInstance().getTableInfoPlateSet(), cf);
+        _allowInsert = allowInsert;
         setTitleColumn("Name");
     }
 
@@ -120,6 +126,14 @@ public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>
     public List<FieldKey> getDefaultVisibleColumns()
     {
         return defaultVisibleColumns;
+    }
+
+    @Override
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
+    {
+        if (!_allowInsert && InsertPermission.class.equals(perm))
+            return false;
+        return super.hasPermission(user, perm);
     }
 
     @Override

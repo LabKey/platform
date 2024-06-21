@@ -16,15 +16,12 @@
 package org.labkey.api.docker;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Builder;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.HeartBeat;
-import org.labkey.api.util.Result;
-import org.labkey.api.view.UnauthorizedException;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -554,26 +551,6 @@ public interface DockerService
             this.lastEntityId = entityId;
         }
     }
-
-    static File getHomeDirectory(User user)
-    {
-        Result r = UserManager.getHomeDirectory(user);
-        if (r.isPresent())
-            return (File)r.get();
-        else
-        {
-            try
-            {
-                r.get();
-            }
-            catch (Exception e)
-            {
-                LogManager.getLogger(DockerService.class).error(e.getMessage());
-            }
-            throw new UnauthorizedException("User does not have a home directory");
-        }
-    }
-
 
     class NoPortAvailableException extends IOException
     {

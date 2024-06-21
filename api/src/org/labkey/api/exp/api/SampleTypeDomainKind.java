@@ -126,6 +126,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         RESERVED_NAMES.add("Sample ID");
         RESERVED_NAMES.add("Status");
         RESERVED_NAMES.add("Amount");
+        RESERVED_NAMES.add("RunId"); // Issue 50461
         RESERVED_NAMES.addAll(InventoryService.INVENTORY_STATUS_COLUMN_NAMES);
         RESERVED_NAMES.addAll(InventoryService.INVENTORY_STATUS_COLUMN_LABELS);
 

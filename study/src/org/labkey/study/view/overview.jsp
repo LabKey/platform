@@ -79,6 +79,7 @@
     String subjectNoun = StudyService.get().getSubjectNounSingular(container);
     String qcUrlFilterKey = getQCUrlFilterKey(CompareType.EQUAL, DatasetQueryView.DATAREGION);
     String visitLabelUrlFilterKey = visitManager.getVisitLabelUrlFilterKey(container, DatasetQueryView.DATAREGION);
+    String visitLabelRowIdFilterKey = visitManager.getVisitRowIdUrlFilterKey(container, DatasetQueryView.DATAREGION);
 
     boolean showCohorts = CohortManager.getInstance().hasCohortMenu(container, user);
     Cohort selectedCohort = null;
@@ -186,14 +187,14 @@
             for (VisitStatistic v : bean.stats)
             {
         %><%=unsafe(slash)%><%
-            if (v == VisitStatistic.ParticipantCount)
-            {
+                if (v == VisitStatistic.ParticipantCount)
+                {
         %><%=h(visits.isEmpty() ? subjectNoun + " Count" : "All " + visitsLabel)%><%
-        }
-        else
-        {
+                }
+                else
+                {
         %><%=h(v.getDisplayString(study))%><%
-            }
+                }
                 slash = " / ";
             }
         %></td>
@@ -257,11 +258,11 @@
         </td>
     </tr>
     <%
+                }
+                prevCategory = category;
             }
-            prevCategory = category;
-        }
 
-        String datasetLabel = (dataset.getLabel() != null ? dataset.getLabel() : "" + dataset.getDatasetId());
+            String datasetLabel = (dataset.getLabel() != null ? dataset.getLabel() : "" + dataset.getDatasetId());
     %>
     <tr class="<%=getShadeRowClass(row)%>">
         <td align="center" style="font-weight:bold;" category="<%= h(dataset.getCategory()) %>"><%= h(datasetLabel) %><%
@@ -352,7 +353,10 @@
                 else if (userCanRead)
                 {
                     ActionURL datasetLink = new ActionURL(DatasetAction.class, container);
-                    datasetLink.addParameter(visitLabelUrlFilterKey, visit.getLabel());
+                    if (StringUtils.isBlank(visit.getLabel()))
+                        datasetLink.addParameter(visitLabelRowIdFilterKey, visit.getRowId());
+                    else
+                        datasetLink.addParameter(visitLabelUrlFilterKey, visit.getLabel());
                     datasetLink.addParameter(Dataset.DATASET_KEY, dataset.getDatasetId());
                     if (selectedCohort != null)
                         cohortFilter.addURLParameters(study, datasetLink, DatasetQueryView.DATAREGION);

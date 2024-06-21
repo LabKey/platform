@@ -34,6 +34,7 @@ import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.StorageProvisioner;
+import org.labkey.experiment.api.ClosureQueryHelper;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpSchema;
@@ -45,6 +46,7 @@ import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.MaterialSource;
 import org.labkey.api.exp.api.SampleTypeDomainKind;
 import org.labkey.experiment.api.SampleTypeServiceImpl;
+import org.labkey.experiment.samples.SampleTimelineAuditProvider;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -303,7 +305,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
     }
 
     /**
-     * Called from exp-23.010-23.011.sql
+     * Called from exp-23.011-23.012.sql
      */
     public static void addRowIdToMaterializedSampleTypes(ModuleContext context)
     {
@@ -319,6 +321,94 @@ public class ExperimentUpgradeCode implements UpgradeCode
                     .forEach(ExperimentUpgradeCode::addRowIdColumn);
 
             tx.commit();
+        }
+    }
+
+    /**
+     * Called from exp-24.002-24.003.sql
+     */
+    public static void populateMaterialAncestors(ModuleContext context)
+    {
+        if (context.isNewInstall())
+            return;
+
+        ClosureQueryHelper.populateMaterialAncestors(LOG);
+    }
+
+    /**
+     * Called from exp-24.002-24.003.sql
+     */
+    public static void populateDataAncestors(ModuleContext context)
+    {
+        if (context.isNewInstall())
+            return;
+
+        ClosureQueryHelper.populateDataAncestors(LOG);
+    }
+
+    // called from exp-24.003-24.004.sql
+    public static void addMissingSampleTypeIdsForSampleTimelineAudit(ModuleContext context)
+    {
+        if (context.isNewInstall())
+            return;
+
+        DbScope scope = ExperimentService.get().getSchema().getScope();
+        List<String> tableNames = new SqlSelector(scope, "SELECT StorageTableName FROM exp.domainDescriptor WHERE StorageSchemaName='audit' AND name='" + SampleTimelineAuditProvider.SampleTimelineAuditDomainKind.NAME + "'").getArrayList(String.class);
+        if (tableNames.size() > 1)
+            LOG.warn("Found " + tableNames.size() + " tables for " + SampleTimelineAuditProvider.SampleTimelineAuditDomainKind.NAME);
+
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
+        {
+            for (String table : tableNames)
+            {
+                SQLFragment countSql = new SQLFragment("SELECT COUNT(*) FROM audit.").append(table).append(" WHERE sampleTypeId = 0");
+                SqlSelector countSelector = new SqlSelector(scope, countSql);
+
+                long toUpdate = countSelector.getObject(Long.class);
+                LOG.info("There are " + toUpdate + " audit log entries to be updated in audit." + table + ".");
+                // first update the type id by finding other audit entries that reference the same sample id.
+                if (toUpdate > 0)
+                {
+                    LOG.info("Updating table audit." + table + " via self-join.");
+                    SQLFragment updateSql = new SQLFragment("UPDATE audit.").append(table)
+                            .append(" SET sampleTypeId = a3.sampleTypeId\n")
+                            .append(" FROM\n")
+                            .append("   (SELECT sampleId, rowId as rowIdToUpdate FROM audit.").append(table).append(" WHERE sampleTypeId = 0").append(") a2 ")
+                            .append("   LEFT JOIN\n")
+                            .append("   (SELECT MAX(sampleTypeId) as sampleTypeId, sampleId FROM audit.").append(table).append(" GROUP BY sampleId) a3")
+                            .append("   ON a2.sampleId = a3.sampleId")
+                            .append(" WHERE rowId = a2.rowIdToUpdate");
+                    long start = System.currentTimeMillis();
+                    SqlExecutor executor = new SqlExecutor(scope);
+                    int numRows = executor.execute(updateSql);
+                    long elapsed = System.currentTimeMillis() - start;
+                    LOG.info("Updated " + numRows + " rows via self-join for table " + table + " in " + (elapsed / 1000) + " sec");
+                }
+
+                toUpdate = countSelector.getObject(Long.class);
+                if (toUpdate > 0)
+                {
+                    // It may have happened that there's only one audit entry for a sample and that entry has a 0 for the type id, in which case we may be able
+                    // to find the type id from the exp.materials table. Since samples may have been deleted, it isn't sufficient to do only this update
+                    LOG.info("Updating table audit." + table + " via exp.materials.");
+                    SQLFragment updateSql = new SQLFragment("UPDATE audit.").append(table)
+                            .append(" SET sampleTypeId = m.materialSourceId\n")
+                            .append(" FROM\n")
+                            .append("   (SELECT sampleId, rowId as rowIdToUpdate FROM audit.").append(table).append(" WHERE sampleTypeId = 0").append(") a2 ")
+                            .append("   LEFT JOIN\n")
+                            .append("   (SELECT materialSourceId, rowId AS sampleRowId FROM exp.material) m")
+                            .append("   ON a2.sampleId = m.sampleRowId")
+                            .append(" WHERE rowId = a2.rowIdToUpdate");
+                    long start = System.currentTimeMillis();
+                    SqlExecutor executor = new SqlExecutor(scope);
+                    int numRows = executor.execute(updateSql);
+                    long elapsed = System.currentTimeMillis() - start;
+                    LOG.info("Updated " + numRows + " rows from exp.material table join in " + (elapsed / 1000) + " sec");
+                }
+                long remaining = countSelector.getObject(Long.class);
+                LOG.info("There are " + remaining + " rows in audit." + table + " that could not be updated with a proper sample type id.");
+            }
+            transaction.commit();
         }
     }
 }

@@ -61,13 +61,11 @@ import org.labkey.api.security.permissions.CanImpersonatePrivilegedSiteRolesPerm
 import org.labkey.api.security.permissions.SiteAdminPermission;
 import org.labkey.api.security.roles.ApplicationAdminRole;
 import org.labkey.api.security.roles.SiteAdminRole;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Link;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.Result;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
@@ -77,7 +75,6 @@ import org.labkey.api.view.ViewContext;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.io.File;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -623,24 +620,6 @@ public class UserManager
     {
         User user = getUser(email);
         return (null != user);
-    }
-
-    public static Result<File> getHomeDirectory(User user)
-    {
-        if (!AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_USER_FOLDERS))
-            return Result.failure("User Folders are not enabled.");
-
-        if (user.isGuest()) //TODO: better exception type?
-            return Result.failure("User folders are unavailable for Guest users");
-
-        File userFilesRoot = AppProps.getInstance().getUserFilesRoot();
-        if(userFilesRoot == null)
-            return Result.failure("User files root is not set");
-
-        File userFolder = new File(userFilesRoot, String.valueOf(user.getUserId()));
-        userFolder.mkdirs();
-
-        return Result.success(userFolder);
     }
 
     public static String sanitizeEmailAddress(String email)

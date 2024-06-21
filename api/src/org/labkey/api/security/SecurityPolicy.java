@@ -23,12 +23,7 @@ import org.json.JSONObject;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.Throttle;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.DeletePermission;
-import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 
@@ -229,6 +224,12 @@ public class SecurityPolicy
         return roles;
     }
 
+    /* Does not inspect any contextual roles, just the roles explicitly given by this SecurityPolicy */
+    public boolean hasRole(UserPrincipal principal, Class<? extends Role> roleClass)
+    {
+        return getRoles(principal.getGroups()).contains(RoleManager.getRole(roleClass));
+    }
+
     private void handleRoles(PrincipalArray principalArray, Consumer<Role> consumer)
     {
         List<Integer> principals = principalArray.getList();
@@ -256,30 +257,6 @@ public class SecurityPolicy
             else
                 ++principalsIdx;
         }
-    }
-
-    /**
-     * This is purely for backwards compatibility with HTTP APIs--Do not use for new code!
-     * @param principal the user/group
-     * @return old-style bitmask for basic permissions
-     */
-    @Deprecated // Use SecurityManager.getPermissions() instead.
-    public int getPermsAsOldBitMask(UserPrincipal principal)
-    {
-        int perms = 0;
-        Set<Class<? extends Permission>> permClasses = SecurityManager.getPermissions(this, principal, Set.of());
-        if (permClasses.contains(ReadPermission.class))
-            perms |= ACL.PERM_READ;
-        if (permClasses.contains(InsertPermission.class))
-            perms |= ACL.PERM_INSERT;
-        if (permClasses.contains(UpdatePermission.class))
-            perms |= ACL.PERM_UPDATE;
-        if (permClasses.contains(DeletePermission.class))
-            perms |= ACL.PERM_DELETE;
-        if (permClasses.contains(AdminPermission.class))
-            perms |= ACL.PERM_ADMIN;
-
-        return perms;
     }
 
     @Nullable

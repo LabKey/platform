@@ -692,14 +692,14 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         {
             for (Plate plate : plateSet.getPlates(user))
             {
-                if (plate.getName().equalsIgnoreCase(name))
+                if (plate.getName() != null && plate.getName().equalsIgnoreCase(name))
                     return true;
             }
             return false;
         }
 
         Plate plate = getPlateByName(c, name);
-        return plate != null && plate.getName().equals(name);
+        return plate != null && plate.getName() != null && plate.getName().equals(name);
     }
 
     public boolean isDuplicatePlateTemplateName(Container container, String name)
@@ -1464,52 +1464,37 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return AssayDbSchema.getInstance().getTableInfoPlate();
     }
 
+    private @NotNull TableInfo getWellTable(Container container, User user)
+    {
+        return getPlateUserSchema(container, user).getTableOrThrow(WellTable.NAME);
+    }
+
+    private @NotNull QueryUpdateService requiredUpdateService(@NotNull TableInfo table)
+    {
+        QueryUpdateService qus = table.getUpdateService();
+        if (qus == null)
+            throw new IllegalStateException(String.format("Unable to resolve QueryUpdateService for %s.", table.getName()));
+        return qus;
+    }
+
     private @NotNull QueryUpdateService getPlateUpdateService(Container container, User user)
     {
-        UserSchema schema = getPlateUserSchema(container, user);
-        TableInfo tableInfo = schema.getTableOrThrow(PlateTable.NAME);
-        QueryUpdateService qus = tableInfo.getUpdateService();
-        if (qus == null)
-            throw new IllegalStateException("Unable to resolve QueryUpdateService for Plates.");
-
-        return qus;
+        return requiredUpdateService(PlateSchema.getPlateTable(container, user, null));
     }
 
     private @NotNull QueryUpdateService getPlateSetUpdateService(Container container, User user)
     {
-        UserSchema schema = getPlateUserSchema(container, user);
-        TableInfo tableInfo = schema.getTableOrThrow(PlateSetTable.NAME);
-        QueryUpdateService qus = tableInfo.getUpdateService();
-        if (qus == null)
-            throw new IllegalStateException("Unable to resolve QueryUpdateService for PlateSets.");
-
-        return qus;
+        return requiredUpdateService(PlateSchema.getPlateSetTable(container, user, null));
     }
 
     private @NotNull QueryUpdateService getWellGroupUpdateService(Container container, User user)
     {
-        UserSchema schema = getPlateUserSchema(container, user);
-        TableInfo tableInfo = schema.getTableOrThrow(WellGroupTable.NAME);
-        QueryUpdateService qus = tableInfo.getUpdateService();
-        if (qus == null)
-            throw new IllegalStateException("Unable to resolve QueryUpdateService for Well Groups.");
-
-        return qus;
-    }
-
-    private @NotNull TableInfo getWellTable(Container container, User user)
-    {
-        return PlateSchema.getWellTable(container, user, null);
+        return requiredUpdateService(PlateSchema.getWellGroupTable(container, user, null));
     }
 
     private @NotNull QueryUpdateService getWellUpdateService(Container container, User user)
     {
-        TableInfo tableInfo = getWellTable(container, user);
-        QueryUpdateService qus = tableInfo.getUpdateService();
-        if (qus == null)
-            throw new IllegalStateException("Unable to resolve QueryUpdateService for Wells.");
-
-        return qus;
+        return requiredUpdateService(PlateSchema.getWellTable(container, user, null));
     }
 
     private static class PlateLsidHandler implements LsidManager.LsidHandler<Plate>

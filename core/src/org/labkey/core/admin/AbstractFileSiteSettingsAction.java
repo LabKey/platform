@@ -104,44 +104,6 @@ public abstract class AbstractFileSiteSettingsAction<FormType extends FileSettin
             if (!isFileSystemRootSet)
                 errors.reject(SpringActionController.ERROR_MSG, "The site file root cannot be blank.");
         }
-
-        String userRoot = StringUtils.trimToNull(form.getUserRootPath());
-
-
-        if(AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_USER_FOLDERS))
-        {
-            if (userRoot != null)
-            {
-                File f = new File(userRoot);
-
-                try
-                {
-                    boolean isNewRoot = isNewRoot(_svc.getUserFilesRoot(), f);
-                    if (!NetworkDrive.exists(f) || !f.isDirectory())
-                    {
-                        errors.reject(SpringActionController.ERROR_MSG, "User file root '" + userRoot + "' does not appear to be a valid directory accessible to the server at " + getViewContext().getRequest().getServerName() + ".");
-                    }
-                    //TODO: this isn't needed yet. And we may want to let them move files independently? until we add move feature for User files
-    //                else if (isNewRoot && !form.isUpgrade())
-    //                {
-    //                    // if this is a new root, make sure it is empty
-    //                    String[] children = f.list();
-    //
-    //                    if (children != null && children.length > 0)
-    //                    {
-    //                        errors.reject(SpringActionController.ERROR_MSG, "User file root '" + userRoot + "' is not empty and cannot be used because files under the current site-level root must be moved to this new root. " +
-    //                                "Either specify a different, non-existing root, or remove the files under the specified directory.");
-    //                    }
-    //                }
-                }
-                catch (IOException e)
-                {
-                    errors.reject(SpringActionController.ERROR_MSG, "The specified file root is invalid.");
-                }
-            }
-            else
-                errors.reject(SpringActionController.ERROR_MSG, "The user file root cannot be blank.");
-        }
     }
 
     private boolean isNewRoot(File prev, File current) throws IOException
@@ -157,11 +119,6 @@ public abstract class AbstractFileSiteSettingsAction<FormType extends FileSettin
         if (null != form.getRootPath())
             _svc.setSiteDefaultRoot(FileUtil.getAbsoluteCaseSensitiveFile(new File(form.getRootPath())), getUser());
         _svc.setWebfilesEnabled(form.isWebfilesEnabled(), getUser());
-
-        if(AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_USER_FOLDERS))
-        {
-            _svc.setUserFilesRoot(FileUtil.getAbsoluteCaseSensitiveFile(new File(form.getUserRootPath())), getUser());
-        }
 
         if (form.isUpgrade())
         {

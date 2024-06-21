@@ -45,7 +45,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * A schema, scoped to a particular container and user
- *
  * For performance a DefaultSchema caches resolved UserSchema objects. The DefaultSchema itself should not
  * be cached.  It should only be held onto for a short time (e.g. request or query scope).
  */
@@ -158,7 +157,7 @@ final public class DefaultSchema extends AbstractSchema implements QuerySchema.C
      */
     static public QuerySchema get(User user, Container container, String schemaPath)
     {
-        if (schemaPath == null || schemaPath.length() == 0)
+        if (schemaPath == null || schemaPath.isEmpty())
             return null;
 
         return get(user, container, SchemaKey.fromString(schemaPath));

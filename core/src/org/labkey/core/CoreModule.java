@@ -290,7 +290,6 @@ import org.labkey.core.view.template.bootstrap.ViewServiceImpl;
 import org.labkey.core.view.template.bootstrap.WarningServiceImpl;
 import org.labkey.core.webdav.DavController;
 import org.labkey.core.webdav.ModuleStaticResolverImpl;
-import org.labkey.core.webdav.UserResolverImpl;
 import org.labkey.core.webdav.WebFilesResolverImpl;
 import org.labkey.core.webdav.WebdavServlet;
 import org.labkey.core.wiki.MarkdownServiceImpl;
@@ -1084,10 +1083,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 "Client-side Exception Logging To Server",
                 "Report unhandled JavaScript exceptions to the server log.",
                 false);
-        AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_USER_FOLDERS,
-                "User Folders",
-                "Enable personal folders for users.",
-                false);
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_NO_GUESTS,
                 "No Guest Account",
                 "Disable the guest account",
@@ -1221,12 +1216,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         MessageConfigService.setInstance(new EmailPreferenceConfigServiceImpl());
         ContainerManager.addContainerListener(new EmailPreferenceContainerListener());
         UserManager.addUserListener(new EmailPreferenceUserListener());
-
-        // We don't register this in init() because that's too early to touch experimental features, #43642
-        if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_USER_FOLDERS))
-        {
-            WebdavService.get().registerRootResolver(UserResolverImpl.get());
-        }
     }
 
     @Override

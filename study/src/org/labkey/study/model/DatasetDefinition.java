@@ -35,8 +35,37 @@ import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.*;
+import org.labkey.api.data.AuditConfigurable;
+import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.BeanObjectFactory;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ConnectionWrapper;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DatabaseCache;
+import org.labkey.api.data.DatabaseTableType;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbScope.Transaction;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.ExceptionFramework;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.NullColumnInfo;
+import org.labkey.api.data.ObjectFactory;
+import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SchemaTableInfo;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.Transient;
+import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
@@ -79,6 +108,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.security.MutableSecurityPolicy;
+import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
@@ -935,10 +965,9 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         //study's policy. This will enable us to "remember" the study-level role assignments in case we want
         //to switch back to them in the future
         SecurityType securityType = getStudy().getSecurityType();
-        SecurityPolicy studyPolicy = (securityType == SecurityType.BASIC_READ || securityType == SecurityType.BASIC_WRITE) ?
-                SecurityPolicyManager.getPolicy(getContainer()) : SecurityPolicyManager.getPolicy(getStudy());
+        SecurableResource securableResource = (securityType == SecurityType.BASIC_READ || securityType == SecurityType.BASIC_WRITE) ? getContainer() : getStudy();
 
-        Set<Class<? extends Permission>> studyPermissions = SecurityManager.getPermissions(studyPolicy, user, contextualRoles);
+        Set<Class<? extends Permission>> studyPermissions = SecurityManager.getPermissions(securableResource, user, contextualRoles);
 
         //need to check both the study's policy and the dataset's policy
         //users that have read permission on the study can read all datasets
@@ -956,19 +985,19 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
             if (securityType == SecurityType.BASIC_WRITE)
             {
                 // Basic write grants dataset edit perms (insert/update/delete) based on user's folder perms
-                copyEditPerms(getStudy().getContainer().getPolicy(), user, result);
+                copyEditPerms(getStudy().getContainer(), user, result);
             }
             else if (securityType == SecurityType.ADVANCED_WRITE)
             {
                 // Advanced write grants dataset edit perms (insert/update/delete) based on study or dataset policy perms
-                copyEditPerms(studyPolicy, user, result);
+                copyEditPerms(securableResource, user, result);
                 // A user can be part of multiple groups, which are set to both Edit All and Per Dataset permissions
                 // so check for a custom security policy even if they have UpdatePermission on the study's policy
                 if (studyPermissions.contains(ReadSomePermission.class))
                 {
                     // Advanced write grants dataset permissions based on the policy stored directly on the dataset
                     // In this case, we return all permissions, important for EHR-specific per-dataset role assignments
-                    result.addAll(SecurityManager.getPermissions(SecurityPolicyManager.getPolicy(this), user, contextualRoles));
+                    result.addAll(SecurityManager.getPermissions(this, user, contextualRoles));
                 }
             }
         }
@@ -988,9 +1017,9 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
 
     private static final Collection<Class<? extends Permission>> EDIT_PERMS = List.of(InsertPermission.class, UpdatePermission.class, DeletePermission.class);
 
-    private void copyEditPerms(SecurityPolicy policy, UserPrincipal user, Set<Class<? extends Permission>> result)
+    private void copyEditPerms(SecurableResource resource, UserPrincipal user, Set<Class<? extends Permission>> result)
     {
-        Set<Class<? extends Permission>> granted = SecurityManager.getPermissions(policy, user, Set.of());
+        Set<Class<? extends Permission>> granted = SecurityManager.getPermissions(resource, user, Set.of());
         EDIT_PERMS.stream().filter(granted::contains).forEach(result::add);
     }
 
