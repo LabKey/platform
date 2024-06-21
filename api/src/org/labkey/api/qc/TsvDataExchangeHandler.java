@@ -285,7 +285,11 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 settings.setAllowEmptyData(true);
                 settings.setThrowOnErrors(false);
 
-                mergedDataMap = validationHandler.getValidationDataMap(expData, data, info, context.getLogger() != null ? context.getLogger() : LOG, xarContext, settings);
+                Map<DataType, Supplier<ValidatingDataRowIterator>> newDataMaps = validationHandler.getValidationDataMap(expData, data, info, context.getLogger() != null ? context.getLogger() : LOG, xarContext, settings);
+                for (Map.Entry<DataType, Supplier<ValidatingDataRowIterator>> newEntry : newDataMaps.entrySet())
+                {
+                    mergedDataMap = mergeMaps(mergedDataMap, newEntry.getKey(), newEntry.getValue());
+                }
             }
         }
 
