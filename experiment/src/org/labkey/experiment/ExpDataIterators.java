@@ -2636,7 +2636,17 @@ public class ExpDataIterators
             else
             {
                 TypeData typeFolderData = null;
-                String typeName = _typeColIndex != null ? StringUtils.trim((String) get(_typeColIndex)) : _dataType.getName();
+                String typeName;
+                if (_typeColIndex != null)
+                {
+                    Object typeNameObj = String.valueOf(get(_typeColIndex));
+                    if (typeNameObj == null)
+                        typeName = null;
+                    else
+                        typeName = StringUtils.trim(String.valueOf(typeNameObj));
+                }
+                else
+                    typeName = _dataType.getName();
                 Container targetContainer = _container; // default to context container
 
                 if (StringUtils.isEmpty(typeName) && _isCrossType)
