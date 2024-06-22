@@ -122,7 +122,7 @@ public class RoleSet
         }
     }
 
-    // Test Jackson serialization/deserialization of a RoleSet and a role-impersonating user
+    // Test Jackson serialization/deserialization of a couple RoleSets and role-impersonating users
     public static class TestCase extends Assert
     {
         @Test
