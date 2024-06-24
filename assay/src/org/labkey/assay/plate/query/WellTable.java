@@ -31,6 +31,7 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.BatchValidationException;
@@ -293,7 +294,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         {
             columnInfo.setFk(QueryForeignKey.from(getUserSchema(), getContainerFilter())
                     .schema(ExpSchema.SCHEMA_NAME, getContainer())
-                    .to("Materials", "RowId", "Name"));
+                    .to(ExpSchema.TableType.Materials.name(), ExpMaterialTable.Column.RowId.name(), ExpMaterialTable.Column.Name.name()));
         }
         return columnInfo;
     }

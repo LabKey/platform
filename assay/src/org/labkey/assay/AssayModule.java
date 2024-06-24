@@ -83,6 +83,7 @@ import org.labkey.assay.plate.PlateMetadataDomainKind;
 import org.labkey.assay.plate.PlateMetricsProvider;
 import org.labkey.assay.plate.TsvPlateLayoutHandler;
 import org.labkey.assay.plate.query.PlateSchema;
+import org.labkey.assay.plate.query.PlateSchemaTest;
 import org.labkey.assay.query.AssayDbSchema;
 import org.labkey.assay.query.AssaySchemaImpl;
 import org.labkey.assay.security.AssayDesignerRole;
@@ -316,7 +317,9 @@ public class AssayModule extends SpringModule
     public @NotNull Set<Class> getIntegrationTests()
     {
         return Set.of(
-            ModuleAssayCache.TestCase.class
+            ModuleAssayCache.TestCase.class,
+            PlateManagerTest.class,
+            PlateSchemaTest.class
         );
     }
 
@@ -335,7 +338,6 @@ public class AssayModule extends SpringModule
             TsvAssayProvider.TestCase.class,
             AssaySchemaImpl.TestCase.class,
             AssayProviderSchema.TestCase.class,
-            PlateManagerTest.class,
             PositionImpl.TestCase.class,
             PlateImpl.TestCase.class,
             PlateUtils.TestCase.class,
