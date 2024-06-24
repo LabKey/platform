@@ -2639,7 +2639,7 @@ public class ExpDataIterators
                 String typeName;
                 if (_typeColIndex != null)
                 {
-                    Object typeNameObj = String.valueOf(get(_typeColIndex));
+                    Object typeNameObj = get(_typeColIndex);
                     if (typeNameObj == null)
                         typeName = null;
                     else
