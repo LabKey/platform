@@ -20,6 +20,7 @@ import jakarta.servlet.FilterRegistration;
 import jakarta.servlet.MultipartConfigElement;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletRegistration;
+import org.apache.catalina.filters.CorsFilter;
 import org.apache.commons.collections4.Factory;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
@@ -157,6 +158,7 @@ import javax.management.StandardMBean;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -173,6 +175,9 @@ import static org.labkey.api.settings.SiteSettingsProperties.apiKeyExpirationSec
  */
 public class ApiModule extends CodeOnlyModule
 {
+    private static final String CORS_PREFIX = "cors.";
+    private static final String CORS_FILTER_NAME = "CorsFilter";
+
     @Override
     protected void init()
     {
@@ -212,6 +217,45 @@ public class ApiModule extends CodeOnlyModule
     {
         addCSPFilter(servletCtx, "csp.enforce", "enforce", "EnforceContentSecurityPolicyFilter");
         addCSPFilter(servletCtx, "csp.report", "report", "ReportContentSecurityPolicyFilter");
+
+        addCorsFilter(servletCtx);
+    }
+
+    private void addCorsFilter(ServletContext servletCtx)
+    {
+        String allowedOrigins = servletCtx.getInitParameter(CORS_PREFIX + "allowedOrigins");
+        String allowedMethods = servletCtx.getInitParameter(CORS_PREFIX + "allowedMethods");
+        String allowedHeaders = servletCtx.getInitParameter(CORS_PREFIX + "allowedHeaders");
+        String exposedHeaders = servletCtx.getInitParameter(CORS_PREFIX + "exposedHeaders");
+        String supportCredentials = servletCtx.getInitParameter(CORS_PREFIX + "supportCredentials");
+        String preflightMaxAge = servletCtx.getInitParameter(CORS_PREFIX + "preflightMaxAge");
+        String requestDecorate = servletCtx.getInitParameter(CORS_PREFIX + "requestDecorate");
+        String urlPattern = servletCtx.getInitParameter(CORS_PREFIX + "urlPattern");
+
+        if (allowedOrigins != null || allowedMethods != null || allowedHeaders != null ||
+            exposedHeaders != null || supportCredentials != null || urlPattern != null ||
+            requestDecorate != null || preflightMaxAge != null)
+        {
+            FilterRegistration registration = servletCtx.addFilter(CORS_FILTER_NAME, new CorsFilter());
+            registration.addMappingForUrlPatterns(allOf(DispatcherType.class), false, urlPattern == null ? "/*" : urlPattern);
+            Map<String, String> params = new HashMap<>();
+            addParam(params, "cors.allowed.origins", allowedOrigins);
+            addParam(params, "cors.allowed.methods", allowedMethods);
+            addParam(params, "cors.allowed.headers", allowedHeaders);
+            addParam(params, "cors.exposed.headers", exposedHeaders);
+            addParam(params, "cors.support.credentials", supportCredentials);
+            addParam(params, "cors.preflight.maxage", preflightMaxAge);
+            addParam(params, "cors.request.decorate", requestDecorate);
+            registration.setInitParameters(params);
+        }
+    }
+
+    private void addParam(Map<String, String> params, String name, String value)
+    {
+        if (value != null)
+        {
+            params.put(name, value);
+        }
     }
 
     private void addCSPFilter(ServletContext servletCtx, String parameterName, String disposition, String filterName)
