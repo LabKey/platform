@@ -1753,9 +1753,9 @@ public class ReportsController extends SpringActionController
                 if (refreshDate != null)
                     descriptor.setRefreshDate(refreshDate);
 
-                int id = ReportService.get().saveReport(getViewContext(), getReportKey(report, form), report);
+                ReportIdentifier reportIdentifier = ReportService.get().saveReportEx(getViewContext(), getReportKey(report, form), report);
 
-                report = (R)ReportService.get().getReport(getContainer(), id);
+                report = (R)ReportService.get().getReport(getContainer(), reportIdentifier.getRowId());
 
                 afterReportSave(form, report);
 

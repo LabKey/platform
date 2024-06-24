@@ -45,10 +45,6 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
 
-/**
- * User: Karl Lum
- * Date: Dec 21, 2007
- */
 public interface ReportService
 {
     // this logger is to enable all report loggers in the admin ui (org.labkey.api.reports.*)
@@ -108,20 +104,6 @@ public interface ReportService
     Report createReportInstance(ReportDescriptor descriptor);
 
     void deleteReport(ContainerUser context, Report report);
-
-    /**
-     * Note: almost all cases of saveReport will want to use the version that does not skip validation.
-     *       One example of where we skip validation is in the StudyUpgradeCode which has a method to fix report properties
-     *       across all reports in the database (regardless of user)
-     */
-    @Deprecated
-    int saveReport(ContainerUser context, String key, Report report, boolean skipValidation);
-
-    @Deprecated
-    default int saveReport(ContainerUser context, String key, Report report)
-    {
-        return saveReport(context, key, report, false);
-    }
 
     /**
      * Note: almost all cases of saveReport will want to use the version that does not skip validation.
