@@ -174,7 +174,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                         }
                         catch (Exception e)
                         {
-                            ValidationException ve = new ValidationException();
+                            ValidationException ve = new ValidationException(e.getMessage());
                             ve.initCause(e);
                             throw ve;
                         }
