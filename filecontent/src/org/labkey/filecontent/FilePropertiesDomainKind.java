@@ -16,6 +16,7 @@
 package org.labkey.filecontent;
 
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExperimentUrls;
@@ -126,6 +127,6 @@ public class FilePropertiesDomainKind extends BaseAbstractDomainKind
     @Override
     public boolean supportsPhiLevel()
     {
-        return true;
+        return ComplianceService.get().isComplianceSupported();
     }
 }
