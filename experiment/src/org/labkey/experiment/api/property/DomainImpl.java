@@ -872,7 +872,7 @@ public class DomainImpl implements Domain
         for (DomainProperty prop: uniqueIdProps)
         {
             // Issue 50715: quote column names with spaces for update statement
-            sql.append(separator).append(dialect.getColumnSelectName(prop.getName())).append(" = ?").add(new Parameter(prop.getName(), prop.getJdbcType()));
+            sql.append(separator).append(prop.getPropertyDescriptor().getLegalSelectName(dialect)).append(" = ?").add(new Parameter(prop.getName(), prop.getJdbcType()));
             separator = ",";
         }
         sql.append(" WHERE ");
