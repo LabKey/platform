@@ -29,6 +29,7 @@ import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.*;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.ListofMapsDataIterator;
@@ -835,6 +836,7 @@ public class DomainImpl implements Domain
     {
         SchemaTableInfo table = StorageProvisioner.get().getSchemaTableInfo(this);
         DbScope scope = table.getSchema().getScope();
+        SqlDialect dialect = table.getSqlDialect();
 
         List<DomainProperty> uniqueIdProps = propsAdded.stream().filter(DomainProperty::isUniqueIdField).toList();
         if (uniqueIdProps.isEmpty())
@@ -869,7 +871,8 @@ public class DomainImpl implements Domain
         String separator = "";
         for (DomainProperty prop: uniqueIdProps)
         {
-            sql.append(separator).append(prop.getName()).append(" = ?").add(new Parameter(prop.getName(), prop.getJdbcType()));
+            // Issue 50715: quote column names with spaces for update statement
+            sql.append(separator).append(dialect.getColumnSelectName(prop.getName())).append(" = ?").add(new Parameter(prop.getName(), prop.getJdbcType()));
             separator = ",";
         }
         sql.append(" WHERE ");
@@ -884,7 +887,7 @@ public class DomainImpl implements Domain
             try
             {
                 ParameterMapStatement stmt1 = new ParameterMapStatement(scope, sql, null);
-                return new StatementDataIterator(table.getSqlDialect(), mapsDi, ctx, stmt1);
+                return new StatementDataIterator(dialect, mapsDi, ctx, stmt1);
             }
             catch (SQLException x)
             {
