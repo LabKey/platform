@@ -16,10 +16,10 @@
 
 package org.labkey.api.assay;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -32,7 +32,6 @@ import org.labkey.api.view.HasHttpRequest;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
@@ -90,15 +89,6 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
 
     @Nullable
     default List<Map<String, Object>> getRawData()
-    {
-        return null;
-    }
-
-    /**
-     * Plate metadata for assays that support metadata integration
-     */
-    @Nullable
-    default Map<String, AssayPlateMetadataService.MetadataLayer> getRawPlateMetadata()
     {
         return null;
     }
@@ -232,7 +222,6 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
         protected boolean _allowCrossRunFileInputs;
         protected boolean _allowLookupByAlternateKey = true;
         protected List<Map<String, Object>> _rawData;
-        protected Map<String, AssayPlateMetadataService.MetadataLayer> _rawPlateMetadata;
         protected Map<String, File> _uploadedData;
         protected String _jobDescription;
         protected String _jobNotificationProvider;
@@ -379,12 +368,6 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
         public FACTORY setRawData(List<Map<String, Object>> rawData)
         {
             _rawData = rawData;
-            return self();
-        }
-
-        public FACTORY setRawPlateMetadata(Map<String, AssayPlateMetadataService.MetadataLayer> rawPlateMetadata)
-        {
-            _rawPlateMetadata = rawPlateMetadata;
             return self();
         }
 

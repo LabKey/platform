@@ -15,10 +15,10 @@
  */
 package org.labkey.api.assay;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.OntologyManager;
@@ -36,7 +36,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
@@ -74,7 +73,6 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     private final Map<String, Object> _rawRunProperties;
     private final Map<String, Object> _rawBatchProperties;
     private final List<Map<String, Object>> _rawData;
-    private final Map<String, AssayPlateMetadataService.MetadataLayer> _rawPlateMetadata;
     private final Map<?, String> _inputDatas;
     private final Map<?, String> _inputMaterials;
     private final Map<?, String> _outputDatas;
@@ -124,8 +122,6 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
 
         // TODO: Wrap the rawData in an unmodifiableList -- unfortunately, AbstractAssayTsvDataHandler.checkData mutates the list items in-place
         _rawData = factory._rawData;
-        _rawPlateMetadata = factory._rawPlateMetadata;
-
         _uploadedData = factory._uploadedData;
 
         _reRunId = factory._reRunId;
@@ -341,12 +337,6 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     public List<Map<String, Object>> getRawData()
     {
         return _rawData;
-    }
-
-    @Override
-    public @Nullable Map<String, AssayPlateMetadataService.MetadataLayer> getRawPlateMetadata()
-    {
-        return _rawPlateMetadata;
     }
 
     @NotNull

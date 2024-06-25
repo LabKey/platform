@@ -15,6 +15,7 @@
  */
 package org.labkey.api.qc;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -30,7 +31,6 @@ import org.labkey.api.assay.DefaultAssayRunCreator;
 import org.labkey.api.assay.TsvDataHandler;
 import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.assay.actions.ProtocolIdForm;
-import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.exp.ExperimentDataHandler;
@@ -65,7 +65,6 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.PrintWriters;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.PrintWriter;
 import java.text.DateFormat;
@@ -84,7 +83,6 @@ import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableMap;
-import static org.labkey.api.assay.plate.AssayPlateMetadataService.MetadataLayer;
 
 /*
 * User: Karl Lum
@@ -227,7 +225,6 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
         Map<String, File> uploadedData = context.getUploadedData();
         List<Map<String, Object>> rawData = context.getRawData();
-        Map<String, MetadataLayer> rawPlateMetadata = context.getRawPlateMetadata();
 
         // For now, only one of uploadedData or rawData is used, not both at the same time.
         Collection<? extends ExpData> dataInputs = Collections.emptyList();
@@ -306,20 +303,6 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             File runData = new File(scriptDir, RUN_DATA_FILE);
             result.add(runData);
 
-            AssayPlateMetadataService svc = AssayPlateMetadataService.get();
-            if (svc != null)
-            {
-                ExpProtocol protocol = run.getProtocol();
-                AssayProvider provider = AssayService.get().getProvider(protocol);
-
-                Domain runDomain = provider.getRunDomain(protocol);
-                DomainProperty property = runDomain.getPropertyByName(AssayPlateMetadataService.PLATE_TEMPLATE_COLUMN_NAME);
-                if (property != null)
-                {
-                    Object lsid = context.getRunProperties().get(property);
-                    rawData = svc.mergePlateMetadata(context.getContainer(), context.getUser(), Lsid.parse(String.valueOf(lsid)), null, rawData, rawPlateMetadata, provider, protocol);
-                }
-            }
             addToMergedMap(mergedDataMap, Map.of(dataType, rawData));
             transformDataTypes.add(dataType);
         }
