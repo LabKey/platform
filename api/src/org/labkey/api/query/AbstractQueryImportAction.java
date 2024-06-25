@@ -673,7 +673,8 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                 if (name.startsWith(ExpMaterial.MATERIAL_INPUT_PARENT.toLowerCase() + "/") ||
                     name.startsWith(ExpMaterial.MATERIAL_OUTPUT_CHILD.toLowerCase() + "/") ||
                     name.startsWith(ExpData.DATA_INPUT_PARENT.toLowerCase() + "/") ||
-                    name.startsWith(ExpData.DATA_OUTPUT_CHILD.toLowerCase() + "/"))
+                    name.startsWith(ExpData.DATA_OUTPUT_CHILD.toLowerCase() + "/") ||
+                    name.equalsIgnoreCase("Name") /* Issue 50710: Treat "Name" column as a string value for sample or data class import */)
                 {
                     col.clazz = String.class;
                     col.converter = TabLoader.noopConverter;
