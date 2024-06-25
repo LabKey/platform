@@ -393,8 +393,10 @@ public class DataIteratorUtil
     }
 
 
-    /* This Function<> mechanism is very simple, but less efficient that an operator that takes an input map, and
+    /**
+     * This Function<> mechanism is very simple, but less efficient that an operator that takes an input map, and
      * a pre-created ArrayListMap for output.  For efficiency there are other DataIterator base classes to use.
+     * Should return ArrayListMap or CaseInsensitiveMap.
      */
     public static DataIteratorBuilder mapTransformer(DataIteratorBuilder dibIn, List<String> columns, Function<Map<String,Object>, Map<String,Object>> fn)
     {
