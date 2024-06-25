@@ -387,6 +387,7 @@ public class DomainUtil
             gwtDomain.setAllowUniqueConstraintProperties(kind.allowUniqueConstraintProperties());
             gwtDomain.setShowDefaultValueSettings(kind.showDefaultValueSettings());
             gwtDomain.setInstructions(kind.getDomainEditorInstructions());
+            gwtDomain.setSupportsPhiLevel(kind.supportsPhiLevel());
         }
         return gwtDomain;
     }

@@ -22,6 +22,7 @@ import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -726,5 +727,11 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
     public void ensureBaseProperties(Domain d)
     {
         var props = getBaseProperties(d);
+    }
+
+    @Override
+    public boolean supportsPhiLevel()
+    {
+        return ComplianceService.get().isComplianceSupported();
     }
 }
