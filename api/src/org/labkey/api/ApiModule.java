@@ -132,6 +132,7 @@ import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.NestedGroupsTest;
 import org.labkey.api.security.PasswordExpiration;
+import org.labkey.api.security.RoleSet;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
@@ -432,6 +433,7 @@ public class ApiModule extends CodeOnlyModule
             //RateLimiter.TestCase.class,
             ResultSetDataIterator.TestCase.class,
             ResultSetSelectorTestCase.class,
+            RoleSet.TestCase.class,
             RowTrackingResultSetWrapper.TestCase.class,
             SQLFragment.IntegrationTestCase.class,
             SecurityManager.TestCase.class,
