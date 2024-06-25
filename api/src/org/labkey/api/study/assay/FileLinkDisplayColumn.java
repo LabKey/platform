@@ -166,6 +166,7 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
             sb.append("&pk=${");
             sb.append(pkFieldKey);
             sb.append("}");
+            sb.append("&modified=${Modified}");
             if (AS_ATTACHMENT_FORMAT.equalsIgnoreCase(col.getFormat()))
             {
                 sb.append("&inline=false");
@@ -233,6 +234,7 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
     public void addQueryFieldKeys(Set<FieldKey> keys)
     {
         super.addQueryFieldKeys(keys);
+        keys.add(FieldKey.fromParts("Modified"));
         if (_pkFieldKey != null)
             keys.add(_pkFieldKey);
         if (_objectURIFieldKey != null)
