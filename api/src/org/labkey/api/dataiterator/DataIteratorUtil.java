@@ -25,8 +25,10 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.exp.MvColumn;
@@ -41,17 +43,21 @@ import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.UnexpectedException;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Spliterator;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -387,6 +393,73 @@ public class DataIteratorUtil
     }
 
 
+    /* This Function<> mechanism is very simple, but less efficient that an operator that takes an input map, and
+     * a pre-created ArrayListMap for output.  For efficiency there are other DataIterator base classes to use.
+     */
+    public static DataIteratorBuilder mapTransformer(DataIteratorBuilder dibIn, List<String> columns, Function<Map<String,Object>, Map<String,Object>> fn)
+    {
+        return context -> new _MapTransformer(dibIn.getDataIterator(context), fn, columns);
+    }
+
+
+    public static class _MapTransformer extends MapDataIterator.MapDataIteratorImpl
+    {
+        ArrayList<ColumnInfo> _columns;
+        final Function<Map<String,Object>, Map<String,Object>> _fn;
+        Map<String,Object> _sourceMap;
+        Map<String,Object> _outputMap;
+
+        _MapTransformer(DataIterator in, Function<Map<String,Object>, Map<String,Object>> fn, List<String> columnNames)
+        {
+            super(wrapMap(in, false), false);
+            _fn = fn;
+            // use source ColumnInfo where it matches
+            _columns = new ArrayList<>(columnNames.size() + 1);
+            _columns.add(in.getColumnInfo(0));
+            var map = DataIteratorUtil.createColumnNameMap(in);
+            for (var name : columnNames)
+            {
+                if (map.containsKey(name))
+                    _columns.add(in.getColumnInfo(map.get(name)));
+                else
+                    _columns.add(new BaseColumnInfo(name, JdbcType.OTHER));
+            }
+        }
+
+        @Override
+        public boolean next() throws BatchValidationException
+        {
+            _currentMap = null;
+            if (!_input.next())
+                return false;
+            _sourceMap = ((MapDataIterator)_input).getMap();
+            _outputMap = _fn.apply(_sourceMap);
+            return true;
+        }
+
+        @Override
+        public Map<String, Object> getMap()
+        {
+            return _outputMap;
+        }
+
+        @Override
+        public Object get(int i)
+        {
+            return 0==i ? _input.get(0) : _outputMap.get(_columns.get(i).getName());
+        }
+
+        @Override
+        public Supplier<Object> getSupplier(int i)
+        {
+            if (0==i)
+                return _input.getSupplier(0);
+            final var name = _columns.get(i).getName();
+            return () -> _outputMap.get(name);
+        }
+    }
+
+
     public static class DataSpliterator implements Spliterator<Map<String,Object>>
     {
         private final MapDataIterator maps;
@@ -455,18 +528,62 @@ public class DataIteratorUtil
     {
         String csv = "a,b,c\n1,2,3\n4,5,6\n";
 
-        DataIterator data() throws Exception
+        DataIterator data()
         {
-            DataLoader dl = new TabLoader.CsvFactory().createLoader(IOUtils.toInputStream(csv, StringUtilsLabKey.DEFAULT_CHARSET),true);
-            DataIteratorContext c = new DataIteratorContext();
-            return dl.getDataIterator(c);
+            try
+            {
+                DataLoader dl = new TabLoader.CsvFactory().createLoader(IOUtils.toInputStream(csv, StringUtilsLabKey.DEFAULT_CHARSET), true);
+                DataIteratorContext c = new DataIteratorContext();
+                return dl.getDataIterator(c);
+            }
+            catch (IOException x)
+            {
+                throw UnexpectedException.wrap(x);
+            }
         }
+
         @Test
-        public void testStream() throws Exception
+        public void testStream()
         {
             assertEquals(2, data().stream().count());
             assertEquals(5, data().stream().mapToInt(m -> Integer.parseInt((String) m.get("a"))).sum());
             assertEquals(9, data().stream().mapToInt(m -> Integer.parseInt((String) m.get("c"))).sum());
+        }
+
+        @Test
+        public void testTransform() throws BatchValidationException
+        {
+            DataIteratorContext ctx = new DataIteratorContext();
+            var tx = mapTransformer((context) -> data(), List.of("a","b","c","sum"),
+                    (row) ->
+                    {
+                        var ret = new HashMap<>(row);
+                        ret.put("a", JdbcType.INTEGER.convert(row.get("a")));
+                        ret.put("b", JdbcType.INTEGER.convert(row.get("b")));
+                        ret.put("c", JdbcType.INTEGER.convert(row.get("c")));
+                        ret.put("sum", (int)ret.get("a") + (int)ret.get("b") + (int)ret.get("c"));
+                        return ret;
+                    }).getDataIterator(ctx);
+
+            assert tx instanceof MapDataIterator;
+            var row = tx.getSupplier(0);
+            var a = tx.getSupplier(1);
+            var b = tx.getSupplier(2);
+            var c = tx.getSupplier(3);
+            var sum = tx.getSupplier(4);
+            var mdi = (MapDataIterator)tx;
+            assertTrue(mdi.supportsGetMap());
+            assertTrue(mdi.next());
+            assertEquals(1, (int)row.get());
+            assertEquals((int)tx.get(4), (int)tx.get(1) + (int)tx.get(2) + (int)tx.get(3));
+            assertEquals((int)mdi.getMap().get("sum"), (int)mdi.getMap().get("a") + (int)mdi.getMap().get("b") + (int)mdi.getMap().get("c"));
+            assertEquals((int)sum.get(), (int)a.get() + (int)b.get() + (int)c.get());
+            assertTrue(mdi.next());
+            assertEquals(2, (int)row.get());
+            assertEquals((int)tx.get(4), (int)tx.get(1) + (int)tx.get(2) + (int)tx.get(3));
+            assertEquals((int)mdi.getMap().get("sum"), (int)mdi.getMap().get("a") + (int)mdi.getMap().get("b") + (int)mdi.getMap().get("c"));
+            assertEquals((int)sum.get(), (int)a.get() + (int)b.get() + (int)c.get());
+            assertFalse(tx.next());
         }
     }
 }

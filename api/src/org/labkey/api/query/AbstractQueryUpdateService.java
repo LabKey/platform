@@ -57,8 +57,6 @@ import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.ExistingRecordDataIterator;
-import org.labkey.api.dataiterator.ListofMapsDataIterator;
-import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
@@ -486,8 +484,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     protected @Nullable List<Map<String, Object>> _insertUpdateRowsUsingDIB(User user, Container container, List<Map<String, Object>> rows,
                                                      DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
     {
-        DataIterator di = _toDataIterator(getClass().getSimpleName() + (context.getInsertOption().updateOnly ? ".updateRows" : ".insertRows()"), rows);
-        DataIteratorBuilder dib = new DataIteratorBuilder.Wrapper(di);
+        DataIteratorBuilder dib = _toDataIteratorBuilder(getClass().getSimpleName() + (context.getInsertOption().updateOnly ? ".updateRows" : ".insertRows()"), rows);
         ArrayList<Map<String,Object>> outputRows = new ArrayList<>();
         int count = _importRowsUsingDIB(user, container, dib, outputRows, context, extraScriptContext);
         afterInsertUpdate(count, context.getErrors(), context.getInsertOption().updateOnly);
@@ -509,7 +506,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     }
 
 
-    protected DataIterator _toDataIterator(String debugName, List<Map<String, Object>> rows)
+    protected DataIteratorBuilder _toDataIteratorBuilder(String debugName, List<Map<String, Object>> rows)
     {
         // TODO probably can't assume all rows have all columns
         // TODO can we assume that all rows refer to columns consistently? (not PTID and MouseId for the same column)
@@ -528,9 +525,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                 colNames.addAll(row.keySet());
         }
 
-        ListofMapsDataIterator maps = new ListofMapsDataIterator(colNames, rows);
-        maps.setDebugName(debugName);
-        return LoggingDataIterator.wrap((DataIterator)maps);
+        return MapDataIterator.of(colNames, rows, debugName);
     }
 
 
@@ -1268,7 +1263,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             int count=0;
             try (var tx = rTableInfo.getSchema().getScope().ensureTransaction())
             {
-                var ret = qus.mergeRows(user, c, new ListofMapsDataIterator(mergeRows.get(0).keySet(), mergeRows), errors, null, null);
+                var ret = qus.mergeRows(user, c, MapDataIterator.of(mergeRows.get(0).keySet(), mergeRows), errors, null, null);
                 if (!errors.hasErrors())
                 {
                     tx.commit();
@@ -1307,7 +1302,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             updateRows.add(CaseInsensitiveHashMap.of(pkName,2,colName,"TWO-UP"));
             DataIteratorContext context = new DataIteratorContext();
             context.setInsertOption(InsertOption.UPDATE);
-            var count = qus.loadRows(user, c, new ListofMapsDataIterator(updateRows.get(0).keySet(), updateRows), context, null);
+            var count = qus.loadRows(user, c, MapDataIterator.of(updateRows.get(0).keySet(), updateRows), context, null);
             assertFalse(context.getErrors().hasErrors());
             assertEquals(count,1);
             var rows = getRows();
@@ -1320,7 +1315,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             updateRows = new ArrayList<Map<String,Object>>();
             updateRows.add(CaseInsensitiveHashMap.of(pkName,123,colName,"NEW"));
             updateRows.add(CaseInsensitiveHashMap.of(pkName,2,colName,"TWO-UP-2"));
-            count = qus.loadRows(user, c, new ListofMapsDataIterator(updateRows.get(0).keySet(), updateRows), context, null);
+            count = qus.loadRows(user, c, MapDataIterator.of(updateRows.get(0).keySet(), updateRows), context, null);
             assertTrue(context.getErrors().hasErrors());
         }
 
@@ -1343,7 +1338,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             mergeRows.add(CaseInsensitiveHashMap.of(pkName,3,colName,"THREE"));
             DataIteratorContext context = new DataIteratorContext();
             context.setInsertOption(InsertOption.REPLACE);
-            var count = qus.loadRows(user, c, new ListofMapsDataIterator(mergeRows.get(0).keySet(), mergeRows), context, null);
+            var count = qus.loadRows(user, c, MapDataIterator.of(mergeRows.get(0).keySet(), mergeRows), context, null);
             assertFalse(context.getErrors().hasErrors());
             assertEquals(count,2);
             var rows = getRows();
