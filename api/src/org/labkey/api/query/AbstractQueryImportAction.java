@@ -572,7 +572,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                                 .setAuditBehaviorType(behaviorType)
                                 .setAuditUserComment(_auditUserComment)
                                 .setOptionParamsMap(getOptionParamsMap())
-                                .setHasLineageColumns(hasLineageColumns())
+                                .setAllowLineageColumns(allowLineageColumns())
                                 .setJobDescription(getQueryImportDescription())
                                 .setJobNotificationProvider(getQueryImportJobNotificationProviderName());
 
@@ -641,10 +641,10 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
     protected void configureLoader(DataLoader loader) throws IOException
     {
-        configureLoader(loader, _target, getRenamedColumns(), hasLineageColumns());
+        configureLoader(loader, _target, getRenamedColumns(), allowLineageColumns());
     }
 
-    public static void configureLoader(DataLoader loader, @Nullable TableInfo target, @Nullable Map<String, String> renamedColumns, boolean includeLineageColumns) throws IOException
+    public static void configureLoader(DataLoader loader, @Nullable TableInfo target, @Nullable Map<String, String> renamedColumns, boolean allowLineageColumns) throws IOException
     {
         //apply known columns so loader can do better type conversion
         if (loader != null && target != null)
@@ -664,7 +664,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
         // Issue 40302: Unable to use samples or data class with integer like names as material or data input
         // treat lineage columns as string values
-        if (loader != null && includeLineageColumns)
+        if (loader != null && allowLineageColumns)
         {
             ColumnDescriptor[] cols = loader.getColumns();
             for (ColumnDescriptor col : cols)
@@ -684,7 +684,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
     }
 
-    protected boolean hasLineageColumns()
+    protected boolean allowLineageColumns()
     {
         return false;
     }
