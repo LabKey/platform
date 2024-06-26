@@ -59,7 +59,7 @@ public class PlateSetExport
             Arrays.asList(
                 rs.getString(FKMap.get(PLATE_NAME_COL)),
                 rs.getString(FKMap.get(WellTable.Column.Position.name())),
-                rs.getInt(FKMap.get(WellTable.Column.Row.name())) * rs.getInt(FKMap.get(WellTable.Column.Col.name())) + "-well"
+                rs.getInt(FKMap.get(WellTable.Column.Row.name())) * rs.getInt(FKMap.get(WellTable.Column.Col.name()))
             )
         );
 
@@ -143,7 +143,7 @@ public class PlateSetExport
 
                 List<Object[]> destinationDataRows = sampleIdToDestinationRow.get(sampleId);
                 if (destinationDataRows == null)
-                    throw new ValidationException("There are samples plated in the origin Plate Set with no corresponding well in the destination Plate Set.");
+                    destinationDataRows = new ArrayList<>(destinationIncludedMetadataCols.size() + 3); // 3 is the number of base (non-metadata) columns
 
                 for (Object[] dataRow : destinationDataRows)
                     plateDataRows.add(ArrayUtils.addAll(sourceDataRow, dataRow));
