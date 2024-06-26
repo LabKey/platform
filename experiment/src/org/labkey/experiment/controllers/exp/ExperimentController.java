@@ -4250,7 +4250,7 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        protected boolean hasLineageColumns()
+        protected boolean allowLineageColumns()
         {
             return true;
         }
