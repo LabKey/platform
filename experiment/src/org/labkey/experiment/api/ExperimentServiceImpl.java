@@ -3415,8 +3415,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         final String runLsid;
         final Container runContainer;
         boolean deleteFirst = true;
-        boolean verifyEdgesNoInsert=false;
-        boolean doIncrementalClosureInvalidation =true;
+        boolean verifyEdgesNoInsert = false;
+        boolean doIncrementalClosureInvalidation = true;
 
         SyncRunEdges(ExpRun run)
         {
@@ -7278,9 +7278,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             {
                 new SyncRunEdges(er.getExpObject())
                         .deleteFirst(false)
+                        .doIncrementalClosureInvalidation(false) // do this update all at once below
                         .verifyEdgesNoInsert(false)
                         .sync(cpasTypeToObjectId);
             }
+            ClosureQueryHelper.recomputeAncestorsForRuns(runLsidToRowId.values().stream().map(IdentifiableEntity::getRowId).toList());
         }
 
         private void initAliquotRootsCache(List<ProtocolAppRecord> protAppRecords)
