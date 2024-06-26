@@ -21,8 +21,6 @@ import org.labkey.api.writer.ContainerUser;
 
 /**
  * Uniquely identifies a report
- * User: Dave
- * Date: Dec 11, 2008
  */
 public interface ReportIdentifier
 {
