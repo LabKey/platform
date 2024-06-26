@@ -38,7 +38,7 @@ public class WellData
         for (var entry : getMetadata().entrySet())
         {
             if (entry.getValue() != null)
-                data.put(WellTable.Column.Properties.name() + "/" + entry.getKey(), entry.getValue());
+                data.put(entry.getKey(), entry.getValue());
         }
 
         return data;
