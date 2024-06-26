@@ -573,6 +573,9 @@ public class ClosureQueryHelper
 
     public static void recomputeAncestorsForRuns(Collection<Integer> runIds)
     {
+        if (runIds.isEmpty())
+            return;
+
         recomputeDataAncestorsForRuns(runIds);
         recomputeMaterialAncestorsForRuns(runIds);
     }
