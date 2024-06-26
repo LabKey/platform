@@ -19,6 +19,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.labkey.api.audit.AbstractAuditTypeProvider;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.provider.ModulePropertiesAuditProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
@@ -293,12 +296,26 @@ public class ModuleProperty
         validate(user, c, value);
 
         PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(PropertyManager.SHARED_USER, c, getCategory(), true);
-
+        Object oldValue = props.get(getName());
+        Map<String, Object> oldProp = Map.of(getName(), oldValue == null ? "" : oldValue );
+        String auditComment;
         if (!StringUtils.isEmpty(value))
+        {
             props.put(getName(), value);
+            auditComment = "Updated property value.";
+        }
         else
+        {
             props.remove(getName());
+            auditComment = "Removed property value.";
+        }
+        ModulePropertiesAuditProvider.ModulePropertiesAuditEvent event = new ModulePropertiesAuditProvider.ModulePropertiesAuditEvent(c, auditComment);
+        event.setModule(getModule().getName());
 
+        event.setOldRecordMap(AbstractAuditTypeProvider.encodeForDataMap(c, oldProp));
+        event.setNewRecordMap(AbstractAuditTypeProvider.encodeForDataMap(c, Map.of(getName(), value == null ? "" : value)));
+
+        AuditLogService.get().addEvent(user, event);
         props.save();
     }
 

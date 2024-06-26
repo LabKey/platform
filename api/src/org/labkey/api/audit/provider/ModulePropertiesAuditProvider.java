@@ -1,13 +1,13 @@
 package org.labkey.api.audit.provider;
 
-import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
+import org.labkey.api.audit.DetailedAuditTypeEvent;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.HtmlDisplayColumnFactory;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
@@ -22,25 +22,26 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * User: klum
- * Date: 7/21/13
- */
+import static org.labkey.api.audit.query.AbstractAuditDomainKind.NEW_RECORD_PROP_NAME;
+import static org.labkey.api.audit.query.AbstractAuditDomainKind.OLD_RECORD_PROP_NAME;
+
 public class ModulePropertiesAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
 {
     public static final  String AUDIT_EVENT_TYPE = "ModulePropertyEvents";
 
-    private static final String COLUMN_NAME_CHANGES = "Changes";
     private static final String COLUMN_NAME_MODULE = "Module";
     private static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
 
     static
     {
-        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CONTAINER));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CREATED));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CREATED_BY));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_IMPERSONATED_BY));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CONTAINER));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_MODULE));
+        defaultVisibleColumns.add(FieldKey.fromParts(OLD_RECORD_PROP_NAME));
+        defaultVisibleColumns.add(FieldKey.fromParts(NEW_RECORD_PROP_NAME));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_DATA_CHANGES));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_COMMENT));
     }
 
@@ -58,7 +59,7 @@ public class ModulePropertiesAuditProvider extends AbstractAuditTypeProvider imp
     @Override
     public String getLabel()
     {
-        return "Module Property Events";
+        return "Module Property events";
     }
 
     @Override
@@ -77,11 +78,7 @@ public class ModulePropertiesAuditProvider extends AbstractAuditTypeProvider imp
     public TableInfo createTableInfo(UserSchema userSchema, ContainerFilter cf)
     {
         DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, cf, defaultVisibleColumns);
-        table.getMutableColumn(COLUMN_NAME_CHANGES).setDisplayColumnFactory(new HtmlDisplayColumnFactory());
-        List<FieldKey> defaultCols = new ArrayList<>(table.getDefaultVisibleColumns());
-        defaultCols.add(FieldKey.fromParts(COLUMN_NAME_CHANGES));
-        table.setDefaultVisibleColumns(defaultCols);
-
+        appendValueMapColumns(table);
         return table;
     }
 
@@ -91,37 +88,18 @@ public class ModulePropertiesAuditProvider extends AbstractAuditTypeProvider imp
         return defaultVisibleColumns;
     }
 
-    public static class ModulePropertiesAuditEvent extends AuditTypeEvent
+    public static class ModulePropertiesAuditEvent extends DetailedAuditTypeEvent
     {
-        private String _changes;
         private String _module;
 
         public ModulePropertiesAuditEvent()
         {
-            super();
+
         }
 
-        public ModulePropertiesAuditEvent(String container, String comment)
+        public ModulePropertiesAuditEvent(Container container, String comment)
         {
             super(AUDIT_EVENT_TYPE, container, comment);
-        }
-
-        public String getChanges()
-        {
-            return _changes;
-        }
-
-        public void setChanges(String changes, boolean append)
-        {
-            if (!append || StringUtils.isEmpty(_changes))
-                _changes = changes;
-            else
-                _changes = _changes + changes;
-        }
-
-        public void setChanges(String changes)
-        {
-            setChanges(changes, false);
         }
 
         public String getModule()
@@ -138,7 +116,7 @@ public class ModulePropertiesAuditProvider extends AbstractAuditTypeProvider imp
         public Map<String, Object> getAuditLogMessageElements()
         {
             Map<String, Object> elements = new LinkedHashMap<>();
-            elements.put("changes", getChanges());
+
             elements.put("module", getModule());
             elements.putAll(super.getAuditLogMessageElements());
             return elements;
@@ -158,8 +136,9 @@ public class ModulePropertiesAuditProvider extends AbstractAuditTypeProvider imp
             super(AUDIT_EVENT_TYPE);
 
             Set<PropertyDescriptor> fields = new LinkedHashSet<>();
-            fields.add(createPropertyDescriptor(COLUMN_NAME_CHANGES, PropertyType.STRING));
             fields.add(createPropertyDescriptor(COLUMN_NAME_MODULE, PropertyType.STRING));
+            fields.add(createOldDataMapPropertyDescriptor());
+            fields.add(createNewDataMapPropertyDescriptor());
             _fields = Collections.unmodifiableSet(fields);
         }
 
