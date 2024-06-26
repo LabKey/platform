@@ -23,6 +23,8 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.assay.AssayTableMetadata;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.compliance.TableRules;
+import org.labkey.api.compliance.TableRulesManager;
 import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
@@ -534,6 +536,12 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     public boolean supportTableRules()
     {
         return true;
+    }
+
+    @Override
+    protected @NotNull TableRules findTableRules()
+    {
+        return TableRulesManager.get().getTableRules(getDatasetDefinition().getDefinitionContainer(), getUserSchema().getUser());
     }
 
     @Override

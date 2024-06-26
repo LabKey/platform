@@ -22,7 +22,6 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.compliance.TableRules;
-import org.labkey.api.compliance.TableRulesManager;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ButtonBarConfig;
@@ -84,7 +83,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
 
     @NotNull protected SchemaType _userSchema;
 
-    private final @NotNull TableRules _rules;
+    private TableRules _rules;
     private Set<FieldKey> _rulesOmittedColumns = null;
     private Set<FieldKey> _rulesTransformedColumns = null;
 
@@ -142,8 +141,21 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
             else
                 applyContainerFilter(getDefaultContainerFilter());
         }
+    }
 
-        _rules = canApplyTableRules() ? TableRulesManager.get().getTableRules(getContainer(), userSchema.getUser()) : TableRules.NOOP_TABLE_RULES;
+    private @NotNull TableRules getTableRules()
+    {
+        if (_rules == null)
+            _rules = canApplyTableRules() ? findTableRules() : TableRules.NOOP_TABLE_RULES;
+
+        return _rules;
+    }
+
+    protected @NotNull TableRules findTableRules()
+    {
+        throw new UnsupportedOperationException("Override this method if canApplyTableRules()==true");
+        // example
+        // return TableRulesManager.get().getTableRules({TYPE}.getDefinitionContainer(), getUserSchema().getUser());
     }
 
     /**
@@ -532,7 +544,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
 
     public SQLFragment getTransformedFromSQL(SQLFragment sqlFrom)
     {
-        return _rules.getSqlTransformer().apply(sqlFrom);
+        return getTableRules().getSqlTransformer().apply(sqlFrom);
     }
 
     /**
@@ -604,9 +616,9 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         for (var column : getMutableColumns())
         {
             MutableColumnInfo transformed;
-            if (_rules.getColumnInfoFilter().test(column))
+            if (getTableRules().getColumnInfoFilter().test(column))
             {
-                transformed = _rules.getColumnInfoTransformer().apply(column);
+                transformed = getTableRules().getColumnInfoTransformer().apply(column);
                 getAliasManager().ensureAlias(column);
                 replaceColumn(transformed, column);
 

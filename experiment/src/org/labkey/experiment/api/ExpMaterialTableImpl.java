@@ -25,6 +25,8 @@ import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.compliance.TableRules;
+import org.labkey.api.compliance.TableRulesManager;
 import org.labkey.api.data.*;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
@@ -1012,8 +1014,24 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
         sql.append(") ").append(alias);
 
-        return sql;
+        return getTransformedFromSQL(sql);
     }
+
+    @Override
+    public boolean supportTableRules() // intentional override
+    {
+        return true;
+    }
+
+    @Override
+    protected @NotNull TableRules findTableRules()
+    {
+        Container definitionContainer = getUserSchema().getContainer();
+        if (null != _ss)
+            definitionContainer = _ss.getContainer();
+        return TableRulesManager.get().getTableRules(definitionContainer, getUserSchema().getUser());
+    }
+
 
     static class InvalidationCounters
     {

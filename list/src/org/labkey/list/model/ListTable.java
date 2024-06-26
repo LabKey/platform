@@ -23,6 +23,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.compliance.TableRules;
+import org.labkey.api.compliance.TableRulesManager;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
@@ -398,6 +400,12 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     public boolean supportTableRules()
     {
         return true;
+    }
+
+    @Override
+    protected @NotNull TableRules findTableRules()
+    {
+        return TableRulesManager.get().getTableRules(getList().getContainer(), getUserSchema().getUser());
     }
 
     /**

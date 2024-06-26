@@ -18,6 +18,7 @@ package org.labkey.experiment.api;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -27,6 +28,8 @@ import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiResponseWriter;
 import org.labkey.api.action.ExtendedApiQueryResponse;
 import org.labkey.api.action.NullSafeBindException;
+import org.labkey.api.compliance.TableRules;
+import org.labkey.api.compliance.TableRulesManager;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -218,6 +221,21 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         }
 
         return customProps;
+    }
+
+    @Override
+    public boolean supportTableRules() // intentional override
+    {
+        return true;
+    }
+
+    @Override
+    protected @NotNull TableRules findTableRules()
+    {
+        Container definitionContainer = getUserSchema().getContainer();
+        if (null != getDomain())
+            definitionContainer = getDomain().getContainer();
+        return TableRulesManager.get().getTableRules(definitionContainer, getUserSchema().getUser());
     }
 
     public void setDefaultColumns()
