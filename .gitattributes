@@ -92,7 +92,6 @@ api/gwtsrc/org/labkey/api/gwt/client/ui/ImageButton.java -text
 api/gwtsrc/org/labkey/api/gwt/client/ui/LinkButton.java -text
 api/gwtsrc/org/labkey/api/gwt/client/ui/StringListBox.java -text
 api/gwtsrc/org/labkey/api/gwt/client/ui/TextBoxDialogBox.java -text
-api/gwtsrc/org/labkey/api/gwt/client/ui/VennDiagramView.java -text
 api/gwtsrc/org/labkey/api/gwt/client/ui/WebPartPanel.java -text
 api/gwtsrc/org/labkey/api/gwt/client/ui/WidgetUpdatable.java -text
 api/gwtsrc/org/labkey/api/gwt/client/ui/WindowUtil.java -text
@@ -342,7 +341,6 @@ api/src/org/labkey/api/cache/CacheStats.java -text
 api/src/org/labkey/api/cache/CacheTimeChooser.java -text
 api/src/org/labkey/api/cache/CacheType.java -text
 api/src/org/labkey/api/cache/CacheWrapper.java -text
-api/src/org/labkey/api/cache/DbCache.java -text
 api/src/org/labkey/api/cache/ehcache/EhCacheProvider.java -text
 api/src/org/labkey/api/cache/ehcache/EhSimpleCache.java -text
 api/src/org/labkey/api/cache/ehcache/SafeCacheManager.java -text
@@ -935,8 +933,6 @@ api/src/org/labkey/api/pipeline/WorkDirFactory.java -text
 api/src/org/labkey/api/pipeline/XMLBeanTaskFactoryFactory.java -text
 api/src/org/labkey/api/portal/ProjectUrls.java -text
 api/src/org/labkey/api/premium/AntiVirusService.java -text
-api/src/org/labkey/api/protein/ProteinService.java -text
-api/src/org/labkey/api/protein/ProteomicsModule.java -text
 api/src/org/labkey/api/qc/DataExchangeHandler.java -text
 api/src/org/labkey/api/qc/DataLoaderSettings.java -text
 api/src/org/labkey/api/qc/DataTransformer.java -text
@@ -1474,7 +1470,6 @@ api/src/org/labkey/api/view/PopupHelpView.java -text
 api/src/org/labkey/api/view/PopupMenu.java -text
 api/src/org/labkey/api/view/PopupMenuView.java -text
 api/src/org/labkey/api/view/PopupUserView.java -text
-api/src/org/labkey/api/view/ProteomicsWebPartFactory.java -text
 api/src/org/labkey/api/view/ReaderView.java -text
 api/src/org/labkey/api/view/RequestBasicAuthException.java -text
 api/src/org/labkey/api/view/ServletView.java -text
@@ -1576,7 +1571,6 @@ api/webapp/clientapi/ext4/data/Proxy.js -text
 api/webapp/clientapi/ext4/data/Reader.js -text
 api/webapp/clientapi/ext4/data/Store.js -text
 api/webapp/clientapi/ext4/Util.js -text
-api/webapp/ext-4.2.1/ext-patches.js -text
 api/webapp/ext-theme/blue/ext-all-debug.css -text
 api/webapp/ext-theme/brown/ext-all-debug.css -text
 api/webapp/ext-theme/harvest/ext-all-debug.css -text
@@ -1635,7 +1629,6 @@ assay/api-src/org/labkey/api/assay/nab/view/RunDetailsAction.java -text
 assay/api-src/org/labkey/api/assay/nab/view/RunDetailsHeaderView.java -text
 assay/api-src/org/labkey/api/assay/plate/AbstractPlateBasedAssayProvider.java -text
 assay/api-src/org/labkey/api/assay/plate/AbstractPlateReader.java -text
-assay/api-src/org/labkey/api/assay/plate/AbstractPlateTypeHandler.java -text
 assay/api-src/org/labkey/api/assay/plate/ExcelPlateReader.java -text
 assay/api-src/org/labkey/api/assay/plate/Plate.java -text
 assay/api-src/org/labkey/api/assay/plate/PlateBasedAssayProvider.java -text
@@ -1645,7 +1638,6 @@ assay/api-src/org/labkey/api/assay/plate/PlateReader.java -text
 assay/api-src/org/labkey/api/assay/plate/PlateSampleFilePropertyHelper.java -text
 assay/api-src/org/labkey/api/assay/plate/PlateSamplePropertyHelper.java -text
 assay/api-src/org/labkey/api/assay/plate/PlateService.java -text
-assay/api-src/org/labkey/api/assay/plate/PlateTypeHandler.java -text
 assay/api-src/org/labkey/api/assay/plate/PlateUtils.java -text
 assay/api-src/org/labkey/api/assay/plate/Position.java -text
 assay/api-src/org/labkey/api/assay/plate/PositionImpl.java -text
@@ -1654,9 +1646,6 @@ assay/api-src/org/labkey/api/assay/plate/Well.java -text
 assay/api-src/org/labkey/api/assay/plate/WellData.java -text
 assay/api-src/org/labkey/api/assay/plate/WellGroup.java -text
 assay/api-src/org/labkey/api/assay/query/RunListDetailsQueryView.java -text
-assay/gwtsrc/gwt/client/org/labkey/assay/designer/client/AssayImporter.java -text
-assay/gwtsrc/gwt/client/org/labkey/assay/designer/client/AssayImporterService.java -text
-assay/gwtsrc/gwt/client/org/labkey/assay/designer/client/AssayImporterServiceAsync.java -text
 assay/gwtsrc/gwt/client/org/labkey/plate/designer/client/GroupChangeListener.java -text
 assay/gwtsrc/gwt/client/org/labkey/plate/designer/client/GroupChangeListenerAdapter.java -text
 assay/gwtsrc/gwt/client/org/labkey/plate/designer/client/GroupTypePanel.java -text
@@ -1697,16 +1686,13 @@ assay/src/org/labkey/assay/actions/DeleteAction.java -text
 assay/src/org/labkey/assay/actions/DeleteProtocolAction.java -text
 assay/src/org/labkey/assay/actions/GetAssayBatchAction.java -text
 assay/src/org/labkey/assay/actions/GetProtocolAction.java -text
-assay/src/org/labkey/assay/actions/ImportAction.java -text
 assay/src/org/labkey/assay/actions/PipelineDataCollectorRedirectAction.java -text
 assay/src/org/labkey/assay/actions/SaveAssayBatchAction.java -text
 assay/src/org/labkey/assay/actions/SetDefaultValuesAssayAction.java -text
 assay/src/org/labkey/assay/actions/ShowSelectedDataAction.java -text
 assay/src/org/labkey/assay/actions/ShowSelectedRunsAction.java -text
 assay/src/org/labkey/assay/actions/TemplateAction.java -text
-assay/src/org/labkey/assay/actions/TsvImportAction.java -text
 assay/src/org/labkey/assay/AssayFolderType.java -text
-assay/src/org/labkey/assay/AssayImportServiceImpl.java -text
 assay/src/org/labkey/assay/AssayListPortalView.java -text
 assay/src/org/labkey/assay/AssayListQueryView.java -text
 assay/src/org/labkey/assay/AssayManager.java -text
@@ -1729,7 +1715,6 @@ assay/src/org/labkey/assay/plate/query/PlateSchema.java -text
 assay/src/org/labkey/assay/plate/query/PlateTable.java -text
 assay/src/org/labkey/assay/plate/query/WellGroupTable.java -text
 assay/src/org/labkey/assay/plate/view/copyTemplate.jsp -text
-assay/src/org/labkey/assay/plate/view/plateTemplateList.jsp -text
 assay/src/org/labkey/assay/plate/WellGroupCurveImpl.java -text
 assay/src/org/labkey/assay/plate/WellGroupImpl.java -text
 assay/src/org/labkey/assay/plate/WellImpl.java -text
@@ -2158,7 +2143,6 @@ experiment/src/org/labkey/experiment/FileLinkFileListener.java -text
 experiment/src/org/labkey/experiment/LineageGraphDisplayColumn.java -text
 experiment/src/org/labkey/experiment/MoveRunsBean.java -text
 experiment/src/org/labkey/experiment/moveRunsLocation.jsp -text
-experiment/src/org/labkey/experiment/NoPipelineRootSetView.java -text
 experiment/src/org/labkey/experiment/Parameters.jsp -text
 experiment/src/org/labkey/experiment/pipeline/ExperimentPipelineJob.java -text
 experiment/src/org/labkey/experiment/pipeline/ExperimentPipelineProvider.java -text
@@ -2734,7 +2718,6 @@ study/gwtsrc/gwt/client/org/labkey/study/designer/client/ScheduleGrid.java -text
 study/gwtsrc/gwt/client/org/labkey/study/designer/client/StudyDefinitionService.java -text
 study/gwtsrc/gwt/client/org/labkey/study/designer/client/StudyDefinitionServiceAsync.java -text
 study/gwtsrc/gwt/client/org/labkey/study/designer/client/VaccinePanel.java -text
-study/gwtsrc/gwt/public/org/labkey/study/designer/Designer.html -text
 study/gwtsrc/gwt/StudyApplication.gwt.xml -text
 study/module.properties -text
 study/resources/schemas/dbscripts/postgresql/study-create.sql -text

@@ -74,6 +74,8 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     private String templateDescription=null; // null if no template
     private String instructions = null;
 
+    private boolean supportsPhiLevel = false;
+
     public GWTDomain()
     {
     }
@@ -101,6 +103,7 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
         this.defaultValueOptions = src.defaultValueOptions;
         this.defaultValuesURL = src.defaultValuesURL;
         this.provisioned = src.isProvisioned();
+        this.supportsPhiLevel = src.supportsPhiLevel;
 
         if (src.indices != null)
         {
@@ -525,4 +528,13 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
         this.provisioned = value;
     }
 
+    public boolean isSupportsPhiLevel()
+    {
+        return supportsPhiLevel;
+    }
+
+    public void setSupportsPhiLevel(boolean supportsPhiLevel)
+    {
+        this.supportsPhiLevel = supportsPhiLevel;
+    }
 }

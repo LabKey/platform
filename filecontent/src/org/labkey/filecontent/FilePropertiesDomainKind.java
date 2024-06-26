@@ -16,6 +16,7 @@
 package org.labkey.filecontent;
 
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExperimentUrls;
@@ -121,5 +122,11 @@ public class FilePropertiesDomainKind extends BaseAbstractDomainKind
     public DefaultValueType getDefaultDefaultType(Domain domain)
     {
         return DefaultValueType.FIXED_EDITABLE;
+    }
+
+    @Override
+    public boolean supportsPhiLevel()
+    {
+        return ComplianceService.get().isComplianceSupported();
     }
 }
