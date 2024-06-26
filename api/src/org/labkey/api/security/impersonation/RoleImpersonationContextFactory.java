@@ -24,6 +24,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.PrincipalArray;
+import org.labkey.api.security.RoleSet;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
@@ -35,7 +36,6 @@ import org.labkey.api.security.permissions.CanImpersonateSiteRolesPermission;
 import org.labkey.api.security.roles.AbstractRootContainerRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.security.roles.RoleSet;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ActionURL;
@@ -280,8 +280,8 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
         @Override
         public Stream<Role> getSiteRoles(User user)
         {
-            // Return only site roles that are being impersonated
-            return super.getSiteRoles(user).filter(_roles::contains);
+            // Return the site roles that are being impersonated
+            return _roles.stream().filter(role->role instanceof AbstractRootContainerRole);
         }
 
         @Override

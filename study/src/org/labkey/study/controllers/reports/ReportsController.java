@@ -268,7 +268,7 @@ public class ReportsController extends BaseStudyController
             {
                 final String key = ReportUtil.getReportQueryKey(report.getDescriptor());
 
-                int reportId = ReportService.get().saveReport(getViewContext(), key, report);
+                int reportId = ReportService.get().saveReportEx(getViewContext(), key, report).getRowId();
 
                 if (form.isRedirectToReport())
                 {
@@ -351,7 +351,7 @@ public class ReportsController extends BaseStudyController
             Report report = form.getReport(getViewContext());
             if (report != null)
             {
-                _savedReportId = ReportService.get().saveReport(getViewContext(), ReportUtil.getReportKey(form.getSchemaName(), form.getQueryName()), report);
+                _savedReportId = ReportService.get().saveReportEx(getViewContext(), ReportUtil.getReportKey(form.getSchemaName(), form.getQueryName()), report).getRowId();
                 return true;
             }
             return false;
@@ -1318,7 +1318,7 @@ public class ReportsController extends BaseStudyController
             String key = ReportUtil.getReportKey(form.getSchemaName(), form.getQueryName());
             Report report = getParticipantReport(form);
 
-            int rowId = ReportService.get().saveReport(getViewContext(), key, report);
+            int rowId = ReportService.get().saveReportEx(getViewContext(), key, report).getRowId();
             ReportIdentifier reportId = ReportService.get().getReportIdentifier(String.valueOf(rowId), getViewContext().getUser(), getViewContext().getContainer());
 
             response.put("success", true);
@@ -1498,8 +1498,7 @@ public class ReportsController extends BaseStudyController
             String key = ReportUtil.getReportKey(StudySchema.getInstance().getSchemaName(), null);
             Report report = getReport(form);
 
-            int rowId = ReportService.get().saveReport(getViewContext(), key, report);
-            ReportIdentifier reportId = ReportService.get().getReportIdentifier(String.valueOf(rowId), getViewContext().getUser(), getViewContext().getContainer());
+            ReportIdentifier reportId = ReportService.get().saveReportEx(getViewContext(), key, report);
 
             response.put("success", true);
             response.put("reportId", reportId);

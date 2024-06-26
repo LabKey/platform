@@ -660,4 +660,10 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
     {
         return new FieldKey(null, "Folder");
     }
+
+    @Override
+    public boolean supportTableRules()
+    {
+        return super.supportTableRules();
+    }
 }

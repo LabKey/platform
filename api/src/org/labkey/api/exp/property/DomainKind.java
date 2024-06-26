@@ -406,4 +406,9 @@ abstract public class DomainKind<T>  implements Handler<String>
     {
         return true;
     }
+
+    public boolean supportsPhiLevel()
+    {
+        return false;
+    }
 }

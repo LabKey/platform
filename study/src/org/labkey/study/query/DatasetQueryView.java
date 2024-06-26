@@ -825,6 +825,18 @@ public class DatasetQueryView extends StudyQueryView
                         errors.add(new SimpleValidationError("Unable to perform assay consistency check, the assay results table does not have the standard columns : " +
                                 _assaySubject + " and " + _assayVisit));
                     }
+
+                    // Issue 50208 : validate timepoint types
+                    if (errors.isEmpty())
+                    {
+                        var timepointCol = dataTable.getColumn(_assayVisit);
+                        if (timepointCol == null)
+                            errors.add(new SimpleValidationError("Unable to perform assay consistency check, the assay results timepoint column (" + _assayVisit.getName() + ") was not found."));
+                        else if (_dataset.getStudy().getTimepointType().isVisitBased() && !timepointCol.isNumericType())
+                            errors.add(new SimpleValidationError("Unable to perform assay consistency check, the assay results timepoint column must be of type : numeric."));
+                        else if (!timepointCol.isDateTimeType())
+                            errors.add(new SimpleValidationError("Unable to perform assay consistency check, the assay results timepoint column must be of type : date."));
+                    }
                 }
                 return errors;
             }
@@ -846,7 +858,7 @@ public class DatasetQueryView extends StudyQueryView
                             .append(" JOIN ").append(dataTable, "AT")
                             .append(" ON DS.").append(_dataset.getKeyPropertyName()).append(" = ").append("AT.").append(dataTable.getPkColumnNames().get(0))
                             .append(" WHERE DS.").append(studyVisit).append(" <> AT.").append(_assayVisit).append(" OR ")
-                            .append(" DS.ParticipantId <> AT.").append(_assaySubject);
+                            .append(" DS.ParticipantId <> ").append(rootTable.getSqlDialect().getVarcharCast(new SQLFragment("AT." + _assaySubject.getName())));
 
                     return sql;
                 }
