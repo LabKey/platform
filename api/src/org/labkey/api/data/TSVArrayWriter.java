@@ -7,6 +7,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+// This class supports generating files with duplicate column names. Consider using TSVMapWriter if
+// multiple identical column names is not an implementation concern.
 public class TSVArrayWriter extends TSVWriter
 {
     private final List<String> _columns;

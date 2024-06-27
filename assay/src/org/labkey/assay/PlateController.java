@@ -1442,7 +1442,7 @@ public class PlateController extends SpringActionController
 
                 boolean isCSV = form.getFileType().equals(FileType.CSV.name());
                 boolean isTSV = form.getFileType().equals(FileType.TSV.name());
-                if (isCSV ||isTSV)
+                if (isCSV || isTSV)
                 {
                     try (TSVArrayWriter writer = new TSVArrayWriter(fullFileName, xlCols, plateDataRows))
                     {
@@ -1527,9 +1527,23 @@ public class PlateController extends SpringActionController
                 ColumnDescriptor[] xlCols = PlateSetExport.getColumnDescriptors("", includedMetadataCols);
                 List<Object[]> plateDataRows = PlateManager.get().getInstrumentInstructions(form.getPlateSetId(), includedMetadataCols, getContainer(), getUser());
 
-                ArrayExcelWriter xlWriter = new ArrayExcelWriter(plateDataRows, xlCols);
-                xlWriter.setFullFileName(plateSet.getName());
-                xlWriter.renderWorkbook(getViewContext().getResponse());
+                boolean isCSV = form.getFileType().equals(FileType.CSV.name());
+                boolean isTSV = form.getFileType().equals(FileType.TSV.name());
+
+                if (isCSV || isTSV)
+                {
+                    try (TSVArrayWriter writer = new TSVArrayWriter(plateSet.getName(), xlCols, plateDataRows))
+                    {
+                        writer.setDelimiterCharacter(isCSV ? TSVWriter.DELIM.COMMA : TSVWriter.DELIM.TAB);
+                        writer.write(getViewContext().getResponse());
+                    }
+                }
+                else
+                {
+                    ArrayExcelWriter xlWriter = new ArrayExcelWriter(plateDataRows, xlCols);
+                    xlWriter.setFullFileName(plateSet.getName());
+                    xlWriter.renderWorkbook(getViewContext().getResponse());
+                }
 
                 return null; // Returning anything here will cause error as excel writer will close the response stream
             }
