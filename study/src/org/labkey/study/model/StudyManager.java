@@ -1685,7 +1685,7 @@ public class StudyManager
 
     public List<AssaySpecimenConfigImpl> getAssaySpecimenConfigs(Container container)
     {
-        return _assaySpecimenHelper.getList(container, "RowId");
+        return _assaySpecimenHelper.getList(container);
     }
 
     public List<VisitImpl> getVisitsForAssaySchedule(Container container)
@@ -5100,14 +5100,14 @@ public class StudyManager
             AssaySpecimenConfigImpl assay1 = new AssaySpecimenConfigImpl(_container, "Assay1", "Assay 1 description");
             assay1.setLab(_lookups.get("Lab"));
             assay1.setSampleType(_lookups.get("SampleType"));
-            _assays.add(Table.insert(_user, StudySchema.getInstance().getTableInfoAssaySpecimen(), assay1));
+            _assays.add(_manager._assaySpecimenHelper.create(_user, assay1));
 
             AssaySpecimenConfigImpl assay2 = new AssaySpecimenConfigImpl(_container, "Assay2", "Assay 2 description");
             assay2.setLab(_lookups.get("Lab"));
             assay2.setSampleType(_lookups.get("SampleType"));
-            _assays.add(Table.insert(_user, StudySchema.getInstance().getTableInfoAssaySpecimen(), assay2));
+            _assays.add(_manager._assaySpecimenHelper.create(_user, assay2));
 
-            assertEquals(_assays.size(), 2);
+            assertEquals(2, _assays.size());
         }
 
         private void populateLookupTables()

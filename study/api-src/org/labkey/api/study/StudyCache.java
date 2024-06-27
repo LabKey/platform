@@ -31,7 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class StudyCache
 {
-    // TODO: Fix generics. Cache (and invalidate) a single map per Container for all object types.
+    // TODO: Cache (and invalidate) a single map per Container for all object types. Fix generics.
     private static final Map<Path, BlockingCache<String, Object>> CACHES = new ConcurrentHashMap<>(10);
 
     public static @NotNull BlockingCache<String, Object> getCache(TableInfo tinfo)

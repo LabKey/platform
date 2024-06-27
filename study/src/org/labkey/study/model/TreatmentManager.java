@@ -530,10 +530,10 @@ public class TreatmentManager
         filter.addCondition(FieldKey.fromParts("AssaySpecimenId"), rowId);
         Table.delete(StudySchema.getInstance().getTableInfoAssaySpecimenVisit(), filter);
 
-        // the delete the AssaySpecimen record by RowId
+        // delete the AssaySpecimen record by RowId
         filter = SimpleFilter.createContainerFilter(container);
         filter.addCondition(FieldKey.fromParts("RowId"), rowId);
-        Table.delete(StudySchema.getInstance().getTableInfoAssaySpecimen(), filter);
+        Table.delete(StudySchema.getInstance().getTableInfoAssaySpecimen(), filter); // TODO: Uncache! (StudyManager._assaySpecimenHelper)
     }
 
     public void deleteAssaySpecimenVisit(Container container, User user, int rowId)
