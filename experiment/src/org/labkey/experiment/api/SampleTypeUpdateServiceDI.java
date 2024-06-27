@@ -486,8 +486,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             results = super.updateRows(user, container, rows, oldKeys, errors, configParameters, extraScriptContext);
 
             /* setup mini dataiterator pipeline to process lineage */
-            DataIterator dib = _toDataIteratorBuilder("updateRows.lineage", results).getDataIterator(new DataIteratorContext());
-            ExpDataIterators.derive(user, container, dib.getDataIterator(new DataIteratorContext()), true, _sampleType, true);
+            DataIterator di = _toDataIteratorBuilder("updateRows.lineage", results).getDataIterator(new DataIteratorContext());
+            ExpDataIterators.derive(user, container, di, true, _sampleType, true);
         }
 
         if (results != null && !results.isEmpty() && !errors.hasErrors())
