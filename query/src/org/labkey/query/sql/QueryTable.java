@@ -780,7 +780,7 @@ public class QueryTable extends AbstractQueryRelation implements QueryRelation.C
             }
 
             ColumnLogging columnLogging = col.getColumnLogging();
-            if (null != columnLogging.getException())
+            if (null == columnLogging.getException())
             {
                 for (FieldKey fieldKey : columnLogging.getDataLoggingColumns())
                 {
