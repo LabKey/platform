@@ -108,16 +108,7 @@ public class LoggingDataIterator extends AbstractDataIterator implements Scrolla
 
         for (int i=0 ; i<=_data.getColumnCount() ; i++)
         {
-            String name = _data.getColumnInfo(i).getName();
-            if (name.length() > 30)
-                name = name.substring(name.length()-30);
-            Object value = _data.get(i);
-            String cls = null == value ? "NULL" : value.getClass().getSimpleName();
-            if (null == value)
-                value = "";
-            if (value instanceof Map)
-                value = value.getClass() + "@" + System.identityHashCode(value);
-            formatter.format("%30s %10s| %s\n", name, cls, value);
+            appendFormattedNameValue(formatter, _data.getColumnInfo(i).getName(), _data.get(i));
         }
 
         if (supportsGetMap())
@@ -134,6 +125,18 @@ public class LoggingDataIterator extends AbstractDataIterator implements Scrolla
         _log.log(_pri, sb.toString());
 
         return true;
+    }
+
+    public static void appendFormattedNameValue(Formatter formatter, String name, Object value)
+    {
+        if (name.length() > 30)
+            name = name.substring(name.length()-30);
+        String cls = null == value ? "NULL" : value.getClass().getSimpleName();
+        if (null == value)
+            value = "";
+        if (value instanceof Map)
+            value = value.getClass() + "@" + System.identityHashCode(value);
+        formatter.format("%30s %10s| %s\n", name, cls, value);
     }
 
     @Override

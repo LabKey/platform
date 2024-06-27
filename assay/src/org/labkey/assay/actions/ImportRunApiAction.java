@@ -47,6 +47,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.iterator.ValidatingDataRowIterator;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
@@ -277,7 +278,8 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
 
             if (!saveDataAsFile)
             {
-                factory.setRawData(rawData);
+                List<Map<String, Object>> rows = rawData;
+                factory.setRawData(() -> ValidatingDataRowIterator.of(rows));
                 factory.setUploadedData(Collections.emptyMap());
 
                 // Create an ExpData for the results if none exists in the outputData map

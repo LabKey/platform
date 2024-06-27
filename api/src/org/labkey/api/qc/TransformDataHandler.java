@@ -20,9 +20,11 @@ import org.labkey.api.assay.AssayRunUploadContext;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.iterator.ValidatingDataRowIterator;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * User: klum
@@ -33,5 +35,5 @@ public interface TransformDataHandler extends ValidationDataHandler
     /**
      * Imports the data map which may have been transformed by an external script.
      */
-    public void importTransformDataMap(ExpData data, AssayRunUploadContext context, ExpRun run, List<Map<String, Object>> dataMap) throws ExperimentException;
+    void importTransformDataMap(ExpData data, AssayRunUploadContext<?> context, ExpRun run, Supplier<ValidatingDataRowIterator> dataMap) throws ExperimentException;
 }

@@ -129,7 +129,7 @@ public class AutoLinkToStudyTest extends BaseWebDriverTest
                 .setAutoLinkTarget("(Data import folder)")
                 .clickSave();
 
-        File runFile = new File(TestFileUtils.getSampleData("AssayImportExport"), "GenericAssay_Run2.xls");
+        File runFile = TestFileUtils.getSampleData("AssayImportExport/GenericAssay_Run2.xlsx");
         importAssayRun(runFile, ASSAY_NAME, runName);
 
         linkToStudy(runName, STUDY1, 1, null);
