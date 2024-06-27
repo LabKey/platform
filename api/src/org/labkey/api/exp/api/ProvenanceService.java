@@ -6,6 +6,7 @@ import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -77,6 +78,8 @@ public interface ProvenanceService
      * Determines whether the provider returned supports provenance;
      */
     boolean isProvenanceSupported();
+
+    OntologyManager.RowCallback getAssayRowCallback(ExpRun run, Container container);
 
     void addProvenanceInputs(Container container, ExpProtocolApplication app, Set<String> inputLSIDs);
 
