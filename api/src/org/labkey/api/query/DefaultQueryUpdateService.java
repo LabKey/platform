@@ -44,6 +44,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.ValidatorContext;
+import org.labkey.api.iterator.ValidatingDataRowIterator;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -64,6 +65,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
 /**
@@ -327,8 +329,9 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                 values.put(pd.getPropertyURI(), value);
             }
 
-            List<String> lsids = OntologyManager.insertTabDelimited(getDomainObjContainer(c), user, null, new ImportHelper(), pds, Collections.singletonList(values), true);
-            String lsid = lsids.get(0);
+            LsidCollector collector = new LsidCollector();
+            OntologyManager.insertTabDelimited(getDomainObjContainer(c), user, null, new ImportHelper(), pds, ValidatingDataRowIterator.of(Collections.singletonList(values).iterator()), true, collector);
+            String lsid = collector.getLsid();
 
             // Add the new lsid to the row map.
             row.put(objectUriCol.getName(), lsid);
@@ -529,10 +532,12 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
 
             // Note: copy lsid into newValues map so it will be found by the ImportHelper.beforeImportObject()
             newValues.put(objectUriCol.getName(), lsid);
-            List<String> lsids = OntologyManager.insertTabDelimited(getDomainObjContainer(c), user, null, new ImportHelper(), tableProperties, Collections.singletonList(newValues), true);
+
+            LsidCollector collector = new LsidCollector();
+            OntologyManager.insertTabDelimited(getDomainObjContainer(c), user, null, new ImportHelper(), tableProperties, ValidatingDataRowIterator.of(Collections.singletonList(newValues).iterator()), true, collector);
 
             // Update the lsid in the row: the lsid may have not existed in the row before the update.
-            lsid = lsids.get(0);
+            lsid = collector.getLsid();
             row.put(objectUriCol.getName(), lsid);
         }
 
@@ -566,6 +571,30 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         }
 
         return Table.update(user, getDbTable(), row, keys); // Cache-invalidation handled in caller (TreatmentManager.saveAssaySpecimen())
+    }
+
+    private static class LsidCollector implements OntologyManager.RowCallback
+    {
+        private String _lsid;
+
+        @Override
+        public void rowProcessed(Map<String, Object> row, String lsid)
+        {
+            if (_lsid != null)
+            {
+                throw new IllegalStateException("Only expected a single LSID");
+            }
+            _lsid = lsid;
+        }
+
+        public String getLsid()
+        {
+            if (_lsid == null)
+            {
+                throw new IllegalStateException("No LSID returned");
+            }
+            return _lsid;
+        }
     }
 
     // Get value from row map where the keys are column names.

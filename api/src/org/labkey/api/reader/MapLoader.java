@@ -139,7 +139,7 @@ public class MapLoader extends DataLoader
     {
     }
 
-    public class MapLoaderIterator extends DataLoaderIterator
+    public class MapLoaderIterator extends AbstractDataLoaderIterator
     {
         protected MapLoaderIterator()
                 throws IOException

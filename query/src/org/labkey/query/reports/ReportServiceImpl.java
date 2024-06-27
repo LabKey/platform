@@ -69,7 +69,6 @@ import org.labkey.api.reports.report.r.ModuleRReportDescriptor;
 import org.labkey.api.reports.report.r.RReportDescriptor;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.MutableSecurityPolicy;
-import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -350,12 +349,6 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         }
     }
 
-    @Override @Deprecated /* use ReportIdentifier version saveReportEx */
-    public int saveReport(ContainerUser context, String key, Report report, boolean skipValidation)
-    {
-        return _saveDbReport(context, key, report, skipValidation).getRowId();
-    }
-
     @Override
     public void validateReportPermissions(ContainerUser context, Report report)
     {
@@ -469,12 +462,11 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
 
     private ReportIdentifier _saveModuleReport(ContainerUser context, String key, Report report, boolean skipValidation)
     {
-        if (!(report.getDescriptor() instanceof ModuleReportDescriptor) || !(report.getDescriptor().getReportId() instanceof ModuleReportIdentifier))
+        if (!(report.getDescriptor() instanceof ModuleReportDescriptor descriptor) || !(report.getDescriptor().getReportId() instanceof ModuleReportIdentifier))
             throw new IllegalStateException("This should be a module report!");
 
         User user = context.getUser();
         Container c = context.getContainer();
-        ModuleReportDescriptor descriptor = (ModuleReportDescriptor)report.getDescriptor();
 
         report.beforeSave(context);
 

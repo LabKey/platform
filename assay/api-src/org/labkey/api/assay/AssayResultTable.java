@@ -295,6 +295,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         String resultRowLsidExpression = schema.getProvider().getResultRowLSIDExpression();
         if (resultRowLsidExpression != null)
         {
+            // Keep in sync with SimpleAssayDataImportHelper.afterObjectImport()
             sql = new SQLFragment(dialect.concatenate(
                     "'" + resultRowLsidExpression +
                             ".Protocol-" + schema.getProtocol().getRowId() + ":'",
@@ -659,5 +660,11 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
     public FieldKey getContainerFieldKey()
     {
         return new FieldKey(null, "Folder");
+    }
+
+    @Override
+    public boolean supportTableRules()
+    {
+        return super.supportTableRules();
     }
 }

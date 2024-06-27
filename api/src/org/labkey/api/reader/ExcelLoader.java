@@ -61,15 +61,16 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.function.Consumer;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 /**
@@ -359,13 +360,24 @@ public class ExcelLoader extends DataLoader
     @NotNull
     private String[][] getFirstNLinesXLSX(int n) throws IOException, InvalidFormatException
     {
-        var grid = loadSheetFromXLSX(n);
+        int row = -1;
+
+        List<Object[]> grid = new ArrayList<>();
+
+        try (AsyncXlsxIterator iter = new AsyncXlsxIterator())
+        {
+            while (row < n && iter.hasNext())
+            {
+                grid.add(iter.next().toArray());
+            }
+        }
+
         List<String[]> cells = new ArrayList<>();
 
         for (int i = 0; cells.size() < n && i<grid.size() ; i++)
         {
-            List<?> currentRow = grid.get(i);
-            List<String> rowData = new ArrayList<>(currentRow.size());
+            Object[] currentRow = grid.get(i);
+            List<String> rowData = new ArrayList<>(currentRow.length);
             boolean foundData = false;
 
             for (Object v : currentRow)
@@ -379,7 +391,7 @@ public class ExcelLoader extends DataLoader
                 cells.add(rowData.toArray(new String[0]));
         }
 
-        return cells.toArray(new String[cells.size()][]);
+        return cells.toArray(new String[0][]);
     }
 
 
@@ -412,7 +424,7 @@ public class ExcelLoader extends DataLoader
                         else
                             data = String.valueOf(value);
 
-                        if (data != null && !"".equals(data))
+                        if (data != null && !data.isEmpty())
                             foundData = true;
 
                         rowData.add(data != null ? data : "");
@@ -432,7 +444,7 @@ public class ExcelLoader extends DataLoader
 
 
     @Override
-    protected CloseableIterator<Map<String, Object>> _iterator(boolean includeRowHash)
+    protected DataLoader.DataLoaderIterator _iterator(boolean includeRowHash)
     {
         try
         {
@@ -468,103 +480,190 @@ public class ExcelLoader extends DataLoader
     }
 
 
-    private List<List<?>> _parsedGridXLSX = null;
-
-
-    private List<List<?>> getParsedGridXLSX() throws IOException, InvalidFormatException
-    {
-        if (null == _parsedGridXLSX)
-            _parsedGridXLSX = loadSheetFromXLSX(-1);
-        return _parsedGridXLSX;
-    }
-
-
     private static class StopLoadingRows extends RuntimeException
     {}
 
-    private List<List<?>> loadSheetFromXLSX(int maxRows) throws IOException, InvalidFormatException
+    private class AsyncXlsxIterator implements CloseableIterator<List<Object>>
     {
-        OPCPackage xlsxPackage = null;
-        try
+        public static final String THREAD_NAME_PREFIX = "Async XLSX parser: ";
+        private final BlockingQueue<List<Object>> _queue;
+        private final Thread _asyncThread;
+        private OPCPackage _xlsxPackage;
+        private volatile RuntimeException _exception;
+        private volatile boolean _complete = false;
+
+        private List<Object> _nextRow;
+
+        public AsyncXlsxIterator() throws IOException, InvalidFormatException
         {
-            List<List<Object>> collect = new LinkedList<>();
-            xlsxPackage = OPCPackage.open(_file.getPath(), PackageAccess.READ);
-            ExcelFactory.WorkbookMetadata md = getWorkbookMetadata(xlsxPackage);
-            String[] strings = md.getSharedStrings();
-            XSSFReader xssfReader = new XSSFReader(xlsxPackage);
-            StylesTable styles = xssfReader.getStylesTable();
-            XSSFReader.SheetIterator iter = (XSSFReader.SheetIterator) xssfReader.getSheetsData();
-            int sheetIndex = -1;
-            while (iter.hasNext())
+            _queue = new ArrayBlockingQueue<>(4);
+            _asyncThread = startAsyncParsing();
+        }
+
+        private Thread startAsyncParsing() throws IOException, InvalidFormatException
+        {
+            try
             {
-                InputStream stream = iter.next();
-                sheetIndex++;
-                // DO NOT CALL getSheet() for XLSX!
-                if (sheetMatches(sheetIndex, iter.getSheetName()))
+                _xlsxPackage = OPCPackage.open(_file.getPath(), PackageAccess.READ);
+                ExcelFactory.WorkbookMetadata md = getWorkbookMetadata(_xlsxPackage);
+                String[] strings = md.getSharedStrings();
+                XSSFReader xssfReader = new XSSFReader(_xlsxPackage);
+                StylesTable styles = xssfReader.getStylesTable();
+                XSSFReader.SheetIterator iter = (XSSFReader.SheetIterator) xssfReader.getSheetsData();
+
+                Runnable runnable = () -> {
+                    int sheetIndex = -1;
+                    while (iter.hasNext())
+                    {
+                        InputStream stream = iter.next();
+                        sheetIndex++;
+                        // DO NOT CALL getSheet() for XLSX since it loads all rows into memory!
+                        if (sheetMatches(sheetIndex, iter.getSheetName()))
+                        {
+                            InputSource sheetSource = new InputSource(stream);
+                            SAXParserFactory saxFactory = SAXParserFactory.newInstance();
+                            try
+                            {
+                                SAXParser saxParser = saxFactory.newSAXParser();
+                                XMLReader sheetParser = saxParser.getXMLReader();
+                                SheetHandler handler = new SheetHandler(styles, strings, _queue, getIsStartDate1904());
+                                sheetParser.setContentHandler(handler);
+                                sheetParser.parse(sheetSource);
+                            }
+                            catch (StopLoadingRows slr)
+                            {
+                                /* no problem */
+                            }
+                            catch (Exception x)
+                            {
+                                _exception = new RuntimeException(x);
+                            }
+                            break;
+                        }
+                    }
+                    _complete = true;
+                    synchronized (_queue)
+                    {
+                        _queue.notify();
+                    }
+                };
+
+                Thread parsingThread = new Thread(runnable, THREAD_NAME_PREFIX + _file.getName());
+                parsingThread.start();
+                return parsingThread;
+            }
+            catch (POIXMLException x)
+            {
+                throw new InvalidFormatException("File is not a valid xlsx file: " + _file.getName() + (x.getMessage() == null ? "" : x.getMessage()));
+            }
+            catch (InvalidOperationException | UnsupportedFileFormatException x)
+            {
+                throw new InvalidFormatException("File is not an xlsx file: " + _file.getPath());
+            }
+            catch (InvalidFormatException | IOException x)
+            {
+                throw x;
+            }
+            catch (Exception x)
+            {
+                throw new IOException(x);
+            }
+        }
+
+        @Override
+        public void close()
+        {
+            if (_xlsxPackage != null)
+            {
+                _xlsxPackage.revert();
+            }
+            _asyncThread.interrupt();
+            try
+            {
+                _asyncThread.join(TimeUnit.SECONDS.toMillis(5));
+            }
+            catch (InterruptedException ignored) {}
+            if (_asyncThread.isAlive())
+            {
+                throw new IllegalStateException("Async thread still alive");
+            }
+        }
+
+        @Override
+        public boolean hasNext()
+        {
+            if (_nextRow != null)
+            {
+                return true;
+            }
+
+            do
+            {
+                try
                 {
-                    InputSource sheetSource = new InputSource(stream);
-                    SAXParserFactory saxFactory = SAXParserFactory.newInstance();
-                    SAXParser saxParser = saxFactory.newSAXParser();
-                    XMLReader sheetParser = saxParser.getXMLReader();
-                    SheetHandler handler = new SheetHandler(styles, strings, maxRows, collect, getIsStartDate1904());
-                    sheetParser.setContentHandler(handler);
-                    try
-                    {
-                        sheetParser.parse(sheetSource);
-                    }
-                    catch (StopLoadingRows slr)
-                    {
-                        /* no problem */
-                    }
-                    break;
+                    _nextRow = _queue.poll(1, TimeUnit.MILLISECONDS);
+                }
+                catch (InterruptedException ignored)
+                {
+
                 }
             }
-            List<List<?>> ret = new ArrayList<>(collect.size());
-            ret.addAll(collect);
-            return ret;
+            while (!_complete && _nextRow == null && _exception == null);
+
+            if (_exception != null)
+            {
+                throw _exception;
+            }
+
+            return _nextRow != null;
         }
-        catch (POIXMLException x)
+
+        @Override
+        public List<Object> next()
         {
-            throw new InvalidFormatException("File is not a valid xlsx file: " + _file.getName() + (x.getMessage() == null ? "" : x.getMessage()));
-        }
-        catch (InvalidOperationException | UnsupportedFileFormatException x)
-        {
-            throw new InvalidFormatException("File is not an xlsx file: " + _file.getPath());
-        }
-        catch (InvalidFormatException | IOException x)
-        {
-            throw x;
-        }
-        catch (Exception x)
-        {
-            throw new IOException(x);
-        }
-        finally
-        {
-            if (null != xlsxPackage)
-                xlsxPackage.revert();
+            if (_nextRow == null)
+            {
+                throw new NoSuchElementException();
+            }
+            var result = _nextRow;
+            _nextRow = null;
+            return result;
         }
     }
 
-
-    private class XlsxIterator extends DataLoaderIterator
+    private class XlsxIterator extends AbstractDataLoaderIterator
     {
-        final List<List<?>> grid;
-
+        private final AsyncXlsxIterator _asyncIter;
         XlsxIterator() throws IOException, InvalidFormatException
         {
             super(_skipLines == -1 ? 1 : _skipLines);
-            grid = getParsedGridXLSX();
+            _asyncIter = new AsyncXlsxIterator();
+
+            int skipLines = _skipLines == -1 ? 1 : _skipLines;
+
+            for (int i = 0; i < skipLines && _asyncIter.hasNext(); i++)
+            {
+                _asyncIter.next();
+            }
+        }
+
+        @Override
+        public void close() throws IOException
+        {
+            super.close();
+            _asyncIter.close();
         }
 
         @Override
         protected Object[] readFields() throws IOException
         {
-            if (lineNum() >= grid.size())
+            if (!_asyncIter.hasNext())
+            {
                 return null;
+            }
 
             ColumnDescriptor[] allColumns = getColumns();
-            List<?> row = grid.get(lineNum());
+            List<Object> row = _asyncIter.next();
             Object[] fields = new Object[_activeColumns.length];
             for (int columnIndex = 0, fieldIndex = 0; columnIndex < row.size() && columnIndex < allColumns.length; columnIndex++)
             {
@@ -579,7 +678,7 @@ public class ExcelLoader extends DataLoader
     }
 
 
-    private class ExcelIterator extends DataLoader.DataLoaderIterator
+    private class ExcelIterator extends AbstractDataLoaderIterator
     {
         private final Sheet sheet;
         private final int numRows;
@@ -641,12 +740,6 @@ public class ExcelLoader extends DataLoader
             }
             return fields;
         }
-
-        @Override
-        public void close() throws IOException
-        {
-            super.close();
-        }
     }
 
 
@@ -693,6 +786,13 @@ public class ExcelLoader extends DataLoader
 
     public static class ExcelLoaderTestCase extends Assert
     {
+        String[] line0 = new String[] { "date", "scan", "time", "mz", "accurateMZ", "mass", "intensity", "charge", "chargeStates", "kl", "background", "median", "peaks", "scan\nFirst", "scanLast", "scanCount", "totalIntensity", "description" };
+        String[] line1Xlsx = new String[] { "2006-01-02 00:00:00", "96", "1543.3400999999999", "858.32460000000003", "false", "1714.6346000000001", "2029.6295", "2", "1", "0.19630893999999999", "26.471083", "12.982442000000001", "4", "92", "100", "9", "20248.761999999999", "description" };
+        String[] line1Xls = new String[] { "2006-01-02 00:00", "96.0", "1543.3401", "858.3246", "false", "1714.6346", "2029.6295", "2.0", "1.0", "0.19630894", "26.471083", "12.982442", "4.0", "92.0", "100.0", "9.0", "20248.762", "description"
+        };
+        String[] line7Xlsx = new String[] { "2006-01-02 00:00:00", "249", "1724.5541000000001", "773.42174999999997", "false", "1544.829", "5.9057474000000001", "2", "1", "0.51059710000000003", "0.67020833000000002", "1.4744527000000001", "2", "246", "250", "5", "29.369174999999998" };
+        String[] line7Xls = new String[] { "2006-01-02 00:00", "249.0", "1724.5541", "773.42175", "false", "1544.829", "5.9057474", "2.0", "1.0", "0.5105971", "0.67020833", "1.4744527", "2.0", "246.0", "250.0", "5.0", "29.369175" };
+
         @Test
         public void detect() throws Exception
         {
@@ -716,6 +816,7 @@ public class ExcelLoader extends DataLoader
             }
 
             assertFalse(isExcel(new File(excelSamplesRoot, "notreallyexcel.xls")));
+            assertFalse(isExcel(new File(excelSamplesRoot, "notreallyexcel.xlsx")));
             assertFalse(isExcel(new File(excelSamplesRoot, "fruits.tsv")));
         }
 
@@ -727,6 +828,121 @@ public class ExcelLoader extends DataLoader
                 checkColumnMetadata(loader);
                 checkData(loader);
             }
+        }
+
+        @Test
+        public void testColumnTypesXlsx() throws Exception
+        {
+            try (ExcelLoader loader = getExcelLoader("ExcelLoaderTest.xlsx"))
+            {
+                checkColumnMetadata(loader);
+                checkData(loader);
+            }
+            ensureAsyncThreads(0);
+        }
+
+        @Test
+        public void testBogusXlsx() throws Exception
+        {
+            try
+            {
+                try (ExcelLoader loader = getExcelLoader("notreallyexcel.xlsx"))
+                {
+                    loader.iterator();
+                }
+                fail();
+            }
+            catch (RuntimeException ignored)
+            {
+
+            }
+            ensureAsyncThreads(0);
+        }
+
+        @Test
+        public void testExtraHasNext() throws Exception
+        {
+            for (String file : Arrays.asList("ExcelLoaderTest.xlsx", "ExcelLoaderTest.xls"))
+            {
+                try (ExcelLoader loader = getExcelLoader(file))
+                {
+                    try (var iter = loader.iterator())
+                    {
+                        int rowCount = 0;
+                        while (iter.hasNext())
+                        {
+                            assertTrue(iter.hasNext());
+                            iter.next();
+                            rowCount++;
+                        }
+                        assertEquals("Wrong row count for " + file, 7, rowCount);
+                    }
+                }
+                ensureAsyncThreads(0);
+            }
+        }
+
+        @Test
+        public void testPartialXlsxParsing() throws Exception
+        {
+            try (ExcelLoader loader = getExcelLoader("ExcelLoaderTest.xlsx"))
+            {
+                try (var iter = loader.iterator())
+                {
+                    assertTrue(iter.hasNext());
+                    ensureAsyncThreads(1);
+                    Map<String, Object> row = iter.next();
+                    checkFirstRow(row);
+                }
+            }
+            ensureAsyncThreads(0);
+        }
+
+        @Test
+        public void testFirstNLinesXlsx() throws Exception
+        {
+            try (ExcelLoader loader = getExcelLoader("ExcelLoaderTest.xlsx"))
+            {
+                verifyLines(loader, line1Xlsx, line7Xlsx);
+            }
+            ensureAsyncThreads(0);
+        }
+
+        private void ensureAsyncThreads(int expected)
+        {
+            int actual = 0;
+            for (Map.Entry<Thread, StackTraceElement[]> threadEntry : Thread.getAllStackTraces().entrySet())
+            {
+                Thread t = threadEntry.getKey();
+                if (t.isAlive() && t.getName().startsWith(AsyncXlsxIterator.THREAD_NAME_PREFIX))
+                {
+                    actual++;
+                }
+            }
+            assertEquals("Unexpected number of async parsing threads", expected, actual);
+        }
+
+        @Test
+        public void testFirstNLinesXls() throws Exception
+        {
+            try (ExcelLoader loader = getExcelLoader("ExcelLoaderTest.xls"))
+            {
+                verifyLines(loader, line1Xls, line7Xls);
+            }
+        }
+
+        private void verifyLines(ExcelLoader loader, String[] expectedLine1, String[] expectedLine7) throws IOException
+        {
+            String[][] lines = loader.getFirstNLines(5);
+            assertEquals(5, lines.length);
+            assertArrayEquals(line0, lines[0]);
+            assertArrayEquals(expectedLine1, lines[1]);
+
+            lines = loader.getFirstNLines(20);
+            assertEquals(8, lines.length);
+            assertArrayEquals(line0, lines[0]);
+            assertArrayEquals(expectedLine1, lines[1]);
+            assertArrayEquals(expectedLine7, lines[7]);
         }
 
         private ExcelLoader getExcelLoader(String filename) throws IOException
@@ -768,9 +984,14 @@ public class ExcelLoader extends DataLoader
             }
 
             Map<String, Object> firstRow = data.get(0);
+            checkFirstRow(firstRow);
+        }
+
+        private static void checkFirstRow(Map<String, Object> firstRow)
+        {
             assertEquals(96, firstRow.get("scan"));
             assertEquals(92, firstRow.get("scan First"));
-            assertFalse((boolean)firstRow.get("accurateMZ"));
+            assertFalse((boolean) firstRow.get("accurateMZ"));
             assertEquals("description", firstRow.get("description"));
         }
 
@@ -865,17 +1086,12 @@ public class ExcelLoader extends DataLoader
         /**
          * Destination for data
          */
-        //private final Collection<List<Object>> output;
-        private final Consumer<List<Object>> output;
+        private final BlockingQueue<List<Object>> output;
         private long output_rowcount = 0;
 
-        private ArrayList<Object> currentRow;
+        private List<Object> currentRow;
         private int widestRow = 1;
 
-        /**
-         * Number of columns to read starting with leftmost
-         */
-        private final int maxRowCount;
 
         // Set when V start element is seen
         private boolean vIsOpen;
@@ -903,21 +1119,20 @@ public class ExcelLoader extends DataLoader
          * @param target  Sink for output
          * @param isStartDate1904 Indicates which date system is in use for this sheet
          */
-        SheetHandler(
+            SheetHandler(
                 StylesTable styles,
                 String[] strings,
-                int maxRows,
-                Collection<List<Object>> target, boolean isStartDate1904)
+                BlockingQueue<List<Object>> target,
+                boolean isStartDate1904)
         {
             this.stylesTable = styles;
             this.sharedStringsTable = strings;
             this.value = new StringBuilder();
             this.nextDataType = xssfDataType.NUMBER;
-            this.output = target::add;
+            this.output = target;
             this.formatter = new DataFormatter();
             this.useFormats = false;
             this.isStartDate1904 = isStartDate1904;
-            this.maxRowCount = maxRows >= 0 ? maxRows : Integer.MAX_VALUE;
         }
 
         @SuppressWarnings("unused")
@@ -1110,12 +1325,17 @@ public class ExcelLoader extends DataLoader
             else if ("row".equals(name))
             {
                 // We're onto a new row
-                widestRow = Math.max(widestRow,currentRow.size());
-                output.accept(currentRow);
+                widestRow = Math.max(widestRow, currentRow.size());
+                try
+                {
+                    output.put(currentRow);
+                }
+                catch (InterruptedException e)
+                {
+                    throw new StopLoadingRows();
+                }
                 output_rowcount++;
                 currentRow = null;
-                if (output_rowcount >= this.maxRowCount)
-                    throw new StopLoadingRows();
             }
 
             debugPrint("</" + name + ">");

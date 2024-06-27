@@ -25,6 +25,7 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.iterator.ValidatingDataRowIterator;
 import org.labkey.api.qc.TransformResult;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
@@ -36,6 +37,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import static java.util.Collections.emptyMap;
 
@@ -89,7 +91,7 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
     Map<String, File> getUploadedData() throws ExperimentException;
 
     @Nullable
-    default List<Map<String, Object>> getRawData()
+    default Supplier<ValidatingDataRowIterator> getRawData()
     {
         return null;
     }
@@ -231,7 +233,7 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
         protected Map<?, String> _outputMaterials;
         protected boolean _allowCrossRunFileInputs;
         protected boolean _allowLookupByAlternateKey = true;
-        protected List<Map<String, Object>> _rawData;
+        protected Supplier<ValidatingDataRowIterator> _rawData;
         protected Map<String, AssayPlateMetadataService.MetadataLayer> _rawPlateMetadata;
         protected Map<String, File> _uploadedData;
         protected String _jobDescription;
@@ -376,7 +378,7 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
          * Result data to import.
          * One of either uploadedData or rawData can be used, not both.
          */
-        public FACTORY setRawData(List<Map<String, Object>> rawData)
+        public FACTORY setRawData(Supplier<ValidatingDataRowIterator> rawData)
         {
             _rawData = rawData;
             return self();

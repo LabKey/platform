@@ -16,8 +16,9 @@
 package org.labkey.visualization;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -31,10 +32,8 @@ import org.junit.Test;
 import org.labkey.api.action.Action;
 import org.labkey.api.action.ActionType;
 import org.labkey.api.action.ApiJsonForm;
-import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiQueryResponse;
 import org.labkey.api.action.ApiResponse;
-import org.labkey.api.action.ApiResponseWriter;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.ExtendedApiQueryResponse;
@@ -119,8 +118,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -131,10 +128,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-/*
- * User: brittp
- * Date: Sep 13, 2010 10:02:53 AM
- */
 public class VisualizationController extends SpringActionController
 {
     public static final String NAME = "visualization";
@@ -1114,10 +1107,10 @@ public class VisualizationController extends SpringActionController
             if (_currentReport.getDescriptor().getReportId() != null)
                 vizDescriptor.setReportId(_currentReport.getDescriptor().getReportId());
             vizDescriptor.setOwner(form.isShared() ? null : getUser().getUserId());
-            int reportId = ReportService.get().saveReport(getViewContext(), vizDescriptor.getReportKey(), _currentReport);
+            ReportIdentifier reportIdentifier = ReportService.get().saveReportEx(getViewContext(), vizDescriptor.getReportKey(), _currentReport);
 
             // Re-select the saved report to make sure it has an entityId
-            Report report = ReportService.get().getReport(getContainer(), reportId);
+            Report report = ReportService.get().getReport(getContainer(), reportIdentifier.getRowId());
 
             if (report instanceof SvgThumbnailGenerator)
             {
@@ -1125,7 +1118,7 @@ public class VisualizationController extends SpringActionController
             }
 
             ApiSimpleResponse resp = new ApiSimpleResponse();
-            resp.put("visualizationId", reportId);
+            resp.put("visualizationId", reportIdentifier.getRowId());
             resp.put("name", _currentReport.getDescriptor().getReportName());
             return resp;
         }
@@ -1267,9 +1260,9 @@ public class VisualizationController extends SpringActionController
             String key = ReportUtil.getReportKey(form.getSchemaName(), form.getQueryName());
             Report report = getGenericReport(form);
 
-            int rowId = ReportService.get().saveReport(getViewContext(), key, report);
-            ReportIdentifier reportId = ReportService.get().getReportIdentifier(String.valueOf(rowId), getUser(), getContainer());
-            report = ReportService.get().getReport(getContainer(), rowId);
+            ReportIdentifier reportIdentifier = ReportService.get().saveReportEx(getViewContext(), key, report);
+            ReportIdentifier reportId = ReportService.get().getReportIdentifier(String.valueOf(reportIdentifier.getRowId()), getUser(), getContainer());
+            report = ReportService.get().getReport(getContainer(), reportIdentifier.getRowId());
             saveSVGThumbnail((SvgThumbnailGenerator) report, form.getSvg(), form.getThumbnailType());
             response.put("success", true);
             response.put("reportId", reportId);
