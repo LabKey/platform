@@ -6204,8 +6204,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         // Delete sequences (genId and the unique counters)
         DbSequenceManager.deleteLike(c, ExpDataClassImpl.SEQUENCE_PREFIX, dataClass.getRowId(), getExpSchema().getSqlDialect());
 
-        SchemaKey expDataSchema = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, ExpSchema.NestedSchemas.data.toString());
-        QueryService.get().fireQueryDeleted(user, c, null, expDataSchema, singleton(dataClass.getName()));
+        QueryService.get().fireQueryDeleted(user, c, null, ExpSchema.SCHEMA_EXP_DATA, singleton(dataClass.getName()));
 
         // remove DataClass from search index
         SearchService ss = SearchService.get();
