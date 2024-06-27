@@ -1702,9 +1702,9 @@ public class StudyManager
         _participantCache.remove(participant.getContainer());
     }
 
-    public List<AssaySpecimenConfigImpl> getAssaySpecimenConfigs(Container container, String sortCol)
+    public List<AssaySpecimenConfigImpl> getAssaySpecimenConfigs(Container container)
     {
-        return _assaySpecimenHelper.getList(container, sortCol);
+        return _assaySpecimenHelper.getList(container, "RowId");
     }
 
     public List<VisitImpl> getVisitsForAssaySchedule(Container container)
@@ -5075,7 +5075,7 @@ public class StudyManager
             List<VisitImpl> visits = _manager.getVisitsForAssaySchedule(_container);
             assertEquals("Unexpected assay schedule visit count", 2, visits.size());
 
-            for (AssaySpecimenConfigImpl assay : _manager.getAssaySpecimenConfigs(_container, "RowId"))
+            for (AssaySpecimenConfigImpl assay : _manager.getAssaySpecimenConfigs(_container))
             {
                 List<Integer> visitIds = _manager.getAssaySpecimenVisitIds(_container, assay);
                 for (VisitImpl visit : _visits)
@@ -5091,7 +5091,7 @@ public class StudyManager
 
         private void verifyAssayConfigurations()
         {
-            List<AssaySpecimenConfigImpl> assays = _manager.getAssaySpecimenConfigs(_container, "RowId");
+            List<AssaySpecimenConfigImpl> assays = _manager.getAssaySpecimenConfigs(_container);
             assertEquals("Unexpected assay configuration count", 2, assays.size());
 
             for (AssaySpecimenConfigImpl assay : assays)

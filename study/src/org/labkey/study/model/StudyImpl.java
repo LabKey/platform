@@ -309,9 +309,9 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
             // consider the XML study design non-empty if we have an immunogen, adjuvant, immunization timepoint, etc.
             GWTStudyDefinition def = manager.getGWTStudyDefinition(user, c, info);
             return def != null && (
-                    def.getImmunogens().size() > 0 || def.getAdjuvants().size() > 0 ||
-                    def.getImmunizationSchedule().getTimepoints().size() > 0 ||
-                    def.getAssaySchedule().getAssays().size() > 0 || def.getAssaySchedule().getTimepoints().size() > 0
+                    !def.getImmunogens().isEmpty() || !def.getAdjuvants().isEmpty() ||
+                    !def.getImmunizationSchedule().getTimepoints().isEmpty() ||
+                    !def.getAssaySchedule().getAssays().isEmpty() || !def.getAssaySchedule().getTimepoints().isEmpty()
                 );
         }
 
@@ -319,9 +319,9 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     }
 
     @Override
-    public List<AssaySpecimenConfigImpl> getAssaySpecimenConfigs(String sortCol)
+    public List<AssaySpecimenConfigImpl> getAssaySpecimenConfigs()
     {
-        return StudyManager.getInstance().getAssaySpecimenConfigs(getContainer(), sortCol);
+        return StudyManager.getInstance().getAssaySpecimenConfigs(getContainer());
     }
 
     @Override

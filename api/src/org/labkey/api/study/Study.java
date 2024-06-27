@@ -59,7 +59,7 @@ public interface Study extends StudyEntity
 
     boolean hasGWTStudyDesign(Container c, User user);
 
-    List<? extends AssaySpecimenConfig> getAssaySpecimenConfigs(String sortCol);
+    List<? extends AssaySpecimenConfig> getAssaySpecimenConfigs();
 
     List<? extends Visit> getVisitsForAssaySchedule();
 

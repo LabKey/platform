@@ -171,7 +171,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import static org.labkey.api.query.QueryService.AuditAction.DELETE;
 import static org.labkey.api.query.QueryService.AuditAction.TRUNCATE;
 
-public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements Cloneable, Dataset, InitializingBean
+public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> implements Cloneable, Dataset, InitializingBean
 {
     // DatasetQueryUpdateService
 

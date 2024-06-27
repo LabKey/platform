@@ -32,7 +32,7 @@ import org.labkey.api.security.User;
 import java.util.Collections;
 import java.util.List;
 
-public class QueryHelper<K extends StudyCachable>
+public class QueryHelper<K extends StudyCachable<K>>
 {
     private final Class<K> _objectClass;
     private final TableInfoGetter _tableInfoGetter;
@@ -85,7 +85,7 @@ public class QueryHelper<K extends StudyCachable>
             List<K> objs = new TableSelector(getTableInfo(), filter, sort).getArrayList(_objectClass);
             // Make both the objects and the list itself immutable so that we don't end up with a corrupted
             // version in the cache
-            for (StudyCachable obj : objs)
+            for (StudyCachable<K> obj : objs)
                 obj.lock();
             return Collections.unmodifiableList(objs);
         };

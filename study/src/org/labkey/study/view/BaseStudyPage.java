@@ -31,6 +31,8 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.TreatmentImpl;
 import org.labkey.study.model.VisitImpl;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -71,7 +73,7 @@ public abstract class BaseStudyPage extends JspBase
 
     protected List<AssaySpecimenConfigImpl> getAssaySpecimenConfigs()
     {
-        return getStudy().getAssaySpecimenConfigs("AssayName");
+        return getStudy().getAssaySpecimenConfigs();
     }
 
     protected List<ProductImpl> getStudyProducts(User user, String role)
