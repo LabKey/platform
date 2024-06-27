@@ -96,7 +96,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
     public Plate getPlate(Container container, ExpProtocol protocol)
     {
         ObjectProperty prop = protocol.getObjectProperties().get(protocol.getLSID() + PLATE_TEMPLATE_SUFFIX);
-        return prop != null ? PlateService.get().getPlate(protocol.getContainer(), Lsid.parse(prop.getStringValue())) : null;
+        return prop != null && prop.getStringValue() != null ? PlateService.get().getPlate(protocol.getContainer(), Lsid.parse(prop.getStringValue())) : null;
     }
 
     public boolean isPlateBased()
@@ -121,7 +121,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
     }
 
     @Override
-    public AssayRunCreator getRunCreator()
+    public AssayRunCreator<?> getRunCreator()
     {
         return new PlateBasedRunCreator(this);
     }

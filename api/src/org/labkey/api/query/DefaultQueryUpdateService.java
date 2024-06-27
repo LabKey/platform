@@ -34,6 +34,8 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.ColumnValidators;
+import org.labkey.api.dataiterator.DataIteratorBuilder;
+import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.OntologyObject;
@@ -44,6 +46,9 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.ValidatorContext;
+import org.labkey.api.iterator.ValidatingDataRowIterator;
+import org.labkey.api.reader.ColumnDescriptor;
+import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -54,6 +59,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.UnauthorizedException;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -64,6 +70,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
 /**
@@ -327,8 +334,9 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                 values.put(pd.getPropertyURI(), value);
             }
 
-            List<String> lsids = OntologyManager.insertTabDelimited(getDomainObjContainer(c), user, null, new ImportHelper(), pds, Collections.singletonList(values), true);
-            String lsid = lsids.get(0);
+            LsidCollector collector = new LsidCollector();
+            OntologyManager.insertTabDelimited(getDomainObjContainer(c), user, null, new ImportHelper(), pds, ValidatingDataRowIterator.of(Collections.singletonList(values).iterator()), true, collector);
+            String lsid = collector.getLsid();
 
             // Add the new lsid to the row map.
             row.put(objectUriCol.getName(), lsid);
@@ -529,10 +537,12 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
 
             // Note: copy lsid into newValues map so it will be found by the ImportHelper.beforeImportObject()
             newValues.put(objectUriCol.getName(), lsid);
-            List<String> lsids = OntologyManager.insertTabDelimited(getDomainObjContainer(c), user, null, new ImportHelper(), tableProperties, Collections.singletonList(newValues), true);
+
+            LsidCollector collector = new LsidCollector();
+            OntologyManager.insertTabDelimited(getDomainObjContainer(c), user, null, new ImportHelper(), tableProperties, ValidatingDataRowIterator.of(Collections.singletonList(newValues).iterator()), true, collector);
 
             // Update the lsid in the row: the lsid may have not existed in the row before the update.
-            lsid = lsids.get(0);
+            lsid = collector.getLsid();
             row.put(objectUriCol.getName(), lsid);
         }
 
@@ -566,6 +576,30 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         }
 
         return Table.update(user, getDbTable(), row, keys); // Cache-invalidation handled in caller (TreatmentManager.saveAssaySpecimen())
+    }
+
+    private static class LsidCollector implements OntologyManager.RowCallback
+    {
+        private String _lsid;
+
+        @Override
+        public void rowProcessed(Map<String, Object> row, String lsid)
+        {
+            if (_lsid != null)
+            {
+                throw new IllegalStateException("Only expected a single LSID");
+            }
+            _lsid = lsid;
+        }
+
+        public String getLsid()
+        {
+            if (_lsid == null)
+            {
+                throw new IllegalStateException("No LSID returned");
+            }
+            return _lsid;
+        }
     }
 
     // Get value from row map where the keys are column names.
@@ -803,5 +837,24 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         if (dp != null)
             return isAttachmentProperty(dp);
         return false;
+    }
+
+    protected void configureCrossFolderImport(DataIteratorBuilder rows, DataIteratorContext context) throws IOException
+    {
+        if (!context.getInsertOption().updateOnly && context.isCrossFolderImport() && rows instanceof DataLoader dataLoader)
+        {
+            boolean hasContainerField = false;
+            for (ColumnDescriptor columnDescriptor : dataLoader.getColumns())
+            {
+                String fieldName = columnDescriptor.getColumnName();
+                if (fieldName.equalsIgnoreCase("Container") || fieldName.equalsIgnoreCase("Folder"))
+                {
+                    hasContainerField = true;
+                    break;
+                }
+            }
+            if (!hasContainerField)
+                context.setCrossFolderImport(false);
+        }
     }
 }

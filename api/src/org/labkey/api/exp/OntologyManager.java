@@ -43,6 +43,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.SystemProperty;
 import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.gwt.client.ui.domain.CancellationException;
+import org.labkey.api.iterator.ValidatingDataRowIterator;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.QueryService;
@@ -74,6 +75,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -262,24 +264,92 @@ public class OntologyManager
     public static final int MAX_PROPS_IN_BATCH = 1000;  // Keep this reasonably small so progress indicator is updated regularly
     public static final int UPDATE_STATS_BATCH_COUNT = 1000;
 
-    /**
-     * @return LSIDs/ObjectURIs of inserted objects
-     */
-    public static List<String> insertTabDelimited(Container c, User user, @Nullable Integer ownerObjectId, ImportHelper helper, Domain domain, List<Map<String, Object>> rows, boolean ensureObjects) throws SQLException, ValidationException
+    public static void insertTabDelimited(Container c,
+                                          User user,
+                                          @Nullable Integer ownerObjectId,
+                                          ImportHelper helper,
+                                          Domain domain,
+                                          ValidatingDataRowIterator rows,
+                                          boolean ensureObjects,
+                                          @Nullable RowCallback rowCallback)
+            throws SQLException, ValidationException
     {
         List<PropertyDescriptor> properties = new ArrayList<>(domain.getProperties().size());
         for (DomainProperty prop : domain.getProperties())
         {
             properties.add(prop.getPropertyDescriptor());
         }
-        return insertTabDelimited(c, user, ownerObjectId, helper, properties, rows, ensureObjects);
+        insertTabDelimited(c, user, ownerObjectId, helper, properties, rows, ensureObjects, rowCallback);
     }
 
-    /**
-     * @return LSIDs/ObjectURIs of inserted objects
-     */
-    public static List<String> insertTabDelimited(Container c, User user, @Nullable Integer ownerObjectId, ImportHelper helper, List<PropertyDescriptor> descriptors, List<Map<String, Object>> rows, boolean ensureObjects) throws SQLException, ValidationException
+    public static void insertTabDelimited(Container c,
+                                          User user,
+                                          @Nullable Integer ownerObjectId,
+                                          ImportHelper helper,
+                                          List<PropertyDescriptor> descriptors,
+                                          ValidatingDataRowIterator rows,
+                                          boolean ensureObjects) throws SQLException, ValidationException
     {
+        insertTabDelimited(c, user, ownerObjectId, helper, descriptors, rows, ensureObjects, NO_OP_ROW_CALLBACK);
+    }
+
+    public interface RowCallback
+    {
+        void rowProcessed(Map<String, Object> row, String lsid) throws ValidationException;
+
+        default void complete() throws ValidationException
+        {}
+
+        default RowCallback chain(RowCallback other)
+        {
+            if (other == NO_OP_ROW_CALLBACK)
+            {
+                return this;
+            }
+            if (this == NO_OP_ROW_CALLBACK)
+            {
+                return other;
+            }
+
+            RowCallback original = this;
+
+            return new RowCallback()
+            {
+                @Override
+                public void rowProcessed(Map<String, Object> row, String lsid) throws ValidationException
+                {
+                    original.rowProcessed(row, lsid);
+                    other.rowProcessed(row, lsid);
+                }
+
+                @Override
+                public void complete() throws ValidationException
+                {
+                    original.complete();
+                    other.complete();
+                }
+            };
+        }
+    }
+
+    public static final RowCallback NO_OP_ROW_CALLBACK = new RowCallback()
+    {
+        @Override
+        public void rowProcessed(Map<String, Object> row, String lsid) {}
+    };
+
+    public static void insertTabDelimited(Container c,
+                                          User user,
+                                          @Nullable Integer ownerObjectId,
+                                          ImportHelper helper,
+                                          List<PropertyDescriptor> descriptors,
+                                          ValidatingDataRowIterator rows,
+                                          boolean ensureObjects,
+                                          @Nullable RowCallback rowCallback)
+            throws SQLException, ValidationException
+    {
+        rowCallback = rowCallback == null ? NO_OP_ROW_CALLBACK : rowCallback;
+
         CPUTimer total = new CPUTimer("insertTabDelimited");
         CPUTimer before = new CPUTimer("beforeImport");
         CPUTimer ensure = new CPUTimer("ensureObject");
@@ -287,7 +357,7 @@ public class OntologyManager
 
         assert total.start();
         assert getExpSchema().getScope().isTransactionActive();
-        List<String> resultingLsids = new ArrayList<>(rows.size());
+
         // Make sure we have enough rows to handle the overflow of the current row so we don't have to resize the list
         List<PropertyRow> propsToInsert = new ArrayList<>(MAX_PROPS_IN_BATCH + descriptors.size());
 
@@ -314,15 +384,20 @@ public class OntologyManager
             int rowCount = 0;
             int batchCount = 0;
 
-            for (Map<String, Object> map : rows)
+            while (rows.hasNext())
             {
+                Map<String, Object> map = rows.next();
                 // TODO: hack -- should exit and return cancellation status instead of throwing
                 if (Thread.currentThread().isInterrupted())
                     throw new CancellationException();
 
                 assert before.start();
                 String lsid = helper.beforeImportObject(map);
-                resultingLsids.add(lsid);
+                if (lsid == null)
+                {
+                    throw new IllegalStateException("No LSID available");
+                }
+
                 assert before.stop();
 
                 assert ensure.start();
@@ -382,6 +457,8 @@ public class OntologyManager
                         helper.updateStatistics(rowCount);
                     }
                 }
+
+                rowCallback.rowProcessed(map, lsid);
             }
 
             if (!errors.isEmpty())
@@ -390,6 +467,7 @@ public class OntologyManager
             assert insert.start();
             insertPropertiesBulk(c, propsToInsert, false);
             helper.afterBatchInsert(rowCount);
+            rowCallback.complete();
             assert insert.stop();
         }
         catch (SQLException x)
@@ -406,17 +484,15 @@ public class OntologyManager
         _log.debug("\t" + before);
         _log.debug("\t" + ensure);
         _log.debug("\t" + insert);
-
-        return resultingLsids;
     }
 
-    public static List<Map<String, Object>> insertTabDelimited(TableInfo tableInsert, Container c, User user,
+    public static void insertTabDelimited(TableInfo tableInsert, Container c, User user,
                                                                UpdateableTableImportHelper helper,
-                                                               List<Map<String, Object>> rows,
+                                                               ValidatingDataRowIterator rows,
                                                                Logger logger)
             throws SQLException, ValidationException
     {
-        return insertTabDelimited(tableInsert, c, user, helper, rows, true, logger);
+        insertTabDelimited(tableInsert, c, user, helper, rows, true, logger, null);
     }
 
     /**
@@ -432,55 +508,69 @@ public class OntologyManager
      * <p>
      * Name->Value is preferred, we are using TableInfo after all.
      */
-    public static List<Map<String, Object>> insertTabDelimited(TableInfo tableInsert, Container c, User user,
-                                                  UpdateableTableImportHelper helper,
-                                                  List<Map<String, Object>> rows,
-                                                  boolean autoFillDefaultColumns,
-                                                  Logger logger)
+    public static void insertTabDelimited(TableInfo tableInsert,
+                                          Container c,
+                                          User user,
+                                          UpdateableTableImportHelper helper,
+                                          ValidatingDataRowIterator rows,
+                                          boolean autoFillDefaultColumns,
+                                          Logger logger,
+                                          RowCallback rowCallback)
             throws SQLException, ValidationException
     {
-        return saveTabDelimited(tableInsert, c, user, helper, rows, logger, true, autoFillDefaultColumns);
+        saveTabDelimited(tableInsert, c, user, helper, rows, logger, true, autoFillDefaultColumns, rowCallback);
     }
 
-    public static List<Map<String, Object>> updateTabDelimited(TableInfo tableInsert, Container c, User user,
-                                                               UpdateableTableImportHelper helper,
-                                                               List<Map<String, Object>> rows,
-                                                               Logger logger)
+    public static void updateTabDelimited(TableInfo tableInsert,
+                                          Container c,
+                                          User user,
+                                          UpdateableTableImportHelper helper,
+                                          ValidatingDataRowIterator rows,
+                                          Logger logger)
             throws SQLException, ValidationException
     {
-        return updateTabDelimited(tableInsert, c, user, helper, rows, true, logger);
+        updateTabDelimited(tableInsert, c, user, helper, rows, true, logger);
     }
 
-    public static List<Map<String, Object>> updateTabDelimited(TableInfo tableInsert, Container c, User user,
-                                                  UpdateableTableImportHelper helper,
-                                                  List<Map<String, Object>> rows,
-                                                  boolean autoFillDefaultColumns,
-                                                  Logger logger)
+    public static void updateTabDelimited(TableInfo tableInsert,
+                                          Container c,
+                                          User user,
+                                          UpdateableTableImportHelper helper,
+                                          ValidatingDataRowIterator rows,
+                                          boolean autoFillDefaultColumns,
+                                          Logger logger)
             throws SQLException, ValidationException
     {
-        return saveTabDelimited(tableInsert, c, user, helper, rows, logger, false, autoFillDefaultColumns);
+        saveTabDelimited(tableInsert, c, user, helper, rows, logger, false, autoFillDefaultColumns, NO_OP_ROW_CALLBACK);
     }
 
-    private static List<Map<String, Object>> saveTabDelimited(TableInfo table, Container c, User user,
-                                                 UpdateableTableImportHelper helper,
-                                                 List<Map<String, Object>> rows,
-                                                 Logger logger,
-                                                 boolean insert,
-                                                 boolean autoFillDefaultColumns)
+    private static void saveTabDelimited(TableInfo table,
+                                         Container c,
+                                         User user,
+                                         UpdateableTableImportHelper helper,
+                                         ValidatingDataRowIterator rows,
+                                         Logger logger,
+                                         boolean insert,
+                                         boolean autoFillDefaultColumns,
+                                         @Nullable RowCallback rowCallback)
             throws SQLException, ValidationException
     {
         if (!(table instanceof UpdateableTableInfo))
             throw new IllegalArgumentException();
 
-        if (rows.isEmpty())
+        if (!rows.hasNext())
         {
-            return Collections.emptyList();
+            return;
+        }
+
+        if (rowCallback == null)
+        {
+            rowCallback = NO_OP_ROW_CALLBACK;
         }
 
         DbScope scope = table.getSchema().getScope();
 
         assert scope.isTransactionActive();
-        List<Map<String, Object>> results = new ArrayList<>(rows.size());
 
         Domain d = table.getDomain();
         List<? extends DomainProperty> properties = null == d ? Collections.emptyList() : d.getProperties();
@@ -530,9 +620,9 @@ public class OntologyManager
 
             int rowCount = 0;
 
-            for (Map<String, Object> map : rows)
+            while (rows.hasNext())
             {
-                currentRow = new CaseInsensitiveHashMap<>(map);
+                currentRow = new CaseInsensitiveHashMap<>(rows.next());
 
                 // TODO: hack -- should exit and return cancellation status instead of throwing
                 if (Thread.currentThread().isInterrupted())
@@ -640,13 +730,20 @@ public class OntologyManager
                     int rowId = parameterMap.getRowId();
                     currentRow.put("rowId", rowId);
                 }
-                helper.afterImportObject(currentRow);
-                results.add(currentRow);
+                lsid = helper.afterImportObject(currentRow);
+                if (lsid == null)
+                {
+                    throw new IllegalStateException("No LSID available");
+                }
+                rowCallback.rowProcessed(currentRow, lsid);
                 rowCount++;
             }
 
+
             if (!errors.isEmpty())
                 throw new ValidationException(errors);
+
+            rowCallback.complete();
 
             helper.afterBatchInsert(rowCount);
             if (logger != null)
@@ -669,8 +766,6 @@ public class OntologyManager
             if (null != conn)
                 scope.releaseConnection(conn);
         }
-
-        return results;
     }
 
     // TODO: Consolidate with ColumnValidator
@@ -713,7 +808,7 @@ public class OntologyManager
         /**
          * may modify map
          *
-         * @return LSID for new or existing Object
+         * @return LSID for new or existing Object. Null indicates LSID is still unknown.
          */
         String beforeImportObject(Map<String, Object> map) throws SQLException;
 
@@ -726,9 +821,10 @@ public class OntologyManager
     public interface UpdateableTableImportHelper extends ImportHelper
     {
         /**
-         * may be used to process attachments, for auditing, etc etc
+         * may be used to process attachments, for auditing, etc
+         * @return the LSID of the inserted row
          */
-        void afterImportObject(Map<String, Object> map) throws SQLException;
+        String afterImportObject(Map<String, Object> map) throws SQLException;
 
         /**
          * may set parameters directly for columns that are not exposed by tableinfo
@@ -1119,7 +1215,7 @@ public class OntologyManager
                 String selectOwnerObjects = "SELECT O.ObjectId FROM " + getTinfoObject() + " O " +
                         " WHERE ObjectId IN " +
                         " (SELECT DISTINCT SUBO.OwnerObjectId FROM " + getTinfoObject() + " SUBO " +
-                        " WHERE SUBO.ObjectId IN ( " + sqlIN.toString() + " ) )";
+                        " WHERE SUBO.ObjectId IN ( " + sqlIN + " ) )";
 
                 ownerObjIds = new SqlSelector(getExpSchema(), selectOwnerObjects).getArray(Integer.class);
             }
@@ -1139,7 +1235,7 @@ public class OntologyManager
                 // now cleanup the object table entries from the list we made, but make sure they don't have
                 // other properties attached to them
                 String deleteObjSql = "DELETE FROM " + getTinfoObject() +
-                        " WHERE ObjectId IN ( " + sqlIN.toString() + " ) " +
+                        " WHERE ObjectId IN ( " + sqlIN + " ) " +
                         " AND NOT EXISTS (SELECT * FROM " + getTinfoObjectProperty() + " OP " +
                         " WHERE  OP.ObjectId = " + getTinfoObject() + ".ObjectId)";
                 new SqlExecutor(getExpSchema()).execute(deleteObjSql);
@@ -1154,7 +1250,7 @@ public class OntologyManager
                         sep = ", ";
                     }
                     String deleteOwnerSql = "DELETE FROM " + getTinfoObject() +
-                            " WHERE ObjectId IN ( " + sqlIN.toString() + " ) " +
+                            " WHERE ObjectId IN ( " + sqlIN + " ) " +
                             " AND NOT EXISTS (SELECT * FROM " + getTinfoObject() + " SUBO " +
                             " WHERE SUBO.OwnerObjectId = " + getTinfoObject() + ".ObjectId)";
                     new SqlExecutor(getExpSchema()).execute(deleteOwnerSql);
@@ -1214,7 +1310,7 @@ public class OntologyManager
                 }
 
                 String deletePDs = "DELETE FROM " + getTinfoPropertyDescriptor() +
-                        " WHERE PropertyId IN ( " + sqlIN.toString() + " ) " +
+                        " WHERE PropertyId IN ( " + sqlIN + " ) " +
                         "AND Container = ? " +
                         "AND NOT EXISTS (SELECT * FROM " + getTinfoObjectProperty() + " OP " +
                         "WHERE OP.PropertyId = " + getTinfoPropertyDescriptor() + ".PropertyId) " +
@@ -1355,8 +1451,8 @@ public class OntologyManager
                     " INNER JOIN " + getTinfoPropertyDomain() + " PDM2 ON (PDM.DomainId = PDM2.DomainId) " +
                     " INNER JOIN " + getTinfoDomainDescriptor() + " DD ON (DD.DomainId = PDM.DomainId)) " +
                     " ON (PD.PropertyId = PDM2.PropertyId) " +
-                    " WHERE PDM.PropertyId IN (" + sqlIn.toString() + ") " +
-                    " OR PD.PropertyId IN (" + sqlIn.toString() + ") ";
+                    " WHERE PDM.PropertyId IN (" + sqlIn + ") " +
+                    " OR PD.PropertyId IN (" + sqlIn + ") ";
 
             if (_log.isDebugEnabled())
             {
@@ -1676,7 +1772,7 @@ public class OntologyManager
             if (colDiffs.toString().contains("RangeURI") || colDiffs.toString().contains("PropertyType"))
                 fMajorDifference = true;
 
-            String errmsg = "ensurePropertyDescriptor:  descriptor In different from Found for " + colDiffs.toString() +
+            String errmsg = "ensurePropertyDescriptor:  descriptor In different from Found for " + colDiffs +
                     "\n\t Descriptor In: " + pdIn +
                     "\n\t Descriptor Found: " + pd;
 
@@ -1704,7 +1800,7 @@ public class OntologyManager
     {
         TableInfo t = getTinfoPropertyDescriptor();
         try (Connection conn = t.getSchema().getScope().getConnection();
-            ParameterMapStatement stmt = getInsertStmt(conn, user, t, true);)
+            ParameterMapStatement stmt = getInsertStmt(conn, user, t, true))
         {
             ObjectFactory<PropertyDescriptor> f = ObjectFactory.Registry.getFactory(PropertyDescriptor.class);
             Map<String, Object> m = f.toMap(pd, null);
@@ -3467,7 +3563,7 @@ public class OntologyManager
             };
             try (Transaction tx = getExpSchema().getScope().ensureTransaction())
             {
-                insertTabDelimited(c, TestContext.get().getUser(), oParent.getObjectId(), helper, pds, rows, false);
+                insertTabDelimited(c, TestContext.get().getUser(), oParent.getObjectId(), helper, pds, ValidatingDataRowIterator.of(rows.iterator()), false);
                 tx.commit();
             }
 

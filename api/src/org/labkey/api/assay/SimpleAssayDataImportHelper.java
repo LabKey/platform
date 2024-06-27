@@ -19,23 +19,28 @@ package org.labkey.api.assay;
 import org.labkey.api.data.ParameterMapStatement;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.query.ValidationException;
 
 import java.util.Map;
 
 public class SimpleAssayDataImportHelper implements OntologyManager.ImportHelper, OntologyManager.UpdateableTableImportHelper
 {
-    private int _id = 0;
-    private ExpData _data;
-    public SimpleAssayDataImportHelper(ExpData data)
+    private final ExpData _data;
+    private final ExpProtocol _protocol;
+    private final AssayProvider _provider;
+
+    public SimpleAssayDataImportHelper(ExpData data, ExpProtocol protocol, AssayProvider provider)
     {
         _data = data;
+        _protocol = protocol;
+        _provider = provider;
     }
 
     @Override
     public String beforeImportObject(Map<String, Object> map)
     {
-        return _data.getLSID() + ".DataRow-" + _id++;
+        return null;
     }
 
     @Override
@@ -56,7 +61,9 @@ public class SimpleAssayDataImportHelper implements OntologyManager.ImportHelper
     }
 
     @Override
-    public void afterImportObject(Map<String, Object> map)
+    public String afterImportObject(Map<String, Object> map)
     {
+        // Now that we know the RowId we know the LSID. Keep in sync with AssayResultTable.createRowExpressionLsidColumn()
+        return _provider.getResultRowLSIDExpression() + ".Protocol-" + _protocol.getRowId() + ":" + map.get("RowId");
     }
 }

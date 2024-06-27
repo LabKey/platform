@@ -18,11 +18,13 @@ package org.labkey.api.qc;
 
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.iterator.ValidatingDataRowIterator;
 import org.labkey.api.util.HtmlString;
 
 import java.io.File;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * User: klum
@@ -30,7 +32,7 @@ import java.util.Map;
  */
 public interface TransformResult
 {
-    Map<ExpData, List<Map<String, Object>>> getTransformedData();
+    Map<ExpData, Supplier<ValidatingDataRowIterator>> getTransformedData();
 
     Map<DomainProperty, String> getRunProperties();
 
