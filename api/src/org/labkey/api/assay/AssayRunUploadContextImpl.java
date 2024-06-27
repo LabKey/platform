@@ -28,6 +28,7 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.iterator.ValidatingDataRowIterator;
 import org.labkey.api.qc.DefaultTransformResult;
 import org.labkey.api.qc.TransformResult;
 import org.labkey.api.security.User;
@@ -44,6 +45,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
@@ -73,7 +75,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     private final Integer _reRunId;
     private final Map<String, Object> _rawRunProperties;
     private final Map<String, Object> _rawBatchProperties;
-    private final List<Map<String, Object>> _rawData;
+    private final Supplier<ValidatingDataRowIterator> _rawData;
     private final Map<String, AssayPlateMetadataService.MetadataLayer> _rawPlateMetadata;
     private final Map<?, String> _inputDatas;
     private final Map<?, String> _inputMaterials;
@@ -122,7 +124,6 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
         _allowCrossRunFileInputs = factory._allowCrossRunFileInputs;
         _allowLookupByAlternateKey = factory._allowLookupByAlternateKey;
 
-        // TODO: Wrap the rawData in an unmodifiableList -- unfortunately, AbstractAssayTsvDataHandler.checkData mutates the list items in-place
         _rawData = factory._rawData;
         _rawPlateMetadata = factory._rawPlateMetadata;
 
@@ -338,7 +339,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
 
     @Nullable
     @Override
-    public List<Map<String, Object>> getRawData()
+    public Supplier<ValidatingDataRowIterator> getRawData()
     {
         return _rawData;
     }

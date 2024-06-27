@@ -295,6 +295,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         String resultRowLsidExpression = schema.getProvider().getResultRowLSIDExpression();
         if (resultRowLsidExpression != null)
         {
+            // Keep in sync with SimpleAssayDataImportHelper.afterObjectImport()
             sql = new SQLFragment(dialect.concatenate(
                     "'" + resultRowLsidExpression +
                             ".Protocol-" + schema.getProtocol().getRowId() + ":'",

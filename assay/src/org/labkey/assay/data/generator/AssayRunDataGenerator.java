@@ -13,6 +13,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.assay.AssayException;
+import org.labkey.api.iterator.ValidatingDataRowIterator;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.ValidationException;
@@ -93,7 +94,7 @@ public class AssayRunDataGenerator extends DataGenerator<AssayRunDataGenerator.C
                 var factory = provider.createRunUploadFactory(protocol, context)
                         .setName(protocol.getName() + " - Run " + (i+1) )
                         .setJobDescription("Run with " + rawData.size() + " results.")
-                        .setRawData(rawData)
+                        .setRawData(() -> ValidatingDataRowIterator.of(rawData))
                         .setUploadedData(Collections.emptyMap());
                 Map<Object, String> outputData = new HashMap<>();
                 // Create an ExpData for the results

@@ -16,10 +16,13 @@
 
 package org.labkey.api.iterator;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.Iterator;
 
 /**
- * Convenience class that turns a normal Iterator into a CloseableIterator, with a no-op close()
+ * Convenience class that turns a normal Iterator into a CloseableIterator, passing through the call to close() if
+ * the supplied iterator implements Closeable.
  * User: adam
  * Date: Feb 16, 2013
 */
@@ -51,7 +54,11 @@ public class WrappingCloseableIterator<T> implements CloseableIterator<T>
     }
 
     @Override
-    public void close()
+    public void close() throws IOException
     {
+        if (_iter instanceof Closeable c)
+        {
+            c.close();
+        }
     }
 }
