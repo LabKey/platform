@@ -210,7 +210,10 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
                 DomainProperty dp = propertyURI != null ? wellDomain.getPropertyByURI(propertyURI) : null;
                 PropertyDescriptor pd = (null == dp) ? null : dp.getPropertyDescriptor();
                 if (dp != null && pd != null)
+                {
                     defaultsSupplier = PropertyColumn.copyAttributes(getUserSchema().getUser(), wrapped, dp, getContainer(), lsidFieldKey, getContainerFilter(), defaultsSupplier);
+                    wrapped.setFieldKey(FieldKey.fromParts(dp.getName()));
+                }
 
                 addColumn(wrapped);
                 defaultVisibleColumns.add(col.getFieldKey());
