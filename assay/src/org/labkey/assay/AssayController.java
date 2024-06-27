@@ -16,6 +16,8 @@
 
 package org.labkey.assay;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
@@ -130,15 +132,30 @@ import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.WebPartView;
-import org.labkey.assay.actions.*;
-import org.labkey.assay.plate.view.AssayPlateMetadataTemplateAction;
+import org.labkey.assay.actions.AssayBatchDetailsAction;
+import org.labkey.assay.actions.AssayBatchesAction;
+import org.labkey.assay.actions.AssayResultsAction;
+import org.labkey.assay.actions.DeleteAction;
+import org.labkey.assay.actions.DeleteProtocolAction;
+import org.labkey.assay.actions.GetAssayBatchAction;
+import org.labkey.assay.actions.GetAssayBatchesAction;
+import org.labkey.assay.actions.GetAssayRunAction;
+import org.labkey.assay.actions.GetAssayRunsAction;
+import org.labkey.assay.actions.GetProtocolAction;
+import org.labkey.assay.actions.ImportRunApiAction;
+import org.labkey.assay.actions.PipelineDataCollectorRedirectAction;
+import org.labkey.assay.actions.SaveAssayBatchAction;
+import org.labkey.assay.actions.SaveAssayRunsAction;
+import org.labkey.assay.actions.SaveProtocolAction;
+import org.labkey.assay.actions.SetDefaultValuesAssayAction;
+import org.labkey.assay.actions.ShowSelectedDataAction;
+import org.labkey.assay.actions.ShowSelectedRunsAction;
+import org.labkey.assay.actions.TemplateAction;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -170,7 +187,6 @@ public class AssayController extends SpringActionController
         AssayBatchDetailsAction.class,
         AssayBatchesAction.class,
         AssayDetailRedirectAction.class,
-        AssayPlateMetadataTemplateAction.class,
         AssayResultDetailsAction.class,
         AssayResultsAction.class,
         AssayRunDetailsAction.class,
@@ -1260,12 +1276,6 @@ public class AssayController extends SpringActionController
             ActionURL fakeURL = new ActionURL(ShowSelectedRunsAction.class, ContainerManager.getHomeContainer());
             fakeURL.addFilter(AssayProtocolSchema.RUNS_TABLE_NAME, AbstractAssayProvider.BATCH_ROWID_FROM_RUN, CompareType.EQUAL, "${RowId}");
             return fakeURL.getParameters().get(0).getKey();
-        }
-
-        @Override
-        public ActionURL getPlateMetadataTemplateURL(Container container, AssayProvider provider, ExpProtocol protocol)
-        {
-            return provider.getPlateMetadataTemplateURL(container, protocol);
         }
     }
 

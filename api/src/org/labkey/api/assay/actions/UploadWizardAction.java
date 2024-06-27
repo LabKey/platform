@@ -16,12 +16,12 @@
 
 package org.labkey.api.assay.actions;
 
+import jakarta.servlet.ServletException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.assay.AbstractAssayProvider;
-import org.labkey.api.assay.AbstractTsvAssayProvider;
 import org.labkey.api.assay.AssayColumnInfoRenderer;
 import org.labkey.api.assay.AssayDataCollector;
 import org.labkey.api.assay.AssayDataCollectorDisplayColumn;
@@ -35,14 +35,12 @@ import org.labkey.api.assay.AssayWarningsDisplayColumn;
 import org.labkey.api.assay.AssayWellExclusionService;
 import org.labkey.api.assay.DefaultAssayRunCreator;
 import org.labkey.api.data.ActionButton;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
@@ -101,7 +99,6 @@ import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.servlet.ModelAndView;
 
-import jakarta.servlet.ServletException;
 import java.io.IOException;
 import java.io.Writer;
 import java.sql.SQLException;
@@ -644,9 +641,6 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         addSampleInputColumns(newRunForm, insertView);
         if (shouldShowDataCollectorUI(newRunForm))
         {
-            if (_provider.getPlateMetadataDataCollector(newRunForm) != null)
-                insertView.getDataRegion().addDisplayColumn(new PlateMetadataDisplayColumn(newRunForm));
-
             insertView.getDataRegion().addDisplayColumn(new AssayDataCollectorDisplayColumn(newRunForm));
         }
 
@@ -1230,56 +1224,6 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             else
             {
                 return super.getErrors(paramName);
-            }
-        }
-    }
-
-    private static class PlateMetadataDisplayColumn extends SimpleDisplayColumn
-    {
-        private final AssayRunUploadForm<AbstractTsvAssayProvider> _form;
-        private final ColumnInfo _col;
-
-        public PlateMetadataDisplayColumn(AssayRunUploadForm form)
-        {
-            _form = form;
-            setCaption("Plate Metadata");
-            _col = new BaseColumnInfo("Plate Metadata", JdbcType.NULL);
-            ((BaseColumnInfo)_col).setInputType("file");
-        }
-
-        @Override
-        public void renderTitle(RenderContext ctx, Writer out) throws IOException
-        {
-            super.renderTitle(ctx, out);
-            out.write(" *");
-        }
-
-        @Override
-        public boolean isEditable()
-        {
-            return true;
-        }
-
-        @Override
-        public ColumnInfo getColumnInfo()
-        {
-            return _col;
-        }
-
-        @Override
-        public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
-        {
-            AssayDataCollector collector = _form.getProvider().getPlateMetadataDataCollector(_form);
-            if (collector != null)
-            {
-                try
-                {
-                    collector.getView(_form).render(ctx.getRequest(), ctx.getViewContext().getResponse());
-                }
-                catch (Exception e)
-                {
-                    throw new IOException(e);
-                }
             }
         }
     }

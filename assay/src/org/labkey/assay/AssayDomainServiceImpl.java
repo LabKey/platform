@@ -298,7 +298,7 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
         // if the provider supports QC and if there is a valid QC service registered
         result.setAllowQCStates(provider.supportsQC() && AssayQCService.getProvider().supportsQC());
 
-        result.setAllowPlateMetadata(provider.supportsPlateMetadata());
+        result.setAllowPlateMetadata(provider.supportsPlateMetadata(protocol));
 
         boolean supportsFlag = provider.supportsFlagColumnType(ExpProtocol.AssayDomainTypes.Result);
         for (GWTDomain d : result.getDomains())

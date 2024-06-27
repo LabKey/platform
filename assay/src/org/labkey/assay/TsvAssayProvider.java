@@ -16,6 +16,8 @@
 
 package org.labkey.assay;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jmock.Expectations;
@@ -32,7 +34,6 @@ import org.labkey.api.assay.AssayProtocolSchema;
 import org.labkey.api.assay.AssayProviderSchema;
 import org.labkey.api.assay.AssayResultDomainKind;
 import org.labkey.api.assay.AssaySaveHandler;
-import org.labkey.api.assay.AssaySchema;
 import org.labkey.api.assay.AssayTableMetadata;
 import org.labkey.api.assay.FileUploadDataCollector;
 import org.labkey.api.assay.PipelineDataCollector;
@@ -75,17 +76,12 @@ import org.labkey.api.study.assay.StudyParticipantVisitResolverType;
 import org.labkey.api.study.assay.ThawListResolverType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.assay.plate.query.PlateSchema;
 import org.labkey.assay.plate.query.PlateSetTable;
 import org.labkey.assay.plate.query.PlateTable;
-import org.labkey.assay.plate.view.AssayPlateMetadataTemplateAction;
-import org.labkey.assay.view.PlateMetadataDataCollector;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -94,7 +90,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -160,22 +155,6 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
             result.add(0, new TextAreaDataCollector());
         }
         return result;
-    }
-
-    @Override
-    public @Nullable AssayDataCollector getPlateMetadataDataCollector(AssayRunUploadForm context)
-    {
-        if (context.getProvider().isPlateMetadataEnabled(context.getProtocol()))
-        {
-            return new PlateMetadataDataCollector(1, context);
-        }
-        return null;
-    }
-
-    @Override
-    public @Nullable ActionURL getPlateMetadataTemplateURL(Container container, ExpProtocol protocol)
-    {
-        return new ActionURL(AssayPlateMetadataTemplateAction.class, container).addParameter("protocol", protocol.getRowId());
     }
 
     @Override
@@ -397,9 +376,12 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     }
 
     @Override
-    public boolean supportsPlateMetadata()
+    public boolean supportsPlateMetadata(ExpProtocol protocol)
     {
-        return true;
+        if (protocol != null)
+            return AssayPlateMetadataService.isBiologicsFolder(protocol.getContainer());
+        else
+            return false;
     }
 
     private boolean hasDomainNameChanged(ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> domain)
@@ -417,7 +399,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
             update.setName(protocol.getName() + getDomainNameSuffix(orig));
         }
 
-        if (isPlateMetadataEnabled(protocol))
+        if (isPlateMetadataEnabled(protocol) && AssayPlateMetadataService.isExperimentalAppPlateEnabled())
         {
             Set<String> existingFields = update.getFields().stream().map(GWTPropertyDescriptor::getName).collect(Collectors.toSet());
             boolean hasRuns = !protocol.getExpRuns().isEmpty();
@@ -428,43 +410,13 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
             {
                 ArrayList<GWTPropertyDescriptor> newFields = new ArrayList<>();
 
-                Optional<GWTPropertyDescriptor> plateTemplateColumn = update.getFields().stream().filter(field -> field.getName().equals(AssayPlateMetadataService.PLATE_TEMPLATE_COLUMN_NAME)).findFirst();
-                if (!AssayPlateMetadataService.isBiologicsFolder(runDomain.getContainer()))
-                {
-                    // only show the run level plate template field for non-LKB folders, this field is for the legacy JSON plate metadata support
-                    if (plateTemplateColumn.isPresent())
-                    {
-                        // Ensure the lookup container is null, so it defaults to "Current Folder" to more easily support
-                        // cross-folder support.
-                        GWTPropertyDescriptor plateTemplate = plateTemplateColumn.get();
-                        plateTemplate.setLookupContainer(null);
-                    }
-                    else
-                    {
-                        GWTPropertyDescriptor plateTemplate = new GWTPropertyDescriptor(AssayPlateMetadataService.PLATE_TEMPLATE_COLUMN_NAME, PropertyType.STRING.getTypeUri());
-                        plateTemplate.setLookupSchema(AssaySchema.NAME + "." + getResourceName());
-                        plateTemplate.setLookupQuery(TsvProviderSchema.PLATE_TEMPLATE_TABLE);
-                        plateTemplate.setLookupContainer(null);
-                        plateTemplate.setRequired(!AssayPlateMetadataService.isExperimentalAppPlateEnabled());
-                        plateTemplate.setShownInUpdateView(false);
-
-                        newFields.add(plateTemplate);
-                    }
-                }
-                else if (plateTemplateColumn.isPresent())
-                {
-                    // remove from LKB folders
-                    List<GWTPropertyDescriptor> fieldsWithoutTemplateColumn = update.getFields().stream().filter(field -> !field.getName().equals(AssayPlateMetadataService.PLATE_TEMPLATE_COLUMN_NAME)).toList();
-                    update.setFields(fieldsWithoutTemplateColumn);
-                }
-
                 if (!existingFields.contains(AssayPlateMetadataService.PLATE_SET_COLUMN_NAME))
                 {
                     GWTPropertyDescriptor plateSet = new GWTPropertyDescriptor(AssayPlateMetadataService.PLATE_SET_COLUMN_NAME, PropertyType.INTEGER.getTypeUri());
                     plateSet.setLookupSchema(PlateSchema.SCHEMA_NAME);
                     plateSet.setLookupQuery(PlateSetTable.NAME);
                     plateSet.setLookupContainer(null);
-                    plateSet.setRequired(AssayPlateMetadataService.isExperimentalAppPlateEnabled() && !hasRuns);
+                    plateSet.setRequired(!hasRuns);
                     plateSet.setShownInUpdateView(false);
 
                     newFields.add(plateSet);
@@ -488,7 +440,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
                     plate.setLookupSchema(PlateSchema.SCHEMA_NAME);
                     plate.setLookupQuery(PlateTable.NAME);
                     plate.setLookupContainer(null);
-                    plate.setRequired(AssayPlateMetadataService.isExperimentalAppPlateEnabled() && !hasRuns);
+                    plate.setRequired(!hasRuns);
                     plate.setImportAliases("PlateID,\"Plate ID\"");
                     plate.setShownInUpdateView(false);
                     plate.setHidden(true);
