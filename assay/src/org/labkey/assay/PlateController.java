@@ -44,6 +44,7 @@ import org.labkey.api.data.ArrayExcelWriter;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.TSVArrayWriter;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
@@ -85,6 +86,7 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
@@ -1355,11 +1357,19 @@ public class PlateController extends SpringActionController
         }
     }
 
+    private enum FileType
+    {
+        CSV,
+        Excel,
+        TSV
+    }
+
     public static class WorklistForm
     {
         private ContainerFilter.Type _containerFilter;
         private int _sourcePlateSetId;
         private int _destinationPlateSetId;
+        private String _fileType;
 
         public ContainerFilter.Type getContainerFilter()
         {
@@ -1390,6 +1400,16 @@ public class PlateController extends SpringActionController
         {
             _destinationPlateSetId = destinationPlateSetId;
         }
+
+        public String getFileType()
+        {
+            return _fileType;
+        }
+
+        public void setFileType(String fileType)
+        {
+            _fileType = fileType;
+        }
     }
 
     @RequiresPermission(ReadPermission.class)
@@ -1418,9 +1438,24 @@ public class PlateController extends SpringActionController
 
                 List<Object[]> plateDataRows = PlateManager.get().getWorklist(form.getSourcePlateSetId(), form.getDestinationPlateSetId(), sourceIncludedMetadataCols, destinationIncludedMetadataCols, getContainer(), getUser());
 
-                ArrayExcelWriter xlWriter = new ArrayExcelWriter(plateDataRows, xlCols);
-                xlWriter.setFullFileName(plateSetSource.getName() + " - " + plateSetDestination.getName());
-                xlWriter.renderWorkbook(getViewContext().getResponse());
+                String fullFileName = plateSetSource.getName() + " - " + plateSetDestination.getName();
+
+                boolean isCSV = form.getFileType().equals(FileType.CSV.name());
+                boolean isTSV = form.getFileType().equals(FileType.TSV.name());
+                if (isCSV ||isTSV)
+                {
+                    try (TSVArrayWriter writer = new TSVArrayWriter(fullFileName, xlCols, plateDataRows))
+                    {
+                        writer.setDelimiterCharacter(isCSV ? TSVWriter.DELIM.COMMA : TSVWriter.DELIM.TAB);
+                        writer.write(getViewContext().getResponse());
+                    }
+                }
+                else
+                {
+                    ArrayExcelWriter xlWriter = new ArrayExcelWriter(plateDataRows, xlCols);
+                    xlWriter.setFullFileName(fullFileName);
+                    xlWriter.renderWorkbook(getViewContext().getResponse());
+                }
 
                 return null; // Returning anything here will cause error as excel writer will close the response stream
             }
@@ -1437,6 +1472,7 @@ public class PlateController extends SpringActionController
     {
         private ContainerFilter.Type _containerFilter;
         private int _plateSetId;
+        private String _fileType;
 
         public ContainerFilter.Type getContainerFilter()
         {
@@ -1456,6 +1492,16 @@ public class PlateController extends SpringActionController
         public void setPlateSetId(int plateSetId)
         {
             _plateSetId = plateSetId;
+        }
+
+        public String getFileType()
+        {
+            return _fileType;
+        }
+
+        public void setFileType(String fileType)
+        {
+            _fileType = fileType;
         }
     }
 

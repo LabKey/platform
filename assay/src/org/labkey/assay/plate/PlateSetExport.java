@@ -8,7 +8,6 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.assay.plate.query.WellTable;
@@ -17,6 +16,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -143,7 +143,7 @@ public class PlateSetExport
 
                 List<Object[]> destinationDataRows = sampleIdToDestinationRow.get(sampleId);
                 if (destinationDataRows == null)
-                    destinationDataRows = new ArrayList<>(destinationIncludedMetadataCols.size() + 3); // 3 is the number of base (non-metadata) columns
+                     destinationDataRows = Collections.singletonList(new Object[destinationIncludedMetadataCols.size() + 3]); // 3 is the number of base (non-metadata) columns
 
                 for (Object[] dataRow : destinationDataRows)
                     plateDataRows.add(ArrayUtils.addAll(sourceDataRow, dataRow));
