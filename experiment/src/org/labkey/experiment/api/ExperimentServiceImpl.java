@@ -228,6 +228,7 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.experiment.ExperimentAuditProvider;
 import org.labkey.experiment.FileLinkFileListener;
+import org.labkey.experiment.MissingFilesCheckInfo;
 import org.labkey.experiment.XarExportType;
 import org.labkey.experiment.XarExporter;
 import org.labkey.experiment.XarReader;
@@ -3414,8 +3415,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         final String runLsid;
         final Container runContainer;
         boolean deleteFirst = true;
-        boolean verifyEdgesNoInsert=false;
-        boolean doIncrementalClosureInvalidation =true;
+        boolean verifyEdgesNoInsert = false;
+        boolean doIncrementalClosureInvalidation = true;
 
         SyncRunEdges(ExpRun run)
         {
@@ -7277,9 +7278,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             {
                 new SyncRunEdges(er.getExpObject())
                         .deleteFirst(false)
+                        .doIncrementalClosureInvalidation(false) // do this update all at once below
                         .verifyEdgesNoInsert(false)
                         .sync(cpasTypeToObjectId);
             }
+            ClosureQueryHelper.recomputeAncestorsForRuns(runLsidToRowId.values().stream().map(IdentifiableEntity::getRowId).toList());
         }
 
         private void initAliquotRootsCache(List<ProtocolAppRecord> protAppRecords)
@@ -9716,7 +9719,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
     }
 
-    public Map<String, Map<String, Set<String>>> doMissingFilesCheck(User user, Container container) throws SQLException
+    public Map<String, Map<String, MissingFilesCheckInfo>> doMissingFilesCheck(User user, Container container, boolean trackMissingFiles) throws SQLException
     {
         if (container == null)
             container = ContainerManager.getRoot();
@@ -9734,7 +9737,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         FileLinkFileListener fileListener = new FileLinkFileListener();
 
-        Map<String, Map<String, Set<String>>> missingFiles = new HashMap<>();
+        // map of containers -> source names -> info (missing files, missing file count, valid file count)
+        Map<String, Map<String, MissingFilesCheckInfo>> fileResults = new HashMap<>();
         SQLFragment unionSql = fileListener.listFilesQuery(true);
         Collection<GUID> containerIds = cf.getIds();
         SQLFragment selectSql;
@@ -9742,9 +9746,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             selectSql = unionSql;
         else
             selectSql = new SQLFragment("SELECT * FROM (").append(unionSql).append(") WHERE Container ").appendInClause(cf.getIds(), CoreSchema.getInstance().getSchema().getSqlDialect());
-        final int MAX_MISSING_COUNT = 1000;
+        final int MAX_MISSING_COUNT = 1_000;
+        final int MAX_ROWS = 100_000;
         int missingCount = 0;
-        try (ResultSet rs = new SqlSelector(CoreSchema.getInstance().getSchema(), selectSql).getResultSet(false))
+        try (ResultSet rs = new SqlSelector(CoreSchema.getInstance().getSchema(), selectSql).setMaxRows(MAX_ROWS).getResultSet(false))
         {
             while (rs.next())
             {
@@ -9759,24 +9764,27 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 else
                     file = new File(filePath);
 
+                String containerId = rs.getString("Container");
+                if (!fileResults.containsKey(containerId))
+                    fileResults.put(containerId, new HashMap<>());
+
+                String sourceName = rs.getString("SourceName");
+                if (!fileResults.get(containerId).containsKey(sourceName))
+                    fileResults.get(containerId).put(sourceName, new MissingFilesCheckInfo());
+
                 if (!file.exists())
                 {
                     missingCount++;
-                    String containerId = rs.getString("Container");
-                    String sourceName = rs.getString("SourceName");
-                    if (!missingFiles.containsKey(containerId))
-                        missingFiles.put(containerId, new HashMap<>());
-                    if (!missingFiles.get(containerId).containsKey(sourceName))
-                        missingFiles.get(containerId).put(sourceName, new HashSet<>());
-
-                    missingFiles.get(containerId).get(sourceName).add(filePath);
+                    fileResults.get(containerId).get(sourceName).addMissingFile(filePath, trackMissingFiles);
                 }
+                else
+                    fileResults.get(containerId).get(sourceName).incrementValidFilesCount();
 
-                if (missingCount >= MAX_MISSING_COUNT)
+                if (trackMissingFiles && missingCount >= MAX_MISSING_COUNT)
                     break;
             }
         }
-        return missingFiles;
+        return fileResults;
     }
 
     public static class TestCase extends Assert

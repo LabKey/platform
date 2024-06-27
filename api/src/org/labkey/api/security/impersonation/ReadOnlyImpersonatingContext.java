@@ -1,7 +1,7 @@
 package org.labkey.api.security.impersonation;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AllowedForReadOnlyUser;
 import org.labkey.api.security.permissions.Permission;
@@ -9,7 +9,6 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 
-import java.util.Set;
 import java.util.stream.Stream;
 
 public class ReadOnlyImpersonatingContext extends NotImpersonatingContext
@@ -22,11 +21,9 @@ public class ReadOnlyImpersonatingContext extends NotImpersonatingContext
     }
 
     @Override
-    public Set<Role> getAssignedRoles(User user, SecurityPolicy policy)
+    public Stream<Role> getAssignedRoles(User user, SecurableResource resource)
     {
-        var ret = super.getAssignedRoles(user, policy);
-        ret.removeIf(Role::isPrivileged);
-        return ret;
+        return super.getAssignedRoles(user, resource).filter(role -> !role.isPrivileged());
     }
 
     @Override

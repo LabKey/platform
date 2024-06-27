@@ -26,7 +26,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 
-import java.util.Set;
+import java.util.stream.Stream;
 
 public abstract class AbstractImpersonationContext implements ImpersonationContext
 {
@@ -85,10 +85,10 @@ public abstract class AbstractImpersonationContext implements ImpersonationConte
     /**
      * @return A set of roles with the privileged roles filtered out if the impersonating admin user isn't allowed them
      */
-    protected Set<Role> getFilteredRoles(Set<Role> roles)
+    protected Stream<Role> getFilteredRoles(Stream<Role> roles)
     {
         if (getAdminUser() != null && !getAdminUser().hasRootPermission(CanImpersonatePrivilegedSiteRolesPermission.class))
-            roles.removeIf(Role::isPrivileged);
+            return roles.filter(role -> !role.isPrivileged());
 
         return roles;
     }

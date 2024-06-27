@@ -68,6 +68,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class LinkedSchema extends ExternalSchema
 {
@@ -605,7 +606,7 @@ public class LinkedSchema extends ExternalSchema
         }
 
         @Override
-        public Set<Role> getAssignedRoles(SecurableResource resource)
+        public Stream<Role> getAssignedRoles(SecurableResource resource)
         {
             // If the resource is allowed (current container or current study) then return the ReaderRole that's set on the LimitedUser
             if (_allowedResourceIds.contains(resource.getResourceId()))
@@ -614,7 +615,7 @@ public class LinkedSchema extends ExternalSchema
             }
 
             // For all other containers and studies, no permissions
-            return Collections.emptySet();
+            return Stream.empty();
         }
     }
 }

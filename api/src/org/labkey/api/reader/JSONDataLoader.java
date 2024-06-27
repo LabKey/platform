@@ -812,7 +812,7 @@ public class JSONDataLoader extends DataLoader
         return new _DataIterator(context, getActiveColumns(), false);
     }
 
-    private class Iter extends DataLoaderIterator
+    private class Iter extends AbstractDataLoaderIterator
     {
         protected Iter() throws IOException
         {

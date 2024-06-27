@@ -20,6 +20,7 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiUsageException;
+import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -805,5 +806,11 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
                     ((BaseColumnInfo)c).setHidden(true);
             }
         }
+    }
+
+    @Override
+    public boolean supportsPhiLevel()
+    {
+        return ComplianceService.get().isComplianceSupported();
     }
 }

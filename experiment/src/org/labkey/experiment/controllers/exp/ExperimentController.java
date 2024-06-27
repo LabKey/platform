@@ -4232,7 +4232,7 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        protected boolean hasLineageColumns()
+        protected boolean allowLineageColumns()
         {
             return true;
         }
@@ -7915,9 +7915,19 @@ public class ExperimentController extends SpringActionController
         @Override
         public Object execute(Object o, BindException errors) throws Exception
         {
+            Map<String, Map<String, MissingFilesCheckInfo>> info = ExperimentServiceImpl.get().doMissingFilesCheck(getUser(), getContainer(), true);
+            JSONObject results = new JSONObject();
+            for (String containerId : info.keySet())
+            {
+                JSONObject containerResults = new JSONObject();
+                for (String sourceName : info.get(containerId).keySet())
+                    containerResults.put(sourceName, info.get(containerId).get(sourceName).toJSON());
+                results.put(containerId, containerResults);
+            }
+
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("success", true);
-            response.put("result", ExperimentServiceImpl.get().doMissingFilesCheck(getUser(), getContainer()));
+            response.put("result", results);
             return response;
         }
     }
