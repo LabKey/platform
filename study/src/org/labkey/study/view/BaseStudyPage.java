@@ -31,15 +31,8 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.TreatmentImpl;
 import org.labkey.study.model.VisitImpl;
 
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 
-/**
- * User: brittp
- * Date: Jan 11, 2006
- * Time: 11:27:26 AM
- */
 public abstract class BaseStudyPage extends JspBase
 {
     private StudyImpl _study;
