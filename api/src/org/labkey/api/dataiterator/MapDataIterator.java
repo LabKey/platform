@@ -16,6 +16,7 @@
 package org.labkey.api.dataiterator;
 
 import org.apache.logging.log4j.LogManager;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
@@ -24,9 +25,10 @@ import org.labkey.api.query.BatchValidationException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 /**
  * User: matthewb
  * Date: 2011-09-07
@@ -37,6 +39,10 @@ public interface MapDataIterator extends DataIterator
     boolean supportsGetMap();
     Map<String,Object> getMap();
 
+    /**
+     * wrap an existing DataIterator to add MapDataIterator interface
+     * CONSIDER moving to AbstractMapDataIterator
+     */
     class MapDataIteratorImpl implements MapDataIterator, ScrollableDataIterator
     {
         DataIterator _input;
@@ -173,5 +179,28 @@ public interface MapDataIterator extends DataIterator
             if (null != _input)
                 _input.debugLogInfo(sb);
         }
+    }
+
+    static DataIteratorBuilder of(@NotNull List<Map<String, Object>> rows)
+    {
+        return (context) -> new AbstractMapDataIterator.ListOfMapsDataIterator(context, null, rows);
+    }
+
+    static DataIteratorBuilder of(@NotNull Set<String> colNames, @NotNull List<Map<String, Object>> rows)
+    {
+        return (context) -> new AbstractMapDataIterator.ListOfMapsDataIterator(context, colNames, rows);
+    }
+
+    static DataIteratorBuilder of(@NotNull Set<String> colNames, @NotNull List<Map<String, Object>> rows, String debugName)
+    {
+        //noinspection resource
+        return (context) -> new AbstractMapDataIterator.ListOfMapsDataIterator(context, colNames, rows).setDebugName(debugName);
+    }
+
+    static DataIteratorBuilder  of(@NotNull Set<String> colNames, @NotNull Iterator<Map<String, Object>> rows)
+    {
+        if (colNames.isEmpty())
+            throw new IllegalArgumentException("names are required");
+        return (context) -> new AbstractMapDataIterator.IteratorOfMapsDataIterator(context, colNames, rows);
     }
 }
