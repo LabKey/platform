@@ -20,12 +20,14 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.iterator.ValidatingDataRowIterator;
 import org.labkey.api.util.HtmlString;
 
 import java.io.File;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * User: klum
@@ -33,7 +35,7 @@ import java.util.Map;
  */
 public class DefaultTransformResult implements TransformResult
 {
-    private Map<ExpData, List<Map<String, Object>>> _dataMap = Collections.emptyMap();
+    private Map<ExpData, Supplier<ValidatingDataRowIterator>> _dataMap = Collections.emptyMap();
     private Map<DomainProperty, String> _batchProperties = Collections.emptyMap();
     private Map<DomainProperty, String> _runProperties = Collections.emptyMap();
     private List<File> _uploadedFiles;
@@ -69,7 +71,7 @@ public class DefaultTransformResult implements TransformResult
 
     public DefaultTransformResult(){}
 
-    public DefaultTransformResult(Map<ExpData, List<Map<String, Object>>> dataMap)
+    public DefaultTransformResult(Map<ExpData, Supplier<ValidatingDataRowIterator>> dataMap)
     {
         _dataMap = dataMap;
         _assayId = null;
@@ -87,7 +89,7 @@ public class DefaultTransformResult implements TransformResult
     }
 
     @Override
-    public Map<ExpData, List<Map<String, Object>>> getTransformedData()
+    public Map<ExpData, Supplier<ValidatingDataRowIterator>> getTransformedData()
     {
         return _dataMap;
     }
