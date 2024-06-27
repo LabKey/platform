@@ -1567,7 +1567,6 @@ public class StudyManager
         return visitTagName + "/" + visitId + "/" + cohortId;
     }
 
-
     public void createCohort(Study study, User user, CohortImpl cohort)
     {
         if (cohort.getContainer() != null && !cohort.getContainer().equals(study.getContainer()))
@@ -1586,7 +1585,6 @@ public class StudyManager
         cohort.initLsid();
         _cohortHelper.update(user, cohort);
     }
-
 
     public void deleteVisit(StudyImpl study, VisitImpl visit, User user)
     {
@@ -1684,7 +1682,6 @@ public class StudyManager
             getVisitManager(study).updateParticipantVisits(user, study.getDatasets());
         }
     }
-
 
     public void updateVisit(User user, VisitImpl visit)
     {
@@ -1789,7 +1786,6 @@ public class StudyManager
 
         return (null != required ? new VisitDataset(container, datasetId, visitRowId, required) : null);
     }
-
 
     public List<VisitImpl> getVisits(Study study, Visit.Order order)
     {
@@ -2087,11 +2083,12 @@ public class StudyManager
     public CohortImpl getCohortByLabel(Container container, User user, String label)
     {
         assertCohortsViewable(container, user);
-        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-        filter.addCondition(FieldKey.fromParts("Label"), label);
 
-        List<CohortImpl> cohorts = _cohortHelper.getList(container, filter);
-        if (cohorts != null && cohorts.size() == 1)
+        List<CohortImpl> cohorts = _cohortHelper.getList(container).stream()
+            .filter(cohort -> cohort.getLabel().equals(label))
+            .toList();
+
+        if (cohorts.size() == 1)
             return cohorts.get(0);
 
         return null;

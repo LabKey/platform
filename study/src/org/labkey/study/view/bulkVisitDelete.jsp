@@ -95,7 +95,7 @@
         {
             ActionURL visitSummaryURL = new ActionURL(VisitSummaryAction.class, study.getContainer());
             visitSummaryURL.addParameter("id", visit.getRowId());
-            int dataCount = visitRowCountMap.containsKey(visit.getRowId()) ? visitRowCountMap.get(visit.getRowId()) : 0;
+            int dataCount = visitRowCountMap.getOrDefault(visit.getRowId(), 0);
             int vialCount = SpecimenManager.get().getSpecimenCountForVisit(visit);
 
             rowCount++;

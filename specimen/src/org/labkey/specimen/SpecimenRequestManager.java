@@ -1217,13 +1217,12 @@ public class SpecimenRequestManager
 
     private void deleteRequestEvents(SpecimenRequest request)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RequestId"), request.getRowId());
-        List<SpecimenRequestEvent> events = _requestEventHelper.getList(request.getContainer(), filter);
-        for (SpecimenRequestEvent event : events)
-        {
-            AttachmentService.get().deleteAttachments(event);
-            _requestEventHelper.delete(event);
-        }
+        _requestEventHelper.getList(request.getContainer()).stream()
+            .filter(event -> event.getRequestId() == request.getRowId())
+            .forEach(event -> {
+                AttachmentService.get().deleteAttachments(event);
+                _requestEventHelper.delete(event);
+            });
     }
 
     public RequestedSpecimens getRequestableBySpecimenHash(Container c, User user, Set<String> formValues, Integer preferredLocation) throws AmbiguousLocationException
