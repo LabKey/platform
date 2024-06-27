@@ -103,24 +103,23 @@ public class ModulePropertiesTestCase extends Assert
         prop2.saveValue(_user, _subFolder, folderVal);
         assertEquals("After updating value for subFolder container, number of audit entries not as expected", beforeUpdateCount + 1, getAuditEventCount(_subFolder));
 
-
         assertEquals(rootVal, prop2.getEffectiveValue(ContainerManager.getRoot()));
         assertEquals(projectVal, prop2.getEffectiveValue(_project));
         assertEquals(folderVal, prop2.getEffectiveValue(_subFolder));
         beforeUpdateCount = getAuditEventCount(_subFolder);
         prop2.saveValue(_user, _subFolder, null);
         assertEquals(projectVal, prop2.getEffectiveValue(_subFolder));
-        assertEquals("After updating value for subFolder container, number of audit entries not as expected", beforeUpdateCount + 1, getAuditEventCount(_subFolder));
+        assertEquals("After removing value for subFolder container, number of audit entries not as expected", beforeUpdateCount + 1, getAuditEventCount(_subFolder));
 
         beforeUpdateCount = getAuditEventCount(_project);
         prop2.saveValue(_user, _project, null);
         assertEquals(rootVal, prop2.getEffectiveValue(_subFolder));
-        assertEquals("After updating value for project container, number of audit entries not as expected", beforeUpdateCount + 1, getAuditEventCount(_project));
+        assertEquals("After removing value for project container, number of audit entries not as expected", beforeUpdateCount + 1, getAuditEventCount(_project));
 
         beforeUpdateCount = getAuditEventCount(ContainerManager.getRoot());
         prop2.saveValue(_user, ContainerManager.getRoot(), null);
         assertEquals(prop2.getDefaultValue(), prop2.getEffectiveValue(_subFolder));
-        assertEquals("After updating value for root container, number of audit entries not as expected", beforeUpdateCount + 1, getAuditEventCount(ContainerManager.getRoot()));
+        assertEquals("After removing value for root container, number of audit entries not as expected", beforeUpdateCount + 1, getAuditEventCount(ContainerManager.getRoot()));
 
         String newVal = "NewValue";
         prop2.saveValue(_user, _project, newVal);
@@ -133,12 +132,7 @@ public class ModulePropertiesTestCase extends Assert
 
     private int getAuditEventCount(Container container)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), container.isRoot() ? "" : container.getName());
-
-        List<AuditTypeEvent> events = AuditLogService.get().getAuditEvents(ContainerManager.getRoot(), _user, ModulePropertiesAuditProvider.AUDIT_EVENT_TYPE, filter, null);
-
-        return events.size();
-
+        return AuditLogService.get().getAuditEvents(container, _user, ModulePropertiesAuditProvider.AUDIT_EVENT_TYPE, null, null).size();
     }
 
     private class TestModule extends CodeOnlyModule
