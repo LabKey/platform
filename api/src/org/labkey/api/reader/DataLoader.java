@@ -55,11 +55,11 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.sql.Time;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.Formatter;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -466,7 +466,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     /**
      * Returns an iterator over the data, respecting the map filter and not including a row hash
      */
-    @Override
+    @Override @NotNull
     public final CloseableIterator<Map<String, Object>> iterator()
     {
         return iterator(false);
@@ -538,24 +538,27 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         }
     };
 
+    public interface DataLoaderIterator extends CloseableIterator<Map<String, Object>>
+    {
+        int lineNum();
+    }
 
-    protected abstract class DataLoaderIterator implements CloseableIterator<Map<String, Object>>
+    protected abstract class AbstractDataLoaderIterator implements DataLoaderIterator
     {
         protected final ColumnDescriptor[] _activeColumns;
 
         private final RowMapFactory<Object> _factory;
         private final boolean _generateInputRowHash;
 
-        private Object[] _fields = null;
         private Map<String, Object> _values = null;
         private int _lineNum;
 
-        protected DataLoaderIterator(int lineNum) throws IOException
+        protected AbstractDataLoaderIterator(int lineNum) throws IOException
         {
             this(lineNum, false);
         }
 
-        protected DataLoaderIterator(int lineNum, boolean generateInputRowHash) throws IOException
+        protected AbstractDataLoaderIterator(int lineNum, boolean generateInputRowHash) throws IOException
         {
             _lineNum = lineNum;
             _generateInputRowHash = generateInputRowHash;
@@ -581,6 +584,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                     column.converter = ConvertUtils.lookup(column.clazz);
         }
 
+        @Override
         public int lineNum()
         {
             return _lineNum;
@@ -595,30 +599,40 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                 throw new IllegalStateException("Attempt to call next() on a finished iterator");
             Map<String, Object> next = _values;
             _values = null;
+
+            if (_log.isDebugEnabled())
+            {
+                StringBuilder sb = new StringBuilder();
+                Formatter formatter = new Formatter(sb);
+                for (var entry : next.entrySet())
+                    LoggingDataIterator.appendFormattedNameValue(formatter, entry.getKey(), entry.getValue());
+                _log.debug(this.getClass().getName() + ".next():\n" + sb);
+            }
+
             return next;
         }
 
         @Override
         public boolean hasNext()
         {
-            if (_fields != null)
-                return true;    // throw illegalstate?
+            if (_values != null)
+                return true;
 
             try
             {
                 while (true)
                 {
-                    _fields = readFields();
-                    if (_fields == null)
+                    Object[] fields = readFields();
+                    if (fields == null)
                     {
                         close();
                         return false;
                     }
                     _lineNum++;
 
-                    String hash = _generateInputRowHash ? HashDataIterator.calculateRowHash(_fields,0,_fields.length) : null;
+                    String hash = _generateInputRowHash ? HashDataIterator.calculateRowHash(fields,0,fields.length) : null;
 
-                    _values = convertValues();
+                    _values = convertValues(fields);
                     if (null == _values)
                         return false;
 
@@ -674,15 +688,13 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
             return -1;
         }
 
-        protected final Map<String, Object> convertValues()
+        protected final Map<String, Object> convertValues(Object[] fields)
         {
-            if (_fields == null)
+            if (fields == null)
                 return null;    // consider: throw IllegalState
 
             try
             {
-                Object[] fields = _fields;
-                _fields = null;
                 Object[] values = new Object[_activeColumns.length];
 
                 boolean foundData = false;

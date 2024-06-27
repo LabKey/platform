@@ -1095,6 +1095,14 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         @Override
         public int loadRows(User user, Container container, DataIteratorBuilder rows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
         {
+            try
+            {
+                configureCrossFolderImport(rows, context);
+            }
+            catch (IOException e)
+            {
+                throw new RuntimeException(e);
+            }
             return super.loadRows(user, container, rows, context, extraScriptContext);
         }
 
@@ -1353,7 +1361,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 results = super.updateRows(user, container, rows, oldKeys, errors, configParameters, extraScriptContext);
 
                 /* setup mini dataiterator pipeline to process lineage */
-                DataIterator di = _toDataIterator("updateRows.lineage", results);
+                DataIterator di = _toDataIteratorBuilder("updateRows.lineage", results).getDataIterator(new DataIteratorContext());
                 ExpDataIterators.derive(user, container, di, false, _dataClass, true);
             }
 

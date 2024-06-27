@@ -4193,26 +4193,8 @@ public class ExperimentController extends SpringActionController
         {
             _context = createDataIteratorContext(_insertOption, getOptionParamsMap(), auditBehaviorType, auditUserComment, errors, null, getContainer());
 
-            if (_context.isCrossFolderImport())
-            {
-                if (!getContainer().hasProductProjects())
-                    _context.setCrossFolderImport(false);
-                else if (!_context.getInsertOption().updateOnly)
-                {
-                    ColumnDescriptor[] dataColumns = dl.getColumns();
-                    boolean hasContainerColumn = false;
-                    for (ColumnDescriptor dataColumn : dataColumns)
-                    {
-                        if (dataColumn.getColumnName().equalsIgnoreCase("container") || dataColumn.getColumnName().equalsIgnoreCase("folder"))
-                        {
-                            hasContainerColumn = true;
-                            break;
-                        }
-                    }
-                    if (!hasContainerColumn)
-                        _context.setCrossFolderImport(false);
-                }
-            }
+            if (_context.isCrossFolderImport() && !getContainer().hasProductProjects())
+                _context.setCrossFolderImport(false);
         }
 
         @Override
@@ -4250,7 +4232,7 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        protected boolean hasLineageColumns()
+        protected boolean allowLineageColumns()
         {
             return true;
         }

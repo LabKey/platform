@@ -9,14 +9,13 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.iterator.ValidatingDataRowIterator;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.ExperimentalFeatureService;
-import org.labkey.api.util.Pair;
 
 import java.io.File;
-import java.util.List;
-import java.util.Map;
+import java.util.function.Supplier;
 
 public interface AssayPlateMetadataService
 {
@@ -51,11 +50,11 @@ public interface AssayPlateMetadataService
      *
      * @return the merged rows
      */
-    List<Map<String, Object>> mergePlateMetadata(
+    Supplier<ValidatingDataRowIterator> mergePlateMetadata(
         Container container,
         User user,
         Integer plateSetId,
-        List<Map<String, Object>> rows,
+        Supplier<ValidatingDataRowIterator> rows,
         AssayProvider provider,
         ExpProtocol protocol
     ) throws ExperimentException;
@@ -63,16 +62,16 @@ public interface AssayPlateMetadataService
     /**
      * Handles the validation and parsing of the plate data (or data file) including plate graphical formats as
      * well as cases where plate identifiers have not been supplied.
+     * TODO - convert to take a ValidatingDataRowIterator instead of a list of maps
      */
-    List<Map<String, Object>> parsePlateData(
+    Supplier<ValidatingDataRowIterator> parsePlateData(
         Container container,
         User user,
         AssayProvider provider,
         ExpProtocol protocol,
         Integer plateSetId,
         File dataFile,
-        List<Map<String, Object>> data,
-        Pair<String, Boolean> plateIdAdded
+        Supplier<ValidatingDataRowIterator> data
     ) throws ExperimentException;
 
     /**

@@ -40,6 +40,7 @@ import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.iterator.ValidatingDataRowIterator;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.view.ViewContext;
@@ -265,7 +266,7 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
     }
 
     @Nullable
-    protected AssayRunUploadContext createRunUploadContext(ViewContext context, ExpProtocol protocol, JSONObject runJsonObject, List<Map<String, Object>> dataRows,
+    protected AssayRunUploadContext<?> createRunUploadContext(ViewContext context, ExpProtocol protocol, JSONObject runJsonObject, List<Map<String, Object>> dataRows,
                                                            Map<ExpData, String> inputData, Map<ExpData, String> outputData,
                                                            Map<ExpMaterial, String> inputMaterial, Map<ExpMaterial, String> outputMaterial)
     {
@@ -281,7 +282,7 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
                 factory.setBatchProperties(runProperties.toMap());
             }
             factory.setUploadedData(Collections.emptyMap());
-            factory.setRawData(dataRows);
+            factory.setRawData(() -> ValidatingDataRowIterator.of(dataRows));
             factory.setInputDatas(inputData);
             factory.setOutputDatas(outputData);
             factory.setInputMaterials(inputMaterial);
@@ -299,7 +300,7 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
         return provider.createRunUploadFactory(protocol, context);
     }
 
-    protected ExpExperiment saveAssayRun(AssayRunUploadContext context, ExpExperiment batch, ExpRun run) throws ExperimentException, ValidationException
+    protected ExpExperiment saveAssayRun(AssayRunUploadContext<?> context, ExpExperiment batch, ExpRun run) throws ExperimentException, ValidationException
     {
         AssayRunCreator runCreator = getProvider().getRunCreator();
         return runCreator.saveExperimentRun(context, batch, run, false);

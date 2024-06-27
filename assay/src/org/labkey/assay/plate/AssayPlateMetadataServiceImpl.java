@@ -39,6 +39,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.iterator.ValidatingDataRowIterator;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -58,6 +59,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -68,11 +70,11 @@ import static org.labkey.api.assay.AssayResultDomainKind.WELL_LSID_COLUMN_NAME;
 public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 {
     @Override
-    public List<Map<String, Object>> mergePlateMetadata(
+    public Supplier<ValidatingDataRowIterator> mergePlateMetadata(
         Container container,
         User user,
         Integer plateSetId,
-        List<Map<String, Object>> rows,
+        Supplier<ValidatingDataRowIterator> rows,
         AssayProvider provider,
         ExpProtocol protocol
     ) throws ExperimentException
@@ -81,68 +83,62 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         DomainProperty plateProperty = resultDomain.getPropertyByName(AssayResultDomainKind.PLATE_COLUMN_NAME);
         DomainProperty wellLocationProperty = resultDomain.getPropertyByName(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME);
 
-        List<Map<String, Object>> mergedRows = new ArrayList<>();
-        for (Map<String, Object> row : rows)
+        return () -> new ValidatingDataRowIterator.Wrapper(rows.get())
         {
-            Map<String, Object> newRow = new CaseInsensitiveLinkedHashMap<>(row);
-
-            // ensure the result data includes a wellLocation field with values like : A1, F12, etc
-            Object wellLocation = PropertyService.get().getDomainPropertyValueFromRow(wellLocationProperty, newRow);
-            if (wellLocation == null)
-                throw new ExperimentException("Imported data must contain a WellLocation column to support plate metadata integration.");
-
-            mergedRows.add(newRow);
-        }
-
-        if (AssayPlateMetadataService.isExperimentalAppPlateEnabled())
-        {
-            Map<Object, Pair<Plate, Map<Position, WellBean>>> plateIdentifierMap = new HashMap<>();
-            ContainerFilter cf = PlateManager.get().getPlateContainerFilter(protocol, container, user);
+            final Map<Object, Pair<Plate, Map<Position, WellBean>>> plateIdentifierMap = new HashMap<>();
+            final ContainerFilter cf = PlateManager.get().getPlateContainerFilter(protocol, container, user);
             int rowCounter = 0;
-            Map<Integer, ExpMaterial> sampleMap = new HashMap<>();
+            final Map<Integer, ExpMaterial> sampleMap = new HashMap<>();
 
-            // include metadata that may have been applied directly to the plate
-            for (Map<String, Object> row : mergedRows)
+            @Override
+            public Map<String, Object> next() throws ValidationException
             {
-                rowCounter++;
+                Map<String, Object> row = new CaseInsensitiveLinkedHashMap<>(super.next());
 
-                Object plateIdentifier = PropertyService.get().getDomainPropertyValueFromRow(plateProperty, row);
-                if (plateIdentifier == null)
-                    throw new ExperimentException("Unable to resolve plate identifier for results row (" + rowCounter + ").");
+                // ensure the result data includes a wellLocation field with values like : A1, F12, etc
+                Object wellLocation = PropertyService.get().getDomainPropertyValueFromRow(wellLocationProperty, row);
+                if (wellLocation == null)
+                    throw new ValidationException("Imported data must contain a WellLocation column to support plate metadata integration.");
 
-                Plate plate = PlateService.get().getPlate(cf, plateSetId, plateIdentifier);
-                if (plate == null)
-                    throw new ExperimentException("Unable to resolve the plate \"" + plateIdentifier + "\" for the results row (" + rowCounter + ").");
-
-                plateIdentifierMap.putIfAbsent(plateIdentifier, new Pair<>(plate, new HashMap<>()));
-
-                // if the plate identifier is the plate name, we need to make sure it resolves during importRows
-                // so replace it with the plateId (which will be unique)
-                if (!StringUtils.isNumeric(plateIdentifier.toString()))
-                    PropertyService.get().replaceDomainPropertyValue(plateProperty, row, plate.getPlateId());
-
-                // create the map of well locations to the well for the given plate
-                Map<Position, WellBean> positionToWell = plateIdentifierMap.get(plateIdentifier).second;
-                if (positionToWell.isEmpty())
+                if (AssayPlateMetadataService.isExperimentalAppPlateEnabled())
                 {
-                    SimpleFilter filter = SimpleFilter.createContainerFilter(plate.getContainer());
-                    filter.addCondition(FieldKey.fromParts("PlateId"), plate.getRowId());
-                    Set<Integer> wellSamples = new HashSet<>();
-                    for (WellBean well : new TableSelector(AssayDbSchema.getInstance().getTableInfoWell(), filter, null).getArrayList(WellBean.class))
+                    // include metadata that may have been applied directly to the plate
+                    rowCounter++;
+
+                    Object plateIdentifier = PropertyService.get().getDomainPropertyValueFromRow(plateProperty, row);
+                    if (plateIdentifier == null)
+                        throw new ValidationException("Unable to resolve plate identifier for results row (" + rowCounter + ").");
+
+                    Plate plate = PlateService.get().getPlate(cf, plateSetId, plateIdentifier);
+                    if (plate == null)
+                        throw new ValidationException("Unable to resolve the plate \"" + plateIdentifier + "\" for the results row (" + rowCounter + ").");
+
+                    plateIdentifierMap.putIfAbsent(plateIdentifier, new Pair<>(plate, new HashMap<>()));
+
+                    // if the plate identifier is the plate name, we need to make sure it resolves during importRows
+                    // so replace it with the plateId (which will be unique)
+                    if (!StringUtils.isNumeric(plateIdentifier.toString()))
+                        PropertyService.get().replaceDomainPropertyValue(plateProperty, row, plate.getPlateId());
+
+                    // create the map of well locations to the well for the given plate
+                    Map<Position, WellBean> positionToWell = plateIdentifierMap.get(plateIdentifier).second;
+                    if (positionToWell.isEmpty())
                     {
-                        positionToWell.put(new PositionImpl(plate.getContainer(), well.getRow(), well.getCol()), well);
-                        if (well.getSampleId() != null && !sampleMap.containsKey(well.getSampleId()))
-                            wellSamples.add(well.getSampleId());
+                        SimpleFilter filter = SimpleFilter.createContainerFilter(plate.getContainer());
+                        filter.addCondition(FieldKey.fromParts("PlateId"), plate.getRowId());
+                        Set<Integer> wellSamples = new HashSet<>();
+                        for (WellBean well : new TableSelector(AssayDbSchema.getInstance().getTableInfoWell(), filter, null).getArrayList(WellBean.class))
+                        {
+                            positionToWell.put(new PositionImpl(plate.getContainer(), well.getRow(), well.getCol()), well);
+                            if (well.getSampleId() != null && !sampleMap.containsKey(well.getSampleId()))
+                                wellSamples.add(well.getSampleId());
+                        }
+
+                        if (!wellSamples.isEmpty())
+                            // stash away any samples associated with the plate
+                            ExperimentService.get().getExpMaterials(wellSamples).forEach(s -> sampleMap.put(s.getRowId(), s));
                     }
 
-                    if (!wellSamples.isEmpty())
-                        // stash away any samples associated with the plate
-                        ExperimentService.get().getExpMaterials(wellSamples).forEach(s -> sampleMap.put(s.getRowId(), s));
-                }
-
-                Object wellLocation = PropertyService.get().getDomainPropertyValueFromRow(wellLocationProperty, row);
-                if (wellLocation != null)
-                {
                     PositionImpl well = new PositionImpl(null, String.valueOf(wellLocation));
                     // need to adjust the column value to be 0 based to match the template locations
                     well.setColumn(well.getColumn() - 1);
@@ -162,23 +158,23 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                         }
                     }
                     else
-                        throw new ExperimentException("Unable to resolve well \"" + wellLocation + "\" for plate \"" + plate.getName() + "\".");
+                        throw new ValidationException("Unable to resolve well \"" + wellLocation + "\" for plate \"" + plate.getName() + "\".");
                 }
+
+                return row;
             }
-        }
-        return mergedRows;
+        };
     }
 
     @Override
-    public List<Map<String, Object>> parsePlateData(
+    public Supplier<ValidatingDataRowIterator> parsePlateData(
         Container container,
         User user,
         AssayProvider provider,
         ExpProtocol protocol,
         Integer plateSetId,
         File dataFile,
-        List<Map<String, Object>> data,
-        Pair<String, Boolean> plateIdAdded
+        Supplier<ValidatingDataRowIterator> data
     ) throws ExperimentException
     {
         // get the ordered list of plates for the plate set
@@ -193,16 +189,24 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         if (plates.isEmpty())
             throw new ExperimentException("No plates were found for the plate set (" + plateSetId + ").");
 
-        if (isGridFormat(data))
+        try (ValidatingDataRowIterator i = data.get())
         {
-            plateIdAdded.setValue(true);
-            List<Map<String, Object>> gridRows = parsePlateGrids(container, user, provider, protocol, plateSet, plates, dataFile);
+            List<Map<String, Object>> rows = i.collect();
 
-            // best attempt at returning something we can import
-            return (gridRows.isEmpty() && !data.isEmpty()) ? data : gridRows;
+            if (isGridFormat(rows))
+            {
+                List<Map<String, Object>> gridRows = parsePlateGrids(container, user, provider, protocol, plateSet, plates, dataFile);
+
+                // best attempt at returning something we can import
+                return () -> ValidatingDataRowIterator.of((gridRows.isEmpty() && !rows.isEmpty()) ? rows : gridRows);
+            }
+
+            return parsePlateRows(provider, protocol, plates, rows);
         }
-
-        return parsePlateRows(provider, protocol, plates, data, plateIdAdded);
+        catch (ValidationException e)
+        {
+            throw new ExperimentException(e);
+        }
     }
 
     private boolean isGridFormat(List<Map<String, Object>> data)
@@ -215,12 +219,11 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         return !data.get(0).containsKey(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME) && !data.get(0).containsKey("Well Location");
     }
 
-    private List<Map<String, Object>> parsePlateRows(
+    private Supplier<ValidatingDataRowIterator> parsePlateRows(
         AssayProvider provider,
         ExpProtocol protocol,
         List<Plate> plates,
-        List<Map<String, Object>> data,
-        Pair<String, Boolean> plateIdAdded
+        List<Map<String, Object>> data
     ) throws ExperimentException
     {
         DomainProperty plateProp = provider.getResultsDomain(protocol).getPropertyByName(AssayResultDomainKind.PLATE_COLUMN_NAME);
@@ -232,10 +235,9 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         boolean hasPlateIdentifiers = plateIdField != null && (data.stream().filter(row -> row.get(plateIdField) != null).findFirst().orElse(null) != null);
 
         if (hasPlateIdentifiers)
-            return data;
+            return () -> ValidatingDataRowIterator.of(data);
 
         final String ERROR_MESSAGE = "Unable to automatically assign plate identifiers to the data rows because %s. Please include plate identifiers for the data rows.";
-        plateIdAdded.second = true;
 
         // verify all plates in the set have the same shape
         Set<PlateType> types = plates.stream().map(Plate::getPlateType).collect(Collectors.toSet());
@@ -261,7 +263,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             // well location field is required, return if not provided or it will fail downstream
             String well = String.valueOf(row.get(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME));
             if (well == null)
-                return data;
+                return () -> ValidatingDataRowIterator.of(data);
 
             Position position = new PositionImpl(null, well);
             if (positions.contains(position))
@@ -281,7 +283,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             }
         }
 
-        return newData;
+        return () -> ValidatingDataRowIterator.of(newData);
     }
 
     /**
@@ -517,7 +519,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 
         public PlateMetadataImportHelper(ExpData data, Container container, User user, ExpRun run, ExpProtocol protocol, AssayProvider provider)
         {
-            super(data);
+            super(data, protocol, provider);
             _wellPositionMap = new HashMap<>();
             _plateIdentifierMap = new HashMap<>();
             _container = container;

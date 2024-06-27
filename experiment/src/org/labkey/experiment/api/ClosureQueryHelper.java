@@ -497,6 +497,26 @@ public class ClosureQueryHelper
         recomputeFromSeeds(selectSeedsSql, true);
     }
 
+    private static void recomputeMaterialAncestorsForRuns(Collection<Integer> runIds)
+    {
+        var tx = getScope().getCurrentTransaction();
+        if (null != tx)
+        {
+            tx.addCommitTask(() -> recomputeMaterialAncestorsForRuns(runIds), DbScope.CommitTaskOption.POSTCOMMIT);
+            return;
+        }
+
+        SQLFragment selectSeedsSql = new SQLFragment()
+                .append("SELECT m.RowId, m.ObjectId, 'm' AS ObjectType FROM exp.material m\n")
+                .append("INNER JOIN exp.MaterialInput mi ON m.rowId = mi.materialId\n")
+                .append("INNER JOIN exp.ProtocolApplication pa ON mi.TargetApplicationId = pa.RowId\n")
+                .append("WHERE pa.RunId ");
+        getScope().getSqlDialect().appendInClauseSql(selectSeedsSql, runIds);
+        selectSeedsSql
+                .append(" AND pa.CpasType = ").appendValue(ExperimentRunOutput);
+        recomputeFromSeeds(selectSeedsSql, true);
+    }
+
     public static void recomputeDataObjectAncestors(int rowId)
     {
         var tx = getScope().getCurrentTransaction();
@@ -529,6 +549,35 @@ public class ClosureQueryHelper
                 .append(" AND d.cpasType = ? ").add(sourceTypeLsid)
                 .append(" AND pa.CpasType = ").appendValue(ExperimentRunOutput);
         recomputeFromSeeds(selectSeedsSql, false);
+    }
+
+    private static void recomputeDataAncestorsForRuns(Collection<Integer> runIds)
+    {
+        var tx = getScope().getCurrentTransaction();
+        if (null != tx)
+        {
+            tx.addCommitTask(() -> recomputeDataAncestorsForRuns(runIds), DbScope.CommitTaskOption.POSTCOMMIT);
+            return;
+        }
+
+        SQLFragment selectSeedsSql = new SQLFragment()
+                .append("SELECT d.RowId, d.ObjectId, 'd' AS ObjectType FROM exp.data d\n")
+                .append("INNER JOIN exp.DataInput di ON d.rowId = di.dataId\n")
+                .append("INNER JOIN exp.ProtocolApplication pa ON di.TargetApplicationId = pa.RowId\n")
+                .append("WHERE pa.RunId ");
+        getScope().getSqlDialect().appendInClauseSql(selectSeedsSql, runIds);
+        selectSeedsSql
+                .append(" AND pa.CpasType = ").appendValue(ExperimentRunOutput);
+        recomputeFromSeeds(selectSeedsSql, false);
+    }
+
+    public static void recomputeAncestorsForRuns(Collection<Integer> runIds)
+    {
+        if (runIds.isEmpty())
+            return;
+
+        recomputeDataAncestorsForRuns(runIds);
+        recomputeMaterialAncestorsForRuns(runIds);
     }
 
     private static DbScope getScope()

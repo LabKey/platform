@@ -45,6 +45,7 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.iterator.ValidatingDataRowIterator;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.PropertyValidationError;
@@ -79,6 +80,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
@@ -125,7 +127,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
     public static final String TRANS_ERR_FILE = "errors.html";
 
     private Map<String, String> _formFields = new HashMap<>();
-    private Map<String, List<Map<String, Object>>> _sampleProperties = new HashMap<>();
+    private Map<String, Supplier<ValidatingDataRowIterator>> _sampleProperties = new HashMap<>();
     private static final Logger LOG = LogManager.getLogger(TsvDataExchangeHandler.class);
     private DataSerializer _serializer = new TsvDataSerializer();
 
@@ -162,7 +164,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             Set<File> dataFiles = writeRunData(context, run, scriptDir, pw);
 
             // any additional sample property sets
-            for (Map.Entry<String, List<Map<String, Object>>> set : _sampleProperties.entrySet())
+            for (Map.Entry<String, Supplier<ValidatingDataRowIterator>> set : _sampleProperties.entrySet())
             {
                 File sampleData = new File(scriptDir, set.getKey() + ".tsv");
                 getDataSerializer().exportRunData(context.getProtocol(), set.getValue(), sampleData);
@@ -191,8 +193,8 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             // error level initialization
             pw.append(Props.severityLevel.name());
             pw.append('\t');
-            if(context instanceof AssayRunUploadForm && null != ((AssayRunUploadForm) context).getSeverityLevel())
-                pw.println(((AssayRunUploadForm) context).getSeverityLevel());
+            if(context instanceof AssayRunUploadForm<?> form && null != form.getSeverityLevel())
+                pw.println(form.getSeverityLevel());
             else
                 pw.println(errLevel.WARN.name());
 
@@ -203,7 +205,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
     /**
      * Writes out a tsv representation of the assay uploaded data.
      */
-    protected Set<File> writeRunData(AssayRunUploadContext context, ExpRun run, File scriptDir, PrintWriter pw) throws Exception
+    protected Set<File> writeRunData(AssayRunUploadContext<?> context, ExpRun run, File scriptDir, PrintWriter pw) throws Exception
     {
         TransformResult transform = context.getTransformResult();
         if (!transform.getTransformedData().isEmpty())
@@ -219,18 +221,26 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
      * assay-saveAssayBatch.api: does not include uploadedData but may include an inputData file along with rawData rows.
      * assay-importRun.api: may include uploadedData or rawData (with or without an inputData file).
      */
-    protected Set<File> _writeRunData(AssayRunUploadContext context, ExpRun run, File scriptDir, PrintWriter pw) throws Exception
+    protected Set<File> _writeRunData(AssayRunUploadContext<?> context, ExpRun run, File scriptDir, PrintWriter pw) throws Exception
     {
         List<File> result = new ArrayList<>();
 
         Map<String, File> uploadedData = context.getUploadedData();
-        List<Map<String, Object>> rawData = context.getRawData();
+        Supplier<ValidatingDataRowIterator> rawData = context.getRawData();
 
         // For now, only one of uploadedData or rawData is used, not both at the same time.
         Collection<? extends ExpData> dataInputs = Collections.emptyList();
-        if (uploadedData.isEmpty() && rawData != null && !rawData.isEmpty())
+        boolean rawDataHasRows = false;
+        if (uploadedData.isEmpty() && rawData != null)
         {
-            dataInputs = run.getDataInputs().keySet();
+            try (ValidatingDataRowIterator iterator = rawData.get())
+            {
+                if (iterator.hasNext())
+                {
+                    rawDataHasRows = true;
+                    dataInputs = run.getDataInputs().keySet();
+                }
+            }
         }
 
         boolean hasRunDataUploadedFile = !uploadedData.isEmpty() || !dataInputs.isEmpty();
@@ -238,10 +248,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         ViewBackgroundInfo info = new ViewBackgroundInfo(context.getContainer(), context.getUser(), context.getActionURL());
         XarContext xarContext = new AssayUploadXarContext("Simple Run Creation", context);
 
-        Map<DataType, List<Map<String, Object>>> mergedDataMap = new HashMap<>();
-
-        // All of the DataTypes that support
-        Set<DataType> transformDataTypes = new HashSet<>();
+        Map<DataType, Supplier<ValidatingDataRowIterator>> mergedDataMap = new HashMap<>();
 
         DataType dataType = context.getProvider().getDataType();
         if (dataType == null)
@@ -262,7 +269,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             expData.setRun(run);
 
             ExperimentDataHandler handler = expData.findDataHandler();
-            if (handler instanceof ValidationDataHandler)
+            if (handler instanceof ValidationDataHandler validationHandler)
             {
                 pw.append(sep).append(data.getAbsolutePath());
                 sep = ";";
@@ -275,11 +282,11 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 settings.setAllowEmptyData(true);
                 settings.setThrowOnErrors(false);
 
-                Map<DataType, List<Map<String, Object>>> dataMap = ((ValidationDataHandler)handler).getValidationDataMap(expData, data, info, context.getLogger() != null ? context.getLogger() : LOG, xarContext, settings);
-
-                // Combine the rows of any of the same DataTypes into a single entry
-                addToMergedMap(mergedDataMap, dataMap);
-                transformDataTypes.addAll(dataMap.keySet());
+                Map<DataType, Supplier<ValidatingDataRowIterator>> newDataMaps = validationHandler.getValidationDataMap(expData, data, info, context.getLogger() != null ? context.getLogger() : LOG, xarContext, settings);
+                for (Map.Entry<DataType, Supplier<ValidatingDataRowIterator>> newEntry : newDataMaps.entrySet())
+                {
+                    mergedDataMap = mergeMaps(mergedDataMap, newEntry.getKey(), newEntry.getValue());
+                }
             }
         }
 
@@ -297,21 +304,20 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             pw.println();
 
 
-        // Add rawData rows to mergedDataMap so it will be included as a runDataFile in the runProperties.tsv
-        if (rawData != null && !rawData.isEmpty())
+        // Add rawData rows to mergedDataMap, so it will be included as a runDataFile in the runProperties.tsv
+        if (rawDataHasRows)
         {
             File runData = new File(scriptDir, RUN_DATA_FILE);
             result.add(runData);
 
-            addToMergedMap(mergedDataMap, Map.of(dataType, rawData));
-            transformDataTypes.add(dataType);
+            mergedDataMap = mergeMaps(mergedDataMap, dataType, rawData);
         }
 
         File dir = AssayFileWriter.ensureUploadDirectory(context.getContainer());
 
         assert mergedDataMap.size() <= 1 : "Multiple input files are only supported if they are of the same type";
 
-        for (Map.Entry<DataType, List<Map<String, Object>>> dataEntry : mergedDataMap.entrySet())
+        for (Map.Entry<DataType, Supplier<ValidatingDataRowIterator>> dataEntry : mergedDataMap.entrySet())
         {
             File runData = new File(scriptDir, Props.runDataFile + ".tsv");
             getDataSerializer().exportRunData(context.getProtocol(), dataEntry.getValue(), runData);
@@ -323,7 +329,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             pw.append('\t');
             pw.append(dataEntry.getKey().getNamespacePrefix());
 
-            if (transformDataTypes.contains(dataEntry.getKey()))
+            if (mergedDataMap.containsKey(dataEntry.getKey()))
             {
                 // if the handler supports data transformation, we will include an additional column for the location of
                 // a transformed data file that a transform script may create.
@@ -338,19 +344,20 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         return new HashSet<>(result);
     }
 
-    protected void addToMergedMap(Map<DataType, List<Map<String, Object>>> mergedDataMap, Map<DataType, List<Map<String, Object>>> dataMap)
+    protected Map<DataType, Supplier<ValidatingDataRowIterator>> mergeMaps(Map<DataType, Supplier<ValidatingDataRowIterator>> primaryMap, DataType additionalDataType, Supplier<ValidatingDataRowIterator> additionalRows)
     {
-        for (Map.Entry<DataType, List<Map<String, Object>>> entry : dataMap.entrySet())
+        Map<DataType, Supplier<ValidatingDataRowIterator>> result = new HashMap<>(primaryMap);
+
+        if (result.containsKey(additionalDataType))
         {
-            if (mergedDataMap.containsKey(entry.getKey()))
-            {
-                mergedDataMap.get(entry.getKey()).addAll(entry.getValue());
-            }
-            else
-            {
-                mergedDataMap.put(entry.getKey(), entry.getValue());
-            }
+            result.compute(additionalDataType, (k, initialRows) -> () -> ValidatingDataRowIterator.concat(initialRows.get(), additionalRows.get()));
         }
+        else
+        {
+            result.put(additionalDataType, additionalRows);
+        }
+
+        return result;
     }
 
     /**
@@ -379,7 +386,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         AssayFileWriter.ensureUploadDirectory(context.getContainer());
         File workDir = getWorkingDirectory(context);
 
-        for (Map.Entry<ExpData, List<Map<String, Object>>> entry : transformResult.getTransformedData().entrySet())
+        for (Map.Entry<ExpData, Supplier<ValidatingDataRowIterator>> entry : transformResult.getTransformedData().entrySet())
         {
             ExpData data = entry.getKey();
             File runData = new File(scriptDir, Props.runDataFile + ".tsv");
@@ -409,7 +416,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
     protected void addSampleProperties(String propertyName, List<Map<String, Object>> rows)
     {
-        _sampleProperties.put(propertyName, rows);
+        _sampleProperties.put(propertyName, () -> ValidatingDataRowIterator.of(rows));
     }
 
     protected void writeRunProperties(AssayRunUploadContext<? extends AssayProvider> context, Map<DomainProperty, String> runProperties, File scriptDir, PrintWriter pw, TSVWriter writer)
@@ -718,11 +725,11 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 pw.append('\t');
                 pw.println(runData.getAbsolutePath());
 
-                getDataSerializer().exportRunData(protocol, new ArrayList<>(dataRows), runData);
+                getDataSerializer().exportRunData(protocol, () -> ValidatingDataRowIterator.of(dataRows), runData);
             }
 
             // any additional sample property sets
-            for (Map.Entry<String, List<Map<String, Object>>> set : _sampleProperties.entrySet())
+            for (Map.Entry<String, Supplier<ValidatingDataRowIterator>> set : _sampleProperties.entrySet())
             {
                 File sampleData = new File(scriptDir, set.getKey() + ".tsv");
                 getDataSerializer().exportRunData(protocol, set.getValue(), sampleData);
@@ -1042,7 +1049,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 if (!transformedData.isEmpty())
                 {
                     // found some transformed data, create the ExpData objects and return in the transform result
-                    Map<ExpData, List<Map<String, Object>>> dataMap = new HashMap<>();
+                    Map<ExpData, Supplier<ValidatingDataRowIterator>> dataMap = new HashMap<>();
 
                     for (Map.Entry<String, File> entry : transformedData.entrySet())
                     {

@@ -34,6 +34,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.pipeline.XarGeneratorId;
+import org.labkey.api.iterator.ValidatingDataRowIterator;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.AbstractTaskFactory;
@@ -822,7 +823,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             // Add raw data if specified, either raw data or uploaded file can be used but not both
             List<Map<String, Object>> rawData = _factory.getRawData(getJob());
             if (rawData != null)
-                factory.setRawData(rawData);
+                factory.setRawData(() -> ValidatingDataRowIterator.of(rawData));
 
             factory.setBatchProperties(getBatchProperties());
 

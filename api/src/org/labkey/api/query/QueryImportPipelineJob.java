@@ -56,7 +56,7 @@ public class QueryImportPipelineJob extends PipelineJob
         QueryUpdateService.InsertOption _insertOption= QueryUpdateService.InsertOption.INSERT;
         AuditBehaviorType _auditBehaviorType = null;
         String _auditUserComment = null;
-        boolean _hasLineageColumns = false;
+        boolean _allowLineageColumns = false;
         Map<AbstractQueryImportAction.Params, Boolean> _optionParamsMap = new HashMap<>();
 
         String _jobDescription;
@@ -118,9 +118,9 @@ public class QueryImportPipelineJob extends PipelineJob
             return _optionParamsMap;
         }
 
-        public boolean isHasLineageColumns()
+        public boolean allowLineageColumns()
         {
-            return _hasLineageColumns;
+            return _allowLineageColumns;
         }
 
         public String getJobDescription()
@@ -198,9 +198,9 @@ public class QueryImportPipelineJob extends PipelineJob
             return this;
         }
 
-        public QueryImportAsyncContextBuilder setHasLineageColumns(boolean hasLineageColumns)
+        public QueryImportAsyncContextBuilder setAllowLineageColumns(boolean allowLineageColumns)
         {
-            _hasLineageColumns = hasLineageColumns;
+            _allowLineageColumns = allowLineageColumns;
             return this;
         }
 
@@ -271,7 +271,7 @@ public class QueryImportPipelineJob extends PipelineJob
 
             loader = DataLoader.get().createLoader(_importContextBuilder.getPrimaryFile(), _importContextBuilder.getFileContentType(), _importContextBuilder.isHasColumnHeaders(), null, null);
 
-            AbstractQueryImportAction.configureLoader(loader, target, _importContextBuilder.getRenamedColumns(), _importContextBuilder.isHasLineageColumns());
+            AbstractQueryImportAction.configureLoader(loader, target, _importContextBuilder.getRenamedColumns(), _importContextBuilder.allowLineageColumns());
 
             TransactionAuditProvider.TransactionAuditEvent auditEvent = null;
 
