@@ -5,6 +5,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Dataset;
@@ -28,6 +29,12 @@ public class DefaultProvenanceProvider implements ProvenanceService
     public boolean isProvenanceSupported()
     {
         return false;
+    }
+
+    @Override
+    public OntologyManager.RowCallback getAssayRowCallback(ExpRun run, Container container)
+    {
+        return OntologyManager.NO_OP_ROW_CALLBACK;
     }
 
     @Override

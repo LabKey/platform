@@ -24,15 +24,15 @@ import org.labkey.api.exp.XarContext;
  */
 public class AssayUploadXarContext extends XarContext
 {
-    private AssayRunUploadContext _context;
+    private final AssayRunUploadContext<?> _context;
 
-    public AssayUploadXarContext(String jobDescription, AssayRunUploadContext context)
+    public AssayUploadXarContext(String jobDescription, AssayRunUploadContext<?> context)
     {
         super(jobDescription, context.getContainer(), context.getUser());
         _context = context;
     }
 
-    public AssayRunUploadContext getContext()
+    public AssayRunUploadContext<?> getContext()
     {
         return _context;
     }
