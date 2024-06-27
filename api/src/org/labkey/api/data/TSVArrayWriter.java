@@ -37,14 +37,12 @@ public class TSVArrayWriter extends TSVWriter
     @Override
     protected int writeBody()
     {
-        int rowCount = 0;
-
         for (List<String> row : _rows)
         {
             writeLine(row);
         }
 
-        return rowCount;
+        return _rows.size();
     }
 
     @Override
