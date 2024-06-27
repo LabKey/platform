@@ -297,7 +297,6 @@ public class ModuleProperty
 
         PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(PropertyManager.SHARED_USER, c, getCategory(), true);
         Object oldValue = props.get(getName());
-        Map<String, Object> oldProp = Map.of(getName(), oldValue == null ? "" : oldValue );
         String auditComment;
         if (!StringUtils.isEmpty(value))
         {
@@ -312,8 +311,8 @@ public class ModuleProperty
         ModulePropertiesAuditProvider.ModulePropertiesAuditEvent event = new ModulePropertiesAuditProvider.ModulePropertiesAuditEvent(c, auditComment);
         event.setModule(getModule().getName());
 
-        event.setOldRecordMap(AbstractAuditTypeProvider.encodeForDataMap(c, oldProp));
-        event.setNewRecordMap(AbstractAuditTypeProvider.encodeForDataMap(c, Map.of(getName(), value == null ? "" : value)));
+        event.setOldValue(oldValue);
+        event.setNewValue(value);
 
         AuditLogService.get().addEvent(user, event);
         props.save();

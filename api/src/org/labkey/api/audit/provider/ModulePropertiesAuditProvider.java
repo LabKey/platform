@@ -30,6 +30,8 @@ public class ModulePropertiesAuditProvider extends AbstractAuditTypeProvider imp
     public static final  String AUDIT_EVENT_TYPE = "ModulePropertyEvents";
 
     private static final String COLUMN_NAME_MODULE = "Module";
+    private static final String COLUMN_NAME_OLD_VALUE = "OldValue";
+    private static final String COLUMN_NAME_NEW_VALUE = "NewValue";
     private static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
 
     static
@@ -39,9 +41,8 @@ public class ModulePropertiesAuditProvider extends AbstractAuditTypeProvider imp
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_IMPERSONATED_BY));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CONTAINER));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_MODULE));
-        defaultVisibleColumns.add(FieldKey.fromParts(OLD_RECORD_PROP_NAME));
-        defaultVisibleColumns.add(FieldKey.fromParts(NEW_RECORD_PROP_NAME));
-        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_DATA_CHANGES));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_OLD_VALUE));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_NEW_VALUE));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_COMMENT));
     }
 
@@ -75,22 +76,16 @@ public class ModulePropertiesAuditProvider extends AbstractAuditTypeProvider imp
     }
 
     @Override
-    public TableInfo createTableInfo(UserSchema userSchema, ContainerFilter cf)
-    {
-        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, cf, defaultVisibleColumns);
-        appendValueMapColumns(table);
-        return table;
-    }
-
-    @Override
     public List<FieldKey> getDefaultVisibleColumns()
     {
         return defaultVisibleColumns;
     }
 
-    public static class ModulePropertiesAuditEvent extends DetailedAuditTypeEvent
+    public static class ModulePropertiesAuditEvent extends AuditTypeEvent
     {
         private String _module;
+        private Object _oldValue;
+        private Object _newValue;
 
         public ModulePropertiesAuditEvent()
         {
@@ -112,12 +107,34 @@ public class ModulePropertiesAuditProvider extends AbstractAuditTypeProvider imp
             _module = module;
         }
 
+        public Object getOldValue()
+        {
+            return _oldValue;
+        }
+
+        public void setOldValue(Object oldValue)
+        {
+            _oldValue = oldValue;
+        }
+
+        public Object getNewValue()
+        {
+            return _newValue;
+        }
+
+        public void setNewValue(Object newValue)
+        {
+            _newValue = newValue;
+        }
+
         @Override
         public Map<String, Object> getAuditLogMessageElements()
         {
             Map<String, Object> elements = new LinkedHashMap<>();
 
             elements.put("module", getModule());
+            elements.put("oldValue", getOldValue());
+            elements.put("newValue", getNewValue());
             elements.putAll(super.getAuditLogMessageElements());
             return elements;
         }
@@ -137,8 +154,8 @@ public class ModulePropertiesAuditProvider extends AbstractAuditTypeProvider imp
 
             Set<PropertyDescriptor> fields = new LinkedHashSet<>();
             fields.add(createPropertyDescriptor(COLUMN_NAME_MODULE, PropertyType.STRING));
-            fields.add(createOldDataMapPropertyDescriptor());
-            fields.add(createNewDataMapPropertyDescriptor());
+            fields.add(createPropertyDescriptor(COLUMN_NAME_OLD_VALUE, PropertyType.STRING));
+            fields.add(createPropertyDescriptor(COLUMN_NAME_NEW_VALUE, PropertyType.STRING));
             _fields = Collections.unmodifiableSet(fields);
         }
 
