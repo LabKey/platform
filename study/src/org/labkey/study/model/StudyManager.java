@@ -398,9 +398,6 @@ public class StudyManager
 
     private class DatasetHelper
     {
-        // NOTE: We really don't want to have multiple instances of DatasetDefinitions in-memory, only return the
-        // datasets that are cached under container.containerId/ds.entityId
-
         private final QueryHelper<DatasetDefinition> helper = new QueryHelper<>(
                 () -> StudySchema.getInstance().getTableInfoDataset(),
                 DatasetDefinition.class)
@@ -454,54 +451,17 @@ public class StudyManager
 
         public List<DatasetDefinition> getList(Container c)
         {
-            return toSharedInstance(helper.getList(c));
+            return helper.getList(c);
         }
 
         public List<DatasetDefinition> getList(Container c, SimpleFilter filter)
         {
-            return toSharedInstance(helper.getList(c, filter));
+            return helper.getList(c, filter);
         }
 
         public DatasetDefinition get(Container c, int rowId)
         {
-            return toSharedInstance(helper.get(c, rowId, "DatasetId"));
-        }
-
-        @NotNull
-        private List<DatasetDefinition> toSharedInstance(List<DatasetDefinition> in)
-        {
-            TableInfo t = getTableInfo();
-            ArrayList<DatasetDefinition> ret = new ArrayList<>(in.size());
-            for (DatasetDefinition dsIn : in)
-            {
-                DatasetDefinition dsRet = (DatasetDefinition) getCached(t, dsIn.getContainer(), dsIn.getEntityId());
-                if (null == dsRet)
-                {
-                    dsRet = dsIn;
-                    StudyCache.cache(t, dsIn.getContainer(), dsIn.getEntityId(), dsIn);
-                }
-                ret.add(dsRet);
-            }
-            return ret;
-        }
-
-        private DatasetDefinition toSharedInstance(DatasetDefinition dsIn)
-        {
-            if (null == dsIn)
-                return null;
-            TableInfo t = getTableInfo();
-            DatasetDefinition dsRet = (DatasetDefinition) getCached(t, dsIn.getContainer(), dsIn.getEntityId());
-            if (null == dsRet)
-            {
-                dsRet = dsIn;
-                StudyCache.cache(t, dsIn.getContainer(), dsIn.getEntityId(), dsIn);
-            }
-            return dsRet;
-        }
-
-        private static Object getCached(TableInfo tinfo, Container c, Object cacheKey)
-        {
-            return StudyCache.getCache(tinfo).get(StudyCache.getCacheName(c, cacheKey));
+            return helper.get(c, rowId, "DatasetId");
         }
     }
 

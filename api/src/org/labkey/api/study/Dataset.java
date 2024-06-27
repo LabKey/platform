@@ -53,7 +53,7 @@ import java.util.Set;
 /**
  * A table that contains information about subjects and timepoints. The main data type used in studies.
  */
-public interface Dataset extends StudyEntity, StudyCachable<Dataset>
+public interface Dataset extends StudyEntity
 {
     // standard string to use in URLs etc.
     String DATASET_KEY = "datasetId";

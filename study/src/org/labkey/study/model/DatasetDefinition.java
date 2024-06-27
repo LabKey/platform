@@ -171,12 +171,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import static org.labkey.api.query.QueryService.AuditAction.DELETE;
 import static org.labkey.api.query.QueryService.AuditAction.TRUNCATE;
 
-
-/**
- * User: brittp
- * Date: Jan 6, 2006
- * Time: 10:29:31 AM
- */
 public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements Cloneable, Dataset, InitializingBean
 {
     // DatasetQueryUpdateService

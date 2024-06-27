@@ -18,9 +18,9 @@ package org.labkey.api.study;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
-import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.TableInfo;
@@ -31,15 +31,14 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class StudyCache
 {
-    // TODO: Fix generics. Get rid of cache() method and switch to BlockingCaches. Cache (and invalidate)
-    // a single map per Container for all object types.
-    private static final Map<Path, DatabaseCache<String, Object>> CACHES = new ConcurrentHashMap<>(10);
+    // TODO: Fix generics. Cache (and invalidate) a single map per Container for all object types.
+    private static final Map<Path, BlockingCache<String, Object>> CACHES = new ConcurrentHashMap<>(10);
 
-    public static @NotNull DatabaseCache<String, Object> getCache(TableInfo tinfo)
+    public static @NotNull BlockingCache<String, Object> getCache(TableInfo tinfo)
     {
         Path cacheKey = tinfo.getNotificationKey();
         assert null != cacheKey : "StudyCache not supported for " + tinfo;
-        return CACHES.computeIfAbsent(cacheKey, key -> new DatabaseCache(tinfo.getSchema().getScope(), tinfo.getCacheSize(), "StudyCache: " + tinfo.getName()));
+        return CACHES.computeIfAbsent(cacheKey, key -> DatabaseCache.get(tinfo.getSchema().getScope(), tinfo.getCacheSize(), "StudyCache: " + tinfo.getName(), null));
     }
 
     public static String getCacheName(Container c, @Nullable Object cacheKey)
@@ -47,17 +46,10 @@ public class StudyCache
         return c.getId() + "/" + (null != cacheKey ? cacheKey : "");
     }
 
-    public static void cache(TableInfo tinfo, Container c, String objectId, StudyCachable cachable)
-    {
-        if (cachable != null)
-            cachable.lock();
-        getCache(tinfo).put(getCacheName(c, objectId), cachable, CacheManager.HOUR);
-    }
-
     // TODO: this method is broken/inconsistent -- the cacheKey passed in doesn't match the put() keys
     public static void uncache(TableInfo tinfo, Container c, Object cacheKey)
     {
-        DatabaseCache<String, Object> cache = getCache(tinfo);
+        BlockingCache<String, Object> cache = getCache(tinfo);
         cache.remove(getCacheName(c, cacheKey));
         cache.clear();
     }
