@@ -285,7 +285,7 @@ public class StudyManager
 
                     // The match, if any, for the container that's being queried directly
                     StudyImpl result = null;
-                    // Keep track of all of the containers that DON'T have a study so we can cache them as a miss
+                    // Keep track of all containers that DON'T have a study so we can cache them as a miss
                     if (c.getParent() != null)
                     {
                         siblingsWithNoStudies.addAll(ContainerManager.getChildren(c.getParent()));
@@ -1231,7 +1231,7 @@ public class StudyManager
 
     public void importVisitAliases(Study study, User user, List<VisitAlias> aliases) throws ValidationException
     {
-        DataIteratorBuilder it = new BeanDataIterator.Builder(VisitAlias.class, aliases);
+        DataIteratorBuilder it = new BeanDataIterator.Builder<>(VisitAlias.class, aliases);
         importVisitAliases(study, user, it);
     }
 
@@ -1444,9 +1444,8 @@ public class StudyManager
             newVisitTagMap.remove(visitTag.getName());
         });
 
-        List<VisitTag> newVisitTags = new ArrayList<>();
-        newVisitTags.addAll(newVisitTagMap.values());
-        DataIteratorBuilder loader = new BeanDataIterator.Builder(VisitTag.class, newVisitTags);
+        List<VisitTag> newVisitTags = new ArrayList<>(newVisitTagMap.values());
+        DataIteratorBuilder loader = new BeanDataIterator.Builder<>(VisitTag.class, newVisitTags);
         DbScope scope = tinfo.getSchema().getScope();
 
         try (Transaction transaction = scope.ensureTransaction())
@@ -1742,11 +1741,6 @@ public class StudyManager
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         filter.addCondition(FieldKey.fromParts("VisitId"), rowId);
         Table.delete(StudySchema.getInstance().getTableInfoAssaySpecimenVisit(), filter);
-    }
-
-    public String getStudyDesignAssayLabelByName(Container container, String name)
-    {
-        return getStudyDesignLabelByName(container, StudySchema.getInstance().getTableInfoStudyDesignAssays(), name);
     }
 
     public String getStudyDesignLabLabelByName(Container container, String name)
@@ -4727,7 +4721,7 @@ public class StudyManager
     }
 
     /**
-     * Get the shared study in the project for the given study (excluding the shared study itself.)
+     * Get the shared study in the project for the given study (excluding the shared study itself)
      */
     @Nullable
     public Study getSharedStudy(@NotNull Container c)

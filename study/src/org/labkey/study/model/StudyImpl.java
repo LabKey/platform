@@ -233,7 +233,6 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         return shortName.isEmpty() ? label : shortName;
     }
 
-
     @Override
     public List<VisitImpl> getVisits(Visit.Order order)
     {
