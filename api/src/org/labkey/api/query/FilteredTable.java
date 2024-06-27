@@ -153,7 +153,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
 
     protected @NotNull TableRules findTableRules()
     {
-        throw new UnsupportedOperationException("Override this method if canApplyTableRules()==true");
+        throw new UnsupportedOperationException("Override this method if canApplyTableRules()==true: " + getClass().getName());
         // example
         // return TableRulesManager.get().getTableRules({TYPE}.getDefinitionContainer(), getUserSchema().getUser());
     }
