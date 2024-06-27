@@ -119,7 +119,7 @@ public class QueryHelper<K extends StudyCachable<K>>
     public K create(User user, K obj)
     {
         K ret = Table.insert(user, getTableInfo(), obj);
-        clearCache(obj);
+        clearCache(obj.getContainer());
         return ret;
     }
 
@@ -131,14 +131,14 @@ public class QueryHelper<K extends StudyCachable<K>>
     public K update(User user, K obj, Object... pk)
     {
         K ret = Table.update(user, getTableInfo(), obj, pk);
-        clearCache(obj);
+        clearCache(obj.getContainer());
         return ret;
     }
 
     public void delete(K obj)
     {
         Table.delete(getTableInfo(), obj.getPrimaryKey());
-        clearCache(obj);
+        clearCache(obj.getContainer());
     }
 
     public TableInfo getTableInfo()
@@ -149,11 +149,6 @@ public class QueryHelper<K extends StudyCachable<K>>
     public void clearCache(Container c)
     {
         StudyCache.clearCache(getTableInfo(), c);
-    }
-
-    public void clearCache(K obj)
-    {
-        StudyCache.uncache(getTableInfo(), obj.getContainer(), obj.getPrimaryKey().toString());
     }
 
     public void clearCache()

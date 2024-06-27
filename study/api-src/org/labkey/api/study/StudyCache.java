@@ -46,14 +46,6 @@ public class StudyCache
         return c.getId() + "/" + (null != cacheKey ? cacheKey : "");
     }
 
-    // TODO: this method is broken/inconsistent -- the cacheKey passed in doesn't match the put() keys
-    public static void uncache(TableInfo tinfo, Container c, Object cacheKey)
-    {
-        BlockingCache<String, Object> cache = getCache(tinfo);
-        cache.remove(getCacheName(c, cacheKey));
-        cache.clear();
-    }
-
     public static Object get(TableInfo tinfo, Container c, Object cacheKey, CacheLoader<String, Object> loader)
     {
         return getCache(tinfo).get(getCacheName(c, cacheKey), null, loader);

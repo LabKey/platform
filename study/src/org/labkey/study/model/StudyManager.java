@@ -338,13 +338,6 @@ public class StudyManager
                 super.clearCache(c);
                 clearCachedStudies();
             }
-
-            @Override
-            public void clearCache(StudyImpl obj)
-            {
-                clearCache(obj.getContainer()); // Need to clear <cid>/~ALL plus <cid>/<filter> entries
-                clearCachedStudies();
-            }
         };
 
         _visitHelper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoVisit(), VisitImpl.class);
@@ -398,16 +391,7 @@ public class StudyManager
 
     private class DatasetHelper
     {
-        private final QueryHelper<DatasetDefinition> helper = new QueryHelper<>(
-                () -> StudySchema.getInstance().getTableInfoDataset(),
-                DatasetDefinition.class)
-        {
-            @Override
-            public void clearCache(DatasetDefinition obj)
-            {
-                super.clearCache(obj.getContainer());
-            }
-        };
+        private final QueryHelper<DatasetDefinition> helper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoDataset(), DatasetDefinition.class);
 
         private DatasetHelper()
         {
@@ -1658,19 +1642,20 @@ public class StudyManager
             try
             {
                 Study visitStudy = getStudyForVisits(study);
+                Container c = visitStudy.getContainer();
 
-                for (VisitImpl visit : visits)
+                try
                 {
-                    try
+                    for (VisitImpl visit : visits)
                     {
-                        Table.delete(schema.getTableInfoVisit(), new Object[]{visitStudy.getContainer(), visit.getRowId()});
-                    }
-                    finally
-                    {
-                        _visitHelper.clearCache(visit);
+                        Table.delete(schema.getTableInfoVisit(), new Object[]{c, visit.getRowId()});
                     }
                 }
-            }
+                finally
+                {
+                    _visitHelper.clearCache(c);
+                }
+             }
             catch (OptimisticConflictException x)
             {
                 /* ignore */
