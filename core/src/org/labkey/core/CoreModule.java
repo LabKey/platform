@@ -46,6 +46,7 @@ import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.audit.provider.ContainerAuditProvider;
 import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.audit.provider.GroupAuditProvider;
+import org.labkey.api.audit.provider.ModulePropertiesAuditProvider;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -923,6 +924,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             AuditLogService.get().registerAuditType(new ClientApiAuditProvider());
             AuditLogService.get().registerAuditType(new AuthenticationSettingsAuditTypeProvider());
             AuditLogService.get().registerAuditType(new TransactionAuditProvider());
+            AuditLogService.get().registerAuditType(new ModulePropertiesAuditProvider());
 
             DataStateManager.getInstance().registerDataStateHandler(new CoreQCStateHandler());
         }

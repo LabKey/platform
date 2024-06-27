@@ -410,6 +410,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                         columnDescriptor.name = SAMPLE_ALT_IMPORT_NAME_COLS.get(columnDescriptor.getColumnName());
                     }
                 }
+                configureCrossFolderImport(rows, context);
             }
         }
         catch (IOException e)

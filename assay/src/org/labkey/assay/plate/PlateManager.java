@@ -3328,6 +3328,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                         String typeStr = StringUtils.trimToNull(wellChange.type);
                         if (typeStr != null)
                             type = WellGroup.Type.valueOf(typeStr);
+                        else
+                            type = null;
                     }
                     if (wellChange.group != null)
                         wellGroup = StringUtils.trimToNull(wellChange.group);

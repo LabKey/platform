@@ -46,6 +46,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.iterator.ValidatingDataRowIterator;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.assay.plate.Plate;
@@ -71,6 +72,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * User: klum
@@ -478,7 +480,8 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         ExpProtocol protocol = run.getProtocol();
         DilutionDataFileParser parser = getDataFileParser(data, dataFile, info);
 
-        importRows(data, run, protocol, parser.getResults(), context.getUser());
+        List<Map<String, Object>> results = parser.getResults();
+        importRows(data, run, protocol, () -> ValidatingDataRowIterator.of(results), context.getUser());
     }
 
     public static final String POLY_SUFFIX = "_poly";
@@ -486,7 +489,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
     public static final String PL4_SUFFIX = "_4pl";
     public static final String PL5_SUFFIX = "_5pl";
 
-    protected abstract void importRows(ExpData data, ExpRun run, ExpProtocol protocol, List<Map<String, Object>> rawData, User user) throws ExperimentException;
+    protected abstract void importRows(ExpData data, ExpRun run, ExpProtocol protocol, Supplier<ValidatingDataRowIterator> rawData, User user) throws ExperimentException;
 
     protected ObjectProperty getObjectProperty(Container container, ExpProtocol protocol, String objectURI, String propertyName, Object value, Map<Integer, String> cutoffFormats)
     {
