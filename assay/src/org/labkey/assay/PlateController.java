@@ -44,6 +44,7 @@ import org.labkey.api.data.ArrayExcelWriter;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.TSVArrayWriter;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
@@ -85,6 +86,7 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
@@ -1355,11 +1357,19 @@ public class PlateController extends SpringActionController
         }
     }
 
+    public enum FileType
+    {
+        CSV,
+        Excel,
+        TSV
+    }
+
     public static class WorklistForm
     {
         private ContainerFilter.Type _containerFilter;
         private int _sourcePlateSetId;
         private int _destinationPlateSetId;
+        private FileType _fileType;
 
         public ContainerFilter.Type getContainerFilter()
         {
@@ -1390,6 +1400,16 @@ public class PlateController extends SpringActionController
         {
             _destinationPlateSetId = destinationPlateSetId;
         }
+
+        public FileType getFileType()
+        {
+            return _fileType;
+        }
+
+        public void setFileType(FileType fileType)
+        {
+            _fileType = fileType;
+        }
     }
 
     @RequiresPermission(ReadPermission.class)
@@ -1418,9 +1438,9 @@ public class PlateController extends SpringActionController
 
                 List<Object[]> plateDataRows = PlateManager.get().getWorklist(form.getSourcePlateSetId(), form.getDestinationPlateSetId(), sourceIncludedMetadataCols, destinationIncludedMetadataCols, getContainer(), getUser());
 
-                ArrayExcelWriter xlWriter = new ArrayExcelWriter(plateDataRows, xlCols);
-                xlWriter.setFullFileName(plateSetSource.getName() + " - " + plateSetDestination.getName());
-                xlWriter.renderWorkbook(getViewContext().getResponse());
+                String fullFileName = plateSetSource.getName() + " - " + plateSetDestination.getName();
+
+                PlateManager.get().getPlateSetExportFile(fullFileName, xlCols, plateDataRows, form.getFileType(), getViewContext().getResponse());
 
                 return null; // Returning anything here will cause error as excel writer will close the response stream
             }
@@ -1437,6 +1457,7 @@ public class PlateController extends SpringActionController
     {
         private ContainerFilter.Type _containerFilter;
         private int _plateSetId;
+        private FileType _fileType;
 
         public ContainerFilter.Type getContainerFilter()
         {
@@ -1456,6 +1477,16 @@ public class PlateController extends SpringActionController
         public void setPlateSetId(int plateSetId)
         {
             _plateSetId = plateSetId;
+        }
+
+        public FileType getFileType()
+        {
+            return _fileType;
+        }
+
+        public void setFileType(FileType fileType)
+        {
+            _fileType = fileType;
         }
     }
 
@@ -1481,9 +1512,7 @@ public class PlateController extends SpringActionController
                 ColumnDescriptor[] xlCols = PlateSetExport.getColumnDescriptors("", includedMetadataCols);
                 List<Object[]> plateDataRows = PlateManager.get().getInstrumentInstructions(form.getPlateSetId(), includedMetadataCols, getContainer(), getUser());
 
-                ArrayExcelWriter xlWriter = new ArrayExcelWriter(plateDataRows, xlCols);
-                xlWriter.setFullFileName(plateSet.getName());
-                xlWriter.renderWorkbook(getViewContext().getResponse());
+                PlateManager.get().getPlateSetExportFile(plateSet.getName(), xlCols, plateDataRows, form.getFileType(), getViewContext().getResponse());
 
                 return null; // Returning anything here will cause error as excel writer will close the response stream
             }
