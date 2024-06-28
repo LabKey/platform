@@ -23,7 +23,7 @@ public class TSVArrayWriter extends TSVWriter
                 .collect(Collectors.toList());
         _rows = rows.stream()
                 .map(array -> Arrays.stream(array)
-                        .map(obj -> (obj == null) ? "" : (obj instanceof String) ? (String) obj : String.valueOf(obj))
+                        .map(obj -> (obj == null) ? "" : String.valueOf(obj))
                         .collect(Collectors.toList()))
                 .collect(Collectors.toList());
     }

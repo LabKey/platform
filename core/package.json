@@ -54,7 +54,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "3.56.0-fb-worklistiiimprovements.0",
+    "@labkey/components": "3.56.1-fb-worklistiiimprovements.0",
     "@labkey/themes": "1.3.3"
   },
   "devDependencies": {

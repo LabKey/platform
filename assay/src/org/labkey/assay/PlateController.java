@@ -1357,7 +1357,7 @@ public class PlateController extends SpringActionController
         }
     }
 
-    private enum FileType
+    public enum FileType
     {
         CSV,
         Excel,
@@ -1369,7 +1369,7 @@ public class PlateController extends SpringActionController
         private ContainerFilter.Type _containerFilter;
         private int _sourcePlateSetId;
         private int _destinationPlateSetId;
-        private String _fileType;
+        private FileType _fileType;
 
         public ContainerFilter.Type getContainerFilter()
         {
@@ -1401,12 +1401,12 @@ public class PlateController extends SpringActionController
             _destinationPlateSetId = destinationPlateSetId;
         }
 
-        public String getFileType()
+        public FileType getFileType()
         {
             return _fileType;
         }
 
-        public void setFileType(String fileType)
+        public void setFileType(FileType fileType)
         {
             _fileType = fileType;
         }
@@ -1440,22 +1440,7 @@ public class PlateController extends SpringActionController
 
                 String fullFileName = plateSetSource.getName() + " - " + plateSetDestination.getName();
 
-                boolean isCSV = form.getFileType().equals(FileType.CSV.name());
-                boolean isTSV = form.getFileType().equals(FileType.TSV.name());
-                if (isCSV || isTSV)
-                {
-                    try (TSVArrayWriter writer = new TSVArrayWriter(fullFileName, xlCols, plateDataRows))
-                    {
-                        writer.setDelimiterCharacter(isCSV ? TSVWriter.DELIM.COMMA : TSVWriter.DELIM.TAB);
-                        writer.write(getViewContext().getResponse());
-                    }
-                }
-                else
-                {
-                    ArrayExcelWriter xlWriter = new ArrayExcelWriter(plateDataRows, xlCols);
-                    xlWriter.setFullFileName(fullFileName);
-                    xlWriter.renderWorkbook(getViewContext().getResponse());
-                }
+                PlateManager.get().getPlateSetExportFile(fullFileName, xlCols, plateDataRows, form.getFileType(), getViewContext().getResponse());
 
                 return null; // Returning anything here will cause error as excel writer will close the response stream
             }
@@ -1472,7 +1457,7 @@ public class PlateController extends SpringActionController
     {
         private ContainerFilter.Type _containerFilter;
         private int _plateSetId;
-        private String _fileType;
+        private FileType _fileType;
 
         public ContainerFilter.Type getContainerFilter()
         {
@@ -1494,12 +1479,12 @@ public class PlateController extends SpringActionController
             _plateSetId = plateSetId;
         }
 
-        public String getFileType()
+        public FileType getFileType()
         {
             return _fileType;
         }
 
-        public void setFileType(String fileType)
+        public void setFileType(FileType fileType)
         {
             _fileType = fileType;
         }
@@ -1527,23 +1512,7 @@ public class PlateController extends SpringActionController
                 ColumnDescriptor[] xlCols = PlateSetExport.getColumnDescriptors("", includedMetadataCols);
                 List<Object[]> plateDataRows = PlateManager.get().getInstrumentInstructions(form.getPlateSetId(), includedMetadataCols, getContainer(), getUser());
 
-                boolean isCSV = form.getFileType().equals(FileType.CSV.name());
-                boolean isTSV = form.getFileType().equals(FileType.TSV.name());
-
-                if (isCSV || isTSV)
-                {
-                    try (TSVArrayWriter writer = new TSVArrayWriter(plateSet.getName(), xlCols, plateDataRows))
-                    {
-                        writer.setDelimiterCharacter(isCSV ? TSVWriter.DELIM.COMMA : TSVWriter.DELIM.TAB);
-                        writer.write(getViewContext().getResponse());
-                    }
-                }
-                else
-                {
-                    ArrayExcelWriter xlWriter = new ArrayExcelWriter(plateDataRows, xlCols);
-                    xlWriter.setFullFileName(plateSet.getName());
-                    xlWriter.renderWorkbook(getViewContext().getResponse());
-                }
+                PlateManager.get().getPlateSetExportFile(plateSet.getName(), xlCols, plateDataRows, form.getFileType(), getViewContext().getResponse());
 
                 return null; // Returning anything here will cause error as excel writer will close the response stream
             }
