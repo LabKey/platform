@@ -24,9 +24,12 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
+import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExperimentService;
@@ -38,6 +41,7 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryForeignKey;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
@@ -56,12 +60,9 @@ import java.util.Collections;
 import java.util.Map;
 
 import static org.labkey.api.exp.query.ExpSchema.DATA_CLASS_CATEGORY_TABLE;
+import static org.labkey.api.exp.query.ExpSchema.SCHEMA_EXP_DATA;
 import static org.labkey.api.exp.query.ExpSchema.TableType.SampleSets;
 
-/**
- * User: kevink
- * Date: 9/21/15
- */
 public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column> implements ExpDataClassTable
 {
     protected ExpDataClassTableImpl(String name, UserSchema schema, ContainerFilter cf)
@@ -102,6 +103,27 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
                         Collections.singletonMap("name", "Name"));
                 nameURL.setContainerContext(getContainer());
                 c.setURL(nameURL);
+
+                UserSchema schema = QueryService.get().getUserSchema(_userSchema.getUser(), _userSchema.getContainer(), SCHEMA_EXP_DATA);
+                if (schema != null)
+                {
+                    c.setDisplayColumnFactory(colInfo -> new DataColumn(colInfo)
+                    {
+                        @Override
+                        public Object getDisplayValue(RenderContext ctx)
+                        {
+                            String name = (String) ctx.get("name");
+                            if (name != null)
+                            {
+                                TableInfo table = schema.getTable(name);
+                                if (table != null)
+                                    return table.getTitle();
+                            }
+
+                            return super.getDisplayValue(ctx);
+                        }
+                    });
+                }
 
                 return c;
             }
