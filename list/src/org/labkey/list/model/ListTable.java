@@ -405,7 +405,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     @Override
     protected @NotNull TableRules findTableRules()
     {
-        return TableRulesManager.get().getTableRules(getList().getContainer(), getUserSchema().getUser());
+        return TableRulesManager.get().getTableRules(getList().getContainer(), getUserSchema().getUser(), getUserSchema().getContainer());
     }
 
     /**

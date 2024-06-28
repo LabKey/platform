@@ -2,6 +2,8 @@ package org.labkey.study.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.compliance.TableRules;
+import org.labkey.api.compliance.TableRulesManager;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.SQLFragment;
@@ -19,9 +21,11 @@ import org.labkey.study.model.DatasetDefinition;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 public class SampleDatasetTable extends LinkedDatasetTable
 {
+    private ExpSampleType _sampleType;
     private TableInfo _sampleTable;
     private List<FieldKey> _defaultVisibleColumns = null;
 
@@ -103,16 +107,24 @@ public class SampleDatasetTable extends LinkedDatasetTable
         if (_sampleTable == null)
         {
             ExpObject source = _dsd.resolvePublishSource();
-            if (!(source instanceof ExpSampleType))
+            if (!(source instanceof ExpSampleType sampleType))
                 return null;
+            _sampleType = sampleType;
 
-            ExpSampleType sampleType = (ExpSampleType)source;
             UserSchema userSchema = QueryService.get().getUserSchema(_userSchema.getUser(), sampleType.getContainer(), SamplesSchema.SCHEMA_NAME);
 
             // Hide 'linked' column for Sample Type Datasets
-            if (userSchema instanceof SamplesSchema)
+            if (userSchema instanceof SamplesSchema samplesSchema)
             {
-                _sampleTable = ((SamplesSchema) userSchema).createSampleTable(sampleType, ContainerFilter.EVERYTHING);
+                // We want to create a samples table here with a few differences from the "regular" sample type table
+                // - No container filter.  We rely on the study and dataset permissions to control access.
+                // - No linkToStudy columns
+                // - No PHI restrictions, again we want PHI permission from the study folder
+                //
+                // It is easier to handle these changes on the construction-side, so we use a helper schema
+                // CONSIDER: do we need a version of getTable() that allows passing custom options?
+                var noLinks = Objects.requireNonNull(samplesSchema.getSchema(SamplesSchema.STUDY_LINKED_SCHEMA_NAME));
+                _sampleTable = Objects.requireNonNull(noLinks.getTable(sampleType.getName(), ContainerFilter.EVERYTHING));
             }
             else
             {
@@ -122,8 +134,27 @@ public class SampleDatasetTable extends LinkedDatasetTable
         return _sampleTable;
     }
 
+    // NOTE we are going to wrap a
+
     private String getSampleTableAlias(String mainAlias)
     {
         return mainAlias + "_ST";
+    }
+
+
+    @Override
+    public boolean supportTableRules() // intentional override
+    {
+        return true;
+    }
+
+    @Override
+    protected @NotNull TableRules findTableRules()
+    {
+        // init _sampleType
+        getSamplesTable();
+        if (null != _sampleType)
+            return TableRulesManager.get().getTableRules(_sampleType.getContainer(), getUserSchema().getUser(), _dsd.getContainer());
+        return super.findTableRules();
     }
 }

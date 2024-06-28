@@ -115,6 +115,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 {
     ExpSampleTypeImpl _ss;
     Set<String> _uniqueIdFields;
+    boolean _supportTableRules = true;
 
     public static final Set<String> MATERIAL_ALT_MERGE_KEYS;
     public static final Set<String> MATERIAL_ALT_UPDATE_KEYS;
@@ -1018,9 +1019,15 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     }
 
     @Override
+    public void setSupportTableRules(boolean b)
+    {
+        this._supportTableRules = b;
+    }
+
+    @Override
     public boolean supportTableRules() // intentional override
     {
-        return true;
+        return _supportTableRules;
     }
 
     @Override
@@ -1029,7 +1036,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         Container definitionContainer = getUserSchema().getContainer();
         if (null != _ss)
             definitionContainer = _ss.getContainer();
-        return TableRulesManager.get().getTableRules(definitionContainer, getUserSchema().getUser());
+        return TableRulesManager.get().getTableRules(definitionContainer, getUserSchema().getUser(), getUserSchema().getContainer());
     }
 
 

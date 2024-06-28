@@ -736,7 +736,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     @Override
     protected @NotNull TableRules findTableRules()
     {
-        return TableRulesManager.get().getTableRules(_dataClass.getContainer(), getUserSchema().getUser());
+        return TableRulesManager.get().getTableRules(_dataClass.getContainer(), getUserSchema().getUser(), getUserSchema().getContainer());
     }
 
     private static final Set<String> DEFAULT_HIDDEN_COLS = new CaseInsensitiveHashSet("Container", "Created", "CreatedBy", "ModifiedBy", "Modified", "Owner", "EntityId", "RowId");

@@ -235,7 +235,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         Container definitionContainer = getUserSchema().getContainer();
         if (null != getDomain())
             definitionContainer = getDomain().getContainer();
-        return TableRulesManager.get().getTableRules(definitionContainer, getUserSchema().getUser());
+        return TableRulesManager.get().getTableRules(definitionContainer, getUserSchema().getUser(), getUserSchema().getContainer());
     }
 
     public void setDefaultColumns()

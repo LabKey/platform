@@ -541,7 +541,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     @Override
     protected @NotNull TableRules findTableRules()
     {
-        return TableRulesManager.get().getTableRules(getDatasetDefinition().getDefinitionContainer(), getUserSchema().getUser());
+        return TableRulesManager.get().getTableRules(getDatasetDefinition().getDefinitionContainer(), getUserSchema().getUser(), getUserSchema().getContainer());
     }
 
     @Override
