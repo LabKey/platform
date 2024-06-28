@@ -36,7 +36,6 @@
 <%@ page import="org.labkey.api.data.TableSelector" %>
 <%@ page import="org.labkey.api.data.dialect.SqlDialect" %>
 <%@ page import="org.labkey.api.dataiterator.DataIteratorContext" %>
-<%@ page import="org.labkey.api.dataiterator.ListofMapsDataIterator" %>
 <%@ page import="org.labkey.api.exp.ExperimentException" %>
 <%@ page import="org.labkey.api.exp.ObjectProperty" %>
 <%@ page import="org.labkey.api.exp.OntologyManager" %>
@@ -459,7 +458,7 @@ private void verifyAliasesViaSelectRows(String schemaName, String queryName, int
 private void testEmptyInsert(ExpDataClassImpl dataClass, TableInfo table, User user) throws Exception
 {
     List<Map<String, Object>> rows = new ArrayList<>();
-    ListofMapsDataIterator.Builder b = new ListofMapsDataIterator.Builder(new CaseInsensitiveHashSet("name", "flag", "alias", "aa"), rows);
+    MapLoader b = new MapLoader(rows);
 
     BatchValidationException errors = new BatchValidationException();
     int count = table.getUpdateService().importRows(user, c, b, errors, null, null);
@@ -1020,7 +1019,7 @@ public void testInsertOptionUpdate() throws Exception
     DataIteratorContext context = new DataIteratorContext();
     context.setInsertOption(QueryUpdateService.InsertOption.IMPORT);
 
-    var count = qus.loadRows(user, c, new ListofMapsDataIterator(rowsToAdd.get(0).keySet(), rowsToAdd), context, null);
+    var count = qus.loadRows(user, c, new MapLoader(rowsToAdd), context, null);
     assertFalse(context.getErrors().hasErrors());
     assertEquals(count,3);
 
@@ -1036,7 +1035,7 @@ public void testInsertOptionUpdate() throws Exception
     rowsToUpdate.add(CaseInsensitiveHashMap.of("name", "D-2", "prop", "b1", "DataInputs/DataClassWithImportOption", null));
 
     context.setInsertOption(QueryUpdateService.InsertOption.UPDATE);
-    count = qus.loadRows(user, c, new ListofMapsDataIterator(rowsToUpdate.get(0).keySet(), rowsToUpdate), context, null);
+    count = qus.loadRows(user, c, new MapLoader(rowsToUpdate), context, null);
 
     assertFalse(context.getErrors().hasErrors());
     assertEquals(count,3);

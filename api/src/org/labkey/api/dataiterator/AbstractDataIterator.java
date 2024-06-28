@@ -52,11 +52,11 @@ public abstract class AbstractDataIterator implements DataIterator
         return defaultIfBlank(getDebugName(),super.toString());
     }
 
-    public void setDebugName(String name)
+    public AbstractDataIterator setDebugName(String name)
     {
         _debugName = name;
+        return this;
     }
-
 
     @Override
     public String getDebugName()

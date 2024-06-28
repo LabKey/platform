@@ -36,11 +36,11 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.dataiterator.AbstractMapDataIterator;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
-import org.labkey.api.dataiterator.ListofMapsDataIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.pipeline.AbstractSpecimenTransformTask;
@@ -597,7 +597,7 @@ public class SampleMindedTransformTask extends AbstractSpecimenTransformTask
         }
     }
 
-    static class _DataIterator extends ListofMapsDataIterator
+    static class _DataIterator extends AbstractMapDataIterator.ListOfMapsDataIterator
     {
         static DataIterator create(User user, DataIterator source, DataIteratorContext context, Study study, TableInfo target) throws BatchValidationException
         {
@@ -607,7 +607,7 @@ public class SampleMindedTransformTask extends AbstractSpecimenTransformTask
 
         _DataIterator(User user, List<ColumnInfo> cols, DataIterator source, DataIteratorContext context, Study study) throws BatchValidationException
         {
-            super(cols);
+            super(context, cols);
 
             try
             {

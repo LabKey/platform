@@ -90,6 +90,7 @@ import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
+import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.HelpTopic;
@@ -116,6 +117,7 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiRenderingService;
+import org.labkey.core.CoreModule;
 import org.labkey.core.admin.AdminController;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -2216,6 +2218,8 @@ public class LoginController extends SpringActionController
         }
     }
 
+    private static final String REMOTE_LOGIN_FEATURE_AREA = "remoteLoginInvocations";
+
     @SuppressWarnings("unused")
     @RequiresLogin
     public static class CreateTokenAction extends SimpleViewAction<TokenAuthenticationForm>
@@ -2239,6 +2243,7 @@ public class LoginController extends SpringActionController
             returnUrl.addParameter("labkeyEmail", user.getEmail());
 
             getViewContext().getResponse().sendRedirect(returnUrl.getURIString());
+            SimpleMetricsService.get().increment(CoreModule.CORE_MODULE_NAME, REMOTE_LOGIN_FEATURE_AREA, "create");
             return null;
         }
 
@@ -2292,7 +2297,7 @@ public class LoginController extends SpringActionController
             }
 
             response.flushBuffer();
-
+            SimpleMetricsService.get().increment(CoreModule.CORE_MODULE_NAME, REMOTE_LOGIN_FEATURE_AREA, "verify");
             return null;
         }
 
@@ -2314,6 +2319,7 @@ public class LoginController extends SpringActionController
             if (null != form.getLabkeyToken())
                 TokenAuthenticationManager.get().invalidateKey(form.getLabkeyToken());
             URLHelper returnUrl = form.getValidReturnUrl();
+            SimpleMetricsService.get().increment(CoreModule.CORE_MODULE_NAME, REMOTE_LOGIN_FEATURE_AREA, "invalidate");
             if (null != returnUrl)
                 return returnUrl;
             return AppProps.getInstance().getHomePageActionURL();

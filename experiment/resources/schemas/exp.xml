@@ -259,7 +259,7 @@
           <description>Contains a life sciences identifier for this sample</description>
       </column>
       <column columnName="Name">
-          <description>Contains a short description for this sample</description>
+          <description>Contains a short name for this sample</description>
       </column>
       <column columnName="Description">
           <description>Contains a description for this sample</description>
