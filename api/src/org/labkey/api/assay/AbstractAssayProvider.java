@@ -16,6 +16,7 @@
 
 package org.labkey.api.assay;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -23,7 +24,6 @@ import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.assay.actions.DesignerAction;
 import org.labkey.api.assay.actions.UploadWizardAction;
 import org.labkey.api.assay.pipeline.AssayRunAsyncContext;
-import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.ActionButton;
@@ -92,7 +92,6 @@ import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.TimepointType;
@@ -114,7 +113,6 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
 import javax.script.ScriptEngine;
-import jakarta.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -691,18 +689,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
     }
 
     @Override
-    public @Nullable AssayDataCollector getPlateMetadataDataCollector(AssayRunUploadForm context)
-    {
-        return null;
-    }
-
-    @Override
-    public @Nullable ActionURL getPlateMetadataTemplateURL(Container container, ExpProtocol protocol)
-    {
-        return null;
-    }
-
-    @Override
     public AssayRunCreator getRunCreator()
     {
         return new DefaultAssayRunCreator<>(this);
@@ -904,15 +890,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
             }
         }
         sortDomainList(domains);
-
-        // see if there is a plate metadata domain associated with this protocol
-        Domain plateDomain = AssayPlateMetadataService.get().getPlateDataDomain(protocol);
-        if (plateDomain != null)
-        {
-            Map<DomainProperty, Object> values = DefaultValueService.get().getDefaultValues(plateDomain.getContainer(), plateDomain);
-            domains.add(new Pair<>(plateDomain, values));
-        }
-
         return domains;
     }
 
@@ -1735,7 +1712,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     }
 
     @Override
-    public boolean supportsPlateMetadata()
+    public boolean supportsPlateMetadata(ExpProtocol protocol)
     {
         return false;
     }
@@ -1743,14 +1720,14 @@ public abstract class AbstractAssayProvider implements AssayProvider
     @Override
     public void setPlateMetadataEnabled(ExpProtocol protocol, boolean metadataEnabled)
     {
-        if (supportsPlateMetadata())
+        if (supportsPlateMetadata(protocol))
             setBooleanProperty(protocol, PLATE_METADATA_PROPERTY_SUFFIX, metadataEnabled);
     }
 
     @Override
     public boolean isPlateMetadataEnabled(ExpProtocol protocol)
     {
-        return supportsPlateMetadata() && Boolean.TRUE.equals(getBooleanProperty(protocol, PLATE_METADATA_PROPERTY_SUFFIX));
+        return supportsPlateMetadata(protocol) && Boolean.TRUE.equals(getBooleanProperty(protocol, PLATE_METADATA_PROPERTY_SUFFIX));
     }
 
     public record AssayFileMoveData(ExpRun run, Container sourceContainer, String fieldName, File sourceFile, File targetFile) {}

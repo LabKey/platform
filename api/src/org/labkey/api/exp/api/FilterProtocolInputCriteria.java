@@ -83,24 +83,22 @@ public class FilterProtocolInputCriteria extends AbstractProtocolInputCriteria
     public List<? extends ExpRunItem> findMatching(@NotNull ExpProtocolInput protocolInput, @NotNull User user, @NotNull Container c)
     {
         TableInfo table = null;
-        if (protocolInput instanceof ExpDataProtocolInput)
+        if (protocolInput instanceof ExpDataProtocolInput dpi)
         {
-            ExpDataProtocolInput dpi = (ExpDataProtocolInput)protocolInput;
             ExpDataClass dc = dpi.getType();
             if (dc != null)
             {
-                UserSchema schema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, ExpSchema.NestedSchemas.data.toString()));
+                UserSchema schema = QueryService.get().getUserSchema(user, c, ExpSchema.SCHEMA_EXP_DATA);
                 table = schema.getTable(dc.getName());
             }
             else
             {
-                UserSchema schema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts(ExpSchema.SCHEMA_NAME));
+                UserSchema schema = QueryService.get().getUserSchema(user, c, ExpSchema.SCHEMA_EXP);
                 table = schema.getTable(ExpSchema.TableType.Data.toString());
             }
         }
-        else if (protocolInput instanceof ExpMaterialProtocolInput)
+        else if (protocolInput instanceof ExpMaterialProtocolInput mpi)
         {
-            ExpMaterialProtocolInput mpi = (ExpMaterialProtocolInput)protocolInput;
             ExpSampleType st = mpi.getType();
             if (st != null)
             {
@@ -109,7 +107,7 @@ public class FilterProtocolInputCriteria extends AbstractProtocolInputCriteria
             }
             else
             {
-                UserSchema schema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts(ExpSchema.SCHEMA_NAME));
+                UserSchema schema = QueryService.get().getUserSchema(user, c, ExpSchema.SCHEMA_EXP);
                 table = schema.getTable(ExpSchema.TableType.Materials.toString());
             }
         }
