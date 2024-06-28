@@ -1129,11 +1129,11 @@ public class ExperimentController extends SpringActionController
 
         private QueryView getDataClassContentsView(BindException errors)
         {
-            ExpSchema expSchema = new ExpSchema(getUser(), getContainer());
-            UserSchema dataClassSchema = (UserSchema) expSchema.getSchema(ExpSchema.NestedSchemas.data.toString());
+            UserSchema dataClassSchema = QueryService.get().getUserSchema(getUser(), getContainer(), ExpSchema.SCHEMA_EXP_DATA);
             QuerySettings settings = dataClassSchema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, _dataClass.getName());
-            return new QueryView(dataClassSchema, settings, errors){
 
+            return new QueryView(dataClassSchema, settings, errors)
+            {
                 @Override
                 public @NotNull LinkedHashSet<ClientDependency> getClientDependencies()
                 {
@@ -3636,13 +3636,13 @@ public class ExperimentController extends SpringActionController
                 if (dc == null)
                 {
                     // Reference to exp.Data table
-                    schemaKey = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME);
+                    schemaKey = ExpSchema.SCHEMA_EXP;
                     queryName = ExpSchema.TableType.Data.name();
                 }
                 else
                 {
                     // Reference to exp.data.<DataClass> table
-                    schemaKey = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, ExpSchema.NestedSchemas.data.name());
+                    schemaKey = ExpSchema.SCHEMA_EXP_DATA;
                     queryName = dc.getName();
                 }
 
@@ -4193,26 +4193,8 @@ public class ExperimentController extends SpringActionController
         {
             _context = createDataIteratorContext(_insertOption, getOptionParamsMap(), auditBehaviorType, auditUserComment, errors, null, getContainer());
 
-            if (_context.isCrossFolderImport())
-            {
-                if (!getContainer().hasProductProjects())
-                    _context.setCrossFolderImport(false);
-                else if (!_context.getInsertOption().updateOnly)
-                {
-                    ColumnDescriptor[] dataColumns = dl.getColumns();
-                    boolean hasContainerColumn = false;
-                    for (ColumnDescriptor dataColumn : dataColumns)
-                    {
-                        if (dataColumn.getColumnName().equalsIgnoreCase("container") || dataColumn.getColumnName().equalsIgnoreCase("folder"))
-                        {
-                            hasContainerColumn = true;
-                            break;
-                        }
-                    }
-                    if (!hasContainerColumn)
-                        _context.setCrossFolderImport(false);
-                }
-            }
+            if (_context.isCrossFolderImport() && !getContainer().hasProductProjects())
+                _context.setCrossFolderImport(false);
         }
 
         @Override

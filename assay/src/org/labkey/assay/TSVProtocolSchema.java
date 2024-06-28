@@ -22,7 +22,6 @@ import org.labkey.api.assay.AssayResultDomainKind;
 import org.labkey.api.assay.AssayResultTable;
 import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.assay.AssayWellExclusionService;
-import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -35,20 +34,13 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.flag.FlagColumnRenderer;
-import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.AliasedColumn;
-import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryForeignKey;
-import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserPrincipal;
-import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.assay.plate.query.PlateSchema;
@@ -64,22 +56,9 @@ import java.util.Set;
 
 public class TSVProtocolSchema extends AssayProtocolSchema
 {
-    public static final String PLATE_DATA_TABLE = "PlateData";
-    public static final String PLATE_DATA_LAYER_SUFFIX = "_well_groups";
-
     public TSVProtocolSchema(User user, Container container, @NotNull TsvAssayProvider provider, @NotNull ExpProtocol protocol, @Nullable Container targetStudy)
     {
         super(user, container, provider, protocol, targetStudy);
-    }
-
-    @Override
-    public Set<String> getTableNames()
-    {
-        Set<String> names = super.getTableNames();
-
-        if (getProvider().isPlateMetadataEnabled(getProtocol()))
-            names.add(PLATE_DATA_TABLE);
-        return names;
     }
 
     @Override
@@ -93,12 +72,7 @@ public class TSVProtocolSchema extends AssayProtocolSchema
     {
         if (EXCLUSION_REPORT_TABLE_NAME.equalsIgnoreCase(name))
             return createExclusionReportTable(cf);
-        else if (PLATE_DATA_TABLE.equalsIgnoreCase(name))
-        {
-            TableInfo plateTable = createPlateDataTable(cf);
-            if (plateTable != null)
-                return plateTable;
-        }
+
         return super.createProviderTable(name, cf);
     }
 
@@ -157,41 +131,6 @@ public class TSVProtocolSchema extends AssayProtocolSchema
             List<FieldKey> defaultColumns = new ArrayList<>(getDefaultVisibleColumns());
             if (getProvider().isPlateMetadataEnabled(getProtocol()))
             {
-                // legacy standard assay plate metadata support
-                Domain plateDataDomain = AssayPlateMetadataService.get().getPlateDataDomain(getProtocol());
-                if (plateDataDomain != null)
-                {
-                    ColumnInfo lsidCol = getColumn("Lsid");
-                    if (lsidCol != null)
-                    {
-                        BaseColumnInfo col = new AliasedColumn("PlateData", lsidCol);
-                        col.setFk(QueryForeignKey
-                                .from(getUserSchema(), getContainerFilter())
-                                .to(PLATE_DATA_TABLE, "Lsid", null)
-                        );
-                        col.setUserEditable(false);
-                        col.setCalculated(true);
-                        addColumn(col);
-
-                        List<FieldKey> plateDefaultColumns = new ArrayList<>();
-                        for (DomainProperty prop : plateDataDomain.getProperties())
-                        {
-                            plateDefaultColumns.add(FieldKey.fromParts("PlateData", prop.getName()));
-                        }
-
-                        // show the layer columns first
-                        plateDefaultColumns.sort((o1, o2) -> {
-                            if (o1.toString().toLowerCase().endsWith(PLATE_DATA_LAYER_SUFFIX))
-                                return -1;
-                            else if (o2.toString().toLowerCase().endsWith(PLATE_DATA_LAYER_SUFFIX))
-                                return 1;
-                            else
-                                return o1.toString().compareTo(o2.toString());
-                        });
-                        defaultColumns.addAll(plateDefaultColumns);
-                    }
-                }
-
                 // join to the well table which may have plate metadata
                 ColumnInfo wellLsidCol = getColumn(AssayResultDomainKind.WELL_LSID_COLUMN_NAME);
                 if (wellLsidCol != null)
@@ -227,49 +166,6 @@ public class TSVProtocolSchema extends AssayProtocolSchema
                 defaultColumns.add(0, FieldKey.fromParts("Well", "SampleId"));
                 setDefaultVisibleColumns(defaultColumns);
             }
-        }
-    }
-
-    @Nullable
-    private TableInfo createPlateDataTable(ContainerFilter cf)
-    {
-        Domain domain = AssayPlateMetadataService.get().getPlateDataDomain(getProtocol());
-        if (domain != null)
-            return new _AssayPlateDataTable(domain, this, cf);
-        return null;
-    }
-
-    private static class _AssayPlateDataTable extends FilteredTable<AssayProtocolSchema>
-    {
-        public _AssayPlateDataTable(@NotNull Domain domain, @NotNull AssayProtocolSchema userSchema, @Nullable ContainerFilter containerFilter)
-        {
-            super(StorageProvisioner.createTableInfo(domain), userSchema, containerFilter);
-
-            setDescription("Represents the imported plate metadata and contains a row for each row in the Data table.");
-            setTitle("PlateData");
-
-            for (ColumnInfo col : getRealTable().getColumns())
-            {
-                var columnInfo = wrapColumn(col);
-                if (col.getName().equals("Lsid"))
-                {
-                    columnInfo.setHidden(true);
-                    columnInfo.setKeyField(true);
-                }
-                addColumn(columnInfo);
-            }
-        }
-
-        @Override
-        public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
-        {
-            return _userSchema.getContainer().hasPermission(user, perm);
-        }
-
-        @Override
-        public @Nullable QueryUpdateService getUpdateService()
-        {
-            return new DefaultQueryUpdateService(this, getRealTable());
         }
     }
 

@@ -30,7 +30,6 @@ import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.assay.TsvDataHandler;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
-import org.labkey.api.assay.plate.PlateMetadataDataHandler;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.plate.PlateUtils;
 import org.labkey.api.assay.plate.PositionImpl;
@@ -72,7 +71,6 @@ import org.labkey.assay.data.generator.AssayDesignGenerator;
 import org.labkey.assay.data.generator.AssayRunDataGenerator;
 import org.labkey.assay.data.generator.PlateSetDataGenerator;
 import org.labkey.assay.pipeline.AssayImportRunTask;
-import org.labkey.assay.plate.AssayPlateDataDomainKind;
 import org.labkey.assay.plate.AssayPlateMetadataServiceImpl;
 import org.labkey.assay.plate.PlateCache;
 import org.labkey.assay.plate.PlateDocumentProvider;
@@ -158,8 +156,6 @@ public class AssayModule extends SpringModule
         // Register early so file-based assays are available to Java code at upgrade time
         ExperimentService.get().registerExperimentDataHandler(new TsvDataHandler());
         ExperimentService.get().registerExperimentDataHandler(new FileBasedModuleDataHandler());
-        ExperimentService.get().registerExperimentDataHandler(new PlateMetadataDataHandler());
-        PropertyService.get().registerDomainKind(new AssayPlateDataDomainKind());
         PlateService.get().registerPlateLayoutHandler(new TsvPlateLayoutHandler());
 
         PropertyService.get().registerDomainKind(new DefaultAssayDomainKind());

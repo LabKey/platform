@@ -288,15 +288,6 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
                 {
                     _uploadedData = new HashMap<>();
                     _uploadedData.putAll(collector.createData(this));
-                    AssayDataCollector plateMetadataCollector = getProvider().getPlateMetadataDataCollector(this);
-                    if (plateMetadataCollector != null)
-                    {
-                        Map<String, File> metadataFiles = plateMetadataCollector.createData(this);
-                        if (metadataFiles.containsKey(AssayDataCollector.PLATE_METADATA_FILE))
-                        {
-                            _uploadedData.put(AssayDataCollector.PLATE_METADATA_FILE, metadataFiles.get(AssayDataCollector.PLATE_METADATA_FILE));
-                        }
-                    }
                 }
                 catch (IOException e)
                 {

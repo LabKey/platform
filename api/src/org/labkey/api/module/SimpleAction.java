@@ -123,45 +123,43 @@ public class SimpleAction extends BaseViewAction implements NavTrailAction
         if (null == container)
             throw new NotFoundException("The folder path '" + getViewContext().getActionURL().getExtraPath() + "' does not match an existing folder on the server!");
 
-        if (null != _view && _view.isRequiresLogin() && user.isGuest())
-            throw new UnauthorizedException("You must sign in to see this content.");
-
         if (null != _view)
         {
+            if (_view.isRequiresLogin() && user.isGuest())
+                throw new UnauthorizedException("You must sign in to see this content.");
+
+            Set<Class<? extends Permission>> oldStylePerms = new HashSet<>();
             // Handle old-style permission bits, for backward compatibility
             int perm = _view.getRequiredPerms();
-            Set<Class<? extends Permission>> perms = new HashSet<>();
 
             if ((perm & ACL.PERM_READ) > 0 || (perm & ACL.PERM_READOWN) > 0)
-                perms.add(ReadPermission.class);
+                oldStylePerms.add(ReadPermission.class);
             if ((perm & ACL.PERM_INSERT) > 0)
-                perms.add(InsertPermission.class);
+                oldStylePerms.add(InsertPermission.class);
             if ((perm & ACL.PERM_UPDATE) > 0 || (perm & ACL.PERM_UPDATEOWN) > 0)
-                perms.add(UpdatePermission.class);
+                oldStylePerms.add(UpdatePermission.class);
             if ((perm & ACL.PERM_DELETE) > 0 || (perm & ACL.PERM_DELETEOWN) > 0)
-                perms.add(DeletePermission.class);
+                oldStylePerms.add(DeletePermission.class);
             if ((perm & ACL.PERM_ADMIN) > 0)
-                perms.add(AdminPermission.class);
+                oldStylePerms.add(AdminPermission.class);
 
-            if (!container.hasPermissions(user, perms))
+            if (!container.hasPermissions(user, oldStylePerms))
             {
                 container.throwIfForbiddenProject(user);
                 throw new UnauthorizedException("You do not have permission to view this content.");
             }
-        }
 
-        if (null != _view && !_view.getRequiredPermissionClasses().isEmpty())
-        {
-            for (Class<? extends Permission> perm : _view.getRequiredPermissionClasses())
+            Set<Class<? extends Permission>> perms = _view.getRequiredPermissionClasses();
+            if (!perms.isEmpty())
             {
-                if (!container.hasPermission(user, perm))
+                if (!container.hasPermissions(user, perms))
                 {
                     container.throwIfForbiddenProject(user);
                     throw new UnauthorizedException("You do not have permission to view this content.");
                 }
             }
         }
-        
+
         verifyTermsOfUse(false);
     }
 
