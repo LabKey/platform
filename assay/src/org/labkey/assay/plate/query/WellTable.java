@@ -55,6 +55,7 @@ import org.labkey.assay.query.AssayDbSchema;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -240,6 +241,12 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
                     .to(ExpSchema.TableType.Materials.name(), ExpMaterialTable.Column.RowId.name(), ExpMaterialTable.Column.Name.name()));
         }
         return columnInfo;
+    }
+
+    @Override
+    public List<FieldKey> getDefaultVisibleColumns()
+    {
+        return Collections.unmodifiableList(defaultVisibleColumns);
     }
 
     @NotNull
