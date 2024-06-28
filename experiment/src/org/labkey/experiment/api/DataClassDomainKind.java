@@ -106,6 +106,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
         RESERVED_NAMES = new CaseInsensitiveHashSet(BASE_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet()));
         RESERVED_NAMES.addAll(Arrays.asList(ExpDataClassDataTable.Column.values()).stream().map(ExpDataClassDataTable.Column::name).collect(Collectors.toList()));
         RESERVED_NAMES.add("Container");
+        RESERVED_NAMES.add("Project"); // Label for "Folder", remove when "Project" is renamed back to "Folder"
         RESERVED_NAMES.add("RunId"); // Issue 50461
 
         FOREIGN_KEYS = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
