@@ -89,6 +89,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Set" %>
+<%@ page import="org.labkey.api.reader.MapLoader" %>
 
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
 
@@ -683,7 +684,7 @@ public void testUpdateSomeParents() throws Exception
     rows.add(CaseInsensitiveHashMap.of("name", "C1", "MaterialInputs/Parent1Samples", "P1-1")); // change one parent but not the other
     rows.add(CaseInsensitiveHashMap.of("name", "C4", "MaterialInputs/Parent1Samples", null)); // remove one parent but not the other
 
-    svc.mergeRows(user, c, new ListofMapsDataIterator(rows.get(0).keySet(),rows), errors, null, null);
+    svc.mergeRows(user, c, new MapLoader(rows), errors, null, null);
     assertFalse(errors.hasErrors());
 
     ExpLineage lineage = ExperimentService.get().getLineage(c, user, C1, opts);
@@ -700,7 +701,7 @@ public void testUpdateSomeParents() throws Exception
     rows.add(CaseInsensitiveHashMap.of("name", "C4", "MaterialInputs/Parent1Samples", "P1-1", "MaterialInputs/Parent2Samples", "P2-1")); // change both parents
     rows.add(CaseInsensitiveHashMap.of("name", "C2", "MaterialInputs/Parent1Samples", "", "MaterialInputs/Parent2Samples", null)); // remove both parents
 
-    svc.mergeRows(user, c, new ListofMapsDataIterator(rows.get(0).keySet(),rows), errors, null, null);
+    svc.mergeRows(user, c, new MapLoader(rows), errors, null, null);
     assertFalse(errors.hasErrors());
 
     lineage = ExperimentService.get().getLineage(c, user, C2, opts);
@@ -1004,7 +1005,7 @@ public void testDetailedAuditLog() throws Exception
     // and since merge is a different code path...
     rows.clear(); errors.clear();
     rows.add(PageFlowUtil.mapInsensitive("Name", "A1", "Measure", "Merged", "Value", 3.0));
-    int count = qus.mergeRows(user, c, new ListofMapsDataIterator(null,rows), errors, config, null);
+    int count = qus.mergeRows(user, c, new MapLoader(rows), errors, config, null);
     assertEquals(1, count);
     // check audit log
     events = AuditLogService.get().getAuditEvents(c,user,SampleTimelineAuditEvent.EVENT_TYPE,f,new Sort("-RowId"));
@@ -1135,7 +1136,7 @@ public void testInsertOptionUpdate() throws Exception
 
     DataIteratorContext context = new DataIteratorContext();
     context.setInsertOption(QueryUpdateService.InsertOption.IMPORT);
-    var count = qus.loadRows(user, c, new ListofMapsDataIterator(rowsToAdd.get(0).keySet(), rowsToAdd), context, null);
+    var count = qus.loadRows(user, c, new MapLoader(rowsToAdd), context, null);
 
     assertFalse(context.getErrors().hasErrors());
     assertEquals(count,3);
@@ -1169,7 +1170,7 @@ public void testInsertOptionUpdate() throws Exception
     rowsToUpdate.add(CaseInsensitiveHashMap.of("name", "S-2", "intVal", 200));
 
     context.setInsertOption(QueryUpdateService.InsertOption.UPDATE);
-    count = qus.loadRows(user, c, new ListofMapsDataIterator(rowsToUpdate.get(0).keySet(), rowsToUpdate), context, null);
+    count = qus.loadRows(user, c, new MapLoader(rowsToUpdate), context, null);
 
     assertFalse(context.getErrors().hasErrors());
     assertEquals(count,3);
@@ -1195,7 +1196,7 @@ public void testInsertOptionUpdate() throws Exception
     // update a sample that doesn't exist should throw error
     rowsToUpdate = new ArrayList<>();
     rowsToUpdate.add(CaseInsensitiveHashMap.of("name", "S-1-absent", "intVal", 100));
-    qus.loadRows(user, c, new ListofMapsDataIterator(rowsToUpdate.get(0).keySet(), rowsToUpdate), context, null);
+    qus.loadRows(user, c, new MapLoader(rowsToUpdate), context, null);
     assertTrue(context.getErrors().hasErrors());
     String msg = context.getErrors().getRowErrors().size() > 0 ? context.getErrors().getRowErrors().get(0).toString() : "no message";
     assertTrue(msg.contains("Sample does not exist: S-1-absent."));
@@ -1206,7 +1207,7 @@ public void testInsertOptionUpdate() throws Exception
     Map<Enum, Object> auditOptions = new HashMap<>();
     auditOptions.put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, AuditBehaviorType.DETAILED);
     context.setConfigParameters(auditOptions);
-    qus.loadRows(user, c, new ListofMapsDataIterator(rowsToUpdate.get(0).keySet(), rowsToUpdate), context, null);
+    qus.loadRows(user, c, new MapLoader(rowsToUpdate), context, null);
     assertTrue(context.getErrors().hasErrors());
     msg = context.getErrors().getRowErrors().size() > 0 ? context.getErrors().getRowErrors().get(0).toString() : "no message";
     assertTrue(msg.contains("Sample does not exist: S-1-absent."));
@@ -1219,7 +1220,7 @@ public void testInsertOptionUpdate() throws Exception
 
     context = new DataIteratorContext();
     context.setInsertOption(QueryUpdateService.InsertOption.UPDATE);
-    qus.loadRows(user, c, new ListofMapsDataIterator(rowsToUpdate.get(0).keySet(), rowsToUpdate), context, null);
+    qus.loadRows(user, c, new MapLoader(rowsToUpdate), context, null);
     assertFalse(context.getErrors().hasErrors());
     assertEquals(count,3);
     rows = getSampleRows(sampleTypeName);

@@ -19,14 +19,18 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.AuditTypeEvent;
+import org.labkey.api.audit.provider.ModulePropertiesAuditProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.NormalContainerType;
-import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleProperty;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.TestContext;
@@ -34,6 +38,7 @@ import org.labkey.api.view.WebPartFactory;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -83,28 +88,38 @@ public class ModulePropertiesTestCase extends Assert
 
         Map<String, ModuleProperty> props = _module.getModuleProperties();
         ModuleProperty prop2 = props.get(PROP2);
-        User saveUser = PropertyManager.SHARED_USER;
 
         String rootVal = "RootValue";
         String projectVal = "ProjectValue";
         String folderVal = "FolderValue";
 
+        int beforeUpdateCount = getAuditEventCount(ContainerManager.getRoot());
         prop2.saveValue(_user, ContainerManager.getRoot(), rootVal);
+        assertEquals("After updating value for root container, number of audit entries not as expected", beforeUpdateCount + 1, getAuditEventCount(ContainerManager.getRoot()));
+        beforeUpdateCount = getAuditEventCount(_project);
         prop2.saveValue(_user, _project, projectVal);
+        assertEquals("After updating value for project container, number of audit entries not as expected", beforeUpdateCount + 1, getAuditEventCount(_project));
+        beforeUpdateCount = getAuditEventCount(_subFolder);
         prop2.saveValue(_user, _subFolder, folderVal);
+        assertEquals("After updating value for subFolder container, number of audit entries not as expected", beforeUpdateCount + 1, getAuditEventCount(_subFolder));
 
         assertEquals(rootVal, prop2.getEffectiveValue(ContainerManager.getRoot()));
         assertEquals(projectVal, prop2.getEffectiveValue(_project));
         assertEquals(folderVal, prop2.getEffectiveValue(_subFolder));
-
+        beforeUpdateCount = getAuditEventCount(_subFolder);
         prop2.saveValue(_user, _subFolder, null);
         assertEquals(projectVal, prop2.getEffectiveValue(_subFolder));
+        assertEquals("After removing value for subFolder container, number of audit entries not as expected", beforeUpdateCount + 1, getAuditEventCount(_subFolder));
 
+        beforeUpdateCount = getAuditEventCount(_project);
         prop2.saveValue(_user, _project, null);
         assertEquals(rootVal, prop2.getEffectiveValue(_subFolder));
+        assertEquals("After removing value for project container, number of audit entries not as expected", beforeUpdateCount + 1, getAuditEventCount(_project));
 
+        beforeUpdateCount = getAuditEventCount(ContainerManager.getRoot());
         prop2.saveValue(_user, ContainerManager.getRoot(), null);
         assertEquals(prop2.getDefaultValue(), prop2.getEffectiveValue(_subFolder));
+        assertEquals("After removing value for root container, number of audit entries not as expected", beforeUpdateCount + 1, getAuditEventCount(ContainerManager.getRoot()));
 
         String newVal = "NewValue";
         prop2.saveValue(_user, _project, newVal);
@@ -113,6 +128,11 @@ public class ModulePropertiesTestCase extends Assert
         assertEquals(newVal, prop2.getEffectiveValue(_subFolder));
 
         ContainerManager.deleteAll(_project, _user);
+    }
+
+    private int getAuditEventCount(Container container)
+    {
+        return AuditLogService.get().getAuditEvents(container, _user, ModulePropertiesAuditProvider.AUDIT_EVENT_TYPE, null, null).size();
     }
 
     private class TestModule extends CodeOnlyModule

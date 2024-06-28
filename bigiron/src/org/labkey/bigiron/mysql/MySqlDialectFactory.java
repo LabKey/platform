@@ -33,11 +33,6 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
 
-/*
-* User: adam
-* Date: Nov 26, 2010
-* Time: 10:11:46 PM
-*/
 public class MySqlDialectFactory implements SqlDialectFactory
 {
     private static final Logger _log = LogManager.getLogger(MySqlDialectFactory.class);
@@ -80,7 +75,7 @@ public class MySqlDialectFactory implements SqlDialectFactory
         return "com.mysql.cj.jdbc.Driver".equals(driverClassName) || "com.mysql.jdbc.Driver".equals(driverClassName) ? new MySqlDialect() : null;
     }
 
-    private final static String RECOMMENDED = getProductName() + " 8.0.x is the recommended version.";
+    private final static String RECOMMENDED = getProductName() + " 8.4.x is the recommended version.";
 
     @Override
     public @Nullable SqlDialect createFromMetadata(DatabaseMetaData md, boolean logWarnings, boolean primaryDataSource) throws SQLException, DatabaseNotSupportedException
@@ -95,8 +90,8 @@ public class MySqlDialectFactory implements SqlDialectFactory
         // Version 5.1 or greater is allowed...
         if (version >= 51)
         {
-            // ...but warn for anything greater than 8.0.x
-            if (logWarnings && version > 80)
+            // ...but warn for anything greater than 8.4.x
+            if (logWarnings && version > 84)
                 _log.warn("LabKey Server has not been tested against " + getProductName() + " version " + databaseProductVersion + ". " +  RECOMMENDED);
 
             if (version >= 80)

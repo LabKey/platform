@@ -22,7 +22,6 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.view.HtmlView;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.InsertView;
 
 import java.io.File;
@@ -95,14 +94,10 @@ public class PreviouslyUploadedDataCollector<ContextType extends AssayRunUploadC
         String separator = "";
         for (Map.Entry<String, File> entry : _uploadedFiles.entrySet())
         {
-            // exclude the plate metadata file (if supported)
-            if (!AssayDataCollector.PLATE_METADATA_FILE.equals(entry.getKey()))
-            {
-                sb.append(separator);
-                separator = ", ";
-                sb.append(entry.getValue().getName());
-                sb.append(getHiddenFormElementHTML(context.getContainer(), entry.getKey(), entry.getValue()));
-            }
+            sb.append(separator);
+            separator = ", ";
+            sb.append(entry.getValue().getName());
+            sb.append(getHiddenFormElementHTML(context.getContainer(), entry.getKey(), entry.getValue()));
         }
         return new HtmlView(sb);
     }

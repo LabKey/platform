@@ -121,7 +121,7 @@ public class ModuleHtmlViewDefinition
                 _viewDef = viewDoc.getView();
                 if (null != _viewDef)
                 {
-                    calculatePermissions();
+                    calculatePermissions(r.toString());
                     // We will reload to pick up changes, so don't just keep adding to the same set of dependencies.
                     // Start over each time and flip the collection all at once.
                     addResources();
@@ -146,11 +146,12 @@ public class ModuleHtmlViewDefinition
         return ColumnInfo.labelFromName(name);
     }
 
-    protected void calculatePermissions()
+    protected void calculatePermissions(String resource)
     {
         PermissionsListType permsList = _viewDef.getPermissions();
         if (permsList != null && permsList.getPermissionArray() != null)
         {
+            _log.warn("The \"<permissions>\" element used in \"{}\" is deprecated and support will be removed in LabKey Server 24.8! Migrate uses to \"<permissionClasses>\".", resource);
             for (PermissionType permEntry : permsList.getPermissionArray())
             {
                 SimpleAction.PermissionEnum perm = SimpleAction.PermissionEnum.valueOf(permEntry.getName().toString());
@@ -159,7 +160,7 @@ public class ModuleHtmlViewDefinition
                     _requiresLogin = true;
                 else if (SimpleAction.PermissionEnum.none == perm)
                     _requiredPerms = perm.toInt();
-                else if (null != perm)
+                else
                     _requiredPerms |= perm.toInt();
             }
         }

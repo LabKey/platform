@@ -24,15 +24,11 @@ import org.labkey.api.assay.AssayDataType;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayRunUploadContext;
 import org.labkey.api.assay.AssayService;
-import org.labkey.api.assay.DefaultAssayRunCreator;
-import org.labkey.api.assay.plate.AssayPlateMetadataService;
-import org.labkey.api.assay.plate.PlateMetadataDataHandler;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpData;
-import org.labkey.api.exp.api.ExpDataRunInput;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
@@ -127,7 +123,6 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
         private static final String RESULTS_NAME = "results";
         private static final String RUN_PROPS_NAME = "runProperties";
         private static final String BATCH_PROPS_NAME = "batchProperties";
-        private static final String PLATE_METADATA_NAME = "plateMetadata";
 
         private static final String PROTOCOL_NAME_KEY = "name";
         private static final String PROTOCOL_ID_KEY = "id";
@@ -375,35 +370,6 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
         }
 
         @Override
-        @Nullable Map<String, AssayPlateMetadataService.MetadataLayer> getPlateMetadata(PipelineJob job) throws PipelineJobException
-        {
-            File dataFile = getDataFile(job);
-
-            try
-            {
-                // plate metadata is only supported for zip archives because on JSON formats are currently supported
-                if ("zip".equalsIgnoreCase(FileUtil.getExtension(dataFile)))
-                {
-                    ensureExplodedZip(job, dataFile);
-                    File dir = getExplodedZipDir(job, dataFile);
-                    File[] results = dir.listFiles((dir1, name) -> PLATE_METADATA_NAME.equalsIgnoreCase(FileUtil.getBaseName(name)));
-                    if (results != null && results.length == 1)
-                    {
-                        File metadataFile = results[0];
-                        job.getLogger().info("Found plate metadata file named : " + metadataFile + ", attempting to parse JSON metadata.");
-                        return AssayPlateMetadataService.get().parsePlateMetadata(metadataFile);
-                    }
-                }
-            }
-            catch (ExperimentException e)
-            {
-                throw new PipelineJobException(e);
-            }
-
-            return null;
-        }
-
-        @Override
         void cleanUp(PipelineJob job)
         {
             File dataFile = getDataFile(job);
@@ -645,12 +611,6 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             return Collections.emptyMap();
         }
 
-        @Nullable
-        Map<String, AssayPlateMetadataService.MetadataLayer> getPlateMetadata(PipelineJob job) throws PipelineJobException
-        {
-            return null;
-        }
-
         void cleanUp(PipelineJob job) throws PipelineJobException
         {
         }
@@ -868,21 +828,6 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             factory.setBatchProperties(getBatchProperties());
 
             factory.setRunProperties(getRunProperties());
-
-            // add plate metadata if the provider supports it and the protocol has it enabled
-            if (provider.isPlateMetadataEnabled(protocol))
-            {
-                Map<String, AssayPlateMetadataService.MetadataLayer> plateMetadata = _factory.getPlateMetadata(getJob());
-                if (plateMetadata != null)
-                {
-                    factory.setRawPlateMetadata(plateMetadata);
-
-                    // create an expdata object to track the metadata
-                    ExpData plateData = DefaultAssayRunCreator.createData(container, "Plate Metadata", PlateMetadataDataHandler.DATA_TYPE, getJob().getLogger());
-                    plateData.save(user);
-                    factory.setOutputDatas(Map.of(plateData, ExpDataRunInput.DEFAULT_ROLE));
-                }
-            }
 
             factory.setTargetStudy(getTargetStudy());
 

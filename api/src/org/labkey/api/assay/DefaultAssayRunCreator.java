@@ -25,7 +25,6 @@ import org.json.JSONArray;
 import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.assay.pipeline.AssayRunAsyncContext;
 import org.labkey.api.assay.pipeline.AssayUploadPipelineJob;
-import org.labkey.api.assay.plate.PlateMetadataDataHandler;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -73,7 +72,6 @@ import org.labkey.api.qc.TransformDataHandler;
 import org.labkey.api.qc.TransformResult;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.PropertyValidationError;
-import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
@@ -536,7 +534,6 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             {
                 TsvDataHandler dataHandler = new TsvDataHandler();
                 dataHandler.setAllowEmptyData(true);
-                dataHandler.setRawPlateMetadata(context.getRawPlateMetadata());
                 dataHandler.importRows(primaryData, context.getUser(), run, context.getProtocol(), getProvider(), rawData, null, context.shouldAutoFillDefaultResultColumns());
             }
         }
@@ -557,10 +554,6 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             for (ExpData insertedData : insertedDatas)
             {
                 ExperimentDataHandler dataHandler = insertedData.findDataHandler();
-
-                // Pass through raw plate metadata from assay run upload context
-                if (context.getRawPlateMetadata() != null && dataHandler instanceof AbstractAssayTsvDataHandler)
-                    ((AbstractAssayTsvDataHandler) dataHandler).setRawPlateMetadata(context.getRawPlateMetadata());
 
                 dataHandler.importFile(insertedData, insertedData.getFile(), info, logger, xarContext, context.isAllowLookupByAlternateKey(), context.shouldAutoFillDefaultResultColumns());
             }
@@ -1006,11 +999,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         {
             String key = entry.getKey();
             File file = entry.getValue();
-
-            if (key.equals(AssayDataCollector.PLATE_METADATA_FILE))
-                dataType = PlateMetadataDataHandler.DATA_TYPE;
-            else
-                dataType = context.getProvider().getDataType();
+            dataType = context.getProvider().getDataType();
 
             // Reuse existing exp.data as the assay output file unless:
             // - we are re-importing the run
