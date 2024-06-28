@@ -2220,6 +2220,12 @@ public class LoginController extends SpringActionController
 
     private static final String REMOTE_LOGIN_FEATURE_AREA = "remoteLoginInvocations";
 
+    private static void handleRemoteLoginAction(String actionName)
+    {
+        SimpleMetricsService.get().increment(CoreModule.CORE_MODULE_NAME, REMOTE_LOGIN_FEATURE_AREA, actionName);
+        _log.warn("The Remote Login API has been deprecated and will be removed in LabKey Server 24.8! Migrate uses to the CAS identity provider.");
+    }
+
     @SuppressWarnings("unused")
     @RequiresLogin
     public static class CreateTokenAction extends SimpleViewAction<TokenAuthenticationForm>
@@ -2243,7 +2249,7 @@ public class LoginController extends SpringActionController
             returnUrl.addParameter("labkeyEmail", user.getEmail());
 
             getViewContext().getResponse().sendRedirect(returnUrl.getURIString());
-            SimpleMetricsService.get().increment(CoreModule.CORE_MODULE_NAME, REMOTE_LOGIN_FEATURE_AREA, "create");
+            handleRemoteLoginAction("create");
             return null;
         }
 
@@ -2297,7 +2303,7 @@ public class LoginController extends SpringActionController
             }
 
             response.flushBuffer();
-            SimpleMetricsService.get().increment(CoreModule.CORE_MODULE_NAME, REMOTE_LOGIN_FEATURE_AREA, "verify");
+            handleRemoteLoginAction("verify");
             return null;
         }
 
@@ -2319,7 +2325,7 @@ public class LoginController extends SpringActionController
             if (null != form.getLabkeyToken())
                 TokenAuthenticationManager.get().invalidateKey(form.getLabkeyToken());
             URLHelper returnUrl = form.getValidReturnUrl();
-            SimpleMetricsService.get().increment(CoreModule.CORE_MODULE_NAME, REMOTE_LOGIN_FEATURE_AREA, "invalidate");
+            handleRemoteLoginAction("invalidate");
             if (null != returnUrl)
                 return returnUrl;
             return AppProps.getInstance().getHomePageActionURL();
