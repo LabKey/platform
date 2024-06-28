@@ -23,16 +23,31 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
-import org.labkey.api.assay.plate.PlateMetadataDataHandler;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.*;
+import org.labkey.api.data.AssayResultsFileConverter;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.ForeignKey;
+import org.labkey.api.data.ImportAliasable;
+import org.labkey.api.data.MvUtil;
+import org.labkey.api.data.RemapCache;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableResultSet;
+import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.ColumnValidators;
 import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.exp.OntologyManager;
@@ -109,7 +124,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     };
 
     private static final Logger LOG = LogHelper.getLogger(AbstractAssayTsvDataHandler.class, "Info related to assay data import");
-    private Map<String, AssayPlateMetadataService.MetadataLayer> _rawPlateMetadata;
 
     protected abstract boolean allowEmptyData();
 
@@ -163,9 +177,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         try
         {
             DataLoaderSettings settings = new DataLoaderSettings();
-            // pass through any plate metadata
-            if (context.getRawPlateMetadata() != null)
-                setRawPlateMetadata(context.getRawPlateMetadata());
             importRows(data, context.getUser(), run, context.getProtocol(), context.getProvider(), dataMap, settings, context.shouldAutoFillDefaultResultColumns());
         }
         catch (ValidationException e)
@@ -181,25 +192,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         AssayProvider provider = AssayService.get().getProvider(protocol);
         Domain dataDomain = provider.getResultsDomain(protocol);
         boolean plateMetadataEnabled = provider.isPlateMetadataEnabled(protocol);
-        File plateMetadataFile = null;
-        Map<String, AssayPlateMetadataService.MetadataLayer> rawPlateMetadata = null;
-
-        if (plateMetadataEnabled)
-        {
-            if (context instanceof AssayUploadXarContext assayContext)
-            {
-                // the plate metadata will either be uploaded as a file or in a raw, already parsed form depending on
-                // how the run is imported.
-                rawPlateMetadata = assayContext.getContext().getRawPlateMetadata();
-                plateMetadataFile = assayContext.getContext().getUploadedData().get(AssayDataCollector.PLATE_METADATA_FILE);
-                if (plateMetadataFile != null)
-                {
-                    // don't serialize the plate metadata file to the transform script working dir
-                    if (plateMetadataFile.getPath().equals(dataFile.getPath()))
-                        return Collections.emptyMap();
-                }
-            }
-        }
 
         try (DataLoader loader = createLoaderForImport(dataFile, data.getRun(), dataDomain, settings, true))
         {
@@ -217,7 +209,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             // assays with plate metadata support will merge the plate metadata with the data rows to make it easier for
             // transform scripts to perform metadata related calculations
             if (plateMetadataEnabled)
-                dataRows = mergePlateMetadata(context, provider, protocol, dataRows, rawPlateMetadata, plateMetadataFile);
+                dataRows = mergePlateMetadata(context, provider, protocol, dataRows);
 
             datas.put(getDataType(), dataRows);
 
@@ -229,29 +221,14 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         }
     }
 
-    private Supplier<ValidatingDataRowIterator> mergePlateMetadata(XarContext context, AssayProvider provider, ExpProtocol protocol, Supplier<ValidatingDataRowIterator> dataRows,
-                                                         Map<String, AssayPlateMetadataService.MetadataLayer> rawPlateMetadata, File plateMetadataFile)
-            throws ExperimentException
+    private Supplier<ValidatingDataRowIterator> mergePlateMetadata(XarContext context, AssayProvider provider, ExpProtocol protocol, Supplier<ValidatingDataRowIterator> dataRows) throws ExperimentException
     {
-        Map<String, AssayPlateMetadataService.MetadataLayer> plateMetadata = null;
-        if (plateMetadataFile != null || rawPlateMetadata != null)
-        {
-            if (plateMetadataFile != null)
-                plateMetadata = AssayPlateMetadataService.get().parsePlateMetadata(plateMetadataFile);
-            else
-                plateMetadata = rawPlateMetadata;
-        }
-
         Domain runDomain = provider.getRunDomain(protocol);
-        DomainProperty propertyPlateTemplate = runDomain.getPropertyByName(AssayPlateMetadataService.PLATE_TEMPLATE_COLUMN_NAME);
         DomainProperty propertyPlateSet = runDomain.getPropertyByName(AssayPlateMetadataService.PLATE_SET_COLUMN_NAME);
-        if (propertyPlateTemplate != null || propertyPlateSet != null)
+        if (propertyPlateSet != null)
         {
-            Map<DomainProperty, String> runProps = ((AssayUploadXarContext)context).getContext().getRunProperties();
-            Object lsid = runProps.getOrDefault(propertyPlateTemplate, null);
-            Lsid templateLsid = lsid != null && !StringUtils.isEmpty(String.valueOf(lsid)) ? Lsid.parse(String.valueOf(lsid)) : null;
             Integer plateSetId = getPlateSetValueFromRunProps(context, provider, protocol);
-            return AssayPlateMetadataService.get().mergePlateMetadata(context.getContainer(), context.getUser(), templateLsid, plateSetId, dataRows, plateMetadata, provider, protocol);
+            return AssayPlateMetadataService.get().mergePlateMetadata(context.getContainer(), context.getUser(), plateSetId, dataRows, provider, protocol);
         }
 
         return dataRows;
@@ -590,9 +567,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
                 // Attach run's final protocol application with output LSIDs for Assay Result rows
                 rowCallback = rowCallback.chain(pvs.getAssayRowCallback(run, container));
-
-                // add plate metadata if the assay is configured to support it
-                rowCallback = rowCallback.chain(addAssayPlateMetadata(container, user, run, provider, protocol, data));
             }
 
             // Insert the data into the assay's data table.
@@ -619,43 +593,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         catch (IOException e)
         {
             throw new ExperimentException(e);
-        }
-    }
-
-    private OntologyManager.RowCallback addAssayPlateMetadata(
-        Container container,
-        User user,
-        ExpRun run,
-        AssayProvider provider,
-        ExpProtocol protocol,
-        ExpData resultData
-    ) throws ExperimentException
-    {
-        if (!provider.isPlateMetadataEnabled(protocol))
-            return NO_OP_ROW_CALLBACK;
-
-        // find the ExpData object for the plate metadata
-        List<? extends ExpData> datas = run.getOutputDatas(PlateMetadataDataHandler.DATA_TYPE);
-        if (datas.size() == 1)
-        {
-            ExpData plateData = datas.get(0);
-            Map<String, AssayPlateMetadataService.MetadataLayer> plateMetadata;
-
-            if (plateData.getFile() != null)
-                plateMetadata = AssayPlateMetadataService.get().parsePlateMetadata(plateData.getFile());
-            else if (getRawPlateMetadata() != null)
-                plateMetadata = getRawPlateMetadata();
-            else
-                throw new ExperimentException("There was no plate metadata JSON available for this run");
-
-            return AssayPlateMetadataService.get().getAssayPlateMetadataRowCallback(resultData, plateMetadata, container, user, run, provider, protocol);
-        }
-        else
-        {
-            // plate metadata is optional if the experimental plate flag is enabled
-            if (!AssayPlateMetadataService.isExperimentalAppPlateEnabled())
-                throw new ExperimentException("Unable to locate the ExpData with the plate metadata");
-            return NO_OP_ROW_CALLBACK;
         }
     }
 
@@ -1277,17 +1214,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             return PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(data.getContainer(), protocol, run.getRowId());
         }
         return null;
-    }
-
-    @Nullable
-    public Map<String, AssayPlateMetadataService.MetadataLayer> getRawPlateMetadata()
-    {
-        return _rawPlateMetadata;
-    }
-
-    public void setRawPlateMetadata(Map<String, AssayPlateMetadataService.MetadataLayer> rawPlateMetadata)
-    {
-        _rawPlateMetadata = rawPlateMetadata;
     }
 
     /** Wrapper around a row's key->value map that can find the values based on any of the DomainProperty's potential

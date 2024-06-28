@@ -109,19 +109,6 @@ public interface AssayProvider extends Handler<ExpProtocol>
     List<AssayDataCollector> getDataCollectors(Map<String, File> uploadedFiles, AssayRunUploadForm context);
 
     /**
-     * Providers that support plate metadata can provide a data collector for plate specific data
-     */
-    @Nullable
-    AssayDataCollector getPlateMetadataDataCollector(AssayRunUploadForm context);
-
-    /**
-     * Return the ActionURL to download (or render) an example of the plate metadata format necessary
-     * to support importing of plate metadata. This will be rendered in the import wizard.
-     */
-    @Nullable
-    ActionURL getPlateMetadataTemplateURL(Container container, ExpProtocol protocol);
-
-    /**
      * @return the name of the assay provider.
      * This should not change once assay designs have been created, or they will be orphaned because they will no longer match.
      */
@@ -270,7 +257,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
     boolean isQCEnabled(ExpProtocol protocol);
 
     /** Does the provider support integration of plate template metadata */
-    boolean supportsPlateMetadata();
+    boolean supportsPlateMetadata(ExpProtocol protocol);
     void setPlateMetadataEnabled(ExpProtocol protocol, boolean metadataEnabled);
     boolean isPlateMetadataEnabled(ExpProtocol protocol);
 

@@ -52,7 +52,6 @@ public class AssayJSONConverter
     public static final String BATCHES = "batches";
     public static final String RUN = "run";
     public static final String RUNS = "runs";
-    public static final String PLATE_METADATA = "plateMetadata";
 
     // Run properties
     public static final String DATA_ROWS = "dataRows";
