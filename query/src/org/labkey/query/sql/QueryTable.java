@@ -780,9 +780,12 @@ public class QueryTable extends AbstractQueryRelation implements QueryRelation.C
             }
 
             ColumnLogging columnLogging = col.getColumnLogging();
-            for (FieldKey fieldKey : columnLogging.getDataLoggingColumns())
+            if (null == columnLogging.getException())
             {
-                addSuggestedColumn(suggested, fieldKey, selectedColumnMap);
+                for (FieldKey fieldKey : columnLogging.getDataLoggingColumns())
+                {
+                    addSuggestedColumn(suggested, fieldKey, selectedColumnMap);
+                }
             }
         }
         suggested.removeAll(selected);

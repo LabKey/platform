@@ -105,11 +105,12 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         /** return false if we did not acquire the loadingLock */
         boolean load(SQLFragment selectQuery, boolean isSelectInto)
         {
+            boolean lockAquired = false;
             try
             {
                 try
                 {
-                    if (!_loadingLock.tryLock(5, TimeUnit.MINUTES))
+                    if (!(lockAquired = _loadingLock.tryLock(5, TimeUnit.MINUTES)))
                         return false;
                 }
                 catch (InterruptedException x)
@@ -162,7 +163,8 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
             }
             finally
             {
-                _loadingLock.unlock();
+                if (lockAquired)
+                    _loadingLock.unlock();
             }
         }
     }
