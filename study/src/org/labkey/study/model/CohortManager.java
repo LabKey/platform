@@ -212,7 +212,7 @@ public class CohortManager
         if (StudyManager.getInstance().showCohorts(container, user))
         {
             List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(container, user);
-            return cohorts.size() > 0;
+            return !cohorts.isEmpty();
         }
         return false;
     }
@@ -221,7 +221,7 @@ public class CohortManager
     public void addCohortNavTree(Container container, User user, CohortFilter currentCohortFilter, @Nullable String dataRegionName, NavTree tree)
     {
         List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(container, user);
-        if (cohorts.size() > 0)
+        if (!cohorts.isEmpty())
         {
             String caption = "Cohorts";
             Study study = StudyManager.getInstance().getStudy(container);
@@ -549,10 +549,7 @@ public class CohortManager
 
     private void addCohortIdParameter(List<Object> parameters, Integer cohortId)
     {
-        if (cohortId != null)
-            parameters.add(cohortId);
-        else
-            parameters.add(Parameter.nullParameter(JdbcType.INTEGER));
+        parameters.add(Objects.requireNonNullElseGet(cohortId, () -> Parameter.nullParameter(JdbcType.INTEGER)));
     }
 
     public Participant[] getParticipantsForCohort(Container c, int cohortId)

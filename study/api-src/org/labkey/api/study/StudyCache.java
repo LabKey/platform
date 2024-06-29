@@ -46,6 +46,7 @@ public class StudyCache
         return c.getId() + "/" + (null != cacheKey ? cacheKey : "");
     }
 
+    // Study helper calls this directly to handle sibling studies
     public static Object get(TableInfo tinfo, Container c, Object cacheKey, CacheLoader<String, Object> loader)
     {
         return getCache(tinfo).get(getCacheName(c, cacheKey), null, loader);

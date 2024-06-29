@@ -89,7 +89,7 @@ public class SpecimenRequestManager
     private SpecimenRequestManager()
     {
         _requestEventHelper = new QueryHelper<>(() -> SpecimenSchema.get().getTableInfoSampleRequestEvent(), SpecimenRequestEvent.class);
-        _requestStatusHelper = new QueryHelper<>(() -> SpecimenSchema.get().getTableInfoSampleRequestStatus(), SpecimenRequestStatus.class);
+        _requestStatusHelper = new QueryHelper<>(() -> SpecimenSchema.get().getTableInfoSampleRequestStatus(), SpecimenRequestStatus.class, "RowId", "SortOrder");
         _requestHelper = new QueryHelper<>(() -> SpecimenSchema.get().getTableInfoSampleRequest(), SpecimenRequest.class);
 
         initGroupedValueAllowedColumnMap();
@@ -97,7 +97,7 @@ public class SpecimenRequestManager
 
     public List<SpecimenRequestStatus> getRequestStatuses(Container c, User user)
     {
-        List<SpecimenRequestStatus> statuses = _requestStatusHelper.getList(c, "SortOrder");
+        List<SpecimenRequestStatus> statuses = _requestStatusHelper.getList(c);
         // if the 'not-yet-submitted' status doesn't exist, create it here, with sort order -1,
         // so it's always first.
         if (statuses == null || statuses.isEmpty() || statuses.get(0).getSortOrder() != -1)
@@ -113,7 +113,7 @@ public class SpecimenRequestManager
                 Table.insert(user, _requestStatusHelper.getTableInfo(), notYetSubmittedStatus);
                 _requestStatusHelper.clearCache(c);
             }
-            statuses = _requestStatusHelper.getList(c, "SortOrder");
+            statuses = _requestStatusHelper.getList(c);
         }
         return statuses;
     }

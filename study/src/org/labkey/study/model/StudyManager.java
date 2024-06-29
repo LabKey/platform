@@ -342,7 +342,7 @@ public class StudyManager
 
         _visitHelper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoVisit(), VisitImpl.class);
         _assaySpecimenHelper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoAssaySpecimen(), AssaySpecimenConfigImpl.class);
-        _cohortHelper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoCohort(), CohortImpl.class);
+        _cohortHelper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoCohort(), CohortImpl.class, "RowId", "Label");
 
         /*
          * Whenever we explicitly invalidate a dataset, unmaterialize it as well this is probably a little overkill,
@@ -391,7 +391,7 @@ public class StudyManager
 
     private class DatasetHelper
     {
-        private final QueryHelper<DatasetDefinition> helper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoDataset(), DatasetDefinition.class);
+        private final QueryHelper<DatasetDefinition> helper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoDataset(), DatasetDefinition.class, "DatasetId", null);
 
         private DatasetHelper()
         {
@@ -445,7 +445,7 @@ public class StudyManager
 
         public DatasetDefinition get(Container c, int rowId)
         {
-            return helper.get(c, rowId, "DatasetId");
+            return helper.get(c, rowId);
         }
     }
 
@@ -1804,12 +1804,11 @@ public class StudyManager
             clearParticipantVisitCaches(substudy);
     }
 
-
     public VisitImpl getVisitForRowId(Study study, int rowId)
     {
         Study visitStudy = getStudyForVisits(study);
 
-        return _visitHelper.get(visitStudy.getContainer(), rowId, "RowId");
+        return _visitHelper.get(visitStudy.getContainer(), rowId);
     }
 
     /**
@@ -2041,7 +2040,7 @@ public class StudyManager
     public List<CohortImpl> getCohorts(Container container, User user)
     {
         assertCohortsViewable(container, user);
-        return _cohortHelper.getList(container, "Label");
+        return _cohortHelper.getList(container);
     }
 
     public CohortImpl getCurrentCohortForParticipant(Container container, User user, String participantId)
@@ -2222,8 +2221,8 @@ public class StudyManager
             return Collections.emptyList();
 
         if (null == local)
-            local = getDatasetDefinitionsLocal(study, null);
-        List<DatasetDefinition> shared = getDatasetDefinitionsLocal(sharedStudy, null);
+            local = getDatasetDefinitionsLocal(study);
+        List<DatasetDefinition> shared = getDatasetDefinitionsLocal(sharedStudy);
 
         if (local.isEmpty() || shared.isEmpty())
             return Collections.emptyList();
@@ -2249,6 +2248,11 @@ public class StudyManager
         return new ArrayList<>(shadowed.values());
     }
 
+
+    public List<DatasetDefinition> getDatasetDefinitionsLocal(Study study)
+    {
+        return getDatasetDefinitionsLocal(study, null);
+    }
 
     public List<DatasetDefinition> getDatasetDefinitionsLocal(Study study, @Nullable Cohort cohort, String... types)
     {

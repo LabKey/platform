@@ -36,28 +36,41 @@ public class QueryHelper<K extends StudyCachable<K>>
 {
     private final Class<K> _objectClass;
     private final TableInfoGetter _tableInfoGetter;
+    private final String _rowIdColumnName;
+    private final String _defaultSortString;
 
     public QueryHelper(TableInfoGetter tableInfoGetter, Class<K> objectClass)
     {
+        this(tableInfoGetter, objectClass, "RowId", null);
+    }
+
+    public QueryHelper(TableInfoGetter tableInfoGetter, Class<K> objectClass, String rowIdColumnName, String defaultSortString)
+    {
         _tableInfoGetter = tableInfoGetter;
         _objectClass = objectClass;
+        _rowIdColumnName = rowIdColumnName;
+        _defaultSortString = defaultSortString;
     }
 
     public List<K> getList(Container c)
     {
-        return getList(c, null, null);
+        return getList(c, null, _defaultSortString);
     }
 
-    public List<K> getList(Container c, String sortString)
-    {
-        return getList(c, null, sortString);
-    }
-
+    // Used only by dataset helper. Scenarios:
+    // - Filter by Cohort + Type
+    // - Filter by Category
+    // - Select by Label (case-insensitive. Note: study.Datasets has a unique constraint on Container, LOWER(Label))
+    // - Select by EntityId
+    // - Select by Name (case-insensitive. Note: study.Datasets has a unique constraint on Container, LOWER(Name))
     public List<K> getList(Container c, SimpleFilter filter)
     {
         return getList(c, filter, null);
     }
 
+    // Visit helper uses this to filter by Cohort and sort by Visit.Order (Chronological vs. Display Order vs. SequenceNumMin)
+    // Request helper users this to filter by Hidden and CreatedBy, and sort by -Created
+    // Study helper overrides this to handle sibling studies
     public List<K> getList(final Container c, @Nullable final SimpleFilter filterArg, @Nullable final String sortString)
     {
         String cacheId = getCacheId(filterArg);
@@ -92,21 +105,11 @@ public class QueryHelper<K extends StudyCachable<K>>
         return (List<K>)StudyCache.get(getTableInfo(), c, cacheId, loader);
     }
 
-    public K get(Container c, int rowId)
-    {
-        return get(c, (Object)rowId, "RowId");
-    }
-
-    public K get(Container c, int rowId, String rowIdColumnName)
-    {
-        return get(c, (Object)rowId, rowIdColumnName);
-    }
-
-    private K get(final Container c, final Object rowId, final String rowIdColumnName)
+    public K get(final Container c, final int rowId)
     {
         CacheLoader<String, Object> loader = (key, argument) -> {
             SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-            filter.addCondition(rowIdColumnName, rowId);
+            filter.addCondition(_rowIdColumnName, rowId);
             StudyCachable<K> obj = new TableSelector(getTableInfo(), filter, null).getObject(_objectClass);
             if (obj != null)
                 obj.lock();
