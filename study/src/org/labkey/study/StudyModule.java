@@ -462,7 +462,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 metric.put("participantAliasCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Study WHERE ParticipantAliasDatasetId IS NOT NULL").getObject(Long.class));
 
                 // grab the counts of report and dataset notification settings (by notification option)
-                Set<? extends StudyImpl> allStudies = StudyManager.getInstance().getAllStudies();
+                Collection<? extends StudyImpl> allStudies = StudyManager.getInstance().getAllStudies();
                 Map<ReportContentEmailManager.NotifyOption, Integer> notifyOptionCounts = new HashMap<>();
                 allStudies.forEach(study -> {
                     Map<Integer, SortedSet<Integer>> settings = ReportContentEmailManager.getUserCategoryMap(study.getContainer());

@@ -353,9 +353,9 @@ public class StudyServiceImpl implements StudyService, ContainerSecurableResourc
         {
             String studyRef = (String)studyReference;
             // look for study by label
-            Set<? extends StudyImpl> studies = user == null ?
+            Collection<? extends StudyImpl> studies = user == null ?
                     StudyManager.getInstance().getAllStudies() :
-                    StudyManager.getInstance().getAllStudies(ContainerManager.getRoot(), user, ReadPermission.class);
+                    StudyManager.getInstance().getAllStudies(ContainerManager.getRoot(), user);
 
             for (Study study : studies)
             {

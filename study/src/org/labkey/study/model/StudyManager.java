@@ -497,11 +497,11 @@ public class StudyManager
 
     private static final String CACHE_KEY = StudyManager.class.getName() + "||cachedStudies";
 
-    /** @return all studies in the whole server, unfiltered by permissions */
+    /** @return all studies in the whole server, unfiltered by permissions and sorted by Label */
     @NotNull
     public Set<? extends StudyImpl> getAllStudies()
     {
-        Set<StudyImpl> ret = (Set)CacheManager.getSharedCache().get(CACHE_KEY);
+        Set<StudyImpl> ret = (Set<StudyImpl>)CacheManager.getSharedCache().get(CACHE_KEY);
         if (ret == null)
         {
             ret = Collections.unmodifiableSet(new LinkedHashSet<>(new TableSelector(StudySchema.getInstance().getTableInfoStudy(), null, new Sort("Label")).getArrayList(StudyImpl.class)));
