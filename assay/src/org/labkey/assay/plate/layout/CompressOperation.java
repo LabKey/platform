@@ -14,28 +14,17 @@ public class CompressOperation implements LayoutOperation
     private PlateType _sourcePlateType;
 
     @Override
-    public void validateOptions(ReformatOptions.OperationOptions options, @NotNull List<Plate> sourcePlates, PlateType targetPlateType) throws ValidationException
+    public List<WellLayout> execute(ReformatOptions.OperationOptions options, @NotNull List<Plate> sourcePlates, PlateType targetPlateType)
     {
-        if (!ReformatOptions.FillStrategy.quadrant.equals(options.getFillStrategy()))
-            throw new ValidationException("Quadrant stamping is the only fill strategy supported by this operation.");
+        ReformatOptions.FillStrategy fillStrategy = options.getFillStrategy();
 
-        for (Plate plate : sourcePlates)
-        {
-            if (_sourcePlateType == null)
-                _sourcePlateType = plate.getPlateType();
-            else if (!_sourcePlateType.equals(plate.getPlateType()))
-                throw new ValidationException("Source plate type mismatch. All source plates must be of the same type.");
-        }
+        if (ReformatOptions.FillStrategy.quadrant == fillStrategy)
+            return quadrant(sourcePlates, targetPlateType);
 
-        if (_sourcePlateType == null)
-            throw new ValidationException("Source plate type missing. Unable to determine source plate type.");
-
-        if (_sourcePlateType.getWellCount() * 4 != targetPlateType.getWellCount())
-            throw new ValidationException("Quadrant stamping only supports target plates types with exactly 4x the number of wells.");
+        throw new UnsupportedOperationException(String.format("CompressOperation does not support the \"%s\" fill strategy.", fillStrategy));
     }
 
-    @Override
-    public List<WellLayout> execute(@NotNull ReformatOptions.OperationOptions options, @NotNull List<Plate> sourcePlates, PlateType targetPlateType)
+    private List<WellLayout> quadrant(@NotNull List<Plate> sourcePlates, PlateType targetPlateType)
     {
         List<WellLayout> layouts = new ArrayList<>();
         WellLayout target = null;
@@ -82,8 +71,35 @@ public class CompressOperation implements LayoutOperation
     }
 
     @Override
+    public boolean requiresOperationOptions()
+    {
+        return true;
+    }
+
+    @Override
     public boolean requiresTargetPlateType()
     {
         return true;
+    }
+
+    @Override
+    public void validate(ReformatOptions.OperationOptions options, @NotNull List<Plate> sourcePlates, PlateType targetPlateType) throws ValidationException
+    {
+        if (!ReformatOptions.FillStrategy.quadrant.equals(options.getFillStrategy()))
+            throw new ValidationException("Quadrant stamping is the only fill strategy supported by this operation.");
+
+        for (Plate plate : sourcePlates)
+        {
+            if (_sourcePlateType == null)
+                _sourcePlateType = plate.getPlateType();
+            else if (!_sourcePlateType.equals(plate.getPlateType()))
+                throw new ValidationException("Source plate type mismatch. All source plates must be of the same type.");
+        }
+
+        if (_sourcePlateType == null)
+            throw new ValidationException("Source plate type missing. Unable to determine source plate type.");
+
+        if (_sourcePlateType.getWellCount() * 4 != targetPlateType.getWellCount())
+            throw new ValidationException("Quadrant stamping only supports target plates types with exactly 4x the number of wells.");
     }
 }

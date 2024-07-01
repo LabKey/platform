@@ -16,6 +16,7 @@
 
 package org.labkey.assay.plate;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -2366,13 +2367,44 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return PLATE_NAME_EXPRESSION;
     }
 
-    public record CreatePlateSetPlate(String name, Integer plateType, Integer templateId, List<Map<String, Object>> data) {}
+    public record PlateData(String name, Integer plateType, Integer templateId, List<Map<String, Object>> data) {}
+
+    private List<Plate> addPlatesToPlateSet(
+        Container container,
+        User user,
+        int plateSetId,
+        boolean plateSetIsTemplate,
+        @NotNull List<PlateData> plates
+    ) throws Exception
+    {
+        if (plates.isEmpty())
+            return Collections.emptyList();
+
+        try (DbScope.Transaction tx = ensureTransaction())
+        {
+            List<Plate> platesAdded = new ArrayList<>();
+
+            for (var plate : plates)
+            {
+                var plateType = requirePlateType(plate.plateType, "Failed to add plates to plate set.");
+                var plateImpl = new PlateImpl(container, plate.name, plateType);
+                plateImpl.setTemplate(plateSetIsTemplate);
+
+                // TODO: Write a cheaper plate create/save for multiple plates
+                platesAdded.add(createAndSavePlate(container, user, plateImpl, plateSetId, plate.data));
+            }
+
+            tx.commit();
+
+            return platesAdded;
+        }
+    }
 
     public PlateSetImpl createPlateSet(
         Container container,
         User user,
         @NotNull PlateSetImpl plateSet,
-        @Nullable List<CreatePlateSetPlate> plates,
+        @Nullable List<PlateData> plates,
         @Nullable Integer parentPlateSetId
     ) throws Exception
     {
@@ -2417,17 +2449,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             savePlateSetHeritage(plateSetId, plateSet.getType(), parentPlateSet);
 
             if (plates != null)
-            {
-                for (var plate : plates)
-                {
-                    var plateType = requirePlateType(plate.plateType, "Failed to create plate set.");
-                    var plateImpl = new PlateImpl(container, plate.name, plateType);
-                    plateImpl.setTemplate(plateSet.isTemplate());
-
-                    // TODO: Write a cheaper plate create/save for multiple plates
-                    createAndSavePlate(container, user, plateImpl, plateSetId, plate.data);
-                }
-            }
+                addPlatesToPlateSet(container, user, plateSetId, plateSet.isTemplate(), plates);
 
             plateSet = (PlateSetImpl) getPlateSet(container, plateSetId);
             tx.commit();
@@ -2945,14 +2967,14 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     }
 
     /** Prepares the plate data for plates that specify a "templateId". */
-    public List<CreatePlateSetPlate> preparePlateData(Container container, User user, Collection<CreatePlateSetPlate> plates)
+    public List<PlateData> preparePlateData(Container container, User user, Collection<PlateData> plates)
     {
         if (plates == null || plates.isEmpty())
             return Collections.emptyList();
 
-        List<CreatePlateSetPlate> plateData = new ArrayList<>();
+        List<PlateData> plateData = new ArrayList<>();
 
-        for (CreatePlateSetPlate plate : plates)
+        for (PlateData plate : plates)
         {
             if (plate.templateId == null)
                 plateData.add(plate);
@@ -2963,7 +2985,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                         .map(WellData::getData)
                         .toList();
 
-                plateData.add(new CreatePlateSetPlate(plate.name, plate.plateType, plate.templateId, data));
+                plateData.add(new PlateData(plate.name, plate.plateType, plate.templateId, data));
             }
         }
 
@@ -2993,10 +3015,10 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
      * This is a re-array operation, so take the plate sources and apply the selected samples
      * according to each plate's layout.
      */
-    public List<CreatePlateSetPlate> reArrayFromSelection(
+    public List<PlateData> reArrayFromSelection(
         Container container,
         User user,
-        List<CreatePlateSetPlate> plates,
+        List<PlateData> plates,
         @NotNull String selectionKey
     ) throws ValidationException
     {
@@ -3005,10 +3027,10 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             throw new ValidationException("Failed to generate plate data. No samples selected.");
 
         int sampleIdsCounter = 0;
-        List<CreatePlateSetPlate> platesData = new ArrayList<>();
+        List<PlateData> platesData = new ArrayList<>();
         Map<Integer, PlateType> plateTypes = new HashMap<>();
 
-        for (CreatePlateSetPlate plate : plates)
+        for (PlateData plate : plates)
         {
             int plateTypeId = plate.plateType;
             if (!plateTypes.containsKey(plateTypeId))
@@ -3025,14 +3047,14 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
                 // Hydrate a CreatePlateSetPlate and add it to plate data
                 List<Map<String, Object>> data = wellData.stream().map(WellData::getData).toList();
-                platesData.add(new CreatePlateSetPlate(plate.name, plateType.getRowId(), plate.templateId, data));
+                platesData.add(new PlateData(plate.name, plateType.getRowId(), plate.templateId, data));
             }
             else
             {
                 // Iterate through sorted samples array and place them in ascending order in each plate's wells
                 Pair<Integer, List<Map<String, Object>>> pair;
                 pair = getWellSampleData(container, selectedSampleIds, plateType.getRows(), plateType.getColumns(), sampleIdsCounter);
-                platesData.add(new CreatePlateSetPlate(plate.name, plateType.getRowId(), null, pair.second));
+                platesData.add(new PlateData(plate.name, plateType.getRowId(), null, pair.second));
                 sampleIdsCounter = pair.first;
             }
         }
@@ -3475,7 +3497,10 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         }
     }
 
-    public @NotNull List<CreatePlateSetPlate> reformat(Container container, User user, ReformatOptions options) throws ValidationException
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record ReformatResult(List<PlateData> previewData, Integer plateSetRowId, List<Integer> plateRowIds) {}
+
+    public @NotNull ReformatResult reformat(Container container, User user, ReformatOptions options) throws Exception
     {
         if (!container.hasPermission(user, InsertPermission.class))
             throw new UnauthorizedException("Insufficient permissions.");
@@ -3485,10 +3510,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         PlateSetImpl destinationPlateSet = getReformatDestinationPlateSet(container, options);
         List<Plate> sourcePlates = getReformatSourcePlates(container, options);
-
-        PlateType targetPlateType = null;
-        if (options.getOperationOptions() != null && options.getOperationOptions().getTargetPlateTypeId() != null)
-            targetPlateType = requirePlateType(options.getOperationOptions().getTargetPlateTypeId(), null);
+        PlateType targetPlateType = getReformatTargetPlateType(options);
 
         LayoutEngine engine = new LayoutEngine(
             LayoutEngine.layoutOperationFactory(options),
@@ -3509,8 +3531,29 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             ));
         }
 
-        List<CreatePlateSetPlate> newPlates = hydratePlatesFromLayouts(container, user, wellLayouts);
-        return newPlates;
+        List<PlateData> plateData = hydratePlateDataFromWellLayout(container, user, wellLayouts);
+
+        if (options.isPreview())
+            return new ReformatResult(plateData, null, null);
+
+        Integer plateSetRowId;
+        List<Plate> newPlates;
+
+        if (destinationPlateSet.isNew())
+        {
+            // TODO: Determine different settings that configure the parentPlateSetId
+            PlateSet newPlateSet = createPlateSet(container, user, destinationPlateSet, plateData, null);
+            plateSetRowId = newPlateSet.getRowId();
+            newPlates = newPlateSet.getPlates(user);
+        }
+        else
+        {
+            plateSetRowId = destinationPlateSet.getRowId();
+            newPlates = addPlatesToPlateSet(container, user, plateSetRowId, destinationPlateSet.isTemplate(), plateData);
+        }
+
+        List<Integer> plateRowIds = newPlates.stream().map(Plate::getRowId).toList();
+        return new ReformatResult(null, plateSetRowId, plateRowIds);
     }
 
     private @NotNull List<Integer> getReformatPlateRowIds(ReformatOptions options) throws ValidationException
@@ -3601,7 +3644,15 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return sourcePlates;
     }
 
-    private List<CreatePlateSetPlate> hydratePlatesFromLayouts(
+    private @Nullable PlateType getReformatTargetPlateType(ReformatOptions options) throws ValidationException
+    {
+        PlateType targetPlateType = null;
+        if (options.getOperationOptions() != null && options.getOperationOptions().getTargetPlateTypeId() != null)
+            targetPlateType = requirePlateType(options.getOperationOptions().getTargetPlateTypeId(), null);
+        return targetPlateType;
+    }
+
+    private @NotNull List<PlateData> hydratePlateDataFromWellLayout(
         Container container,
         User user,
         List<WellLayout> wellLayouts
@@ -3610,7 +3661,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         if (wellLayouts.isEmpty())
             return Collections.emptyList();
 
-        List<CreatePlateSetPlate> plates = new ArrayList<>();
+        List<PlateData> plates = new ArrayList<>();
         Map<Integer, List<WellData>> sourceWellDataMap = new HashMap<>();
 
         for (WellLayout wellLayout : wellLayouts)
@@ -3643,7 +3694,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 }
             }
 
-            plates.add(new CreatePlateSetPlate(null, plateType.getRowId(), null, targetWellData));
+            plates.add(new PlateData(null, plateType.getRowId(), null, targetWellData));
         }
 
         return plates;

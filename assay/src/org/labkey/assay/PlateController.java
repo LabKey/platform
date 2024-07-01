@@ -41,11 +41,9 @@ import org.labkey.api.assay.plate.PlateSetType;
 import org.labkey.api.assay.plate.PlateType;
 import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.collections.RowMapFactory;
-import org.labkey.api.data.ArrayExcelWriter;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.TSVArrayWriter;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
@@ -87,7 +85,6 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
@@ -953,7 +950,7 @@ public class PlateController extends SpringActionController
     {
         private String _description;
         private String _name;
-        private List<PlateManager.CreatePlateSetPlate> _plates = new ArrayList<>();
+        private List<PlateManager.PlateData> _plates = new ArrayList<>();
         private Integer _parentPlateSetId;
         private String _selectionKey;
         private Boolean _template;
@@ -979,12 +976,12 @@ public class PlateController extends SpringActionController
             _name = name;
         }
 
-        public List<PlateManager.CreatePlateSetPlate> getPlates()
+        public List<PlateManager.PlateData> getPlates()
         {
             return _plates;
         }
 
-        public void setPlates(List<PlateManager.CreatePlateSetPlate> plates)
+        public void setPlates(List<PlateManager.PlateData> plates)
         {
             _plates = plates;
         }
@@ -1078,7 +1075,7 @@ public class PlateController extends SpringActionController
                 }
                 else
                 {
-                    List<PlateManager.CreatePlateSetPlate> plates = form.getPlates();
+                    List<PlateManager.PlateData> plates = form.getPlates();
                     if (form.isRearrayCase())
                     {
                         String selectionKey = StringUtils.trimToNull(form.getSelectionKey());
@@ -1760,13 +1757,12 @@ public class PlateController extends SpringActionController
                 var reformatResult = PlateManager.get().reformat(getContainer(), getUser(), options);
                 return success(reformatResult);
             }
-            catch (ValidationException e)
-            {
-                errors.reject(ERROR_GENERIC, "Failed to reformat plates. " + e.getMessage());
-            }
             catch (Exception e)
             {
-                errors.reject(ERROR_GENERIC, e.getMessage() != null ? e.getMessage() : "Failed to reformat plates.");
+                String message = "Failed to reformat plates.";
+                if (e.getMessage() != null)
+                    message += " " + e.getMessage();
+                errors.reject(ERROR_GENERIC, message);
             }
 
             return null;

@@ -18,7 +18,7 @@ public class LayoutEngine
 
     public LayoutEngine(
         @NotNull LayoutOperation operation,
-        @NotNull ReformatOptions.OperationOptions operationOptions,
+        @Nullable ReformatOptions.OperationOptions operationOptions,
         @NotNull List<Plate> sourcePlates,
         @Nullable PlateType targetPlateType
     )
@@ -37,7 +37,10 @@ public class LayoutEngine
         if (_operation.requiresTargetPlateType() && _targetPlateType == null)
             throw new ValidationException("A target plate type is required for this operation.");
 
-        _operation.validateOptions(_operationOptions, _sourcePlates, _targetPlateType);
+        if (_operation.requiresOperationOptions() && _operationOptions == null)
+            throw new ValidationException("Operation options are required for this operation.");
+
+        _operation.validate(_operationOptions, _sourcePlates, _targetPlateType);
 
         return _operation.execute(_operationOptions, _sourcePlates, _targetPlateType);
     }

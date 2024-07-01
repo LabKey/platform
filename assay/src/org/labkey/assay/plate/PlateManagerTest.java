@@ -262,9 +262,9 @@ public final class PlateManagerTest
 
         // Act
         PlateSet plateSet = PlateManager.get().createPlateSet(container, user, plateSetImpl, List.of(
-                new PlateManager.CreatePlateSetPlate("testAccessPlateByIdentifiersFirst", plateType.getRowId(), null, null),
-                new PlateManager.CreatePlateSetPlate("testAccessPlateByIdentifiersSecond", plateType.getRowId(), null, null),
-                new PlateManager.CreatePlateSetPlate("testAccessPlateByIdentifiersThird", plateType.getRowId(), null, null)
+                new PlateManager.PlateData("testAccessPlateByIdentifiersFirst", plateType.getRowId(), null, null),
+                new PlateManager.PlateData("testAccessPlateByIdentifiersSecond", plateType.getRowId(), null, null),
+                new PlateManager.PlateData("testAccessPlateByIdentifiersThird", plateType.getRowId(), null, null)
         ), null);
 
         // Assert

@@ -11,7 +11,7 @@ import java.util.List;
 public class StampOperation implements LayoutOperation
 {
     @Override
-    public List<WellLayout> execute(@NotNull ReformatOptions.OperationOptions options, @NotNull List<Plate> sourcePlates, PlateType targetPlateType)
+    public List<WellLayout> execute(ReformatOptions.OperationOptions options, @NotNull List<Plate> sourcePlates, PlateType targetPlateType)
     {
         List<WellLayout> result = new ArrayList<>();
         for (Plate plate : sourcePlates)

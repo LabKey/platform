@@ -99,7 +99,7 @@ public class ReformatOptions
     private OperationOptions _operationOptions;
     private List<Integer> _plateRowIds;
     private String _plateSelectionKey;
-    private Boolean _preview;
+    private Boolean _preview = false;
     private ReformatPlateSet _targetPlateSet;
 
     public ReformatOperation getOperation()
@@ -142,7 +142,7 @@ public class ReformatOptions
         _plateSelectionKey = plateSelectionKey;
     }
 
-    public Boolean getPreview()
+    public Boolean isPreview()
     {
         return _preview;
     }
