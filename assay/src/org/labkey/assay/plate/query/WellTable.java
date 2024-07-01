@@ -259,48 +259,50 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
     @Override
     protected SQLFragment getFromSQLExpanded(String alias, Set<FieldKey> cols)
     {
+        // join the base assay.well table to the provisioned table
+        checkReadBeforeExecute();
+
+        Set<String> baseColumns = new CaseInsensitiveHashSet(_rootTable.getColumnNameSet());
+
+        // all columns from provisioned table except lsid
         TableInfo wellProperties = PlateManager.get().getPlateMetadataTable(getContainer(), _userSchema.getUser());
+        Set<String> provisionedColumns = Collections.emptySet();
         if (wellProperties != null)
         {
-            // join the base assay.well table to the provisioned table
-            checkReadBeforeExecute();
-
-            Set<String> baseColumns = new CaseInsensitiveHashSet(_rootTable.getColumnNameSet());
-
-            // all columns from provisioned table except lsid
-            Set<String> provisionedColumns = new CaseInsensitiveHashSet(wellProperties.getColumnNameSet());
+            provisionedColumns = new CaseInsensitiveHashSet(wellProperties.getColumnNameSet());
             provisionedColumns.remove("lsid");
-
-            SQLFragment sql = new SQLFragment();
-            sql.append("(SELECT * FROM (SELECT ");
-            String delim = "";
-            for (String col : baseColumns)
-            {
-                sql.append(delim).append("d.").append(col);
-                delim = ", ";
-            }
-
-            for (String col : provisionedColumns)
-            {
-                sql.append(delim).append(wellProperties.getColumn(col).getValueSql("p"));
-            }
-
-            sql.append(" FROM ")
-                    .append(_rootTable, "d")
-                    .append(" INNER JOIN ")
-                    .append(wellProperties, "p").append(" ON d.lsid = p.lsid");
-            String subAlias = alias + "_wp_sub";
-            sql.append(") ").append(subAlias);
-            sql.append("\n");
-
-            // add the WHERE clause
-            Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
-            SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable.getSqlDialect(), subAlias, columnMap);
-            sql.append("\n").append(filterFrag).append(") ").append(alias);
-
-            return sql;
         }
-        return super.getFromSQLExpanded(alias, cols);
+
+        SQLFragment sql = new SQLFragment();
+        sql.append("(SELECT * FROM (SELECT ");
+        String delim = "";
+        for (String col : baseColumns)
+        {
+            sql.append(delim).append("d.").append(col);
+            delim = ", ";
+        }
+
+        for (String col : provisionedColumns)
+        {
+            sql.append(delim).append(wellProperties.getColumn(col).getValueSql("p"));
+        }
+
+        sql.append(" FROM ").append(_rootTable, "d");
+
+        if (!provisionedColumns.isEmpty())
+        {
+            sql.append(" INNER JOIN ").append(wellProperties, "p").append(" ON d.lsid = p.lsid");
+        }
+        String subAlias = alias + "_wp_sub";
+        sql.append(") ").append(subAlias);
+        sql.append("\n");
+
+        // add the WHERE clause
+        Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
+        SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable.getSqlDialect(), subAlias, columnMap);
+        sql.append("\n").append(filterFrag).append(") ").append(alias);
+
+        return sql;
     }
 
     @Override
