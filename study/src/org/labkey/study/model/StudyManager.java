@@ -152,7 +152,6 @@ import org.labkey.api.study.DataspaceContainerFilter;
 import org.labkey.api.study.QueryHelper;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
-import org.labkey.api.study.StudyCache;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
@@ -254,82 +253,21 @@ public class StudyManager
 
     private StudyManager()
     {
+        // Study helper is no longer used to retrieve studies; we're already caching all StudyImpls and retrieving them
+        // via getAllStudiesMap() below. We're keeping this around to provide insert(), update(), and delete() methods
+        // that clear the cached studies.
         _studyHelper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoStudy(), StudyImpl.class)
         {
             @Override
             public List<StudyImpl> getList(final Container c, SimpleFilter filterArg, final String sortString)
             {
-                assert filterArg == null && sortString == null;
-                String cacheId = getCacheId(filterArg);
-                if (sortString != null)
-                    cacheId += "; sort = " + sortString;
+                throw new IllegalStateException("Shouldn't be calling Study Helper getList() method");
+            }
 
-                final Set<Container> siblingsWithNoStudies = new HashSet<>();
-                final Set<Study> siblingsStudies = new HashSet<>();
-
-                CacheLoader<String, Object> loader = (key, argument) ->
-                {
-                    // Bulk-load the study for the current container and its siblings, instead of issuing separate
-                    // requests for each container. See issue 19632
-                    SQLFragment selectSQL = new SQLFragment("SELECT * FROM study.Study WHERE Container IN (SELECT ? AS EntityId ");
-                    selectSQL.add(c);
-                    if (c.getParent() != null)
-                    {
-                        selectSQL.append(" UNION SELECT EntityId FROM ");
-                        selectSQL.append(CoreSchema.getInstance().getTableInfoContainers(), "c");
-                        selectSQL.append(" WHERE Parent = ?");
-                        selectSQL.add(c.getParent());
-                    }
-                    selectSQL.append(")");
-                    List<StudyImpl> objs = new SqlSelector(StudySchema.getInstance().getSchema(), selectSQL).getArrayList(StudyImpl.class);
-
-                    // The match, if any, for the container that's being queried directly
-                    StudyImpl result = null;
-                    // Keep track of all containers that DON'T have a study so we can cache them as a miss
-                    if (c.getParent() != null)
-                    {
-                        siblingsWithNoStudies.addAll(ContainerManager.getChildren(c.getParent()));
-                        // No need to reprocess the original container
-                        siblingsWithNoStudies.remove(c);
-                    }
-
-                    for (StudyImpl obj : objs)
-                    {
-                        obj.lock();
-
-                        if (obj.getContainer().equals(c))
-                        {
-                            result = obj;
-                        }
-                        else
-                        {
-                            // Found a study for this container
-                            siblingsWithNoStudies.remove(obj.getContainer());
-
-                            // Remember the hit
-                            siblingsStudies.add(obj);
-                        }
-                    }
-
-                    // Return the specific hit/miss for the originally queried container
-                    return result == null ? Collections.emptyList() : Collections.singletonList(result);
-                };
-
-                List<StudyImpl> result = (List<StudyImpl>) StudyCache.get(getTableInfo(), c, cacheId, loader);
-
-                // Make sure the misses are cached
-                for (Container studylessChild : siblingsWithNoStudies)
-                {
-                    StudyCache.get(getTableInfo(), studylessChild, getCacheId(filterArg), (key, argument) -> Collections.emptyList());
-                }
-
-                // Make sure the sibling hits are cached
-                for (final Study study : siblingsStudies)
-                {
-                    StudyCache.get(getTableInfo(), study.getContainer(), getCacheId(filterArg), (key, argument) -> Collections.singletonList(study));
-                }
-
-                return result;
+            @Override
+            public StudyImpl get(Container c, int rowId)
+            {
+                throw new IllegalStateException("Shouldn't be calling Study Helper get() method");
             }
 
             @Override
@@ -462,16 +400,15 @@ public class StudyManager
 
         while (true)
         {
-            List<StudyImpl> studies = _studyHelper.getList(c);
-            if (studies == null || studies.isEmpty())
-                return null;
-            else if (studies.size() > 1)
-                throw new IllegalStateException("Only one study is allowed per container");
-            else
-                study = studies.get(0);
+            study = getAllStudiesMap().get(c.getId());
 
-            // UNDONE: There is a subtle bug in QueryHelper caching, cached objects shouldn't hold onto Container objects
+            // This should be a very fast "has study" check, replacement fix for Issue 19632
+            if (null == study)
+                break;
+
             assert (study.getContainer().getId().equals(c.getId()));
+
+            // UNDONE: There is a subtle bug in caching, cached objects shouldn't hold onto Container objects
             Container freshestContainer = ContainerManager.getForId(c.getId());
             if (study.getContainer() == freshestContainer)
                 break;
@@ -479,17 +416,10 @@ public class StudyManager
             if (!retry) // we only get one retry
                 break;
 
-            _log.debug("Clearing cached study for " + c + " as its container reference didn't match the current object from ContainerManager " + freshestContainer);
+            _log.debug("Clearing cached study for {} as its container reference didn't match the current object from ContainerManager {}", c, freshestContainer);
 
-            _studyHelper.clearCache(c);
+            _studyHelper.clearCache(c); // This clears the cached "all studies" map as well
             retry = false;
-        }
-
-        // upgrade checks
-        if (null == study.getEntityId() || c.getId().equals(study.getEntityId()))
-        {
-            study.setEntityId(GUID.makeGUID());
-            updateStudy(null, study);
         }
 
         return study;
@@ -499,12 +429,20 @@ public class StudyManager
 
     /** @return all studies in the whole server, unfiltered by permissions and sorted by Label */
     @NotNull
-    public Set<? extends StudyImpl> getAllStudies()
+    public Collection<? extends StudyImpl> getAllStudies()
     {
-        Set<StudyImpl> ret = (Set<StudyImpl>)CacheManager.getSharedCache().get(CACHE_KEY);
+        return getAllStudiesMap().values();
+    }
+
+    private Map<String, ? extends StudyImpl> getAllStudiesMap()
+    {
+        Map<String, StudyImpl> ret = (Map<String, StudyImpl>)CacheManager.getSharedCache().get(CACHE_KEY);
         if (ret == null)
         {
-            ret = Collections.unmodifiableSet(new LinkedHashSet<>(new TableSelector(StudySchema.getInstance().getTableInfoStudy(), null, new Sort("Label")).getArrayList(StudyImpl.class)));
+            ret = Collections.unmodifiableMap(
+                new TableSelector(StudySchema.getInstance().getTableInfoStudy(), null, new Sort("Label")).stream(StudyImpl.class)
+                    .collect(LabKeyCollectors.toLinkedMap(study -> study.getContainer().getId(), study -> study))
+            );
             CacheManager.getSharedCache().put(CACHE_KEY, ret);
         }
 
@@ -4789,7 +4727,8 @@ public class StudyManager
             _log.info("Ensuring study design domains in all studies are moved to the project level.");
 
             StudyManager.getInstance().getAllStudies().forEach(
-                    study -> StudyDesignManager.get().ensureStudyDesignDomainsContainer(study.getContainer(), _log));
+                study -> StudyDesignManager.get().ensureStudyDesignDomainsContainer(study.getContainer(), _log)
+            );
         }
     }
 

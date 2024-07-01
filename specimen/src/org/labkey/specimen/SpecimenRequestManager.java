@@ -90,7 +90,7 @@ public class SpecimenRequestManager
     {
         _requestEventHelper = new QueryHelper<>(() -> SpecimenSchema.get().getTableInfoSampleRequestEvent(), SpecimenRequestEvent.class);
         _requestStatusHelper = new QueryHelper<>(() -> SpecimenSchema.get().getTableInfoSampleRequestStatus(), SpecimenRequestStatus.class, "RowId", "SortOrder");
-        _requestHelper = new QueryHelper<>(() -> SpecimenSchema.get().getTableInfoSampleRequest(), SpecimenRequest.class);
+        _requestHelper = new QueryHelper<>(() -> SpecimenSchema.get().getTableInfoSampleRequest(), SpecimenRequest.class, "RowId", "-Created");
 
         initGroupedValueAllowedColumnMap();
     }
@@ -533,7 +533,7 @@ public class SpecimenRequestManager
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Hidden"), Boolean.FALSE);
         if (user != null)
             filter.addCondition(FieldKey.fromParts("CreatedBy"), user.getUserId());
-        return _requestHelper.getList(c, filter, "-Created");
+        return _requestHelper.getList(c, filter);
     }
 
     public SpecimenRequest getRequest(Container c, int rowId)
