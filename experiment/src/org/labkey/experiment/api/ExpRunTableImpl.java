@@ -1034,7 +1034,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 }
                 catch (ConversionException e)
                 {
-                    throw new ValidationException(e.getMessage());
+                    throw new QueryUpdateServiceException("Unable to convert value " + e.getMessage());
                 }
                 catch (BatchValidationException e)
                 {
