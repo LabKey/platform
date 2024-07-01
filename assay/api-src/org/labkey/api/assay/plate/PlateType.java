@@ -6,4 +6,5 @@ public interface PlateType
     String getDescription();
     Integer getRows();
     Integer getColumns();
+    Integer getWellCount();
 }

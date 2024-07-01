@@ -81,6 +81,12 @@ public class PlateTypeBean implements PlateType
     }
 
     @Override
+    public Integer getWellCount()
+    {
+        return _rows * _cols;
+    }
+
+    @Override
     public int hashCode()
     {
         return (31 * _rows) + _cols;

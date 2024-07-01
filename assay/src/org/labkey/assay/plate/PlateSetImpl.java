@@ -138,7 +138,7 @@ public class PlateSetImpl extends Entity implements PlateSet
     @JsonProperty("plateCount")
     public Integer getPlateCount()
     {
-        if (_rowId == null)
+        if (isNew())
             return 0;
 
         TableInfo table = AssayDbSchema.getInstance().getTableInfoPlate();
@@ -213,5 +213,17 @@ public class PlateSetImpl extends Entity implements PlateSet
     public void setType(PlateSetType type)
     {
         _type = type;
+    }
+
+    @JsonIgnore
+    public int availablePlateCount()
+    {
+        return isNew() ? MAX_PLATES : Math.max(0, MAX_PLATES - getPlateCount());
+    }
+
+    @JsonIgnore
+    public boolean isNew()
+    {
+        return _rowId == null || _rowId == 0;
     }
 }

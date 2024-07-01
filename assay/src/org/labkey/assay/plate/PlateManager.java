@@ -124,10 +124,13 @@ import org.labkey.assay.AssayManager;
 import org.labkey.assay.PlateController;
 import org.labkey.assay.TsvAssayProvider;
 import org.labkey.assay.plate.data.WellData;
+import org.labkey.assay.plate.layout.LayoutEngine;
+import org.labkey.assay.plate.layout.WellLayout;
 import org.labkey.assay.plate.model.PlateBean;
 import org.labkey.assay.plate.model.PlateSetAssays;
 import org.labkey.assay.plate.model.PlateSetLineage;
 import org.labkey.assay.plate.model.PlateTypeBean;
+import org.labkey.assay.plate.model.ReformatOptions;
 import org.labkey.assay.plate.model.WellGroupBean;
 import org.labkey.assay.plate.query.PlateSchema;
 import org.labkey.assay.plate.query.PlateSetTable;
@@ -387,8 +390,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         Set<FieldKey> includedMetadataCols = new HashSet<>();
         for (Plate plate : plateSet.getPlates(user))
         {
-            QueryView plateQueryView = PlateManager.get().getPlateQueryView(c, user, cf, plate, false);
-            Map<String, FieldKey> displayColumns = PlateManager.get().getPlateDisplayColumns(plateQueryView)
+            QueryView plateQueryView = getPlateQueryView(c, user, cf, plate, false);
+            Map<String, FieldKey> displayColumns = getPlateDisplayColumns(plateQueryView)
                     .stream()
                     .filter(col -> col.getFilterKey() != null)
                     .collect(Collectors.toMap(col -> col.getColumnInfo().getPropertyURI(), DisplayColumn::getFilterKey));
@@ -2376,8 +2379,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         if (!container.hasPermission(user, InsertPermission.class))
             throw new UnauthorizedException("Failed to create plate set. Insufficient permissions.");
 
-        if (plateSet.getRowId() != null)
-            throw new ValidationException("Failed to create plate set. Cannot create plate set with rowId (" + plateSet.getRowId() + ").");
+        if (!plateSet.isNew())
+            throw new ValidationException(String.format("Failed to create plate set. Cannot create plate set with rowId (%d).", plateSet.getRowId()));
 
         if (plates != null && plates.size() > MAX_PLATES)
             throw new ValidationException(String.format("Failed to create plate set. Plate sets can have a maximum of %d plates.", MAX_PLATES));
@@ -3003,14 +3006,14 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         int sampleIdsCounter = 0;
         List<CreatePlateSetPlate> platesData = new ArrayList<>();
-        Map<Integer, PlateType> plateTypesHash = new HashMap<>();
+        Map<Integer, PlateType> plateTypes = new HashMap<>();
 
         for (CreatePlateSetPlate plate : plates)
         {
             int plateTypeId = plate.plateType;
-            if (!plateTypesHash.containsKey(plateTypeId))
-                plateTypesHash.put(plateTypeId, requirePlateType(plateTypeId, "Failed to generate plate data."));
-            PlateType plateType = plateTypesHash.get(plateTypeId);
+            if (!plateTypes.containsKey(plateTypeId))
+                plateTypes.put(plateTypeId, requirePlateType(plateTypeId, "Failed to generate plate data."));
+            PlateType plateType = plateTypes.get(plateTypeId);
 
             if (plate.templateId != null)
             {
@@ -3470,5 +3473,179 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 }
             }
         }
+    }
+
+    public @NotNull List<CreatePlateSetPlate> reformat(Container container, User user, ReformatOptions options) throws ValidationException
+    {
+        if (!container.hasPermission(user, InsertPermission.class))
+            throw new UnauthorizedException("Insufficient permissions.");
+
+        if (options.getOperation() == null)
+            throw new ValidationException("An \"operation\" must be specified.");
+
+        PlateSetImpl destinationPlateSet = getReformatDestinationPlateSet(container, options);
+        List<Plate> sourcePlates = getReformatSourcePlates(container, options);
+
+        PlateType targetPlateType = null;
+        if (options.getOperationOptions() != null && options.getOperationOptions().getTargetPlateTypeId() != null)
+            targetPlateType = requirePlateType(options.getOperationOptions().getTargetPlateTypeId(), null);
+
+        LayoutEngine engine = new LayoutEngine(
+            LayoutEngine.layoutOperationFactory(options),
+            options.getOperationOptions(),
+            sourcePlates,
+            targetPlateType
+        );
+
+        List<WellLayout> wellLayouts = engine.run();
+        int availablePlateCount = destinationPlateSet.availablePlateCount();
+
+        if (availablePlateCount < wellLayouts.size())
+        {
+            throw new ValidationException(String.format(
+                "This plate set has space for %d more plates. This operation will generate %d plates.",
+                availablePlateCount,
+                wellLayouts.size()
+            ));
+        }
+
+        List<CreatePlateSetPlate> newPlates = hydratePlatesFromLayouts(container, user, wellLayouts);
+        return newPlates;
+    }
+
+    private @NotNull List<Integer> getReformatPlateRowIds(ReformatOptions options) throws ValidationException
+    {
+        boolean hasPlateRowIds = options.getPlateRowIds() != null && !options.getPlateRowIds().isEmpty();
+
+        String selectionKey = StringUtils.trimToNull(options.getPlateSelectionKey());
+        boolean hasPlateSelectionKey = selectionKey != null;
+
+        if (hasPlateRowIds && hasPlateSelectionKey)
+            throw new ValidationException("Either \"plateRowIds\" or \"plateSelectionKey\" can be specified but not both.");
+        else if (!hasPlateRowIds && !hasPlateSelectionKey)
+            throw new ValidationException("Either \"plateRowIds\" or \"plateSelectionKey\" must be specified.");
+
+        List<Integer> plateRowIds;
+        if (hasPlateRowIds)
+            plateRowIds = options.getPlateRowIds();
+        else
+            plateRowIds = getSelection(selectionKey).stream().toList();
+
+        if (plateRowIds.isEmpty())
+            throw new ValidationException("No source plates are specified.");
+
+        for (Integer plateRowId : plateRowIds)
+        {
+            if (plateRowId == null)
+                throw new ValidationException("An invalid null plate row id was specified.");
+            else if (plateRowId < 1)
+                throw new ValidationException(String.format("An invalid plate row id (%d) was specified.", plateRowId));
+        }
+
+        return plateRowIds;
+    }
+
+    private @NotNull PlateSetImpl getReformatDestinationPlateSet(Container container, ReformatOptions options) throws ValidationException
+    {
+        ReformatOptions.ReformatPlateSet targetPlateSetOptions = options.getTargetPlateSet();
+        if (targetPlateSetOptions == null)
+            throw new ValidationException("A \"targetPlateSet\" must be specified.");
+
+        boolean hasRowId = targetPlateSetOptions.getRowId() != null && targetPlateSetOptions.getRowId() > 0;
+        boolean hasType = targetPlateSetOptions.getType() != null;
+
+        if (hasRowId && hasType)
+            throw new ValidationException("Either a \"rowId\" or a \"type\" can be specified for \"targetPlateSet\" but not both.");
+        else if (!hasRowId && !hasType)
+            throw new ValidationException("Either a \"rowId\" or a \"type\" must be specified for \"targetPlateSet\".");
+
+        PlateSetImpl plateSet;
+        if (hasRowId)
+        {
+            plateSet = (PlateSetImpl) requirePlateSet(container, targetPlateSetOptions.getRowId(), null);
+            if (plateSet.isArchived())
+                throw new ValidationException(String.format("Plate Set \"%s\" is archived and cannot be modified.", plateSet.getName()));
+            if (plateSet.isFull())
+                throw new ValidationException(String.format("Plate Set \"%s\" is full and cannot include additional plates.", plateSet.getName()));
+        }
+        else
+        {
+            plateSet = new PlateSetImpl();
+            plateSet.setType(targetPlateSetOptions.getType());
+            if (StringUtils.trimToNull(targetPlateSetOptions.getDescription()) != null)
+                plateSet.setDescription(targetPlateSetOptions.getDescription());
+        }
+
+        return plateSet;
+    }
+
+    private List<Plate> getReformatSourcePlates(Container container, ReformatOptions options) throws ValidationException
+    {
+        List<Plate> sourcePlates = new ArrayList<>();
+        PlateSet sourcePlateSet = null;
+        for (Integer plateRowId : getReformatPlateRowIds(options))
+        {
+            Plate sourcePlate = requirePlate(container, plateRowId, null);
+            PlateSet plateSet = sourcePlate.getPlateSet();
+            if (plateSet == null || plateSet.getRowId() == null)
+                throw new ValidationException(String.format("Unable to resolve plate set for source plate \"%s\".", sourcePlate.getName()));
+
+            if (sourcePlateSet == null)
+                sourcePlateSet = plateSet;
+            else if (!Objects.equals(sourcePlateSet.getRowId(), plateSet.getRowId()))
+                throw new ValidationException("All source plates must be from the same plate set.");
+
+            sourcePlates.add(sourcePlate);
+        }
+
+        return sourcePlates;
+    }
+
+    private List<CreatePlateSetPlate> hydratePlatesFromLayouts(
+        Container container,
+        User user,
+        List<WellLayout> wellLayouts
+    )
+    {
+        if (wellLayouts.isEmpty())
+            return Collections.emptyList();
+
+        List<CreatePlateSetPlate> plates = new ArrayList<>();
+        Map<Integer, List<WellData>> sourceWellDataMap = new HashMap<>();
+
+        for (WellLayout wellLayout : wellLayouts)
+        {
+            PlateType plateType = wellLayout.getPlateType();
+            List<Map<String, Object>> targetWellData = new ArrayList<>();
+
+            for (WellLayout.Well well : wellLayout.getWells())
+            {
+                if (well == null)
+                    continue;
+
+                List<WellData> sourceWellDatas = sourceWellDataMap.computeIfAbsent(well.sourcePlateId(), (plateRowId) -> getWellData(container, user, plateRowId, true, true));
+
+                for (WellData wellData : sourceWellDatas)
+                {
+                    if (wellData.getRow() == well.sourceRowId() && wellData.getCol() == well.sourceColIdx())
+                    {
+                        Position p = new PositionImpl(container, well.destinationRowIdx(), well.destinationColIdx());
+
+                        WellData d = new WellData();
+                        d.setPosition(p.getDescription());
+                        d.setSampleId(wellData.getSampleId());
+                        d.setMetadata(wellData.getMetadata());
+                        d.setWellGroup(wellData.getWellGroup());
+                        d.setType(wellData.getType());
+
+                        targetWellData.add(d.getData());
+                    }
+                }
+            }
+
+            plates.add(new CreatePlateSetPlate(null, plateType.getRowId(), null, targetWellData));
+        }
+
+        return plates;
     }
 }
