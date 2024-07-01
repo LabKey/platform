@@ -278,9 +278,9 @@ public class StudyManager
             }
         };
 
-        _visitHelper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoVisit(), VisitImpl.class);
+        _visitHelper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoVisit(), VisitImpl.class, Visit.Order.DISPLAY.getSortColumns());
         _assaySpecimenHelper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoAssaySpecimen(), AssaySpecimenConfigImpl.class);
-        _cohortHelper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoCohort(), CohortImpl.class, "RowId", "Label");
+        _cohortHelper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoCohort(), CohortImpl.class, "Label");
 
         /*
          * Whenever we explicitly invalidate a dataset, unmaterialize it as well this is probably a little overkill,
@@ -329,7 +329,7 @@ public class StudyManager
 
     private class DatasetHelper
     {
-        private final QueryHelper<DatasetDefinition> helper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoDataset(), DatasetDefinition.class, "DatasetId", null);
+        private final QueryHelper<DatasetDefinition> helper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoDataset(), DatasetDefinition.class, null, "DatasetId");
 
         private DatasetHelper()
         {
@@ -444,6 +444,7 @@ public class StudyManager
                     .collect(LabKeyCollectors.toLinkedMap(study -> study.getContainer().getId(), study -> study))
             );
             CacheManager.getSharedCache().put(CACHE_KEY, ret);
+            _log.info("Reloaded all studies map"); // TODO: Temp logging to verify race condition
         }
 
         return ret;
@@ -452,6 +453,7 @@ public class StudyManager
     private void clearCachedStudies()
     {
         CacheManager.getSharedCache().remove(CACHE_KEY);
+        _log.info("Cleared all studies map"); // TODO: Temp logging to verify race condition
     }
 
     /** @return all studies under the given root in the container hierarchy (inclusive), unfiltered by permissions */
@@ -1720,6 +1722,7 @@ public class StudyManager
 
         if (cohort != null)
         {
+            // TODO: This container filter is redundant with the container filter added by getList()
             filter = SimpleFilter.createContainerFilter(visitStudy.getContainer());
             if (showCohorts(study.getContainer(), user))
                 filter.addWhereClause("(CohortId IS NULL OR CohortId = ?)", new Object[]{cohort.getRowId()});

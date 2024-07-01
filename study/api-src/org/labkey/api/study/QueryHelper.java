@@ -36,20 +36,25 @@ public class QueryHelper<K extends StudyCachable<K>>
 {
     private final Class<K> _objectClass;
     private final TableInfoGetter _tableInfoGetter;
-    private final FieldKey _rowIdFieldKey;
     private final String _defaultSortString;
+    private final FieldKey _rowIdFieldKey;
 
     public QueryHelper(TableInfoGetter tableInfoGetter, Class<K> objectClass)
     {
-        this(tableInfoGetter, objectClass, "RowId", null);
+        this(tableInfoGetter, objectClass, null);
     }
 
-    public QueryHelper(TableInfoGetter tableInfoGetter, Class<K> objectClass, String rowIdColumnName, String defaultSortString)
+    public QueryHelper(TableInfoGetter tableInfoGetter, Class<K> objectClass, @Nullable String defaultSortString)
+    {
+        this(tableInfoGetter, objectClass, defaultSortString, null);
+    }
+
+    public QueryHelper(TableInfoGetter tableInfoGetter, Class<K> objectClass, @Nullable String defaultSortString, @Nullable String rowIdColumnName)
     {
         _tableInfoGetter = tableInfoGetter;
         _objectClass = objectClass;
-        _rowIdFieldKey = FieldKey.fromString(rowIdColumnName);
         _defaultSortString = defaultSortString;
+        _rowIdFieldKey = FieldKey.fromString(null != rowIdColumnName ? rowIdColumnName : "RowId");
     }
 
     public List<K> getList(Container c)
