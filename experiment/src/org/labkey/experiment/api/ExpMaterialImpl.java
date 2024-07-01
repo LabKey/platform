@@ -559,9 +559,12 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         ExpSampleTypeImpl sampleType = (ExpSampleTypeImpl) getSampleType();
         Map<String,Object> uriMap = getProperties(sampleType);
         Map<PropertyDescriptor, Object> values = new HashMap<>();
-        for (DomainProperty pd : sampleType.getDomain().getProperties())
+        if (sampleType != null)
         {
-            values.put(pd.getPropertyDescriptor(), uriMap.get(pd.getPropertyURI()));
+            for (DomainProperty pd : sampleType.getDomain().getProperties())
+            {
+                values.put(pd.getPropertyDescriptor(), uriMap.get(pd.getPropertyURI()));
+            }
         }
         return values;
     }
