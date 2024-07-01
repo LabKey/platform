@@ -33,9 +33,10 @@ public class ReformatOptions
             return _rowId;
         }
 
-        public void setRowId(Integer rowId)
+        public ReformatPlateSet setRowId(Integer rowId)
         {
             _rowId = rowId;
+            return this;
         }
 
         public String getDescription()
@@ -43,9 +44,10 @@ public class ReformatOptions
             return _description;
         }
 
-        public void setDescription(String description)
+        public ReformatPlateSet setDescription(String description)
         {
             _description = description;
+            return this;
         }
 
         public String getName()
@@ -53,9 +55,10 @@ public class ReformatOptions
             return _name;
         }
 
-        public void setName(String name)
+        public ReformatPlateSet setName(String name)
         {
             _name = name;
+            return this;
         }
 
         public PlateSetType getType()
@@ -63,9 +66,10 @@ public class ReformatOptions
             return _type;
         }
 
-        public void setType(PlateSetType type)
+        public ReformatPlateSet setType(PlateSetType type)
         {
             _type = type;
+            return this;
         }
     }
 
@@ -79,9 +83,10 @@ public class ReformatOptions
             return _fillStrategy;
         }
 
-        public void setFillStrategy(FillStrategy fillStrategy)
+        public OperationOptions setFillStrategy(FillStrategy fillStrategy)
         {
             _fillStrategy = fillStrategy;
+            return this;
         }
 
         public Integer getTargetPlateTypeId()
@@ -89,9 +94,10 @@ public class ReformatOptions
             return _targetPlateTypeId;
         }
 
-        public void setTargetPlateTypeId(Integer targetPlateTypeId)
+        public OperationOptions setTargetPlateTypeId(Integer targetPlateTypeId)
         {
             _targetPlateTypeId = targetPlateTypeId;
+            return this;
         }
     }
 
@@ -107,9 +113,10 @@ public class ReformatOptions
         return _operation;
     }
 
-    public void setOperation(ReformatOperation operation)
+    public ReformatOptions setOperation(ReformatOperation operation)
     {
         _operation = operation;
+        return this;
     }
 
     public OperationOptions getOperationOptions()
@@ -117,9 +124,10 @@ public class ReformatOptions
         return _operationOptions;
     }
 
-    public void setOperationOptions(OperationOptions operationOptions)
+    public ReformatOptions setOperationOptions(OperationOptions operationOptions)
     {
         _operationOptions = operationOptions;
+        return this;
     }
 
     public List<Integer> getPlateRowIds()
@@ -127,9 +135,10 @@ public class ReformatOptions
         return _plateRowIds;
     }
 
-    public void setPlateRowIds(List<Integer> plateRowIds)
+    public ReformatOptions setPlateRowIds(List<Integer> plateRowIds)
     {
         _plateRowIds = plateRowIds;
+        return this;
     }
 
     public String getPlateSelectionKey()
@@ -137,9 +146,10 @@ public class ReformatOptions
         return _plateSelectionKey;
     }
 
-    public void setPlateSelectionKey(String plateSelectionKey)
+    public ReformatOptions setPlateSelectionKey(String plateSelectionKey)
     {
         _plateSelectionKey = plateSelectionKey;
+        return this;
     }
 
     public Boolean isPreview()
@@ -147,9 +157,10 @@ public class ReformatOptions
         return _preview;
     }
 
-    public void setPreview(Boolean preview)
+    public ReformatOptions setPreview(Boolean preview)
     {
         _preview = preview;
+        return this;
     }
 
     public ReformatPlateSet getTargetPlateSet()
@@ -157,8 +168,9 @@ public class ReformatOptions
         return _targetPlateSet;
     }
 
-    public void setTargetPlateSet(ReformatPlateSet targetPlateSet)
+    public ReformatOptions setTargetPlateSet(ReformatPlateSet targetPlateSet)
     {
         _targetPlateSet = targetPlateSet;
+        return this;
     }
 }

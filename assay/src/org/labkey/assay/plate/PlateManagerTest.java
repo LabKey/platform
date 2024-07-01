@@ -1,5 +1,7 @@
 package org.labkey.assay.plate;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -8,6 +10,7 @@ import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateCustomField;
 import org.labkey.api.assay.plate.PlateLayoutHandler;
 import org.labkey.api.assay.plate.PlateSet;
+import org.labkey.api.assay.plate.PlateSetType;
 import org.labkey.api.assay.plate.PlateType;
 import org.labkey.api.assay.plate.Position;
 import org.labkey.api.assay.plate.WellGroup;
@@ -35,6 +38,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
+import org.labkey.assay.plate.model.ReformatOptions;
 import org.labkey.assay.plate.model.WellBean;
 import org.labkey.assay.plate.query.PlateSchema;
 import org.labkey.assay.plate.query.WellTable;
@@ -56,45 +60,100 @@ import static org.labkey.api.util.JunitUtil.deleteTestContainer;
 
 public final class PlateManagerTest
 {
+    private static Integer ARCHIVED_PLATE_SET_ID;
+    private static Integer EMPTY_PLATE_SET_ID;
+    private static Integer FULL_PLATE_SET_ID;
+
+    private static PlateType PLATE_TYPE_12_WELLS;
+    private static PlateType PLATE_TYPE_96_WELLS;
+    private static PlateType PLATE_TYPE_384_WELLS;
+
     private static Container container;
-    private static User user;
     private static ExpSampleType sampleType;
+    private static User user;
 
     @BeforeClass
     public static void setupTest() throws Exception
     {
+        deleteTestContainer();
+
         container = JunitUtil.getTestContainer();
         user = TestContext.get().getUser();
 
-        PlateManager.get().deleteAllPlateData(container);
         Domain domain = PlateManager.get().getPlateMetadataDomain(container, user);
         if (domain != null)
             domain.delete(user);
 
         // create custom properties
-        List<GWTPropertyDescriptor> customFields = List.of(
-            new GWTPropertyDescriptor("barcode", "http://www.w3.org/2001/XMLSchema#string"),
-            new GWTPropertyDescriptor("concentration", "http://www.w3.org/2001/XMLSchema#double"),
-            new GWTPropertyDescriptor("negativeControl", "http://www.w3.org/2001/XMLSchema#double")
-        );
-
-        PlateManager.get().createPlateMetadataFields(container, user, customFields);
+        {
+            List<GWTPropertyDescriptor> customFields = List.of(
+                new GWTPropertyDescriptor("barcode", "http://www.w3.org/2001/XMLSchema#string"),
+                new GWTPropertyDescriptor("concentration", "http://www.w3.org/2001/XMLSchema#double"),
+                new GWTPropertyDescriptor("negativeControl", "http://www.w3.org/2001/XMLSchema#double")
+            );
+            PlateManager.get().createPlateMetadataFields(container, user, customFields);
+        }
 
         // create sample type
-        List<GWTPropertyDescriptor> props = new ArrayList<>();
-        props.add(new GWTPropertyDescriptor("col1", "string"));
-        props.add(new GWTPropertyDescriptor("col2", "string"));
-        sampleType = SampleTypeService.get().createSampleType(container, user, "SampleType1", null, props, emptyList(), 0, -1, -1, -1, null, null);
-    }
+        {
+            List<GWTPropertyDescriptor> props = new ArrayList<>();
+            props.add(new GWTPropertyDescriptor("col1", "string"));
+            props.add(new GWTPropertyDescriptor("col2", "string"));
+            sampleType = SampleTypeService.get().createSampleType(container, user, "SampleType1", null, props, emptyList(), 0, -1, -1, -1, null, null);
+        }
 
-    @After
-    public void cleanupTest()
-    {
-        PlateManager.get().deleteAllPlateData(container);
+        // resolve plate types
+        {
+            PLATE_TYPE_12_WELLS = PlateManager.get().getPlateType(3, 4);
+            assertNotNull(PLATE_TYPE_12_WELLS);
+
+            PLATE_TYPE_96_WELLS = PlateManager.get().getPlateType(8, 12);
+            assertNotNull(PLATE_TYPE_96_WELLS);
+
+            PLATE_TYPE_384_WELLS = PlateManager.get().getPlateType(16, 24);
+            assertNotNull(PLATE_TYPE_384_WELLS);
+        }
+
+        // create archived plate set
+        {
+            PlateSetImpl archivedPlateSet = new PlateSetImpl();
+            archivedPlateSet.setDescription("PlateManagerTest Archived Plate Set");
+
+            archivedPlateSet = PlateManager.get().createPlateSet(container, user, archivedPlateSet, null, null);
+            PlateManager.get().archive(container, user, List.of(archivedPlateSet.getRowId()), null, true);
+            archivedPlateSet = (PlateSetImpl) PlateManager.get().getPlateSet(container, archivedPlateSet.getRowId());
+            assertNotNull(archivedPlateSet);
+            assertTrue(archivedPlateSet.isArchived());
+            ARCHIVED_PLATE_SET_ID = archivedPlateSet.getRowId();
+        }
+
+        // create empty plate set
+        {
+            PlateSetImpl emptyPlateSet = new PlateSetImpl();
+            emptyPlateSet.setDescription("PlateManagerTest Empty Plate Set");
+
+            emptyPlateSet = PlateManager.get().createPlateSet(container, user, emptyPlateSet, null, null);
+            assertEquals(Integer.valueOf(0), emptyPlateSet.getPlateCount());
+            EMPTY_PLATE_SET_ID = emptyPlateSet.getRowId();
+        }
+
+        // create full plate set
+        {
+            PlateSetImpl fullPlateSet = new PlateSetImpl();
+            fullPlateSet.setDescription("PlateManagerTest Full Plate Set");
+
+            List<PlateManager.PlateData> fullPlates = new ArrayList<>();
+            for (int i = 0; i < PlateSet.MAX_PLATES; i++)
+                fullPlates.add(new PlateManager.PlateData(null, PLATE_TYPE_12_WELLS.getRowId(), null, null));
+
+            fullPlateSet = PlateManager.get().createPlateSet(container, user, fullPlateSet, fullPlates, null);
+            assertTrue(fullPlateSet.isFull());
+            FULL_PLATE_SET_ID = fullPlateSet.getRowId();
+        }
     }
 
     @AfterClass
-    public static void onComplete()
+    public static void cleanup()
     {
         deleteTestContainer();
         container = null;
@@ -300,9 +359,7 @@ public final class PlateManagerTest
     public void testCreatePlateTemplates() throws Exception
     {
         // Verify plate service assumptions about plate templates
-        PlateType plateType = PlateManager.get().getPlateType(16, 24);
-        assertNotNull("384 well plate type was not found", plateType);
-        Plate plate = PlateManager.get().createPlateTemplate(container, TsvPlateLayoutHandler.TYPE, plateType);
+        Plate plate = PlateManager.get().createPlateTemplate(container, TsvPlateLayoutHandler.TYPE, PLATE_TYPE_384_WELLS);
         plate.setName("my plate template");
         int templateId = PlateManager.get().save(container, user, plate);
         Plate template = PlateManager.get().getPlate(container, templateId);
@@ -311,10 +368,7 @@ public final class PlateManagerTest
         assertNotNull("Expected plate template to be persisted", template);
         assertTrue("Expected saved plate to have the template field set to true", template.isTemplate());
 
-        plateType = PlateManager.get().getPlateType(8, 12);
-        assertNotNull("96 well plate type was not found", plateType);
-
-        plate = PlateManager.get().createPlate(container, TsvPlateLayoutHandler.TYPE, plateType);
+        plate = PlateManager.get().createPlate(container, TsvPlateLayoutHandler.TYPE, PLATE_TYPE_96_WELLS);
         plate.setName("non plate template");
         PlateManager.get().save(container, user, plate);
 
@@ -328,10 +382,7 @@ public final class PlateManagerTest
     @Test
     public void testCreatePlateMetadata() throws Exception
     {
-        PlateType plateType = PlateManager.get().getPlateType(16, 24);
-        assertNotNull("384 well plate type was not found", plateType);
-
-        Plate plate = PlateManager.get().createPlateTemplate(container, TsvPlateLayoutHandler.TYPE, plateType);
+        Plate plate = PlateManager.get().createPlateTemplate(container, TsvPlateLayoutHandler.TYPE, PLATE_TYPE_384_WELLS);
         plate.setName("new plate with metadata");
         int plateId = PlateManager.get().save(container, user, plate);
 
@@ -437,26 +488,21 @@ public final class PlateManagerTest
     @Test
     public void testCreateAndSavePlateWithData() throws Exception
     {
-        // Arrange
-        PlateType plateType = PlateManager.get().getPlateType(8, 12);
-        assertNotNull("96 well plate type was not found", plateType);
-
         // Act
         List<Map<String, Object>> rows = List.of(
-                CaseInsensitiveHashMap.of(
-                        "wellLocation", "A1",
-                        "concentration", 2.25,
-                        "barcode", "B1234")
-                ,
-                CaseInsensitiveHashMap.of(
-                        "wellLocation", "A2",
-                        "concentration", 1.25,
-                        "barcode", "B5678"
-                )
+            CaseInsensitiveHashMap.of(
+                "wellLocation", "A1",
+                "concentration", 2.25,
+                "barcode", "B1234"
+            ),
+            CaseInsensitiveHashMap.of(
+                "wellLocation", "A2",
+                "concentration", 1.25,
+                "barcode", "B5678"
+            )
         );
 
-        PlateImpl plateImpl = new PlateImpl(container, "hit selection plate", plateType);
-        Plate plate = PlateManager.get().createAndSavePlate(container, user, plateImpl, null, rows);
+        Plate plate = createPlate(PLATE_TYPE_96_WELLS, "hit selection plate", null, rows);
         assertEquals("Expected 2 plate custom fields", 2, plate.getCustomFields().size());
 
         TableInfo wellTable = QueryService.get().getUserSchema(user, container, PlateSchema.SCHEMA_NAME).getTable(WellTable.NAME);
@@ -545,27 +591,23 @@ public final class PlateManagerTest
         sample2.setCpasType(sampleType.getLSID());
         sample2.save(user);
 
-        PlateType plateType = PlateManager.get().getPlateType(8, 12);
-        assertNotNull("96 well plate type was not found", plateType);
-
         List<Map<String, Object>> rows = List.of(
-                CaseInsensitiveHashMap.of(
-                        "wellLocation", "A1",
-                        "sampleId", sample1.getRowId(),
-                        "type", "SAMPLE",
-                        "concentration", 2.25,
-                        "barcode", "B1234")
-                ,
-                CaseInsensitiveHashMap.of(
-                        "wellLocation", "A2",
-                        "sampleId", sample2.getRowId(),
-                        "type", "SAMPLE",
-                        "concentration", 1.25,
-                        "barcode", "B5678"
-                )
+            CaseInsensitiveHashMap.of(
+                "wellLocation", "A1",
+                "sampleId", sample1.getRowId(),
+                "type", "SAMPLE",
+                "concentration", 2.25,
+                "barcode", "B1234")
+            ,
+            CaseInsensitiveHashMap.of(
+                "wellLocation", "A2",
+                "sampleId", sample2.getRowId(),
+                "type", "SAMPLE",
+                "concentration", 1.25,
+                "barcode", "B5678"
+            )
         );
-        Plate plate = new PlateImpl(container, "myPlate", plateType);
-        plate = PlateManager.get().createAndSavePlate(container, user, plate, null, rows);
+        Plate plate = createPlate(PLATE_TYPE_96_WELLS, "myPlate", null, rows);
 
         // Act
         List<FieldKey> includedMetadataCols = PlateManager.get().getMetadataColumns(plate.getPlateSet(), container, user, cf);
@@ -596,44 +638,42 @@ public final class PlateManagerTest
         sample2.setCpasType(sampleType.getLSID());
         sample2.save(user);
 
-        PlateType plateType = PlateManager.get().getPlateType(8, 12);
-        assertNotNull("96 well plate type was not found", plateType);
-
         List<Map<String, Object>> rows1 = List.of(
-                CaseInsensitiveHashMap.of(
-                        "wellLocation", "A1",
-                        "sampleId", sample1.getRowId(),
-                        "type", "SAMPLE",
-                        "concentration", 2.25,
-                        "barcode", "B1234")
-                ,
-                CaseInsensitiveHashMap.of(
-                        "wellLocation", "A2",
-                        "sampleId", sample2.getRowId(),
-                        "type", "SAMPLE",
-                        "concentration", 1.25,
-                        "barcode", "B5678"
-                )
+            CaseInsensitiveHashMap.of(
+                "wellLocation", "A1",
+                "sampleId", sample1.getRowId(),
+                "type", "SAMPLE",
+                "concentration", 2.25,
+                "barcode", "B1234")
+            ,
+            CaseInsensitiveHashMap.of(
+                "wellLocation", "A2",
+                "sampleId", sample2.getRowId(),
+                "type", "SAMPLE",
+                "concentration", 1.25,
+                "barcode", "B5678"
+            )
         );
-        Plate plateSource = PlateManager.get().createAndSavePlate(container, user, new PlateImpl(container, "myPlate1", plateType), null, rows1);
+        Plate plateSource = createPlate(PLATE_TYPE_96_WELLS, "myPlate1", null, rows1);
 
         List<Map<String, Object>> rows2 = List.of(
-                CaseInsensitiveHashMap.of(
-                        "wellLocation", "A1",
-                        "type", "SAMPLE",
-                        "sampleId", sample2.getRowId())
-                ,
-                CaseInsensitiveHashMap.of(
-                        "wellLocation", "A2",
-                        "type", "SAMPLE",
-                        "sampleId", sample1.getRowId())
-                ,
-                CaseInsensitiveHashMap.of(
-                        "wellLocation", "A3",
-                        "type", "SAMPLE",
-                        "sampleId", sample2.getRowId())
+            CaseInsensitiveHashMap.of(
+                "wellLocation", "A1",
+                "type", "SAMPLE",
+                "sampleId", sample2.getRowId()
+            ),
+            CaseInsensitiveHashMap.of(
+                "wellLocation", "A2",
+                "type", "SAMPLE",
+                "sampleId", sample1.getRowId()
+            ),
+            CaseInsensitiveHashMap.of(
+                "wellLocation", "A3",
+                "type", "SAMPLE",
+                "sampleId", sample2.getRowId()
+            )
         );
-        Plate plateDestination = PlateManager.get().createAndSavePlate(container, user, new PlateImpl(container, "myPlate2", plateType), null, rows2);
+        Plate plateDestination = createPlate(PLATE_TYPE_96_WELLS, "myPlate2", null, rows2);
 
         // Act
         List<FieldKey> sourceIncludedMetadataCols = PlateManager.get().getMetadataColumns(plateSource.getPlateSet(), container, user, cf);
@@ -655,5 +695,155 @@ public final class PlateManagerTest
         String[] valuesRow3 = new String[]{"myPlate1", "A2", "96", "sampleB", "B5678", "1.25", "myPlate2", "A3", "96"};
         for (int i = 0; i < row3.length; i++)
             assertEquals(row3[i].toString(), valuesRow3[i]);
+    }
+
+    private void assertReformatThrows(String message, ReformatOptions options)
+    {
+        try
+        {
+            PlateManager.get().reformat(container, user, options);
+        }
+        catch (Throwable t)
+        {
+            assertEquals("Plate reformat did not throw the expected error.", message, t.getMessage());
+            return;
+        }
+
+        fail(String.format("Plate reformat failed to throw. Expected \"%s\".", message));
+    }
+
+    private ReformatOptions defaultOptions()
+    {
+        return new ReformatOptions()
+            .setOperation(ReformatOptions.ReformatOperation.stamp)
+            .setTargetPlateSet(new ReformatOptions.ReformatPlateSet().setRowId(EMPTY_PLATE_SET_ID));
+    }
+
+    @Test
+    public void testReformatTargetPlateSet()
+    {
+        assertReformatThrows("Reformat options are required.", null);
+        assertReformatThrows("An \"operation\" must be specified.", new ReformatOptions());
+
+        assertReformatThrows("A \"targetPlateSet\" must be specified.", defaultOptions().setTargetPlateSet(null));
+        assertReformatThrows(
+            "Either a \"rowId\" or a \"type\" must be specified for \"targetPlateSet\".",
+            defaultOptions().setTargetPlateSet(new ReformatOptions.ReformatPlateSet())
+        );
+        assertReformatThrows(
+            "Either a \"rowId\" or a \"type\" must be specified for \"targetPlateSet\".",
+            defaultOptions().setTargetPlateSet(new ReformatOptions.ReformatPlateSet().setRowId(null))
+        );
+        assertReformatThrows(
+            "Either a \"rowId\" or a \"type\" must be specified for \"targetPlateSet\".",
+            defaultOptions().setTargetPlateSet(new ReformatOptions.ReformatPlateSet().setRowId(0))
+        );
+        assertReformatThrows(
+            "Either a \"rowId\" or a \"type\" can be specified for \"targetPlateSet\" but not both.",
+            defaultOptions().setTargetPlateSet(new ReformatOptions.ReformatPlateSet().setRowId(1).setType(PlateSetType.assay))
+        );
+
+        PlateSet archivedPlateSet = PlateManager.get().getPlateSet(container, ARCHIVED_PLATE_SET_ID);
+        assertNotNull(archivedPlateSet);
+
+        assertReformatThrows(
+            String.format("Plate Set \"%s\" is archived and cannot be modified.", archivedPlateSet.getName()),
+            defaultOptions().setTargetPlateSet(new ReformatOptions.ReformatPlateSet().setRowId(ARCHIVED_PLATE_SET_ID))
+        );
+
+        PlateSet fullPlateSet = PlateManager.get().getPlateSet(container, FULL_PLATE_SET_ID);
+        assertNotNull(fullPlateSet);
+
+        assertReformatThrows(
+            String.format("Plate Set \"%s\" is full and cannot include additional plates.", fullPlateSet.getName()),
+            defaultOptions().setTargetPlateSet(new ReformatOptions.ReformatPlateSet().setRowId(FULL_PLATE_SET_ID))
+        );
+    }
+
+    @Test
+    public void testReformatSourcePlates() throws Exception
+    {
+        assertReformatThrows(
+            "Either \"plateRowIds\" or \"plateSelectionKey\" can be specified but not both.",
+            defaultOptions().setPlateRowIds(List.of(1234)).setPlateSelectionKey("1234")
+        );
+        assertReformatThrows(
+            "Either \"plateRowIds\" or \"plateSelectionKey\" must be specified.",
+            defaultOptions().setPlateRowIds(null).setPlateSelectionKey(" ")
+        );
+        assertReformatThrows("No source plates are specified.", defaultOptions().setPlateSelectionKey("1234"));
+
+        List<Integer> withNulls = new ArrayList<>();
+        withNulls.add(null);
+        assertReformatThrows("An invalid null plate row id was specified.", defaultOptions().setPlateRowIds(withNulls));
+        assertReformatThrows("An invalid plate row id (-10) was specified.", defaultOptions().setPlateRowIds(List.of(-10)));
+
+        // Create plates in two different plate sets and attempt to reformat them together
+        Plate p1 = createPlate(PLATE_TYPE_12_WELLS);
+        Plate p2 = createPlate(PLATE_TYPE_12_WELLS);
+        assertReformatThrows("All source plates must be from the same plate set.", defaultOptions().setPlateRowIds(List.of(p1.getRowId(), p2.getRowId())));
+    }
+
+    @Test
+    public void testReformatExpand() throws Exception
+    {
+        // Arrange
+        List<Map<String, Object>> sourcePlateData = List.of(
+            CaseInsensitiveHashMap.of("wellLocation", "A1", "properties/barcode", "BC-A1"),
+            CaseInsensitiveHashMap.of("wellLocation", "H12", "properties/barcode", "BC-H12"),
+            CaseInsensitiveHashMap.of("wellLocation", "I13", "properties/barcode", "BC-I13"),
+            CaseInsensitiveHashMap.of("wellLocation", "P24", "properties/barcode", "BC-P24")
+        );
+        Plate sourcePlate = createPlate(PLATE_TYPE_384_WELLS, "384-well source plate", null, sourcePlateData);
+        Integer targetPlateSetId = sourcePlate.getPlateSet().getRowId();
+
+        ReformatOptions options = new ReformatOptions()
+            .setOperation(ReformatOptions.ReformatOperation.expand)
+            .setTargetPlateSet(new ReformatOptions.ReformatPlateSet().setRowId(targetPlateSetId))
+            .setOperationOptions(
+                new ReformatOptions.OperationOptions()
+                        .setFillStrategy(ReformatOptions.FillStrategy.reverseQuadrant)
+                        .setTargetPlateTypeId(PLATE_TYPE_96_WELLS.getRowId())
+            )
+            .setPlateRowIds(List.of(sourcePlate.getRowId()))
+            .setPreview(true);
+
+        // Act (preview)
+        PlateManager.ReformatResult result = PlateManager.get().reformat(container, user, options);
+
+        // Assert
+        assertNotNull(result.previewData());
+        assertEquals("Expected reverse quadrant expansion of a 384-well plate to generate 4 96-well plates.", 4, result.previewData().size());
+
+        for (int i = 0; i < result.previewData().size(); i++)
+            assertEquals("Expected all generated plates to have 96-wells", 96, result.previewData().get(i).data().size());
+
+        assertEquals("BC-A1", result.previewData().get(0).data().get(0).get("properties/barcode"));
+        assertEquals("BC-H12", result.previewData().get(0).data().get(95).get("properties/barcode"));
+        assertEquals("BC-I13", result.previewData().get(3).data().get(0).get("properties/barcode"));
+        assertEquals("BC-P24", result.previewData().get(3).data().get(95).get("properties/barcode"));
+
+        // Act (saved)
+        result = PlateManager.get().reformat(container, user, options.setPreview(false));
+
+        assertNull(result.previewData());
+        assertEquals(targetPlateSetId, result.plateSetRowId());
+        assertEquals(4, result.plateRowIds().size());
+    }
+
+    private Plate createPlate(@NotNull PlateType plateType) throws Exception
+    {
+        return createPlate(plateType, null, null, null);
+    }
+
+    private Plate createPlate(
+        @NotNull PlateType plateType,
+        @Nullable String plateName,
+        @Nullable Integer plateSetId,
+        @Nullable List<Map<String, Object>> plateData
+    ) throws Exception
+    {
+        PlateImpl plate = new PlateImpl(container, plateName, plateType);
+        return PlateManager.get().createAndSavePlate(container, user, plate, plateSetId, plateData);
     }
 }

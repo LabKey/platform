@@ -3505,6 +3505,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         if (!container.hasPermission(user, InsertPermission.class))
             throw new UnauthorizedException("Insufficient permissions.");
 
+        if (options == null)
+            throw new ValidationException("Reformat options are required.");
         if (options.getOperation() == null)
             throw new ValidationException("An \"operation\" must be specified.");
 
@@ -3640,6 +3642,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
             sourcePlates.add(sourcePlate);
         }
+
+        if (sourcePlateSet != null && !container.equals(sourcePlateSet.getContainer()))
+            throw new ValidationException(String.format("Plate set \"%s\" is not in the %s folder.", sourcePlateSet.getName(), container.getPath()));
 
         return sourcePlates;
     }
