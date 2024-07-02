@@ -18,6 +18,7 @@ package org.labkey.api.study;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheLoader;
+import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.SimpleFilter;
@@ -29,8 +30,11 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 public class QueryHelper<K extends StudyCachable<K>>
 {
@@ -120,6 +124,14 @@ public class QueryHelper<K extends StudyCachable<K>>
             return obj;
         };
         Object obj = StudyCache.get(getTableInfo(), c, rowId, loader);
+
+        K obj2 = (K)StudyCache.get(getTableInfo(), c, (key, argument) -> {
+            final SimpleFilter filter = SimpleFilter.createContainerFilter(c);
+            return new StudyCacheMap(new TableSelector(getTableInfo(), filter, new Sort(_defaultSortString)));
+        }).get(rowId);
+
+        assert Objects.equals(obj, obj2);
+
         return (K)obj;
     }
 
@@ -170,6 +182,26 @@ public class QueryHelper<K extends StudyCachable<K>>
         else
         {
             return filter.toSQLString(getTableInfo().getSqlDialect());
+        }
+    }
+
+    public class StudyCacheMap
+    {
+        private final Map<Object, K> _map;
+
+        public StudyCacheMap(TableSelector selector)
+        {
+            _map = selector.uncachedStream(_objectClass).peek(StudyCachable::lock).collect(LabKeyCollectors.toLinkedMap(StudyCachable::getPrimaryKey, v -> v));
+        }
+
+        public K get(Object key)
+        {
+            return _map.get(key);
+        }
+
+        public Collection<K> getCollection()
+        {
+            return _map.values();
         }
     }
 }

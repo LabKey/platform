@@ -283,7 +283,7 @@ public class StudyManager
         _cohortHelper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoCohort(), CohortImpl.class, "Label");
 
         /*
-         * Whenever we explicitly invalidate a dataset, unmaterialize it as well this is probably a little overkill,
+         * Whenever we explicitly invalidate a dataset, unmaterialize it as well. This is probably a little overkill,
          *  e.g. name change doesn't need to unmaterialize however, this is the best choke point
          */
         _datasetHelper = new DatasetHelper();
