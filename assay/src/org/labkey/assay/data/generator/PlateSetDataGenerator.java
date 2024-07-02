@@ -266,9 +266,9 @@ public class PlateSetDataGenerator extends DataGenerator<PlateSetDataGenerator.C
                     for (String name : wellProperties)
                     {
                         if (name.startsWith(INT_PROP_PREFIX))
-                            rowMap.put(WellTable.Column.Properties.name() + "/" + name, randomInt(1, 5000));
+                            rowMap.put(name, randomInt(1, 5000));
                         else
-                            rowMap.put(WellTable.Column.Properties.name() + "/" + name, randomDouble(1, 100000));
+                            rowMap.put(name, randomDouble(1, 100000));
                     }
                     rows.add(rowMap);
                 }

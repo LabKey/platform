@@ -132,7 +132,6 @@ import org.labkey.assay.plate.model.WellGroupBean;
 import org.labkey.assay.plate.query.PlateSchema;
 import org.labkey.assay.plate.query.PlateSetTable;
 import org.labkey.assay.plate.query.PlateTable;
-import org.labkey.assay.plate.query.WellGroupTable;
 import org.labkey.assay.plate.query.WellTable;
 import org.labkey.assay.query.AssayDbSchema;
 
@@ -400,7 +399,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 if (lookupFk != null)
                     includedMetadataCols.add(lookupFk);
                 else
-                    includedMetadataCols.add(FieldKey.fromParts(WellTable.Column.Properties.name(), field.getName()));
+                    includedMetadataCols.add(FieldKey.fromParts(field.getName()));
             }
         }
 
@@ -1118,7 +1117,6 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             WellTable.Column.Lsid.name(),
             WellTable.Column.PlateId.name(),
             WellTable.Column.Position.name(),
-            WellTable.Column.Properties.name(),
             WellTable.Column.Row.name(),
             WellTable.Column.RowId.name(),
             WELL_LOCATION
@@ -1146,10 +1144,6 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                     continue;
 
                 var key = entry.getKey();
-                var customFieldPrefix = WellTable.Column.Properties.name().toLowerCase() + "/";
-                if (key.toLowerCase().startsWith(customFieldPrefix))
-                    key = key.substring(customFieldPrefix.length());
-
                 if (StringUtils.trimToNull(key) != null && keywords.contains(key))
                     continue;
 
@@ -1668,7 +1662,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 {
                     var value = sourceMetaDataRow.get(field.toString());
                     if (value != null)
-                        updateCopyRow.put(FieldKey.fromParts("properties", field.toString()).toString(), value);
+                        updateCopyRow.put(FieldKey.fromParts(field.toString()).toString(), value);
                 }
             }
 
@@ -2242,7 +2236,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         // merge in any well metadata values
         Map<FieldKey, WellCustomField> customFieldMap = new HashMap<>();
         for (WellCustomField customField : fields)
-            customFieldMap.put(FieldKey.fromParts("properties", customField.getName()), customField);
+            customFieldMap.put(FieldKey.fromParts(customField.getName()), customField);
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("rowId"), wellId);
 
         TableInfo wellTable = getWellTable(plate.getContainer(), user);
@@ -3152,7 +3146,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         }
         for (PlateCustomField customField : plate.getCustomFields())
         {
-            fieldKeys.add(FieldKey.fromParts("Properties", customField.getName()));
+            fieldKeys.add(FieldKey.fromParts(customField.getName()));
         }
 
         return fieldKeys;
@@ -3171,18 +3165,6 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         settings.setQueryName(WellTable.NAME);
         settings.getBaseFilter().addCondition(FieldKey.fromParts("PlateId"), plate.getRowId());
         return new QueryView(userSchema, settings, null);
-    }
-
-    private Map<String, String> getPlateRenameColumnMap(Plate plate)
-    {
-        Map<String, String> renameColumnMap = new HashMap<>(Collections.singletonMap("SampleId/Name", "Sample Id"));
-
-        for (PlateCustomField customField : plate.getCustomFields())
-        {
-            renameColumnMap.put(FieldKey.fromParts("Properties", customField.getName()).toString(), customField.getName());
-        }
-
-        return renameColumnMap;
     }
 
     public List<DisplayColumn> getPlateDisplayColumns(QueryView queryView)
@@ -3211,10 +3193,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             {
                 QueryView plateQueryView = getPlateQueryView(c, user, cf, plate, false);
                 List<DisplayColumn> displayColumns = getPlateDisplayColumns(plateQueryView);
-                Map<String, String> renameColumnMap = getPlateRenameColumnMap(plate);
                 PlateFileBytes plateFileBytes = new PlateFileBytes(plate.getName(), new ByteArrayOutputStream());
 
-                try (TSVGridWriter writer = new TSVGridWriter(plateQueryView::getResults, displayColumns, renameColumnMap))
+                try (TSVGridWriter writer = new TSVGridWriter(plateQueryView::getResults, displayColumns, Collections.singletonMap("SampleId/Name", "Sample Id")))
                 {
                     writer.setDelimiterCharacter(delim);
                     writer.setColumnHeaderType(ColumnHeaderType.FieldKey);

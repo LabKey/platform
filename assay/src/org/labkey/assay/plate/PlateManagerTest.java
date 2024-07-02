@@ -384,8 +384,8 @@ public final class PlateManagerTest
         WellBean well = wells.get(0);
         List<Map<String, Object>> rows = List.of(CaseInsensitiveHashMap.of(
                 "rowid", well.getRowId(),
-                "properties/concentration", 1.25,
-                "properties/negativeControl", 5.25
+                "concentration", 1.25,
+                "negativeControl", 5.25
         ));
 
         qus.updateRows(user, container, rows, null, errors, null, null);
@@ -395,16 +395,16 @@ public final class PlateManagerTest
         well = wells.get(1);
         rows = List.of(CaseInsensitiveHashMap.of(
                 "rowid", well.getRowId(),
-                "properties/concentration", 2.25,
-                "properties/negativeControl", 6.25
+                "concentration", 2.25,
+                "negativeControl", 6.25
         ));
 
         qus.updateRows(user, container, rows, null, errors, null, null);
         if (errors.hasErrors())
             fail(errors.getMessage());
 
-        FieldKey fkConcentration = FieldKey.fromParts("properties", "concentration");
-        FieldKey fkNegativeControl = FieldKey.fromParts("properties", "negativeControl");
+        FieldKey fkConcentration = FieldKey.fromParts("concentration");
+        FieldKey fkNegativeControl = FieldKey.fromParts("negativeControl");
         Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(wellTable, List.of(fkConcentration, fkNegativeControl));
 
         // verify plate metadata property updates
@@ -445,13 +445,13 @@ public final class PlateManagerTest
         List<Map<String, Object>> rows = List.of(
                 CaseInsensitiveHashMap.of(
                         "wellLocation", "A1",
-                        "properties/concentration", 2.25,
-                        "properties/barcode", "B1234")
+                        "concentration", 2.25,
+                        "barcode", "B1234")
                 ,
                 CaseInsensitiveHashMap.of(
                         "wellLocation", "A2",
-                        "properties/concentration", 1.25,
-                        "properties/barcode", "B5678"
+                        "concentration", 1.25,
+                        "barcode", "B5678"
                 )
         );
 
@@ -460,8 +460,8 @@ public final class PlateManagerTest
         assertEquals("Expected 2 plate custom fields", 2, plate.getCustomFields().size());
 
         TableInfo wellTable = QueryService.get().getUserSchema(user, container, PlateSchema.SCHEMA_NAME).getTable(WellTable.NAME);
-        FieldKey fkConcentration = FieldKey.fromParts("properties", "concentration");
-        FieldKey fkBarcode = FieldKey.fromParts("properties", "barcode");
+        FieldKey fkConcentration = FieldKey.fromParts("concentration");
+        FieldKey fkBarcode = FieldKey.fromParts("barcode");
         Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(wellTable, List.of(fkConcentration, fkBarcode));
 
         // verify that well data was added
@@ -553,15 +553,15 @@ public final class PlateManagerTest
                         "wellLocation", "A1",
                         "sampleId", sample1.getRowId(),
                         "type", "SAMPLE",
-                        "properties/concentration", 2.25,
-                        "properties/barcode", "B1234")
+                        "concentration", 2.25,
+                        "barcode", "B1234")
                 ,
                 CaseInsensitiveHashMap.of(
                         "wellLocation", "A2",
                         "sampleId", sample2.getRowId(),
                         "type", "SAMPLE",
-                        "properties/concentration", 1.25,
-                        "properties/barcode", "B5678"
+                        "concentration", 1.25,
+                        "barcode", "B5678"
                 )
         );
         Plate plate = new PlateImpl(container, "myPlate", plateType);
@@ -604,15 +604,15 @@ public final class PlateManagerTest
                         "wellLocation", "A1",
                         "sampleId", sample1.getRowId(),
                         "type", "SAMPLE",
-                        "properties/concentration", 2.25,
-                        "properties/barcode", "B1234")
+                        "concentration", 2.25,
+                        "barcode", "B1234")
                 ,
                 CaseInsensitiveHashMap.of(
                         "wellLocation", "A2",
                         "sampleId", sample2.getRowId(),
                         "type", "SAMPLE",
-                        "properties/concentration", 1.25,
-                        "properties/barcode", "B5678"
+                        "concentration", 1.25,
+                        "barcode", "B5678"
                 )
         );
         Plate plateSource = PlateManager.get().createAndSavePlate(container, user, new PlateImpl(container, "myPlate1", plateType), null, rows1);

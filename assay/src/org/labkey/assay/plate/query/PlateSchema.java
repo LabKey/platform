@@ -75,12 +75,6 @@ public class PlateSchema extends SimpleUserSchema
             return new HitTable(this, cf, false).init();
         if (WellGroupTable.NAME.equalsIgnoreCase(name))
             return new WellGroupTable(this, cf, false).init();
-        if (WellTable.WELL_PROPERTIES_TABLE.equalsIgnoreCase(name))
-        {
-            Domain domain = PlateManager.get().getPlateMetadataDomain(getContainer(), getUser());
-            if (domain != null)
-                return new WellTable.WellPropertiesTable(domain,this, cf);
-        }
         if (WellGroupTypeTable.NAME.equalsIgnoreCase(name))
             return new WellGroupTypeTable(this);
 
