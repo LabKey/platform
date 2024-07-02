@@ -789,10 +789,10 @@ public final class PlateManagerTest
     {
         // Arrange
         List<Map<String, Object>> sourcePlateData = List.of(
-            CaseInsensitiveHashMap.of("wellLocation", "A1", "properties/barcode", "BC-A1"),
-            CaseInsensitiveHashMap.of("wellLocation", "H12", "properties/barcode", "BC-H12"),
-            CaseInsensitiveHashMap.of("wellLocation", "I13", "properties/barcode", "BC-I13"),
-            CaseInsensitiveHashMap.of("wellLocation", "P24", "properties/barcode", "BC-P24")
+            CaseInsensitiveHashMap.of("wellLocation", "A1", "barcode", "BC-A1"),
+            CaseInsensitiveHashMap.of("wellLocation", "H12", "barcode", "BC-H12"),
+            CaseInsensitiveHashMap.of("wellLocation", "I13", "barcode", "BC-I13"),
+            CaseInsensitiveHashMap.of("wellLocation", "P24", "barcode", "BC-P24")
         );
         Plate sourcePlate = createPlate(PLATE_TYPE_384_WELLS, "384-well source plate", null, sourcePlateData);
         Integer targetPlateSetId = sourcePlate.getPlateSet().getRowId();
@@ -814,10 +814,10 @@ public final class PlateManagerTest
         for (int i = 0; i < result.previewData().size(); i++)
             assertEquals("Expected all generated plates to have 96-wells", 96, result.previewData().get(i).data().size());
 
-        assertEquals("BC-A1", result.previewData().get(0).data().get(0).get("properties/barcode"));
-        assertEquals("BC-H12", result.previewData().get(0).data().get(95).get("properties/barcode"));
-        assertEquals("BC-I13", result.previewData().get(3).data().get(0).get("properties/barcode"));
-        assertEquals("BC-P24", result.previewData().get(3).data().get(95).get("properties/barcode"));
+        assertEquals("BC-A1", result.previewData().get(0).data().get(0).get("barcode"));
+        assertEquals("BC-H12", result.previewData().get(0).data().get(95).get("barcode"));
+        assertEquals("BC-I13", result.previewData().get(3).data().get(0).get("barcode"));
+        assertEquals("BC-P24", result.previewData().get(3).data().get(95).get("barcode"));
 
         // Act (saved)
         result = PlateManager.get().reformat(container, user, options.setPreview(false));
