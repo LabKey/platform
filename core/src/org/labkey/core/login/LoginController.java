@@ -90,6 +90,7 @@ import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
+import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.HelpTopic;
@@ -116,6 +117,7 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiRenderingService;
+import org.labkey.core.CoreModule;
 import org.labkey.core.admin.AdminController;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -2216,6 +2218,14 @@ public class LoginController extends SpringActionController
         }
     }
 
+    private static final String REMOTE_LOGIN_FEATURE_AREA = "remoteLoginInvocations";
+
+    private static void handleRemoteLoginAction(String actionName)
+    {
+        SimpleMetricsService.get().increment(CoreModule.CORE_MODULE_NAME, REMOTE_LOGIN_FEATURE_AREA, actionName);
+        _log.warn("The Remote Login API has been deprecated and will be removed in LabKey Server 24.8! Migrate uses to the CAS identity provider.");
+    }
+
     @SuppressWarnings("unused")
     @RequiresLogin
     public static class CreateTokenAction extends SimpleViewAction<TokenAuthenticationForm>
@@ -2239,6 +2249,7 @@ public class LoginController extends SpringActionController
             returnUrl.addParameter("labkeyEmail", user.getEmail());
 
             getViewContext().getResponse().sendRedirect(returnUrl.getURIString());
+            handleRemoteLoginAction("create");
             return null;
         }
 
@@ -2292,7 +2303,7 @@ public class LoginController extends SpringActionController
             }
 
             response.flushBuffer();
-
+            handleRemoteLoginAction("verify");
             return null;
         }
 
@@ -2314,6 +2325,7 @@ public class LoginController extends SpringActionController
             if (null != form.getLabkeyToken())
                 TokenAuthenticationManager.get().invalidateKey(form.getLabkeyToken());
             URLHelper returnUrl = form.getValidReturnUrl();
+            handleRemoteLoginAction("invalidate");
             if (null != returnUrl)
                 return returnUrl;
             return AppProps.getInstance().getHomePageActionURL();

@@ -151,7 +151,7 @@ public class ModuleHtmlViewDefinition
         PermissionsListType permsList = _viewDef.getPermissions();
         if (permsList != null && permsList.getPermissionArray() != null)
         {
-            _log.warn("The \"<permissions>\" element used in \"{}\" is deprecated and support will be removed in 24.11! Migrate uses to \"<permissionClasses>\".", resource);
+            _log.warn("The \"<permissions>\" element used in \"{}\" is deprecated and support will be removed in LabKey Server 24.8! Migrate uses to \"<permissionClasses>\".", resource);
             for (PermissionType permEntry : permsList.getPermissionArray())
             {
                 SimpleAction.PermissionEnum perm = SimpleAction.PermissionEnum.valueOf(permEntry.getName().toString());

@@ -16,6 +16,7 @@
 
 package org.labkey.assay.plate;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -45,6 +46,7 @@ import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.ArrayExcelWriter;
 import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
@@ -64,6 +66,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TSVArrayWriter;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.Table;
@@ -100,6 +103,7 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -117,6 +121,7 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.assay.AssayManager;
+import org.labkey.assay.PlateController;
 import org.labkey.assay.TsvAssayProvider;
 import org.labkey.assay.plate.data.WellData;
 import org.labkey.assay.plate.model.PlateBean;
@@ -132,6 +137,7 @@ import org.labkey.assay.plate.query.WellTable;
 import org.labkey.assay.query.AssayDbSchema;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -3087,6 +3093,26 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         }
 
         return counter;
+    }
+
+    public void getPlateSetExportFile(String fileName, ColumnDescriptor[] cols, List<Object[]> rows, PlateController.FileType fileType, HttpServletResponse response) throws IOException
+    {
+        boolean isCSV = fileType.equals(PlateController.FileType.CSV);
+        boolean isTSV = fileType.equals(PlateController.FileType.TSV);
+        if (isCSV || isTSV)
+        {
+            try (TSVArrayWriter writer = new TSVArrayWriter(fileName, cols, rows))
+            {
+                writer.setDelimiterCharacter(isCSV ? TSVWriter.DELIM.COMMA : TSVWriter.DELIM.TAB);
+                writer.write(response);
+            }
+        }
+        else
+        {
+            ArrayExcelWriter xlWriter = new ArrayExcelWriter(rows, cols);
+            xlWriter.setFullFileName(fileName);
+            xlWriter.renderWorkbook(response);
+        }
     }
 
     public List<Object[]> getWorklist(
