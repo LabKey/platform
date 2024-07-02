@@ -155,6 +155,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
+import org.labkey.api.study.Visit.Order;
 import org.labkey.api.study.model.ParticipantDataset;
 import org.labkey.api.study.model.ParticipantInfo;
 import org.labkey.api.test.TestWhen;
@@ -234,7 +235,7 @@ public class StudyManager
     private static final StudySchema SCHEMA = StudySchema.getInstance();
 
     private final QueryHelper<StudyImpl> _studyHelper;
-    private final QueryHelper<VisitImpl> _visitHelper;
+    private final VisitHelper _visitHelper;
     private final QueryHelper<AssaySpecimenConfigImpl> _assaySpecimenHelper;
     private final DatasetHelper _datasetHelper;
     private final QueryHelper<CohortImpl> _cohortHelper;
@@ -259,12 +260,6 @@ public class StudyManager
         _studyHelper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoStudy(), StudyImpl.class)
         {
             @Override
-            public List<StudyImpl> getList(final Container c, SimpleFilter filterArg, final String sortString)
-            {
-                throw new IllegalStateException("Shouldn't be calling Study Helper getList() method");
-            }
-
-            @Override
             public StudyImpl get(Container c, int rowId)
             {
                 throw new IllegalStateException("Shouldn't be calling Study Helper get() method");
@@ -278,7 +273,7 @@ public class StudyManager
             }
         };
 
-        _visitHelper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoVisit(), VisitImpl.class, Visit.Order.DISPLAY.getSortColumns());
+        _visitHelper = new VisitHelper();
         _assaySpecimenHelper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoAssaySpecimen(), AssaySpecimenConfigImpl.class);
         _cohortHelper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoCohort(), CohortImpl.class, "Label");
 
@@ -316,6 +311,59 @@ public class StudyManager
         );
 
         ViewCategoryManager.addCategoryListener(new CategoryListener(this));
+    }
+
+    private static class VisitHelper extends QueryHelper<VisitImpl>
+    {
+        private static final Order DEFAULT_ORDER = Order.DISPLAY;
+
+        private VisitHelper()
+        {
+            super(() -> StudySchema.getInstance().getTableInfoVisit(), VisitImpl.class, DEFAULT_ORDER.getSortColumns());
+        }
+
+        private Collection<VisitImpl> getCollection(Container c, Order order)
+        {
+            return getMap(c).getCollection(order);
+        }
+
+        @Override
+        protected VisitCacheMap getMap(Container c)
+        {
+            return (VisitCacheMap)super.getMap(c);
+        }
+
+        @Override
+        protected VisitCacheMap createMap(Collection<VisitImpl> collection)
+        {
+            return new VisitCacheMap(collection);
+        }
+
+        private class VisitCacheMap extends StudyCacheMap
+        {
+            private final Collection<VisitImpl> _sequenceNumVisits;
+            private final Collection<VisitImpl> _chronologicalVisits;
+
+            private VisitCacheMap(Collection<VisitImpl> collection)
+            {
+                super(collection);
+
+                // I'd prefer to push comparators into Visit.Order, but Visit (in API) doesn't know about the display
+                // order field.
+                List<VisitImpl> sorted = new ArrayList<>(collection);
+                sorted.sort(Comparator.comparing(VisitImpl::getSequenceNumMin));
+                _sequenceNumVisits = Collections.unmodifiableCollection(sorted);
+
+                sorted = new ArrayList<>(collection);
+                sorted.sort(Comparator.comparing(VisitImpl::getChronologicalOrder).thenComparing(VisitImpl::getSequenceNumMin));
+                _chronologicalVisits = Collections.unmodifiableCollection(sorted);
+            }
+
+            private Collection<VisitImpl> getCollection(Order order)
+            {
+                return order == DEFAULT_ORDER ? getCollection() : order == Order.SEQUENCE_NUM ? _sequenceNumVisits : _chronologicalVisits;
+            }
+        }
     }
 
     public void updateStudySnapshot(StudySnapshot snapshot, User user)
@@ -966,7 +1014,7 @@ public class StudyManager
             throw new VisitCreationException("SequenceNumMin must be less than or equal to SequenceNumMax");
 
         if (null == existingVisits)
-            existingVisits = getVisits(study, Visit.Order.SEQUENCE_NUM);
+            existingVisits = getVisits(study, Order.SEQUENCE_NUM);
 
         int prevDisplayOrder = 0;
         int prevChronologicalOrder = 0;
@@ -1012,7 +1060,7 @@ public class StudyManager
      */
     public VisitImpl getVisit(Study study, User user, BigDecimal sequenceNum, Visit.Type type)
     {
-        Collection<VisitImpl> visits = getVisits(study, Visit.Order.SEQUENCE_NUM);
+        Collection<VisitImpl> visits = getVisits(study, Order.SEQUENCE_NUM);
         return ensureVisitWithoutSaving(study, sequenceNum, type, visits);
     }
 
@@ -1027,7 +1075,7 @@ public class StudyManager
     public @NotNull ValidationException ensureVisits(Study study, User user, Set<BigDecimal> sequencenums, @Nullable Visit.Type type,
                                 boolean failForUndefinedVisits)
     {
-        Collection<VisitImpl> visits = getVisits(study, Visit.Order.SEQUENCE_NUM);
+        Collection<VisitImpl> visits = getVisits(study, Order.SEQUENCE_NUM);
         ValidationException errors = new ValidationException();
         List<String> seqNumFailures = new ArrayList<>();
 
@@ -1040,7 +1088,7 @@ public class StudyManager
                 {
                     createVisit(study, user, result, visits);
                     // Refresh existing visits to avoid constraint violation, see #44425
-                    visits = getVisits(study, Visit.Order.SEQUENCE_NUM);
+                    visits = getVisits(study, Order.SEQUENCE_NUM);
                 }
                 else
                     seqNumFailures.add(String.valueOf(sequencenum));
@@ -1203,7 +1251,7 @@ public class StudyManager
     public Map<String, BigDecimal> getVisitImportMap(Study study, boolean includeStandardMapping)
     {
         Collection<VisitAlias> customMapping = getCustomVisitImportMapping(study);
-        Collection<VisitImpl> visits = includeStandardMapping ? StudyManager.getInstance().getVisits(study, Visit.Order.SEQUENCE_NUM) : Collections.emptyList();
+        Collection<VisitImpl> visits = includeStandardMapping ? StudyManager.getInstance().getVisits(study, Order.SEQUENCE_NUM) : Collections.emptyList();
 
         Map<String, BigDecimal> map = new CaseInsensitiveHashMap<>((customMapping.size() + visits.size()) * 3 / 4);
 
@@ -1255,7 +1303,7 @@ public class StudyManager
         Set<String> labels = new CaseInsensitiveHashSet();
         Map<String, BigDecimal> customMap = getVisitImportMap(study, false);
 
-        Collection<VisitImpl> visits = StudyManager.getInstance().getVisits(study, Visit.Order.SEQUENCE_NUM);
+        Collection<VisitImpl> visits = StudyManager.getInstance().getVisits(study, Order.SEQUENCE_NUM);
 
         for (Visit visit : visits)
         {
@@ -1643,7 +1691,7 @@ public class StudyManager
         Study study = getStudy(container);
         if (study != null)
         {
-            for (VisitImpl v : getVisits(study, Visit.Order.DISPLAY))
+            for (VisitImpl v : getVisits(study, Order.DISPLAY))
             {
                 if (visitRowIds.contains(v.getRowId()))
                     visits.add(v);
@@ -1706,29 +1754,27 @@ public class StudyManager
         return (null != required ? new VisitDataset(container, datasetId, visitRowId, required) : null);
     }
 
-    public Collection<VisitImpl> getVisits(Study study, Visit.Order order)
+    public Collection<VisitImpl> getVisits(Study study, Order order)
     {
         return getVisits(study, null, null, order);
     }
 
-    public Collection<VisitImpl> getVisits(Study study, @Nullable Cohort cohort, @Nullable User user, Visit.Order order)
+    public Collection<VisitImpl> getVisits(Study study, @Nullable Cohort cohort, @Nullable User user, Order order)
     {
         if (study.getTimepointType() == TimepointType.CONTINUOUS)
             return Collections.emptyList();
 
-        SimpleFilter filter = null;
-
         Study visitStudy = getStudyForVisits(study);
-
-        if (cohort != null)
+        Collection<VisitImpl> visits = _visitHelper.getCollection(visitStudy.getContainer(), order);
+        if (cohort != null && showCohorts(study.getContainer(), user))
         {
-            // TODO: This container filter is redundant with the container filter added by getList()
-            filter = SimpleFilter.createContainerFilter(visitStudy.getContainer());
-            if (showCohorts(study.getContainer(), user))
-                filter.addWhereClause("(CohortId IS NULL OR CohortId = ?)", new Object[]{cohort.getRowId()});
+            // We could cache all combinations of cohort x order instead of filtering on-the-fly, but this seems fast enough
+            visits = visits.stream()
+                .filter(visit -> visit.getCohortId() == null || visit.getCohortId() == cohort.getRowId())
+                .toList();
         }
 
-        return _visitHelper.getList(visitStudy.getContainer(), filter, order.getSortColumns());
+        return visits;
     }
 
     public void clearParticipantVisitCaches(Study study)
@@ -2069,7 +2115,7 @@ public class StudyManager
 
     public VisitImpl getVisitForSequence(Study study, BigDecimal seqNum)
     {
-        Collection<VisitImpl> visits = getVisits(study, Visit.Order.SEQUENCE_NUM);
+        Collection<VisitImpl> visits = getVisits(study, Order.SEQUENCE_NUM);
         for (VisitImpl v : visits)
         {
             if (v.isInRange(seqNum))
@@ -4633,7 +4679,7 @@ public class StudyManager
                 _instance._datasetHelper.clearCache(c);
         }
 
-        private List<DatasetDefinition> getDatasetsForCategory(ViewCategory category)
+        private Collection<DatasetDefinition> getDatasetsForCategory(ViewCategory category)
         {
             if (category != null)
             {

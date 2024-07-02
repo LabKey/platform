@@ -62,23 +62,15 @@ public class QueryHelper<K extends StudyCachable<K>>
         _rowIdFieldKey = FieldKey.fromString(null != rowIdColumnName ? rowIdColumnName : "RowId");
     }
 
-    // Dataset helper uses this extensively to:
+    // Dataset helper uses this to:
     // - Filter by Cohort + Type
     // - Filter by Category
     // - Select by Label (case-insensitive. Note: study.Datasets has a unique constraint on Container, LOWER(Label))
     // - Select by EntityId
     // - Select by Name (case-insensitive. Note: study.Datasets has a unique constraint on Container, LOWER(Name))
-    public List<K> getList(Container c, SimpleFilter filter)
-    {
-        return getList(c, filter, null);
-    }
-
-    // One visit helper caller uses this to filter by Cohort and sort by Visit.Order (Chronological vs. Display Order vs. SequenceNumMin)
-    public List<K> getList(final Container c, @Nullable final SimpleFilter filterArg, @Nullable final String sortString)
+    public List<K> getList(Container c, SimpleFilter filterArg)
     {
         String cacheId = getCacheId(filterArg);
-        if (sortString != null)
-            cacheId += "; sort = " + sortString;
 
         CacheLoader<String, Object> loader = (key, argument) -> {
             SimpleFilter filter = null;
@@ -95,8 +87,7 @@ public class QueryHelper<K extends StudyCachable<K>>
             if (null != filter && !filter.hasContainerEqualClause())
                 filter.addCondition(FieldKey.fromParts("Container"), c);
 
-            Sort sort = sortString != null ? new Sort(sortString) : null;
-            List<K> objs = new TableSelector(getTableInfo(), filter, sort).getArrayList(_objectClass);
+            List<K> objs = new TableSelector(getTableInfo(), filter, null).getArrayList(_objectClass);
             // Make both the objects and the list itself immutable so that we don't end up with a corrupted
             // version in the cache
             for (StudyCachable<K> obj : objs)
