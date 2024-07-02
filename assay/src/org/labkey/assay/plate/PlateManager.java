@@ -3682,7 +3682,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                     if (!wellData.hasData())
                         continue;
 
-                    if (wellData.getRow() == well.sourceRowId() && wellData.getCol() == well.sourceColIdx())
+                    if (wellData.getRow() == well.sourceRowIdx() && wellData.getCol() == well.sourceColIdx())
                     {
                         Position p = new PositionImpl(container, well.destinationRowIdx(), well.destinationColIdx());
 

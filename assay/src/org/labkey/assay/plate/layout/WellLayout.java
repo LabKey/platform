@@ -5,7 +5,7 @@ import org.labkey.api.assay.plate.PlateType;
 
 public class WellLayout
 {
-    public record Well(int destinationRowIdx, int destinationColIdx, int sourcePlateId, int sourceRowId, int sourceColIdx) {}
+    public record Well(int destinationRowIdx, int destinationColIdx, int sourcePlateId, int sourceRowIdx, int sourceColIdx) {}
 
     private final PlateType _plateType;
     private final Well[] _wells;
