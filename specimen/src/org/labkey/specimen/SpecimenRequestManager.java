@@ -72,6 +72,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 
 public class SpecimenRequestManager
 {
@@ -528,12 +529,12 @@ public class SpecimenRequestManager
         return event;
     }
 
-    public List<SpecimenRequest> getRequests(Container c, User user)
+    public Collection<SpecimenRequest> getRequests(Container c, @Nullable User user)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Hidden"), Boolean.FALSE);
-        if (user != null)
-            filter.addCondition(FieldKey.fromParts("CreatedBy"), user.getUserId());
-        return _requestHelper.getList(c, filter);
+        return _requestHelper.getCollection(c).stream()
+            .filter(sr -> !sr.isHidden())
+            .filter(sr -> user == null || sr.getCreatedBy() == user.getUserId())
+            .toList();
     }
 
     public SpecimenRequest getRequest(Container c, int rowId)

@@ -68,13 +68,12 @@ public class QueryHelper<K extends StudyCachable<K>>
     // - Select by Label (case-insensitive. Note: study.Datasets has a unique constraint on Container, LOWER(Label))
     // - Select by EntityId
     // - Select by Name (case-insensitive. Note: study.Datasets has a unique constraint on Container, LOWER(Name))
-    // Request helper uses this to filter by Hidden and CreatedBy
     public List<K> getList(Container c, SimpleFilter filter)
     {
         return getList(c, filter, null);
     }
 
-    // Visit helper uses this to filter by Cohort and sort by Visit.Order (Chronological vs. Display Order vs. SequenceNumMin)
+    // One visit helper caller uses this to filter by Cohort and sort by Visit.Order (Chronological vs. Display Order vs. SequenceNumMin)
     public List<K> getList(final Container c, @Nullable final SimpleFilter filterArg, @Nullable final String sortString)
     {
         String cacheId = getCacheId(filterArg);
@@ -96,9 +95,7 @@ public class QueryHelper<K extends StudyCachable<K>>
             if (null != filter && !filter.hasContainerEqualClause())
                 filter.addCondition(FieldKey.fromParts("Container"), c);
 
-            Sort sort = null;
-            if (sortString != null)
-                sort = new Sort(sortString);
+            Sort sort = sortString != null ? new Sort(sortString) : null;
             List<K> objs = new TableSelector(getTableInfo(), filter, sort).getArrayList(_objectClass);
             // Make both the objects and the list itself immutable so that we don't end up with a corrupted
             // version in the cache
@@ -139,7 +136,12 @@ public class QueryHelper<K extends StudyCachable<K>>
     protected StudyCacheMap getMap(Container c)
     {
         return StudyCache.get(getTableInfo(), c, (key, argument) ->
-            new StudyCacheMap(new TableSelector(getTableInfo(), SimpleFilter.createContainerFilter(c), new Sort(_defaultSortString))));
+            createMap(new TableSelector(getTableInfo(), SimpleFilter.createContainerFilter(c), new Sort(_defaultSortString)).getCollection(_objectClass)));
+    }
+
+    protected StudyCacheMap createMap(Collection<K> collection)
+    {
+        return new StudyCacheMap(collection);
     }
 
     public K create(User user, K obj)
@@ -196,9 +198,11 @@ public class QueryHelper<K extends StudyCachable<K>>
     {
         private final Map<Object, K> _map;
 
-        public StudyCacheMap(TableSelector selector)
+        // Receives a collection of locked K objects
+        public StudyCacheMap(Collection<K> collection)
         {
-            _map = selector.uncachedStream(_objectClass).peek(StudyCachable::lock).collect(LabKeyCollectors.toLinkedMap(StudyCachable::getPrimaryKey, v -> v));
+            _map = Collections.unmodifiableMap(collection.stream()
+                .collect(LabKeyCollectors.toLinkedMap(StudyCachable::getPrimaryKey, v -> v)));
         }
 
         public @Nullable K get(Object key)
