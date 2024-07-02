@@ -45,7 +45,7 @@ public abstract class BaseStudyPage extends JspBase
         return _study;
     }
 
-    protected List<VisitImpl> getVisits(Visit.Order order)
+    protected Collection<VisitImpl> getVisits(Visit.Order order)
     {
         return getStudy().getVisits(order);
     }

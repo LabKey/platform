@@ -33,9 +33,9 @@
 <%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="org.labkey.study.model.VisitMapKey" %>
 <%@ page import="org.labkey.study.visitmanager.VisitManager" %>
+<%@ page import="java.util.Collection" %>
 <%@ page import="java.util.Collections" %>
 <%@ page import="java.util.HashMap" %>
-<%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -90,7 +90,7 @@
     </tr>
     <%
         int rowCount = 0;
-        List<VisitImpl> allVisits = studyManager.getVisits(study, Visit.Order.DISPLAY);
+        Collection<VisitImpl> allVisits = studyManager.getVisits(study, Visit.Order.DISPLAY);
         for (VisitImpl visit : allVisits)
         {
             ActionURL visitSummaryURL = new ActionURL(VisitSummaryAction.class, study.getContainer());

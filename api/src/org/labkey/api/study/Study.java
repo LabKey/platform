@@ -39,7 +39,7 @@ public interface Study extends StudyEntity
 {
     String getShortName();
 
-    List<? extends Visit> getVisits(Visit.Order order);
+    Collection<? extends Visit> getVisits(Visit.Order order);
 
     @SuppressWarnings("unused")  // Used by cdisc_ODM StudyArchiveWriter.java
     Map<String, BigDecimal> getVisitAliases();

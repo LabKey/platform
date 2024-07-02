@@ -76,7 +76,7 @@ public class StudySummaryWebPartFactory extends BaseWebPartFactory
             return _study;
         }
 
-        public List<? extends Visit> getVisits(Visit.Order order)
+        public Collection<? extends Visit> getVisits(Visit.Order order)
         {
             return getStudy().getVisits(order);
         }

@@ -24,7 +24,6 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.specimen.SpecimenQuerySchema;
-import org.labkey.specimen.query.SpecimenQueryView;
 import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -34,6 +33,7 @@ import org.labkey.api.study.model.ParticipantGroupService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.specimen.query.SpecimenQueryView;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -47,7 +47,7 @@ import java.util.Map;
  */
 public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellData>
 {
-    private final List<? extends Visit> _visits;
+    private final Collection<? extends Visit> _visits;
     private final SpecimenVisitReportParameters _parameters;
     private final boolean _viewParticipantCount;
     private final boolean _viewVolume;
@@ -62,7 +62,7 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
     private Collection<Row> _rows;
     private List<Visit> _nonEmptyVisits;
 
-    public SpecimenVisitReport(String titlePrefix, List<? extends Visit> visits, SimpleFilter filter, SpecimenVisitReportParameters parameters)
+    public SpecimenVisitReport(String titlePrefix, Collection<? extends Visit> visits, SimpleFilter filter, SpecimenVisitReportParameters parameters)
     {
         _visits = visits;
         _filter = filter;
@@ -101,7 +101,7 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
         return url;
     }
 
-    public List<? extends Visit> getVisits()
+    public Collection<? extends Visit> getVisits()
     {
         // ensure rows and non-empty columns have been generated
         getRows();

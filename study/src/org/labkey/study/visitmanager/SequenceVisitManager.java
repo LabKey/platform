@@ -52,6 +52,7 @@ import org.labkey.study.query.StudyQuerySchema;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -585,13 +586,13 @@ public class SequenceVisitManager extends VisitManager
 
     private String generateSequenceToVisit(StudyImpl study, String sn)
     {
-        List<VisitImpl> visits = study.getVisits(Visit.Order.SEQUENCE_NUM);
+        Collection<VisitImpl> visits = study.getVisits(Visit.Order.SEQUENCE_NUM);
         if (visits.isEmpty())
             return "-1";
         return generateSequenceToVisit(visits, sn, 1);
     }
 
-    private String generateSequenceToVisit(List<VisitImpl> visits, String sn, int indent)
+    private String generateSequenceToVisit(Collection<VisitImpl> visits, String sn, int indent)
     {
         if (visits.size() <= 16)
         {
@@ -638,20 +639,21 @@ public class SequenceVisitManager extends VisitManager
         }
         else
         {
+            List<VisitImpl> visitList = new ArrayList<>(visits);
             StringBuilder sb = new StringBuilder();
             _indent(sb,indent); sb.append("CASE");
             int partStart = 0, partEnd = 0;
             for (int part=1 ; part<4 ; part++)
             {
-                partEnd = visits.size()*part / 4;
-                VisitImpl v = visits.get(partEnd);
+                partEnd = visitList.size()*part / 4;
+                VisitImpl v = visitList.get(partEnd);
                 _indent(sb,indent); sb.append("WHEN ").append(sn).append(" < ");
                 v.appendSqlSequenceNumMin(sb).append(" THEN");
-                sb.append(generateSequenceToVisit(visits.subList(partStart, partEnd), sn, indent+1));
+                sb.append(generateSequenceToVisit(visitList.subList(partStart, partEnd), sn, indent+1));
                 partStart = partEnd;
             }
             _indent(sb,indent); sb.append("ELSE");
-            sb.append(generateSequenceToVisit(visits.subList(partStart, visits.size()), sn, indent+1));
+            sb.append(generateSequenceToVisit(visitList.subList(partStart, visitList.size()), sn, indent+1));
             _indent(sb,indent); sb.append("END");
             return sb.toString();
         }

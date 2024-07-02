@@ -37,7 +37,7 @@ public class StudyTreatmentSchedule implements ApiJsonForm
 
     // treatment schedule properties
     List<TreatmentImpl> _treatments;
-    List<VisitImpl> _visits;
+    Collection<VisitImpl> _visits;
     Collection<CohortImpl> _cohorts;
 
     public StudyTreatmentSchedule()
@@ -68,12 +68,12 @@ public class StudyTreatmentSchedule implements ApiJsonForm
         return treatmentList;
     }
 
-    public void setVisits(List<VisitImpl> visits)
+    public void setVisits(Collection<VisitImpl> visits)
     {
         _visits = visits;
     }
 
-    public List<VisitImpl> getVisits()
+    public Collection<VisitImpl> getVisits()
     {
         return _visits;
     }

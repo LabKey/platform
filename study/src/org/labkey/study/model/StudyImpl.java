@@ -235,7 +235,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     }
 
     @Override
-    public List<VisitImpl> getVisits(Visit.Order order)
+    public Collection<VisitImpl> getVisits(Visit.Order order)
     {
         return StudyManager.getInstance().getVisits(this, order);
     }
@@ -843,8 +843,8 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     public boolean isEmptyStudy()
     {
         List<DatasetDefinition> datasets = getDatasets();
-        List<VisitImpl> visits = getVisits(Visit.Order.DISPLAY);
-        return visits.size() < 1 && datasets.size() < 1;
+        Collection<VisitImpl> visits = getVisits(Visit.Order.DISPLAY);
+        return visits.isEmpty() && datasets.isEmpty();
     }
 
     @Override

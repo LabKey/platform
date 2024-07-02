@@ -8,7 +8,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.Visit;
 
-import java.util.List;
+import java.util.Collection;
 
 /**
  * Provides specimen module access to a few visit-related methods while keeping VisitImpl, StudyManager, and all
@@ -26,7 +26,7 @@ public interface VisitService
         ServiceRegistry.get().registerService(VisitService.class, impl);
     }
 
-    List<? extends Visit> getVisits(Study study, Visit.Order order);
+    Collection<? extends Visit> getVisits(Study study, Visit.Order order);
 
     ValidationException updateParticipantVisitsWithCohortUpdate(Study study, User user, boolean failForUndefinedVisits, @Nullable Logger logger);
 

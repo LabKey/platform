@@ -4195,7 +4195,7 @@ public class StudyController extends BaseStudyController
             return order;
         }
 
-        private Map<Integer, Integer> getVisitIdToZeroMap(List<VisitImpl> visits)
+        private Map<Integer, Integer> getVisitIdToZeroMap(Collection<VisitImpl> visits)
         {
             Map<Integer, Integer> order = new HashMap<>();
             for (VisitImpl visit : visits)
@@ -4211,7 +4211,7 @@ public class StudyController extends BaseStudyController
 
             Map<Integer, Integer> displayOrder = null;
             Map<Integer, Integer> chronologicalOrder = null;
-            List<VisitImpl> visits = StudyManager.getInstance().getVisits(study, Visit.Order.SEQUENCE_NUM);
+            Collection<VisitImpl> visits = StudyManager.getInstance().getVisits(study, Visit.Order.SEQUENCE_NUM);
 
             if (form.isExplicitDisplayOrder())
                 displayOrder = getVisitIdToOrderIndex(form.getDisplayOrder());

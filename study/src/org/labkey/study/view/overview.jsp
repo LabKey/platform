@@ -58,13 +58,14 @@
 <%@ page import="org.labkey.study.visitmanager.VisitManager.VisitStatistic" %>
 <%@ page import="org.labkey.study.visitmanager.VisitManager.VisitStatistics" %>
 <%@ page import="java.text.NumberFormat" %>
+<%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Collection" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.util.Map" %>
 <%@ page import="static org.labkey.study.model.QCStateSet.getQCUrlFilterKey" %>
 <%@ page import="static org.labkey.study.model.QCStateSet.getQCStateFilteredURL" %>
 <%@ page import="static org.labkey.study.model.QCStateSet.PUBLIC_STATES_LABEL" %>
 <%@ page import="static org.labkey.study.model.QCStateSet.PRIVATE_STATES_LABEL" %>
-<%@ page import="java.util.List" %>
-<%@ page import="java.util.Map" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -108,7 +109,7 @@
         qcStateSetOptions = QCStateSet.getSelectableSets(container);
     }
 
-    List<VisitImpl> visits = manager.getVisits(study, selectedCohort, user, Visit.Order.DISPLAY);
+    List<VisitImpl> visits = new ArrayList<>(manager.getVisits(study, selectedCohort, user, Visit.Order.DISPLAY));
     List<DatasetDefinition> datasets = manager.getDatasetDefinitions(study, selectedCohort);
     boolean cantReadOneOrMoreDatasets = false;
     ActionURL baseURL = urlFor(OverviewAction.class);

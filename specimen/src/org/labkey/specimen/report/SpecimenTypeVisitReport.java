@@ -26,17 +26,12 @@ import org.labkey.specimen.actions.SpecimenReportActions;
 
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-/**
- * User: brittp
- * Created: Jan 14, 2008 9:44:25 AM
- */
 public class SpecimenTypeVisitReport extends SpecimenVisitReport<SummaryByVisitType>
 {
-    public SpecimenTypeVisitReport(String titlePrefix, List<? extends Visit> visits, SimpleFilter filter, SpecimenVisitReportParameters parameters)
+    public SpecimenTypeVisitReport(String titlePrefix, Collection<? extends Visit> visits, SimpleFilter filter, SpecimenVisitReportParameters parameters)
     {
         super(titlePrefix, visits, filter, parameters);
     }

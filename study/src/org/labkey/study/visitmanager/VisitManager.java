@@ -370,7 +370,7 @@ public abstract class VisitManager
      */
     private TreeMap<BigDecimal, VisitImpl> getVisitSequenceMap()
     {
-        List<VisitImpl> visits = getStudy().getVisits(Visit.Order.DISPLAY);
+        Collection<VisitImpl> visits = getStudy().getVisits(Visit.Order.DISPLAY);
         TreeMap<BigDecimal, VisitImpl> visitMap = new TreeMap<>();
         for (VisitImpl v : visits)
             visitMap.put(v.getSequenceNumMin(), v);

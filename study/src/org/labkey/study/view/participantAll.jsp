@@ -185,7 +185,7 @@
     // Now we have a list of datasets with 1 or more rows and a visitMap to help with layout
     // get the data
 
-    List<VisitImpl> allVisits = manager.getVisits(study, Visit.Order.DISPLAY);
+    Collection<VisitImpl> allVisits = manager.getVisits(study, Visit.Order.DISPLAY);
     ArrayList<VisitImpl> visits = new ArrayList<>(visitSequenceMap.size());
     for (VisitImpl visit : allVisits)
     {

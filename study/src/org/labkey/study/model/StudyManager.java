@@ -954,7 +954,7 @@ public class StudyManager
     }
 
 
-    public VisitImpl createVisit(Study study, User user, VisitImpl visit, @Nullable List<VisitImpl> existingVisits)
+    public VisitImpl createVisit(Study study, User user, VisitImpl visit, @Nullable Collection<VisitImpl> existingVisits)
     {
         Study visitStudy = getStudyForVisits(study);
 
@@ -1012,7 +1012,7 @@ public class StudyManager
      */
     public VisitImpl getVisit(Study study, User user, BigDecimal sequenceNum, Visit.Type type)
     {
-        List<VisitImpl> visits = getVisits(study, Visit.Order.SEQUENCE_NUM);
+        Collection<VisitImpl> visits = getVisits(study, Visit.Order.SEQUENCE_NUM);
         return ensureVisitWithoutSaving(study, sequenceNum, type, visits);
     }
 
@@ -1027,7 +1027,7 @@ public class StudyManager
     public @NotNull ValidationException ensureVisits(Study study, User user, Set<BigDecimal> sequencenums, @Nullable Visit.Type type,
                                 boolean failForUndefinedVisits)
     {
-        List<VisitImpl> visits = getVisits(study, Visit.Order.SEQUENCE_NUM);
+        Collection<VisitImpl> visits = getVisits(study, Visit.Order.SEQUENCE_NUM);
         ValidationException errors = new ValidationException();
         List<String> seqNumFailures = new ArrayList<>();
 
@@ -1057,12 +1057,12 @@ public class StudyManager
         return errors;
     }
 
-    private VisitImpl ensureVisitWithoutSaving(Study study, double seqNumDouble, @Nullable Visit.Type type, List<VisitImpl> existingVisits)
+    private VisitImpl ensureVisitWithoutSaving(Study study, double seqNumDouble, @Nullable Visit.Type type, Collection<VisitImpl> existingVisits)
     {
         return ensureVisitWithoutSaving(study, VisitImpl.getSequenceNum(seqNumDouble), type, existingVisits);
     }
 
-    private VisitImpl ensureVisitWithoutSaving(Study study, BigDecimal sequenceNum, @Nullable Visit.Type type, List<VisitImpl> existingVisits)
+    private VisitImpl ensureVisitWithoutSaving(Study study, BigDecimal sequenceNum, @Nullable Visit.Type type, Collection<VisitImpl> existingVisits)
     {
         sequenceNum = VisitImpl.normalizeSequenceNum(sequenceNum);
 
@@ -1203,7 +1203,7 @@ public class StudyManager
     public Map<String, BigDecimal> getVisitImportMap(Study study, boolean includeStandardMapping)
     {
         Collection<VisitAlias> customMapping = getCustomVisitImportMapping(study);
-        List<VisitImpl> visits = includeStandardMapping ? StudyManager.getInstance().getVisits(study, Visit.Order.SEQUENCE_NUM) : Collections.emptyList();
+        Collection<VisitImpl> visits = includeStandardMapping ? StudyManager.getInstance().getVisits(study, Visit.Order.SEQUENCE_NUM) : Collections.emptyList();
 
         Map<String, BigDecimal> map = new CaseInsensitiveHashMap<>((customMapping.size() + visits.size()) * 3 / 4);
 
@@ -1255,7 +1255,7 @@ public class StudyManager
         Set<String> labels = new CaseInsensitiveHashSet();
         Map<String, BigDecimal> customMap = getVisitImportMap(study, false);
 
-        List<VisitImpl> visits = StudyManager.getInstance().getVisits(study, Visit.Order.SEQUENCE_NUM);
+        Collection<VisitImpl> visits = StudyManager.getInstance().getVisits(study, Visit.Order.SEQUENCE_NUM);
 
         for (Visit visit : visits)
         {
@@ -1706,12 +1706,12 @@ public class StudyManager
         return (null != required ? new VisitDataset(container, datasetId, visitRowId, required) : null);
     }
 
-    public List<VisitImpl> getVisits(Study study, Visit.Order order)
+    public Collection<VisitImpl> getVisits(Study study, Visit.Order order)
     {
         return getVisits(study, null, null, order);
     }
 
-    public List<VisitImpl> getVisits(Study study, @Nullable Cohort cohort, @Nullable User user, Visit.Order order)
+    public Collection<VisitImpl> getVisits(Study study, @Nullable Cohort cohort, @Nullable User user, Visit.Order order)
     {
         if (study.getTimepointType() == TimepointType.CONTINUOUS)
             return Collections.emptyList();
@@ -2069,7 +2069,7 @@ public class StudyManager
 
     public VisitImpl getVisitForSequence(Study study, BigDecimal seqNum)
     {
-        List<VisitImpl> visits = getVisits(study, Visit.Order.SEQUENCE_NUM);
+        Collection<VisitImpl> visits = getVisits(study, Visit.Order.SEQUENCE_NUM);
         for (VisitImpl v : visits)
         {
             if (v.isInRange(seqNum))
