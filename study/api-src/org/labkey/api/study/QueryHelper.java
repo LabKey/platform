@@ -119,7 +119,7 @@ public class QueryHelper<K extends StudyCachable<K>>
 
         K obj2 = getMap(c).get(rowId);
 
-        assert Objects.equals(obj, obj2);
+        assert Objects.equals(obj, obj2) : "Old: " + obj + ", New: " + obj2;
 
         return (K)obj;
     }

@@ -59,6 +59,7 @@ public class StudyCache
     public static void clearCache(TableInfo tinfo, Container c)
     {
         getCache(tinfo).removeUsingFilter(new Cache.StringPrefixFilter(getCacheName(c, null)));
+        getCache(tinfo).removeUsingFilter(new Cache.StringPrefixFilter(c.getId()));
     }
 
     public static void clearCache(TableInfo tinfo)
