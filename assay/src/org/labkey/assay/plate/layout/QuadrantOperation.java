@@ -9,22 +9,12 @@ import org.labkey.assay.plate.model.ReformatOptions;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CompressOperation implements LayoutOperation
+public class QuadrantOperation implements LayoutOperation
 {
     private PlateType _sourcePlateType;
 
     @Override
-    public List<WellLayout> execute(ReformatOptions.OperationOptions options, @NotNull List<Plate> sourcePlates, PlateType targetPlateType)
-    {
-        ReformatOptions.FillStrategy fillStrategy = options.getFillStrategy();
-
-        if (ReformatOptions.FillStrategy.quadrant == fillStrategy)
-            return quadrant(sourcePlates, targetPlateType);
-
-        throw new UnsupportedOperationException(String.format("CompressOperation does not support the \"%s\" fill strategy.", fillStrategy));
-    }
-
-    private List<WellLayout> quadrant(@NotNull List<Plate> sourcePlates, PlateType targetPlateType)
+    public List<WellLayout> execute(ReformatOptions options, @NotNull List<Plate> sourcePlates, PlateType targetPlateType)
     {
         List<WellLayout> layouts = new ArrayList<>();
         WellLayout target = null;
@@ -71,23 +61,14 @@ public class CompressOperation implements LayoutOperation
     }
 
     @Override
-    public boolean requiresOperationOptions()
-    {
-        return true;
-    }
-
-    @Override
     public boolean requiresTargetPlateType()
     {
         return true;
     }
 
     @Override
-    public void validate(ReformatOptions.OperationOptions options, @NotNull List<Plate> sourcePlates, PlateType targetPlateType) throws ValidationException
+    public void validate(ReformatOptions options, @NotNull List<Plate> sourcePlates, PlateType targetPlateType) throws ValidationException
     {
-        if (!ReformatOptions.FillStrategy.quadrant.equals(options.getFillStrategy()))
-            throw new ValidationException("Quadrant stamping is the only fill strategy supported by this operation.");
-
         for (Plate plate : sourcePlates)
         {
             if (_sourcePlateType == null)
@@ -100,6 +81,6 @@ public class CompressOperation implements LayoutOperation
             throw new ValidationException("Source plate type missing. Unable to determine source plate type.");
 
         if (_sourcePlateType.getWellCount() * 4 != targetPlateType.getWellCount())
-            throw new ValidationException("Quadrant stamping only supports target plates types with exactly 4x the number of wells.");
+            throw new ValidationException("Quadrant operation only supports target plates types with exactly 4x the number of wells.");
     }
 }

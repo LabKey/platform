@@ -445,9 +445,9 @@ public final class PlateManagerTest
 
         well = wells.get(1);
         rows = List.of(CaseInsensitiveHashMap.of(
-                "rowid", well.getRowId(),
-                "concentration", 2.25,
-                "negativeControl", 6.25
+            "rowid", well.getRowId(),
+            "concentration", 2.25,
+            "negativeControl", 6.25
         ));
 
         qus.updateRows(user, container, rows, null, errors, null, null);
@@ -785,7 +785,7 @@ public final class PlateManagerTest
     }
 
     @Test
-    public void testReformatExpand() throws Exception
+    public void testReformatReverseQuadrant() throws Exception
     {
         // Arrange
         List<Map<String, Object>> sourcePlateData = List.of(
@@ -798,14 +798,10 @@ public final class PlateManagerTest
         Integer targetPlateSetId = sourcePlate.getPlateSet().getRowId();
 
         ReformatOptions options = new ReformatOptions()
-            .setOperation(ReformatOptions.ReformatOperation.expand)
-            .setTargetPlateSet(new ReformatOptions.ReformatPlateSet().setRowId(targetPlateSetId))
-            .setOperationOptions(
-                new ReformatOptions.OperationOptions()
-                        .setFillStrategy(ReformatOptions.FillStrategy.reverseQuadrant)
-                        .setTargetPlateTypeId(PLATE_TYPE_96_WELLS.getRowId())
-            )
+            .setOperation(ReformatOptions.ReformatOperation.reverseQuadrant)
             .setPlateRowIds(List.of(sourcePlate.getRowId()))
+            .setTargetPlateSet(new ReformatOptions.ReformatPlateSet().setRowId(targetPlateSetId))
+            .setTargetPlateTypeId(PLATE_TYPE_96_WELLS.getRowId())
             .setPreview(true);
 
         // Act (preview)

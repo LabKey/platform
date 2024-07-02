@@ -6,18 +6,10 @@ import java.util.List;
 
 public class ReformatOptions
 {
-    public enum FillStrategy
-    {
-        column,
-        quadrant,
-        reverseQuadrant,
-        row
-    }
-
     public enum ReformatOperation
     {
-        compress,
-        expand,
+        quadrant,
+        reverseQuadrant,
         stamp
     }
 
@@ -26,6 +18,7 @@ public class ReformatOptions
         private Integer _rowId;
         private String _description;
         private String _name;
+        private Integer _parentPlateSetId;
         private PlateSetType _type;
 
         public Integer getRowId()
@@ -71,42 +64,25 @@ public class ReformatOptions
             _type = type;
             return this;
         }
-    }
 
-    public static class OperationOptions
-    {
-        private FillStrategy _fillStrategy;
-        private Integer _targetPlateTypeId;
-
-        public FillStrategy getFillStrategy()
+        public Integer getParentPlateSetId()
         {
-            return _fillStrategy;
+            return _parentPlateSetId;
         }
 
-        public OperationOptions setFillStrategy(FillStrategy fillStrategy)
+        public ReformatPlateSet setParentPlateSetId(Integer parentPlateSetId)
         {
-            _fillStrategy = fillStrategy;
-            return this;
-        }
-
-        public Integer getTargetPlateTypeId()
-        {
-            return _targetPlateTypeId;
-        }
-
-        public OperationOptions setTargetPlateTypeId(Integer targetPlateTypeId)
-        {
-            _targetPlateTypeId = targetPlateTypeId;
+            _parentPlateSetId = parentPlateSetId;
             return this;
         }
     }
 
     private ReformatOperation _operation;
-    private OperationOptions _operationOptions;
     private List<Integer> _plateRowIds;
     private String _plateSelectionKey;
     private Boolean _preview = false;
     private ReformatPlateSet _targetPlateSet;
+    private Integer _targetPlateTypeId;
 
     public ReformatOperation getOperation()
     {
@@ -116,17 +92,6 @@ public class ReformatOptions
     public ReformatOptions setOperation(ReformatOperation operation)
     {
         _operation = operation;
-        return this;
-    }
-
-    public OperationOptions getOperationOptions()
-    {
-        return _operationOptions;
-    }
-
-    public ReformatOptions setOperationOptions(OperationOptions operationOptions)
-    {
-        _operationOptions = operationOptions;
         return this;
     }
 
@@ -171,6 +136,17 @@ public class ReformatOptions
     public ReformatOptions setTargetPlateSet(ReformatPlateSet targetPlateSet)
     {
         _targetPlateSet = targetPlateSet;
+        return this;
+    }
+
+    public Integer getTargetPlateTypeId()
+    {
+        return _targetPlateTypeId;
+    }
+
+    public ReformatOptions setTargetPlateTypeId(Integer targetPlateTypeId)
+    {
+        _targetPlateTypeId = targetPlateTypeId;
         return this;
     }
 }
