@@ -87,6 +87,7 @@ import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -293,7 +294,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     }
 
     @Override
-    public List<CohortImpl> getCohorts(User user)
+    public Collection<CohortImpl> getCohorts(User user)
     {
         return StudyManager.getInstance().getCohorts(getContainer(), user);
     }
@@ -318,7 +319,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     }
 
     @Override
-    public List<AssaySpecimenConfigImpl> getAssaySpecimenConfigs()
+    public Collection<AssaySpecimenConfigImpl> getAssaySpecimenConfigs()
     {
         return StudyManager.getInstance().getAssaySpecimenConfigs(getContainer());
     }

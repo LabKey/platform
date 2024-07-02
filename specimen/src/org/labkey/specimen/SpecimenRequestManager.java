@@ -97,10 +97,10 @@ public class SpecimenRequestManager
 
     public List<SpecimenRequestStatus> getRequestStatuses(Container c, User user)
     {
-        List<SpecimenRequestStatus> statuses = _requestStatusHelper.getList(c);
+        List<SpecimenRequestStatus> statuses = new ArrayList<>(_requestStatusHelper.getCollection(c));
         // if the 'not-yet-submitted' status doesn't exist, create it here, with sort order -1,
         // so it's always first.
-        if (statuses == null || statuses.isEmpty() || statuses.get(0).getSortOrder() != -1)
+        if (statuses.isEmpty() || statuses.get(0).getSortOrder() != -1)
         {
             SpecimenRequestStatus notYetSubmittedStatus = new SpecimenRequestStatus();
             notYetSubmittedStatus.setContainer(c);
@@ -113,7 +113,7 @@ public class SpecimenRequestManager
                 Table.insert(user, _requestStatusHelper.getTableInfo(), notYetSubmittedStatus);
                 _requestStatusHelper.clearCache(c);
             }
-            statuses = _requestStatusHelper.getList(c);
+            statuses = new ArrayList<>(_requestStatusHelper.getCollection(c));
         }
         return statuses;
     }
@@ -156,7 +156,7 @@ public class SpecimenRequestManager
 
     public Set<Integer> getRequestStatusIdsInUse(Container c)
     {
-        List<SpecimenRequest> requests = _requestHelper.getList(c);
+        Collection<SpecimenRequest> requests = _requestHelper.getCollection(c);
         Set<Integer> uniqueStatuses = new HashSet<>();
         for (SpecimenRequest request : requests)
             uniqueStatuses.add(request.getStatusId());
@@ -1217,7 +1217,7 @@ public class SpecimenRequestManager
 
     private void deleteRequestEvents(SpecimenRequest request)
     {
-        _requestEventHelper.getList(request.getContainer()).stream()
+        _requestEventHelper.getCollection(request.getContainer()).stream()
             .filter(event -> event.getRequestId() == request.getRowId())
             .forEach(event -> {
                 AttachmentService.get().deleteAttachments(event);

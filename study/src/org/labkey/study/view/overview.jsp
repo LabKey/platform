@@ -58,11 +58,12 @@
 <%@ page import="org.labkey.study.visitmanager.VisitManager.VisitStatistic" %>
 <%@ page import="org.labkey.study.visitmanager.VisitManager.VisitStatistics" %>
 <%@ page import="java.text.NumberFormat" %>
-<%@ page import="java.util.List" %>
+<%@ page import="java.util.Collection" %>
 <%@ page import="static org.labkey.study.model.QCStateSet.getQCUrlFilterKey" %>
 <%@ page import="static org.labkey.study.model.QCStateSet.getQCStateFilteredURL" %>
 <%@ page import="static org.labkey.study.model.QCStateSet.PUBLIC_STATES_LABEL" %>
 <%@ page import="static org.labkey.study.model.QCStateSet.PRIVATE_STATES_LABEL" %>
+<%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -84,7 +85,7 @@
     boolean showCohorts = CohortManager.getInstance().hasCohortMenu(container, user);
     Cohort selectedCohort = null;
     CohortFilter cohortFilter = null;
-    List<CohortImpl> cohorts = null;
+    Collection<CohortImpl> cohorts = null;
 
     if (showCohorts)
     {

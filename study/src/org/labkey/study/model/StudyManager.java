@@ -296,7 +296,7 @@ public class StudyManager
                 Container sharedContainer = ContainerManager.getSharedContainer();
                 assert key != sharedContainer;
 
-                List<DatasetDefinition> defs = _datasetHelper.getList(key);
+                Collection<DatasetDefinition> defs = _datasetHelper.getCollection(key);
                 if (defs == null)
                     return Collections.emptySet();
 
@@ -371,9 +371,9 @@ public class StudyManager
             return helper.update(user, obj, pk);
         }
 
-        public List<DatasetDefinition> getList(Container c)
+        public Collection<DatasetDefinition> getCollection(Container c)
         {
-            return helper.getList(c);
+            return helper.getCollection(c);
         }
 
         public List<DatasetDefinition> getList(Container c, SimpleFilter filter)
@@ -1623,9 +1623,9 @@ public class StudyManager
         _participantCache.remove(participant.getContainer());
     }
 
-    public List<AssaySpecimenConfigImpl> getAssaySpecimenConfigs(Container container)
+    public Collection<AssaySpecimenConfigImpl> getAssaySpecimenConfigs(Container container)
     {
-        return _assaySpecimenHelper.getList(container);
+        return _assaySpecimenHelper.getCollection(container);
     }
 
     public List<VisitImpl> getVisitsForAssaySchedule(Container container)
@@ -1978,10 +1978,10 @@ public class StudyManager
             throw new UnauthorizedException("User does not have permission to view cohort information");
     }
 
-    public List<CohortImpl> getCohorts(Container container, User user)
+    public Collection<CohortImpl> getCohorts(Container container, User user)
     {
         assertCohortsViewable(container, user);
-        return _cohortHelper.getList(container);
+        return _cohortHelper.getCollection(container);
     }
 
     public CohortImpl getCurrentCohortForParticipant(Container container, User user, String participantId)
@@ -2003,7 +2003,7 @@ public class StudyManager
     {
         assertCohortsViewable(container, user);
 
-        List<CohortImpl> cohorts = _cohortHelper.getList(container).stream()
+        List<CohortImpl> cohorts = _cohortHelper.getCollection(container).stream()
             .filter(cohort -> cohort.getLabel().equals(label))
             .toList();
 
@@ -5013,7 +5013,7 @@ public class StudyManager
 
         private void verifyAssayConfigurations()
         {
-            List<AssaySpecimenConfigImpl> assays = _manager.getAssaySpecimenConfigs(_container);
+            Collection<AssaySpecimenConfigImpl> assays = _manager.getAssaySpecimenConfigs(_container);
             assertEquals("Unexpected assay configuration count", 2, assays.size());
 
             for (AssaySpecimenConfigImpl assay : assays)

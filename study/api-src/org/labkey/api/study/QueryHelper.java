@@ -16,6 +16,7 @@
 
 package org.labkey.api.study;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.collections.LabKeyCollectors;
@@ -59,11 +60,6 @@ public class QueryHelper<K extends StudyCachable<K>>
         _objectClass = objectClass;
         _defaultSortString = defaultSortString;
         _rowIdFieldKey = FieldKey.fromString(null != rowIdColumnName ? rowIdColumnName : "RowId");
-    }
-
-    public List<K> getList(Container c)
-    {
-        return getList(c, null, _defaultSortString);
     }
 
     // Dataset helper uses this extensively to:
@@ -113,6 +109,14 @@ public class QueryHelper<K extends StudyCachable<K>>
         return (List<K>)StudyCache.get(getTableInfo(), c, cacheId, loader);
     }
 
+    /**
+     * Return a Collection of all K objects in the provided Container, in default order
+     */
+    public @NotNull Collection<K> getCollection(Container c)
+    {
+        return getMap(c).getCollection();
+    }
+
     public K get(final Container c, final int rowId)
     {
         CacheLoader<String, Object> loader = (key, argument) -> {
@@ -125,14 +129,17 @@ public class QueryHelper<K extends StudyCachable<K>>
         };
         Object obj = StudyCache.get(getTableInfo(), c, rowId, loader);
 
-        K obj2 = (K)StudyCache.get(getTableInfo(), c, (key, argument) -> {
-            final SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-            return new StudyCacheMap(new TableSelector(getTableInfo(), filter, new Sort(_defaultSortString)));
-        }).get(rowId);
+        K obj2 = getMap(c).get(rowId);
 
         assert Objects.equals(obj, obj2);
 
         return (K)obj;
+    }
+
+    protected StudyCacheMap getMap(Container c)
+    {
+        return StudyCache.get(getTableInfo(), c, (key, argument) ->
+            new StudyCacheMap(new TableSelector(getTableInfo(), SimpleFilter.createContainerFilter(c), new Sort(_defaultSortString))));
     }
 
     public K create(User user, K obj)
@@ -194,12 +201,12 @@ public class QueryHelper<K extends StudyCachable<K>>
             _map = selector.uncachedStream(_objectClass).peek(StudyCachable::lock).collect(LabKeyCollectors.toLinkedMap(StudyCachable::getPrimaryKey, v -> v));
         }
 
-        public K get(Object key)
+        public @Nullable K get(Object key)
         {
             return _map.get(key);
         }
 
-        public Collection<K> getCollection()
+        public @NotNull Collection<K> getCollection()
         {
             return _map.values();
         }

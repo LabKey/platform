@@ -31,6 +31,7 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.TreatmentImpl;
 import org.labkey.study.model.VisitImpl;
 
+import java.util.Collection;
 import java.util.List;
 
 public abstract class BaseStudyPage extends JspBase
@@ -59,12 +60,12 @@ public abstract class BaseStudyPage extends JspBase
         return getStudy().getLocations();
     }
 
-    protected List<CohortImpl> getCohorts(User user)
+    protected Collection<CohortImpl> getCohorts(User user)
     {
         return getStudy().getCohorts(user);
     }
 
-    protected List<AssaySpecimenConfigImpl> getAssaySpecimenConfigs()
+    protected Collection<AssaySpecimenConfigImpl> getAssaySpecimenConfigs()
     {
         return getStudy().getAssaySpecimenConfigs();
     }

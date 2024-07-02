@@ -26,6 +26,7 @@ import org.labkey.api.util.HtmlString;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -55,11 +56,11 @@ public interface Study extends StudyEntity
 
     List<? extends Location> getLocations();
 
-    List<? extends Cohort> getCohorts(User user);
+    Collection<? extends Cohort> getCohorts(User user);
 
     boolean hasGWTStudyDesign(Container c, User user);
 
-    List<? extends AssaySpecimenConfig> getAssaySpecimenConfigs();
+    Collection<? extends AssaySpecimenConfig> getAssaySpecimenConfigs();
 
     List<? extends Visit> getVisitsForAssaySchedule();
 

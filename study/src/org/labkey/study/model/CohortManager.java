@@ -211,7 +211,7 @@ public class CohortManager
     {
         if (StudyManager.getInstance().showCohorts(container, user))
         {
-            List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(container, user);
+            Collection<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(container, user);
             return !cohorts.isEmpty();
         }
         return false;
@@ -220,7 +220,7 @@ public class CohortManager
 
     public void addCohortNavTree(Container container, User user, CohortFilter currentCohortFilter, @Nullable String dataRegionName, NavTree tree)
     {
-        List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(container, user);
+        Collection<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(container, user);
         if (!cohorts.isEmpty())
         {
             String caption = "Cohorts";
@@ -425,7 +425,7 @@ public class CohortManager
         Integer prevCohortId = null;
 
         Map<String, Integer> cohortNameToId = new HashMap<>();
-        List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(study.getContainer(), user);
+        Collection<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(study.getContainer(), user);
         for (CohortImpl cohort : cohorts)
             cohortNameToId.put(cohort.getLabel(), cohort.getRowId());
 
