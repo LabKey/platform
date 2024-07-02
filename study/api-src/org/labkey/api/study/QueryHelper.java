@@ -41,7 +41,7 @@ public class QueryHelper<K extends StudyCachable<K>>
 {
     private final Class<K> _objectClass;
     private final TableInfoGetter _tableInfoGetter;
-    private final String _defaultSortString;
+    protected final String _defaultSortString;
     private final FieldKey _rowIdFieldKey;
 
     public QueryHelper(TableInfoGetter tableInfoGetter, Class<K> objectClass)

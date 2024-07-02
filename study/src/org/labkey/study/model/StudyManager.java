@@ -152,6 +152,7 @@ import org.labkey.api.study.DataspaceContainerFilter;
 import org.labkey.api.study.QueryHelper;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyCache;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
@@ -234,7 +235,7 @@ public class StudyManager
     private static final StudyManager _instance = new StudyManager();
     private static final StudySchema SCHEMA = StudySchema.getInstance();
 
-    private final QueryHelper<StudyImpl> _studyHelper;
+    private final StudyHelper _studyHelper;
     private final VisitHelper _visitHelper;
     private final QueryHelper<AssaySpecimenConfigImpl> _assaySpecimenHelper;
     private final DatasetHelper _datasetHelper;
@@ -254,25 +255,7 @@ public class StudyManager
 
     private StudyManager()
     {
-        // Study helper is no longer used to retrieve studies; we're already caching all StudyImpls and retrieving them
-        // via getAllStudiesMap() below. We're keeping this around to provide insert(), update(), and delete() methods
-        // that clear the cached studies.
-        _studyHelper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoStudy(), StudyImpl.class)
-        {
-            @Override
-            public StudyImpl get(Container c, int rowId)
-            {
-                throw new IllegalStateException("Shouldn't be calling Study Helper get() method");
-            }
-
-            @Override
-            public void clearCache(Container c)
-            {
-                super.clearCache(c);
-                clearCachedStudies();
-            }
-        };
-
+        _studyHelper = new StudyHelper();
         _visitHelper = new VisitHelper();
         _assaySpecimenHelper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoAssaySpecimen(), AssaySpecimenConfigImpl.class);
         _cohortHelper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoCohort(), CohortImpl.class, "Label");
@@ -311,6 +294,49 @@ public class StudyManager
         );
 
         ViewCategoryManager.addCategoryListener(new CategoryListener(this));
+    }
+
+    // Study helper is different from other query helpers. There's (at most) one study per container, so we cache a
+    // single map holding all StudyImpls at the root. Even though we're caching a single object in this cache, this
+    // provides a fast "has study" check (see Issue 19632) and leverages the DatabaseCache & cache-clearing semantics
+    // of QueryHelper.
+    private static class StudyHelper extends QueryHelper<StudyImpl>
+    {
+        private static final Container ROOT = ContainerManager.getRoot();
+
+        private StudyHelper()
+        {
+            super(() -> StudySchema.getInstance().getTableInfoStudy(), StudyImpl.class, "Label");
+        }
+
+        private @NotNull Collection<StudyImpl> getAllStudies()
+        {
+            return getMap().getCollection();
+        }
+
+        private @Nullable StudyImpl getStudy(Container c)
+        {
+            return getMap().get(c.getId());
+        }
+
+        @Override
+        protected StudyCacheMap getMap(Container c)
+        {
+            assert c.equals(ROOT);
+            return StudyCache.get(getTableInfo(), c, (key, argument) ->
+                createMap(new TableSelector(getTableInfo(), null, new Sort(_defaultSortString)).getCollection(StudyImpl.class)));
+        }
+
+        private StudyCacheMap getMap()
+        {
+            return getMap(ROOT);
+        }
+
+        @Override
+        public void clearCache(Container c)
+        {
+            super.clearCache(ROOT);
+        }
     }
 
     private static class VisitHelper extends QueryHelper<VisitImpl>
@@ -448,7 +474,7 @@ public class StudyManager
 
         while (true)
         {
-            study = getAllStudiesMap().get(c.getId());
+            study = _studyHelper.getStudy(c);
 
             // This should be a very fast "has study" check, replacement fix for Issue 19632
             if (null == study)
@@ -466,42 +492,18 @@ public class StudyManager
 
             _log.debug("Clearing cached study for {} as its container reference didn't match the current object from ContainerManager {}", c, freshestContainer);
 
-            _studyHelper.clearCache(c); // This clears the cached "all studies" map as well
+            _studyHelper.clearCache(c); // Clear the cached "all studies" map
             retry = false;
         }
 
         return study;
     }
 
-    private static final String CACHE_KEY = StudyManager.class.getName() + "||cachedStudies";
-
     /** @return all studies in the whole server, unfiltered by permissions and sorted by Label */
     @NotNull
     public Collection<? extends StudyImpl> getAllStudies()
     {
-        return getAllStudiesMap().values();
-    }
-
-    private Map<String, ? extends StudyImpl> getAllStudiesMap()
-    {
-        Map<String, StudyImpl> ret = (Map<String, StudyImpl>)CacheManager.getSharedCache().get(CACHE_KEY);
-        if (ret == null)
-        {
-            ret = Collections.unmodifiableMap(
-                new TableSelector(StudySchema.getInstance().getTableInfoStudy(), null, new Sort("Label")).stream(StudyImpl.class)
-                    .collect(LabKeyCollectors.toLinkedMap(study -> study.getContainer().getId(), study -> study))
-            );
-            CacheManager.getSharedCache().put(CACHE_KEY, ret);
-            _log.info("Reloaded all studies map"); // TODO: Temp logging to verify race condition
-        }
-
-        return ret;
-    }
-
-    private void clearCachedStudies()
-    {
-        CacheManager.getSharedCache().remove(CACHE_KEY);
-        _log.info("Cleared all studies map"); // TODO: Temp logging to verify race condition
+        return _studyHelper.getAllStudies();
     }
 
     /** @return all studies under the given root in the container hierarchy (inclusive), unfiltered by permissions */
@@ -2661,7 +2663,6 @@ public class StudyManager
     public void clearCaches(Container c, boolean unmaterializeDatasets)
     {
         Study study = getStudy(c);
-        clearCachedStudies();
         _studyHelper.clearCache(c);
         _visitHelper.clearCache(c);
         LocationCache.clear(c);
@@ -2819,7 +2820,6 @@ public class StudyManager
             transaction.commit();
         }
 
-        clearCachedStudies();
         ContainerManager.notifyContainerChange(c.getId(), ContainerManager.Property.StudyChange);
 
         //
