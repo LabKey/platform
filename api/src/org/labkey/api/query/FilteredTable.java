@@ -90,7 +90,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
     // for debugging/validation only
     protected Set<Class<? extends Permission>> checkedPermissions = new HashSet<>();
 
-    private static boolean assertCheckedPermissions = false; // for fail fast (developers only)
+    private static final boolean assertCheckedPermissions = false; // for fail fast (developers only)
 
     @Override
     public void checkReadBeforeExecute()
@@ -359,10 +359,10 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
 
     /**
      * Create a wrapped copy of the underlying column.
-     *
+     * <br>
      * wrapColumnFromJoinedTable is just like {@link #wrapColumn(ColumnInfo)} except the underlying
      * column may come from a table that is joined to the FilteredTable's parent table.
-     *
+     * <br>
      * For example, the {@link org.labkey.api.exp.query.ExpDataClassDataTable} query table joins
      * together the exp.data table and the provisioned expdataclass.* table. To create wrapped
      * columns from the provisioned SchemaTableInfo, we must use {@link #wrapColumnFromJoinedTable(String, ColumnInfo)}
@@ -642,6 +642,14 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
                 _rulesOmittedColumns.add(column.getFieldKey());
             }
         }
+    }
+
+    @Override
+    public boolean canUserAccessPhi()
+    {
+        if (supportTableRules())
+            return !hasRulesTransformedColumns();
+        return super.canUserAccessPhi();
     }
 
     public @NotNull Set<FieldKey> getPHIDataLoggingColumns()
