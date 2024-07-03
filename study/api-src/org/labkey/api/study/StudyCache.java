@@ -51,9 +51,9 @@ public class StudyCache
         return getCache(tinfo).get(getCacheName(c, cacheKey), null, loader);
     }
 
-    public static <T extends StudyCachable<T>> QueryHelper<T>.StudyCacheMap get(TableInfo tinfo, Container c, CacheLoader<String, Object> loader)
+    public static <T extends StudyCachable<T>> QueryHelper<T>.StudyCacheCollections get(TableInfo tinfo, Container c, CacheLoader<String, Object> loader)
     {
-        return (QueryHelper<T>.StudyCacheMap)getCache(tinfo).get(c.getId(), null, loader);
+        return (QueryHelper<T>.StudyCacheCollections)getCache(tinfo).get(c.getId(), null, loader);
     }
 
     public static void clearCache(TableInfo tinfo, Container c)

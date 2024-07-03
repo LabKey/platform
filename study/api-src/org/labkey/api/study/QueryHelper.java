@@ -35,14 +35,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 public class QueryHelper<K extends StudyCachable<K>>
 {
     private final Class<K> _objectClass;
     private final TableInfoGetter _tableInfoGetter;
     protected final String _defaultSortString;
-    private final FieldKey _rowIdFieldKey;
 
     public QueryHelper(TableInfoGetter tableInfoGetter, Class<K> objectClass)
     {
@@ -51,15 +49,9 @@ public class QueryHelper<K extends StudyCachable<K>>
 
     public QueryHelper(TableInfoGetter tableInfoGetter, Class<K> objectClass, @Nullable String defaultSortString)
     {
-        this(tableInfoGetter, objectClass, defaultSortString, null);
-    }
-
-    public QueryHelper(TableInfoGetter tableInfoGetter, Class<K> objectClass, @Nullable String defaultSortString, @Nullable String rowIdColumnName)
-    {
         _tableInfoGetter = tableInfoGetter;
         _objectClass = objectClass;
         _defaultSortString = defaultSortString;
-        _rowIdFieldKey = FieldKey.fromString(null != rowIdColumnName ? rowIdColumnName : "RowId");
     }
 
     // Dataset helper uses this to:
@@ -102,37 +94,23 @@ public class QueryHelper<K extends StudyCachable<K>>
      */
     public @NotNull Collection<K> getCollection(Container c)
     {
-        return getMap(c).getCollection();
+        return getCollections(c).getCollection();
     }
 
     public K get(final Container c, final int rowId)
     {
-        CacheLoader<String, Object> loader = (key, argument) -> {
-            SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-            filter.addCondition(_rowIdFieldKey, rowId);
-            StudyCachable<K> obj = new TableSelector(getTableInfo(), filter, null).getObject(_objectClass);
-            if (obj != null)
-                obj.lock();
-            return obj;
-        };
-        Object obj = StudyCache.get(getTableInfo(), c, rowId, loader);
-
-        K obj2 = getMap(c).get(rowId);
-
-        assert Objects.equals(obj, obj2) : "Old: " + obj + ", New: " + obj2;
-
-        return (K)obj;
+        return getCollections(c).get(rowId);
     }
 
-    protected StudyCacheMap getMap(Container c)
+    protected StudyCacheCollections getCollections(Container c)
     {
         return StudyCache.get(getTableInfo(), c, (key, argument) ->
-            createMap(new TableSelector(getTableInfo(), SimpleFilter.createContainerFilter(c), new Sort(_defaultSortString)).getCollection(_objectClass)));
+            createCollections(new TableSelector(getTableInfo(), SimpleFilter.createContainerFilter(c), new Sort(_defaultSortString)).getCollection(_objectClass)));
     }
 
-    protected StudyCacheMap createMap(Collection<K> collection)
+    protected StudyCacheCollections createCollections(Collection<K> collection)
     {
-        return new StudyCacheMap(collection);
+        return new StudyCacheCollections(collection);
     }
 
     public K create(User user, K obj)
@@ -185,12 +163,13 @@ public class QueryHelper<K extends StudyCachable<K>>
         }
     }
 
-    public class StudyCacheMap
+    // By default, holds a single map of PK -> StudyCachable<K>, but helpers can override to add other collections
+    public class StudyCacheCollections
     {
         private final Map<Object, K> _map;
 
         // Receives a collection of locked K objects
-        public StudyCacheMap(Collection<K> collection)
+        public StudyCacheCollections(Collection<K> collection)
         {
             _map = Collections.unmodifiableMap(collection.stream()
                 .collect(LabKeyCollectors.toLinkedMap(StudyCachable::getPrimaryKey, v -> v)));

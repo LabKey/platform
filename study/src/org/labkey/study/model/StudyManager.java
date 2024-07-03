@@ -297,7 +297,7 @@ public class StudyManager
     }
 
     // Study helper is different from other query helpers. There's (at most) one study per container, so we cache a
-    // single map holding all StudyImpls at the root. Even though we're caching a single object in this cache, this
+    // single map holding all StudyImpls at the root. Even though we're caching a single object in this cache, it
     // provides a fast "has study" check (see Issue 19632) and leverages the DatabaseCache & cache-clearing semantics
     // of QueryHelper.
     private static class StudyHelper extends QueryHelper<StudyImpl>
@@ -311,25 +311,25 @@ public class StudyManager
 
         private @NotNull Collection<StudyImpl> getAllStudies()
         {
-            return getMap().getCollection();
+            return getCollections().getCollection();
         }
 
         private @Nullable StudyImpl getStudy(Container c)
         {
-            return getMap().get(c.getId());
+            return getCollections().get(c.getId());
         }
 
         @Override
-        protected StudyCacheMap getMap(Container c)
+        protected StudyCacheCollections getCollections(Container c)
         {
             assert c.equals(ROOT);
             return StudyCache.get(getTableInfo(), c, (key, argument) ->
-                createMap(new TableSelector(getTableInfo(), null, new Sort(_defaultSortString)).getCollection(StudyImpl.class)));
+                createCollections(new TableSelector(getTableInfo(), null, new Sort(_defaultSortString)).getCollection(StudyImpl.class)));
         }
 
-        private StudyCacheMap getMap()
+        private StudyCacheCollections getCollections()
         {
-            return getMap(ROOT);
+            return getCollections(ROOT);
         }
 
         @Override
@@ -350,27 +350,27 @@ public class StudyManager
 
         private Collection<VisitImpl> getCollection(Container c, Order order)
         {
-            return getMap(c).getCollection(order);
+            return getCollections(c).getCollection(order);
         }
 
         @Override
-        protected VisitCacheMap getMap(Container c)
+        protected VisitCollections getCollections(Container c)
         {
-            return (VisitCacheMap)super.getMap(c);
+            return (VisitCollections)super.getCollections(c);
         }
 
         @Override
-        protected VisitCacheMap createMap(Collection<VisitImpl> collection)
+        protected VisitCollections createCollections(Collection<VisitImpl> collection)
         {
-            return new VisitCacheMap(collection);
+            return new VisitCollections(collection);
         }
 
-        private class VisitCacheMap extends StudyCacheMap
+        private class VisitCollections extends StudyCacheCollections
         {
             private final Collection<VisitImpl> _sequenceNumVisits;
             private final Collection<VisitImpl> _chronologicalVisits;
 
-            private VisitCacheMap(Collection<VisitImpl> collection)
+            private VisitCollections(Collection<VisitImpl> collection)
             {
                 super(collection);
 
@@ -392,72 +392,32 @@ public class StudyManager
         }
     }
 
-    public void updateStudySnapshot(StudySnapshot snapshot, User user)
+    private class DatasetHelper extends QueryHelper<DatasetDefinition>
     {
-        // For now, "refresh" is the only field that can be updated (plus the Modified fields, which get handled automatically)
-        Map<String, Object> map = new HashMap<>();
-        map.put("refresh", snapshot.isRefresh());
-
-        Table.update(user, StudySchema.getInstance().getTableInfoStudySnapshot(), map, snapshot.getRowId());
-    }
-
-    private class DatasetHelper
-    {
-        private final QueryHelper<DatasetDefinition> helper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoDataset(), DatasetDefinition.class, null, "DatasetId");
-
         private DatasetHelper()
         {
+            super(() -> StudySchema.getInstance().getTableInfoDataset(), DatasetDefinition.class);
         }
 
-        public TableInfo getTableInfo()
-        {
-            return StudySchema.getInstance().getTableInfoDataset();
-        }
-
-        private void clearProperties(DatasetDefinition def)
-        {
-            StudyManager.this._sharedProperties.remove(def.getContainer());
-        }
-
+        @Override
         public void clearCache(Container c)
         {
-            helper.clearCache(c);
+            super.clearCache(c);
+            _sharedProperties.remove(c);
         }
 
-        public void clearCache(DatasetDefinition def)
+        @Override
+        protected DatasetCollections createCollections(Collection<DatasetDefinition> collection)
         {
-            helper.clearCache(def.getContainer());
-            clearProperties(def);
+            return new DatasetCollections(collection);
         }
 
-        public void clearCache()
+        private class DatasetCollections extends StudyCacheCollections
         {
-            helper.clearCache();
-        }
-
-        public DatasetDefinition create(User user, DatasetDefinition obj)
-        {
-            return helper.create(user, obj);
-        }
-
-        public DatasetDefinition update(User user, DatasetDefinition obj, Object... pk)
-        {
-            return helper.update(user, obj, pk);
-        }
-
-        public Collection<DatasetDefinition> getCollection(Container c)
-        {
-            return helper.getCollection(c);
-        }
-
-        public List<DatasetDefinition> getList(Container c, SimpleFilter filter)
-        {
-            return helper.getList(c, filter);
-        }
-
-        public DatasetDefinition get(Container c, int rowId)
-        {
-            return helper.get(c, rowId);
+            public DatasetCollections(Collection<DatasetDefinition> collection)
+            {
+                super(collection);
+            }
         }
     }
 
@@ -610,6 +570,15 @@ public class StudyManager
         }
         QueryService.get().updateLastModified();
         return errors;
+    }
+
+    public void updateStudySnapshot(StudySnapshot snapshot, User user)
+    {
+        // For now, "refresh" is the only field that can be updated (plus the Modified fields, which get handled automatically)
+        Map<String, Object> map = new HashMap<>();
+        map.put("refresh", snapshot.isRefresh());
+
+        Table.update(user, StudySchema.getInstance().getTableInfoStudySnapshot(), map, snapshot.getRowId());
     }
 
     public void createDatasetDefinition(User user, Container container, int datasetId)
@@ -1214,7 +1183,7 @@ public class StudyManager
         TableInfo tinfo = StudySchema.getInstance().getTableInfoVisitAliases();
         DbScope scope = tinfo.getSchema().getScope();
 
-        // We want delete and bulk insert in the same transaction
+        // We want to delete and bulk insert in the same transaction
         try (Transaction transaction = scope.ensureTransaction())
         {
             clearVisitAliases(study);
@@ -2284,7 +2253,7 @@ public class StudyManager
         {
             ds.setEntityId(GUID.makeGUID());
             new SqlExecutor(StudySchema.getInstance().getSchema()).execute("UPDATE study.dataset SET entityId=? WHERE container=? and datasetid=? and entityid IS NULL", ds.getEntityId(), ds.getContainer().getId(), ds.getDatasetId());
-            _datasetHelper.clearCache(ds);
+            _datasetHelper.clearCache(s.getContainer());
             ds = _datasetHelper.get(s.getContainer(), id);
             // calling updateDatasetDefinition() during load (getDatasetDefinition()) may cause recursion problems
             //updateDatasetDefinition(null, ds);
@@ -2444,12 +2413,12 @@ public class StudyManager
 
         _log.debug("Uncaching dataset: " + def.getName(), new Throwable());
 
-        _datasetHelper.clearCache(def);
+        _datasetHelper.clearCache(def.getContainer());
         String uri = def.getTypeURI();
         if (null != uri)
             domainCache.remove(uri);
 
-        // Also clear caches of subjects and visits- changes to this dataset may have affected this data:
+        // Also clear caches of subjects and visits; changes to this dataset may have affected this data:
         clearParticipantVisitCaches(def.getStudy());
     }
 
@@ -2555,7 +2524,7 @@ public class StudyManager
 
     /**
      * delete a dataset definition along with associated type, data, visitmap entries
-     * @param performStudyResync whether or not to kick off our normal bookkeeping. If the whole study is being deleted,
+     * @param performStudyResync whether to kick off our normal bookkeeping. If the whole study is being deleted,
      * we don't need to bother doing this, for example.
      */
     public void deleteDataset(StudyImpl study, User user, DatasetDefinition ds, boolean performStudyResync)
@@ -2619,7 +2588,7 @@ public class StudyManager
         {
             // This dataset may have contained the only references to some subjects or visits; as a result, we need
             // to re-sync the participant and participant/visit tables.  (Issue 12447)
-            // Don't provide the deleted dataset in the list of modified datasets- deletion doesn't count as a modification
+            // Don't provide the deleted dataset in the list of modified datasets; deletion doesn't count as a modification
             // within VisitManager, and passing in the empty set ensures that all subject/visit info will be recalculated.
             getVisitManager(study).updateParticipantVisits(user, Collections.emptySet());
         }
@@ -3157,7 +3126,7 @@ public class StudyManager
             {
                 try
                 {
-                    if (0 == prefix.length() || alternateId.startsWith(prefix))
+                    if (prefix.isEmpty() || alternateId.startsWith(prefix))
                     {
                         String alternateIdNoPrefix = alternateId.substring(prefix.length());
                         usedNumbers.add(alternateIdNoPrefix);
@@ -3767,7 +3736,7 @@ public class StudyManager
                     OntologyManager.updateDomainPropertyFromDescriptor(p, ipd.pd);
                 }
 
-                // Flag this as a property descriptor swap. EnsurePropertyDescriptor will find correct property Id
+                // Flag this as a property descriptor swap. EnsurePropertyDescriptor will find correct property ID
                 // by propertyURI. Ensure correct container/projects set.
                 if (propertyUriChange && (toSystemProp || fromSystemProp))
                 {
@@ -3985,7 +3954,7 @@ public class StudyManager
                     .build();
             OntologyManager.ensureDomainDescriptor(dd);
 
-            // since the descriptor has changed, ensure the domain is up to date
+            // since the descriptor has changed, ensure the domain is up-to-date
             def.refreshDomain();
         }
     }
