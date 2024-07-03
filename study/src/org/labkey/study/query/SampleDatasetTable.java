@@ -134,8 +134,6 @@ public class SampleDatasetTable extends LinkedDatasetTable
         return _sampleTable;
     }
 
-    // NOTE we are going to wrap a
-
     private String getSampleTableAlias(String mainAlias)
     {
         return mainAlias + "_ST";
