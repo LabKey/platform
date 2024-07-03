@@ -389,7 +389,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     public List<FieldKey> getMetadataColumns(@NotNull PlateSet plateSet, Container c, User user, ContainerFilter cf)
     {
         Set<FieldKey> includedMetadataCols = new HashSet<>();
-        for (Plate plate : plateSet.getPlates(user))
+        for (Plate plate : plateSet.getPlates())
         {
             QueryView plateQueryView = getPlateQueryView(c, user, cf, plate, false);
             Map<String, FieldKey> displayColumns = getPlateDisplayColumns(plateQueryView)
@@ -699,7 +699,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         // leverage instead.
         if (plateSet != null && AssayPlateMetadataService.isBiologicsFolder(c))
         {
-            for (Plate plate : plateSet.getPlates(user))
+            for (Plate plate : plateSet.getPlates())
             {
                 if (plate.getName() != null && plate.getName().equalsIgnoreCase(name))
                     return true;
@@ -719,12 +719,18 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Name"), name);
         filter.addCondition(FieldKey.fromParts("Template"), true);
 
-        ContainerFilter cf = QueryService.get().getContainerFilterForLookups(container, User.getAdminServiceUser());
-        if (cf == null)
-            cf = ContainerFilter.current(container);
+        ContainerFilter cf = getPlateLookupContainerFilter(container, User.getAdminServiceUser());
         filter.addCondition(cf.createFilterClause(AssayDbSchema.getInstance().getSchema(), FieldKey.fromParts("Container")));
 
         return new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate(), Set.of("RowId"), filter, null).exists();
+    }
+
+    private @NotNull ContainerFilter getPlateLookupContainerFilter(Container container, User user)
+    {
+        ContainerFilter cf = QueryService.get().getContainerFilterForLookups(container, user);
+        if (cf != null)
+            return cf;
+        return ContainerFilter.current(container);
     }
 
     @Override
@@ -1714,10 +1720,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         if (!container.hasPermission(user, InsertPermission.class))
             throw new UnauthorizedException("Failed to copy plate. Insufficient permissions.");
 
-        ContainerFilter cf = QueryService.get().getContainerFilterForLookups(container, user);
-        if (cf == null)
-            cf = ContainerFilter.current(container);
-
+        ContainerFilter cf = getPlateLookupContainerFilter(container, user);
         PlateImpl sourcePlate = (PlateImpl) getPlate(cf, sourcePlateRowId);
         if (sourcePlate == null)
             throw new ValidationException(String.format("Failed to copy plate. Unable to resolve source plate with RowId (%d).", sourcePlateRowId));
@@ -2422,7 +2425,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         {
             if (plateSet.isTemplate())
                 throw new ValidationException("Failed to create plate set. Template plate sets do not support specifying a parent plate set.");
-            parentPlateSet = (PlateSetImpl) getPlateSet(container, parentPlateSetId);
+            parentPlateSet = (PlateSetImpl) getPlateSet(getPlateLookupContainerFilter(container, user), parentPlateSetId);
             if (parentPlateSet == null)
                 throw new ValidationException(String.format("Failed to create plate set. Parent plate set with rowId (%d) is not available.", parentPlateSetId));
             if (parentPlateSet.isTemplate())
@@ -2473,7 +2476,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         {
             PlateSet newPlateSet = createPlateSet(container, user, plateSet, null, parentId);
 
-            for (Plate plate : parentPlateSet.getPlates(user))
+            for (Plate plate : parentPlateSet.getPlates())
                 copyPlate(container, user, plate.getRowId(), false, newPlateSet.getRowId(), null, null, true);
 
             tx.commit();
@@ -3554,7 +3557,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         {
             PlateSet newPlateSet = createPlateSet(container, user, destinationPlateSet, plateData, options.getTargetPlateSet().getParentPlateSetId());
             plateSetRowId = newPlateSet.getRowId();
-            newPlates = newPlateSet.getPlates(user);
+            newPlates = newPlateSet.getPlates();
         }
         else
         {

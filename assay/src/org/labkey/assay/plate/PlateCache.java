@@ -155,9 +155,9 @@ public class PlateCache
         return getPlates(c, null);
     }
 
-    public static @NotNull List<Plate> getPlatesForPlateSet(Container c, Integer plateSetId)
+    public static @NotNull List<Plate> getPlatesForPlateSet(Container c, Integer plateSetRowId)
     {
-        return getPlates(c, new SimpleFilter(FieldKey.fromParts(PlateTable.Column.PlateSet.name()), plateSetId));
+        return getPlates(c, new SimpleFilter(FieldKey.fromParts(PlateTable.Column.PlateSet.name()), plateSetRowId));
     }
 
     public static @NotNull List<Plate> getPlateTemplates(Container c)

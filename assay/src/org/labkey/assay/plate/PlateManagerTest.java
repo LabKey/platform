@@ -328,7 +328,7 @@ public final class PlateManagerTest
 
         // Assert
         assertTrue("Expected plateSet to have been persisted and provided with a rowId", plateSet.getRowId() > 0);
-        List<Plate> plates = plateSet.getPlates(user);
+        List<Plate> plates = plateSet.getPlates();
         assertEquals("Expected plateSet to have 3 plates", 3, plates.size());
 
         // verify access via plate rowId
