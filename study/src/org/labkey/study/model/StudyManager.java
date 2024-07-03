@@ -152,6 +152,7 @@ import org.labkey.api.study.DataspaceContainerFilter;
 import org.labkey.api.study.QueryHelper;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyCachable;
 import org.labkey.api.study.StudyCache;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
@@ -218,6 +219,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.WeakHashMap;
+import java.util.stream.Collectors;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 import static org.labkey.study.query.StudyQuerySchema.PERSONNEL_TABLE_NAME;
@@ -275,8 +277,6 @@ public class StudyManager
                 assert key != sharedContainer;
 
                 Collection<DatasetDefinition> defs = _datasetHelper.getCollection(key);
-                if (defs == null)
-                    return Collections.emptySet();
 
                 Set<PropertyDescriptor> set = new LinkedHashSet<>();
                 for (DatasetDefinition def : defs)
@@ -406,17 +406,134 @@ public class StudyManager
             _sharedProperties.remove(c);
         }
 
+        private @Nullable DatasetDefinition getByName(Study study, String name)
+        {
+            return getCollections(study)._nameMap.get(name);
+        }
+
+        private @Nullable DatasetDefinition getByLabel(Study study, String label)
+        {
+            return getCollections(study)._labelMap.get(label);
+        }
+
+        private @Nullable DatasetDefinition getByEntityId(Study study, String entityId)
+        {
+            return getCollections(study)._entityIdMap.get(entityId);
+        }
+
+        private @NotNull List<DatasetDefinition> getDatasetsForCategory(Study study, @NotNull ViewCategory category)
+        {
+            List<DatasetDefinition> ret = getCollections(study)._categoryMap.get(category.getRowId());
+            return ret != null ? ret : Collections.emptyList();
+        }
+
+        private @NotNull List<DatasetDefinition> getDatasetsForCohort(Study study, @NotNull Cohort cohort)
+        {
+            return getCollections(study).getDatasetsForCohort(cohort);
+        }
+
+        // Dataset helper uses this to filter by Cohort + Type
+        public Collection<DatasetDefinition> getList(Container c, SimpleFilter filterArg)
+        {
+            String cacheId = getCacheId(filterArg);
+
+            CacheLoader<String, Object> loader = (key, argument) -> {
+                SimpleFilter filter = null;
+
+                if (null != filterArg)
+                {
+                    filter = filterArg;
+                }
+                else if (null != getTableInfo().getColumn("container"))
+                {
+                    filter = SimpleFilter.createContainerFilter(c);
+                }
+
+                if (null != filter && !filter.hasContainerEqualClause())
+                    filter.addCondition(FieldKey.fromParts("Container"), c);
+
+                List<DatasetDefinition> objs = new TableSelector(getTableInfo(), filter, null).getArrayList(DatasetDefinition.class);
+                // Make both the objects and the list itself immutable so that we don't end up with a corrupted
+                // version in the cache
+                for (StudyCachable<DatasetDefinition> obj : objs)
+                    obj.lock();
+                return Collections.unmodifiableList(objs);
+            };
+            return (List<DatasetDefinition>)StudyCache.get(getTableInfo(), c, cacheId, loader);
+        }
+
+        private String getCacheId(@Nullable Filter filter)
+        {
+            if (filter == null)
+                return "~ALL";
+            else
+            {
+                return filter.toSQLString(getTableInfo().getSqlDialect());
+            }
+        }
+
         @Override
         protected DatasetCollections createCollections(Collection<DatasetDefinition> collection)
         {
             return new DatasetCollections(collection);
         }
 
+        protected DatasetCollections getCollections(Study study)
+        {
+            return (DatasetCollections)super.getCollections(study.getContainer());
+        }
+
         private class DatasetCollections extends StudyCacheCollections
         {
-            public DatasetCollections(Collection<DatasetDefinition> collection)
+            private final Map<String, DatasetDefinition> _nameMap = new CaseInsensitiveHashMap<>();
+            private final Map<String, DatasetDefinition> _labelMap = new CaseInsensitiveHashMap<>();
+            private final Map<String, DatasetDefinition> _entityIdMap = new HashMap<>();
+
+            private final Map<Integer, List<DatasetDefinition>> _categoryMap;
+            private final Map<Integer, List<DatasetDefinition>> _cohortMap;
+            private final List<DatasetDefinition> _nullCohortDatasets;
+
+            private DatasetCollections(Collection<DatasetDefinition> collection)
             {
                 super(collection);
+
+                // study.Dataset has constraints on LOWER(Name) and LOWER(Label), so this code path should never attempt
+                // to put duplicates into these maps. Use asserts to verify this.
+                collection.forEach(def -> {
+                    DatasetDefinition old = _nameMap.put(def.getName(), def); assert old == null;
+                    old = _labelMap.put(def.getLabel(), def); assert old == null;
+                    old = _entityIdMap.put(def.getEntityId(), def); assert old == null;
+                });
+
+                // Group by (non-null) category ID
+                _categoryMap = collection.stream()
+                    .filter(def -> def.getCategoryId() != null)
+                    .collect(Collectors.groupingBy(DatasetDefinition::getCategoryId));
+
+                // Group by cohort
+                _nullCohortDatasets = collection.stream()
+                    .filter(def -> def.getCohortId() == null)
+                    .toList();
+
+                _cohortMap = collection.stream()
+                    .filter(def -> def.getCohortId() != null)
+                    .collect(Collectors.groupingBy(DatasetDefinition::getCohortId));
+
+                // Datasets with null cohort get added to every cohort list. Also, make lists immutable.
+                if (!_cohortMap.isEmpty())
+                {
+                    _cohortMap.keySet().forEach(key -> {
+                        List<DatasetDefinition> list = _cohortMap.get(key);
+                        list.addAll(_nullCohortDatasets);
+                        _cohortMap.put(key, Collections.unmodifiableList(list));
+                    });
+                }
+            }
+
+            private @NotNull List<DatasetDefinition> getDatasetsForCohort(Cohort cohort)
+            {
+                List<DatasetDefinition> ret = _cohortMap.get(cohort.getRowId());
+                return ret != null ? ret : _nullCohortDatasets;
             }
         }
     }
@@ -2234,7 +2351,22 @@ public class StudyManager
         }
 
         // Make a copy (it's immutable) so that we can sort it. See issue 17875
-        return new ArrayList<>(_datasetHelper.getList(study.getContainer(), filter));
+        List<DatasetDefinition> ret = new ArrayList<>(_datasetHelper.getList(study.getContainer(), filter));
+        ret.sort(Comparator.comparing(DatasetDefinition::getDatasetId));
+
+        Collection<DatasetDefinition> ret2 = cohort != null ? _datasetHelper.getDatasetsForCohort(study, cohort) : _datasetHelper.getCollection(study.getContainer());
+
+        if (types != null && types.length > 0)
+        {
+            Set<String> typeSet = Set.of(types);
+            ret2 = ret2.stream().filter(def -> typeSet.contains(def.getType())).toList();
+        }
+
+        List<DatasetDefinition> sorted = new ArrayList<>(ret2);
+        sorted.sort(Comparator.comparing(DatasetDefinition::getDatasetId)); // TODO: Just for temporary comparison purposes
+        assert ret.equals(sorted);
+
+        return ret;
     }
 
 
@@ -2279,47 +2411,30 @@ public class StudyManager
         {
             return null;
         }
-        
-        SimpleFilter filter = SimpleFilter.createContainerFilter(s.getContainer());
-        filter.addWhereClause("LOWER(Label) = ?", new Object[]{label.toLowerCase()}, FieldKey.fromParts("Label"));
 
-        List<DatasetDefinition> defs = _datasetHelper.getList(s.getContainer(), filter);
-        if (defs.size() == 1)
-            return defs.get(0);
-
-        return null;
+        return _datasetHelper.getByLabel(s, label);
     }
 
 
     @Nullable
     public DatasetDefinition getDatasetDefinitionByEntityId(Study s, String entityId)
     {
-        SimpleFilter filter = SimpleFilter.createContainerFilter(s.getContainer());
-        filter.addCondition(FieldKey.fromParts("EntityId"), entityId);
-
-        List<DatasetDefinition> defs = _datasetHelper.getList(s.getContainer(), filter);
-        if (defs.size() == 1)
-            return defs.get(0);
-
-        return null;
+        return _datasetHelper.getByEntityId(s, entityId);
     }
     
 
     @Nullable
     public DatasetDefinition getDatasetDefinitionByName(Study s, String name)
     {
-        SimpleFilter filter = SimpleFilter.createContainerFilter(s.getContainer());
-        filter.addWhereClause("LOWER(Name) = LOWER(?)", new Object[]{name}, FieldKey.fromParts("Name"));
-
-        List<DatasetDefinition> defs = _datasetHelper.getList(s.getContainer(), filter);
-        if (defs.size() == 1)
-            return defs.get(0);
+        DatasetDefinition def = _datasetHelper.getByName(s, name);
+        if (def != null)
+            return def;
 
         Study sharedStudy = getSharedStudy(s);
         if (null == sharedStudy)
             return null;
 
-        DatasetDefinition def = getDatasetDefinitionByName(sharedStudy, name);
+        def = getDatasetDefinitionByName(sharedStudy, name);
         if (null == def)
             return null;
         return def.createLocalDatasetDefinition((StudyImpl) s);
@@ -4655,9 +4770,7 @@ public class StudyManager
                 Study study = _instance.getStudy(ContainerManager.getForId(category.getContainerId()));
                 if (study != null)
                 {
-                    SimpleFilter filter = SimpleFilter.createContainerFilter(study.getContainer());
-                    filter.addCondition(FieldKey.fromParts("CategoryId"), category.getRowId());
-                    return _instance._datasetHelper.getList(study.getContainer(), filter);
+                    return _instance._datasetHelper.getDatasetsForCategory(study, category);
                 }
             }
 

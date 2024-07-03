@@ -18,22 +18,18 @@ package org.labkey.api.study;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.Filter;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableInfoGetter;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 
 public class QueryHelper<K extends StudyCachable<K>>
@@ -52,41 +48,6 @@ public class QueryHelper<K extends StudyCachable<K>>
         _tableInfoGetter = tableInfoGetter;
         _objectClass = objectClass;
         _defaultSortString = defaultSortString;
-    }
-
-    // Dataset helper uses this to:
-    // - Filter by Cohort + Type
-    // - Filter by Category
-    // - Select by Label (case-insensitive. Note: study.Datasets has a unique constraint on Container, LOWER(Label))
-    // - Select by EntityId
-    // - Select by Name (case-insensitive. Note: study.Datasets has a unique constraint on Container, LOWER(Name))
-    public List<K> getList(Container c, SimpleFilter filterArg)
-    {
-        String cacheId = getCacheId(filterArg);
-
-        CacheLoader<String, Object> loader = (key, argument) -> {
-            SimpleFilter filter = null;
-
-            if (null != filterArg)
-            {
-                filter = filterArg;
-            }
-            else if (null != getTableInfo().getColumn("container"))
-            {
-                filter = SimpleFilter.createContainerFilter(c);
-            }
-
-            if (null != filter && !filter.hasContainerEqualClause())
-                filter.addCondition(FieldKey.fromParts("Container"), c);
-
-            List<K> objs = new TableSelector(getTableInfo(), filter, null).getArrayList(_objectClass);
-            // Make both the objects and the list itself immutable so that we don't end up with a corrupted
-            // version in the cache
-            for (StudyCachable<K> obj : objs)
-                obj.lock();
-            return Collections.unmodifiableList(objs);
-        };
-        return (List<K>)StudyCache.get(getTableInfo(), c, cacheId, loader);
     }
 
     /**
@@ -151,16 +112,6 @@ public class QueryHelper<K extends StudyCachable<K>>
     public void clearCache()
     {
         StudyCache.clearCache(getTableInfo());
-    }
-
-    protected String getCacheId(@Nullable Filter filter)
-    {
-        if (filter == null)
-            return "~ALL";
-        else
-        {
-            return filter.toSQLString(getTableInfo().getSqlDialect());
-        }
     }
 
     // By default, holds a single map of PK -> StudyCachable<K>, but helpers can override to add other collections
