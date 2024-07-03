@@ -18,11 +18,11 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.query.FieldKey;
 import org.labkey.assay.plate.model.PlateBean;
+import org.labkey.assay.plate.query.PlateTable;
 import org.labkey.assay.query.AssayDbSchema;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -131,46 +131,38 @@ public class PlateCache
         return plate != null ? plate.copy() : null;
     }
 
-    public static @NotNull List<Plate> getPlates(Container c)
+    private static @NotNull List<Plate> getPlates(Container c, @Nullable SimpleFilter filter)
     {
-        List<Plate> plates = new ArrayList<>();
+        SimpleFilter plateFilter = SimpleFilter.createContainerFilter(c);
+        if (filter != null)
+        {
+            for (SimpleFilter.FilterClause clause : filter.getClauses())
+                plateFilter.addClause(clause);
+        }
+
         List<Integer> ids = new TableSelector(
             AssayDbSchema.getInstance().getTableInfoPlate(),
-            Collections.singleton("RowId"),
-            SimpleFilter.createContainerFilter(c),
-            new Sort("RowId")
+            Collections.singleton(PlateTable.Column.RowId.name()),
+            plateFilter,
+            new Sort(PlateTable.Column.RowId.name())
         ).getArrayList(Integer.class);
 
-        for (Integer id : ids)
-            plates.add(PLATE_CACHE.get(PlateCacheKey.getCacheKey(c, id)));
-        return plates;
+        return ids.stream().map(id -> PLATE_CACHE.get(PlateCacheKey.getCacheKey(c, id))).toList();
+    }
+
+    public static @NotNull List<Plate> getPlates(Container c)
+    {
+        return getPlates(c, null);
     }
 
     public static @NotNull List<Plate> getPlatesForPlateSet(Container c, Integer plateSetId)
     {
-        List<Plate> plates = new ArrayList<>();
-        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-        filter.addCondition(FieldKey.fromParts("PlateSet"), plateSetId);
-        List<Integer> ids = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate(),
-                Collections.singleton("RowId"), filter, new Sort("RowId"))
-                .getArrayList(Integer.class);
-
-        for (Integer id : ids)
-            plates.add(PLATE_CACHE.get(PlateCacheKey.getCacheKey(c, id)));
-        return plates;
+        return getPlates(c, new SimpleFilter(FieldKey.fromParts(PlateTable.Column.PlateSet.name()), plateSetId));
     }
 
     public static @NotNull List<Plate> getPlateTemplates(Container c)
     {
-        List<Plate> templates = new ArrayList<>();
-        for (Plate plate : getPlates(c))
-        {
-            if (plate.isTemplate())
-                templates.add(plate);
-        }
-        return templates.stream()
-                .sorted(Comparator.comparing(Plate::getName))
-                .toList();
+        return getPlates(c, new SimpleFilter(FieldKey.fromParts(PlateTable.Column.Template.name()), true));
     }
 
     public static void uncache(Container c)
