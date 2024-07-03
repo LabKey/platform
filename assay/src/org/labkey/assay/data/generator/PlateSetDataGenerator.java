@@ -38,7 +38,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.labkey.assay.plate.PlateManager.CreatePlateSetPlate;
+import static org.labkey.assay.plate.PlateManager.PlateData;
 
 public class PlateSetDataGenerator extends DataGenerator<PlateSetDataGenerator.Config>
 {
@@ -235,7 +235,7 @@ public class PlateSetDataGenerator extends DataGenerator<PlateSetDataGenerator.C
         PlateSetImpl plateSet = new PlateSetImpl();
         plateSet.setType(plateSetType);
 
-        List<CreatePlateSetPlate> plates = new ArrayList<>();
+        List<PlateData> plates = new ArrayList<>();
         int sampleIdx = 0;
 
         // custom well properties to add to this plate set
@@ -273,7 +273,7 @@ public class PlateSetDataGenerator extends DataGenerator<PlateSetDataGenerator.C
                     rows.add(rowMap);
                 }
             }
-            plates.add(new CreatePlateSetPlate(null, _plateType.getRowId(), null, rows));
+            plates.add(new PlateData(null, _plateType.getRowId(), null, rows));
         }
         _plateSetsCreated++;
         return PlateManager.get().createPlateSet(getContainer(), getUser(), plateSet, plates, parentPlateSet != null ? parentPlateSet.getRowId() : null);
