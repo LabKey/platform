@@ -191,7 +191,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                     }
                     ((MutableColumnInfo) rawColumnInfo).setJdbcType(columnToBeWrapped.getJdbcType());
                 }
-                else
+                else if (metadataColumnJSON.getValueExpression() == null)
                 {
                     log.info("No such column: " + metadataColumnJSON.getName() + " in table: " + schemaName + "." + queryDef.getName() + " in folder: " + container.getName());
                 }
@@ -512,6 +512,10 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                     // ensure the wrapped column name is set for all saved columns
                     xmlColumn.setWrappedColumnName(metadataColumnJSON.getWrappedColumnName());
                 }
+                else if (metadataColumnJSON.getValueExpression() != null)
+                {
+                    xmlColumn.setValueExpression(metadataColumnJSON.getValueExpression());
+                }
             }
         }
 
@@ -640,6 +644,9 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
 
             if (columnInfo.getWrappedColumnName() != null)
                 metadataColumnJSON.setWrappedColumnName(columnInfo.getWrappedColumnName());
+
+            if (columnInfo.getValueExpression() != null)
+                metadataColumnJSON.setValueExpression(columnInfo.getValueExpression());
 
             if (columnInfo.getFk() != null)
             {
@@ -816,6 +823,11 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                             {
                                 injectedColumnNames.add(column.getColumnName());
                             }
+                        }
+                        if (column.getValueExpression() != null)
+                        {
+                            metadataColumnJSON.setLockExistingField(false);
+                            metadataColumnJSON.setValueExpression(column.getValueExpression());
                         }
                     }
                 }
