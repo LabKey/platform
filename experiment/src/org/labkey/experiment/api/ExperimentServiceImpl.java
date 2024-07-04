@@ -634,7 +634,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (lsids.isEmpty())
             return Collections.emptyList();
 
-        return getExpDatas(new SimpleFilter(FieldKey.fromParts("LSID"), lsids, IN));
+        return getExpDatas(new SimpleFilter(FieldKey.fromParts(ExpDataTable.Column.LSID.name()), lsids, IN));
     }
 
     @Override
@@ -643,7 +643,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (rowIds.isEmpty())
             return Collections.emptyList();
 
-        return getExpDatas(new SimpleFilter(FieldKey.fromParts("RowId"), rowIds, IN));
+        return getExpDatas(new SimpleFilter(FieldKey.fromParts(ExpDataTable.Column.RowId.name()), rowIds, IN));
     }
 
     @Override
@@ -652,7 +652,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (rowIds.isEmpty())
             return Collections.emptyList();
 
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), rowIds, IN);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(ExpDataTable.Column.RowId.name()), rowIds, IN);
         filter.addCondition(FieldKey.fromParts("classId"), dataClass.getRowId());
 
         return getExpDatas(filter);
@@ -663,9 +663,18 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         if (type != null)
-            filter.addWhereClause(Lsid.namespaceFilter("LSID", type.getNamespacePrefix()), null);
+            filter.addWhereClause(Lsid.namespaceFilter(ExpDataTable.Column.LSID.name(), type.getNamespacePrefix()), null);
         if (name != null)
-            filter.addCondition(FieldKey.fromParts("Name"), name);
+            filter.addCondition(FieldKey.fromParts(ExpDataTable.Column.Name.name()), name);
+
+        return getExpDatas(filter);
+    }
+
+    public List<ExpDataImpl> getOutputDatas(int runRowId, @Nullable DataType type)
+    {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RunId"), runRowId);
+        if (type != null)
+            filter.addWhereClause(Lsid.namespaceFilter(ExpDataTable.Column.LSID.name(), type.getNamespacePrefix()), null);
 
         return getExpDatas(filter);
     }
@@ -760,37 +769,42 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public List<ExpMaterialImpl> getExpMaterialsByName(@NotNull String name, @Nullable Container container, User user)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Name"), name);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.Name.name()), name);
         if (container != null)
-        {
             filter.addCondition(FieldKey.fromParts("Container"), container);
-        }
-        List<Material> matches = new TableSelector(getTinfoMaterial(), getTinfoMaterial().getColumns(), filter, null).getArrayList(Material.class);
-        List<ExpMaterialImpl> results = ExpMaterialImpl.fromMaterials(matches);
-        results = results.stream().filter((m) -> m.getContainer().hasPermission(user, ReadPermission.class) && m.getSampleType() != null).collect(Collectors.toList());
-        return results;
+
+        return getExpMaterials(filter)
+            .stream()
+            .filter(m -> m.getContainer().hasPermission(user, ReadPermission.class) && m.getSampleType() != null)
+            .toList();
     }
 
-    @Override
-    @Nullable
-    public ExpMaterialImpl getExpMaterial(int rowid)
+    public @Nullable ExpMaterialImpl getExpMaterial(SimpleFilter filter)
     {
-        Material material = new TableSelector(getTinfoMaterial()).getObject(rowid, Material.class);
+        Material material = new TableSelector(getTinfoMaterial(), filter, null).getObject(Material.class);
         return material == null ? null : new ExpMaterialImpl(material);
     }
 
     @Override
-    @Nullable
-    public ExpMaterialImpl getExpMaterial(int rowid, ContainerFilter containerFilter)
+    public @Nullable ExpMaterialImpl getExpMaterial(int rowId)
     {
-        SimpleFilter filter = null;
+        return getExpMaterial(new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.RowId.name()), rowId));
+    }
+
+    @Override
+    public @Nullable ExpMaterialImpl getExpMaterial(String lsid)
+    {
+        return getExpMaterial(new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.LSID.name()), lsid));
+    }
+
+    @Override
+    public @Nullable ExpMaterialImpl getExpMaterial(int rowId, ContainerFilter containerFilter)
+    {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.RowId.name()), rowId);
         if (containerFilter != null)
-        {
-            filter = new SimpleFilter();
             filter.addClause(containerFilter.createFilterClause(getExpSchema(), FieldKey.fromParts("Container")));
-        }
-        Material material = new TableSelector(getTinfoMaterial(), filter, null).getObject(rowid, Material.class);
-        return material == null ? null : new ExpMaterialImpl(material);
+
+        return getExpMaterial(filter);
     }
 
     @Override
@@ -815,91 +829,84 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 .map(ExpObject::getRowId).collect(Collectors.toList());
     }
 
+    private @NotNull List<Material> getMaterials(SimpleFilter filter, @Nullable Sort sort)
+    {
+        return new TableSelector(getTinfoMaterial(), filter, sort).getArrayList(Material.class);
+    }
+
+    private @NotNull List<ExpMaterialImpl> getExpMaterials(SimpleFilter filter)
+    {
+        return getExpMaterials(filter, null);
+    }
+
+    public @NotNull List<ExpMaterialImpl> getExpMaterials(SimpleFilter filter, @Nullable Sort sort)
+    {
+        return ExpMaterialImpl.fromMaterials(getMaterials(filter, sort));
+    }
+
     @Override
     @NotNull
-    public List<ExpMaterialImpl> getExpMaterials(Collection<Integer> rowids)
+    public List<ExpMaterialImpl> getExpMaterials(Collection<Integer> rowIds)
     {
-        SimpleFilter filter = new SimpleFilter().addInClause(FieldKey.fromParts(ExpMaterialTable.Column.RowId.name()), rowids);
-        TableSelector selector = new TableSelector(getTinfoMaterial(), filter, null);
+        if (rowIds.isEmpty())
+            return emptyList();
 
-        final List<ExpMaterialImpl> materials = new ArrayList<>(rowids.size());
-        selector.forEach(Material.class, material -> materials.add(new ExpMaterialImpl(material)));
-
-        return materials;
+        return getExpMaterials(new SimpleFilter().addInClause(FieldKey.fromParts(ExpMaterialTable.Column.RowId.name()), rowIds));
     }
 
     @Override
     @NotNull
     public List<ExpMaterialImpl> getExpMaterialsByLsid(Collection<String> lsids)
     {
-        SimpleFilter filter = new SimpleFilter().addInClause(FieldKey.fromParts(ExpMaterialTable.Column.LSID.name()), lsids);
-        TableSelector selector = new TableSelector(getTinfoMaterial(), filter, null);
+        if (lsids.isEmpty())
+            return emptyList();
 
-        final List<ExpMaterialImpl> materials = new ArrayList<>(lsids.size());
-        selector.forEach(Material.class, material -> materials.add(new ExpMaterialImpl(material)));
-
-        return materials;
+        return getExpMaterials(new SimpleFilter().addInClause(FieldKey.fromParts(ExpMaterialTable.Column.LSID.name()), lsids));
     }
 
     @Override
     @Nullable
     public List<ExpMaterialImpl> getExpMaterials(Container container, User user, Collection<Integer> rowIds, @Nullable ExpSampleType sampleType)
     {
-        SimpleFilter filter = new SimpleFilter();
-        filter.addInClause(FieldKey.fromParts("RowId"), rowIds);
+        if (rowIds.isEmpty())
+            return emptyList();
+
+        SimpleFilter filter = new SimpleFilter().addInClause(FieldKey.fromParts("RowId"), rowIds);
         if (sampleType != null)
             filter.addCondition(FieldKey.fromParts("CpasType"), sampleType.getLSID());
 
         // SampleType may live in different container
         ContainerFilter containerFilter = getContainerFilterTypeForFind(container).create(container, user);
-        SimpleFilter.FilterClause clause = containerFilter.createFilterClause(getSchema(), FieldKey.fromParts("Container"));
-        filter.addClause(clause);
+        filter.addClause(containerFilter.createFilterClause(getSchema(), FieldKey.fromParts("Container")));
 
-        return new TableSelector(getTinfoMaterial(), filter, null)
-            .getArrayList(Material.class)
-            .stream()
-            .map(ExpMaterialImpl::new)
-            .toList();
+        return getExpMaterials(filter);
     }
-
 
     public List<ExpMaterialImpl> getExpMaterialsByObjectId(ContainerFilter containerFilter, Collection<Integer> objectIds)
     {
-        SimpleFilter filter = new SimpleFilter();
-        filter.addInClause(FieldKey.fromParts("ObjectId"), objectIds);
+        if (objectIds.isEmpty())
+            return emptyList();
 
-        SimpleFilter.FilterClause clause = containerFilter.createFilterClause(getSchema(), FieldKey.fromParts("Container"));
-        filter.addClause(clause);
+        SimpleFilter filter = new SimpleFilter().addInClause(FieldKey.fromParts("ObjectId"), objectIds);
+        filter.addClause(containerFilter.createFilterClause(getSchema(), FieldKey.fromParts("Container")));
 
-        return new TableSelector(getTinfoMaterial(), filter, null)
-                .getArrayList(Material.class)
-                .stream()
-                .map(ExpMaterialImpl::new)
-                .toList();
+        return getExpMaterials(filter);
     }
 
-
     @Override
-    public ExpMaterialImpl createExpMaterial(Container container, Lsid lsid)
+    public @NotNull ExpMaterialImpl createExpMaterial(Container container, Lsid lsid)
     {
         return createExpMaterial(container, lsid.toString(), lsid.getObjectId());
     }
 
     @Override
-    public ExpMaterialImpl createExpMaterial(Container container, String lsid, String name)
+    public @NotNull ExpMaterialImpl createExpMaterial(Container container, String lsid, String name)
     {
         ExpMaterialImpl result = new ExpMaterialImpl(new Material());
         result.setContainer(container);
         result.setLSID(lsid);
         result.setName(name);
         return result;
-    }
-
-    @Override
-    public ExpMaterialImpl getExpMaterial(String lsid)
-    {
-        Material result = new TableSelector(getTinfoMaterial(), new SimpleFilter(FieldKey.fromParts("LSID"), lsid), null).getObject(Material.class);
-        return result == null ? null : new ExpMaterialImpl(result);
     }
 
     private static final int INDEXING_LIMIT = 10_000;
@@ -5901,7 +5908,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         getExpSchema().getSqlDialect().appendInClauseSql(sql, rowIds);
         sql.append(")");
         return ExpRunImpl.fromRuns(getRunsForDataList(sql));
-
     }
 
     private List<ExperimentRun> getRunsForDataList(SQLFragment dataRowIdSQL)
@@ -6223,8 +6229,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             protocolStep.setOutputDatas(new ArrayList<>());
         }
 
-        sort = new Sort("RowId");
-        List<ExpMaterialImpl> materials = ExpMaterialImpl.fromMaterials(new TableSelector(getTinfoMaterial(), filt, sort).getArrayList(Material.class));
+        List<ExpMaterialImpl> materials = getExpMaterials(filt, new Sort("RowId"));
         final Map<Integer, ExpMaterialImpl> runMaterialMap = new HashMap<>(materials.size());
 
         for (ExpMaterialImpl mat : materials)
@@ -6471,8 +6476,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     public List<Material> getOutputMaterialForApplication(int applicationId)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("SourceApplicationId"), applicationId);
-        return new TableSelector(getTinfoMaterial(), filter, null).getArrayList(Material.class);
+        return getMaterials(new SimpleFilter(FieldKey.fromParts("SourceApplicationId"), applicationId), null);
     }
 
     public List<MaterialInput> getMaterialOutputsForApplication(int applicationId)
@@ -8560,7 +8564,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     public List<ExpMaterialImpl> getExpMaterialsForRun(int runId)
     {
-        return ExpMaterialImpl.fromMaterials(new SqlSelector(getExpSchema(), new SQLFragment("SELECT * FROM " + getTinfoMaterial() + " WHERE RunId = ?", runId)).getArrayList(Material.class));
+        return getExpMaterials(new SimpleFilter(FieldKey.fromParts("RunId"), runId));
     }
 
     /**
