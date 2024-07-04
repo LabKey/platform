@@ -22,6 +22,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.HttpView;
+import org.labkey.assay.plate.query.WellTable;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -67,8 +68,8 @@ public class PlateMapExcelWriter extends ExcelWriter
             while (results.next())
             {
                 RowMap<Object> well = factory.getRowMap(results);
-                Integer row = (Integer) well.get("Row");
-                Integer col = (Integer) well.get("Col");
+                Integer row = (Integer) well.get(WellTable.Column.Row.name());
+                Integer col = (Integer) well.get(WellTable.Column.Col.name());
 
                 Map<Integer, RowMap<Object>> rowMap = _wellData.computeIfAbsent(row, k -> new HashMap<>());
 
