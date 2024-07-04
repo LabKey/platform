@@ -3195,7 +3195,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return new QueryView(userSchema, settings, null);
     }
 
-    public List<DisplayColumn> getPlateDisplayColumns(QueryView queryView)
+    private List<DisplayColumn> getPlateDisplayColumns(QueryView queryView)
     {
         // We have to use the display columns from the DataRegion returned from createDataView in order to get the
         // correct columns that we set via QuerySettings in getPlateQueryView, if we don't then we'll only get the

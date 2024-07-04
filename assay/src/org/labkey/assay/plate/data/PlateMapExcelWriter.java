@@ -35,12 +35,8 @@ public class PlateMapExcelWriter extends ExcelWriter
     private static final Logger logger = LogHelper.getLogger(PlateMapExcelWriter.class, "Plate map export");
 
     private final Plate _plate;
-
     private final QueryView _queryView;
-
     private final List<DisplayColumn> _displayColumns;
-
-    private final Map<String, CellStyle> _cellStyleMap = new HashMap<>();
 
     // Map of Row label (A, B, etc.) to Column Data, which is a Map of Column Label (1, 2, etc.) to Well Data (Sample
     // ID, metadata column values)
@@ -101,24 +97,6 @@ public class PlateMapExcelWriter extends ExcelWriter
         }
 
         incrementRow();
-    }
-
-    protected CellStyle getCellStyle(Workbook workbook, DisplayColumn dc)
-    {
-        CellStyle cellStyle = _cellStyleMap.get(dc.getName());
-
-        if (cellStyle == null)
-        {
-            String formatString = dc.getExcelFormatString();
-
-            if (formatString == null)
-                formatString = dc.getFormatString();
-
-            cellStyle = ExcelCellUtils.createCellStyle(workbook, ExcelCellUtils.getSimpleType(dc), formatString);
-            _cellStyleMap.put(dc.getName(), cellStyle);
-        }
-
-        return cellStyle;
     }
 
     private String getDisplayColumnAlias(DisplayColumn displayColumn)
