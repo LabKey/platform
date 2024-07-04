@@ -6215,8 +6215,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         int runId = expRun.getRowId();
         SimpleFilter filt = new SimpleFilter(FieldKey.fromParts("RunId"), runId);
-        Sort sort = new Sort("ActionSequence, RowId");
-        List<ExpProtocolApplicationImpl> protocolSteps = ExpProtocolApplicationImpl.fromProtocolApplications(new TableSelector(getTinfoProtocolApplication(), getTinfoProtocolApplication().getColumns(), filt, sort).getArrayList(ProtocolApplication.class));
+        List<ExpProtocolApplicationImpl> protocolSteps = ExpProtocolApplicationImpl.fromProtocolApplications(new TableSelector(getTinfoProtocolApplication(), getTinfoProtocolApplication().getColumns(), filt, new Sort("ActionSequence, RowId")).getArrayList(ProtocolApplication.class));
         expRun.setProtocolApplications(protocolSteps);
         final Map<Integer, ExpProtocolApplicationImpl> protStepMap = new HashMap<>(protocolSteps.size());
 
@@ -6241,7 +6240,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             mat.markAsPopulated(protApp);
         }
 
-        List<ExpDataImpl> datas = getExpDatas(filt, sort);
+        List<ExpDataImpl> datas = getExpDatas(filt, new Sort("RowId"));
         final Map<Integer, ExpDataImpl> runDataMap = new HashMap<>(datas.size());
 
         for (ExpDataImpl dat : datas)
