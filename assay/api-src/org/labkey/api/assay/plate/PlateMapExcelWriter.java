@@ -18,11 +18,9 @@ import org.labkey.api.data.Results;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.util.logging.LogHelper;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 
 import java.io.IOException;
-import java.io.Writer;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
@@ -101,7 +99,8 @@ public class PlateMapExcelWriter extends ExcelWriter
         incrementRow();
     }
 
-    protected CellStyle getCellStyle(Workbook workbook, DisplayColumn dc) {
+    protected CellStyle getCellStyle(Workbook workbook, DisplayColumn dc)
+    {
         CellStyle cellStyle = _cellStyleMap.get(dc.getName());
 
         if (cellStyle == null)
@@ -222,7 +221,7 @@ public class PlateMapExcelWriter extends ExcelWriter
             else // CustomField view
             {
                 PlateCustomField customField = _plate.getCustomFields().get(sheetNumber - 2);
-                FieldKey fieldKey = FieldKey.fromParts("Properties", customField.getName());
+                FieldKey fieldKey = FieldKey.fromParts(customField.getName());
                 displayColumns = _displayColumns.stream().filter(dc -> dc.getColumnInfo().getFieldKey().equals(fieldKey)).toList();
             }
 
@@ -251,129 +250,6 @@ public class PlateMapExcelWriter extends ExcelWriter
                 setSheetName(customFields.get(sheetNum - 2).getName());
 
             renderNewSheet(workbook);
-        }
-    }
-
-    public class PlateMapDisplayColumn extends DisplayColumn
-    {
-        Class valueClass;
-
-        public PlateMapDisplayColumn(String name, Class valueClass)
-        {
-            this(name, name, valueClass);
-        }
-
-        public PlateMapDisplayColumn(String name, String caption, Class valueClass)
-        {
-            setName(name);
-            setCaption(caption);
-            this.valueClass = valueClass;
-        }
-
-        @Override
-        public Object getValue(RenderContext ctx)
-        {
-            //Ignore the context.
-//            return maps.get(currentRow).get(getName());
-            return null;
-        }
-
-        @Override
-        public Class getValueClass()
-        {
-            return valueClass;
-        }
-
-
-        //NOTE: Methods beyond here are unimplemented, just abstract in base class!
-        @Override
-        public void renderGridCellContents(RenderContext ctx, Writer out)
-        {
-            throw new UnsupportedOperationException("This is for excel only.");
-        }
-
-        @Override
-        public void renderDetailsCellContents(RenderContext ctx, Writer out)
-        {
-            throw new UnsupportedOperationException("This is for excel only.");
-        }
-
-        @Override
-        public void renderTitle(RenderContext ctx, Writer out)
-        {
-            throw new UnsupportedOperationException("This is for excel only.");
-        }
-
-        @Override
-        public boolean isSortable()
-        {
-            return false;
-        }
-
-        @Override
-        public boolean isFilterable()
-        {
-            return false;
-        }
-
-        @Override
-        public boolean isEditable()
-        {
-            return false;
-        }
-
-        @Override
-        public void renderFilterOnClick(RenderContext ctx, Writer out)
-        {
-            throw new UnsupportedOperationException("This is for excel only.");
-        }
-
-        @Override
-        public void renderInputHtml(RenderContext ctx, Writer out, Object value)
-        {
-            throw new UnsupportedOperationException("This is for excel only.");
-        }
-
-        @Override
-        public void setURL(ActionURL url)
-        {
-            throw new UnsupportedOperationException("This is for excel only.");
-        }
-
-        @Override
-        public void setURL(String url)
-        {
-            throw new UnsupportedOperationException("This is for excel only.");
-        }
-
-        @Override
-        public String getURL()
-        {
-            return null;
-        }
-
-        @Override
-        public String renderURL(RenderContext ctx)
-        {
-            return null;
-        }
-
-        @Override
-        public boolean isQueryColumn()
-        {
-            return false;
-        }
-
-        @Override
-        public ColumnInfo getColumnInfo()
-        {
-            return null;
-        }
-
-        @Override
-        public void render(RenderContext ctx, Writer out)
-        {
-            throw new UnsupportedOperationException("This is for excel only.");
         }
     }
 }
