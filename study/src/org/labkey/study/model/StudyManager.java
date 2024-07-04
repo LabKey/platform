@@ -145,6 +145,7 @@ import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.location.LocationCache;
 import org.labkey.api.specimen.model.SpecimenTablesProvider;
+import org.labkey.api.study.AbstractStudyCachable;
 import org.labkey.api.study.AssaySpecimenConfig;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Dataset;
@@ -324,7 +325,11 @@ public class StudyManager
         {
             assert c.equals(ROOT);
             return StudyCache.get(getTableInfo(), c, (key, argument) ->
-                createCollections(new TableSelector(getTableInfo(), null, new Sort(_defaultSortString)).getCollection(StudyImpl.class)));
+                createCollections(new TableSelector(getTableInfo(), null, new Sort(_defaultSortString)).stream(StudyImpl.class)
+                    .peek(AbstractStudyCachable::lock)
+                    .toList()
+                )
+            );
         }
 
         private StudyCacheCollections getCollections()
@@ -2323,7 +2328,6 @@ public class StudyManager
         return new ArrayList<>(shadowed.values());
     }
 
-
     public List<DatasetDefinition> getDatasetDefinitionsLocal(Study study)
     {
         return getDatasetDefinitionsLocal(study, null);
@@ -2369,27 +2373,15 @@ public class StudyManager
         return ret;
     }
 
-
     public Set<PropertyDescriptor> getSharedProperties(Study study)
     {
         return _sharedProperties.get(study.getContainer());
     }
 
-
     @Nullable
     public DatasetDefinition getDatasetDefinition(Study s, int id)
     {
         DatasetDefinition ds = _datasetHelper.get(s.getContainer(), id);
-        // update old rows w/o entityid
-        if (null != ds && null == ds.getEntityId())
-        {
-            ds.setEntityId(GUID.makeGUID());
-            new SqlExecutor(StudySchema.getInstance().getSchema()).execute("UPDATE study.dataset SET entityId=? WHERE container=? and datasetid=? and entityid IS NULL", ds.getEntityId(), ds.getContainer().getId(), ds.getDatasetId());
-            _datasetHelper.clearCache(s.getContainer());
-            ds = _datasetHelper.get(s.getContainer(), id);
-            // calling updateDatasetDefinition() during load (getDatasetDefinition()) may cause recursion problems
-            //updateDatasetDefinition(null, ds);
-        }
         if (null != ds)
             return ds;
 

@@ -66,7 +66,12 @@ public class QueryHelper<K extends StudyCachable<K>>
     protected StudyCacheCollections getCollections(Container c)
     {
         return StudyCache.get(getTableInfo(), c, (key, argument) ->
-            createCollections(new TableSelector(getTableInfo(), SimpleFilter.createContainerFilter(c), new Sort(_defaultSortString)).getCollection(_objectClass)));
+            createCollections(
+                new TableSelector(getTableInfo(), SimpleFilter.createContainerFilter(c), new Sort(_defaultSortString)).stream(_objectClass)
+                    .peek(StudyCachable::lock)
+                    .toList()
+            )
+        );
     }
 
     protected StudyCacheCollections createCollections(Collection<K> collection)

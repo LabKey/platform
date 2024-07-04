@@ -313,13 +313,6 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         _isShared = study.getShareDatasetDefinitions();
     }
 
-
-    @Override
-    public DatasetDefinition createMutable()
-    {
-        return (DatasetDefinition) super.createMutable();
-    }
-
     /*
      * given a potentially shared dataset definition, return a dataset definition that is scoped to the current study
      */
