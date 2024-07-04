@@ -606,11 +606,11 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
      */
     default boolean hasDbTriggers() { return false; }
 
-    /**
-     * TableInfos that can be associated with a QueryHelper need a reliable key other than a TableInfo instance.
-     * Return null if QueryHelper is not supported.
-     */
-    Path getNotificationKey();
+    @Deprecated // No longer used
+    default Path getNotificationKey()
+    {
+        return null;
+    }
 
     /* for asserting that tableinfo is not changed unexpectedly */
     void setLocked(boolean b);

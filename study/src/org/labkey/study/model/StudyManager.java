@@ -145,16 +145,14 @@ import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.location.LocationCache;
 import org.labkey.api.specimen.model.SpecimenTablesProvider;
-import org.labkey.api.study.AbstractStudyCachable;
 import org.labkey.api.study.AssaySpecimenConfig;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.DataspaceContainerFilter;
 import org.labkey.api.study.QueryHelper;
+import org.labkey.api.study.QueryHelper.StudyCacheCollections;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
-import org.labkey.api.study.StudyCachable;
-import org.labkey.api.study.StudyCache;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
@@ -240,9 +238,9 @@ public class StudyManager
 
     private final StudyHelper _studyHelper;
     private final VisitHelper _visitHelper;
-    private final QueryHelper<AssaySpecimenConfigImpl> _assaySpecimenHelper;
+    private final QueryHelper<Integer, AssaySpecimenConfigImpl, StudyCacheCollections<Integer, AssaySpecimenConfigImpl>> _assaySpecimenHelper;
     private final DatasetHelper _datasetHelper;
-    private final QueryHelper<CohortImpl> _cohortHelper;
+    private final QueryHelper<Integer, CohortImpl, StudyCacheCollections<Integer, CohortImpl>> _cohortHelper;
     private final BlockingCache<Container, Set<PropertyDescriptor>> _sharedProperties;
 
     private final BlockingCache<Container, Map<String, Participant>> _participantCache = DatabaseCache.get(StudySchema.getInstance().getScope(), Constants.getMaxContainers(), CacheManager.HOUR, "Participants", (c, argument) -> {
@@ -301,7 +299,7 @@ public class StudyManager
     // single map holding all StudyImpls at the root. Even though we're caching a single object in this cache, it
     // provides a fast "has study" check (see Issue 19632) and leverages the DatabaseCache & cache-clearing semantics
     // of QueryHelper.
-    private static class StudyHelper extends QueryHelper<StudyImpl>
+    private static class StudyHelper extends QueryHelper<String, StudyImpl, StudyCacheCollections<String, StudyImpl>>
     {
         private static final Container ROOT = ContainerManager.getRoot();
 
@@ -321,18 +319,13 @@ public class StudyManager
         }
 
         @Override
-        protected StudyCacheCollections getCollections(Container c)
+        protected TableSelector getTableSelector(Container c)
         {
             assert c.equals(ROOT);
-            return StudyCache.get(getTableInfo(), c, (key, argument) ->
-                createCollections(new TableSelector(getTableInfo(), null, new Sort(_defaultSortString)).stream(StudyImpl.class)
-                    .peek(AbstractStudyCachable::lock)
-                    .toList()
-                )
-            );
+            return new TableSelector(getTableInfo(), null, new Sort(_defaultSortString));
         }
 
-        private StudyCacheCollections getCollections()
+        private StudyCacheCollections<String, StudyImpl> getCollections()
         {
             return getCollections(ROOT);
         }
@@ -344,7 +337,7 @@ public class StudyManager
         }
     }
 
-    private static class VisitHelper extends QueryHelper<VisitImpl>
+    private static class VisitHelper extends QueryHelper<Integer, VisitImpl, VisitHelper.VisitCollections>
     {
         private static final Order DEFAULT_ORDER = Order.DISPLAY;
 
@@ -359,18 +352,12 @@ public class StudyManager
         }
 
         @Override
-        protected VisitCollections getCollections(Container c)
-        {
-            return (VisitCollections)super.getCollections(c);
-        }
-
-        @Override
         protected VisitCollections createCollections(Collection<VisitImpl> collection)
         {
             return new VisitCollections(collection);
         }
 
-        private class VisitCollections extends StudyCacheCollections
+        private static class VisitCollections extends StudyCacheCollections<Integer, VisitImpl>
         {
             private final Collection<VisitImpl> _sequenceNumVisits;
             private final Collection<VisitImpl> _chronologicalVisits;
@@ -397,7 +384,7 @@ public class StudyManager
         }
     }
 
-    private class DatasetHelper extends QueryHelper<DatasetDefinition>
+    private class DatasetHelper extends QueryHelper<Integer, DatasetDefinition, DatasetHelper.DatasetCollections>
     {
         private DatasetHelper()
         {
@@ -437,46 +424,6 @@ public class StudyManager
             return getCollections(study).getDatasetsForCohort(cohort);
         }
 
-        // Dataset helper uses this to filter by Cohort + Type
-        public Collection<DatasetDefinition> getList(Container c, SimpleFilter filterArg)
-        {
-            String cacheId = getCacheId(filterArg);
-
-            CacheLoader<String, Object> loader = (key, argument) -> {
-                SimpleFilter filter = null;
-
-                if (null != filterArg)
-                {
-                    filter = filterArg;
-                }
-                else if (null != getTableInfo().getColumn("container"))
-                {
-                    filter = SimpleFilter.createContainerFilter(c);
-                }
-
-                if (null != filter && !filter.hasContainerEqualClause())
-                    filter.addCondition(FieldKey.fromParts("Container"), c);
-
-                List<DatasetDefinition> objs = new TableSelector(getTableInfo(), filter, null).getArrayList(DatasetDefinition.class);
-                // Make both the objects and the list itself immutable so that we don't end up with a corrupted
-                // version in the cache
-                for (StudyCachable<DatasetDefinition> obj : objs)
-                    obj.lock();
-                return Collections.unmodifiableList(objs);
-            };
-            return (List<DatasetDefinition>)StudyCache.get(getTableInfo(), c, cacheId, loader);
-        }
-
-        private String getCacheId(@Nullable Filter filter)
-        {
-            if (filter == null)
-                return "~ALL";
-            else
-            {
-                return filter.toSQLString(getTableInfo().getSqlDialect());
-            }
-        }
-
         @Override
         protected DatasetCollections createCollections(Collection<DatasetDefinition> collection)
         {
@@ -485,10 +432,10 @@ public class StudyManager
 
         protected DatasetCollections getCollections(Study study)
         {
-            return (DatasetCollections)super.getCollections(study.getContainer());
+            return super.getCollections(study.getContainer());
         }
 
-        private class DatasetCollections extends StudyCacheCollections
+        private static class DatasetCollections extends StudyCacheCollections<Integer, DatasetDefinition>
         {
             private final Map<String, DatasetDefinition> _nameMap = new CaseInsensitiveHashMap<>();
             private final Map<String, DatasetDefinition> _labelMap = new CaseInsensitiveHashMap<>();
@@ -2335,42 +2282,16 @@ public class StudyManager
 
     public List<DatasetDefinition> getDatasetDefinitionsLocal(Study study, @Nullable Cohort cohort, String... types)
     {
-        SimpleFilter filter = null;
-        if (cohort != null)
-        {
-            filter = SimpleFilter.createContainerFilter(study.getContainer());
-            filter.addWhereClause("(CohortId IS NULL OR CohortId = ?)", new Object[] { cohort.getRowId() });
-        }
-
-        if (types != null && types.length > 0)
-        {
-            // ignore during upgrade
-            ColumnInfo typeCol = StudySchema.getInstance().getTableInfoDataset().getColumn("Type");
-            if (null != typeCol && !typeCol.isUnselectable())
-            {
-                if (filter == null)
-                    filter = SimpleFilter.createContainerFilter(study.getContainer());
-                filter.addInClause(FieldKey.fromParts("Type"), Arrays.asList(types));
-            }
-        }
-
-        // Make a copy (it's immutable) so that we can sort it. See issue 17875
-        List<DatasetDefinition> ret = new ArrayList<>(_datasetHelper.getList(study.getContainer(), filter));
-        ret.sort(Comparator.comparing(DatasetDefinition::getDatasetId));
-
-        Collection<DatasetDefinition> ret2 = cohort != null ? _datasetHelper.getDatasetsForCohort(study, cohort) : _datasetHelper.getCollection(study.getContainer());
+        Collection<DatasetDefinition> ret = cohort != null ? _datasetHelper.getDatasetsForCohort(study, cohort) : _datasetHelper.getCollection(study.getContainer());
 
         if (types != null && types.length > 0)
         {
             Set<String> typeSet = Set.of(types);
-            ret2 = ret2.stream().filter(def -> typeSet.contains(def.getType())).toList();
+            ret = ret.stream().filter(def -> typeSet.contains(def.getType())).toList();
         }
 
-        List<DatasetDefinition> sorted = new ArrayList<>(ret2);
-        sorted.sort(Comparator.comparing(DatasetDefinition::getDatasetId)); // TODO: Just for temporary comparison purposes
-        assert ret.equals(sorted);
-
-        return ret;
+        // Make a copy (it's immutable) so that we can sort it. See issue 17875
+        return new ArrayList<>(ret);
     }
 
     public Set<PropertyDescriptor> getSharedProperties(Study study)

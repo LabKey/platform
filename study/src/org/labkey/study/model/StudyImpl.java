@@ -97,12 +97,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-/**
- * User: brittp
- * Date: Jan 6, 2006
- * Time: 10:28:32 AM
- */
-public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
+public class StudyImpl extends ExtensibleStudyEntity<String, StudyImpl> implements Study
 {
     private static final Logger LOG = LogManager.getLogger(StudyImpl.class);
     private static final String DOMAIN_URI_PREFIX = "Study";
@@ -363,7 +358,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     }
 
     @Override
-    public Object getPrimaryKey()
+    public String getPrimaryKey()
     {
         return getContainer().getId();
     }

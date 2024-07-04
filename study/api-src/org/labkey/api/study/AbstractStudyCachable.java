@@ -21,12 +21,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.MemTracker;
 
-/**
- * User: brittp
- * Date: Feb 10, 2006
- * Time: 2:33:38 PM
- */
-public abstract class AbstractStudyCachable<T> implements StudyCachable<T>, Cloneable
+public abstract class AbstractStudyCachable<K, T> implements StudyCachable<K, T>, Cloneable
 {
     private boolean _mutable;
 

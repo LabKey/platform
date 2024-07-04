@@ -32,7 +32,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
-public class SpecimenRequest extends AbstractStudyCachable<SpecimenRequest> implements RequirementOwner
+public class SpecimenRequest extends AbstractStudyCachable<Integer, SpecimenRequest> implements RequirementOwner
 {
     private Container _container;
     private String _entityId;
@@ -47,7 +47,7 @@ public class SpecimenRequest extends AbstractStudyCachable<SpecimenRequest> impl
     private boolean _hidden;
 
     @Override
-    public Object getPrimaryKey()
+    public Integer getPrimaryKey()
     {
         return getRowId();
     }

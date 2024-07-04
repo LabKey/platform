@@ -22,7 +22,6 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.specimen.SpecimenSchema;
-import org.labkey.api.util.Path;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,8 +29,6 @@ import java.util.List;
 
 public class SpecimenWrapTable extends BaseStudyTable
 {
-    private final Path _notificationKey;
-
     protected final List<DomainProperty> _optionalSpecimenProperties = new ArrayList<>();
     protected final List<DomainProperty> _optionalVialProperties = new ArrayList<>();
 
@@ -58,7 +55,6 @@ public class SpecimenWrapTable extends BaseStudyTable
         addOptionalColumns(_optionalSpecimenProperties, false, null);
 
         addContainerColumn(true);
-        _notificationKey = new Path("study", getClass().getName(), getName());
     }
 
     @NotNull
@@ -67,12 +63,6 @@ public class SpecimenWrapTable extends BaseStudyTable
     {
         checkReadBeforeExecute();
         return SpecimenDetailTable.getSpecimenAndVialFromSQL(alias, getSchema(), getContainer(), _optionalSpecimenProperties, _optionalVialProperties);
-    }
-
-    @Override
-    public Path getNotificationKey()
-    {
-        return _notificationKey;
     }
 
     @Override

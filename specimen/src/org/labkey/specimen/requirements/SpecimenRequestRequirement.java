@@ -25,13 +25,8 @@ import org.labkey.api.study.StudyCachable;
 import org.labkey.api.util.MemTracker;
 import org.labkey.specimen.model.SpecimenRequestActor;
 
-/**
- * User: brittp
- * Date: Feb 8, 2006
- * Time: 4:18:29 PM
- */
 public class SpecimenRequestRequirement extends DefaultRequirement<SpecimenRequestRequirement>
-        implements StudyCachable<SpecimenRequestRequirement>, Cloneable
+        implements StudyCachable<Integer, SpecimenRequestRequirement>, Cloneable
 {
     private int _rowId;
     private Container _container;
@@ -147,7 +142,7 @@ public class SpecimenRequestRequirement extends DefaultRequirement<SpecimenReque
     }
 
     @Override
-    public Object getPrimaryKey()
+    public Integer getPrimaryKey()
     {
         return getRowId();
     }

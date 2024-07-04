@@ -18,8 +18,10 @@ package org.labkey.api.study;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
@@ -32,73 +34,80 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
-public class QueryHelper<K extends StudyCachable<K>>
+public class QueryHelper<K, T extends StudyCachable<K, T>, SC extends QueryHelper.StudyCacheCollections<K, T>>
 {
-    private final Class<K> _objectClass;
+    private final BlockingCache<Container, SC> _cache;
+    private final Class<T> _objectClass;
     private final TableInfoGetter _tableInfoGetter;
     protected final String _defaultSortString;
 
-    public QueryHelper(TableInfoGetter tableInfoGetter, Class<K> objectClass)
+    public QueryHelper(TableInfoGetter tableInfoGetter, Class<T> objectClass)
     {
         this(tableInfoGetter, objectClass, null);
     }
 
-    public QueryHelper(TableInfoGetter tableInfoGetter, Class<K> objectClass, @Nullable String defaultSortString)
+    public QueryHelper(TableInfoGetter tableInfoGetter, Class<T> objectClass, @Nullable String defaultSortString)
     {
         _tableInfoGetter = tableInfoGetter;
         _objectClass = objectClass;
         _defaultSortString = defaultSortString;
+        TableInfo tableInfo = _tableInfoGetter.getTableInfo();
+        _cache = DatabaseCache.get(tableInfo.getSchema().getScope(), tableInfo.getCacheSize(), "StudyCache: " + tableInfo.getName(), (key, argument) ->
+            createCollections(
+                getTableSelector(key).stream(_objectClass)
+                    .peek(StudyCachable::lock)
+                    .toList()
+            ));
     }
 
     /**
-     * Return a Collection of all K objects in the provided Container, in default order
+     * Return a Collection of all T objects in the provided Container, in default order
      */
-    public @NotNull Collection<K> getCollection(Container c)
+    public @NotNull Collection<T> getCollection(Container c)
     {
         return getCollections(c).getCollection();
     }
 
-    public K get(final Container c, final int rowId)
+    public T get(final Container c, final K pk)
     {
-        return getCollections(c).get(rowId);
+        return getCollections(c).get(pk);
     }
 
-    protected StudyCacheCollections getCollections(Container c)
+    protected TableSelector getTableSelector(Container c)
     {
-        return StudyCache.get(getTableInfo(), c, (key, argument) ->
-            createCollections(
-                new TableSelector(getTableInfo(), SimpleFilter.createContainerFilter(c), new Sort(_defaultSortString)).stream(_objectClass)
-                    .peek(StudyCachable::lock)
-                    .toList()
-            )
-        );
+        return new TableSelector(getTableInfo(), SimpleFilter.createContainerFilter(c), new Sort(_defaultSortString));
     }
 
-    protected StudyCacheCollections createCollections(Collection<K> collection)
+    protected SC getCollections(Container c)
     {
-        return new StudyCacheCollections(collection);
+        return _cache.get(c, null);
     }
 
-    public K create(User user, K obj)
+    protected SC createCollections(Collection<T> collection)
     {
-        K ret = Table.insert(user, getTableInfo(), obj);
+        return (SC) new QueryHelper.StudyCacheCollections<>(collection);
+    }
+
+    public T create(User user, T obj)
+    {
+        T ret = Table.insert(user, getTableInfo(), obj);
         clearCache(obj.getContainer());
         return ret;
     }
 
-    public K update(User user, K obj)
+    public T update(User user, T obj)
     {
         return update(user, obj, obj.getPrimaryKey());
     }
 
-    public K update(User user, K obj, Object... pk)
+    public T update(User user, T obj, Object... pk)
     {
-        K ret = Table.update(user, getTableInfo(), obj, pk);
+        T ret = Table.update(user, getTableInfo(), obj, pk);
         clearCache(obj.getContainer());
         return ret;
     }
 
-    public void delete(K obj)
+    public void delete(T obj)
     {
         Table.delete(getTableInfo(), obj.getPrimaryKey());
         clearCache(obj.getContainer());
@@ -111,32 +120,32 @@ public class QueryHelper<K extends StudyCachable<K>>
 
     public void clearCache(Container c)
     {
-        StudyCache.clearCache(getTableInfo(), c);
+        _cache.remove(c);
     }
 
     public void clearCache()
     {
-        StudyCache.clearCache(getTableInfo());
+        _cache.clear();
     }
 
-    // By default, holds a single map of PK -> StudyCachable<K>, but helpers can override to add other collections
-    public class StudyCacheCollections
+    // By default, holds a single map of PK -> V, but helpers can override to add other collections
+    public static class StudyCacheCollections<K, V extends StudyCachable<K, V>>
     {
-        private final Map<Object, K> _map;
+        private final Map<K, V> _map;
 
-        // Receives a collection of locked K objects
-        public StudyCacheCollections(Collection<K> collection)
+        // Receives a collection of locked T objects
+        public StudyCacheCollections(Collection<V> collection)
         {
             _map = Collections.unmodifiableMap(collection.stream()
                 .collect(LabKeyCollectors.toLinkedMap(StudyCachable::getPrimaryKey, v -> v)));
         }
 
-        public @Nullable K get(Object key)
+        public @Nullable V get(K key)
         {
             return _map.get(key);
         }
 
-        public @NotNull Collection<K> getCollection()
+        public @NotNull Collection<V> getCollection()
         {
             return _map.values();
         }

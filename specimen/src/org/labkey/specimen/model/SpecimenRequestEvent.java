@@ -25,7 +25,7 @@ import org.labkey.api.study.AbstractStudyCachable;
 import java.util.Date;
 import java.util.Objects;
 
-public class SpecimenRequestEvent extends AbstractStudyCachable<SpecimenRequestEvent> implements AttachmentParent
+public class SpecimenRequestEvent extends AbstractStudyCachable<Integer, SpecimenRequestEvent> implements AttachmentParent
 {
     private int _rowId;
     private String _entityId;
@@ -124,7 +124,7 @@ public class SpecimenRequestEvent extends AbstractStudyCachable<SpecimenRequestE
     }
 
     @Override
-    public Object getPrimaryKey()
+    public Integer getPrimaryKey()
     {
         return getRowId();
     }

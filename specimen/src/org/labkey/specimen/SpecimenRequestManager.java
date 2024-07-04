@@ -41,6 +41,7 @@ import org.labkey.api.specimen.importer.VialSpecimenRollup;
 import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
 import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.QueryHelper;
+import org.labkey.api.study.QueryHelper.StudyCacheCollections;
 import org.labkey.api.study.SpecimenUrls;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -72,15 +73,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.stream.Collectors;
 
 public class SpecimenRequestManager
 {
     private static final SpecimenRequestManager INSTANCE = new SpecimenRequestManager();
 
-    private final QueryHelper<SpecimenRequestEvent> _requestEventHelper;
-    private final QueryHelper<SpecimenRequestStatus> _requestStatusHelper;
-    private final QueryHelper<SpecimenRequest> _requestHelper;
+    private final QueryHelper<Integer, SpecimenRequestEvent, StudyCacheCollections<Integer, SpecimenRequestEvent>> _requestEventHelper;
+    private final QueryHelper<Integer, SpecimenRequestStatus, StudyCacheCollections<Integer, SpecimenRequestStatus>> _requestStatusHelper;
+    private final QueryHelper<Integer, SpecimenRequest, StudyCacheCollections<Integer, SpecimenRequest>> _requestHelper;
 
     public static SpecimenRequestManager get()
     {
