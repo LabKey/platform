@@ -30,21 +30,23 @@ public interface ExpExperimentTable extends ExpTable<ExpExperimentTable.Column>
 
     enum Column
     {
-        RowId,
-        LSID,
-        Name,
-        Hypothesis,
-        Contact,
-        ExperimentDescriptionURL,
+        BatchProtocolId,
         Comments,
+        Contact,
         Created,
         CreatedBy,
+        ExperimentDescriptionURL,
+        FilePathRoot,
+        Folder,
+        Hypothesis,
+        JobId,
+        LSID,
         Modified,
         ModifiedBy,
-        RunCount,
-        Folder,
-        BatchProtocolId,
-        Properties
+        Name,
+        Properties,
+        RowId,
+        RunCount
     }
 
     MutableColumnInfo createRunCountColumn(String alias, ExpProtocol parentProtocol, ExpProtocol childProtocol);

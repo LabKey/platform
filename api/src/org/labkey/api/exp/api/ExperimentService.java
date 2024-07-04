@@ -155,6 +155,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     List<? extends ExpRun> getExpRuns(Collection<Integer> rowIds);
 
+    @Nullable
     ExpRun getExpRun(String lsid);
 
     /** @return a list of ExpRuns ordered by the RowId */
@@ -182,8 +183,10 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     void syncRunEdges(Collection<ExpRun> runs);
 
+    @Nullable
     ExpData getExpData(int rowId);
 
+    @Nullable
     ExpData getExpData(String lsid);
 
     @NotNull
@@ -196,7 +199,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
     List<? extends ExpData> getExpDatas(Collection<Integer> rowid);
 
     @NotNull
-    List<? extends ExpData> getExpDatas(ExpDataClass dataClass, Collection<Integer> rowIds);
+    List<? extends ExpData> getExpDatas(@NotNull ExpDataClass dataClass, Collection<Integer> rowIds);
 
     List<? extends ExpData> getExpDatas(Container container, @Nullable DataType type, @Nullable String name);
 
@@ -740,11 +743,9 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     void deleteAllExpObjInContainer(Container container, User user) throws ExperimentException;
 
-    void deleteExperimentRunsByRowIds(Container container, final User user, int... selectedRunIds);
+    void deleteExperimentRunsByRowIds(Container container, final User user, int... runRowIds);
 
-    void deleteExperimentRunsByRowIds(Container container, final User user, @Nullable String userComment, @NotNull Collection<Integer> selectedRunIds);
-
-    void deleteExpExperimentByRowId(Container container, User user, int experimentId);
+    void deleteExperimentRunsByRowIds(Container container, final User user, @Nullable String userComment, @NotNull Collection<Integer> runRowIds);
 
     void addExperimentListener(ExperimentListener listener);
 
