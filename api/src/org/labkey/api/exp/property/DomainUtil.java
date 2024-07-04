@@ -62,6 +62,7 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.PropertyValidationError;
+import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
@@ -79,6 +80,7 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.ConditionalFormatFilterType;
 import org.labkey.data.xml.ConditionalFormatType;
+import org.labkey.data.xml.TableType;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -95,6 +97,7 @@ import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior;
+import static org.labkey.api.gwt.client.ui.PropertyType.CALCULATED_CONCEPT_URI;
 import static org.labkey.api.util.StringExpressionFactory.SUBSTITUTION_EXP_PATTERN;
 
 /**
@@ -267,14 +270,32 @@ public class DomainUtil
 
         Map<String, Object> pkColMap = new HashMap<>();
         TableInfo tableInfo = null;
+        List<GWTPropertyDescriptor> calculatedColumns = new ArrayList<>();
         if (!skipPKCols)
         {
-            //get PK columns
             tableInfo = domainKind.getTableInfo(user, container, domain, null);
-
-            if (null != tableInfo && null != tableInfo.getPkColumns())
+            if (null != tableInfo)
             {
-                pkColMap = tableInfo.getPkColumns().stream().collect(Collectors.toMap(ColumnInfo :: getColumnName, ColumnInfo :: isKeyField));
+                // get PK columns
+                if (null != tableInfo.getPkColumns())
+                    pkColMap = tableInfo.getPkColumns().stream().collect(Collectors.toMap(ColumnInfo :: getColumnName, ColumnInfo :: isKeyField));
+
+                // get calculated columns from XML metadata, those with value expressions
+                ArrayList<QueryException> errors = new ArrayList<>();
+                TableType xmlTable = QueryService.get().findMetadataOverride(tableInfo.getUserSchema(), tableInfo.getName(), false, false, errors, null)
+                        .stream().findFirst().orElse(null);
+                if (xmlTable != null && xmlTable.isSetColumns())
+                {
+                    for (ColumnType col : xmlTable.getColumns().getColumnArray())
+                    {
+                        if (col.getValueExpression() != null)
+                        {
+                            GWTPropertyDescriptor propDesc = getPropertyDescriptor(col);
+                            propDesc.setConceptURI(CALCULATED_CONCEPT_URI);
+                            calculatedColumns.add(propDesc);
+                        }
+                    }
+                }
             }
         }
 
@@ -319,6 +340,10 @@ public class DomainUtil
 
             list.add(p);
         }
+
+        // add calculated columns to the list of properties
+        if (!calculatedColumns.isEmpty())
+            list.addAll(calculatedColumns);
 
         d.setFields(list);
 
@@ -610,6 +635,8 @@ public class DomainUtil
             gwtProp.setScannable(columnXml.getScannable());
         if (columnXml.isSetDerivationDataScope())
             gwtProp.setDerivationDataScope(columnXml.getDerivationDataScope().toString());
+        if (columnXml.isSetValueExpression())
+            gwtProp.setValueExpression(columnXml.getValueExpression());
 
         return gwtProp;
     }

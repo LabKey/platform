@@ -51,6 +51,8 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     private DefaultValueType defaultDefaultValueType = null;
     private DefaultValueType[] defaultValueOptions = new DefaultValueType[0];
     private List<FieldType> fields = new ArrayList<FieldType>();
+    private List<FieldType> standardFields = null;
+    private List<FieldType> calculatedFields = null;
     private List<GWTIndex> indices = new ArrayList<GWTIndex>();
     private String defaultValuesURL = null;
 
@@ -254,7 +256,16 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
 
     public List<FieldType> getFields()
     {
-        return fields;
+        if (standardFields == null)
+            standardFields = fields.stream().filter(f -> !f.isCalculatedField()).toList();
+        return standardFields;
+    }
+
+    public List<FieldType> getCalculatedFields()
+    {
+        if (calculatedFields == null)
+            calculatedFields = fields.stream().filter(GWTPropertyDescriptor::isCalculatedField).toList();
+        return calculatedFields;
     }
 
     public void setFields(List<FieldType> list)
