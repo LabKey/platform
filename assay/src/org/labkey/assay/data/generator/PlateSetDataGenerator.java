@@ -331,7 +331,7 @@ public class PlateSetDataGenerator extends DataGenerator<PlateSetDataGenerator.C
     {
         // create a row for every plate in the plate set
         List<Map<String, Object>> data = new ArrayList<>();
-        for (Plate plate : plateSet.getPlates(getUser()))
+        for (Plate plate : plateSet.getPlates())
         {
             for (int row=0; row < _plateType.getRows(); row++)
             {
