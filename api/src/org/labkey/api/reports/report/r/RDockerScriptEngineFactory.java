@@ -41,7 +41,7 @@ public class RDockerScriptEngineFactory extends ExternalScriptEngineFactory
     {
         DockerService ds = DockerService.get();
         if (null != ds && ds.isDockerEnabled()
-                && AppProps.getInstance().isExperimentalFeatureEnabled(RStudioService.R_DOCKER_SANDBOX)
+                && AppProps.getInstance().isOptionalFeatureEnabled(RStudioService.R_DOCKER_SANDBOX)
                 && this._dockerImage != null)
             return new RDockerScriptEngine(_def, ds, this._dockerImage);
         else return null;

@@ -255,7 +255,7 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
 
     protected Set<String> getSubSchemaNames()
     {
-        if (!AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_STUDY_SUBSCHEMAS))
+        if (!AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_STUDY_SUBSCHEMAS))
             return Set.of();
         var ret = new LinkedHashSet<>(Arrays.asList(DATASETS_SCHEMA_NAME, DESIGN_SCHEMA_NAME));
         if (null != SpecimenService.get())
@@ -306,7 +306,7 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
     @Override
     public Set<String> getTableNames()
     {
-        if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_STUDY_SUBSCHEMAS))
+        if (AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_STUDY_SUBSCHEMAS))
             return Collections.emptySet();
 
         if (_tableNames == null)

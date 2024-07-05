@@ -16,11 +16,15 @@
  */
 %>
 <%@ page import="org.labkey.api.settings.AdminConsole" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.settings.AdminConsole.OptionalFeatureFlag" %>
+<%@ page import="org.labkey.api.settings.OptionalFeatureService.FeatureType" %>
+<%@ page import="org.labkey.core.admin.AdminController.OptionalFeaturesForm" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    boolean showHidden = PageFlowUtil.mapFromQueryString(request.getQueryString()).containsKey("showHidden");
+    OptionalFeaturesForm form = (OptionalFeaturesForm)getModelBean();
+    FeatureType type = form.getTypeEnum();
+    boolean showHidden = form.isShowHidden();
 %>
 <style>
     .toggle-label-text {
@@ -36,40 +40,48 @@
     }
 </style>
 <p class="labkey-error">
-    <strong>WARNING</strong>:
-    These experimental features may change, break, or disappear at any time.
-    We make absolutely no guarantees about what may happen if you turn on these experimental
-    features. Enabling or disabling some features will require a restart of the server.
+<%=type.getAdminGuidance()%>
 </p>
 <div class="list-group">
-<% for (AdminConsole.ExperimentalFeatureFlag flag : AdminConsole.getExperimentalFeatureFlags()) { %>
-<% if (!showHidden && flag.isHidden()) continue; %>
+<%
+    for (OptionalFeatureFlag flag : AdminConsole.getOptionalFeatureFlags(type))
+    {
+        if (!showHidden && flag.isHidden())
+            continue;
+%>
 <div class="list-group-item">
     <label>
         <input id="<%=h(flag.getFlag())%>" type="checkbox" <%=checked(flag.isEnabled())%>>
         <span class="toggle-label-text"><%=h(flag.getTitle())%></span>
     </label>
     <div class="list-group-item-text"><%=h(flag.getDescription())%></div>
-    <% if (flag.isRequiresRestart()) { %>
+<%
+        if (flag.isRequiresRestart())
+        {
+%>
     <br/>
     <div class="list-group-item-text labkey-error">A restart is required after toggling this feature.</div>
-    <% } %>
+<%
+        }
+%>
 </div>
-<% } %>
+<%
+    }
+%>
 </div>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
     (function () {
         let inputList = document.querySelectorAll('div.list-group-item input');
         inputList.forEach(function (input) {
-            input.addEventListener('change', function (e) {
+            input.addEventListener('change', function () {
                 let flag = input.id;
                 let enabled = input.checked;
                 LABKEY.Ajax.request({
-                    url: LABKEY.ActionURL.buildURL('admin', 'experimentalFeature.api'),
+                    url: LABKEY.ActionURL.buildURL('admin', 'optionalFeature.api'),
                     method: 'POST',
                     params: { feature: flag, enabled: enabled },
                     success: LABKEY.Utils.getCallbackWrapper(function(json) {
-                        console.log((json.enabled ? 'Enabled' : 'Disabled') + ' experimental feature');
+                        console.log((json.enabled ? 'Enabled' : 'Disabled') + <%=q(" " + type.name().toLowerCase() + " feature: ")%> + flag);
                     }),
                     failure: LABKEY.Utils.getCallbackWrapper(null, null, true)
                 });
@@ -77,4 +89,3 @@
         });
     })();
 </script>
-

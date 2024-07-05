@@ -147,16 +147,18 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.settings.AdminConsole;
+import org.labkey.api.settings.AdminConsole.OptionalFeatureFlag;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.CustomLabelService;
 import org.labkey.api.settings.CustomLabelService.CustomLabelServiceImpl;
-import org.labkey.api.settings.ExperimentalFeatureService;
-import org.labkey.api.settings.ExperimentalFeatureService.ExperimentalFeatureServiceImpl;
 import org.labkey.api.settings.FolderSettingsCache;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.LookAndFeelPropertiesManager;
 import org.labkey.api.settings.LookAndFeelPropertiesManager.ResourceType;
 import org.labkey.api.settings.LookAndFeelPropertiesManager.SiteResourceHandler;
+import org.labkey.api.settings.OptionalFeatureService;
+import org.labkey.api.settings.OptionalFeatureService.FeatureType;
+import org.labkey.api.settings.OptionalFeatureService.OptionalFeatureServiceImpl;
 import org.labkey.api.settings.ProductConfiguration;
 import org.labkey.api.settings.StandardStartupPropertyHandler;
 import org.labkey.api.settings.StartupPropertyEntry;
@@ -419,7 +421,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         WarningService.setInstance(new WarningServiceImpl());
 
         ViewService.setInstance(ViewServiceImpl.getInstance());
-        ExperimentalFeatureService.setInstance(new ExperimentalFeatureServiceImpl());
+        OptionalFeatureService.setInstance(new OptionalFeatureServiceImpl());
         ThumbnailService.setInstance(new ThumbnailServiceImpl());
         ShortURLService.setInstance(new ShortURLServiceImpl());
         StatsService.setInstance(new StatsServiceImpl());
@@ -1093,8 +1095,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 "Block malicious clients",
                 "Reject requests from clients that appear malicious. Turn this feature off if you want to run a security scanner.",
                 false);
-        AdminConsole.addExperimentalFeatureFlag(new AdminConsole.ExperimentalFeatureFlag(EXPERIMENTAL_LOCAL_MARKETING_UPDATE,
-                "Self test marketing updates", "Test marketing updates from this local server (requires the mothership module).", false, true));
+        AdminConsole.addOptionalFeatureFlag(new OptionalFeatureFlag(EXPERIMENTAL_LOCAL_MARKETING_UPDATE,
+                "Self test marketing updates", "Test marketing updates from this local server (requires the mothership module).", false, true, FeatureType.Experimental));
         AdminConsole.addExperimentalFeatureFlag(FEATURE_FLAG_DISABLE_ENFORCE_CSP,
                 "Disable enforce Content Security Policy",
                 "Stop sending the " + ContentSecurityPolicyFilter.ContentSecurityPolicyType.Enforce.getHeaderName() + " header to browsers, " +
@@ -1103,7 +1105,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 "(e.g., if an enforce CSP breaks critical functionality).",
                 false);
 
-        ExperimentalFeatureService.get().addFeatureListener(EXPERIMENTAL_LOCAL_MARKETING_UPDATE, (feature, enabled) -> {
+        OptionalFeatureService.get().addFeatureListener(EXPERIMENTAL_LOCAL_MARKETING_UPDATE, (feature, enabled) -> {
             // update the timer task when this setting changes
             MothershipReport.setSelfTestMarketingUpdates(enabled);
             UsageReportingLevel.reportNow();
@@ -1131,10 +1133,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             javaInfo.put("java.vm.name", System.getProperty("java.vm.name"));
             results.put("javaRuntime", javaInfo);
             results.put("applicationMenuDisplayMode", LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getApplicationMenuDisplayMode());
-            results.put("experimentalFeaturesEnabled", AdminConsole.getExperimentalFeatureFlags().stream()
-                .filter(AdminConsole.ExperimentalFeatureFlag::isEnabled)
-                .map(AdminConsole.ExperimentalFeatureFlag::getFlag)
-                .collect(Collectors.toList()));
+            results.put("optionalFeaturesEnabled", AdminConsole.getOptionalFeatureFlags().stream()
+                .filter(OptionalFeatureFlag::isEnabled)
+                .collect(Collectors.groupingBy(optionalFeatureFlag -> optionalFeatureFlag.getType().name().toLowerCase(), Collectors.mapping(OptionalFeatureFlag::getFlag, Collectors.toList()))));
             results.put("productFeaturesEnabled", AdminConsole.getProductFeatureSet());
             results.put("analyticsTrackingStatus", AnalyticsServiceImpl.get().getTrackingStatus().toString());
             String labkeyContextPath = AppProps.getInstance().getContextPath();

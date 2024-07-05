@@ -114,7 +114,7 @@ public class SQLFragment implements Appendable, CharSequence
             (StringUtils.countMatches(charseq, '\"') % 2) != 0 ||
             StringUtils.contains(charseq, ';'))
         {
-            if (!AppProps.getInstance().isExperimentalFeatureEnabled(FEATUREFLAG_DISABLE_STRICT_CHECKS))
+            if (!AppProps.getInstance().isOptionalFeatureEnabled(FEATUREFLAG_DISABLE_STRICT_CHECKS))
                 throw new IllegalArgumentException("SQLFragment.append(String) does not allow semicolons or unmatched quotes");
         }
 
@@ -390,7 +390,7 @@ public class SQLFragment implements Appendable, CharSequence
             (StringUtils.countMatches(charseq, '\"') % 2) != 0 ||
             StringUtils.contains(charseq, ';'))
         {
-            if (!AppProps.getInstance().isExperimentalFeatureEnabled(FEATUREFLAG_DISABLE_STRICT_CHECKS))
+            if (!AppProps.getInstance().isOptionalFeatureEnabled(FEATUREFLAG_DISABLE_STRICT_CHECKS))
                 throw new IllegalArgumentException("SQLFragment.append(String) does not allow semicolons or unmatched quotes");
         }
 
@@ -413,7 +413,7 @@ public class SQLFragment implements Appendable, CharSequence
             malformed = (StringUtils.countMatches(identifier, '`') % 2) != 0;
         else
             malformed = StringUtils.containsAny(identifier, "*/\\'\"`?;- \t\n");
-        if (malformed && !AppProps.getInstance().isExperimentalFeatureEnabled(FEATUREFLAG_DISABLE_STRICT_CHECKS))
+        if (malformed && !AppProps.getInstance().isOptionalFeatureEnabled(FEATUREFLAG_DISABLE_STRICT_CHECKS))
             throw new IllegalArgumentException("SQLFragment.appendIdentifier(String) value appears to be incorrectly formatted: " + identifier);
 
         getStringBuilder().append(charseq);
@@ -717,7 +717,7 @@ public class SQLFragment implements Appendable, CharSequence
             (StringUtils.countMatches(str, '\"') % 2) != 0 ||
             StringUtils.contains(str, ';'))
         {
-            if (!AppProps.getInstance().isExperimentalFeatureEnabled(FEATUREFLAG_DISABLE_STRICT_CHECKS))
+            if (!AppProps.getInstance().isOptionalFeatureEnabled(FEATUREFLAG_DISABLE_STRICT_CHECKS))
                 throw new IllegalArgumentException("SQLFragment.insert(int,String) does not allow semicolons or unmatched quotes");
         }
 
@@ -1120,12 +1120,12 @@ public class SQLFragment implements Appendable, CharSequence
             try
             {
                 r.run();
-                if (!AppProps.getInstance().isExperimentalFeatureEnabled(FEATUREFLAG_DISABLE_STRICT_CHECKS))
+                if (!AppProps.getInstance().isOptionalFeatureEnabled(FEATUREFLAG_DISABLE_STRICT_CHECKS))
                     fail("Expected IllegalArgumentException");
             }
             catch (IllegalArgumentException e)
             {
-                if (AppProps.getInstance().isExperimentalFeatureEnabled(FEATUREFLAG_DISABLE_STRICT_CHECKS))
+                if (AppProps.getInstance().isOptionalFeatureEnabled(FEATUREFLAG_DISABLE_STRICT_CHECKS))
                     fail("Did not expect IllegalArgumentException");
             }
         }

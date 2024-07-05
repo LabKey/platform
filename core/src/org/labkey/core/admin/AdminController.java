@@ -211,10 +211,11 @@ import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ConceptURIProperties;
 import org.labkey.api.settings.DateParsingMode;
-import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.LookAndFeelPropertiesManager.ResourceType;
 import org.labkey.api.settings.NetworkDriveProps;
+import org.labkey.api.settings.OptionalFeatureService;
+import org.labkey.api.settings.OptionalFeatureService.FeatureType;
 import org.labkey.api.settings.ProductConfiguration;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableFolderLookAndFeelProperties;
@@ -418,7 +419,8 @@ public class AdminController extends SpringActionController
         // Configuration
         AdminConsole.addLink(Configuration, "authentication", urlProvider(LoginUrls.class).getConfigureURL());
         AdminConsole.addLink(Configuration, "email customization", new ActionURL(CustomizeEmailAction.class, root), AdminPermission.class);
-        AdminConsole.addLink(Configuration, "experimental features", new ActionURL(ExperimentalFeaturesAction.class, root), AdminOperationsPermission.class);
+        AdminConsole.addLink(Configuration, "deprecated features", new ActionURL(OptionalFeaturesAction.class, root).addParameter("type", FeatureType.Deprecated.name()), AdminOperationsPermission.class);
+        AdminConsole.addLink(Configuration, "experimental features", new ActionURL(OptionalFeaturesAction.class, root).addParameter("type", FeatureType.Experimental.name()), AdminOperationsPermission.class);
         if (!AdminConsole.getProductGroups().isEmpty())
             AdminConsole.addLink(Configuration, "product configuration", new ActionURL(ProductConfigurationAction.class, root), AdminOperationsPermission.class);
         // TODO move to FileContentModule
@@ -607,7 +609,7 @@ public class AdminController extends SpringActionController
         @Override
         public ActionURL getExperimentalFeaturesURL()
         {
-            return new ActionURL(ExperimentalFeaturesAction.class, ContainerManager.getRoot());
+            return new ActionURL(OptionalFeaturesAction.class, ContainerManager.getRoot());
         }
 
         @Override
@@ -9113,7 +9115,7 @@ public class AdminController extends SpringActionController
         }
     }
 
-    public static class ExperimentalFeaturesForm
+    public static class OptionalFeatureForm
     {
         private String feature;
         private boolean enabled;
@@ -9140,7 +9142,7 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public static class ExperimentalFeatureAction extends BaseApiAction<ExperimentalFeaturesForm>
+    public static class OptionalFeatureAction extends BaseApiAction<OptionalFeatureForm>
     {
         @Override
         protected ModelAndView handleGet() throws Exception
@@ -9149,13 +9151,13 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public ApiResponse execute(ExperimentalFeaturesForm form, BindException errors)
+        public ApiResponse execute(OptionalFeatureForm form, BindException errors)
         {
             String feature = StringUtils.trimToNull(form.getFeature());
             if (feature == null)
                 throw new ApiUsageException("feature is required");
 
-            ExperimentalFeatureService svc = ExperimentalFeatureService.get();
+            OptionalFeatureService svc = OptionalFeatureService.get();
             if (svc == null)
                 throw new IllegalStateException();
 
@@ -9173,41 +9175,59 @@ public class AdminController extends SpringActionController
         }
     }
 
+    public static class OptionalFeaturesForm
+    {
+        private String _type;
+        private boolean _showHidden;
+
+        public String getType()
+        {
+            return _type;
+        }
+
+        @SuppressWarnings("unused")
+        public void setType(String type)
+        {
+            _type = type;
+        }
+
+        public @NotNull FeatureType getTypeEnum()
+        {
+            return EnumUtils.getEnum(FeatureType.class, getType(), FeatureType.Experimental);
+        }
+
+        public boolean isShowHidden()
+        {
+            return _showHidden;
+        }
+
+        @SuppressWarnings("unused")
+        public void setShowHidden(boolean showHidden)
+        {
+            _showHidden = showHidden;
+        }
+    }
 
     @AdminConsoleAction
     @RequiresPermission(AdminOperationsPermission.class)
-    public class ExperimentalFeaturesAction extends FormViewAction<Object>
+    public class OptionalFeaturesAction extends SimpleViewAction<OptionalFeaturesForm>
     {
-        @Override
-        public void validateCommand(Object form, Errors errors)
-        {
-        }
+        private FeatureType _type;
 
         @Override
-        public ModelAndView getView(Object form, boolean reshow, BindException errors)
+        public ModelAndView getView(OptionalFeaturesForm form, BindException errors)
         {
-            JspView<Object> view = new JspView<>("/org/labkey/core/admin/experimentalFeatures.jsp");
+            _type = form.getTypeEnum();
+            JspView<Object> view = new JspView<>("/org/labkey/core/admin/optionalFeatures.jsp", form);
             view.setFrame(WebPartView.FrameType.NONE);
             return view;
-        }
-
-        @Override
-        public boolean handlePost(Object form, BindException errors)
-        {
-            throw new UnsupportedOperationException("Nope");
-        }
-
-        @Override
-        public URLHelper getSuccessURL(Object form)
-        {
-            return getShowAdminURL();
         }
 
         @Override
         public void addNavTrail(NavTree root)
         {
             setHelpTopic("experimental");
-            addAdminNavTrail(root, "Experimental Features", getClass());
+            addAdminNavTrail(root, _type.name() + " Features", getClass());
         }
     }
 
@@ -10169,7 +10189,7 @@ public class AdminController extends SpringActionController
         @Override
         public Object execute(ExceptionForm form, BindException errors)
         {
-            if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP))
+            if (AppProps.getInstance().isOptionalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP))
             {
                 ExceptionUtil.logClientExceptionToMothership(
                         form.getStackTrace(),
@@ -10181,7 +10201,7 @@ public class AdminController extends SpringActionController
                         form.getUsername()
                 );
             }
-            else if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_SERVER))
+            else if (AppProps.getInstance().isOptionalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_SERVER))
             {
                 LOG.error("Client exception detected:\n" +
                         form.getRequestURL() + "\n" +
@@ -11562,7 +11582,7 @@ public class AdminController extends SpringActionController
                 controller.new EmailTestAction(),
                 controller.new ShowNetworkDriveTestAction(),
                 controller.new ValidateDomainsAction(),
-                new ExperimentalFeatureAction(),
+                new OptionalFeatureAction(),
                 new GetSchemaXmlDocAction(),
                 new RecreateViewsAction()
             );
@@ -11595,7 +11615,7 @@ public class AdminController extends SpringActionController
             // @AdminConsoleAction
             // @RequiresPermission(AdminOperationsPermission.class)
             assertForAdminOperationsPermission(ContainerManager.getRoot(), user,
-                controller.new ExperimentalFeaturesAction()
+                controller.new OptionalFeaturesAction()
             );
 
             // @RequiresSiteAdmin
