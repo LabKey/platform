@@ -7,18 +7,12 @@ import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateSet;
 import org.labkey.api.assay.plate.PlateSetType;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.Entity;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.security.User;
 import org.labkey.assay.query.AssayDbSchema;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -123,16 +117,12 @@ public class PlateSetImpl extends Entity implements PlateSet
     }
 
     @Override
-    public List<Plate> getPlates(User user)
+    public List<Plate> getPlates()
     {
-        ContainerFilter cf = PlateManager.get().getPlateContainerFilter(null, getContainer(), user);
-        List<Plate> plates = new ArrayList<>();
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("PlateSet"), _rowId);
-        new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate(), Collections.singleton("RowId"), filter, null).forEach(Integer.class, plateId -> {
-            plates.add(PlateCache.getPlate(cf, plateId));
-        });
+        if (isNew())
+            return Collections.emptyList();
 
-        return plates;
+        return PlateCache.getPlatesForPlateSet(getContainer(), getRowId());
     }
 
     @JsonProperty("plateCount")
