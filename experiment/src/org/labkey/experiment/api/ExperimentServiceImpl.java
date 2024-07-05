@@ -5469,6 +5469,21 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
     }
 
+    @Override
+    public void deleteExpExperimentByRowId(Container c, User user, int rowId)
+    {
+        if (!c.hasPermission(user, DeletePermission.class))
+        {
+            throw new IllegalStateException("Not permitted");
+        }
+
+        ExpExperimentImpl experiment = getExpExperiment(rowId);
+        if (experiment == null)
+            return;
+
+        deleteExpExperiment(c, user, experiment);
+    }
+
     // TODO: This should be refactored to support deletion of multiple ExpExperiments at one time
     private void deleteExpExperiment(Container c, User user, @NotNull ExpExperimentImpl experiment)
     {

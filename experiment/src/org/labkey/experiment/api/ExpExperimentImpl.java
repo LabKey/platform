@@ -262,7 +262,7 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
     @Override
     public void delete(User user)
     {
-        ExperimentServiceImpl.get().deleteExperimentRunsByRowIds(getContainer(), user, getRowId());
+        ExperimentServiceImpl.get().deleteExpExperimentByRowId(getContainer(), user, getRowId());
     }
 
     public void setHidden(boolean hidden)
