@@ -383,20 +383,19 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     ExpExperiment createExpExperiment(Container container, String name);
 
-    ExpExperiment getExpExperiment(int rowid);
+    @Nullable ExpExperiment getExpExperiment(int rowId);
 
-    ExpExperiment getExpExperiment(String lsid);
+    @Nullable ExpExperiment getExpExperiment(String lsid);
 
     List<? extends ExpExperiment> getExpExperiments(Collection<Integer> rowIds);
 
     List<? extends ExpExperiment> getExperiments(Container container, User user, boolean includeOtherContainers, boolean includeBatches);
 
-    ExpProtocol getExpProtocol(int rowid);
+    @Nullable ExpProtocol getExpProtocol(int rowid);
 
-    @Nullable
-    ExpProtocol getExpProtocol(String lsid);
+    @Nullable ExpProtocol getExpProtocol(String lsid);
 
-    ExpProtocol getExpProtocol(Container container, String name);
+    @Nullable ExpProtocol getExpProtocol(Container container, String name);
 
     ExpProtocol createExpProtocol(Container container, ExpProtocol.ApplicationType type, String name);
 

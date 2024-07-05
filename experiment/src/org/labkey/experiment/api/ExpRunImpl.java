@@ -540,7 +540,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         final ExperimentServiceImpl svc = ExperimentServiceImpl.get();
         final SqlDialect dialect = svc.getSchema().getSqlDialect();
 
-        ExperimentServiceImpl.get().invalidateExperimentRun(getLSID());
+        svc.invalidateExperimentRun(getLSID());
 
         deleteProtocolApplicationProvenance();
 
