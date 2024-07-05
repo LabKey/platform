@@ -8811,7 +8811,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return excludedProjects;
     }
 
-
     private Set<Integer> _getContainerDataTypeExclusions(DataTypeForExclusion dataType, String excludedContainerId)
     {
         Set<Integer> excludedRowIds = new HashSet<>();
