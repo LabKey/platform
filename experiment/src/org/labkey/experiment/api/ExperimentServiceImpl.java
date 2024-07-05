@@ -1210,13 +1210,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public @Nullable ExpExperimentImpl getExpExperiment(int rowId)
     {
-        return getExpExperiment(new SimpleFilter(FieldKey.fromParts("RowId"), rowId));
+        return getExpExperiment(new SimpleFilter(FieldKey.fromParts(ExpExperimentTable.Column.RowId.name()), rowId));
     }
 
     @Override
     public ExpExperiment getExpExperiment(String lsid)
     {
-        return getExpExperiment(new SimpleFilter(FieldKey.fromParts("LSID"), lsid));
+        return getExpExperiment(new SimpleFilter(FieldKey.fromParts(ExpExperimentTable.Column.LSID.name()), lsid));
     }
 
     @Override
