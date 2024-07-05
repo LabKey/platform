@@ -421,7 +421,7 @@ public class SecurityController extends SpringActionController
             // For current usages of this API, we want to return the "effective" permissions for resources/tables defined
             // in this container, so check isPhiRolesRequired().
             PHI maxPhi = PHI.Restricted;
-            if (ComplianceService.get().getFolderSettings(getContainer(), User.getAdminServiceUser()).isPhiRolesRequired())
+            if (ComplianceService.get().isComplianceSupported() && ComplianceService.get().getFolderSettings(getContainer(), User.getAdminServiceUser()).isPhiRolesRequired())
                 maxPhi = ComplianceService.get().getMaxAllowedPhi(getContainer(), getUser());
 
             ApiSimpleResponse response = new ApiSimpleResponse();
