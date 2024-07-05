@@ -53,6 +53,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbScope.Transaction;
 import org.labkey.api.data.ExcelColumn;
 import org.labkey.api.data.ExcelWriter;
+import org.labkey.api.data.PHI;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
@@ -416,11 +417,15 @@ public class SecurityController extends SpringActionController
         @Override
         public Object execute(Object o, BindException errors) throws Exception
         {
-            String maxPhi = ComplianceService.get().getMaxAllowedPhi(getContainer(), getUser()).name();
+            // ComplianceService.getMaxAllowedPhi() only checks assigned permssions.
+            // For current usages of this API, we want to return the "effective" permissions for resources/tables defined
+            // in this container, so check isPhiRolesRequired().
+            PHI maxPhi = PHI.Restricted;
+            if (ComplianceService.get().getFolderSettings(getContainer(), User.getAdminServiceUser()).isPhiRolesRequired())
+                maxPhi = ComplianceService.get().getMaxAllowedPhi(getContainer(), getUser());
 
             ApiSimpleResponse response = new ApiSimpleResponse();
-            response.put("maxPhiLevel", maxPhi);
-
+            response.put("maxPhiLevel", maxPhi.name());
             return response;
         }
     }
