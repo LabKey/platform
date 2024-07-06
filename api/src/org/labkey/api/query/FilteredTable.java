@@ -648,7 +648,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
     public boolean canUserAccessPhi()
     {
         if (supportTableRules())
-            return !hasRulesTransformedColumns();
+            return !hasRulesTransformedColumns() && !hasRulesOmittedColumns();
         return super.canUserAccessPhi();
     }
 
