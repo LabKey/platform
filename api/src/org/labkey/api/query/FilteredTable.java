@@ -647,6 +647,9 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
     @Override
     public boolean canUserAccessPhi()
     {
+        // This overrides FitleredTable.canUserAccessPhi() because it implicitly uses the TableRules _rules.
+        // However, this doesn't work until after applyTableRules().
+        // TODO add a method to TableRules
         if (supportTableRules())
             return !hasRulesTransformedColumns() && !hasRulesOmittedColumns();
         return super.canUserAccessPhi();
