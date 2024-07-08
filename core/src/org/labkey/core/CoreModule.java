@@ -1133,9 +1133,11 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             javaInfo.put("java.vm.name", System.getProperty("java.vm.name"));
             results.put("javaRuntime", javaInfo);
             results.put("applicationMenuDisplayMode", LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getApplicationMenuDisplayMode());
-            results.put("optionalFeaturesEnabled", AdminConsole.getOptionalFeatureFlags().stream()
-                .filter(OptionalFeatureFlag::isEnabled)
-                .collect(Collectors.groupingBy(optionalFeatureFlag -> optionalFeatureFlag.getType().name().toLowerCase(), Collectors.mapping(OptionalFeatureFlag::getFlag, Collectors.toList()))));
+            results.put("optionalFeatures", AdminConsole.getOptionalFeatureFlags().stream()
+                .collect(Collectors.groupingBy(optionalFeatureFlag -> optionalFeatureFlag.getType().name().toLowerCase(),
+                    Collectors.mapping(flag -> flag, Collectors.toMap(OptionalFeatureFlag::getFlag, OptionalFeatureFlag::isEnabled))
+                ))
+            );
             results.put("productFeaturesEnabled", AdminConsole.getProductFeatureSet());
             results.put("analyticsTrackingStatus", AnalyticsServiceImpl.get().getTrackingStatus().toString());
             String labkeyContextPath = AppProps.getInstance().getContextPath();
