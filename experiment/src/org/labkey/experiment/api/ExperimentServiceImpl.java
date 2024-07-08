@@ -1265,18 +1265,24 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return getExpProtocol(container, name, null);
     }
 
-    private ExpProtocolImpl getExpProtocol(Container container, String name, @Nullable ContainerFilter cf)
+    private @Nullable ExpProtocolImpl getExpProtocol(Container container, String name, @Nullable ContainerFilter cf)
     {
+        if (cf == null && container == null)
+            throw new IllegalArgumentException("Either a container or a container filter must be supplied to retrieve an exp protocol by name.");
+
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Name"), name);
-        if (cf instanceof ContainerFilter.ContainerFilterWithPermission cfp)
-        {
-            Collection<GUID> validContainerIds =  cfp.generateIds(container, ReadPermission.class, null);
-            filter.addCondition(FieldKey.fromParts("Container"), validContainerIds, CompareType.IN);
-        }
-        else if (container != null)
+        if (cf != null)
+            filter.addCondition(cf.createFilterClause(getExpSchema(), FieldKey.fromParts("Container")));
+        else
             filter.addCondition(FieldKey.fromParts("Container"), container.getId());
 
-        return getExpProtocol(filter);
+        // When a container filter is applied we cannot guarantee a single protocol by name.
+        // For backwards compatibility, and instead of throwing, get a sorted list of protocols and return the first one.
+        List<ExpProtocolImpl> protocols = getExpProtocols(filter, new Sort("RowId"), 1);
+        if (protocols.isEmpty())
+            return null;
+
+        return protocols.get(0);
     }
 
     private void uncacheProtocol(Protocol p)
@@ -8083,7 +8089,16 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     private @NotNull List<ExpProtocolImpl> getExpProtocols(SimpleFilter filter)
     {
-        return ExpProtocolImpl.fromProtocols(new TableSelector(getTinfoProtocol(), filter, null).getArrayList(Protocol.class));
+        return getExpProtocols(filter, null, null);
+    }
+
+    private @NotNull List<ExpProtocolImpl> getExpProtocols(SimpleFilter filter, @Nullable Sort sort, @Nullable Integer maxRows)
+    {
+        TableSelector selector = new TableSelector(getTinfoProtocol(), filter, sort);
+        if (maxRows != null)
+            selector.setMaxRows(maxRows);
+
+        return ExpProtocolImpl.fromProtocols(selector.getArrayList(Protocol.class));
     }
 
     @Override
@@ -8106,7 +8121,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public List<ExpProtocolImpl> getAllExpProtocols()
     {
-        return getExpProtocols((SimpleFilter) null);
+        return getExpProtocols(null, null);
     }
 
     @Override
