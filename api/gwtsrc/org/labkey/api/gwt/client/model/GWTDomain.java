@@ -254,6 +254,11 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
         this.container = container;
     }
 
+    public List<FieldType> getAllFields()
+    {
+        return fields;
+    }
+
     public List<FieldType> getFields()
     {
         if (standardFields == null)
@@ -271,6 +276,10 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     public void setFields(List<FieldType> list)
     {
         fields = list;
+
+        // reset the cached lists of fields so they will be recalculated on next call to getters
+        standardFields = null;
+        calculatedFields = null;
     }
 
     public FieldType getFieldByName(String name)

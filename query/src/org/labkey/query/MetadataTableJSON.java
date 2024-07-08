@@ -31,7 +31,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.WrappedColumn;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.Lookup;
@@ -64,6 +63,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+
+import static org.labkey.api.gwt.client.ui.PropertyType.CALCULATED_CONCEPT_URI;
 
 /**
  * User: jeckels
@@ -172,7 +173,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
         }
 
 
-        for (MetadataColumnJSON metadataColumnJSON : this.getFields())
+        for (MetadataColumnJSON metadataColumnJSON : this.getAllFields())
         {
             ColumnType xmlColumn = columnsToDelete.get(metadataColumnJSON.getName());
             ColumnInfo rawColumnInfo = rawTableInfo.getColumn(metadataColumnJSON.getName());
@@ -642,12 +643,6 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             metadataColumnJSON.setURL(columnInfo.getURL() == null ? null : columnInfo.getURL().toString());
             metadataColumnJSON.setRangeURI(PropertyType.getFromClass(columnInfo.getJavaObjectClass()).getTypeUri());
 
-            if (columnInfo.getWrappedColumnName() != null)
-                metadataColumnJSON.setWrappedColumnName(columnInfo.getWrappedColumnName());
-
-            if (columnInfo.getValueExpression() != null)
-                metadataColumnJSON.setValueExpression(columnInfo.getValueExpression());
-
             if (columnInfo.getFk() != null)
             {
                 ForeignKey fk = columnInfo.getFk();
@@ -677,6 +672,15 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             metadataColumnJSON.setConceptLabelColumn(columnInfo.getConceptLabelColumn());
 
             metadataColumnJSON.setDerivationDataScope(columnInfo.getDerivationDataScope());
+
+            if (columnInfo.getWrappedColumnName() != null)
+                metadataColumnJSON.setWrappedColumnName(columnInfo.getWrappedColumnName());
+
+            if (columnInfo.getValueExpression() != null)
+            {
+                metadataColumnJSON.setConceptURI(CALCULATED_CONCEPT_URI);
+                metadataColumnJSON.setValueExpression(columnInfo.getValueExpression());
+            }
         }
 
         List<QueryDef> queryDefs = QueryServiceImpl.get().findMetadataOverrideImpl(schema, tableName, false, false, null);

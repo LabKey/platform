@@ -84,6 +84,7 @@ import org.labkey.data.xml.TableType;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -282,8 +283,8 @@ public class DomainUtil
 
                 // get calculated columns from XML metadata, those with value expressions
                 ArrayList<QueryException> errors = new ArrayList<>();
-                TableType xmlTable = QueryService.get().findMetadataOverride(tableInfo.getUserSchema(), tableInfo.getName(), false, false, errors, null)
-                        .stream().findFirst().orElse(null);
+                Collection<TableType> metadata = QueryService.get().findMetadataOverride(tableInfo.getUserSchema(), tableInfo.getName(), false, false, errors, null);
+                TableType xmlTable = metadata != null ? metadata.stream().findFirst().orElse(null) : null;
                 if (xmlTable != null && xmlTable.isSetColumns())
                 {
                     for (ColumnType col : xmlTable.getColumns().getColumnArray())
@@ -292,6 +293,11 @@ public class DomainUtil
                         {
                             GWTPropertyDescriptor propDesc = getPropertyDescriptor(col);
                             propDesc.setConceptURI(CALCULATED_CONCEPT_URI);
+
+                            ColumnInfo colInfo = tableInfo.getColumn(propDesc.getName());
+                            if (colInfo != null)
+                                propDesc.setRangeURI(PropertyType.getFromJdbcType(colInfo.getJdbcType()).getTypeUri());
+
                             calculatedColumns.add(propDesc);
                         }
                     }
