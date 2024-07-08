@@ -281,27 +281,7 @@ public class DomainUtil
                 if (null != tableInfo.getPkColumns())
                     pkColMap = tableInfo.getPkColumns().stream().collect(Collectors.toMap(ColumnInfo :: getColumnName, ColumnInfo :: isKeyField));
 
-                // get calculated columns from XML metadata, those with value expressions
-                ArrayList<QueryException> errors = new ArrayList<>();
-                Collection<TableType> metadata = QueryService.get().findMetadataOverride(tableInfo.getUserSchema(), tableInfo.getName(), false, false, errors, null);
-                TableType xmlTable = metadata != null ? metadata.stream().findFirst().orElse(null) : null;
-                if (xmlTable != null && xmlTable.isSetColumns())
-                {
-                    for (ColumnType col : xmlTable.getColumns().getColumnArray())
-                    {
-                        if (col.getValueExpression() != null)
-                        {
-                            GWTPropertyDescriptor propDesc = getPropertyDescriptor(col);
-                            propDesc.setConceptURI(CALCULATED_CONCEPT_URI);
-
-                            ColumnInfo colInfo = tableInfo.getColumn(propDesc.getName());
-                            if (colInfo != null)
-                                propDesc.setRangeURI(PropertyType.getFromJdbcType(colInfo.getJdbcType()).getTypeUri());
-
-                            calculatedColumns.add(propDesc);
-                        }
-                    }
-                }
+                calculatedColumns = getCalculatedColumnsForTableInfo(tableInfo);
             }
         }
 
@@ -392,6 +372,40 @@ public class DomainUtil
         }
 
         return d;
+    }
+
+    // get calculated columns (i.e. those with value expressions) for a tableInfo from the related XML metadata
+    private static List<GWTPropertyDescriptor> getCalculatedColumnsForTableInfo(@NotNull TableInfo tableInfo)
+    {
+
+        ArrayList<QueryException> errors = new ArrayList<>();
+        Collection<TableType> metadata = QueryService.get().findMetadataOverride(tableInfo.getUserSchema(), tableInfo.getName(), false, false, errors, null);
+        if (metadata == null)
+            return Collections.emptyList();
+
+        TableType xmlTable = metadata.stream().findFirst().orElse(null);
+        if (xmlTable != null && xmlTable.isSetColumns())
+        {
+            List<GWTPropertyDescriptor> calculatedColumns = new ArrayList<>();
+            for (ColumnType col : xmlTable.getColumns().getColumnArray())
+            {
+                if (col.getValueExpression() != null)
+                {
+                    GWTPropertyDescriptor propDesc = getPropertyDescriptor(col);
+                    propDesc.setConceptURI(CALCULATED_CONCEPT_URI);
+
+                    ColumnInfo colInfo = tableInfo.getColumn(propDesc.getName());
+                    if (colInfo != null)
+                        propDesc.setRangeURI(PropertyType.getFromJdbcType(colInfo.getJdbcType()).getTypeUri());
+
+                    calculatedColumns.add(propDesc);
+                }
+            }
+
+            return calculatedColumns;
+        }
+
+        return Collections.emptyList();
     }
 
     private static GWTDomain<GWTPropertyDescriptor> getDomain(Domain dd)
