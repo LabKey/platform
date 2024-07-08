@@ -75,7 +75,7 @@ public class MySqlDialectFactory implements SqlDialectFactory
         return "com.mysql.cj.jdbc.Driver".equals(driverClassName) || "com.mysql.jdbc.Driver".equals(driverClassName) ? new MySqlDialect() : null;
     }
 
-    private final static String RECOMMENDED = getProductName() + " 8.4.x is the recommended version.";
+    private final static String RECOMMENDED = getProductName() + " 9.0.x is the recommended version.";
 
     @Override
     public @Nullable SqlDialect createFromMetadata(DatabaseMetaData md, boolean logWarnings, boolean primaryDataSource) throws SQLException, DatabaseNotSupportedException
@@ -90,9 +90,12 @@ public class MySqlDialectFactory implements SqlDialectFactory
         // Version 5.1 or greater is allowed...
         if (version >= 51)
         {
-            // ...but warn for anything greater than 8.4.x
-            if (logWarnings && version > 84)
+            // ...but warn for anything greater than 9.0.x
+            if (logWarnings && version > 90)
                 _log.warn("LabKey Server has not been tested against " + getProductName() + " version " + databaseProductVersion + ". " +  RECOMMENDED);
+
+            if (version >= 90)
+                return new MySql90Dialect();
 
             if (version >= 80)
                 return new MySql80Dialect();
