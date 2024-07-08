@@ -1,18 +1,20 @@
 import React, { ReactNode } from 'react';
-import { Button } from 'react-bootstrap';
 import { imageURL, HelpLink, HELP_LINK_REFERRER } from '@labkey/components';
 import { ActionURL, Ajax, getServerContext } from '@labkey/api';
 
 import { ErrorDetails, ErrorType } from './model';
 
-const ERROR_HEADING = () => <>Oops! An error has occurred.</>
+const ERROR_HEADING = () => <>Oops! An error has occurred.</>;
 
 const DETAILS_SUB_INSTRUCTION = (
     <>
         <p className="labkey-error-details labkey-error-details-question">What else can I do?</p>
         <p className="labkey-error-details">
-            Search through the <HelpLink topic="default" referrer={HELP_LINK_REFERRER.ERROR_PAGE}>LabKey support documentation</HelpLink> and
-            previous forum questions to troubleshoot your issue.
+            Search through the{' '}
+            <HelpLink topic="default" referrer={HELP_LINK_REFERRER.ERROR_PAGE}>
+                LabKey support documentation
+            </HelpLink>{' '}
+            and previous forum questions to troubleshoot your issue.
         </p>
         <p className="labkey-error-details">
             If you are part of a{' '}
@@ -33,17 +35,12 @@ const DETAILS_SUB_INSTRUCTION = (
     </>
 );
 
-const NOTFOUND_HEADING = (errorMessage?: string) => (<>
-        {errorMessage !== undefined ?
-            errorMessage : 'Oops! The requested page cannot be found.'}
-    </>);
+const NOTFOUND_HEADING = (errorMessage?: string) => (
+    <>{errorMessage !== undefined ? errorMessage : 'Oops! The requested page cannot be found.'}</>
+);
 
 const NOTFOUND_SUBHEADING = (errorMessage?: string) => (
-    <>
-        {errorMessage !== undefined
-            ? ''
-            : 'It seems like something went wrong.'}
-    </>
+    <>{errorMessage !== undefined ? '' : 'It seems like something went wrong.'}</>
 );
 const NOTFOUND_INSTRUCTION = (errorDetails: ErrorDetails) => (
     <>
@@ -85,22 +82,26 @@ const NOTFOUND_DETAILS = (errorDetails: ErrorDetails) => (
             <ul>
                 <li>
                     <b>Incorrect URL: </b>the wrong web address has been typed.{' '}
-                    <HelpLink topic="url" referrer={HELP_LINK_REFERRER.ERROR_PAGE}>Read More &gt;</HelpLink>
+                    <HelpLink topic="url" referrer={HELP_LINK_REFERRER.ERROR_PAGE}>
+                        Read More &gt;
+                    </HelpLink>
                 </li>
             </ul>
             <div className="labkey-error-subdetails">
-                <span className="fa fa-check-circle domain-panel-status-icon-green" /> Double check and
-                make sure that your URL has been correctly input.
+                <span className="fa fa-check-circle domain-panel-status-icon-green" /> Double check and make sure that
+                your URL has been correctly input.
             </div>
             <ul>
                 <li>
                     <b>Permissions: </b>your account does not have the permissions to view this page.{' '}
-                    <HelpLink topic="permissionLevels" referrer={HELP_LINK_REFERRER.ERROR_PAGE}>Read More &gt;</HelpLink>
+                    <HelpLink topic="permissionLevels" referrer={HELP_LINK_REFERRER.ERROR_PAGE}>
+                        Read More &gt;
+                    </HelpLink>
                 </li>
             </ul>
             <div className="labkey-error-subdetails">
-                <span className="fa fa-check-circle domain-panel-status-icon-green" /> Contact your
-                administrator to request access.
+                <span className="fa fa-check-circle domain-panel-status-icon-green" /> Contact your administrator to
+                request access.
             </div>
         </div>
 
@@ -116,22 +117,25 @@ const PERMISSION_INSTRUCTION = (errorDetails: ErrorDetails) => <>{errorDetails.a
 
 const PERMISSION_DETAILS = (errorDetails: ErrorDetails) => (
     <>
-        {errorDetails.advice === undefined ?
+        {errorDetails.advice === undefined ? (
             <>
                 <p className="labkey-error-details labkey-error-details-question">What is a permission error?</p>
 
                 <p className="labkey-error-details">
-                    A permission error occurs when the account you've logged into does not have the required permissions to
-                    access
-                    this page. <HelpLink topic="permissionLevels" referrer={HELP_LINK_REFERRER.ERROR_PAGE}>Read
-                    More &gt;</HelpLink>
+                    A permission error occurs when the account you've logged into does not have the required permissions
+                    to access this page.{' '}
+                    <HelpLink topic="permissionLevels" referrer={HELP_LINK_REFERRER.ERROR_PAGE}>
+                        Read More &gt;
+                    </HelpLink>
                 </p>
                 <div className="labkey-error-details labkey-error-subdetails">
-                    <span className="fa fa-check-circle domain-panel-status-icon-green" /> Try contacting your
-                server administrator to request access to this page.
+                    <span className="fa fa-check-circle domain-panel-status-icon-green" /> Try contacting your server
+                    administrator to request access to this page.
                 </div>
-            </> : <p className="labkey-error-details">{errorDetails.advice}</p>
-        }
+            </>
+        ) : (
+            <p className="labkey-error-details">{errorDetails.advice}</p>
+        )}
         <div className="labkey-error-details">
             <ul>
                 <li>
@@ -147,12 +151,13 @@ const PERMISSION_DETAILS = (errorDetails: ErrorDetails) => (
         </div>
         {getServerContext().impersonatingUser !== undefined && (
             <div className="labkey-error labkey-error-details labkey-error-subdetails">
-                <span className="fa fa-exclamation-circle permission-warning-icon" /> You are currently
-                impersonating: <b>{getServerContext().user.displayName} </b>
+                <span className="fa fa-exclamation-circle permission-warning-icon" /> You are currently impersonating:{' '}
+                <b>{getServerContext().user.displayName} </b>
                 <div className="error-page-br" />
                 <div className="error-page-br" />
-                <Button
+                <button
                     className="btn btn-primary"
+                    type="button"
                     onClick={() => {
                         const returnUrl =
                             ActionURL.getReturnUrl() !== undefined
@@ -171,7 +176,7 @@ const PERMISSION_DETAILS = (errorDetails: ErrorDetails) => (
                     }}
                 >
                     Stop Impersonating
-                </Button>
+                </button>
             </div>
         )}
     </>
@@ -207,12 +212,15 @@ const CONFIGURATION_DETAILS = (errorDetails: ErrorDetails) => (
             <ul>
                 <li>
                     <b>Server Configuration Errors: </b>issues related to your machine, software version, or running
-                    dependencies. <HelpLink topic="troubleshootingAdmin" referrer={HELP_LINK_REFERRER.ERROR_PAGE}>Read More &gt;</HelpLink>
+                    dependencies.{' '}
+                    <HelpLink topic="troubleshootingAdmin" referrer={HELP_LINK_REFERRER.ERROR_PAGE}>
+                        Read More &gt;
+                    </HelpLink>
                 </li>
             </ul>
             <div className="labkey-error-subdetails">
-                <span className="fa fa-check-circle domain-panel-status-icon-green" /> Try restarting your
-                current instance of LabKey.
+                <span className="fa fa-check-circle domain-panel-status-icon-green" /> Try restarting your current
+                instance of LabKey.
             </div>
         </div>
 
@@ -250,9 +258,9 @@ const EXECUTION_DETAILS = (errorDetails: ErrorDetails) => <pre>{errorDetails.sta
 type ErrorTypeInfo = {
     details: (errorDetails?: ErrorDetails) => ReactNode;
     heading: (errorMessage?: string) => ReactNode;
-    subHeading: (errorMessage?: string) => ReactNode;
     imagePath: string;
     instruction: (errorDetails?: ErrorDetails) => ReactNode;
+    subHeading: (errorMessage?: string) => ReactNode;
 };
 
 const ERROR_TYPE_INFO: { [key in ErrorType]: ErrorTypeInfo } = {
@@ -315,8 +323,7 @@ export const getInstruction = (errorDetails: ErrorDetails): ReactNode => {
 };
 
 export const getViewDetails = (errorDetails: ErrorDetails): ReactNode => {
-    const { errorType, message, stackTrace } = errorDetails;
-    const info = ERROR_TYPE_INFO[errorType];
+    const info = ERROR_TYPE_INFO[errorDetails.errorType];
     if (!info) return null;
 
     return (
