@@ -38,19 +38,25 @@ import org.labkey.api.announcements.api.TourService;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.MessageAuditProvider;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.rss.RSSService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
@@ -61,18 +67,16 @@ import org.labkey.api.view.WebPartView;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
- * User: migra
- * Date: Jul 13, 2005
- * Time: 3:05:50 PM
- * <p/>
  * NOTE: Wiki handles some of the shared Communications module stuff.
  * e.g. it handles ContainerListener and Attachments
- * <p/>
  */
 public class AnnouncementModule extends DefaultModule implements SearchService.DocumentProvider
 {
@@ -187,6 +191,17 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         }
 
         TourService.setInstance(new TourServiceImpl());
+
+        UsageMetricsService.get().registerUsageMetrics(NAME, () -> Map.of("discussions", Map.of(
+            "rootEnabled", LookAndFeelProperties.getInstance(ContainerManager.getRoot()).isDiscussionEnabled(),
+            "projectsEnabled", ContainerManager.getProjects().stream()
+                    .filter(project -> LookAndFeelProperties.getInstance(project).isDiscussionEnabled())
+                    .count(),
+            "createdByYear", new TableSelector(CommSchema.getInstance().getTableInfoAnnouncements(), Collections.singleton("Created"),
+                        new SimpleFilter(FieldKey.fromString("DiscussionSrcUrl"), null, CompareType.NONBLANK), null
+                    ).stream(Date.class)
+                    .collect(Collectors.groupingBy(date -> date.getYear() + 1900, Collectors.counting()))
+        )));
     }
 
 
@@ -220,7 +235,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         long count = AnnouncementManager.getMessageCount(c);
 
         if (count > 0)
-            list.add("" + count + " " + (count > 1 ? "Messages/Responses" : "Message"));
+            list.add(count + " " + (count > 1 ? "Messages/Responses" : "Message"));
 
         return list;
     }
