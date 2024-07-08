@@ -14,7 +14,7 @@
     "build-prod": "npm run clean && cross-env NODE_ENV=production PROD_SOURCE_MAP=source-map webpack --config node_modules/@labkey/build/webpack/prod.config.js --color --progress --profile"
   },
   "dependencies": {
-    "@labkey/components": "3.53.5"
+    "@labkey/components": "3.57.0-fb-calcColsInFieldEditor.1"
   },
   "devDependencies": {
     "@labkey/build": "7.3.0",
