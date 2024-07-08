@@ -1,7 +1,6 @@
 import React, { ChangeEvent, Dispatch, FC, Reducer, useCallback, useEffect, useState, useReducer } from 'react';
 import { ActionURL, Ajax, Utils } from '@labkey/api';
-import { naturalSort, FormSchema, AutoForm } from '@labkey/components';
-import { Alert, ListGroup, ListGroupItem } from 'react-bootstrap';
+import { naturalSort, FormSchema, AutoForm, Alert, cancelEvent } from '@labkey/components';
 
 // eslint-disable-next-line import/no-unassigned-import
 import './CreatePipelineTrigger.scss';
@@ -23,9 +22,11 @@ interface TriggerConfiguration {
     copy: string;
     filePattern: string;
     location: string;
-    move: string; // server side only, split into moveDirectory and moveContainer on init.
+    move: string;
+    // client side only.
+    moveContainer: string;
+    // server side only, split into moveDirectory and moveContainer on init.
     moveDirectory: string; // client side only.
-    moveContainer: string; // client side only.
     parameterFunction: string;
     quiet: number;
     recursive: boolean;
@@ -35,9 +36,9 @@ interface TriggerConfiguration {
 type CustomConfiguration = Record<string, string | boolean>;
 
 interface CustomParameterModel {
+    id: number;
     key: string;
-    value: string;
-    id: number; // used internally as a key for react
+    value: string; // used internally as a key for react
 }
 
 enum View {
@@ -48,19 +49,19 @@ enum View {
 interface FormState {
     // the custom parameters known by the FormSchema (see FileAnalysisTaskPipeline.getCustomFields)
     customConfig: CustomConfiguration;
+    customConfigValid: boolean;
     // customFieldFormSchemas are required so we can properly set defaultValues when Details.pipelineId changes
     customFieldFormSchemas: Record<string, FormSchema>;
     // the parameters not known by the FormSchema, added via "add custom parameter" in UI
     customParameters: Record<number, CustomParameterModel>;
-    customConfigValid: boolean;
     details: Details;
     detailsFormSchema: FormSchema;
     detailsValid: boolean;
     isDirty: boolean;
     rowId?: number;
     saveError: string;
-    saving: boolean;
     saveSuccessful: boolean;
+    saving: boolean;
     taskFormSchemas: Record<string, FormSchema>;
     triggerConfig: TriggerConfiguration;
     triggerConfigValid: boolean;
@@ -81,20 +82,20 @@ type InitialState = Omit<
 >;
 
 enum ActionType {
-    SET_VIEW = 'SET_VIEW',
-    UPDATE_DETAILS = 'UPDATE_DETAILS',
-    UPDATE_TRIGGER_CONFIG = 'UPDATE_TRIGGER_CONFIG',
-    UPDATE_CUSTOM_CONFIG = 'UPDATE_CUSTOM_CONFIG',
-    UPDATE_CUSTOM_PARAM = 'UPDATE_CUSTOM_PARAM',
     ADD_CUSTOM_PARAM = 'ADD_CUSTOM_PARAM',
     REMOVE_CUSTOM_PARAM = 'REMOVE_CUSTOM_PARAM',
     SET_SAVING = 'SET_SAVING',
+    SET_VIEW = 'SET_VIEW',
+    UPDATE_CUSTOM_CONFIG = 'UPDATE_CUSTOM_CONFIG',
+    UPDATE_CUSTOM_PARAM = 'UPDATE_CUSTOM_PARAM',
+    UPDATE_DETAILS = 'UPDATE_DETAILS',
+    UPDATE_TRIGGER_CONFIG = 'UPDATE_TRIGGER_CONFIG',
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 interface FieldAction<T = any> {
-    type: ActionType.UPDATE_DETAILS | ActionType.UPDATE_TRIGGER_CONFIG | ActionType.UPDATE_CUSTOM_CONFIG;
     field: string;
+    type: ActionType.UPDATE_DETAILS | ActionType.UPDATE_TRIGGER_CONFIG | ActionType.UPDATE_CUSTOM_CONFIG;
     value: T;
 }
 
@@ -108,22 +109,22 @@ interface AddCustomParamAction {
 }
 
 interface RemoveCustomParamAction {
-    type: ActionType.REMOVE_CUSTOM_PARAM;
     id: number;
+    type: ActionType.REMOVE_CUSTOM_PARAM;
 }
 
 interface UpdateCustomParamAction {
-    type: ActionType.UPDATE_CUSTOM_PARAM;
     id: number;
     key: string;
+    type: ActionType.UPDATE_CUSTOM_PARAM;
     value: string;
 }
 
 interface SetSavingAction {
-    type: ActionType.SET_SAVING;
     saveError: string;
-    saving: boolean;
     saveSuccessful: boolean;
+    saving: boolean;
+    type: ActionType.SET_SAVING;
 }
 
 type FormStateAction =
@@ -441,16 +442,14 @@ interface CustomParameterProps {
 const CustomParameter: FC<CustomParameterProps> = ({ customParameter, remove, update }) => {
     const { id, key, value } = customParameter;
     const onRemoveClicked = useCallback(() => remove(id), [remove, id]);
-    const onKeyChanged = useCallback((event: ChangeEvent<HTMLInputElement>) => update(id, event.target.value, value), [
-        update,
-        id,
-        value,
-    ]);
-    const onValueChanged = useCallback((event: ChangeEvent<HTMLInputElement>) => update(id, key, event.target.value), [
-        update,
-        id,
-        key,
-    ]);
+    const onKeyChanged = useCallback(
+        (event: ChangeEvent<HTMLInputElement>) => update(id, event.target.value, value),
+        [update, id, value]
+    );
+    const onValueChanged = useCallback(
+        (event: ChangeEvent<HTMLInputElement>) => update(id, key, event.target.value),
+        [update, id, key]
+    );
     return (
         <div className="custom-parameter form-group">
             <div className="col-sm-3">
@@ -512,8 +511,8 @@ const CustomParameters: FC<CustomParametersProps> = ({ customParameters, dispatc
 };
 
 interface ConfigurationFormProps {
-    formState: FormState;
     dispatch: Dispatch<FormStateAction>;
+    formState: FormState;
     onBack: () => void;
     onSubmit: () => void;
     returnUrl: string;
@@ -688,8 +687,20 @@ export const CreatePipelineTrigger: FC<Props> = props => {
     );
     const { isDirty, saveSuccessful, saveError, saving, view } = formState;
     const helpText = HELP_TEXT + (tasksHelpText[formState.details.pipelineId] ?? '');
-    const showDetails = useCallback(() => dispatch({ type: ActionType.SET_VIEW, view: View.DETAILS }), []);
-    const showConfig = useCallback(() => dispatch({ type: ActionType.SET_VIEW, view: View.CONFIGURATION }), []);
+    const showDetails = useCallback(
+        (event = undefined) => {
+            if (event) cancelEvent(event);
+            dispatch({ type: ActionType.SET_VIEW, view: View.DETAILS });
+        },
+        [dispatch]
+    );
+    const showConfig = useCallback(
+        (event = undefined) => {
+            if (event) cancelEvent(event);
+            dispatch({ type: ActionType.SET_VIEW, view: View.CONFIGURATION });
+        },
+        [dispatch]
+    );
     const onSubmit = useCallback(async () => {
         dispatch({ type: ActionType.SET_SAVING, saving: true, saveError: undefined, saveSuccessful: false });
         let _saveError;
@@ -706,7 +717,7 @@ export const CreatePipelineTrigger: FC<Props> = props => {
         } finally {
             dispatch({ type: ActionType.SET_SAVING, saving: false, saveError: _saveError, saveSuccessful: success });
         }
-    }, [formState]);
+    }, [dispatch, formState]);
 
     useEffect(() => {
         const beforeUnload = (event: BeforeUnloadEvent): void => {
@@ -726,27 +737,35 @@ export const CreatePipelineTrigger: FC<Props> = props => {
         if (saveSuccessful) {
             window.setTimeout(() => (window.location.href = returnUrl), 1000);
         }
-    }, [saveSuccessful]);
+    }, [returnUrl, saveSuccessful]);
 
     return (
         <div className="create-pipeline-trigger row">
             <div className="col-sm-2">
-                <ListGroup>
-                    <ListGroupItem active={view === View.DETAILS} onClick={showDetails}>
+                <div className="list-group">
+                    <a
+                        className={`list-group-item ${view === View.DETAILS ? 'active' : ''}`}
+                        onClick={showDetails}
+                        href="#"
+                    >
                         Details
-                    </ListGroupItem>
+                    </a>
 
-                    <ListGroupItem active={view === View.CONFIGURATION} onClick={showConfig}>
+                    <a
+                        className={`list-group-item ${view === View.CONFIGURATION ? 'active' : ''}`}
+                        onClick={showConfig}
+                        href="#"
+                    >
                         Configuration
-                    </ListGroupItem>
-                </ListGroup>
+                    </a>
+                </div>
 
-                <ListGroup className="list-group">
-                    <ListGroupItem href={docsHref} target="_blank" rel="noopener noreferrer">
+                <ul className="list-group">
+                    <a className="list-group-item" href={docsHref} target="_blank" rel="noopener noreferrer">
                         Documentation &nbsp;
                         <span className="fa fa-external-link" />
-                    </ListGroupItem>
-                </ListGroup>
+                    </a>
+                </ul>
             </div>
 
             <div className="col-sm-7">
