@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.query;
+package org.labkey.api.query;
 
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 
@@ -41,6 +41,12 @@ public class MetadataColumnJSON extends GWTPropertyDescriptor
         setWrappedColumnName(ci.getWrappedColumnName());
         setValueExpression(ci.getValueExpression());
         setLookupCustom(ci.isLookupCustom());
+    }
+
+    public MetadataColumnJSON(GWTPropertyDescriptor ci)
+    {
+        super(ci);
+        setValueExpression(ci.getValueExpression());
     }
 
     public String getWrappedColumnName()
