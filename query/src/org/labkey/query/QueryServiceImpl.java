@@ -45,6 +45,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.query.ExpTable;
 import org.labkey.api.gwt.client.AuditBehaviorType;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
@@ -2244,6 +2245,16 @@ public class QueryServiceImpl implements QueryService
         }
 
         return null;
+    }
+
+    @Override
+    public void saveCalculatedFieldsMetadata(String schemaName, String queryName, List<? extends GWTPropertyDescriptor> fields, boolean isUserDefinedQuery, User user, Container container) throws MetadataUnavailableException
+    {
+        List<MetadataColumnJSON> calcFields = new ArrayList<>();
+        for (GWTPropertyDescriptor field : fields)
+            calcFields.add(new MetadataColumnJSON(field));
+
+        MetadataTableJSON.saveMetadata(schemaName, queryName, calcFields, isUserDefinedQuery, true, user, container);
     }
 
     // Use a WeakHashMap to cache QueryDefs. This means that the cache entries will only be associated directly
