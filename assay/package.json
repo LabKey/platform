@@ -12,7 +12,7 @@
     "clean": "rimraf resources/web/assay/gen && rimraf resources/views/gen && rimraf resources/web/gen"
   },
   "dependencies": {
-    "@labkey/components": "3.57.0-fb-remove-react-bootstrap-usages.6"
+    "@labkey/components": "4.0.0-fb-remove-react-bootstrap-usages.0"
   },
   "devDependencies": {
     "@labkey/build": "7.3.0",
