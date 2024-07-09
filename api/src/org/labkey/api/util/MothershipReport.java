@@ -17,7 +17,8 @@
 package org.labkey.api.util;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.mail.internet.ContentType;
+import jakarta.servlet.ServletContext;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -29,15 +30,12 @@ import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.ExperimentalFeatureService;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.logging.LogHelper;
 
-import jakarta.mail.internet.ContentType;
 import javax.net.ssl.HttpsURLConnection;
-import jakarta.servlet.ServletContext;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -87,7 +85,7 @@ public class MothershipReport implements Runnable
 
     public final static String JSON_METRICS_KEY = "jsonMetrics";
     public static final String EXPERIMENTAL_LOCAL_MARKETING_UPDATE = "localMarketingUpdates";
-    private static boolean _selfTestMarketingUpdates = ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_LOCAL_MARKETING_UPDATE);
+    private static boolean _selfTestMarketingUpdates = OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_LOCAL_MARKETING_UPDATE);
 
     /** @return true if this server can self-report exceptions (that is, has the Mothership module installed) */
     public static boolean isShowSelfReportExceptions()

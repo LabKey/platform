@@ -15,6 +15,7 @@
  */
 package org.labkey.api.settings;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ContainerManager;
@@ -24,7 +25,6 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.view.ActionURL;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
@@ -39,8 +39,8 @@ public interface AppProps
 
     String SCOPE_SITE_SETTINGS = "SiteSettings";
 
-    String EXPERIMENTAL_FEATURE = "experimentalFeature";
-    String SCOPE_EXPERIMENTAL_FEATURE = "ExperimentalFeature";
+    String OPTIONAL_FEATURE = "experimentalFeature"; // Used for all optional features; "experimental" for historical reasons.
+    String SCOPE_OPTIONAL_FEATURE = "ExperimentalFeature"; // Startup property prefix for all optional features; "Experimental" for historical reasons.
     String EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP = "javascriptMothership";
     String EXPERIMENTAL_JAVASCRIPT_SERVER = "javascriptErrorServerLogging";
     String EXPERIMENTAL_NO_GUESTS = "disableGuestAccount";
@@ -63,7 +63,7 @@ public interface AppProps
 
     boolean isMailRecorderEnabled();
 
-    boolean isExperimentalFeatureEnabled(String feature);
+    boolean isOptionalFeatureEnabled(String feature);
 
     boolean isDevMode();
 

@@ -33,7 +33,7 @@ import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.SimpleUserSchema.SimpleTable;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.ExperimentalFeatureService;
+import org.labkey.api.settings.OptionalFeatureService;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -92,7 +92,7 @@ public class SimpleQueryUpdateService extends DefaultQueryUpdateService
         if (oldKeys != null) // could be called by updateChangingKeys
             return false;
 
-        if (ExperimentalFeatureService.get().isFeatureEnabled(USE_ROW_BY_ROW_UPDATE))
+        if (OptionalFeatureService.get().isFeatureEnabled(USE_ROW_BY_ROW_UPDATE))
             return false;
 
         if (!supportUpdateUsingDIB())

@@ -30,6 +30,7 @@ import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.assay.plate.Plate;
@@ -40,7 +41,6 @@ import org.labkey.api.assay.plate.PlateSetType;
 import org.labkey.api.assay.plate.PlateType;
 import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.collections.RowMapFactory;
-import org.labkey.api.data.ArrayExcelWriter;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -67,7 +67,6 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataViewSnapshotSelectionForm;
 import org.labkey.api.view.HtmlView;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
@@ -79,6 +78,7 @@ import org.labkey.assay.plate.PlateSetExport;
 import org.labkey.assay.plate.PlateSetImpl;
 import org.labkey.assay.plate.PlateUrls;
 import org.labkey.assay.plate.TsvPlateLayoutHandler;
+import org.labkey.assay.plate.model.ReformatOptions;
 import org.labkey.assay.view.AssayGWTView;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -123,17 +123,12 @@ public class PlateController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public static class BeginAction extends SimpleViewAction
+    public static class BeginAction extends SimpleRedirectAction
     {
         @Override
-        public ModelAndView getView(Object o, BindException errors)
+        public URLHelper getRedirectURL(Object o)
         {
-            return HttpView.redirect(new ActionURL(PlateListAction.class, getContainer()));
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
+            return new ActionURL(PlateListAction.class, getContainer());
         }
     }
 
@@ -201,24 +196,18 @@ public class PlateController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public static class PlateDetailsAction extends SimpleViewAction<RowIdForm>
+    public static class PlateDetailsAction extends SimpleRedirectAction<RowIdForm>
     {
         @Override
-        public ModelAndView getView(RowIdForm form, BindException errors)
+        public URLHelper getRedirectURL(RowIdForm form)
         {
-            Plate plate = PlateService.get().getPlate(getContainer(), form.getRowId());
+            Plate plate = PlateManager.get().getPlate(getContainer(), form.getRowId());
             if (plate == null)
                 throw new NotFoundException("Plate " + form.getRowId() + " does not exist.");
             ActionURL url = PlateManager.get().getDetailsURL(plate);
             if (url == null)
                 throw new NotFoundException("Details URL has not been configured for plate type " + plate.getName() + ".");
-
-            return HttpView.redirect(url);
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
+            return url;
         }
     }
 
@@ -961,7 +950,7 @@ public class PlateController extends SpringActionController
     {
         private String _description;
         private String _name;
-        private List<PlateManager.CreatePlateSetPlate> _plates = new ArrayList<>();
+        private List<PlateManager.PlateData> _plates = new ArrayList<>();
         private Integer _parentPlateSetId;
         private String _selectionKey;
         private Boolean _template;
@@ -987,12 +976,12 @@ public class PlateController extends SpringActionController
             _name = name;
         }
 
-        public List<PlateManager.CreatePlateSetPlate> getPlates()
+        public List<PlateManager.PlateData> getPlates()
         {
             return _plates;
         }
 
-        public void setPlates(List<PlateManager.CreatePlateSetPlate> plates)
+        public void setPlates(List<PlateManager.PlateData> plates)
         {
             _plates = plates;
         }
@@ -1086,7 +1075,7 @@ public class PlateController extends SpringActionController
                 }
                 else
                 {
-                    List<PlateManager.CreatePlateSetPlate> plates = form.getPlates();
+                    List<PlateManager.PlateData> plates = form.getPlates();
                     if (form.isRearrayCase())
                     {
                         String selectionKey = StringUtils.trimToNull(form.getSelectionKey());
@@ -1355,11 +1344,19 @@ public class PlateController extends SpringActionController
         }
     }
 
+    public enum FileType
+    {
+        CSV,
+        Excel,
+        TSV
+    }
+
     public static class WorklistForm
     {
         private ContainerFilter.Type _containerFilter;
         private int _sourcePlateSetId;
         private int _destinationPlateSetId;
+        private FileType _fileType;
 
         public ContainerFilter.Type getContainerFilter()
         {
@@ -1390,6 +1387,16 @@ public class PlateController extends SpringActionController
         {
             _destinationPlateSetId = destinationPlateSetId;
         }
+
+        public FileType getFileType()
+        {
+            return _fileType;
+        }
+
+        public void setFileType(FileType fileType)
+        {
+            _fileType = fileType;
+        }
     }
 
     @RequiresPermission(ReadPermission.class)
@@ -1418,9 +1425,9 @@ public class PlateController extends SpringActionController
 
                 List<Object[]> plateDataRows = PlateManager.get().getWorklist(form.getSourcePlateSetId(), form.getDestinationPlateSetId(), sourceIncludedMetadataCols, destinationIncludedMetadataCols, getContainer(), getUser());
 
-                ArrayExcelWriter xlWriter = new ArrayExcelWriter(plateDataRows, xlCols);
-                xlWriter.setFullFileName(plateSetSource.getName() + " - " + plateSetDestination.getName());
-                xlWriter.renderWorkbook(getViewContext().getResponse());
+                String fullFileName = plateSetSource.getName() + " - " + plateSetDestination.getName();
+
+                PlateManager.get().getPlateSetExportFile(fullFileName, xlCols, plateDataRows, form.getFileType(), getViewContext().getResponse());
 
                 return null; // Returning anything here will cause error as excel writer will close the response stream
             }
@@ -1437,6 +1444,7 @@ public class PlateController extends SpringActionController
     {
         private ContainerFilter.Type _containerFilter;
         private int _plateSetId;
+        private FileType _fileType;
 
         public ContainerFilter.Type getContainerFilter()
         {
@@ -1456,6 +1464,16 @@ public class PlateController extends SpringActionController
         public void setPlateSetId(int plateSetId)
         {
             _plateSetId = plateSetId;
+        }
+
+        public FileType getFileType()
+        {
+            return _fileType;
+        }
+
+        public void setFileType(FileType fileType)
+        {
+            _fileType = fileType;
         }
     }
 
@@ -1481,9 +1499,7 @@ public class PlateController extends SpringActionController
                 ColumnDescriptor[] xlCols = PlateSetExport.getColumnDescriptors("", includedMetadataCols);
                 List<Object[]> plateDataRows = PlateManager.get().getInstrumentInstructions(form.getPlateSetId(), includedMetadataCols, getContainer(), getUser());
 
-                ArrayExcelWriter xlWriter = new ArrayExcelWriter(plateDataRows, xlCols);
-                xlWriter.setFullFileName(plateSet.getName());
-                xlWriter.renderWorkbook(getViewContext().getResponse());
+                PlateManager.get().getPlateSetExportFile(plateSet.getName(), xlCols, plateDataRows, form.getFileType(), getViewContext().getResponse());
 
                 return null; // Returning anything here will cause error as excel writer will close the response stream
             }
@@ -1727,6 +1743,29 @@ public class PlateController extends SpringActionController
                 null
             );
             return success(plate);
+        }
+    }
+
+    @RequiresPermission(InsertPermission.class)
+    public static class ReformatAction extends MutatingApiAction<ReformatOptions>
+    {
+        @Override
+        public Object execute(ReformatOptions options, BindException errors) throws Exception
+        {
+            try
+            {
+                var reformatResult = PlateManager.get().reformat(getContainer(), getUser(), options);
+                return success(reformatResult);
+            }
+            catch (Exception e)
+            {
+                String message = "Failed to reformat plates.";
+                if (e.getMessage() != null)
+                    message += " " + e.getMessage();
+                errors.reject(ERROR_GENERIC, message);
+            }
+
+            return null;
         }
     }
 }

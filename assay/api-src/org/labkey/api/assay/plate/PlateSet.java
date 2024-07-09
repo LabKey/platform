@@ -23,7 +23,7 @@ public interface PlateSet
 
     boolean isTemplate();
 
-    List<Plate> getPlates(User user);
+    List<Plate> getPlates();
 
     PlateSetType getType();
 }

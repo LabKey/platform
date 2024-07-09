@@ -49,7 +49,7 @@ public class SecurityPointcutServiceImpl implements SecurityPointcutService
             return sendError(res, HttpServletResponse.SC_BAD_REQUEST, "Invalid characters in request.");
         }
 
-        if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_BLOCKER))
+        if (AppProps.getInstance().isOptionalFeatureEnabled(AppProps.EXPERIMENTAL_BLOCKER))
         {
            if (BlockListFilter.isOnBlockList(req))
                return sendError(res, SC_GONE,"Try again later.");

@@ -9,7 +9,7 @@ import org.labkey.test.Locator;
 import org.labkey.test.WebDriverWrapper;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.pages.mothership.EditUpgradeMessagePage;
-import org.labkey.test.util.ExperimentalFeaturesHelper;
+import org.labkey.test.util.OptionalFeatureHelper;
 import org.labkey.test.util.PostgresOnlyTest;
 import org.labkey.test.util.TestUser;
 import org.openqa.selenium.WebElement;
@@ -55,7 +55,7 @@ public class InProductMessagingTest extends BaseWebDriverTest implements Postgre
 
     private void disableExpFeature()
     {
-        ExperimentalFeaturesHelper.disableExperimentalFeature(createDefaultConnection(), "localMarketingUpdates");
+        OptionalFeatureHelper.disableOptionalFeature(createDefaultConnection(), "localMarketingUpdates");
     }
 
     private void doSetup()
@@ -73,7 +73,7 @@ public class InProductMessagingTest extends BaseWebDriverTest implements Postgre
         editPage.save();
 
         // then, enable the exp feature and await the banner containing custom content
-        ExperimentalFeaturesHelper.enableExperimentalFeature(createDefaultConnection(), "localMarketingUpdates");
+        OptionalFeatureHelper.enableOptionalFeature(createDefaultConnection(), "localMarketingUpdates");
 
         checker().withScreenshot("unexpected_banner_content")
                 .awaiting(Duration.ofSeconds(10), ()-> assertThat(refreshAndAwaitAlert().getText())
@@ -98,13 +98,13 @@ public class InProductMessagingTest extends BaseWebDriverTest implements Postgre
         // don't leave an alert with the custom message lying around, other tests expect the default message
         dismissAlert(refreshAndAwaitAlert());
 
-        ExperimentalFeaturesHelper.disableExperimentalFeature(createDefaultConnection(), "localMarketingUpdates");
+        OptionalFeatureHelper.disableOptionalFeature(createDefaultConnection(), "localMarketingUpdates");
     }
 
     @Test
     public void testMarketingMessageAppearsForGuest() throws Exception
     {
-        ExperimentalFeaturesHelper.enableExperimentalFeature(createDefaultConnection(), "localMarketingUpdates");
+        OptionalFeatureHelper.enableOptionalFeature(createDefaultConnection(), "localMarketingUpdates");
         goToHome();
 
         // now signout as admin, verify guest is shown the default banner
@@ -116,13 +116,13 @@ public class InProductMessagingTest extends BaseWebDriverTest implements Postgre
                         .contains(DEFAULT_MESSAGE));
         dismissAlert(refreshAndAwaitAlert());   // don't leave an old alert around for the next test
         signIn();
-        ExperimentalFeaturesHelper.disableExperimentalFeature(createDefaultConnection(), "localMarketingUpdates");
+        OptionalFeatureHelper.disableOptionalFeature(createDefaultConnection(), "localMarketingUpdates");
     }
 
     @Test
     public void testMarketingMessageAppearsForAuthor() throws Exception
     {
-        ExperimentalFeaturesHelper.enableExperimentalFeature(createDefaultConnection(), "localMarketingUpdates");
+        OptionalFeatureHelper.enableOptionalFeature(createDefaultConnection(), "localMarketingUpdates");
 
         goToHome();
         /* give it some time for the exp feature task to process, sometimes the custom message will still be there */
@@ -137,7 +137,7 @@ public class InProductMessagingTest extends BaseWebDriverTest implements Postgre
         dismissAlert(refreshAndAwaitAlert());
         TEST_AUTHOR.stopImpersonating();
 
-        ExperimentalFeaturesHelper.disableExperimentalFeature(createDefaultConnection(), "localMarketingUpdates");
+        OptionalFeatureHelper.disableOptionalFeature(createDefaultConnection(), "localMarketingUpdates");
     }
 
 

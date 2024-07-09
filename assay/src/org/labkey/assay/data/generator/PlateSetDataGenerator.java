@@ -38,7 +38,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.labkey.assay.plate.PlateManager.CreatePlateSetPlate;
+import static org.labkey.assay.plate.PlateManager.PlateData;
 
 public class PlateSetDataGenerator extends DataGenerator<PlateSetDataGenerator.Config>
 {
@@ -235,7 +235,7 @@ public class PlateSetDataGenerator extends DataGenerator<PlateSetDataGenerator.C
         PlateSetImpl plateSet = new PlateSetImpl();
         plateSet.setType(plateSetType);
 
-        List<CreatePlateSetPlate> plates = new ArrayList<>();
+        List<PlateData> plates = new ArrayList<>();
         int sampleIdx = 0;
 
         // custom well properties to add to this plate set
@@ -266,14 +266,14 @@ public class PlateSetDataGenerator extends DataGenerator<PlateSetDataGenerator.C
                     for (String name : wellProperties)
                     {
                         if (name.startsWith(INT_PROP_PREFIX))
-                            rowMap.put(WellTable.Column.Properties.name() + "/" + name, randomInt(1, 5000));
+                            rowMap.put(name, randomInt(1, 5000));
                         else
-                            rowMap.put(WellTable.Column.Properties.name() + "/" + name, randomDouble(1, 100000));
+                            rowMap.put(name, randomDouble(1, 100000));
                     }
                     rows.add(rowMap);
                 }
             }
-            plates.add(new CreatePlateSetPlate(null, _plateType.getRowId(), null, rows));
+            plates.add(new PlateData(null, _plateType.getRowId(), null, rows));
         }
         _plateSetsCreated++;
         return PlateManager.get().createPlateSet(getContainer(), getUser(), plateSet, plates, parentPlateSet != null ? parentPlateSet.getRowId() : null);
@@ -331,7 +331,7 @@ public class PlateSetDataGenerator extends DataGenerator<PlateSetDataGenerator.C
     {
         // create a row for every plate in the plate set
         List<Map<String, Object>> data = new ArrayList<>();
-        for (Plate plate : plateSet.getPlates(getUser()))
+        for (Plate plate : plateSet.getPlates())
         {
             for (int row=0; row < _plateType.getRows(); row++)
             {

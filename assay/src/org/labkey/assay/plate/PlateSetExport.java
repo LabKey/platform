@@ -8,7 +8,6 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.assay.plate.query.WellTable;
@@ -17,6 +16,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -59,7 +59,7 @@ public class PlateSetExport
             Arrays.asList(
                 rs.getString(FKMap.get(PLATE_NAME_COL)),
                 rs.getString(FKMap.get(WellTable.Column.Position.name())),
-                rs.getInt(FKMap.get(WellTable.Column.Row.name())) * rs.getInt(FKMap.get(WellTable.Column.Col.name())) + "-well"
+                rs.getInt(FKMap.get(WellTable.Column.Row.name())) * rs.getInt(FKMap.get(WellTable.Column.Col.name()))
             )
         );
 
@@ -88,7 +88,7 @@ public class PlateSetExport
 
         List<ColumnDescriptor> metadataColumns = includedMetadataCols
                 .stream()
-                .map(fk -> new ColumnDescriptor(fk.getParts().size() > 2 ? fk.getParent().getCaption() : fk.getCaption()))
+                .map(fk -> new ColumnDescriptor(fk.getParts().size() > 1 ? fk.getParent().getCaption() : fk.getCaption()))
                 .toList();
 
         baseColumns.addAll(metadataColumns);
@@ -111,11 +111,11 @@ public class PlateSetExport
         // Where the data rows contain the key's sample
         try (Results rs = QueryService.get().select(wellTable, getWellColumns(wellTable, destinationIncludedMetadataCols), new SimpleFilter(FKMap.get(PLATE_SET_ID_COL), destinationPlateSetId), new Sort(ROW_ID_COL)))
         {
-            while (rs.next()) {
+            while (rs.next())
+            {
                 String sampleId = rs.getString(FKMap.get(SAMPLE_ID_COL));
-                if (sampleId == null) {
+                if (sampleId == null)
                     continue;
-                }
 
                 sampleIdToDestinationRow.computeIfAbsent(sampleId, key -> new ArrayList<>())
                         .add(getDataRow(PlateSetExport.DESTINATION, rs, destinationIncludedMetadataCols));
@@ -143,7 +143,7 @@ public class PlateSetExport
 
                 List<Object[]> destinationDataRows = sampleIdToDestinationRow.get(sampleId);
                 if (destinationDataRows == null)
-                    throw new ValidationException("There are samples plated in the origin Plate Set with no corresponding well in the destination Plate Set.");
+                     destinationDataRows = Collections.singletonList(new Object[destinationIncludedMetadataCols.size() + 3]); // 3 is the number of base (non-metadata) columns
 
                 for (Object[] dataRow : destinationDataRows)
                     plateDataRows.add(ArrayUtils.addAll(sourceDataRow, dataRow));

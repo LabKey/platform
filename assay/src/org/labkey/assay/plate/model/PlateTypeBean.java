@@ -1,5 +1,6 @@
 package org.labkey.assay.plate.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import org.labkey.api.assay.plate.PlateType;
 
@@ -78,6 +79,13 @@ public class PlateTypeBean implements PlateType
     public void setArchived(boolean archived)
     {
         _archived = archived;
+    }
+
+    @JsonIgnore
+    @Override
+    public Integer getWellCount()
+    {
+        return _rows * _cols;
     }
 
     @Override

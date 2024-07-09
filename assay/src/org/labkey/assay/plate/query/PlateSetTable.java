@@ -208,7 +208,7 @@ public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>
             if (plateSet == null)
                 throw new QueryUpdateServiceException(String.format("Plate set could not be found for ID : %d", plateSetId));
 
-            List<Plate> plates = plateSet.getPlates(user);
+            List<Plate> plates = plateSet.getPlates();
             if (!plates.isEmpty())
                 throw new QueryUpdateServiceException(String.format("Plate set has %d plates associated with it and cannot be deleted.", plates.size()));
 

@@ -52,7 +52,7 @@ public class NotificationMenuView extends JspView<Object>
     @Override
     protected void renderView(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception
     {
-        if (!AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_NOTIFICATION_MENU))
+        if (!AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_NOTIFICATION_MENU))
             return;
         if (getViewContext().getUser().isGuest())
             return;

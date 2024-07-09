@@ -18,6 +18,7 @@ public class WellData
     private Integer _sampleId;
     private WellGroup.Type _type;
     private String _wellGroup;
+    // NOTE: If/when adding additional properties update hasData() to include the new properties
 
     public WellData()
     {
@@ -38,10 +39,16 @@ public class WellData
         for (var entry : getMetadata().entrySet())
         {
             if (entry.getValue() != null)
-                data.put(WellTable.Column.Properties.name() + "/" + entry.getKey(), entry.getValue());
+                data.put(entry.getKey(), entry.getValue());
         }
 
         return data;
+    }
+
+    public boolean hasData()
+    {
+        // _position is not used when determining if the well data has data
+        return _sampleId != null || _type != null && _wellGroup != null || !getMetadata().isEmpty();
     }
 
     public Integer getCol()
