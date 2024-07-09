@@ -533,7 +533,8 @@ public class TreatmentManager
         // delete the AssaySpecimen record by RowId
         filter = SimpleFilter.createContainerFilter(container);
         filter.addCondition(FieldKey.fromParts("RowId"), rowId);
-        Table.delete(StudySchema.getInstance().getTableInfoAssaySpecimen(), filter); // TODO: Uncache! (StudyManager._assaySpecimenHelper)
+        Table.delete(StudySchema.getInstance().getTableInfoAssaySpecimen(), filter);
+        StudyManager.getInstance().clearAssaySpecimenCache(container);
     }
 
     public void deleteAssaySpecimenVisit(Container container, User user, int rowId)

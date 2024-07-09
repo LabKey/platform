@@ -235,6 +235,7 @@ public class StudyManager
     private static final Logger _log = LogManager.getLogger(StudyManager.class);
     private static final StudyManager _instance = new StudyManager();
     private static final StudySchema SCHEMA = StudySchema.getInstance();
+    private static final String LSID_REQUIRED = "LSID_REQUIRED";
 
     private final StudyHelper _studyHelper;
     private final VisitHelper _visitHelper;
@@ -242,7 +243,6 @@ public class StudyManager
     private final DatasetHelper _datasetHelper;
     private final QueryHelper<Integer, CohortImpl, StudyCacheCollections<Integer, CohortImpl>> _cohortHelper;
     private final BlockingCache<Container, Set<PropertyDescriptor>> _sharedProperties;
-
     private final BlockingCache<Container, Map<String, Participant>> _participantCache = DatabaseCache.get(StudySchema.getInstance().getScope(), Constants.getMaxContainers(), CacheManager.HOUR, "Participants", (c, argument) -> {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         return Collections.unmodifiableMap(
@@ -251,8 +251,6 @@ public class StudyManager
                 .collect(LabKeyCollectors.toLinkedMap(Participant::getParticipantId, participant -> participant))
         );
     });
-
-    private static final String LSID_REQUIRED = "LSID_REQUIRED";
 
     private StudyManager()
     {
