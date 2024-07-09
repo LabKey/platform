@@ -33,7 +33,7 @@ import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateCustomField;
 import org.labkey.api.assay.plate.PlateLayoutHandler;
-import org.labkey.api.assay.plate.PlateMapExcelWriter;
+import org.labkey.assay.plate.data.PlateMapExcelWriter;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.plate.PlateSet;
 import org.labkey.api.assay.plate.PlateSetEdge;
@@ -3195,7 +3195,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return new QueryView(userSchema, settings, null);
     }
 
-    public List<DisplayColumn> getPlateDisplayColumns(QueryView queryView)
+    private List<DisplayColumn> getPlateDisplayColumns(QueryView queryView)
     {
         // We have to use the display columns from the DataRegion returned from createDataView in order to get the
         // correct columns that we set via QuerySettings in getPlateQueryView, if we don't then we'll only get the
