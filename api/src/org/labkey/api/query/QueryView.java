@@ -826,6 +826,12 @@ public class QueryView extends WebPartView<Object>
         return table != null && table.hasPermission(getUser(), DeletePermission.class);
     }
 
+    protected boolean isAdmin()
+    {
+        TableInfo table = getTable();
+        return table != null && table.hasPermission(getUser(), AdminPermission.class);
+    }
+
     private boolean allowQueryTableInsertURLOverride()
     {
         TableInfo table = getTable();
@@ -1973,7 +1979,7 @@ public class QueryView extends WebPartView<Object>
             button.addMenuItem(customizeView);
         }
 
-        if (QueryService.get().isQuerySnapshot(getContainer(), getSchema().getSchemaName(), getSettings().getQueryName()))
+        if (isAdmin() && QueryService.get().isQuerySnapshot(getContainer(), getSchema().getSchemaName(), getSettings().getQueryName()))
         {
             QuerySnapshotService.Provider provider = QuerySnapshotService.get(getSchema().getSchemaName());
             if (provider != null)
