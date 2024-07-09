@@ -807,20 +807,20 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
                       className="domain-row-main"
                     >
                       <div
-                        className="domain-row-base-fields col-xs-9"
+                        className="col-xs-9 domain-row-base-fields"
                       >
                         <div
-                          className="description auth-row__field col-xs-4"
+                          className="col-xs-4 description auth-row__field"
                         >
                           LDAP Configurations
                         </div>
                         <div
-                          className="details auth-row__field col-xs-4"
+                          className="col-xs-4 details auth-row__field"
                         >
                           ldap://ldap.forumsys.com
                         </div>
                         <div
-                          className="provider auth-row__field col-xs-3"
+                          className="col-xs-3 provider auth-row__field"
                         >
                           LDAP
                         </div>
@@ -829,10 +829,10 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
                         className="col-xs-1"
                       />
                       <div
-                        className="domain-row-base-fields col-xs-2"
+                        className="col-xs-2 domain-row-base-fields"
                       >
                         <div
-                          className="enabled auth-row__field col-xs-7"
+                          className="col-xs-7 enabled auth-row__field"
                         >
                           <span
                             className="fa fa-circle"
@@ -845,10 +845,10 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
                              Enabled
                         </div>
                         <div
-                          className="delete auth-row__field col-xs-1"
+                          className="col-xs-1 delete auth-row__field"
                         />
                         <div
-                          className="editOrView auth-row__field col-xs-3"
+                          className="col-xs-3 editOrView auth-row__field"
                         >
                           <div
                             className="clickable"
@@ -878,18 +878,18 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
                       className="domain-row-main"
                     >
                       <div
-                        className="domain-row-base-fields col-xs-9"
+                        className="col-xs-9 domain-row-base-fields"
                       >
                         <div
-                          className="description auth-row__field col-xs-4"
+                          className="col-xs-4 description auth-row__field"
                         >
                           Standard database authentication
                         </div>
                         <div
-                          className="details auth-row__field col-xs-4"
+                          className="col-xs-4 details auth-row__field"
                         />
                         <div
-                          className="provider auth-row__field col-xs-3"
+                          className="col-xs-3 provider auth-row__field"
                         >
                           Database
                         </div>
@@ -898,10 +898,10 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
                         className="col-xs-1"
                       />
                       <div
-                        className="domain-row-base-fields col-xs-2"
+                        className="col-xs-2 domain-row-base-fields"
                       >
                         <div
-                          className="enabled auth-row__field col-xs-7"
+                          className="col-xs-7 enabled auth-row__field"
                         >
                           <span
                             className="fa fa-circle"
@@ -914,10 +914,10 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
                              Enabled
                         </div>
                         <div
-                          className="delete auth-row__field col-xs-1"
+                          className="col-xs-1 delete auth-row__field"
                         />
                         <div
-                          className="editOrView auth-row__field col-xs-3"
+                          className="col-xs-3 editOrView auth-row__field"
                         >
                           <div
                             className="clickable"
@@ -974,20 +974,20 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
                       className="domain-row-main"
                     >
                       <div
-                        className="domain-row-base-fields col-xs-9"
+                        className="col-xs-9 domain-row-base-fields"
                       >
                         <div
-                          className="description auth-row__field col-xs-4"
+                          className="col-xs-4 description auth-row__field"
                         >
                           SAML Configuration
                         </div>
                         <div
-                          className="details auth-row__field col-xs-4"
+                          className="col-xs-4 details auth-row__field"
                         >
                           IdP SSO URL
                         </div>
                         <div
-                          className="provider auth-row__field col-xs-3"
+                          className="col-xs-3 provider auth-row__field"
                         >
                           SAML
                         </div>
@@ -996,10 +996,10 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
                         className="col-xs-1"
                       />
                       <div
-                        className="domain-row-base-fields col-xs-2"
+                        className="col-xs-2 domain-row-base-fields"
                       >
                         <div
-                          className="enabled auth-row__field col-xs-7"
+                          className="col-xs-7 enabled auth-row__field"
                         >
                           <span
                             className="fa fa-circle"
@@ -1012,10 +1012,10 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
                              Enabled
                         </div>
                         <div
-                          className="delete auth-row__field col-xs-1"
+                          className="col-xs-1 delete auth-row__field"
                         />
                         <div
-                          className="editOrView auth-row__field col-xs-3"
+                          className="col-xs-3 editOrView auth-row__field"
                         >
                           <div
                             className="clickable"
@@ -1045,20 +1045,20 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
                       className="domain-row-main"
                     >
                       <div
-                        className="domain-row-base-fields col-xs-9"
+                        className="col-xs-9 domain-row-base-fields"
                       >
                         <div
-                          className="description auth-row__field col-xs-4"
+                          className="col-xs-4 description auth-row__field"
                         >
                           CAS Configurations
                         </div>
                         <div
-                          className="details auth-row__field col-xs-4"
+                          className="col-xs-4 details auth-row__field"
                         >
                           https://www.labkey.org/cas
                         </div>
                         <div
-                          className="provider auth-row__field col-xs-3"
+                          className="col-xs-3 provider auth-row__field"
                         >
                           CAS
                         </div>
@@ -1067,10 +1067,10 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
                         className="col-xs-1"
                       />
                       <div
-                        className="domain-row-base-fields col-xs-2"
+                        className="col-xs-2 domain-row-base-fields"
                       >
                         <div
-                          className="enabled auth-row__field col-xs-7"
+                          className="col-xs-7 enabled auth-row__field"
                         >
                           <span
                             className="fa fa-circle"
@@ -1083,10 +1083,10 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
                              Enabled
                         </div>
                         <div
-                          className="delete auth-row__field col-xs-1"
+                          className="col-xs-1 delete auth-row__field"
                         />
                         <div
-                          className="editOrView auth-row__field col-xs-3"
+                          className="col-xs-3 editOrView auth-row__field"
                         >
                           <div
                             className="clickable"
@@ -1116,20 +1116,20 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
                       className="domain-row-main"
                     >
                       <div
-                        className="domain-row-base-fields col-xs-9"
+                        className="col-xs-9 domain-row-base-fields"
                       >
                         <div
-                          className="description auth-row__field col-xs-4"
+                          className="col-xs-4 description auth-row__field"
                         >
                           CAS Configuration 2
                         </div>
                         <div
-                          className="details auth-row__field col-xs-4"
+                          className="col-xs-4 details auth-row__field"
                         >
                           https://www.labkey.org/cas
                         </div>
                         <div
-                          className="provider auth-row__field col-xs-3"
+                          className="col-xs-3 provider auth-row__field"
                         >
                           CAS
                         </div>
@@ -1138,10 +1138,10 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
                         className="col-xs-1"
                       />
                       <div
-                        className="domain-row-base-fields col-xs-2"
+                        className="col-xs-2 domain-row-base-fields"
                       >
                         <div
-                          className="enabled auth-row__field col-xs-7"
+                          className="col-xs-7 enabled auth-row__field"
                         >
                           <span
                             className="fa fa-circle"
@@ -1154,10 +1154,10 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
                              Enabled
                         </div>
                         <div
-                          className="delete auth-row__field col-xs-1"
+                          className="col-xs-1 delete auth-row__field"
                         />
                         <div
-                          className="editOrView auth-row__field col-xs-3"
+                          className="col-xs-3 editOrView auth-row__field"
                         >
                           <div
                             className="clickable"
@@ -1201,20 +1201,20 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
                       className="domain-row-main"
                     >
                       <div
-                        className="domain-row-base-fields col-xs-9"
+                        className="col-xs-9 domain-row-base-fields"
                       >
                         <div
-                          className="description auth-row__field col-xs-4"
+                          className="col-xs-4 description auth-row__field"
                         >
                           Duo 2 Factor Configuration
                         </div>
                         <div
-                          className="details auth-row__field col-xs-4"
+                          className="col-xs-4 details auth-row__field"
                         >
                           Key1
                         </div>
                         <div
-                          className="provider auth-row__field col-xs-3"
+                          className="col-xs-3 provider auth-row__field"
                         >
                           Duo 2 Factor
                         </div>
@@ -1223,10 +1223,10 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
                         className="col-xs-1"
                       />
                       <div
-                        className="domain-row-base-fields col-xs-2"
+                        className="col-xs-2 domain-row-base-fields"
                       >
                         <div
-                          className="enabled auth-row__field col-xs-7"
+                          className="col-xs-7 enabled auth-row__field"
                         >
                           <span
                             className="fa fa-circle"
@@ -1239,10 +1239,10 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
                              Disabled
                         </div>
                         <div
-                          className="delete auth-row__field col-xs-1"
+                          className="col-xs-1 delete auth-row__field"
                         />
                         <div
-                          className="editOrView auth-row__field col-xs-3"
+                          className="col-xs-3 editOrView auth-row__field"
                         >
                           <div
                             className="clickable"
@@ -1272,20 +1272,20 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
                       className="domain-row-main"
                     >
                       <div
-                        className="domain-row-base-fields col-xs-9"
+                        className="col-xs-9 domain-row-base-fields"
                       >
                         <div
-                          className="description auth-row__field col-xs-4"
+                          className="col-xs-4 description auth-row__field"
                         >
                           Duo 2 Factor Configuration 2
                         </div>
                         <div
-                          className="details auth-row__field col-xs-4"
+                          className="col-xs-4 details auth-row__field"
                         >
                           Key2
                         </div>
                         <div
-                          className="provider auth-row__field col-xs-3"
+                          className="col-xs-3 provider auth-row__field"
                         >
                           Duo 2 Factor
                         </div>
@@ -1294,10 +1294,10 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
                         className="col-xs-1"
                       />
                       <div
-                        className="domain-row-base-fields col-xs-2"
+                        className="col-xs-2 domain-row-base-fields"
                       >
                         <div
-                          className="enabled auth-row__field col-xs-7"
+                          className="col-xs-7 enabled auth-row__field"
                         >
                           <span
                             className="fa fa-circle"
@@ -1310,10 +1310,10 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
                              Disabled
                         </div>
                         <div
-                          className="delete auth-row__field col-xs-1"
+                          className="col-xs-1 delete auth-row__field"
                         />
                         <div
-                          className="editOrView auth-row__field col-xs-3"
+                          className="col-xs-3 editOrView auth-row__field"
                         >
                           <div
                             className="clickable"
