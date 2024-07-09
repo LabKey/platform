@@ -438,7 +438,7 @@ public class ChangeSummary
     private static Notification createNotification(User notifyUser, MailHelper.MultipartMessage m, String linkText,
                                                    String linkURL, String id, String type) throws MessagingException
     {
-        if (!AppProps.getInstance().isExperimentalFeatureEnabled(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU))
+        if (!AppProps.getInstance().isOptionalFeatureEnabled(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU))
             return null;
 
         Notification notification = new Notification();

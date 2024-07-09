@@ -44,7 +44,6 @@ import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.AssayTableMetadata;
 import org.labkey.api.assay.AssayWellExclusionService;
 import org.labkey.api.assay.DefaultAssayRunCreator;
-import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
@@ -9710,11 +9709,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     {
         if (CoreSchema.getInstance().getSqlDialect().isSqlServer())
         {
-            return AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_WITH_COUNTER);
+            return AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_WITH_COUNTER);
         }
         else
         {
-            return !AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_ALLOW_GAP_COUNTER);
+            return !AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_ALLOW_GAP_COUNTER);
         }
     }
 
