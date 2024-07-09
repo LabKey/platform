@@ -37,6 +37,8 @@ import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.gwt.client.model.GWTConditionalFormat;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.MetadataColumnJSON;
+import org.labkey.api.query.MetadataUnavailableException;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
@@ -104,14 +106,14 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
         _definitionFolder = definitionFolder;
     }
 
-    public MetadataTableJSON saveMetadata(String schemaName, User user, Container container) throws MetadataUnavailableException
+    public static void saveMetadata(String schemaName, String queryName, List<MetadataColumnJSON> fields, boolean isUserDefinedQuery, boolean calculatedFieldsOnly, User user, Container container) throws MetadataUnavailableException
     {
         UserSchema schema = QueryService.get().getUserSchema(user, container, schemaName);
-        QueryDef queryDef = QueryManager.get().getQueryDef(schema.getContainer(), schema.getSchemaName(), this.getName(), this.isUserDefinedQuery());
-        TableInfo rawTableInfo = schema.getTable(this.getName(), false);
+        QueryDef queryDef = QueryManager.get().getQueryDef(schema.getContainer(), schema.getSchemaName(), queryName, isUserDefinedQuery);
+        TableInfo rawTableInfo = schema.getTable(queryName, false);
 
         if (null == rawTableInfo)
-            throw new MetadataUnavailableException("No such table: " + this.getName());
+            throw new MetadataUnavailableException("No such table: " + queryName);
 
         TablesDocument doc = null;
         TableType xmlTable = null;
@@ -126,7 +128,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             {
                 throw new MetadataUnavailableException(e.getMessage());
             }
-            xmlTable = getTableType(this.getName(), doc);
+            xmlTable = getTableType(queryName, doc);
             // when there is a queryDef but xmlTable is null it means the xmlMetaData contains tableName which does not
             // match with actual queryName then reconstruct the xml table metadata : See Issue 43523
             if (xmlTable == null)
@@ -139,7 +141,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             queryDef = new QueryDef();
             queryDef.setSchema(schemaName);
             queryDef.setContainer(container.getId());
-            queryDef.setName(this.getName());
+            queryDef.setName(queryName);
         }
 
         if (doc == null)
@@ -151,7 +153,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
         {
             TablesType tables = doc.addNewTables();
             xmlTable = tables.addNewTable();
-            xmlTable.setTableName(this.getName());
+            xmlTable.setTableName(queryName);
         }
 
         if (xmlTable.getColumns() == null)
@@ -167,13 +169,12 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
         Map<String, ColumnType> columnsToDelete = new CaseInsensitiveHashMap<>();
         for (ColumnType columnType : xmlTable.getColumns().getColumnArray())
         {
-            // Remember all the columns in the metadata overrides so that we can delete any that the user
-            // has removed completely.
-            columnsToDelete.put(columnType.getColumnName(), columnType);
+            // Remember all the columns in the metadata overrides so that we can delete any that the user has removed completely.
+            if (!calculatedFieldsOnly || columnType.getValueExpression() != null)
+                columnsToDelete.put(columnType.getColumnName(), columnType);
         }
 
-
-        for (MetadataColumnJSON metadataColumnJSON : this.getAllFields())
+        for (MetadataColumnJSON metadataColumnJSON : fields)
         {
             ColumnType xmlColumn = columnsToDelete.get(metadataColumnJSON.getName());
             ColumnInfo rawColumnInfo = rawTableInfo.getColumn(metadataColumnJSON.getName());
@@ -305,7 +306,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                 xmlColumn.unsetDefaultScale();
             }
 
-            if (!StringUtils.equals(metadataColumnJSON.getDerivationDataScope(), rawColumnInfo.getDerivationDataScope()))
+            if (!calculatedFieldsOnly && !StringUtils.equals(metadataColumnJSON.getDerivationDataScope(), rawColumnInfo.getDerivationDataScope()))
             {
                 xmlColumn.setDerivationDataScope(DerivationDataScopeTypes.Enum.forString(metadataColumnJSON.getDerivationDataScope()));
             }
@@ -539,11 +540,9 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
         {
             QueryManager.get().update(user, queryDef);
         }
-
-        return getMetadata(schemaName, this.getName(), user, container);
     }
 
-    private void addImportAliases(ColumnType xmlColumn, String importAliases)
+    private static void addImportAliases(ColumnType xmlColumn, String importAliases)
     {
         Set<String> aliasesSet = ColumnRenderPropertiesImpl.convertToSet(importAliases);
         ColumnType.ImportAliases importAliasesXml = xmlColumn.addNewImportAliases();

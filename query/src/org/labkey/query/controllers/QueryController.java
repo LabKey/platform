@@ -7954,12 +7954,11 @@ public class QueryController extends SpringActionController
         {
             String schemaName = queryMetadataApiForm.getSchemaName();
             MetadataTableJSON domain = queryMetadataApiForm.getDomain();
-            domain.setUserDefinedQuery(queryMetadataApiForm.isUserDefinedQuery());
-            MetadataTableJSON savedDomain = domain.saveMetadata(schemaName, getUser(), getContainer());
+            MetadataTableJSON.saveMetadata(schemaName, domain.getName(), domain.getAllFields(), queryMetadataApiForm.isUserDefinedQuery(), false, getUser(), getContainer());
 
             ApiSimpleResponse resp = new ApiSimpleResponse();
             resp.put("success", true);
-            resp.put("domain", savedDomain);
+            resp.put("domain", MetadataTableJSON.getMetadata(schemaName, domain.getName(), getUser(), getContainer()));
             return resp;
         }
     }
