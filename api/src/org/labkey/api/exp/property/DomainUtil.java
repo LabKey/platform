@@ -430,6 +430,7 @@ public class DomainUtil
             gwtDomain.setAllowSampleSubjectProperties(kind.allowSampleSubjectProperties());
             gwtDomain.setAllowTimepointProperties(kind.allowTimepointProperties());
             gwtDomain.setAllowUniqueConstraintProperties(kind.allowUniqueConstraintProperties());
+            gwtDomain.setAllowCalculatedFields(kind.allowCalculatedFields());
             gwtDomain.setShowDefaultValueSettings(kind.showDefaultValueSettings());
             gwtDomain.setInstructions(kind.getDomainEditorInstructions());
             gwtDomain.setSupportsPhiLevel(kind.supportsPhiLevel());
@@ -449,6 +450,7 @@ public class DomainUtil
         gwtDomain.setAllowTimepointProperties(kind.allowTimepointProperties());
         gwtDomain.setShowDefaultValueSettings(kind.showDefaultValueSettings());
         gwtDomain.setAllowUniqueConstraintProperties(kind.allowUniqueConstraintProperties());
+        gwtDomain.setAllowCalculatedFields(kind.allowCalculatedFields());
         gwtDomain.setInstructions(kind.getDomainEditorInstructions());
         gwtDomain.setDefaultValueOptions(kind.getDefaultValueOptions(null), kind.getDefaultDefaultType(null));
         return gwtDomain;

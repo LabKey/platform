@@ -222,6 +222,12 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     }
 
     @Override
+    public boolean allowCalculatedFields()
+    {
+        return true;
+    }
+
+    @Override
     public @Nullable ActionURL urlShowData(Domain domain, ContainerUser containerUser)
     {
         ExpSampleType st = getSampleType(domain);

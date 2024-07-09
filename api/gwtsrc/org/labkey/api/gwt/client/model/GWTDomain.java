@@ -47,6 +47,7 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     private boolean allowSampleSubjectProperties;
     private boolean allowTimepointProperties;
     private boolean allowUniqueConstraintProperties;
+    private boolean allowCalculatedFields;
     private boolean showDefaultValueSettings;
     private DefaultValueType defaultDefaultValueType = null;
     private DefaultValueType[] defaultValueOptions = new DefaultValueType[0];
@@ -100,6 +101,7 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
         this.allowSampleSubjectProperties = src.allowSampleSubjectProperties;
         this.allowTimepointProperties = src.allowTimepointProperties;
         this.allowUniqueConstraintProperties = src.allowUniqueConstraintProperties;
+        this.allowCalculatedFields = src.allowCalculatedFields;
         this.showDefaultValueSettings = src.showDefaultValueSettings;
         this.defaultDefaultValueType = src.defaultDefaultValueType;
         this.defaultValueOptions = src.defaultValueOptions;
@@ -371,6 +373,16 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     public void setAllowUniqueConstraintProperties(boolean allowUniqueConstraintProperties)
     {
         this.allowUniqueConstraintProperties = allowUniqueConstraintProperties;
+    }
+
+    public boolean isAllowCalculatedFields()
+    {
+        return allowCalculatedFields;
+    }
+
+    public void setAllowCalculatedFields(boolean allowCalculatedFields)
+    {
+        this.allowCalculatedFields = allowCalculatedFields;
     }
 
     /**
