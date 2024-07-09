@@ -7,17 +7,17 @@ module.exports = {
     apps: [{
         name: 'authenticationConfiguration',
         title: 'Authentication',
-        permission: 'admin',
+        permissionClasses: ['org.labkey.api.security.permissions.AdminPermission'],
         path: './src/client/AuthenticationConfiguration'
     },{
         name: 'components',
         title: '@labkey/components',
-        permission: 'admin',
+        permissionClasses: ['org.labkey.api.security.permissions.AdminPermission'],
         path: './src/client/LabKeyUIComponentsPage'
     }, {
         name: 'viewUsageStatistics',
         title: 'View Usage Statistics',
-        permission: 'admin',
+        permissionClasses: ['org.labkey.api.security.permissions.AdminPermission'],
         path: './src/client/ViewUsageStatistics',
     },{
         name: 'errorHandler',
@@ -32,42 +32,42 @@ module.exports = {
     },{
         name: 'assayDesigner',
         title: 'Assay Designer',
-        permission: 'read', // the component will check for DesignAssayPermission and show edit vs read only mode accordingly, used in assay/action/DesignerAction.java
+        permissionClasses: ['org.labkey.api.security.permissions.ReadPermission'], // the component will check for DesignAssayPermission and show edit vs read only mode accordingly, used in assay/action/DesignerAction.java
         path: './src/client/AssayDesigner'
     },{
         name: 'domainDesigner',
         title: 'Field Editor',
-        permission: 'admin', // used in PropertyController.EditDomainAction
+        permissionClasses: ['org.labkey.api.security.permissions.AdminPermission'], // used in PropertyController.EditDomainAction
         path: './src/client/DomainDesigner'
     }, {
         name: 'sampleTypeDesigner',
         title: 'Sample Type Designer',
-        permission: 'admin', // used in ExperimentController.EditSampleTypeAction
+        permissionClasses: ['org.labkey.api.security.permissions.AdminPermission'], // used in ExperimentController.EditSampleTypeAction
         path: './src/client/SampleTypeDesigner'
     },{
         name: 'dataClassDesigner',
         title: 'Data Class Designer',
-        permission: 'admin', // used in ExperimentController.EditDataClassAction
+        permissionClasses: ['org.labkey.api.security.permissions.AdminPermission'], // used in ExperimentController.EditDataClassAction
         path: './src/client/DataClassDesigner'
     },{
         name: 'issuesListDesigner',
         title: 'Issues List Definition Designer',
-        permission: 'admin', // used in IssuesController.AdminAction
+        permissionClasses: ['org.labkey.api.security.permissions.AdminPermission'], // used in IssuesController.AdminAction
         path: './src/client/IssuesListDesigner'
     },{
         name: 'listDesigner',
         title: 'List Designer',
-        permission: 'read', // the component will check for DesignListPermission and show edit vs read only mode accordingly, used in ListController.EditListDefinitionAction
+        permissionClasses: ['org.labkey.api.security.permissions.ReadPermission'], // the component will check for DesignListPermission and show edit vs read only mode accordingly, used in ListController.EditListDefinitionAction
         path: './src/client/ListDesigner'
     },{
         name: 'queryMetadataEditor',
         title: 'Metadata Editor',
-        permission: 'admin', // used in QueryController.MetadataQueryAction
+        permissionClasses: ['org.labkey.api.security.permissions.AdminPermission'], // used in QueryController.MetadataQueryAction
         path: './src/client/QueryMetadataEditor'
     },{
         name: 'datasetDesigner',
         title: 'Dataset Designer',
-        permission: 'admin', // used in StudyController.EditTypeAction and StudyController.DefineDatasetTypeAction
+        permissionClasses: ['org.labkey.api.security.permissions.AdminPermission'], // used in StudyController.EditTypeAction and StudyController.DefineDatasetTypeAction
         path: './src/client/DatasetDesigner'
     }, {
         name: 'conceptFilter',
