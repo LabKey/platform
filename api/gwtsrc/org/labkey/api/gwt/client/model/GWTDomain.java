@@ -113,10 +113,11 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
                 this.indices.add(src.indices.get(i).copy());
         }
 
-        if (src.getFields() == null)
+        // include all fields here (standard and calculated) in the copy
+        if (src.getAllFields() == null)
             return;
-        for (int i=0 ; i<src.getFields().size() ; i++)
-            this.fields.add((FieldType)src.getFields().get(i).copy());
+        for (int i=0 ; i<src.getAllFields().size() ; i++)
+            this.fields.add((FieldType)src.getAllFields().get(i).copy());
 
         if (src.mandatoryPropertyDescriptorNames != null)
         {
