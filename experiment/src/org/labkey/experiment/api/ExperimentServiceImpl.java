@@ -1366,11 +1366,15 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     // Used when constructing a Protocol from XarReader where the protocol id is not set known
     public ExpMaterialProtocolInputImpl createMaterialProtocolInput(
-            @NotNull Container c,
-            @NotNull String name, int protocolId, boolean input,
-            @Nullable ExpSampleType sampleType,
-            @Nullable ExpProtocolInputCriteria criteria,
-            int minOccurs, @Nullable Integer maxOccurs)
+        @NotNull Container c,
+        @NotNull String name,
+        int protocolId,
+        boolean input,
+        @Nullable ExpSampleType sampleType,
+        @Nullable ExpProtocolInputCriteria criteria,
+        int minOccurs,
+        @Nullable Integer maxOccurs
+    )
     {
         MaterialProtocolInput obj = new MaterialProtocolInput();
         populateProtocolInput(obj, c, name, protocolId, input, criteria, minOccurs, maxOccurs);
@@ -1381,11 +1385,15 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     private void populateProtocolInput(
-            @NotNull AbstractProtocolInput obj,
-            @NotNull Container c,
-            @NotNull String name, int protocolId, boolean input,
-            @Nullable ExpProtocolInputCriteria criteria,
-            int minOccurs, @Nullable Integer maxOccurs)
+        @NotNull AbstractProtocolInput obj,
+        @NotNull Container c,
+        @NotNull String name,
+        int protocolId,
+        boolean input,
+        @Nullable ExpProtocolInputCriteria criteria,
+        int minOccurs,
+        @Nullable Integer maxOccurs
+    )
     {
         Objects.requireNonNull(name, "Name required");
 
