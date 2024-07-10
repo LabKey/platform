@@ -67,6 +67,7 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -722,7 +723,7 @@ public class StudyDesignController extends BaseStudyController
             }
         }
 
-        private void updateCohorts(List<CohortImpl> cohorts, Study study) throws ValidationException
+        private void updateCohorts(Collection<CohortImpl> cohorts, Study study) throws ValidationException
         {
             // insert new cohorts and update any existing ones
             for (CohortImpl cohort : cohorts)
@@ -746,7 +747,6 @@ public class StudyDesignController extends BaseStudyController
 
                 updateTreatmentVisitMap(cohort.getRowId(), cohort.getTreatmentVisitMap());
             }
-
         }
 
         private void updateTreatmentVisitMap(int cohortId, List<TreatmentVisitMapImpl> treatmentVisitMaps)

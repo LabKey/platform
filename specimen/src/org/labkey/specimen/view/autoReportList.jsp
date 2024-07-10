@@ -35,6 +35,7 @@
 <%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
 <%@ page import="org.labkey.specimen.actions.ReportConfigurationBean" %>
 <%@ page import="org.labkey.specimen.report.SpecimenVisitReportParameters" %>
+<%@ page import="java.util.Collection" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -46,7 +47,7 @@
     User user = getUser();
     boolean showCohorts = StudyService.get().showCohorts(container, user);
     Study study = StudyService.get().getStudy(container);
-    List<? extends Cohort> cohorts = null;
+    Collection<? extends Cohort> cohorts = null;
     if (showCohorts)
         cohorts = CohortService.get().getCohorts(container, user);
     HtmlString optionLabelStyle = HtmlString.unsafe("text-align: left; padding: 5px 5px 0 5px;");

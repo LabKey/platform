@@ -1551,7 +1551,7 @@ public class ParticipantGroupController extends BaseStudyController
     }
 
 
-    List<CohortImpl> getCohorts()
+    Collection<CohortImpl> getCohorts()
     {
         return StudyManager.getInstance().getCohorts(getContainer(), getUser());
     }

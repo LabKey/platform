@@ -43,7 +43,7 @@ This folder does not contain a study.
     }
 
     List<? extends SpecimenVisitReport> reports = bean.getReports();
-    if (reports == null || reports.size() == 0)
+    if (reports == null || reports.isEmpty())
     {
 %>
 The request has produced no records.
@@ -53,7 +53,7 @@ The request has produced no records.
     {
     for (SpecimenVisitReport report : reports)
     {
-        List<Visit> visits = report.getVisits();
+        Collection<Visit> visits = report.getVisits();
         int colCount = visits.size() + report.getLabelDepth();
 %>
 <div id="<%=tableContainerId%>" style="overflow-x:auto;">

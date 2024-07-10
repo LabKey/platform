@@ -62,7 +62,7 @@
     StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
     boolean canAdmin = context.hasPermission(AdminPermission.class) && null != study;
     params.put("canAdmin", Boolean.toString(canAdmin));
-    params.put("canCreateTimepoints", Boolean.toString(canAdmin && (study.getVisits(Visit.Order.CHRONOLOGICAL).size() < 1)));
+    params.put("canCreateTimepoints", Boolean.toString(canAdmin && study.getVisits(Visit.Order.DISPLAY).isEmpty()));
 
     params.put("panel", bean.getPanel());  //bean.getPanel());
     if (null != bean.getFinishURL())

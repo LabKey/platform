@@ -21,7 +21,7 @@ import org.labkey.api.study.AbstractStudyCachable;
 
 import java.util.Objects;
 
-public class SpecimenRequestStatus extends AbstractStudyCachable<SpecimenRequestStatus>
+public class SpecimenRequestStatus extends AbstractStudyCachable<Integer, SpecimenRequestStatus>
 {
     private int _rowId;
     private Container _container;
@@ -55,7 +55,7 @@ public class SpecimenRequestStatus extends AbstractStudyCachable<SpecimenRequest
     }
 
     @Override
-    public Object getPrimaryKey()
+    public Integer getPrimaryKey()
     {
         return getRowId();
     }

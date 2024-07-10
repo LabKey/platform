@@ -21,7 +21,7 @@ import org.labkey.api.study.AbstractStudyCachable;
 
 import java.util.Map;
 
-public class AdditiveType extends AbstractStudyCachable<AdditiveType>
+public class AdditiveType extends AbstractStudyCachable<Long, AdditiveType>
 {
     private long _rowId; // serial NOT NULL,
     private Container _container; // entityid NOT NULL,
@@ -42,7 +42,7 @@ public class AdditiveType extends AbstractStudyCachable<AdditiveType>
     }
 
     @Override
-    public Object getPrimaryKey()
+    public Long getPrimaryKey()
     {
         return _rowId;
     }

@@ -21,13 +21,7 @@ import org.labkey.api.study.AbstractStudyCachable;
 
 import java.util.Map;
 
-/*
- * User: brittp
- * Date: Dec 18, 2008
- * Time: 12:48:03 PM
- */
-
-public class DerivativeType extends AbstractStudyCachable<DerivativeType>
+public class DerivativeType extends AbstractStudyCachable<Long, DerivativeType>
 {
     private long _rowId; // serial NOT NULL,
     private Container _container; // entityid NOT NULL,
@@ -48,7 +42,7 @@ public class DerivativeType extends AbstractStudyCachable<DerivativeType>
     }
 
     @Override
-    public Object getPrimaryKey()
+    public Long getPrimaryKey()
     {
         return _rowId;
     }

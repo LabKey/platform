@@ -23,6 +23,7 @@ import org.labkey.api.util.JsonUtil;
 import org.labkey.api.view.HttpView;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,8 +37,8 @@ public class StudyTreatmentSchedule implements ApiJsonForm
 
     // treatment schedule properties
     List<TreatmentImpl> _treatments;
-    List<VisitImpl> _visits;
-    List<CohortImpl> _cohorts;
+    Collection<VisitImpl> _visits;
+    Collection<CohortImpl> _cohorts;
 
     public StudyTreatmentSchedule()
     {}
@@ -67,12 +68,12 @@ public class StudyTreatmentSchedule implements ApiJsonForm
         return treatmentList;
     }
 
-    public void setVisits(List<VisitImpl> visits)
+    public void setVisits(Collection<VisitImpl> visits)
     {
         _visits = visits;
     }
 
-    public List<VisitImpl> getVisits()
+    public Collection<VisitImpl> getVisits()
     {
         return _visits;
     }
@@ -112,12 +113,12 @@ public class StudyTreatmentSchedule implements ApiJsonForm
         return ids;
     }
 
-    public void setCohorts(List<CohortImpl> cohorts)
+    public void setCohorts(Collection<CohortImpl> cohorts)
     {
         _cohorts = cohorts;
     }
 
-    public List<CohortImpl> getCohorts()
+    public Collection<CohortImpl> getCohorts()
     {
         return _cohorts;
     }

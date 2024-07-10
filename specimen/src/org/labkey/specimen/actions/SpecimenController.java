@@ -2911,7 +2911,7 @@ public class SpecimenController extends SpringActionController
 
     private Map<Integer, SpecimenRequestStatus> getIdToRequestStatusMap(Container container)
     {
-        List<SpecimenRequestStatus> statuses = SpecimenRequestManager.get().getRequestStatuses(container, getUser());
+        Collection<SpecimenRequestStatus> statuses = SpecimenRequestManager.get().getRequestStatuses(container, getUser());
         Map<Integer, SpecimenRequestStatus> idToStatus = new HashMap<>();
         for (SpecimenRequestStatus status : statuses)
             idToStatus.put(status.getRowId(), status);
@@ -3031,7 +3031,7 @@ public class SpecimenController extends SpringActionController
             {
                 SpecimenRequestStatus status = new SpecimenRequestStatus();
                 status.setLabel(form.getNewLabel());
-                List<SpecimenRequestStatus> statuses = SpecimenRequestManager.get().getRequestStatuses(getContainer(), getUser());
+                Collection<SpecimenRequestStatus> statuses = SpecimenRequestManager.get().getRequestStatuses(getContainer(), getUser());
                 status.setSortOrder(statuses.size());
                 status.setContainer(getContainer());
                 status.setFinalState(form.isNewFinalState());
@@ -3101,7 +3101,7 @@ public class SpecimenController extends SpringActionController
         @Override
         public boolean handlePost(IdForm form, BindException errors) throws Exception
         {
-            List<SpecimenRequestStatus> statuses = SpecimenRequestManager.get().getRequestStatuses(getContainer(), getUser());
+            Collection<SpecimenRequestStatus> statuses = SpecimenRequestManager.get().getRequestStatuses(getContainer(), getUser());
             SpecimenRequestStatus status = SpecimenRequestManager.get().getRequestStatus(getContainer(), form.getId());
             if (status != null)
             {

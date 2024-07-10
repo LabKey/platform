@@ -16,129 +16,101 @@
 
 package org.labkey.api.study;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.cache.CacheLoader;
+import org.labkey.api.cache.BlockingCache;
+import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.Filter;
+import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableInfoGetter;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 
+import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
+import java.util.Map;
 
-public class QueryHelper<K extends StudyCachable>
+public class QueryHelper<K, T extends StudyCachable<K, T>, SC extends QueryHelper.StudyCacheCollections<K, T>>
 {
-    private final Class<K> _objectClass;
+    private final BlockingCache<Container, SC> _cache;
+    private final Class<T> _objectClass;
     private final TableInfoGetter _tableInfoGetter;
+    protected final String _defaultSortString;
 
-    public QueryHelper(TableInfoGetter tableInfoGetter, Class<K> objectClass)
+    public QueryHelper(TableInfoGetter tableInfoGetter, Class<T> objectClass)
+    {
+        this(tableInfoGetter, objectClass, null);
+    }
+
+    public QueryHelper(TableInfoGetter tableInfoGetter, Class<T> objectClass, @Nullable String defaultSortString)
     {
         _tableInfoGetter = tableInfoGetter;
         _objectClass = objectClass;
+        _defaultSortString = defaultSortString;
+        TableInfo tableInfo = _tableInfoGetter.getTableInfo();
+        _cache = DatabaseCache.get(tableInfo.getSchema().getScope(), tableInfo.getCacheSize(), "StudyCache: " + tableInfo.getName(), (key, argument) ->
+            createCollections(
+                getTableSelector(key).stream(_objectClass)
+                    .peek(StudyCachable::lock)
+                    .toList()
+            ));
     }
 
-    public List<K> getList(Container c)
+    /**
+     * Return a Collection of all T objects in the provided Container, in default order
+     */
+    public @NotNull Collection<T> getCollection(Container c)
     {
-        return getList(c, null, null);
+        return getCollections(c).getCollection();
     }
 
-    public List<K> getList(Container c, String sortString)
+    public T get(final Container c, final K pk)
     {
-        return getList(c, null, sortString);
+        return getCollections(c).get(pk);
     }
 
-    public List<K> getList(Container c, SimpleFilter filter)
+    protected TableSelector getTableSelector(Container c)
     {
-        return getList(c, filter, null);
+        return new TableSelector(getTableInfo(), SimpleFilter.createContainerFilter(c), new Sort(_defaultSortString));
     }
 
-    public List<K> getList(final Container c, @Nullable final SimpleFilter filterArg, @Nullable final String sortString)
+    protected SC getCollections(Container c)
     {
-        String cacheId = getCacheId(filterArg);
-        if (sortString != null)
-            cacheId += "; sort = " + sortString;
-
-        CacheLoader<String, Object> loader = (key, argument) -> {
-            SimpleFilter filter = null;
-
-            if(null != filterArg)
-            {
-                filter = filterArg;
-            }
-            else if(null != getTableInfo().getColumn("container"))
-            {
-                filter = SimpleFilter.createContainerFilter(c);
-            }
-
-            if (null != filter && !filter.hasContainerEqualClause())
-                filter.addCondition(FieldKey.fromParts("Container"), c);
-
-            Sort sort = null;
-            if (sortString != null)
-                sort = new Sort(sortString);
-            List<K> objs = new TableSelector(getTableInfo(), filter, sort).getArrayList(_objectClass);
-            // Make both the objects and the list itself immutable so that we don't end up with a corrupted
-            // version in the cache
-            for (StudyCachable obj : objs)
-                obj.lock();
-            return Collections.unmodifiableList(objs);
-        };
-        return (List<K>)StudyCache.get(getTableInfo(), c, cacheId, loader);
+        return _cache.get(c, null);
     }
 
-    public K get(Container c, int rowId)
+    protected SC createCollections(Collection<T> collection)
     {
-        return get(c, (Object)rowId, "RowId");
+        return (SC) new QueryHelper.StudyCacheCollections<>(collection);
     }
 
-    public K get(Container c, int rowId, String rowIdColumnName)
+    public T create(User user, T obj)
     {
-        return get(c, (Object)rowId, rowIdColumnName);
-    }
-
-    private K get(final Container c, final Object rowId, final String rowIdColumnName)
-    {
-        CacheLoader<String, Object> loader = (key, argument) -> {
-            SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-            filter.addCondition(rowIdColumnName, rowId);
-            StudyCachable<K> obj = new TableSelector(getTableInfo(), filter, null).getObject(_objectClass);
-            if (obj != null)
-                obj.lock();
-            return obj;
-        };
-        Object obj = StudyCache.get(getTableInfo(), c, rowId, loader);
-        return (K)obj;
-    }
-
-    public K create(User user, K obj)
-    {
-        K ret = Table.insert(user, getTableInfo(), obj);
-        clearCache(obj);
+        T ret = Table.insert(user, getTableInfo(), obj);
+        clearCache(obj.getContainer());
         return ret;
     }
 
-    public K update(User user, K obj)
+    public T update(User user, T obj)
     {
         return update(user, obj, obj.getPrimaryKey());
     }
 
-    public K update(User user, K obj, Object... pk)
+    public T update(User user, T obj, Object... pk)
     {
-        K ret = Table.update(user, getTableInfo(), obj, pk);
-        clearCache(obj);
+        T ret = Table.update(user, getTableInfo(), obj, pk);
+        clearCache(obj.getContainer());
         return ret;
     }
 
-    public void delete(K obj)
+    public void delete(T obj)
     {
         Table.delete(getTableInfo(), obj.getPrimaryKey());
-        clearCache(obj);
+        clearCache(obj.getContainer());
     }
 
     public TableInfo getTableInfo()
@@ -148,26 +120,34 @@ public class QueryHelper<K extends StudyCachable>
 
     public void clearCache(Container c)
     {
-        StudyCache.clearCache(getTableInfo(), c);
-    }
-
-    public void clearCache(K obj)
-    {
-        StudyCache.uncache(getTableInfo(), obj.getContainer(), obj.getPrimaryKey().toString());
+        _cache.remove(c);
     }
 
     public void clearCache()
     {
-        StudyCache.clearCache(getTableInfo());
+        _cache.clear();
     }
 
-    protected String getCacheId(@Nullable Filter filter)
+    // By default, holds a single map of PK -> V, but helpers can override to add other collections
+    public static class StudyCacheCollections<K, V extends StudyCachable<K, V>>
     {
-        if (filter == null)
-            return "~ALL";
-        else
+        private final Map<K, V> _map;
+
+        // Receives a collection of locked T objects
+        public StudyCacheCollections(Collection<V> collection)
         {
-            return filter.toSQLString(getTableInfo().getSqlDialect());
+            _map = Collections.unmodifiableMap(collection.stream()
+                .collect(LabKeyCollectors.toLinkedMap(StudyCachable::getPrimaryKey, v -> v)));
+        }
+
+        public @Nullable V get(K key)
+        {
+            return _map.get(key);
+        }
+
+        public @NotNull Collection<V> getCollection()
+        {
+            return _map.values();
         }
     }
 }

@@ -40,13 +40,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * User: brittp
- * Date: Jan 17, 2006
- * Time: 2:48:41 PM
- */
-public abstract class AbstractStudyEntity<T>
-        extends AbstractStudyCachable<T> implements StudyEntity, Serializable
+public abstract class AbstractStudyEntity<K, T> extends AbstractStudyCachable<K, T> implements StudyEntity, Serializable
 {
     transient private Container _container;
     private String _containerId;

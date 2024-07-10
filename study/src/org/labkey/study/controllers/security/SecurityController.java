@@ -15,6 +15,8 @@
  */
 package org.labkey.study.controllers.security;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.xmlbeans.XmlOptions;
@@ -71,8 +73,6 @@ import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -625,7 +625,6 @@ public class SecurityController extends SpringActionController
 
             return new ActionURL(SecurityController.BeginAction.class, getContainer());
         }
-
     }
 
     public enum PermissionType implements SafeToRenderEnum

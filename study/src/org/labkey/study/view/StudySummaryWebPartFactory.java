@@ -30,7 +30,6 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.HtmlView;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.Portal;
@@ -41,6 +40,7 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.springframework.validation.BindException;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -76,7 +76,7 @@ public class StudySummaryWebPartFactory extends BaseWebPartFactory
             return _study;
         }
 
-        public List<? extends Visit> getVisits(Visit.Order order)
+        public Collection<? extends Visit> getVisits(Visit.Order order)
         {
             return getStudy().getVisits(order);
         }
@@ -91,7 +91,7 @@ public class StudySummaryWebPartFactory extends BaseWebPartFactory
             return getStudy().getLocations();
         }
 
-        public List<? extends Cohort> getCohorts(User user)
+        public Collection<? extends Cohort> getCohorts(User user)
         {
             return getStudy().getCohorts(user);
         }

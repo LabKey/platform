@@ -57,8 +57,8 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class CohortController extends BaseStudyController
@@ -103,7 +103,7 @@ public class CohortController extends BaseStudyController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class DeleteUnusedCohortsAction extends FormHandlerAction
+    public class DeleteUnusedCohortsAction extends FormHandlerAction<Object>
     {
         @Override
         public void validateCommand(Object target, Errors errors)
@@ -113,7 +113,7 @@ public class CohortController extends BaseStudyController
         @Override
         public boolean handlePost(Object o, BindException errors) throws Exception
         {
-            List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(getContainer(), getUser());
+            Collection<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(getContainer(), getUser());
             for (CohortImpl cohort : cohorts)
             {
                 if (!cohort.isInUse())

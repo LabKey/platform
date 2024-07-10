@@ -46,6 +46,7 @@ import org.labkey.study.xml.StudyDocument;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -129,7 +130,7 @@ public class SpecimenSettingsWriter extends AbstractSpecimenWriter
     private void writeRequestStatuses(SpecimenSettingsType specimenSettingsType, Study study, SimpleStudyExportContext ctx)
     {
         SpecimenSettingsType.RequestStatuses xmlRequestStatuses = null;
-        List<SpecimenRequestStatus> statuses = SpecimenRequestManager.get().getRequestStatuses(study.getContainer(), ctx.getUser());
+        Collection<SpecimenRequestStatus> statuses = SpecimenRequestManager.get().getRequestStatuses(study.getContainer(), ctx.getUser());
         if (!statuses.isEmpty())
         {
             for (SpecimenRequestStatus status : statuses)

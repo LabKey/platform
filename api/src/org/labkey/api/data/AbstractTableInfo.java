@@ -67,7 +67,6 @@ import org.labkey.api.util.MemTrackable;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.Path;
 import org.labkey.api.util.SimpleNamedObject;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
@@ -1877,14 +1876,6 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
 
         if (errors.hasErrors())
             throw errors;
-    }
-
-
-    /** TableInfo does not support QueryHelper by default */
-    @Override
-    public Path getNotificationKey()
-    {
-        return null;
     }
 
     public void checkLocked()

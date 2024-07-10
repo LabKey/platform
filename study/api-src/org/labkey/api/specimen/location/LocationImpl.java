@@ -22,12 +22,7 @@ import org.labkey.api.study.Location;
 
 import java.util.Map;
 
-/**
- * User: brittp
- * Date: Jan 6, 2006
- * Time: 10:28:38 AM
- */
-public class LocationImpl extends AbstractStudyCachable<LocationImpl> implements Location
+public class LocationImpl extends AbstractStudyCachable<Integer, LocationImpl> implements Location
 {
     private int _rowId; // INT IDENTITY(1,1),
     private Container _container;
@@ -120,7 +115,7 @@ public class LocationImpl extends AbstractStudyCachable<LocationImpl> implements
     }
 
     @Override
-    public Object getPrimaryKey()
+    public Integer getPrimaryKey()
     {
         return getRowId();
     }
