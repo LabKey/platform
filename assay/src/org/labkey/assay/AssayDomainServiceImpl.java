@@ -52,15 +52,14 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.exp.xar.XarConstants;
 import org.labkey.api.gwt.client.DefaultValueType;
-import org.labkey.api.gwt.client.assay.AssayException;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.gwt.client.model.GWTContainer;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
+import org.labkey.api.query.MetadataUnavailableException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.ValidationException;
-import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.study.assay.SampleMetadataInputFormat;
@@ -573,6 +572,8 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                     // an unusable state.
                     if (domainErrors.hasErrors())
                         throw domainErrors;
+
+                    QueryService.get().saveCalculatedFieldsMetadata(domain.getSchemaName(), domain.getQueryName(), domain.getCalculatedFields(), false, getUser(), getContainer());
                 }
 
                 if (assay.getExcludedContainerIds() != null && (!isNew || !assay.getExcludedContainerIds().isEmpty()))
@@ -588,7 +589,7 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                 Throwable cause = e.getCause();
                 throw new ValidationException(cause.getMessage());
             }
-            catch (ExperimentException e)
+            catch (ExperimentException | MetadataUnavailableException e)
             {
                 throw new ValidationException(e.getMessage());
             }
