@@ -64,10 +64,10 @@ import java.util.Set;
 public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNode
 {
     /**
-     * This is used to report problems encountered during construction of the TableInfo.  These would generally be
-     * reported in the schema browser or editor.  Failing to construct a TableInfo generally breaks the UI badly, so we
-     * want to be able to return a usable TableInfo whenever possible and then report problems here if they the issue
-     * is correctable.
+     * This is used to report problems encountered during construction of the TableInfo. These would generally be
+     * reported in the schema browser or editor. Failing to construct a TableInfo generally breaks the UI badly, so we
+     * want to be able to return a usable TableInfo whenever possible and then report problems here if the issue is
+     * correctable.
      *<br>
      * See also ValidateQueryAction.
      *<br>
@@ -138,11 +138,11 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
 
     @NotNull List<ColumnInfo> getPkColumns();
 
-    /** Gets all of the constraints that guarantee uniqueness in the underlying table. This includes both PRIMARY KEY and UNIQUE constraints */
+    /** Gets all constraints that guarantee uniqueness in the underlying table. This includes both PRIMARY KEY and UNIQUE constraints */
     @NotNull
     Map<String, Pair<IndexType, List<ColumnInfo>>> getUniqueIndices();
 
-    /** Gets all of the indices from the underlying table. This includes PRIMARY KEY and UNIQUE constraints, as well as non-unique INDEX */
+    /** Gets all indices from the underlying table. This includes PRIMARY KEY and UNIQUE constraints, as well as non-unique INDEX */
     @NotNull
     Map<String, Pair<IndexType, List<ColumnInfo>>> getAllIndices();
 
@@ -362,8 +362,8 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
     boolean hasDetailsURL();
 
     /**
-     * Return the method of a given name.  Methods are accessible via the QueryModule's query
-     * language.  Most tables do not have methods. 
+     * Return the method of a given name. Methods are accessible via the QueryModule's query language. Most tables do
+     * not have methods.
      */
     default MethodInfo getMethod(String name)
     {
@@ -393,8 +393,8 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
     List<Pair<String, String>> getImportTemplates(ViewContext ctx);
 
     /**
-     * Returns a list of the raw import templates (without substituting the container).  This is intended to be
-     * used by FilteredTable or other instances that need to copy the raw values from a parent table.  In general,
+     * Returns a list of the raw import templates (without substituting the container). This is intended to be
+     * used by FilteredTable or other instances that need to copy the raw values from a parent table. In general,
      * getImportTemplates() should be used instead
      */
     List<Pair<String, StringExpression>> getRawImportTemplates();
@@ -453,7 +453,7 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
         public String getMethodName()
         {
             String name = name();
-            return name.substring(0, 1) + name.toLowerCase().substring(1, name.length());
+            return name.charAt(0) + name.toLowerCase().substring(1, name.length());
         }
     }
 
@@ -471,7 +471,7 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
 
     /**
      * Queries may have named parameters, SELECT queries (the only kind we have right now) may
-     * return TableInfos.  This is how you find out if a TableInfo representing a query has named
+     * return TableInfos. This is how you find out if a TableInfo representing a query has named
      * parameters
      */
 
@@ -482,8 +482,8 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
      * Executes any trigger scripts for this table.
      *
      * The trigger should be called once before and once after an entire set of rows for each of the
-     * INSERT, UPDATE, DELETE trigger types.  A trigger script may set up data structures to be used
-     * during validation.  In particular, the trigger script might want to do a query to populate a set of
+     * INSERT, UPDATE, DELETE trigger types. A trigger script may set up data structures to be used
+     * during validation. In particular, the trigger script might want to do a query to populate a set of
      * legal values.
      * <p>
      * The <code>errors</code> parameter holds validation error messages for the entire row set.
@@ -635,7 +635,7 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
      * @return FieldKey of the Container column.
      */
     @Nullable
-    public FieldKey getContainerFieldKey();
+    FieldKey getContainerFieldKey();
 
     /**
      * Returns whether this table supports audit tracking of insert, updates and deletes by implementing the
@@ -781,7 +781,7 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
     }
 
     /**
-     * Useful helper to combine permission check/throw.  This is especially useful for tables where permissions can
+     * Useful helper to combine permission check/throw. This is especially useful for tables where permissions can
      * differ from the containing schema/container.
      *
      * TableInfo users should still always check hasPermission() as early as possible for best error handling, and
