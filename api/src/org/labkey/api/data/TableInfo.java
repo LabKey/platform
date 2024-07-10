@@ -606,12 +606,6 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
      */
     default boolean hasDbTriggers() { return false; }
 
-    @Deprecated // No longer used
-    default Path getNotificationKey()
-    {
-        return null;
-    }
-
     /* for asserting that tableinfo is not changed unexpectedly */
     void setLocked(boolean b);
     boolean isLocked();
