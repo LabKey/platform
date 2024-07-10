@@ -47,6 +47,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.query.MetadataUnavailableException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.model.ViewCategory;
@@ -268,6 +269,12 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
 
     @Override
     public boolean allowUniqueConstraintProperties()
+    {
+        return true;
+    }
+
+    @Override
+    public boolean allowCalculatedFields()
     {
         return true;
     }
@@ -497,7 +504,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
 
             if (def.getDomain() != null)
             {
-                List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields();
+                List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getAllFields();
 
                 Domain newDomain = def.getDomain();
                 if (newDomain != null)
@@ -507,9 +514,17 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
                     Set<String> existingProperties = newDomain.getProperties().stream().map(o -> o.getName().toLowerCase()).collect(Collectors.toSet());
                     Map<DomainProperty, Object> defaultValues = new HashMap<>();
                     Set<String> propertyUris = new HashSet<>();
+                    List<GWTPropertyDescriptor> calculatedFields = new ArrayList<>();
 
                     for (GWTPropertyDescriptor pd : properties)
                     {
+                        // handling standard properties only here
+                        if (pd.isCalculatedField())
+                        {
+                            calculatedFields.add(pd);
+                            continue;
+                        }
+
                         if (lowerReservedNames.contains(pd.getName().toLowerCase()) || existingProperties.contains(pd.getName().toLowerCase()))
                         {
                             if (arguments.isStrictFieldValidation())
@@ -524,6 +539,8 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
                     List<GWTIndex> indices = (List<GWTIndex>)domain.getIndices();
                     newDomain.setPropertyIndices(indices, lowerReservedNames);
                     StorageProvisioner.get().addMissingRequiredIndices(newDomain);
+
+                    QueryService.get().saveCalculatedFieldsMetadata("study", name, calculatedFields, false, user, container);
                 }
                 else
                     throw new IllegalArgumentException("Failed to create domain for dataset : " + name + ".");
@@ -732,6 +749,8 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         {
             ValidationException exception = updateDomainDescriptor(original, update, container, user);
 
+            QueryService.get().saveCalculatedFieldsMetadata("study", update.getQueryName(), update.getCalculatedFields(), false, user, container);
+
             if (!exception.hasErrors() && def != null)
                 exception = updateDataset(datasetProperties, original.getDomainURI(), exception, study, container, user, def);
 
@@ -739,6 +758,10 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
                 transaction.commit();
 
             return exception;
+        }
+        catch (MetadataUnavailableException e)
+        {
+            return new ValidationException(e.getMessage());
         }
         finally
         {
