@@ -30,7 +30,7 @@ import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
-import org.labkey.api.settings.ExperimentalFeatureService;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.ColumnAnalyticsProvider;
 import org.labkey.api.util.HtmlString;
@@ -658,7 +658,7 @@ public class DataColumn extends DisplayColumn
         }
         else if (_inputType.toLowerCase().startsWith("select"))
         {
-            if (ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_USE_QUERYSELECT_COMPONENT) && !"select.multiple".equalsIgnoreCase(_inputType))
+            if (OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_USE_QUERYSELECT_COMPONENT) && !"select.multiple".equalsIgnoreCase(_inputType))
             {
                 TypeAheadSelectDisplayColumn displayColumn = new TypeAheadSelectDisplayColumn(_boundColumn, null);
                 displayColumn.renderInputHtml(ctx, out, value);

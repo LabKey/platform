@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 // Base class for startup property handlers that want to work with a map of property entries. Extracted from
-// StandardStartupPropertyHandler to allow ExperimentalFeatureStartupPropertyHandler (which can't use an enum
+// StandardStartupPropertyHandler to allow OptionalFeatureStartupPropertyHandler (which can't use an enum
 // to provide its startup properties) to share implementation and use the existing handleStartupProperties()
 // method. Note that we want StandardStartupPropertyHandler's type parameter (T) to extend Enum<T>, which is
 // why we can't just throw a new constructor on that class.

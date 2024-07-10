@@ -155,7 +155,7 @@ public class LoginController extends SpringActionController
     public PageConfig defaultPageConfig()
     {
         PageConfig ret = super.defaultPageConfig();
-        if (!AppProps.getInstance().isExperimentalFeatureEnabled(FEATUREFLAG_DISABLE_LOGIN_XFRAME))
+        if (!AppProps.getInstance().isOptionalFeatureEnabled(FEATUREFLAG_DISABLE_LOGIN_XFRAME))
             ret.setFrameOption(PageConfig.FrameOption.DENY);
         return ret;
     }
