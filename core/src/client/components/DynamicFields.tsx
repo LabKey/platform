@@ -1,5 +1,5 @@
 import React, { ChangeEvent, FC, memo, PureComponent, useCallback } from 'react';
-import { FormControl } from 'react-bootstrap';
+import classNames from 'classnames';
 import { FileAttachmentForm, LabelHelpTip } from '@labkey/components';
 import { Utils } from '@labkey/api';
 
@@ -15,6 +15,9 @@ export const TextInput: FC<TextInputProps> = memo(props => {
         (event: ChangeEvent<HTMLInputElement>) => onChange(event.target.name, event.target.value),
         [onChange]
     );
+    const inputClassName = classNames('form-control', 'modal__text-input-field', {
+        'modal__text-input-field--error': requiredFieldEmpty,
+    });
 
     return (
         <div className="modal__text-input">
@@ -31,15 +34,7 @@ export const TextInput: FC<TextInputProps> = memo(props => {
             {requiredFieldEmpty && <div className="modal__tiny-error"> This field is required </div>}
 
             {canEdit ? (
-                <FormControl
-                    name={name}
-                    type={type}
-                    value={value}
-                    onChange={onChange_}
-                    className={
-                        'modal__text-input-field' + (requiredFieldEmpty ? ' modal__text-input-field--error' : '')
-                    }
-                />
+                <input name={name} type={type} value={value} onChange={onChange_} className={inputClassName} />
             ) : (
                 <span className="modal__text-input-field"> {value} </span>
             )}
@@ -109,13 +104,13 @@ export const Select: FC<SelectProps> = props => {
 
             {canEdit && (
                 <div className="modal__option-input">
-                    <FormControl componentClass="select" name={name} onChange={onChange_} value={value}>
+                    <select className="form-control" name={name} onChange={onChange_} value={value}>
                         {Object.keys(options).map(item => (
                             <option value={item} key={item}>
                                 {options[item]}
                             </option>
                         ))}
-                    </FormControl>
+                    </select>
                 </div>
             )}
 

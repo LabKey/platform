@@ -1,5 +1,4 @@
 import React, { ChangeEvent } from 'react';
-import { Col, FormControl, Row, Button } from 'react-bootstrap';
 import { Alert, QueryConfig, SchemaQuery } from '@labkey/components';
 
 const Context = React.createContext<SchemaQueryInputContext>(undefined);
@@ -8,10 +7,10 @@ const SchemaQueryInputContextProvider = Context.Provider;
 interface Props {}
 
 interface State {
-    schemaName: string;
-    queryName: string;
     error: string;
     queryConfig: QueryConfig;
+    queryName: string;
+    schemaName: string;
 }
 
 export type SchemaQueryInputContext = State;
@@ -58,17 +57,26 @@ export const SchemaQueryInputProvider = (Component: React.ComponentType) => {
 
             return (
                 <SchemaQueryInputContextProvider value={this.state}>
-                    <Row>
-                        <Col xs={4}>
-                            Schema: <FormControl name="schemaName" type="text" onChange={this.onFormChange} />
-                        </Col>
-                        <Col xs={4}>
-                            Query: <FormControl name="queryName" type="text" onChange={this.onFormChange} />
-                        </Col>
-                        <Col xs={4}>
-                            <Button onClick={this.onApply}>Apply</Button>
-                        </Col>
-                    </Row>
+                    <div className="row">
+                        <div className="col-xs-4">
+                            Schema:{' '}
+                            <input
+                                className="form-control"
+                                name="schemaName"
+                                type="text"
+                                onChange={this.onFormChange}
+                            />
+                        </div>
+                        <div className="col-xs-4">
+                            Query:{' '}
+                            <input className="form-control" name="queryName" type="text" onChange={this.onFormChange} />
+                        </div>
+                        <div className="col-xs-4">
+                            <button className="btn btn-default" onClick={this.onApply} type="button">
+                                Apply
+                            </button>
+                        </div>
+                    </div>
                     <br />
                     {error && <Alert>{error}</Alert>}
                     <Component {...this.props} {...this.state} />
