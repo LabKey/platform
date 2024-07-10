@@ -58,6 +58,8 @@ import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.lists.permissions.DesignListPermission;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.MetadataUnavailableException;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
@@ -160,6 +162,12 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
 
     @Override
     public boolean allowUniqueConstraintProperties()
+    {
+        return true;
+    }
+
+    @Override
+    public boolean allowCalculatedFields()
     {
         return true;
     }
@@ -409,7 +417,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
             listProperties.setDescription(domain.getDescription());
         list.setDescription(listProperties.getDescription());
 
-        List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields();
+        List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getAllFields();
         List<GWTIndex> indices = (List<GWTIndex>)domain.getIndices();
 
         try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
@@ -421,8 +429,16 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
 
             Map<DomainProperty, Object> defaultValues = new HashMap<>();
             Set<String> propertyUris = new HashSet<>();
+            List<GWTPropertyDescriptor> calculatedFields = new ArrayList<>();
             for (GWTPropertyDescriptor pd : properties)
             {
+                // handling standard properties only here
+                if (pd.isCalculatedField())
+                {
+                    calculatedFields.add(pd);
+                    continue;
+                }
+
                 String propertyName = pd.getName().toLowerCase();
                 if (lowerReservedNames.contains(propertyName))
                 {
@@ -441,6 +457,8 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
             // the create case there's no data to index, but there is meta data...
             list.save(user);
             updateListProperties(container, user, list.getListId(), listProperties);
+
+            QueryService.get().saveCalculatedFieldsMetadata(ListQuerySchema.NAME, name, calculatedFields, false, user, container);
 
             DefaultValueService.get().setDefaultValues(container, defaultValues);
 
@@ -574,6 +592,8 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
 
                 //update domain properties
                 exception.addErrors(DomainUtil.updateDomainDescriptor(original, update, container, user));
+
+                QueryService.get().saveCalculatedFieldsMetadata(ListQuerySchema.NAME, update.getQueryName(), update.getCalculatedFields(), false, user, container);
             }
             catch (RuntimeSQLException x)
             {
@@ -586,7 +606,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
                 }
                 return exception.addGlobalError(message);
             }
-            catch (DataIntegrityViolationException x)
+            catch (DataIntegrityViolationException | MetadataUnavailableException x)
             {
                 return exception.addGlobalError("A data error occurred: " + x.getMessage());
             }

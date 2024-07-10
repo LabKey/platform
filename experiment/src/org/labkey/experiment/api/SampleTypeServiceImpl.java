@@ -895,7 +895,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                     transaction.addCommitTask(() -> clearMaterialSourceCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
                     return st;
                 }
-                catch (ExperimentException|MetadataUnavailableException eex)
+                catch (ExperimentException | MetadataUnavailableException eex)
                 {
                     throw new DbScope.RetryPassthroughException(eex);
                 }
