@@ -22,10 +22,8 @@ interface TriggerConfiguration {
     copy: string;
     filePattern: string;
     location: string;
-    move: string;
-    // client side only.
-    moveContainer: string;
-    // server side only, split into moveDirectory and moveContainer on init.
+    move: string; // server side only, split into moveDirectory and moveContainer on init.
+    moveContainer: string; // client side only.
     moveDirectory: string; // client side only.
     parameterFunction: string;
     quiet: number;
@@ -36,9 +34,9 @@ interface TriggerConfiguration {
 type CustomConfiguration = Record<string, string | boolean>;
 
 interface CustomParameterModel {
-    id: number;
+    id: number; // used internally as a key for react
     key: string;
-    value: string; // used internally as a key for react
+    value: string;
 }
 
 enum View {
