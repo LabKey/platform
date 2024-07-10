@@ -9142,6 +9142,7 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
+    @ActionNames("OptionalFeature, ExperimentalFeature")
     public static class OptionalFeatureAction extends BaseApiAction<OptionalFeatureForm>
     {
         @Override
