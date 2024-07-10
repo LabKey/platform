@@ -10,7 +10,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.study.model.StudyManager;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.stream.Collectors;
 
 public class CohortServiceImpl implements CohortService
@@ -48,7 +47,7 @@ public class CohortServiceImpl implements CohortService
     }
 
     @Override
-    public List<? extends Cohort> getCohorts(Container container, User user)
+    public Collection<? extends Cohort> getCohorts(Container container, User user)
     {
         return StudyManager.getInstance().getCohorts(container, user);
     }

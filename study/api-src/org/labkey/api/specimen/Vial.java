@@ -27,12 +27,7 @@ import org.labkey.api.study.StudyService;
 import java.util.Date;
 import java.util.Map;
 
-/**
- * User: brittp
- * Date: Mar 15, 2006
- * Time: 4:26:07 PM
- */
-public class Vial extends AbstractStudyCachable<Vial>
+public class Vial extends AbstractStudyCachable<Long, Vial>
 {
     private final Map<String, Object> _rowMap;
     private final Container _container;
@@ -113,7 +108,7 @@ public class Vial extends AbstractStudyCachable<Vial>
     }
 
     @Override
-    public Object getPrimaryKey()
+    public Long getPrimaryKey()
     {
         return getRowId();
     }

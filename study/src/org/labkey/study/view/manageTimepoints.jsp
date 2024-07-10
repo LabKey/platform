@@ -28,14 +28,14 @@
 <%@ page import="org.labkey.study.controllers.StudyController.VisitSummaryAction" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
-<%@ page import="java.util.List" %>
+<%@ page import="java.util.Collection" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <labkey:errors />
 <%
     StudyPropertiesForm form = (StudyPropertiesForm) getModelBean();
     Study study = getStudy();
-    List<VisitImpl> timepoints = StudyManager.getInstance().getVisits(study, Visit.Order.DISPLAY);
+    Collection<VisitImpl> timepoints = StudyManager.getInstance().getVisits(study, Visit.Order.DISPLAY);
 
     if (form.getStartDate() == null)
     {

@@ -57,7 +57,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.SecurableResource;
-import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.ReaderRole;
@@ -122,9 +121,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-/**
- * User: jgarms
- */
 public class StudyServiceImpl implements StudyService, ContainerSecurableResourceProvider
 {
     public static final StudyServiceImpl INSTANCE = new StudyServiceImpl();
@@ -349,13 +345,12 @@ public class StudyServiceImpl implements StudyService, ContainerSecurableResourc
         }
 
         Set<Study> result = new HashSet<>();
-        if (studyReference instanceof String)
+        if (studyReference instanceof String studyRef)
         {
-            String studyRef = (String)studyReference;
             // look for study by label
-            Set<? extends StudyImpl> studies = user == null ?
+            Collection<? extends StudyImpl> studies = user == null ?
                     StudyManager.getInstance().getAllStudies() :
-                    StudyManager.getInstance().getAllStudies(ContainerManager.getRoot(), user, ReadPermission.class);
+                    StudyManager.getInstance().getAllStudies(ContainerManager.getRoot(), user);
 
             for (Study study : studies)
             {

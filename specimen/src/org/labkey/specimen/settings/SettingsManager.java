@@ -11,7 +11,7 @@ import org.labkey.api.specimen.settings.StatusSettings;
 import org.labkey.specimen.SpecimenRequestManager;
 import org.labkey.specimen.SpecimenRequestStatus;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.Map;
 
 public class SettingsManager
@@ -92,7 +92,7 @@ public class SettingsManager
         {
             if (!org.labkey.api.specimen.settings.SettingsManager.get().getRepositorySettings(container).isEnableRequests())
                 return false;
-            List<SpecimenRequestStatus> statuses = SpecimenRequestManager.get().getRequestStatuses(container, user);
+            Collection<SpecimenRequestStatus> statuses = SpecimenRequestManager.get().getRequestStatuses(container, user);
             return (statuses != null && statuses.size() > 1);
         }
     }

@@ -12,7 +12,7 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.iterator.ValidatingDataRowIterator;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.settings.ExperimentalFeatureService;
+import org.labkey.api.settings.OptionalFeatureService;
 
 import java.io.File;
 import java.util.function.Supplier;
@@ -29,7 +29,7 @@ public interface AssayPlateMetadataService
 
     static boolean isExperimentalAppPlateEnabled()
     {
-        return ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_APP_PLATE_SUPPORT);
+        return OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_APP_PLATE_SUPPORT);
     }
 
     static boolean isBiologicsFolder(Container container)

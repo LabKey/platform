@@ -22,6 +22,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.settings.OptionalFeatureService.FeatureType;
 import org.labkey.api.view.ActionURL;
 
 import java.util.Collection;
@@ -62,7 +63,7 @@ public class AdminConsole
     }
 
     private static final Map<SettingsLinkType, Collection<AdminLink>> _links = new HashMap<>();
-    private static final Set<ExperimentalFeatureFlag> _experimentalFlags = new ConcurrentSkipListSet<>();
+    private static final Set<OptionalFeatureFlag> _optionalFlags = new ConcurrentSkipListSet<>();
     private static final Set<ProductGroup> _productGroups = new ConcurrentSkipListSet<>();
 
     static
@@ -143,34 +144,45 @@ public class AdminConsole
 
     public static void addExperimentalFeatureFlag(String flag, String title, String description, boolean requiresRestart)
     {
-        addExperimentalFeatureFlag(new ExperimentalFeatureFlag(flag, title, description, requiresRestart, false));
+        addOptionalFeatureFlag(new OptionalFeatureFlag(flag, title, description, requiresRestart, false, FeatureType.Experimental));
     }
 
-    public static void addExperimentalFeatureFlag(ExperimentalFeatureFlag experimentalFeatureFlag)
+    public static void addOptionalFeatureFlag(OptionalFeatureFlag optionalFeatureFlag)
     {
-        _experimentalFlags.add(experimentalFeatureFlag);
+        _optionalFlags.add(optionalFeatureFlag);
     }
 
-    public static Collection<ExperimentalFeatureFlag> getExperimentalFeatureFlags()
+    // Return all optional features, regardless of type
+    public static Collection<OptionalFeatureFlag> getOptionalFeatureFlags()
     {
-        return Collections.unmodifiableSet(_experimentalFlags);
+        return Collections.unmodifiableSet(_optionalFlags);
     }
 
-    public static class ExperimentalFeatureFlag implements Comparable<ExperimentalFeatureFlag>, StartupProperty
+    // Return all optional features having the specified type
+    public static Collection<OptionalFeatureFlag> getOptionalFeatureFlags(FeatureType type)
+    {
+        return _optionalFlags.stream()
+            .filter(flag -> flag.getType() == type)
+            .toList();
+    }
+
+    public static class OptionalFeatureFlag implements Comparable<OptionalFeatureFlag>, StartupProperty
     {
         private final String _flag;
         private final String _title;
         private final String _description;
         private final boolean _requiresRestart;
         private final boolean _hidden;
+        private final FeatureType _type;
 
-        public ExperimentalFeatureFlag(String flag, String title, String description, boolean requiresRestart, boolean hidden)
+        public OptionalFeatureFlag(String flag, String title, String description, boolean requiresRestart, boolean hidden, FeatureType type)
         {
             _flag = flag;
             _title = title;
             _description = description;
             _requiresRestart = requiresRestart;
             _hidden = hidden;
+            _type = type;
         }
 
         public String getFlag()
@@ -195,19 +207,24 @@ public class AdminConsole
         }
 
         @Override
-        public int compareTo(@NotNull ExperimentalFeatureFlag o)
+        public int compareTo(@NotNull AdminConsole.OptionalFeatureFlag o)
         {
             return getTitle().compareToIgnoreCase(o.getTitle());
         }
 
         public boolean isEnabled()
         {
-            return AppProps.getInstance().isExperimentalFeatureEnabled(getFlag());
+            return AppProps.getInstance().isOptionalFeatureEnabled(getFlag());
         }
 
         public boolean isHidden()
         {
             return _hidden;
+        }
+
+        public FeatureType getType()
+        {
+            return _type;
         }
 
         // StartupProperty implementation
@@ -293,5 +310,4 @@ public class AdminConsole
 
         @NotNull List<String> getFeatureFlags();
     }
-
 }

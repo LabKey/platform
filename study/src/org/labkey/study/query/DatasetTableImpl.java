@@ -77,7 +77,7 @@ import org.labkey.api.security.permissions.RestrictedReadPermission;
 import org.labkey.api.security.permissions.RestrictedUpdatePermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.Role;
-import org.labkey.api.settings.ExperimentalFeatureService;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.DatasetTable;
 import org.labkey.api.study.DataspaceContainerFilter;
@@ -482,7 +482,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
 
         addFolderColumn();
 
-        if(ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_ALLOW_MERGE_WITH_MANAGED_KEYS) || getDataset().getKeyManagementType() == Dataset.KeyManagementType.None)
+        if(OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_ALLOW_MERGE_WITH_MANAGED_KEYS) || getDataset().getKeyManagementType() == Dataset.KeyManagementType.None)
         {
             setAllowedInsertOption(QueryUpdateService.InsertOption.MERGE);
             setAllowedInsertOption(QueryUpdateService.InsertOption.REPLACE);

@@ -19,7 +19,6 @@
 <%@ page import="org.labkey.api.study.Params"%>
 <%@ page import="org.labkey.api.study.TimepointType"%>
 <%@ page import="org.labkey.api.study.Visit"%>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ConfirmDeleteVisitAction" %>
@@ -33,8 +32,8 @@
 <%@ page import="org.labkey.study.model.VisitDataset" %>
 <%@ page import="org.labkey.study.model.VisitDatasetType" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
+<%@ page import="java.util.Collection" %>
 <%@ page import="java.util.HashMap" %>
-<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -44,7 +43,7 @@
 
     StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
     boolean isDateBased = study != null && study.getTimepointType() == TimepointType.DATE;
-    List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(getContainer(), getUser());
+    Collection<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(getContainer(), getUser());
 %>
 <labkey:errors/>
 <labkey:form action="<%=urlFor(VisitSummaryAction.class)%>" method="POST">

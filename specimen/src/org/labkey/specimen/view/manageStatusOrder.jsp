@@ -22,13 +22,13 @@
 <%@ page import="org.labkey.specimen.SpecimenRequestStatus"%>
 <%@ page import="org.labkey.specimen.actions.SpecimenController.ManageStatusOrderAction" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController.ManageStatusesAction" %>
-<%@ page import="java.util.List" %>
+<%@ page import="java.util.Collection" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Study> me = (JspView<Study>) HttpView.currentView();
     Study study = me.getModelBean();
-    List<SpecimenRequestStatus> statuses = SpecimenRequestManager.get().getRequestStatuses(study.getContainer(), getUser());
+    Collection<SpecimenRequestStatus> statuses = SpecimenRequestManager.get().getRequestStatuses(study.getContainer(), getUser());
 %>
 <labkey:errors/>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">

@@ -27,14 +27,14 @@
 <%@ page import="org.labkey.specimen.actions.SpecimenController.DeleteStatusAction" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController.ManageStatusOrderAction" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController.ManageStatusesAction" %>
-<%@ page import="java.util.List" %>
+<%@ page import="java.util.Collection" %>
 <%@ page import="java.util.Set" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Study> me = (JspView<Study>) HttpView.currentView();
     Study study = me.getModelBean();
-    List<SpecimenRequestStatus> statuses = SpecimenRequestManager.get().getRequestStatuses(study.getContainer(), getUser());
+    Collection<SpecimenRequestStatus> statuses = SpecimenRequestManager.get().getRequestStatuses(study.getContainer(), getUser());
     Set<Integer> inUseStatuses = SpecimenRequestManager.get().getRequestStatusIdsInUse(study.getContainer());
     StatusSettings settings = SettingsManager.get().getStatusSettings(study.getContainer());
     boolean showSystemStatuses = settings.isUseShoppingCart();

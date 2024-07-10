@@ -15,6 +15,8 @@
  */
 package org.labkey.api.settings;
 
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
@@ -38,8 +40,6 @@ import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 
-import jakarta.servlet.ServletContext;
-import jakarta.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -66,7 +66,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
 
     static final String LOOK_AND_FEEL_REVISION = "logoRevision";
     static final String DEFAULT_LSID_AUTHORITY_PROP = "defaultLsidAuthority";
-    static final String EXPERIMENTAL_FEATURE_PREFIX = EXPERIMENTAL_FEATURE + ".";
+    static final String OPTIONAL_FEATURE_PREFIX = OPTIONAL_FEATURE + ".";
     static final String EXTERNAL_REDIRECT_HOST_DELIMITER = "\n";
 
     private static final String SITE_CONFIG_NAME = "SiteConfig";
@@ -375,9 +375,9 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     }
 
     @Override
-    public boolean isExperimentalFeatureEnabled(String feature)
+    public boolean isOptionalFeatureEnabled(String feature)
     {
-        feature = EXPERIMENTAL_FEATURE_PREFIX + feature;
+        feature = OPTIONAL_FEATURE_PREFIX + feature;
         if (null != System.getProperty(feature))
             return Boolean.getBoolean(feature);
         return lookupBooleanValue(feature, false);

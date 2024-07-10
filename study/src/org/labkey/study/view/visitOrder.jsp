@@ -24,7 +24,7 @@
 <%@ page import="org.labkey.study.controllers.StudyController.VisitOrderAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.VisitReorderForm" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
-<%@ page import="java.util.List" %>
+<%@ page import="java.util.Collection" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
@@ -106,7 +106,7 @@ function orderModule(listName, hiddenElName, down)
                     "cohort assignment or other factors. It is generally not useful to set a chronological order for date-based studies.")%></th>
         </tr>
         <%
-            List<VisitImpl> visits = getVisits(Visit.Order.DISPLAY);
+            Collection<VisitImpl> visits = getVisits(Visit.Order.DISPLAY);
             boolean displayEnabled = false;
             boolean chronologicalEnabled = false;
             for (VisitImpl visit : visits)

@@ -23,13 +23,14 @@
 <%@ page import="org.labkey.specimen.actions.ManageRequestBean" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController" %>
 <%@ page import="org.labkey.specimen.notifications.ActorNotificationRecipientSet" %>
+<%@ page import="java.util.Collection" %>
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     JspView<ManageRequestBean> me = (JspView<ManageRequestBean>) HttpView.currentView();
     ManageRequestBean bean = me.getModelBean();
-    List<SpecimenRequestStatus> statuses = SpecimenRequestManager.get().getRequestStatuses(getContainer(), getUser());
+    Collection<SpecimenRequestStatus> statuses = SpecimenRequestManager.get().getRequestStatuses(getContainer(), getUser());
 %>
 <labkey:errors />
 <labkey:form action="<%=urlFor(SpecimenController.ManageRequestStatusAction.class)%>" enctype="multipart/form-data" method="POST">

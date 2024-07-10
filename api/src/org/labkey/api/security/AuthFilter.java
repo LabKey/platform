@@ -190,7 +190,7 @@ public class AuthFilter implements Filter
 
         if (null == user)
         {
-            if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_NO_GUESTS))
+            if (AppProps.getInstance().isOptionalFeatureEnabled(AppProps.EXPERIMENTAL_NO_GUESTS))
                 user = User.nobody;
             else
                 user = User.guest;
@@ -211,7 +211,7 @@ public class AuthFilter implements Filter
 
         QueryService.get().setEnvironment(QueryService.Environment.USER, user);
 
-        if (AppProps.getInstance().isExperimentalFeatureEnabled("experimental-unsafe-inline"))
+        if (AppProps.getInstance().isOptionalFeatureEnabled("experimental-unsafe-inline"))
         {
             String csp = StringUtils.trimToEmpty(((HttpServletResponse) response).getHeader("Content-Security-Policy"));
             String nonceDirectiveValue = "'nonce-" + PageConfig.getScriptNonceHeader(req) + "'";

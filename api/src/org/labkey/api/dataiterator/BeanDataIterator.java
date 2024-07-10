@@ -26,21 +26,16 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * User: matthewb
- * Date: May 23, 2011
- * Time: 5:01:51 PM
- */
 public class BeanDataIterator<K> extends AbstractDataIterator implements DataIterator
 {
-    final Class _class;
+    final Class<K> _class;
     ArrayList<ColumnInfo> _cols = new ArrayList<>();
     ArrayList<Method> _readMethods = new ArrayList<>();
     final List<K> _rows;
     int _currentRow = -1;
 
 
-    public BeanDataIterator(DataIteratorContext context, Class cls, List<K> rows)
+    public BeanDataIterator(DataIteratorContext context, Class<K> cls, List<K> rows)
     {
         super(context);
 
@@ -121,18 +116,18 @@ public class BeanDataIterator<K> extends AbstractDataIterator implements DataIte
     public void debugLogInfo(StringBuilder sb)
     {
         super.debugLogInfo(sb);
-        sb.append("    " + _class.getName());
+        sb.append("    ").append(_class.getName());
         if (_rows != null)
-            sb.append("    rows: " + _rows.size());
+            sb.append("    rows: ").append(_rows.size());
     }
 
 
     public static class Builder<K> implements DataIteratorBuilder
     {
-        Class cls;
+        Class<K> cls;
         List<K> rows;
 
-        public Builder(Class cls, List<K> rows)
+        public Builder(Class<K> cls, List<K> rows)
         {
             this.cls = cls; this.rows = rows;
         }
