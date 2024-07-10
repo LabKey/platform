@@ -2254,7 +2254,8 @@ public class QueryServiceImpl implements QueryService
         for (GWTPropertyDescriptor field : fields)
             calcFields.add(new MetadataColumnJSON(field));
 
-        MetadataTableJSON.saveMetadata(schemaName, queryName, calcFields, isUserDefinedQuery, true, user, container);
+        if (!calcFields.isEmpty())
+            MetadataTableJSON.saveMetadata(schemaName, queryName, calcFields, isUserDefinedQuery, true, user, container);
     }
 
     // Use a WeakHashMap to cache QueryDefs. This means that the cache entries will only be associated directly

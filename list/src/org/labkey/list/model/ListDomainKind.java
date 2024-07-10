@@ -417,7 +417,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
             listProperties.setDescription(domain.getDescription());
         list.setDescription(listProperties.getDescription());
 
-        List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getAllFields();
+        List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields();
         List<GWTIndex> indices = (List<GWTIndex>)domain.getIndices();
 
         try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
@@ -429,16 +429,8 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
 
             Map<DomainProperty, Object> defaultValues = new HashMap<>();
             Set<String> propertyUris = new HashSet<>();
-            List<GWTPropertyDescriptor> calculatedFields = new ArrayList<>();
             for (GWTPropertyDescriptor pd : properties)
             {
-                // handling standard properties only here
-                if (pd.isCalculatedField())
-                {
-                    calculatedFields.add(pd);
-                    continue;
-                }
-
                 String propertyName = pd.getName().toLowerCase();
                 if (lowerReservedNames.contains(propertyName))
                 {
@@ -458,7 +450,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
             list.save(user);
             updateListProperties(container, user, list.getListId(), listProperties);
 
-            QueryService.get().saveCalculatedFieldsMetadata(ListQuerySchema.NAME, name, calculatedFields, false, user, container);
+            QueryService.get().saveCalculatedFieldsMetadata(ListQuerySchema.NAME, name, domain.getCalculatedFields(), false, user, container);
 
             DefaultValueService.get().setDefaultValues(container, defaultValues);
 

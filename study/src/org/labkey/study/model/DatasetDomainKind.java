@@ -504,7 +504,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
 
             if (def.getDomain() != null)
             {
-                List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getAllFields();
+                List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields();
 
                 Domain newDomain = def.getDomain();
                 if (newDomain != null)
@@ -514,17 +514,9 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
                     Set<String> existingProperties = newDomain.getProperties().stream().map(o -> o.getName().toLowerCase()).collect(Collectors.toSet());
                     Map<DomainProperty, Object> defaultValues = new HashMap<>();
                     Set<String> propertyUris = new HashSet<>();
-                    List<GWTPropertyDescriptor> calculatedFields = new ArrayList<>();
 
                     for (GWTPropertyDescriptor pd : properties)
                     {
-                        // handling standard properties only here
-                        if (pd.isCalculatedField())
-                        {
-                            calculatedFields.add(pd);
-                            continue;
-                        }
-
                         if (lowerReservedNames.contains(pd.getName().toLowerCase()) || existingProperties.contains(pd.getName().toLowerCase()))
                         {
                             if (arguments.isStrictFieldValidation())
@@ -540,7 +532,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
                     newDomain.setPropertyIndices(indices, lowerReservedNames);
                     StorageProvisioner.get().addMissingRequiredIndices(newDomain);
 
-                    QueryService.get().saveCalculatedFieldsMetadata("study", name, calculatedFields, false, user, container);
+                    QueryService.get().saveCalculatedFieldsMetadata("study", name, domain.getCalculatedFields(), false, user, container);
                 }
                 else
                     throw new IllegalArgumentException("Failed to create domain for dataset : " + name + ".");
