@@ -68,6 +68,7 @@ import org.springframework.web.servlet.ModelAndView;
 import java.io.IOException;
 import java.io.Writer;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -130,7 +131,7 @@ public abstract class InsertUpdateAction<Form extends EditDatasetRowForm> extend
         // TODO: This is WRONG! Don't hack on the TableInfo, hack on the View!
         if (!study.isManualCohortAssignment() && Objects.equals(ds.getDatasetId(), study.getParticipantCohortDatasetId()))
         {
-            final List<? extends Cohort> cohorts = CohortService.get().getCohorts(study.getContainer(), getUser());
+            final Collection<? extends Cohort> cohorts = CohortService.get().getCohorts(study.getContainer(), getUser());
             String participantCohortPropertyName = study.getParticipantCohortProperty();
             if (participantCohortPropertyName != null)
             {

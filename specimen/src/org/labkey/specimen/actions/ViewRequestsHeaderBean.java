@@ -5,7 +5,7 @@ import org.labkey.specimen.SpecimenRequestManager;
 import org.labkey.specimen.SpecimenRequestStatus;
 import org.labkey.specimen.query.SpecimenRequestQueryView;
 
-import java.util.List;
+import java.util.Collection;
 
 public class ViewRequestsHeaderBean
 {
@@ -26,7 +26,7 @@ public class ViewRequestsHeaderBean
         return _view;
     }
 
-    public List<SpecimenRequestStatus> getStauses()
+    public Collection<SpecimenRequestStatus> getStauses()
     {
         return SpecimenRequestManager.get().getRequestStatuses(_context.getContainer(), _context.getUser());
     }

@@ -69,7 +69,7 @@ import org.labkey.api.security.permissions.RestrictedDeletePermission;
 import org.labkey.api.security.permissions.RestrictedInsertPermission;
 import org.labkey.api.security.permissions.RestrictedUpdatePermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.settings.ExperimentalFeatureService;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.study.CohortFilter;
@@ -702,7 +702,7 @@ public class DatasetQueryView extends StudyQueryView
 
         public DatasetDataRegion(Container container, User user, DatasetDefinition dataset)
         {
-            if (dataset.isPublishedData() && ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_LINKED_DATASET_CHECK))
+            if (dataset.isPublishedData() && OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_LINKED_DATASET_CHECK))
             {
                 Dataset.PublishSource publishSource = dataset.getPublishSource();
                 // currently limit this to assay linked records

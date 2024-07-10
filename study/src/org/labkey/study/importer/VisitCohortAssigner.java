@@ -34,6 +34,7 @@ import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -178,7 +179,7 @@ public class VisitCohortAssigner implements InternalStudyImporter
 
     private Map<String, Integer> getCohortIdMap(User user, Study study)
     {
-        List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(study.getContainer(), user);
+        Collection<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(study.getContainer(), user);
         Map<String, Integer> cohortIdMap = new HashMap<>();
         for (Cohort cohort : cohorts)
             cohortIdMap.put(cohort.getLabel(), cohort.getRowId());

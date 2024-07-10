@@ -44,7 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneable, Serializable, Visit
+public class VisitImpl extends AbstractStudyEntity<Integer, VisitImpl> implements Cloneable, Serializable, Visit
 {
     // standard strings to use in URLs etc
     public static final String VISIT_KEY = "visitRowId";
@@ -190,7 +190,7 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
 
 
     @Override
-    public Object getPrimaryKey()
+    public Integer getPrimaryKey()
     {
         return getRowId();
     }

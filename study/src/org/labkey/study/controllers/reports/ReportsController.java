@@ -106,6 +106,7 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -672,7 +673,7 @@ public class ReportsController extends BaseStudyController
     public static class CreateCrosstabBean
     {
         private List<DatasetDefinition> _datasets;
-        private List<VisitImpl> _visits;
+        private Collection<VisitImpl> _visits;
 
         public CreateCrosstabBean(ViewContext context) throws IllegalStateException
         {
@@ -686,7 +687,7 @@ public class ReportsController extends BaseStudyController
             return _datasets;
         }
 
-        public List<VisitImpl> getVisits()
+        public Collection<VisitImpl> getVisits()
         {
             return _visits;
         }

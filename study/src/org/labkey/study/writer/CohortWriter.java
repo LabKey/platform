@@ -30,7 +30,6 @@ import org.labkey.study.xml.CohortsDocument;
 import org.labkey.study.xml.StudyDocument;
 
 import java.util.Collection;
-import java.util.List;
 
 /**
  * User: adam
@@ -82,7 +81,7 @@ public class CohortWriter implements InternalStudyWriter
 
         cohortsXml.setFile(COHORTS_FILENAME);
 
-        List<CohortImpl> cohorts = study.getCohorts(ctx.getUser());
+        Collection<CohortImpl> cohorts = study.getCohorts(ctx.getUser());
         MultiValuedMap<Integer, String> participantsInEachCohort = new ArrayListValuedHashMap<>(cohorts.size());
         ParticipantMapper participantMapper = ctx.getParticipantMapper();
 

@@ -41,10 +41,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * User: brittp
- * Created: Jan 24, 2008 1:38:15 PM
- */
 public class TypeParticipantReportFactory extends TypeReportFactory
 {
     private String _participantId;
@@ -106,15 +102,15 @@ public class TypeParticipantReportFactory extends TypeReportFactory
                 return Collections.emptyList();
         }
         List<SpecimenVisitReport> reports = new ArrayList<>();
-        Map<Integer, List<? extends Visit>> visitListCache = new HashMap<>(); // cohort rowId -> visits
+        Map<Integer, Collection<? extends Visit>> visitListCache = new HashMap<>(); // cohort rowId -> visits
         boolean showCohorts = StudyService.get().showCohorts(getContainer(), getUser());
-        List<? extends Visit> allVisits = null;
+        Collection<? extends Visit> allVisits = null;
         Study study = StudyService.get().getStudy(getContainer());
         for (String participantId : participantIds)
         {
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(StudyService.get().getSubjectColumnName(getContainer())), participantId);
             addBaseFilters(filter);
-            List<? extends Visit> visits = null;
+            Collection<? extends Visit> visits = null;
             if (showCohorts)
             {
                 Cohort cohort = CohortService.get().getCurrentCohortForParticipant(getContainer(), getUser(), participantId);

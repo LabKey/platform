@@ -31,6 +31,7 @@ import org.labkey.study.model.VisitDataset;
 import org.labkey.study.model.VisitImpl;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -41,7 +42,7 @@ import java.util.Map;
  */
 public class StudySchedule implements ApiJsonForm
 {
-    List<VisitImpl> _visits;
+    Collection<VisitImpl> _visits;
     List<DatasetDefinition> _datasets;
     Map<String, DataViewInfo> _viewInfo = new HashMap<>();
     Map<Integer, List<VisitDataset>> _schedule;
@@ -56,7 +57,7 @@ public class StudySchedule implements ApiJsonForm
         }
     }
 
-    public void setVisits(List<VisitImpl> visits)
+    public void setVisits(Collection<VisitImpl> visits)
     {
         _visits = visits;
     }
@@ -73,7 +74,7 @@ public class StudySchedule implements ApiJsonForm
         return o;
     }
 
-    private JSONArray serializeVisits(User user, List<VisitImpl> visits)
+    private JSONArray serializeVisits(User user, Collection<VisitImpl> visits)
     {
         JSONArray v = new JSONArray();
 
@@ -141,7 +142,7 @@ public class StudySchedule implements ApiJsonForm
         return o;
     }
 
-    private JSONArray serializeData(User user, List<DatasetDefinition> datasets, List<VisitImpl> visits)
+    private JSONArray serializeData(User user, List<DatasetDefinition> datasets, Collection<VisitImpl> visits)
     {
         JSONArray d = new JSONArray();
         Map<Integer, VisitImpl> visitMap = new HashMap<>();

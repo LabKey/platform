@@ -10,7 +10,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.ExperimentalFeatureService;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
@@ -206,7 +206,7 @@ public class ContentSecurityPolicyFilter implements Filter
     {
         if (request instanceof HttpServletRequest req && response instanceof HttpServletResponse resp && null != policyExpression)
         {
-            if (type != ContentSecurityPolicyType.Enforce || !ExperimentalFeatureService.get().isFeatureEnabled(FEATURE_FLAG_DISABLE_ENFORCE_CSP))
+            if (type != ContentSecurityPolicyType.Enforce || !OptionalFeatureService.get().isFeatureEnabled(FEATURE_FLAG_DISABLE_ENFORCE_CSP))
             {
                 Map<String, String> map = Map.of(
                     NONCE_SUBST, getScriptNonceHeader(req),

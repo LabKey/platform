@@ -636,7 +636,7 @@ public class QueryServiceImpl implements QueryService
     @Override
     public long metadataLastModified()
     {
-        return AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_LAST_MODIFIED) ?
+        return AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_LAST_MODIFIED) ?
                 _metadataLastModified.get() : Long.MIN_VALUE;
     }
 
@@ -3417,13 +3417,13 @@ public class QueryServiceImpl implements QueryService
     @Override
     public boolean isProductProjectsAllFolderScopeEnabled()
     {
-        return AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_PRODUCT_ALL_FOLDER_LOOKUPS);
+        return AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_PRODUCT_ALL_FOLDER_LOOKUPS);
     }
 
     @Override
     public boolean isProductProjectsDataListingScopedToProject()
     {
-        return AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED);
+        return AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED);
     }
 
     public static class TestCase extends Assert

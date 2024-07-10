@@ -107,7 +107,7 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
     {
         MailHelper.send(m, createdByUser, c);
 
-        if (!AppProps.getInstance().isExperimentalFeatureEnabled(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU))
+        if (!AppProps.getInstance().isOptionalFeatureEnabled(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU))
             return null;
 
         Notification notification = new Notification();

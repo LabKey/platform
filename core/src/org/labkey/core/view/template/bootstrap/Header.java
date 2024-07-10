@@ -35,7 +35,7 @@ public class Header extends JspView<PageConfig>
 
     private void displayNotifications()
     {
-        if (AppProps.getInstance().isExperimentalFeatureEnabled(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU))
+        if (AppProps.getInstance().isOptionalFeatureEnabled(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU))
         {
             this.setView("notifications", NotificationMenuView.createView(getViewContext()));
         }

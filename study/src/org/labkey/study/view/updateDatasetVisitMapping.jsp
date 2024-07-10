@@ -31,8 +31,8 @@
 <%@ page import="org.labkey.study.model.VisitDatasetType" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="org.labkey.study.visitmanager.VisitManager" %>
+<%@ page import="java.util.Collection" %>
 <%@ page import="java.util.HashMap" %>
-<%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -43,7 +43,7 @@
     Container container = getContainer();
     StudyImpl study = StudyManager.getInstance().getStudy(container);
     VisitManager visitManager = StudyManager.getInstance().getVisitManager(study);
-    List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(container, getUser());
+    Collection<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(container, getUser());
     Map<Integer, String> cohortMap = new HashMap<>();
     cohortMap.put(null, "All");
 

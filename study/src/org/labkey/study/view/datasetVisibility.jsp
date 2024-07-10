@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 %>
-<%@ page import="com.fasterxml.jackson.databind.ObjectMapper"%>
-<%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.study.Study"%>
 <%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.util.JavaScriptFragment" %>
 <%@ page import="org.labkey.api.util.element.Select.SelectBuilder" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -30,12 +30,11 @@
 <%@ page import="org.labkey.study.model.CohortImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.Collection" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.LinkedHashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.util.JsonUtil" %>
-<%@ page import="org.labkey.api.util.JavaScriptFragment" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -51,7 +50,7 @@
     Study study = getStudy();
     Study sharedStudy = StudyManager.getInstance().getSharedStudy(study);
 
-    List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(study.getContainer(), getUser());
+    Collection<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(study.getContainer(), getUser());
     Map<Integer, DatasetVisibilityData> bean = me.getModelBean();
     ArrayList<Integer> emptyDatasets = new ArrayList<>();
 

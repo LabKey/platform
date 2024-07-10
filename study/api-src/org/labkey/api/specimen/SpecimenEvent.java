@@ -22,12 +22,7 @@ import org.labkey.api.study.AbstractStudyCachable;
 import java.util.Date;
 import java.util.Map;
 
-/**
- * User: brittp
- * Date: Mar 15, 2006
- * Time: 4:35:28 PM
- */
-public class SpecimenEvent extends AbstractStudyCachable<SpecimenEvent>
+public class SpecimenEvent extends AbstractStudyCachable<Long, SpecimenEvent>
 {
     private final Map _rowMap;
     private final Container _container;
@@ -71,7 +66,7 @@ public class SpecimenEvent extends AbstractStudyCachable<SpecimenEvent>
     }
 
     @Override
-    public Object getPrimaryKey()
+    public Long getPrimaryKey()
     {
         return getRowId();
     }

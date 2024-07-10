@@ -247,7 +247,7 @@ public class SpecimenApiController extends SpringActionController
                 boolean allUsers = getContainer().hasPermission(getUser(), ManageRequestsPermission.class);
                 if (requestsForm.isAllUsers() != null)
                     allUsers = requestsForm.isAllUsers();
-                List<SpecimenRequest> allUserRequests = SpecimenRequestManager.get().getRequests(container, allUsers ? null : user);
+                Collection<SpecimenRequest> allUserRequests = SpecimenRequestManager.get().getRequests(container, allUsers ? null : user);
                 List<SpecimenRequest> nonFinalRequests = new ArrayList<>();
                 for (SpecimenRequest request : allUserRequests)
                 {

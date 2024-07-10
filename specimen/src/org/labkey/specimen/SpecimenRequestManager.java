@@ -41,6 +41,7 @@ import org.labkey.api.specimen.importer.VialSpecimenRollup;
 import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
 import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.QueryHelper;
+import org.labkey.api.study.QueryHelper.StudyCacheCollections;
 import org.labkey.api.study.SpecimenUrls;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -77,9 +78,9 @@ public class SpecimenRequestManager
 {
     private static final SpecimenRequestManager INSTANCE = new SpecimenRequestManager();
 
-    private final QueryHelper<SpecimenRequestEvent> _requestEventHelper;
-    private final QueryHelper<SpecimenRequestStatus> _requestStatusHelper;
-    private final QueryHelper<SpecimenRequest> _requestHelper;
+    private final QueryHelper<Integer, SpecimenRequestEvent, StudyCacheCollections<Integer, SpecimenRequestEvent>> _requestEventHelper;
+    private final QueryHelper<Integer, SpecimenRequestStatus, StudyCacheCollections<Integer, SpecimenRequestStatus>> _requestStatusHelper;
+    private final QueryHelper<Integer, SpecimenRequest, StudyCacheCollections<Integer, SpecimenRequest>> _requestHelper;
 
     public static SpecimenRequestManager get()
     {
@@ -89,18 +90,18 @@ public class SpecimenRequestManager
     private SpecimenRequestManager()
     {
         _requestEventHelper = new QueryHelper<>(() -> SpecimenSchema.get().getTableInfoSampleRequestEvent(), SpecimenRequestEvent.class);
-        _requestStatusHelper = new QueryHelper<>(() -> SpecimenSchema.get().getTableInfoSampleRequestStatus(), SpecimenRequestStatus.class);
-        _requestHelper = new QueryHelper<>(() -> SpecimenSchema.get().getTableInfoSampleRequest(), SpecimenRequest.class);
+        _requestStatusHelper = new QueryHelper<>(() -> SpecimenSchema.get().getTableInfoSampleRequestStatus(), SpecimenRequestStatus.class, "SortOrder");
+        _requestHelper = new QueryHelper<>(() -> SpecimenSchema.get().getTableInfoSampleRequest(), SpecimenRequest.class, "-Created");
 
         initGroupedValueAllowedColumnMap();
     }
 
     public List<SpecimenRequestStatus> getRequestStatuses(Container c, User user)
     {
-        List<SpecimenRequestStatus> statuses = _requestStatusHelper.getList(c, "SortOrder");
+        List<SpecimenRequestStatus> statuses = new ArrayList<>(_requestStatusHelper.getCollection(c));
         // if the 'not-yet-submitted' status doesn't exist, create it here, with sort order -1,
         // so it's always first.
-        if (statuses == null || statuses.isEmpty() || statuses.get(0).getSortOrder() != -1)
+        if (statuses.isEmpty() || statuses.get(0).getSortOrder() != -1)
         {
             SpecimenRequestStatus notYetSubmittedStatus = new SpecimenRequestStatus();
             notYetSubmittedStatus.setContainer(c);
@@ -113,7 +114,7 @@ public class SpecimenRequestManager
                 Table.insert(user, _requestStatusHelper.getTableInfo(), notYetSubmittedStatus);
                 _requestStatusHelper.clearCache(c);
             }
-            statuses = _requestStatusHelper.getList(c, "SortOrder");
+            statuses = new ArrayList<>(_requestStatusHelper.getCollection(c));
         }
         return statuses;
     }
@@ -156,7 +157,7 @@ public class SpecimenRequestManager
 
     public Set<Integer> getRequestStatusIdsInUse(Container c)
     {
-        List<SpecimenRequest> requests = _requestHelper.getList(c);
+        Collection<SpecimenRequest> requests = _requestHelper.getCollection(c);
         Set<Integer> uniqueStatuses = new HashSet<>();
         for (SpecimenRequest request : requests)
             uniqueStatuses.add(request.getStatusId());
@@ -528,12 +529,12 @@ public class SpecimenRequestManager
         return event;
     }
 
-    public List<SpecimenRequest> getRequests(Container c, User user)
+    public Collection<SpecimenRequest> getRequests(Container c, @Nullable User user)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Hidden"), Boolean.FALSE);
-        if (user != null)
-            filter.addCondition(FieldKey.fromParts("CreatedBy"), user.getUserId());
-        return _requestHelper.getList(c, filter, "-Created");
+        return _requestHelper.getCollection(c).stream()
+            .filter(sr -> !sr.isHidden())
+            .filter(sr -> user == null || sr.getCreatedBy() == user.getUserId())
+            .toList();
     }
 
     public SpecimenRequest getRequest(Container c, int rowId)
@@ -1217,13 +1218,12 @@ public class SpecimenRequestManager
 
     private void deleteRequestEvents(SpecimenRequest request)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RequestId"), request.getRowId());
-        List<SpecimenRequestEvent> events = _requestEventHelper.getList(request.getContainer(), filter);
-        for (SpecimenRequestEvent event : events)
-        {
-            AttachmentService.get().deleteAttachments(event);
-            _requestEventHelper.delete(event);
-        }
+        _requestEventHelper.getCollection(request.getContainer()).stream()
+            .filter(event -> event.getRequestId() == request.getRowId())
+            .forEach(event -> {
+                AttachmentService.get().deleteAttachments(event);
+                _requestEventHelper.delete(event);
+            });
     }
 
     public RequestedSpecimens getRequestableBySpecimenHash(Container c, User user, Set<String> formValues, Integer preferredLocation) throws AmbiguousLocationException

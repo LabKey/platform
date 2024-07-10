@@ -26,6 +26,7 @@ import org.labkey.api.util.HtmlString;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -38,7 +39,7 @@ public interface Study extends StudyEntity
 {
     String getShortName();
 
-    List<? extends Visit> getVisits(Visit.Order order);
+    Collection<? extends Visit> getVisits(Visit.Order order);
 
     @SuppressWarnings("unused")  // Used by cdisc_ODM StudyArchiveWriter.java
     Map<String, BigDecimal> getVisitAliases();
@@ -55,11 +56,11 @@ public interface Study extends StudyEntity
 
     List<? extends Location> getLocations();
 
-    List<? extends Cohort> getCohorts(User user);
+    Collection<? extends Cohort> getCohorts(User user);
 
     boolean hasGWTStudyDesign(Container c, User user);
 
-    List<? extends AssaySpecimenConfig> getAssaySpecimenConfigs(String sortCol);
+    Collection<? extends AssaySpecimenConfig> getAssaySpecimenConfigs();
 
     List<? extends Visit> getVisitsForAssaySchedule();
 

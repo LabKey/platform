@@ -95,7 +95,6 @@ import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.property.DomainTemplateGroup;
 import org.labkey.api.files.FileSystemWatcherImpl;
 import org.labkey.api.iterator.MarkableIterator;
-import org.labkey.api.iterator.ValidatingDataRowIterator;
 import org.labkey.api.iterator.ValidatingDataRowIteratorTestCase;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.mbean.LabKeyManagement;
@@ -141,8 +140,8 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.AppPropsTestCase;
-import org.labkey.api.settings.ExperimentalFeatureStartupListener;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.settings.OptionalFeatureStartupListener;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.util.ChecksumUtil;
 import org.labkey.api.util.Compress;
@@ -238,7 +237,7 @@ public class ApiModule extends CodeOnlyModule
         ApiKeyManager.get().handleStartupProperties();
         MailHelper.init();
         // Handle experimental feature startup properties as late as possible; we want all experimental features to be registered first
-        ContextListener.addStartupListener(new ExperimentalFeatureStartupListener());
+        ContextListener.addStartupListener(new OptionalFeatureStartupListener());
         ContextListener.addStartupListener(new StartupPropertyStartupListener());
     }
 

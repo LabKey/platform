@@ -20,10 +20,6 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.math.BigDecimal;
 
-/**
- * User: kevink
- * Date: May 27, 2009
- */
 public interface Visit extends StudyEntity
 {
     BigDecimal MAX_SEQUENCE_NUM = BigDecimal.valueOf(10).pow(11);

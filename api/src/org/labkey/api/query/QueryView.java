@@ -3063,7 +3063,7 @@ public class QueryView extends WebPartView<Object>
 
     private boolean isShowExperimentalGenericDetailsURL()
     {
-        return AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_GENERIC_DETAILS_URL);
+        return AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_GENERIC_DETAILS_URL);
     }
 
 
