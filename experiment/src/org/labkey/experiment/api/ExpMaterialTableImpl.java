@@ -42,6 +42,7 @@ import org.labkey.api.exp.api.NameExpressionOptionService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSampleTypeTable;
@@ -766,6 +767,10 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             defaultCols.addAll(InventoryService.get().addInventoryStatusColumns(st == null ? null : st.getMetricUnit(), this, getContainer(), _userSchema.getUser()));
 
         addVocabularyDomains();
+
+        List<FieldKey> calculatedFieldKeys = DomainUtil.getCalculatedFieldsForDefaultView(this);
+        defaultCols.addAll(calculatedFieldKeys);
+
         addColumn(Column.Properties);
 
         var colInputs = addColumn(Column.Inputs);

@@ -78,6 +78,7 @@ import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.ConceptURIVocabularyDomainProvider;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpDataClassDataTable;
 import org.labkey.api.exp.query.ExpDataTable;
@@ -484,6 +485,9 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
         List<FieldKey> vocabularyDomainFields = addVocabularyDomainFields();
         defaultVisible.addAll(vocabularyDomainFields);
+
+        List<FieldKey> calculatedFieldKeys = DomainUtil.getCalculatedFieldsForDefaultView(this);
+        defaultVisible.addAll(calculatedFieldKeys);
 
         addColumn(Column.Properties);
 

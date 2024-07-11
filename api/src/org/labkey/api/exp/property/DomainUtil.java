@@ -408,6 +408,17 @@ public class DomainUtil
         return Collections.emptyList();
     }
 
+    public static List<FieldKey> getCalculatedFieldsForDefaultView(@NotNull TableInfo tableInfo)
+    {
+        List<FieldKey> calculatedFieldKeys = new ArrayList<>();
+        for (GWTPropertyDescriptor calculatedField : DomainUtil.getCalculatedFieldsForTableInfo(tableInfo))
+        {
+            if (!calculatedField.isHidden())
+                calculatedFieldKeys.add(FieldKey.fromParts(calculatedField.getName()));
+        }
+        return calculatedFieldKeys;
+    }
+
     private static GWTDomain<GWTPropertyDescriptor> getDomain(Domain dd)
     {
         GWTDomain<GWTPropertyDescriptor> gwtDomain = new GWTDomain<>();

@@ -48,6 +48,7 @@ import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.lists.permissions.ManagePicklistsPermission;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DetailsURL;
@@ -329,7 +330,10 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
             setUpdateURL(LINK_DISABLER);
         }
 
-        _defaultVisibleColumns = Collections.unmodifiableList(QueryService.get().getDefaultVisibleColumns(defaultColumnsCandidates));
+        List<FieldKey> defaultVisible = QueryService.get().getDefaultVisibleColumns(defaultColumnsCandidates);
+        List<FieldKey> calculatedFieldKeys = DomainUtil.getCalculatedFieldsForDefaultView(this);
+        defaultVisible.addAll(calculatedFieldKeys);
+        _defaultVisibleColumns = Collections.unmodifiableList(defaultVisible);
 
         if (_list.getKeyType() != ListDefinition.KeyType.AutoIncrementInteger)
         {
