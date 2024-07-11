@@ -57,7 +57,7 @@ public class XmlVisitMapWriter implements Writer<StudyImpl, StudyExportContext>
     @Override
     public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws IOException, ImportException
     {
-        List<VisitImpl> visits = study.getVisits(Visit.Order.DISPLAY);
+        Collection<VisitImpl> visits = study.getVisits(Visit.Order.DISPLAY);
         Map<Integer, List<VisitTagMapEntry>> visitTagMapMap = StudyManager.getInstance().getVisitTagMapMap(study);
 
         StudyDocument.Study studyXml = ctx.getXml();

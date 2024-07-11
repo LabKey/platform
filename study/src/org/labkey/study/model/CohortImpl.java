@@ -28,11 +28,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-/**
- * User: brittp
- * Created: Jan 15, 2008 4:27:38 PM
- */
-public class CohortImpl extends ExtensibleStudyEntity<CohortImpl> implements Cohort
+public class CohortImpl extends ExtensibleStudyEntity<Integer, CohortImpl> implements Cohort
 {
     private static final String DOMAIN_URI_PREFIX = "Cohort";
     public static final DomainInfo DOMAIN_INFO = new StudyDomainInfo(DOMAIN_URI_PREFIX, false);
@@ -45,7 +41,7 @@ public class CohortImpl extends ExtensibleStudyEntity<CohortImpl> implements Coh
     List<TreatmentVisitMapImpl> _treatmentVisitMap;
 
     @Override
-    public Object getPrimaryKey()
+    public Integer getPrimaryKey()
     {
         return getRowId();
     }

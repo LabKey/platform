@@ -32,7 +32,7 @@ import java.util.Objects;
 /**
  * Represents an assay/specimen configuration for a study
  */
-public class AssaySpecimenConfigImpl extends AbstractStudyEntity<AssaySpecimenConfigImpl> implements AssaySpecimenConfig
+public class AssaySpecimenConfigImpl extends AbstractStudyEntity<Integer, AssaySpecimenConfigImpl> implements AssaySpecimenConfig
 {
     private int _rowId;
     private String _assayName;
@@ -66,7 +66,7 @@ public class AssaySpecimenConfigImpl extends AbstractStudyEntity<AssaySpecimenCo
     }
 
     @Override
-    public Object getPrimaryKey()
+    public Integer getPrimaryKey()
     {
         return getRowId();
     }

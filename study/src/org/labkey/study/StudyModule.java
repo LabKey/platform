@@ -462,7 +462,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 metric.put("participantAliasCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Study WHERE ParticipantAliasDatasetId IS NOT NULL").getObject(Long.class));
 
                 // grab the counts of report and dataset notification settings (by notification option)
-                Set<? extends StudyImpl> allStudies = StudyManager.getInstance().getAllStudies();
+                Collection<? extends StudyImpl> allStudies = StudyManager.getInstance().getAllStudies();
                 Map<ReportContentEmailManager.NotifyOption, Integer> notifyOptionCounts = new HashMap<>();
                 allStudies.forEach(study -> {
                     Map<Integer, SortedSet<Integer>> settings = ReportContentEmailManager.getUserCategoryMap(study.getContainer());
@@ -497,13 +497,11 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                     .map(study->StudyQuerySchema.createSchema(study, User.getSearchUser(), RoleManager.getRole(ReaderRole.class)))
                     .forEach(schema->{
                         TableInfo products = schema.getTable(StudyQuerySchema.PRODUCT_TABLE_NAME);
-                        long productCount = new TableSelector(products).getRowCount();
-                        if (productCount > 0)
+                        if (new TableSelector(products).exists())
                             hasProducts.increment();
 
                         TableInfo treatments = schema.getTable(StudyQuerySchema.TREATMENT_TABLE_NAME);
-                        long treatmentCount = new TableSelector(treatments).getRowCount();
-                        if (treatmentCount > 0)
+                        if (new TableSelector(treatments).exists())
                             hasTreatments.increment();
                     });
 

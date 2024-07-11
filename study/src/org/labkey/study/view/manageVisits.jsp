@@ -17,6 +17,7 @@
 %>
 <%@ page import="org.labkey.api.study.Visit" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.controllers.StudyController.BulkDeleteVisitsAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.CreateVisitAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.DeleteUnusedVisitsAction" %>
@@ -28,12 +29,11 @@
 <%@ page import="org.labkey.study.controllers.StudyController.VisitSummaryAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.VisitVisibilityAction" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
-<%@ page import="java.util.List" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="java.util.Collection" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    List<VisitImpl> allVisits = getVisits(Visit.Order.DISPLAY);
+    Collection<VisitImpl> allVisits = getVisits(Visit.Order.DISPLAY);
 %>
 <labkey:errors/>
 <table class="lk-fields-table">
@@ -42,7 +42,7 @@
         <td><%= link("Study Schedule", StudyScheduleAction.class) %></td>
     </tr>
 <%
-    if (allVisits.size() > 0)
+    if (!allVisits.isEmpty())
     {
 %>
     <tr>
@@ -96,7 +96,7 @@
 </labkey:panel>
 
 <%
-    if (allVisits.size() > 0)
+    if (!allVisits.isEmpty())
     {
 %>
 <p>

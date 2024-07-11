@@ -15,6 +15,8 @@
  */
 package org.labkey.specimen.report;
 
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServletResponse;
 import jxl.Workbook;
 import jxl.WorkbookSettings;
 import jxl.write.Label;
@@ -29,9 +31,8 @@ import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.study.Visit;
 import org.labkey.api.util.ExceptionUtil;
 
-import jakarta.servlet.ServletOutputStream;
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -104,7 +105,7 @@ public class SpecimenReportExcelWriter
 
         WritableSheet sheet = workbook.createSheet(sheetName, workbook.getNumberOfSheets());
 
-        List<Visit> visits = report.getVisits();
+        List<Visit> visits = new ArrayList<Visit>(report.getVisits());
 
         // Merge cells at top of sheet and write the headers
         // One or more embedded tabs split a header into equally spaced columns

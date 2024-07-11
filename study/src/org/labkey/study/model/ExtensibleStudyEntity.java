@@ -32,12 +32,8 @@ import java.util.Map;
 
 /**
  * Indicates that an object has virtual columns in Ontology Manager
- *
- * User: jgarms
- * Date: Jul 23, 2008
- * Time: 10:59:24 AM
  */
-public abstract class ExtensibleStudyEntity<E> extends AbstractStudyEntity<E>
+public abstract class ExtensibleStudyEntity<K, E> extends AbstractStudyEntity<K, E>
 {
     public interface DomainInfo
     {

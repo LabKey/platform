@@ -1,7 +1,6 @@
 import React, { PureComponent } from 'react';
-import { Alert, FormControl } from 'react-bootstrap';
 import { ActionURL, Ajax, Utils } from '@labkey/api';
-import { FormButtons, Modal, resolveErrorMessage } from '@labkey/components';
+import { Alert, FormButtons, Modal, resolveErrorMessage } from '@labkey/components';
 
 import { DatabasePasswordSettings } from './models';
 
@@ -126,8 +125,8 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
                     <span>Password Strength:</span>
 
                     <span className="database-modal__field">
-                        <FormControl
-                            componentClass="select"
+                        <select
+                            className="form-control"
                             name="strength"
                             onChange={this.handleChange}
                             value={strength}
@@ -138,7 +137,7 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
                                     {Object.keys(option)[0]}
                                 </option>
                             ))}
-                        </FormControl>
+                        </select>
                     </span>
                 </div>
 
@@ -155,8 +154,8 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
 
                     <span className="database-modal__field">
                         {allowEdit ? (
-                            <FormControl
-                                componentClass="select"
+                            <select
+                                className="form-control"
                                 name="expiration"
                                 placeholder="select"
                                 onChange={this.handleChange}
@@ -167,7 +166,7 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
                                         {OPTIONS_MAP[option]}
                                     </option>
                                 ))}
-                            </FormControl>
+                            </select>
                         ) : (
                             OPTIONS_MAP[expiration]
                         )}

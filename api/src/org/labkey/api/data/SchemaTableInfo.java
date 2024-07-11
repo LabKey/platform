@@ -47,7 +47,6 @@ import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.MinorConfigurationException;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.Path;
 import org.labkey.api.util.SimpleNamedObject;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
@@ -83,7 +82,6 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     private final SQLFragment _selectName;
     private final String _metaDataName;
     private final DatabaseTableType _tableType;
-    private final Path _notificationKey;
 
     private String _name;
     private String _description;
@@ -126,10 +124,8 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
         _metaDataName = metaDataName;
         _selectName = selectName;
         _tableType = tableType;
-        _notificationKey = new Path(parentSchema.getClass().getName(), parentSchema.getName(), getClass().getName(), getName());
         _title = title;
     }
-
 
     public SchemaTableInfo(DbSchema parentSchema, DatabaseTableType tableType, String tableMetaDataName)
     {
@@ -1014,12 +1010,6 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     {
         checkLocked();
         getColumnMetaData().setPkColumnNames(pkColumnNames);
-    }
-
-    @Override
-    public Path getNotificationKey()
-    {
-        return _notificationKey;
     }
 
     private void checkLocked()

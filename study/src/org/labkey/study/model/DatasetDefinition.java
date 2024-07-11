@@ -171,13 +171,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import static org.labkey.api.query.QueryService.AuditAction.DELETE;
 import static org.labkey.api.query.QueryService.AuditAction.TRUNCATE;
 
-
-/**
- * User: brittp
- * Date: Jan 6, 2006
- * Time: 10:29:31 AM
- */
-public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements Cloneable, Dataset, InitializingBean
+public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefinition> implements Cloneable, Dataset, InitializingBean
 {
     // DatasetQueryUpdateService
 
@@ -317,13 +311,6 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         _typeURI = null != typeURI ? typeURI : DatasetDomainKind.generateDomainURI(name, _entityId, getContainer());
         _showByDefault = true;
         _isShared = study.getShareDatasetDefinitions();
-    }
-
-
-    @Override
-    public DatasetDefinition createMutable()
-    {
-        return (DatasetDefinition) super.createMutable();
     }
 
     /*
@@ -663,7 +650,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
     }
 
     @Override
-    public Object getPrimaryKey()
+    public Integer getPrimaryKey()
     {
         return getRowId();
     }

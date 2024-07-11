@@ -87,6 +87,7 @@ import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -96,12 +97,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-/**
- * User: brittp
- * Date: Jan 6, 2006
- * Time: 10:28:32 AM
- */
-public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
+public class StudyImpl extends ExtensibleStudyEntity<String, StudyImpl> implements Study
 {
     private static final Logger LOG = LogManager.getLogger(StudyImpl.class);
     private static final String DOMAIN_URI_PREFIX = "Study";
@@ -233,9 +229,8 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         return shortName.isEmpty() ? label : shortName;
     }
 
-
     @Override
-    public List<VisitImpl> getVisits(Visit.Order order)
+    public Collection<VisitImpl> getVisits(Visit.Order order)
     {
         return StudyManager.getInstance().getVisits(this, order);
     }
@@ -294,7 +289,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     }
 
     @Override
-    public List<CohortImpl> getCohorts(User user)
+    public Collection<CohortImpl> getCohorts(User user)
     {
         return StudyManager.getInstance().getCohorts(getContainer(), user);
     }
@@ -309,9 +304,9 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
             // consider the XML study design non-empty if we have an immunogen, adjuvant, immunization timepoint, etc.
             GWTStudyDefinition def = manager.getGWTStudyDefinition(user, c, info);
             return def != null && (
-                    def.getImmunogens().size() > 0 || def.getAdjuvants().size() > 0 ||
-                    def.getImmunizationSchedule().getTimepoints().size() > 0 ||
-                    def.getAssaySchedule().getAssays().size() > 0 || def.getAssaySchedule().getTimepoints().size() > 0
+                    !def.getImmunogens().isEmpty() || !def.getAdjuvants().isEmpty() ||
+                    !def.getImmunizationSchedule().getTimepoints().isEmpty() ||
+                    !def.getAssaySchedule().getAssays().isEmpty() || !def.getAssaySchedule().getTimepoints().isEmpty()
                 );
         }
 
@@ -319,9 +314,9 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     }
 
     @Override
-    public List<AssaySpecimenConfigImpl> getAssaySpecimenConfigs(String sortCol)
+    public Collection<AssaySpecimenConfigImpl> getAssaySpecimenConfigs()
     {
-        return StudyManager.getInstance().getAssaySpecimenConfigs(getContainer(), sortCol);
+        return StudyManager.getInstance().getAssaySpecimenConfigs(getContainer());
     }
 
     @Override
@@ -363,7 +358,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     }
 
     @Override
-    public Object getPrimaryKey()
+    public String getPrimaryKey()
     {
         return getContainer().getId();
     }
@@ -843,8 +838,8 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     public boolean isEmptyStudy()
     {
         List<DatasetDefinition> datasets = getDatasets();
-        List<VisitImpl> visits = getVisits(Visit.Order.DISPLAY);
-        return visits.size() < 1 && datasets.size() < 1;
+        Collection<VisitImpl> visits = getVisits(Visit.Order.DISPLAY);
+        return visits.isEmpty() && datasets.isEmpty();
     }
 
     @Override

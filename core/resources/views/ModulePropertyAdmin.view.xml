@@ -1,7 +1,7 @@
 <view xmlns="http://labkey.org/data/xml/view">
-    <permissions>
-        <permission name="update" />
-    </permissions>
+    <permissionClasses>
+        <permissionClass name="org.labkey.api.security.permissions.UpdatePermission"/>
+    </permissionClasses>
     <dependencies>
         <dependency path="Ext4"/>
         <dependency path="ModulePropertiesAdminPanel.js"/>

@@ -31,13 +31,9 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.TreatmentImpl;
 import org.labkey.study.model.VisitImpl;
 
+import java.util.Collection;
 import java.util.List;
 
-/**
- * User: brittp
- * Date: Jan 11, 2006
- * Time: 11:27:26 AM
- */
 public abstract class BaseStudyPage extends JspBase
 {
     private StudyImpl _study;
@@ -49,7 +45,7 @@ public abstract class BaseStudyPage extends JspBase
         return _study;
     }
 
-    protected List<VisitImpl> getVisits(Visit.Order order)
+    protected Collection<VisitImpl> getVisits(Visit.Order order)
     {
         return getStudy().getVisits(order);
     }
@@ -64,14 +60,14 @@ public abstract class BaseStudyPage extends JspBase
         return getStudy().getLocations();
     }
 
-    protected List<CohortImpl> getCohorts(User user)
+    protected Collection<CohortImpl> getCohorts(User user)
     {
         return getStudy().getCohorts(user);
     }
 
-    protected List<AssaySpecimenConfigImpl> getAssaySpecimenConfigs()
+    protected Collection<AssaySpecimenConfigImpl> getAssaySpecimenConfigs()
     {
-        return getStudy().getAssaySpecimenConfigs("AssayName");
+        return getStudy().getAssaySpecimenConfigs();
     }
 
     protected List<ProductImpl> getStudyProducts(User user, String role)

@@ -1,7 +1,6 @@
 import React, { PureComponent } from 'react';
-import { Button, Alert } from 'react-bootstrap';
 import { ActionURL, Ajax, Utils } from '@labkey/api';
-import { LoadingSpinner, resolveErrorMessage } from '@labkey/components';
+import { LoadingSpinner, resolveErrorMessage, Alert } from '@labkey/components';
 
 import { GlobalSettings } from '../components/GlobalSettings';
 import AuthConfigMasterPanel from '../components/AuthConfigMasterPanel';
@@ -262,17 +261,14 @@ export class App extends PureComponent<{}, Partial<State>> {
     };
 
     updateAuthRowsAfterSave = (config: string, configType: string): void => {
-        this.setState(
-            state => {
-                const prevState = state[configType];
-                const newState = addOrUpdateAnAuthConfig(config, prevState, configType);
+        this.setState(state => {
+            const prevState = state[configType];
+            const newState = addOrUpdateAnAuthConfig(config, prevState, configType);
 
-                // Update our dirtiness information with added modal, since dirtiness should only track reordering
-                const dirtinessData = { ...state.dirtinessData, [configType]: newState };
-                return { [configType]: newState, dirtinessData };
-            },
-            this.resetSecondaryProviders
-        );
+            // Update our dirtiness information with added modal, since dirtiness should only track reordering
+            const dirtinessData = { ...state.dirtinessData, [configType]: newState };
+            return { [configType]: newState, dirtinessData };
+        }, this.resetSecondaryProviders);
     };
 
     render() {
@@ -326,20 +322,25 @@ export class App extends PureComponent<{}, Partial<State>> {
 
                 {canEdit ? (
                     <>
-                        <Button className="labkey-button parent-panel__cancel-button" onClick={this.onCancel}>
+                        <button
+                            className="labkey-button btn btn-default parent-panel__cancel-button"
+                            onClick={this.onCancel}
+                            type="button"
+                        >
                             Cancel
-                        </Button>
-                        <Button
-                            className="labkey-button primary parent-panel__save-button pull-right"
+                        </button>
+                        <button
+                            className="labkey-button primary btn btn-primary parent-panel__save-button pull-right"
                             onClick={this.saveChanges}
+                            type="button"
                         >
                             Save and Finish
-                        </Button>
+                        </button>
                     </>
                 ) : (
-                    <Button className="labkey-button" onClick={this.onCancel}>
+                    <button className="btn btn-default labkey-button" onClick={this.onCancel}>
                         Done
-                    </Button>
+                    </button>
                 )}
             </div>
         );

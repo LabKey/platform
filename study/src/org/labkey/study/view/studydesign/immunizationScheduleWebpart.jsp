@@ -30,6 +30,7 @@
 <%@ page import="org.labkey.study.model.TreatmentManager" %>
 <%@ page import="org.labkey.study.model.TreatmentVisitMapImpl" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
+<%@ page import="java.util.Collection" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
@@ -68,7 +69,7 @@
       }
       else
       {
-        List<CohortImpl> cohorts = study.getCohorts(user);
+        Collection<CohortImpl> cohorts = study.getCohorts(user);
         %>This section shows the immunization schedule for this study. Each treatment may consist of  one or more study products.<br/><%
 
         if (canEdit)

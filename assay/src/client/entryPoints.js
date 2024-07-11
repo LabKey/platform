@@ -7,7 +7,6 @@ module.exports = {
     apps: [{
         name: 'assayTypeSelect',
         title: 'New Assay Design',
-        permission: 'insert',
         permissionClasses: ['org.labkey.api.assay.security.DesignAssayPermission'],
         path: './src/client/AssayTypeSelect'
     }]

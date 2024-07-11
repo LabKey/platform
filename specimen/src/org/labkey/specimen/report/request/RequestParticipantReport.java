@@ -16,29 +16,24 @@
 package org.labkey.specimen.report.request;
 
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.specimen.query.SpecimenQueryView;
 import org.labkey.api.study.Visit;
 import org.labkey.api.view.ActionURL;
 import org.labkey.specimen.actions.SpecimenController;
+import org.labkey.specimen.query.SpecimenQueryView;
 import org.labkey.specimen.report.RequestSummaryByVisitType;
 import org.labkey.specimen.report.SpecimenReportManager;
 import org.labkey.specimen.report.SpecimenTypeLevel;
 import org.labkey.specimen.report.SpecimenVisitReport;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-/**
- * User: brittp
- * Created: Feb 5, 2008 2:17:53 PM
- */
 public class RequestParticipantReport extends SpecimenVisitReport<RequestSummaryByVisitType>
 {
     private final boolean _completeRequestsOnly;
 
-    public RequestParticipantReport(String titlePrefix, List<? extends Visit> visits, SimpleFilter filter, RequestParticipantReportFactory parameters)
+    public RequestParticipantReport(String titlePrefix, Collection<? extends Visit> visits, SimpleFilter filter, RequestParticipantReportFactory parameters)
     {
         super(titlePrefix, visits, filter, parameters);
         _completeRequestsOnly = parameters.isCompletedRequestsOnly();

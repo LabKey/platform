@@ -24,6 +24,7 @@ import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 
@@ -41,7 +42,7 @@ public class BaseStudyView<T> extends HttpView<T>
     private final HashMap<Integer, VisitImpl> _visitMap = new HashMap<>();
     private final HashMap<Integer, DatasetDefinition> _datasetMap = new HashMap<>();
 
-    private List<VisitImpl> _visits;            // display ordered
+    private Collection<VisitImpl> _visits;            // display ordered
     private List<DatasetDefinition> _datasetDefs;
 
     public BaseStudyView(Study study)
@@ -50,7 +51,7 @@ public class BaseStudyView<T> extends HttpView<T>
         _studyManager = StudyManager.getInstance();
     }
 
-    protected List<VisitImpl> getVisits()
+    protected Collection<VisitImpl> getVisits()
     {
         if (null == _visits)
         {

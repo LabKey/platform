@@ -27,6 +27,7 @@
 <%@ page import="org.labkey.api.study.StudyFolderTabs" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.study.model.ParticipantGroup" %>
+<%@ page import="org.labkey.api.util.JavaScriptFragment" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -44,10 +45,9 @@
 <%@ page import="java.io.IOException" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.BitSet" %>
-<%@ page import="java.util.HashMap" %>
 <%@ page import="static org.labkey.api.util.HtmlString.EMPTY_STRING" %>
+<%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.util.JavaScriptFragment" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -144,7 +144,7 @@
         {
             if (StudyManager.getInstance().showCohorts(container, user))
                 cohorts.addAll(StudyManager.getInstance().getCohorts(container, user));
-            hasCohorts = cohorts.size() > 0;
+            hasCohorts = !cohorts.isEmpty();
             if (hasCohorts)
             {
                 if (study != null && StudyManager.getInstance().getParticipantIdsNotInCohorts(study).length > 0)

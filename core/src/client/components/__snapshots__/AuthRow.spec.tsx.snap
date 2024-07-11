@@ -26,20 +26,20 @@ exports[`<AuthRow/> Editable 1`] = `
         className="domain-row-main"
       >
         <div
-          className="domain-row-base-fields col-xs-9"
+          className="col-xs-9 domain-row-base-fields"
         >
           <div
-            className="description auth-row__field col-xs-4"
+            className="col-xs-4 description auth-row__field"
           >
             CAS Configuration1
           </div>
           <div
-            className="details auth-row__field col-xs-4"
+            className="col-xs-4 details auth-row__field"
           >
             https://www.labkey.org/cas
           </div>
           <div
-            className="provider auth-row__field col-xs-3"
+            className="col-xs-3 provider auth-row__field"
           >
             CAS
           </div>
@@ -48,10 +48,10 @@ exports[`<AuthRow/> Editable 1`] = `
           className="col-xs-1"
         />
         <div
-          className="domain-row-base-fields col-xs-2"
+          className="col-xs-2 domain-row-base-fields"
         >
           <div
-            className="enabled auth-row__field col-xs-7"
+            className="col-xs-7 enabled auth-row__field"
           >
             <span
               className="fa fa-circle"
@@ -64,7 +64,7 @@ exports[`<AuthRow/> Editable 1`] = `
                Enabled
           </div>
           <div
-            className="delete auth-row__field col-xs-1"
+            className="col-xs-1 delete auth-row__field"
           >
             <div
               className="clickable deleteIcon"
@@ -76,7 +76,7 @@ exports[`<AuthRow/> Editable 1`] = `
             </div>
           </div>
           <div
-            className="editOrView auth-row__field col-xs-3"
+            className="col-xs-3 editOrView auth-row__field"
           >
             <div
               className="clickable editOrViewIcon"
@@ -120,20 +120,20 @@ exports[`<AuthRow/> Non-draggable 1`] = `
         className="domain-row-main"
       >
         <div
-          className="domain-row-base-fields col-xs-9"
+          className="col-xs-9 domain-row-base-fields"
         >
           <div
-            className="description auth-row__field col-xs-4"
+            className="col-xs-4 description auth-row__field"
           >
             CAS Configuration1
           </div>
           <div
-            className="details auth-row__field col-xs-4"
+            className="col-xs-4 details auth-row__field"
           >
             https://www.labkey.org/cas
           </div>
           <div
-            className="provider auth-row__field col-xs-3"
+            className="col-xs-3 provider auth-row__field"
           >
             CAS
           </div>
@@ -142,10 +142,10 @@ exports[`<AuthRow/> Non-draggable 1`] = `
           className="col-xs-1"
         />
         <div
-          className="domain-row-base-fields col-xs-2"
+          className="col-xs-2 domain-row-base-fields"
         >
           <div
-            className="enabled auth-row__field col-xs-7"
+            className="col-xs-7 enabled auth-row__field"
           >
             <span
               className="fa fa-circle"
@@ -158,7 +158,7 @@ exports[`<AuthRow/> Non-draggable 1`] = `
                Enabled
           </div>
           <div
-            className="delete auth-row__field col-xs-1"
+            className="col-xs-1 delete auth-row__field"
           >
             <div
               className="clickable deleteIcon"
@@ -170,7 +170,7 @@ exports[`<AuthRow/> Non-draggable 1`] = `
             </div>
           </div>
           <div
-            className="editOrView auth-row__field col-xs-3"
+            className="col-xs-3 editOrView auth-row__field"
           >
             <div
               className="clickable editOrViewIcon"
@@ -214,20 +214,20 @@ exports[`<AuthRow/> View-only 1`] = `
         className="domain-row-main"
       >
         <div
-          className="domain-row-base-fields col-xs-9"
+          className="col-xs-9 domain-row-base-fields"
         >
           <div
-            className="description auth-row__field col-xs-4"
+            className="col-xs-4 description auth-row__field"
           >
             CAS Configuration1
           </div>
           <div
-            className="details auth-row__field col-xs-4"
+            className="col-xs-4 details auth-row__field"
           >
             https://www.labkey.org/cas
           </div>
           <div
-            className="provider auth-row__field col-xs-3"
+            className="col-xs-3 provider auth-row__field"
           >
             CAS
           </div>
@@ -236,10 +236,10 @@ exports[`<AuthRow/> View-only 1`] = `
           className="col-xs-1"
         />
         <div
-          className="domain-row-base-fields col-xs-2"
+          className="col-xs-2 domain-row-base-fields"
         >
           <div
-            className="enabled auth-row__field col-xs-7"
+            className="col-xs-7 enabled auth-row__field"
           >
             <span
               className="fa fa-circle"
@@ -252,7 +252,7 @@ exports[`<AuthRow/> View-only 1`] = `
                Enabled
           </div>
           <div
-            className="delete auth-row__field col-xs-1"
+            className="col-xs-1 delete auth-row__field"
           >
             <div
               className="clickable deleteIcon"
@@ -264,7 +264,7 @@ exports[`<AuthRow/> View-only 1`] = `
             </div>
           </div>
           <div
-            className="editOrView auth-row__field col-xs-3"
+            className="col-xs-3 editOrView auth-row__field"
           >
             <div
               className="clickable editOrViewIcon"

@@ -708,12 +708,6 @@ public class StorageProvisionerImpl implements StorageProvisioner
         }
 
         @Override
-        public Path getNotificationKey()
-        {
-            return _inner.getNotificationKey();
-        }
-
-        @Override
         public DatabaseTableType getTableType()
         {
             return _inner.getTableType();
