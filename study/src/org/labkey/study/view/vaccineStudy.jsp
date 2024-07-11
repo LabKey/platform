@@ -18,6 +18,8 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
+<%@ page import="org.labkey.api.settings.OptionalFeatureService" %>
+<%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.Visit" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.NotFoundException" %>
@@ -54,7 +56,7 @@
 
     params.put("revision", Integer.toString(revInteger));
     params.put("edit", context.hasPermission(UpdatePermission.class) && bean.isEditMode() ? "true" : "false");
-    boolean canEdit = context.hasPermission(UpdatePermission.class);
+    boolean canEdit = OptionalFeatureService.get().isFeatureEnabled(Study.GWT_STUDY_DESIGN) && getViewContext().hasPermission(UpdatePermission.class);
     params.put("canEdit",  Boolean.toString(canEdit));
     //Can't create repository from web part
     params.put("canCreateRepository", Boolean.FALSE.toString());

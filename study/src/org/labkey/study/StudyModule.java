@@ -67,6 +67,7 @@ import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.specimen.SpecimenSampleTypeDomainKind;
 import org.labkey.api.specimen.model.AdditiveTypeDomainKind;
 import org.labkey.api.specimen.model.DerivativeTypeDomainKind;
@@ -418,6 +419,15 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 "Merging of dataset that uses server-managed third key (such as GUID or auto RowId) is not officially supported. Unexpected outcome might be experienced when merge is performed.",
                 false);
 
+        AdminConsole.addOptionalFeatureFlag(new AdminConsole.OptionalFeatureFlag(Study.GWT_STUDY_DESIGN,
+                "Vaccine Study Protocol Editor",
+                "The study protocol editor (accessed from the Vaccine Study Protocols webpart) has been deprecated and protocol " +
+                        "information will be shown in a read only mode. The edit button can be shown by enabling this feature, " +
+                        "but this capability will be removed permanently in a future release. " +
+                        "Please create any new study protocols in the format as defined by the \"Manage Study Products\" link on the study Manage tab.",
+                false,
+                false,
+                OptionalFeatureService.FeatureType.Deprecated));
         ReportAndDatasetChangeDigestProvider.get().addNotificationInfoProvider(new DatasetNotificationInfoProvider());
 
         AdminLinkManager.getInstance().addListener((adminNavTree, container, user) -> {
@@ -690,7 +700,19 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         @Override
         public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
         {
-            return new StudyDesignsWebPart(portalCtx, true);
+            if (OptionalFeatureService.get().isFeatureEnabled(Study.GWT_STUDY_DESIGN))
+                return new StudyDesignsWebPart(portalCtx, true);
+            else
+                return null;
+        }
+
+        @Override
+        public boolean isAvailable(Container c, String scope, String location)
+        {
+            if (OptionalFeatureService.get().isFeatureEnabled(Study.GWT_STUDY_DESIGN))
+                return super.isAvailable(c, scope, location);
+            else
+                return false;
         }
     }
 
