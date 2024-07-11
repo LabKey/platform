@@ -1,7 +1,6 @@
 import React, { FC, memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { ActionURL, Ajax, getServerContext, Utils } from '@labkey/api';
 import { AssayPicker, AssayPickerSelectionModel, AssayPickerTabs, GENERAL_ASSAY_PROVIDER_NAME, App as LabKeyApp } from '@labkey/components';
-import { Button } from 'react-bootstrap';
 
 import './AssayTypeSelect.scss';
 
@@ -92,16 +91,15 @@ export const App: FC<any> = memo(props => {
                 </div>
             </div>
             <div className={'assay-type-select-panel assay-type-select-btns'}>
-                <Button onClick={onCancel}>Cancel</Button>
-                <Button
-                    className="pull-right"
-                    bsStyle={'primary'}
+                <button className="btn btn-default" onClick={onCancel}>Cancel</button>
+                <button
+                    className="btn btn-primary pull-right"
                     onClick={onSubmit}
                     disabled={assayPickerSelection.tab === AssayPickerTabs.XAR_IMPORT_TAB
                         && !assayPickerSelection.file}
                 >
                     {assayPickerSelection.tab === AssayPickerTabs.XAR_IMPORT_TAB ? 'Import' : 'Choose ' + label + ' Assay'}
-                </Button>
+                </button>
             </div>
         </>
     )

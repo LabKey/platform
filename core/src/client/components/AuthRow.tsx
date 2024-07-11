@@ -1,6 +1,5 @@
 import React, { PureComponent } from 'react';
 import classNames from 'classnames';
-import { Col } from 'react-bootstrap';
 import { DragDropHandle, Modal } from '@labkey/components';
 
 import DynamicConfigurationModal from './DynamicConfigurationModal';
@@ -165,33 +164,21 @@ export default class AuthRow extends PureComponent<Props, Partial<State>> {
                         <div className="domain-row-handle">{handle}</div>
 
                         <div className="domain-row-main">
-                            <Col xs={9} className="domain-row-base-fields">
-                                <Col xs={4} className="description auth-row__field">
-                                    {authConfig.description}
-                                </Col>
-                                <Col xs={4} className="details auth-row__field">
-                                    {authConfig.details}
-                                </Col>
-                                <Col xs={3} className="provider auth-row__field">
-                                    {authConfig.provider}
-                                </Col>
-                            </Col>
+                            <div className="col-xs-9 domain-row-base-fields">
+                                <div className="col-xs-4 description auth-row__field">{authConfig.description}</div>
+                                <div className="col-xs-4 details auth-row__field">{authConfig.details}</div>
+                                <div className="col-xs-3 provider auth-row__field">{authConfig.provider}</div>
+                            </div>
 
-                            <Col xs={1} />
+                            <div className="col-xs-1" />
 
-                            <Col xs={2} className="domain-row-base-fields">
-                                <Col xs={7} className="enabled auth-row__field">
-                                    {enabledField}
-                                </Col>
+                            <div className="col-xs-2 domain-row-base-fields">
+                                <div className="col-xs-7 enabled auth-row__field">{enabledField}</div>
 
-                                <Col xs={1} className="delete auth-row__field">
-                                    {deleteIcon}
-                                </Col>
+                                <div className="col-xs-1 delete auth-row__field">{deleteIcon}</div>
 
-                                <Col xs={3} className="editOrView auth-row__field">
-                                    {editOrViewIcon}
-                                </Col>
-                            </Col>
+                                <div className="col-xs-3 editOrView auth-row__field">{editOrViewIcon}</div>
+                            </div>
 
                             {this.state.editModalOpen && modal}
                             {this.state.deleteModalOpen && deleteModal}

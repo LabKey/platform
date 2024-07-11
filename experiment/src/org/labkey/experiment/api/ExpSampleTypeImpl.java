@@ -699,8 +699,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         if (cf != null)
             filter.addCondition(cf.createFilterClause(ExperimentServiceImpl.getExpSchema(), FieldKey.fromParts("Container")));
 
-        Sort sort = new Sort("Name");
-        return ExpMaterialImpl.fromMaterials(new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), filter, sort).getArrayList(Material.class));
+        return ExperimentServiceImpl.get().getExpMaterials(filter, new Sort("Name"));
     }
 
     @Override
@@ -728,20 +727,12 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         if (cf != null)
             filter.addCondition(cf.createFilterClause(ExperimentServiceImpl.getExpSchema(), FieldKey.fromParts("Container")));
 
-        Material material = new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), filter, null).getObject(Material.class);
-        if (material == null)
-            return null;
-        return new ExpMaterialImpl(material);
+        return ExperimentServiceImpl.get().getExpMaterial(filter);
     }
 
     private ExpMaterialImpl getSampleByObjectId(Integer objectId)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ObjectId"), objectId);
-
-        Material material = new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), filter, null).getObject(Material.class);
-        if (material == null)
-            return null;
-        return new ExpMaterialImpl(material);
+        return ExperimentServiceImpl.get().getExpMaterial(new SimpleFilter(FieldKey.fromParts("ObjectId"), objectId));
     }
 
     @Override
