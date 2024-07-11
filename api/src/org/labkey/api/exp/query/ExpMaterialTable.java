@@ -61,4 +61,9 @@ public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>, Upd
         StoredAmount,
         Units,
     }
+
+    default void setSupportTableRules(boolean supportTableRules)
+    {
+        throw new UnsupportedOperationException();
+    }
 }

@@ -602,7 +602,9 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
             // CONSIDER: Only include maxAllowedPhi if {@link ComplianceFolderSettings#isPhiRolesRequired()}
             if (nonNullContainer)
             {
-                PHI maxAllowedPhi = ComplianceService.get().getMaxAllowedPhi(container, user);
+                PHI maxAllowedPhi = PHI.Restricted;
+                if (ComplianceService.get().isComplianceSupported() && ComplianceService.get().getFolderSettings(container, getAdminServiceUser()).isPhiRolesRequired())
+                    maxAllowedPhi = ComplianceService.get().getMaxAllowedPhi(container, user);
                 props.put("maxAllowedPhi", maxAllowedPhi);
             }
         }

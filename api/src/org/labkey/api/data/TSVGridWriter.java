@@ -30,13 +30,16 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
 {
     private final ResultsFactory _factory;
+    private final Set<FieldKey> _fieldKeys;
     private List<DisplayColumn> _displayColumns;
     private final Map<String, String> _renameColumnMap;
 
@@ -47,6 +50,14 @@ public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
     {
         _factory = factory;
         _renameColumnMap = Collections.emptyMap();
+        _fieldKeys = null;
+    }
+
+    public TSVGridWriter(ResultsFactory factory, Collection<FieldKey> fieldKeys)
+    {
+        _factory = factory;
+        _renameColumnMap = Collections.emptyMap();
+        _fieldKeys = fieldKeys instanceof Set<FieldKey> setOfFieldKeys? setOfFieldKeys : new HashSet<>(fieldKeys);
     }
 
     /**
@@ -60,6 +71,7 @@ public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
         _factory = factory;
         _displayColumns = init(displayColumns);
         _renameColumnMap = Collections.emptyMap();
+        _fieldKeys = null;
     }
 
     public TSVGridWriter(ResultsFactory factory, List<DisplayColumn> displayColumns, Map<String, String> renameColumnMap)
@@ -67,14 +79,18 @@ public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
         _factory = factory;
         _displayColumns = init(displayColumns);
         _renameColumnMap = renameColumnMap;
+        _fieldKeys = null;
     }
 
-    private static List<DisplayColumn> init(Collection<ColumnInfo> cols)
+    private static List<DisplayColumn> init(Collection<ColumnInfo> cols, Set<FieldKey> fieldKeys)
     {
         List<DisplayColumn> dataColumns = new LinkedList<>();
 
         for (ColumnInfo col : cols)
-            dataColumns.add(col.getDisplayColumnFactory().createRenderer(col));
+        {
+            if (null == fieldKeys || fieldKeys.contains(col.getFieldKey()))
+                dataColumns.add(col.getDisplayColumnFactory().createRenderer(col));
+        }
 
         return init(dataColumns);
     }
@@ -113,7 +129,7 @@ public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
         try (Results results = _factory.get())
         {
             if (null == _displayColumns)
-                _displayColumns = init(results.getFieldMap().values());
+                _displayColumns = init(results.getFieldMap().values(), _fieldKeys);
             return handler.handle(results);
         }
         catch (SQLException ex)

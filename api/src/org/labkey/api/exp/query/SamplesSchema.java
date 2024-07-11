@@ -16,7 +16,6 @@
 
 package org.labkey.api.exp.query;
 
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -41,9 +40,13 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
@@ -56,11 +59,18 @@ import java.util.Set;
 public class SamplesSchema extends AbstractExpSchema
 {
     public static final String SCHEMA_NAME = "samples";
+    public static final String STUDY_LINKED_SCHEMA_NAME = "~~STUDY.LINKED.SAMPLE~~";
+
     // AllSampleTypes.query.xml metadata file is applied to all Sample Types in a container
     public static final String SCHEMA_METADATA_NAME = "AllSampleTypes";
     public static final SchemaKey SCHEMA_SAMPLES = SchemaKey.fromParts(SamplesSchema.SCHEMA_NAME);
     public static final String SCHEMA_DESCR = "Contains data about the samples used in experiment runs.";
-    static final Logger log = LogManager.getLogger(SamplesSchema.class);
+    static final Logger log = LogHelper.getLogger(SamplesSchema.class, "Samples Schema");
+
+    boolean withLinkToStudyColumns = true;
+    boolean supportTableRules = true;
+    Set<Role> contextualRoles = Set.of();
+
 
     static private Map<String, ExpSampleType> getSampleTypeMap(Container container, User user)
     {
@@ -97,9 +107,40 @@ public class SamplesSchema extends AbstractExpSchema
         setDefaultSchema(schema.getDefaultSchema());
     }
 
+    public SamplesSchema(QuerySchema schema, boolean studyLinkedSamples)
+    {
+        this(schema.getUser(), schema.getContainer());
+        setDefaultSchema(schema.getDefaultSchema());
+
+        if (studyLinkedSamples)
+        {
+            this.setContainerFilter(ContainerFilter.EVERYTHING);
+            this.withLinkToStudyColumns = false;
+            this.supportTableRules = false;
+            this.contextualRoles = Set.of(RoleManager.getRole(ReaderRole.class));
+        }
+    }
+
     public SamplesSchema(User user, Container container)
     {
         this(SchemaKey.fromParts(SCHEMA_NAME), user, container);
+    }
+
+    @Override
+    public boolean canReadSchema()
+    {
+        return super.canReadSchema() || getContainer().hasPermission(getUser(), ReadPermission.class, contextualRoles) ;
+    }
+
+    @Override
+    public QuerySchema getSchema(String name)
+    {
+        if (STUDY_LINKED_SCHEMA_NAME.equals(name))
+        {
+            // users of this could just hide the link-to-study columns, but they are kinda expensive to create
+            return new SamplesSchema(getDefaultSchema(), true);
+        }
+        return super.getSchema(name);
     }
 
     private Map<String, ExpSampleType> _sampleTypeMap = null;
@@ -137,16 +178,19 @@ public class SamplesSchema extends AbstractExpSchema
         if (st == null)
             return null;
 
-        AbstractTableInfo tableInfo = (AbstractTableInfo) createSampleTable(st, cf);
+        ExpMaterialTable tableInfo = createSampleTable(st, cf);
 
         // Get linked to study columns
         StudyPublishService studyPublishService = StudyPublishService.get();
-        if (studyPublishService != null)
+        if (withLinkToStudyColumns && studyPublishService != null)
         {
             int rowId = st.getRowId();
             String rowIdNameString = ExpMaterialTable.Column.RowId.toString();
-            studyPublishService.addLinkedToStudyColumns(tableInfo, Dataset.PublishSource.SampleType, true, rowId, rowIdNameString, getUser());
-            return tableInfo;
+            studyPublishService.addLinkedToStudyColumns((AbstractTableInfo)tableInfo, Dataset.PublishSource.SampleType, true, rowId, rowIdNameString, getUser());
+        }
+        if (!supportTableRules)
+        {
+            tableInfo.setSupportTableRules(false);
         }
         
         return tableInfo;
