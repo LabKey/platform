@@ -13,7 +13,7 @@
     "test-integration": "cross-env NODE_ENV=test jest --ci --runInBand -c test/js/jest.config.integration.js"
   },
   "dependencies": {
-    "@labkey/components": "4.0.1-fb-gridCellValidation.2"
+    "@labkey/components": "4.0.1-fb-gridCellValidation.3"
   },
   "devDependencies": {
     "@labkey/build": "7.3.0",
