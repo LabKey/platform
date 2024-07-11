@@ -190,6 +190,7 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                 if (provider.isMandatoryDomainProperty(domain, prop.getName()))
                     mandatoryPropertyDescriptors.add(prop.getName());
             }
+            gwtProps.addAll(gwtDomain.getCalculatedFields());
             gwtDomain.setFields(gwtProps);
             gwtDomain.setMandatoryFieldNames(mandatoryPropertyDescriptors);
         }
