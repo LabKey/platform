@@ -26,7 +26,7 @@
     JspView<CustomPropertiesView.CustomPropertiesBean> me = (JspView<CustomPropertiesView.CustomPropertiesBean>) HttpView.currentView();
     CustomPropertiesView.CustomPropertiesBean form = me.getModelBean();
 %>
-<table class="lk-fields-table">
+<table>
 <%
     final JspWriter fout = out;
 
@@ -35,7 +35,7 @@
         try
         {
             fout.println(unsafe("<tr>"));
-            fout.println(unsafe("    <td class=\"labkey-form-label\">"));
+            fout.println(unsafe("    <td class=\"lk-form-label\">"));
 
             int i = 0;
             while(i < indent)
@@ -45,7 +45,7 @@
             }
 
             // Note: StandardPropertyRenderer HTML encodes description and value
-            fout.println(unsafe(description));
+            fout.println(unsafe(description + ":"));
             fout.println(unsafe("    </td>"));
             fout.println(unsafe("    <td>" + value + "</td>"));
             fout.println(unsafe("</tr>"));

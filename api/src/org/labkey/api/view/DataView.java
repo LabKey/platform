@@ -143,7 +143,9 @@ public abstract class DataView extends WebPartView<RenderContext>
         {
             DataRegion dr = new DataRegion();
             dr.setTable(form.getTable());
-            List<ColumnInfo> allCols = form.getTable().getUserEditableColumns();
+            List<ColumnInfo> allCols = form.getTable().getColumns().stream()
+                    .filter(col -> col.isUserEditable() || col.isValueExpressionColumn())
+                    .toList();
             List<ColumnInfo> includedCols = new ArrayList<>();
             for (ColumnInfo col : allCols)
             {
