@@ -376,7 +376,6 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     }
 
     /** When a table a) overrides (String alias, Set<FieldKey> cols) b) has CalculatedColumns we need to make sure that
-
      * we include the dependent columns in the Set<>.
      */
     protected Set<FieldKey> expandColumns(Set<FieldKey> columns)
@@ -1275,20 +1274,20 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         loadFromXML(schema, xmlTables, errors, true);
     }
 
-    public void loadFromXML(QuerySchema schema, @Nullable Collection<TableType> xmlTables, Collection<QueryException> errors, boolean allowCalculatedColumns)
+    public void loadFromXML(QuerySchema schema, @Nullable Collection<TableType> xmlTables, Collection<QueryException> errors, boolean allowCalculatedFields)
     {
         checkLocked();
 
         if (xmlTables != null)
         {
             for (TableType xmlTable : xmlTables)
-                loadFromXML(schema, xmlTable, errors, allowCalculatedColumns);
+                loadFromXML(schema, xmlTable, errors, allowCalculatedFields);
         }
     }
 
-    private void loadFromXML(QuerySchema schema, @Nullable TableType xmlTable, Collection<QueryException> errors, boolean allowCalculatedColumns)
+    private void loadFromXML(QuerySchema schema, @Nullable TableType xmlTable, Collection<QueryException> errors, boolean allowCalculatedFields)
     {
-        loadAllButCustomizerFromXML(schema, xmlTable, errors, allowCalculatedColumns);
+        loadAllButCustomizerFromXML(schema, xmlTable, errors, allowCalculatedFields);
 
         // This needs to happen AFTER all of the other XML-based config has been applied, so it should always
         // be at the end of this method
@@ -1299,7 +1298,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     }
 
     /** Applies XML metadata for everything, except for invoking any Java TableInfo customizer */
-    protected void loadAllButCustomizerFromXML(QuerySchema schema, @Nullable TableType xmlTable, Collection<QueryException> errors, boolean allowCalculatedColumns)
+    protected void loadAllButCustomizerFromXML(QuerySchema schema, @Nullable TableType xmlTable, Collection<QueryException> errors, boolean allowCalculatedFields)
     {
         if (xmlTable == null)
             return;
@@ -1382,7 +1381,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
                 {
                     wrappedColumns.add(xmlColumn);
                 }
-                else if (allowCalculatedColumns && xmlColumn.isSetValueExpression() && isNotBlank(xmlColumn.getValueExpression()))
+                else if (allowCalculatedFields && xmlColumn.isSetValueExpression() && isNotBlank(xmlColumn.getValueExpression()))
                 {
                     /* SPEC decision: for now we're not doing calculated columns over query. */
                     wrappedColumns.add(xmlColumn);

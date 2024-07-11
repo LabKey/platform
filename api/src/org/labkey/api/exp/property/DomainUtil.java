@@ -271,7 +271,7 @@ public class DomainUtil
 
         Map<String, Object> pkColMap = new HashMap<>();
         TableInfo tableInfo = null;
-        List<GWTPropertyDescriptor> calculatedColumns = new ArrayList<>();
+        List<GWTPropertyDescriptor> calculatedFields = new ArrayList<>();
         if (!skipPKCols)
         {
             tableInfo = domainKind.getTableInfo(user, container, domain, null);
@@ -281,7 +281,7 @@ public class DomainUtil
                 if (null != tableInfo.getPkColumns())
                     pkColMap = tableInfo.getPkColumns().stream().collect(Collectors.toMap(ColumnInfo :: getColumnName, ColumnInfo :: isKeyField));
 
-                calculatedColumns = getCalculatedColumnsForTableInfo(tableInfo);
+                calculatedFields = getCalculatedFieldsForTableInfo(tableInfo);
             }
         }
 
@@ -328,8 +328,8 @@ public class DomainUtil
         }
 
         // add calculated columns to the list of properties
-        if (!calculatedColumns.isEmpty())
-            list.addAll(calculatedColumns);
+        if (!calculatedFields.isEmpty())
+            list.addAll(calculatedFields);
 
         d.setFields(list);
 
@@ -374,8 +374,8 @@ public class DomainUtil
         return d;
     }
 
-    // get calculated columns (i.e. those with value expressions) for a tableInfo from the related XML metadata
-    private static List<GWTPropertyDescriptor> getCalculatedColumnsForTableInfo(@NotNull TableInfo tableInfo)
+    // get calculated fields (i.e. those with value expressions) for a tableInfo from the related XML metadata
+    private static List<GWTPropertyDescriptor> getCalculatedFieldsForTableInfo(@NotNull TableInfo tableInfo)
     {
 
         ArrayList<QueryException> errors = new ArrayList<>();
@@ -386,7 +386,7 @@ public class DomainUtil
         TableType xmlTable = metadata.stream().findFirst().orElse(null);
         if (xmlTable != null && xmlTable.isSetColumns())
         {
-            List<GWTPropertyDescriptor> calculatedColumns = new ArrayList<>();
+            List<GWTPropertyDescriptor> calculatedFields = new ArrayList<>();
             for (ColumnType col : xmlTable.getColumns().getColumnArray())
             {
                 if (col.getValueExpression() != null)
@@ -398,11 +398,11 @@ public class DomainUtil
                     if (colInfo != null)
                         propDesc.setRangeURI(PropertyType.getFromJdbcType(colInfo.getJdbcType()).getTypeUri());
 
-                    calculatedColumns.add(propDesc);
+                    calculatedFields.add(propDesc);
                 }
             }
 
-            return calculatedColumns;
+            return calculatedFields;
         }
 
         return Collections.emptyList();
