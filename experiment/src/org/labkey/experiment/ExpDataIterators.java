@@ -93,7 +93,9 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.publish.StudyPublishService;
@@ -1504,6 +1506,8 @@ public class ExpDataIterators
     @NotNull
     private static Pair<Set<? extends ExpMaterial>, Set<? extends ExpMaterial>> clearRunItemSourceRun(User user, ExpRunItem runItem, boolean clearAncestors) throws ValidationException, ExperimentException
     {
+        // Issue 50776: To update lineage we need to delete existing runs, so we need to assure the user has DeletePermission
+        LimitedUser limitedUser = new LimitedUser(user, DeletePermission.class);
         ExpProtocolApplication existingSourceApp = runItem.getSourceApplication();
         Set<? extends ExpMaterial> previousMaterialParents = Collections.emptySet();
         Set<? extends ExpMaterial> previousMaterialChildren = Collections.emptySet();
@@ -1540,13 +1544,14 @@ public class ExpDataIterators
             runItem.setSourceApplication(null);
             try
             {
-                runItem.save(user);
+                runItem.save(limitedUser);
             }
             catch (BatchValidationException e)
             {
                 throw new ExperimentException(e);
             }
-            existingDerivationRun.delete(user);
+
+            existingDerivationRun.delete(limitedUser);
             if (clearAncestors)
                 ExperimentServiceImpl.get().clearAncestors(runItem);
         }
@@ -1558,7 +1563,7 @@ public class ExpDataIterators
             runItem.setSourceApplication(null);
             try
             {
-                runItem.save(user);
+                runItem.save(limitedUser);
             }
             catch (BatchValidationException e)
             {
@@ -1569,14 +1574,14 @@ public class ExpDataIterators
             if (runItem instanceof ExpMaterial material)
             {
                 if (outputApp != null)
-                    outputApp.removeMaterialInput(user, material);
-                existingSourceApp.removeMaterialInput(user, material);
+                    outputApp.removeMaterialInput(limitedUser, material);
+                existingSourceApp.removeMaterialInput(limitedUser, material);
             }
             else if (runItem instanceof ExpData data)
             {
                 if (outputApp != null)
-                    outputApp.removeDataInput(user, data);
-                existingSourceApp.removeDataInput(user, data);
+                    outputApp.removeDataInput(limitedUser, data);
+                existingSourceApp.removeDataInput(limitedUser, data);
             }
             ExperimentService.get().queueSyncRunEdges(existingDerivationRun);
         }
