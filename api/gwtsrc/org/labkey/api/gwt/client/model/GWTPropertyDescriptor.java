@@ -585,11 +585,6 @@ public class GWTPropertyDescriptor implements IsSerializable
         this.derivationDataScope.set(derivationDataScope);
     }
 
-    public boolean isCalculatedField()
-    {
-        return getValueExpression() != null;
-    }
-
     public String getValueExpression()
     {
         return valueExpression.getString();

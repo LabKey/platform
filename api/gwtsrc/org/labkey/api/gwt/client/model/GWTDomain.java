@@ -265,14 +265,14 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     public List<FieldType> getFields()
     {
         if (standardFields == null)
-            standardFields = fields.stream().filter(f -> !f.isCalculatedField()).toList();
+            standardFields = fields.stream().filter(f -> f.getValueExpression() == null).toList();
         return standardFields;
     }
 
     public List<FieldType> getCalculatedFields()
     {
         if (calculatedFields == null)
-            calculatedFields = fields.stream().filter(GWTPropertyDescriptor::isCalculatedField).toList();
+            calculatedFields = fields.stream().filter(f -> f.getValueExpression() != null).toList();
         return calculatedFields;
     }
 
