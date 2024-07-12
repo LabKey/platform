@@ -9,9 +9,7 @@ import com.fasterxml.jackson.core.Base64Variant;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonpCharacterEscapes;
 import com.fasterxml.jackson.core.PrettyPrinter;
-import com.fasterxml.jackson.core.io.CharacterEscapes;
 import com.fasterxml.jackson.databind.AnnotationIntrospector;
 import com.fasterxml.jackson.databind.DeserializationConfig;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -20,7 +18,6 @@ import com.fasterxml.jackson.databind.InjectableValues;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.MapperFeature;
-import com.fasterxml.jackson.databind.MappingJsonFactory;
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
@@ -63,48 +60,11 @@ import java.util.TimeZone;
 @SuppressWarnings("deprecation")
 class LabKeyObjectMapper extends ObjectMapper
 {
-    private static final int[] labkeyAsciiEscapes;
-    static
-    {
-        labkeyAsciiEscapes = CharacterEscapes.standardAsciiEscapesForJSON().clone();
-        labkeyAsciiEscapes['/'] = '/';
-    }
-
-    static class LabKeyCharacterEscapes extends JsonpCharacterEscapes
-    {
-        private static final LabKeyCharacterEscapes sInstance = new LabKeyCharacterEscapes();
-        @Override
-        public int[] getEscapeCodesForAscii()
-        {
-            return labkeyAsciiEscapes;
-        }
-    }
-
-    static class LabKeyJsonFactory extends MappingJsonFactory
-    {
-        LabKeyJsonFactory()
-        {
-            setCharacterEscapes(LabKeyCharacterEscapes.sInstance);
-        }
-
-        LabKeyJsonFactory(LabKeyJsonFactory src, ObjectMapper mapper)
-        {
-            super(src, mapper);
-        }
-
-        @Override
-        public JsonFactory copy()
-        {
-            _checkInvalidCopy(LabKeyJsonFactory.class);
-            return new LabKeyJsonFactory(this, null);
-        }
-    }
-
     final boolean locked;
 
     LabKeyObjectMapper(boolean locked)
     {
-        super(new LabKeyJsonFactory());
+        super(JsonUtil.createDefaultJsonFactoryBuilder().build());
         // Allow org.json classes to be serialized by Jackson
         super.registerModule(new JsonOrgModule());
         // We must register JavaTimeModule in order to serialize LocalDate, etc.
