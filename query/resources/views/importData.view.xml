@@ -1,7 +1,7 @@
 <view xmlns="http://labkey.org/data/xml/view" title="Import Data">
-    <permissions>
-        <permission name="insert" />
-    </permissions>
+    <permissionClasses>
+        <permissionClass name="org.labkey.api.security.permissions.InsertPermission"/>
+    </permissionClasses>
     <dependencies>
         <dependency path="Ext4ClientApi"/>
         <dependency path="/extWidgets/ExcelUploadPanel.js"/>
