@@ -708,6 +708,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             setGridURL(new DetailsURL(gridUrl));
         }
 
+        List<FieldKey> calculatedFieldKeys = DomainUtil.getCalculatedFieldsForDefaultView(this);
+        defaultCols.addAll(calculatedFieldKeys);
+
         addColumn(Column.AliquotCount);
         addColumn(Column.AliquotVolume);
         addColumn(Column.AliquotUnit);
@@ -770,9 +773,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             defaultCols.addAll(InventoryService.get().addInventoryStatusColumns(st == null ? null : st.getMetricUnit(), this, getContainer(), _userSchema.getUser()));
 
         addVocabularyDomains();
-
-        List<FieldKey> calculatedFieldKeys = DomainUtil.getCalculatedFieldsForDefaultView(this);
-        defaultCols.addAll(calculatedFieldKeys);
 
         addColumn(Column.Properties);
 
