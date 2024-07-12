@@ -796,7 +796,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             GWTPropertyDescriptor pd = properties.get(i);
             String propertyName = pd.getName().toLowerCase();
 
-            // handling standard properties only here
+            // calculatedFields will be handled separately
             if (pd.isCalculatedField())
             {
                 calculatedFields.add(pd);

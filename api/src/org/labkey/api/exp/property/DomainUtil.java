@@ -1293,7 +1293,7 @@ public class DomainUtil
         ValidationException exception = new ValidationException();
         Map<Integer, String> propertyIdNameMap = getOriginalFieldPropertyIdNameMap(orig);//key: orig property id, value : orig field name
 
-        for (Object f : updates.getFields())
+        for (Object f : updates.getAllFields())
         {
             GWTPropertyDescriptor field = (GWTPropertyDescriptor)f;
 

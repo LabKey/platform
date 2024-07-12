@@ -7918,7 +7918,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         List<GWTPropertyDescriptor> calculatedFields = new ArrayList<>();
         for (GWTPropertyDescriptor pd : properties)
         {
-            // handling standard properties only here
+            // calculatedFields will be handled separately
             if (pd.isCalculatedField())
             {
                 calculatedFields.add(pd);
