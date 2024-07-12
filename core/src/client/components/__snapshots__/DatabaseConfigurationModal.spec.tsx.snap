@@ -42,9 +42,8 @@ exports[`<DatabaseConfigurationModal/> Editable 1`] = `
     <span
       className="database-modal__field"
     >
-      <FormControl
-        bsClass="form-control"
-        componentClass="select"
+      <select
+        className="form-control"
         disabled={false}
         name="strength"
         onChange={[Function]}
@@ -74,9 +73,8 @@ exports[`<DatabaseConfigurationModal/> Editable 1`] = `
     <span
       className="database-modal__field"
     >
-      <FormControl
-        bsClass="form-control"
-        componentClass="select"
+      <select
+        className="form-control"
         name="expiration"
         onChange={[Function]}
         placeholder="select"
@@ -112,7 +110,7 @@ exports[`<DatabaseConfigurationModal/> Editable 1`] = `
         >
           Every twelve months
         </option>
-      </FormControl>
+      </select>
     </span>
   </div>
 </Modal>
@@ -153,9 +151,8 @@ exports[`<DatabaseConfigurationModal/> View-only 1`] = `
     <span
       className="database-modal__field"
     >
-      <FormControl
-        bsClass="form-control"
-        componentClass="select"
+      <select
+        className="form-control"
         disabled={true}
         name="strength"
         onChange={[Function]}

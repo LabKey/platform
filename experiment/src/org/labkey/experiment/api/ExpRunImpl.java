@@ -36,7 +36,6 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.ExperimentRunType;
-import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
@@ -236,13 +235,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     @Override
     public List<ExpDataImpl> getOutputDatas(@Nullable DataType type)
     {
-        SimpleFilter filter = new SimpleFilter();
-        filter.addCondition(FieldKey.fromParts("RunId"), getRowId());
-        if (type != null)
-        {
-            filter.addWhereClause(Lsid.namespaceFilter("LSID", type.getNamespacePrefix()), null);
-        }
-        return ExpDataImpl.fromDatas(new TableSelector(ExperimentServiceImpl.get().getTinfoData(), filter, null).getArrayList(Data.class));
+        return ExperimentServiceImpl.get().getOutputDatas(getRowId(), type);
     }
 
     @Override
@@ -547,7 +540,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         final ExperimentServiceImpl svc = ExperimentServiceImpl.get();
         final SqlDialect dialect = svc.getSchema().getSqlDialect();
 
-        ExperimentServiceImpl.get().invalidateExperimentRun(getLSID());
+        svc.invalidateExperimentRun(getLSID());
 
         deleteProtocolApplicationProvenance();
 
@@ -649,7 +642,6 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     {
         new SqlExecutor(getExpSchema()).execute("DELETE FROM exp.ProtocolApplication WHERE RunId = ?", getRowId());
     }
-
 
     private synchronized void ensureFullyPopulated()
     {

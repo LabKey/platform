@@ -3,7 +3,6 @@
  * any form or by any electronic or mechanical means without written permission from LabKey Corporation.
  */
 import React from 'react';
-import { Panel } from 'react-bootstrap';
 import { fromJS, List } from 'immutable';
 import {
     AppContextProvider,

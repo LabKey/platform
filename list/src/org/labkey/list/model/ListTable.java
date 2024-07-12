@@ -23,6 +23,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.compliance.TableRules;
+import org.labkey.api.compliance.TableRulesManager;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
@@ -86,7 +88,6 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
 {
     private final ListDefinition _list;
     private static final Logger LOG = LogManager.getLogger(ListTable.class);
-    private final boolean _canAccessPhi;
 
     // NK: Picklists are instances of Lists that are utilized to group Samples. As such, they are utilized
     // in more specific ways than Lists in our system and necessitate a different collection of default
@@ -305,7 +306,9 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
             addColumn(entityId);
         }
 
-        _canAccessPhi = canUserAccessPhi();
+        // NOTE I think may be too early to call this method?
+        // We can't tell which columns have PhiColumnBehavior==show until after applyTableRules is called
+        boolean canAccessPhi = canUserAccessPhi();
 
         DetailsURL gridURL = new DetailsURL(_list.urlShowData(_userSchema.getContainer()), Collections.<String, String>emptyMap());
         setGridURL(gridURL);
@@ -313,17 +316,17 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
         if (null != colKey)
             setDetailsURL(new DetailsURL(_list.urlDetails(null, _userSchema.getContainer()), "pk", colKey.getFieldKey()));
 
-        if (!listDef.getAllowUpload() || !_canAccessPhi)
+        if (!listDef.getAllowUpload() || !canAccessPhi)
             setImportURL(LINK_DISABLER);
         else
         {
             setImportURL(new DetailsURL(listDef.urlImport(_userSchema.getContainer())));
         }
 
-        if (!listDef.getAllowDelete() || !_canAccessPhi)
+        if (!listDef.getAllowDelete() || !canAccessPhi)
             setDeleteURL(LINK_DISABLER);
 
-        if (!_canAccessPhi)
+        if (!canAccessPhi)
         {
             setInsertURL(LINK_DISABLER);
             setUpdateURL(LINK_DISABLER);
@@ -400,6 +403,12 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
         return true;
     }
 
+    @Override
+    protected @NotNull TableRules findTableRules()
+    {
+        return TableRulesManager.get().getTableRules(getList().getContainer(), getUserSchema().getUser(), getUserSchema().getContainer());
+    }
+
     /**
      * For logging, replace the provisioned table name with the nicer name
      */
@@ -459,9 +468,9 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
 
         boolean gate = true;
         if (InsertPermission.class.equals(perm) || UpdatePermission.class.equals(perm))
-            gate = _canAccessPhi;
+            gate = canUserAccessPhi();
         else if (DeletePermission.class.equals(perm))
-            gate = _canAccessPhi && _list.getAllowDelete();
+            gate = canUserAccessPhi() && _list.getAllowDelete();
         return gate && getContainer().hasPermission(user, perm);
     }
 

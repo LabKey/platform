@@ -30,6 +30,8 @@ import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
+import org.labkey.api.compliance.TableRules;
+import org.labkey.api.compliance.TableRulesManager;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
@@ -722,7 +724,19 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable.getSqlDialect(), subAlias, columnMap);
         sql.append("\n").append(filterFrag).append(") ").append(alias);
 
-        return sql;
+        return getTransformedFromSQL(sql);
+    }
+
+    @Override
+    public boolean supportTableRules() // intentional override
+    {
+        return true;
+    }
+
+    @Override
+    protected @NotNull TableRules findTableRules()
+    {
+        return TableRulesManager.get().getTableRules(_dataClass.getContainer(), getUserSchema().getUser(), getUserSchema().getContainer());
     }
 
     private static final Set<String> DEFAULT_HIDDEN_COLS = new CaseInsensitiveHashSet("Container", "Created", "CreatedBy", "ModifiedBy", "Modified", "Owner", "EntityId", "RowId");

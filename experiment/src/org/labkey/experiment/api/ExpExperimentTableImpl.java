@@ -191,11 +191,10 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
         addVocabularyDomains();
         addColumn(Column.Properties);
 
-        setTitleColumn("Name");
+        setTitleColumn(Column.Name.toString());
 
         DetailsURL detailsURL = new DetailsURL(new ActionURL(ExperimentController.DetailsAction.class, _userSchema.getContainer()), Collections.singletonMap("rowId", "RowId"));
         setDetailsURL(detailsURL);
-//        getColumn(Column.Name).setURL(detailsURL);
     }
 
     @Override

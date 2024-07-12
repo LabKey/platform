@@ -114,7 +114,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         super.addColumns();
         addWellGroupColumn();
         addPositionColumn();
-        addWellMetadata();
+        addWellMetadataColumns();
         addTypeColumn();
     }
 
@@ -188,7 +188,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
     /**
      * Join the well metadata fields into the well table as sibling fields to the columns on the well table.
      */
-    private void addWellMetadata()
+    private void addWellMetadataColumns()
     {
         Domain wellDomain = PlateManager.get().getPlateMetadataDomain(getContainer(), getUserSchema().getUser());
         FieldKey lsidFieldKey = FieldKey.fromParts("lsid");
@@ -209,15 +209,17 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
                 // Copy the property descriptor settings to the wrapped column.
                 String propertyURI = col.getPropertyURI();
                 DomainProperty dp = propertyURI != null ? wellDomain.getPropertyByURI(propertyURI) : null;
-                PropertyDescriptor pd = (null == dp) ? null : dp.getPropertyDescriptor();
-                if (dp != null && pd != null)
+                if (dp != null)
                 {
-                    defaultsSupplier = PropertyColumn.copyAttributes(getUserSchema().getUser(), wrapped, dp, getContainer(), lsidFieldKey, getContainerFilter(), defaultsSupplier);
-                    wrapped.setFieldKey(FieldKey.fromParts(dp.getName()));
+                    PropertyDescriptor pd = dp.getPropertyDescriptor();
+                    if (pd != null)
+                    {
+                        defaultsSupplier = PropertyColumn.copyAttributes(getUserSchema().getUser(), wrapped, dp, getContainer(), lsidFieldKey, getContainerFilter(), defaultsSupplier);
+                        wrapped.setFieldKey(FieldKey.fromParts(dp.getName()));
+                    }
                 }
 
                 addColumn(wrapped);
-                defaultVisibleColumns.add(col.getFieldKey());
             }
         }
     }

@@ -22,7 +22,6 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.compliance.TableRules;
-import org.labkey.api.compliance.TableRulesManager;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ButtonBarConfig;
@@ -84,14 +83,14 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
 
     @NotNull protected SchemaType _userSchema;
 
-    private final @NotNull TableRules _rules;
+    private TableRules _rules;
     private Set<FieldKey> _rulesOmittedColumns = null;
     private Set<FieldKey> _rulesTransformedColumns = null;
 
     // for debugging/validation only
     protected Set<Class<? extends Permission>> checkedPermissions = new HashSet<>();
 
-    private static boolean assertCheckedPermissions = false; // for fail fast (developers only)
+    private static final boolean assertCheckedPermissions = false; // for fail fast (developers only)
 
     @Override
     public void checkReadBeforeExecute()
@@ -142,8 +141,21 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
             else
                 applyContainerFilter(getDefaultContainerFilter());
         }
+    }
 
-        _rules = canApplyTableRules() ? TableRulesManager.get().getTableRules(getContainer(), userSchema.getUser()) : TableRules.NOOP_TABLE_RULES;
+    private @NotNull TableRules getTableRules()
+    {
+        if (_rules == null)
+            _rules = canApplyTableRules() ? findTableRules() : TableRules.NOOP_TABLE_RULES;
+
+        return _rules;
+    }
+
+    protected @NotNull TableRules findTableRules()
+    {
+        throw new UnsupportedOperationException("Override this method if canApplyTableRules()==true: " + getClass().getName());
+        // example
+        // return TableRulesManager.get().getTableRules({TYPE}.getDefinitionContainer(), getUserSchema().getUser(), getUserSchema().getContainer());
     }
 
     /**
@@ -347,10 +359,10 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
 
     /**
      * Create a wrapped copy of the underlying column.
-     *
+     * <br>
      * wrapColumnFromJoinedTable is just like {@link #wrapColumn(ColumnInfo)} except the underlying
      * column may come from a table that is joined to the FilteredTable's parent table.
-     *
+     * <br>
      * For example, the {@link org.labkey.api.exp.query.ExpDataClassDataTable} query table joins
      * together the exp.data table and the provisioned expdataclass.* table. To create wrapped
      * columns from the provisioned SchemaTableInfo, we must use {@link #wrapColumnFromJoinedTable(String, ColumnInfo)}
@@ -532,7 +544,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
 
     public SQLFragment getTransformedFromSQL(SQLFragment sqlFrom)
     {
-        return _rules.getSqlTransformer().apply(sqlFrom);
+        return getTableRules().getSqlTransformer().apply(sqlFrom);
     }
 
     /**
@@ -604,9 +616,9 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         for (var column : getMutableColumns())
         {
             MutableColumnInfo transformed;
-            if (_rules.getColumnInfoFilter().test(column))
+            if (getTableRules().getColumnInfoFilter().test(column))
             {
-                transformed = _rules.getColumnInfoTransformer().apply(column);
+                transformed = getTableRules().getColumnInfoTransformer().apply(column);
                 getAliasManager().ensureAlias(column);
                 replaceColumn(transformed, column);
 
@@ -630,6 +642,17 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
                 _rulesOmittedColumns.add(column.getFieldKey());
             }
         }
+    }
+
+    @Override
+    public boolean canUserAccessPhi()
+    {
+        // This overrides FitleredTable.canUserAccessPhi() because it implicitly uses the TableRules _rules.
+        // However, this doesn't work until after applyTableRules().
+        // TODO add a method to TableRules
+        if (supportTableRules())
+            return !hasRulesTransformedColumns() && !hasRulesOmittedColumns();
+        return super.canUserAccessPhi();
     }
 
     public @NotNull Set<FieldKey> getPHIDataLoggingColumns()
