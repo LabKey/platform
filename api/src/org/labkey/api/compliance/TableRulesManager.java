@@ -17,6 +17,7 @@ package org.labkey.api.compliance;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
+import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 
 import java.util.List;
@@ -42,11 +43,11 @@ public class TableRulesManager
         TABLE_RULES_PROVIDERS.add(0, provider);
     }
 
-    public @NotNull TableRules getTableRules(@NotNull Container c, @NotNull User user)
+    public @NotNull TableRules getTableRules(@NotNull Container c, @NotNull User user, SecurableResource permissionsResource)
     {
         for (TableRulesProvider provider : TABLE_RULES_PROVIDERS)
         {
-            TableRules rules = provider.get(c, user);
+            TableRules rules = provider.get(c, user, permissionsResource);
 
             if (null != rules)
             {

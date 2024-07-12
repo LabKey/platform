@@ -25,6 +25,8 @@ import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.compliance.TableRules;
+import org.labkey.api.compliance.TableRulesManager;
 import org.labkey.api.data.*;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
@@ -114,6 +116,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 {
     ExpSampleTypeImpl _ss;
     Set<String> _uniqueIdFields;
+    boolean _supportTableRules = true;
 
     public static final Set<String> MATERIAL_ALT_MERGE_KEYS;
     public static final Set<String> MATERIAL_ALT_UPDATE_KEYS;
@@ -1017,8 +1020,30 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
         sql.append(") ").append(alias);
 
-        return sql;
+        return getTransformedFromSQL(sql);
     }
+
+    @Override
+    public void setSupportTableRules(boolean b)
+    {
+        this._supportTableRules = b;
+    }
+
+    @Override
+    public boolean supportTableRules() // intentional override
+    {
+        return _supportTableRules;
+    }
+
+    @Override
+    protected @NotNull TableRules findTableRules()
+    {
+        Container definitionContainer = getUserSchema().getContainer();
+        if (null != _ss)
+            definitionContainer = _ss.getContainer();
+        return TableRulesManager.get().getTableRules(definitionContainer, getUserSchema().getUser(), getUserSchema().getContainer());
+    }
+
 
     static class InvalidationCounters
     {
