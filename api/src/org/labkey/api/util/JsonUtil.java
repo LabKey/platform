@@ -15,14 +15,13 @@
  */
 package org.labkey.api.util;
 
-import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonFactoryBuilder;
 import com.fasterxml.jackson.core.JsonLocation;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.core.JsonpCharacterEscapes;
-import com.fasterxml.jackson.core.io.CharacterEscapes;
+import com.fasterxml.jackson.core.json.JsonWriteFeature;
 import com.fasterxml.jackson.databind.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
@@ -63,6 +62,12 @@ public class JsonUtil
     public static ObjectMapper createDefaultMapper()
     {
         return new LabKeyObjectMapper(false);
+    }
+
+    public static JsonFactoryBuilder createDefaultJsonFactoryBuilder()
+    {
+        return new JsonFactoryBuilder()
+                .enable(JsonWriteFeature.ESCAPE_FORWARD_SLASHES);
     }
 
     public static JsonLocation expectObjectStart(JsonParser p) throws IOException
