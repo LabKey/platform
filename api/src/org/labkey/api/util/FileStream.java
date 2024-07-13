@@ -19,6 +19,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.util.logging.LogHelper;
 
 import java.io.BufferedInputStream;
@@ -48,6 +49,10 @@ import java.util.Date;
 public interface FileStream
 {
     Logger LOG = LogHelper.getLogger(FileStream.class, "File transfers");
+
+    // See issue 50620
+    String STAGE_FILE_UPLOADS = "StageFileUploads";
+
     /** @return -1 if unknown */
     long getSize() throws IOException;
 
@@ -76,9 +81,43 @@ public interface FileStream
         {
             throw new IOException("Destination file [" + dest.getAbsolutePath() + "] already exists and could not be deleted");
         }
-        try (ReadableByteChannel in = s.getInputChannel())
+
+        long size = s.getSize();
+        if (ExperimentalFeatureService.get().isFeatureEnabled(STAGE_FILE_UPLOADS))
         {
-            FileUtil.copyFile(in, s.getSize(), dest);
+            File tempFile = FileUtil.createTempFile(STAGE_FILE_UPLOADS, ".tmp");
+            try
+            {
+                // Although the FileStream passed here is backed by temp file on disk, the underlying FileChannelImpl
+                // is wrapped in a ChannelInputStream due to the way it's returned from Spring and Tomcat's APIs.
+                // That means the copy can't use the ultra-efficient file->file channel transfer implementation.
+                // Most of the time that doesn't really matter, but for certain NFS mounts, it's horrifically slower.
+                // It's way faster to copy to an intermediate temp file that can then serve as a fast transfer source.
+                // See issue 50620.
+                try (ReadableByteChannel in = s.getInputChannel())
+                {
+                    FileUtil.copyFile(in, s.getSize(), tempFile);
+                }
+                try (FileInputStream fIn = new FileInputStream(tempFile);
+                    ReadableByteChannel in = fIn.getChannel())
+                {
+                    FileUtil.copyFile(in, size, dest);
+                }
+            }
+            finally
+            {
+                if (!tempFile.delete() && tempFile.exists())
+                {
+                    LOG.warn("Failed to delete temporary file [" + tempFile.getAbsolutePath() + "]");
+                }
+            }
+        }
+        else
+        {
+            try (ReadableByteChannel in = s.getInputChannel())
+            {
+                FileUtil.copyFile(in, size, dest);
+            }
         }
     }
 
