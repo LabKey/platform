@@ -140,6 +140,8 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.ModuleLoader.SchemaActions;
+import org.labkey.api.module.ModuleLoader.SchemaAndModule;
 import org.labkey.api.module.SimpleModule;
 import org.labkey.api.moduleeditor.api.ModuleEditorService;
 import org.labkey.api.pipeline.DirectoryNotDeletedException;
@@ -9049,9 +9051,9 @@ public class AdminController extends SpringActionController
             HtmlStringBuilder skippedSchemas = HtmlStringBuilder.of();
             if (hasSchemas)
             {
-                Pair<List<String>, List<Pair<String, String>>> schemaActions = ModuleLoader.getInstance().getSchemaDeleteActions(module, ctx);
-                List<String> deleteList = schemaActions.first;
-                List<Pair<String, String>> skipList = schemaActions.second;
+                SchemaActions schemaActions = ModuleLoader.getInstance().getSchemaActions(module, ctx);
+                List<String> deleteList = schemaActions.deleteList();
+                List<SchemaAndModule> skipList = schemaActions.skipList();
 
                 // List all the schemas that will be deleted
                 if (!deleteList.isEmpty())
@@ -9064,11 +9066,11 @@ public class AdminController extends SpringActionController
                 if (!skipList.isEmpty())
                 {
                     skippedSchemas.append(HtmlString.BR);
-                    skipList.forEach(pair -> skippedSchemas.append(HtmlString.BR)
+                    skipList.forEach(sam -> skippedSchemas.append(HtmlString.BR)
                         .append("Note: Schema \"")
-                        .append(pair.first)
+                        .append(sam.schema())
                         .append("\" will not be deleted because it's in use by module \"")
-                        .append(pair.second)
+                        .append(sam.module())
                         .append("\""));
                 }
             }

@@ -1735,9 +1735,9 @@ public class ModuleLoader implements MemTrackerListener
         String sql = "DELETE FROM " + _core.getTableInfoSqlScripts() + " WHERE ModuleName = ? AND Filename " + dialect.getCaseInsensitiveLikeOperator() + " ?";
 
         Module m = getModule(moduleName);
-        Pair<List<String>, List<Pair<String, String>>> schemaActions = getSchemaDeleteActions(m, context);
+        SchemaActions schemaActions = getSchemaActions(m, context);
 
-        schemaActions.first.forEach(schema -> {
+        schemaActions.deleteList().forEach(schema -> {
             _log.info("Dropping schema \"{}\"", schema);
             new SqlExecutor(_core.getSchema()).execute(sql, moduleName, schema + "-%");
             scope.getSqlDialect().dropSchema(_core.getSchema(), schema);
@@ -1745,7 +1745,7 @@ public class ModuleLoader implements MemTrackerListener
             SchemaNameCache.get().remove(scope); // Invalidates the list of schema names associated with this scope
         });
 
-        schemaActions.second.forEach(pair -> _log.info("Skipping drop of schema \"{}\" because it's in use by module \"{}\"", pair.first, pair.second));
+        schemaActions.skipList().forEach(sam -> _log.info("Skipping drop of schema \"{}\" because it's in use by module \"{}\"", sam.schema(), sam.module()));
 
         Table.delete(getTableInfoModules(), context.getName());
 
@@ -1772,11 +1772,14 @@ public class ModuleLoader implements MemTrackerListener
         clearUnknownModuleCount();
     }
 
+    public record SchemaAndModule(String schema, String module) {}
+    public record SchemaActions(List<String> deleteList, List<SchemaAndModule> skipList){}
+
     // Divide the schemas reported by the specified module context into two lists: schemas that should be deleted and
-    // schemas that shouldn't. If module is not-null (known) then all schemas will be in the delete list. If the module
-    // is null (unknown) then the should-be-deleted list contains the schemas that no known module claims and the
-    // do-not-delete list contains schemas that known modules still manage.
-    public Pair<List<String>, List<Pair<String, String>>> getSchemaDeleteActions(@Nullable Module module, ModuleContext context)
+    // schemas that shouldn't. If module is not-null (known) then the delete list contains all schemas and the skip list
+    // is empty. If the module is null (unknown) then the delete list contains the schemas that no known module claims
+    // and the skip list contains schemas that known modules still claim.
+    public SchemaActions getSchemaActions(@Nullable Module module, ModuleContext context)
     {
         // If we're deleting an "unknown module" then avoid deleting any schema that's owned by a known module, Issue 47547
         Map<String, String> inUseSchemas = null == module ?
@@ -1786,14 +1789,14 @@ public class ModuleLoader implements MemTrackerListener
             Collections.emptyMap();
 
         List<String> deleteList = new LinkedList<>();
-        List<Pair<String, String>> skipList = new LinkedList<>();
+        List<SchemaAndModule> skipList = new LinkedList<>();
 
         for (String schema : context.getSchemaList())
         {
             String usingModuleName = inUseSchemas.get(schema);
             if (usingModuleName != null)
             {
-                skipList.add(Pair.of(schema, usingModuleName));
+                skipList.add(new SchemaAndModule(schema, usingModuleName));
             }
             else
             {
@@ -1801,7 +1804,7 @@ public class ModuleLoader implements MemTrackerListener
             }
         }
 
-        return Pair.of(deleteList, skipList);
+        return new SchemaActions(deleteList, skipList);
     }
 
     private void startNonCoreUpgradeAndStartup(Execution execution, boolean coreRequiredUpgrade, File lockFile)
