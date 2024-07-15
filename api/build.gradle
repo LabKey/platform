@@ -54,11 +54,6 @@ configurations {
     // Avoid pulling in the Activation API because we don't want to conflict with one loaded from $CATALINA_HOME/lib
     all*.exclude group: "jakarta.activation", module: "jakarta.activation-api"
 
-    creditable {
-        canBeConsumed = false
-        canBeResolved = true
-    }
-
     // this configuration and its artifact are declared because the default outgoing variant for the api
     // module (runtimeElements) does not include all the class files since the classes compiled from
     // the XSDs are produced in a separate classes directory.  The name is chosen to be the same as

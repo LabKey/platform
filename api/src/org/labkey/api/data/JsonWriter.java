@@ -163,6 +163,7 @@ public class JsonWriter
         props.put("measure", cinfo != null && cinfo.isMeasure());
         props.put("recommendedVariable", cinfo != null && cinfo.isRecommendedVariable());
         props.put("defaultScale", cinfo != null ? cinfo.getDefaultScale().name() : DefaultScaleType.LINEAR.name());
+        props.put("scale", cinfo != null ? cinfo.getScale() : null);
         props.put("phi", cinfo != null ? cinfo.getPHI().name() : PHI.NotPHI.name());
         props.put("phiProtected", cinfo instanceof PhiTransformedColumnInfo);
         props.put("excludeFromShifting", cinfo != null && cinfo.isExcludeFromShifting());
