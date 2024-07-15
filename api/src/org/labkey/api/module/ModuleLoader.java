@@ -79,6 +79,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MemTrackerListener;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StartupListener;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -1717,7 +1718,6 @@ public class ModuleLoader implements MemTrackerListener
             Table.update(null, getTableInfoModules(), context, context.getName());
     }
 
-
     // Not transacted: SQL Server sp_dropapprole can't be called inside a transaction
     public void removeModule(ModuleContext context)
     {
@@ -1731,30 +1731,21 @@ public class ModuleLoader implements MemTrackerListener
 
         String moduleName = context.getName();
 
-        _log.info("Deleting module " + moduleName);
+        _log.info("Deleting module {}", moduleName);
         String sql = "DELETE FROM " + _core.getTableInfoSqlScripts() + " WHERE ModuleName = ? AND Filename " + dialect.getCaseInsensitiveLikeOperator() + " ?";
 
-        // If we're deleting an "unknown module" then avoid deleting any schema that's owned by a known module, Issue 47547
         Module m = getModule(moduleName);
-        Set<String> inUseSchemas = null == m ?
-            getModules().stream().flatMap(mod -> mod.getSchemaNames().stream()).collect(LabKeyCollectors.toCaseInsensitiveHashSet()) :
-            Collections.emptySet();
+        Pair<List<String>, List<Pair<String, String>>> schemaActions = getSchemaDeleteActions(m, context);
 
-        for (String schema : context.getSchemaList())
-        {
-            if (inUseSchemas.contains(schema))
-            {
-                _log.info("Skipping drop of schema " + schema + " because it's in use by a known module");
-            }
-            else
-            {
-                _log.info("Dropping schema " + schema);
-                new SqlExecutor(_core.getSchema()).execute(sql, moduleName, schema + "-%");
-                scope.getSqlDialect().dropSchema(_core.getSchema(), schema);
-                scope.invalidateSchema(schema, DbSchemaType.Unknown); // Invalidates all versions of the schema and tables in the non-provisioned caches (e.g., module, bare, fast)
-                SchemaNameCache.get().remove(scope); // Invalidates the list of schema names associated with this scope
-            }
-        }
+        schemaActions.first.forEach(schema -> {
+            _log.info("Dropping schema \"{}\"", schema);
+            new SqlExecutor(_core.getSchema()).execute(sql, moduleName, schema + "-%");
+            scope.getSqlDialect().dropSchema(_core.getSchema(), schema);
+            scope.invalidateSchema(schema, DbSchemaType.Unknown); // Invalidates all versions of the schema and tables in the non-provisioned caches (e.g., module, bare, fast)
+            SchemaNameCache.get().remove(scope); // Invalidates the list of schema names associated with this scope
+        });
+
+        schemaActions.second.forEach(pair -> _log.info("Skipping drop of schema \"{}\" because it's in use by module \"{}\"", pair.first, pair.second));
 
         Table.delete(getTableInfoModules(), context.getName());
 
@@ -1779,6 +1770,38 @@ public class ModuleLoader implements MemTrackerListener
 
         ContextListener.fireModuleChangeEvent(m);
         clearUnknownModuleCount();
+    }
+
+    // Divide the schemas reported by the specified module context into two lists: schemas that should be deleted and
+    // schemas that shouldn't. If module is not-null (known) then all schemas will be in the delete list. If the module
+    // is null (unknown) then the should-be-deleted list contains the schemas that no known module claims and the
+    // do-not-delete list contains schemas that known modules still manage.
+    public Pair<List<String>, List<Pair<String, String>>> getSchemaDeleteActions(@Nullable Module module, ModuleContext context)
+    {
+        // If we're deleting an "unknown module" then avoid deleting any schema that's owned by a known module, Issue 47547
+        Map<String, String> inUseSchemas = null == module ?
+            getModules().stream()
+                .flatMap(mod -> mod.getSchemaNames().stream().map(name -> Pair.of(name, mod.getName())))
+                .collect(LabKeyCollectors.toCaseInsensitiveMap(Pair::getKey, Pair::getValue)) :
+            Collections.emptyMap();
+
+        List<String> deleteList = new LinkedList<>();
+        List<Pair<String, String>> skipList = new LinkedList<>();
+
+        for (String schema : context.getSchemaList())
+        {
+            String usingModuleName = inUseSchemas.get(schema);
+            if (usingModuleName != null)
+            {
+                skipList.add(Pair.of(schema, usingModuleName));
+            }
+            else
+            {
+                deleteList.add(schema);
+            }
+        }
+
+        return Pair.of(deleteList, skipList);
     }
 
     private void startNonCoreUpgradeAndStartup(Execution execution, boolean coreRequiredUpgrade, File lockFile)

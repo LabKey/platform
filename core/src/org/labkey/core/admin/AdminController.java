@@ -9041,17 +9041,36 @@ public class AdminController extends SpringActionController
             ModuleContext ctx = form.getModuleContext();
             Module module = ModuleLoader.getInstance().getModule(ctx.getName());
             boolean hasSchemas = !ctx.getSchemaList().isEmpty();
-            boolean isSimple = SimpleModule.class.getName().equals(ctx.getClassName());
             boolean hasFiles = false;
             if (null != module)
                 hasFiles = null!=module.getExplodedPath() && module.getExplodedPath().isDirectory() || null!=module.getZippedPath() && module.getZippedPath().isFile();
 
             HtmlStringBuilder description = HtmlStringBuilder.of("\"" + ctx.getName() + "\" module");
+            HtmlStringBuilder skippedSchemas = HtmlStringBuilder.of();
             if (hasSchemas)
             {
-                List<String> schemas = ctx.getSchemaList();
-                description.append(" and delete all data in ");
-                description.append(schemas.size() > 1 ? "these schemas: " + StringUtils.join(schemas, ", ") : "the \"" + schemas.get(0) + "\" schema");
+                Pair<List<String>, List<Pair<String, String>>> schemaActions = ModuleLoader.getInstance().getSchemaDeleteActions(module, ctx);
+                List<String> deleteList = schemaActions.first;
+                List<Pair<String, String>> skipList = schemaActions.second;
+
+                // List all the schemas that will be deleted
+                if (!deleteList.isEmpty())
+                {
+                    description.append(" and delete all data in ");
+                    description.append(deleteList.size() > 1 ? "these schemas: " + StringUtils.join(deleteList, ", ") : "the \"" + deleteList.get(0) + "\" schema");
+                }
+
+                // For unknown modules, also list the schemas that won't be deleted
+                if (!skipList.isEmpty())
+                {
+                    skippedSchemas.append(HtmlString.BR);
+                    skipList.forEach(pair -> skippedSchemas.append(HtmlString.BR)
+                        .append("Note: Schema \"")
+                        .append(pair.first)
+                        .append("\" will not be deleted because it's in use by module \"")
+                        .append(pair.second)
+                        .append("\""));
+                }
             }
 
             return new HtmlView(DIV(
@@ -9063,6 +9082,7 @@ public class AdminController extends SpringActionController
                 BR(),
                 "Are you sure you want to remove the ", description, "? ",
                 "This operation cannot be undone!",
+                skippedSchemas,
                 BR(),
                 !hasFiles ? null : "Deleting modules on a running server could leave it in an unpredictable state; be sure to restart your server."
             ));
