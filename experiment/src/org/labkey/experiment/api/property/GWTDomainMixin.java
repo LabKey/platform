@@ -26,7 +26,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
  */
 @JsonIgnoreProperties({
         "_Ts",
-        // CONSIDER: Exclude mandatory and reserved names for now, but we may need it when re-implementing a domain designer
         "mandatoryFieldNames",
         "reservedFieldNames",
         "excludeFromExportFieldNames",
@@ -34,6 +33,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
         "defaultValuesURL",
         "provisioned",
         "domainException",
+        "allFields"
 })
 
 @JsonFilter("listDomainsActionFilter")
