@@ -32,8 +32,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
         "phiNotAllowedFieldNames",
         "defaultValuesURL",
         "provisioned",
-        "domainException",
-        "allFields"
+        "domainException"
 })
 
 @JsonFilter("listDomainsActionFilter")

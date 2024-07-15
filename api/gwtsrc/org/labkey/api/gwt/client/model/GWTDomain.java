@@ -16,6 +16,7 @@
 
 package org.labkey.api.gwt.client.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.gwt.user.client.rpc.IsSerializable;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.util.PropertyUtil;
@@ -257,6 +258,7 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
         this.container = container;
     }
 
+    @JsonIgnore
     public List<FieldType> getAllFields()
     {
         return fields;
