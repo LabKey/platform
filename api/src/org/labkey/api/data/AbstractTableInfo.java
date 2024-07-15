@@ -1274,20 +1274,20 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         loadFromXML(schema, xmlTables, errors, true);
     }
 
-    public void loadFromXML(QuerySchema schema, @Nullable Collection<TableType> xmlTables, Collection<QueryException> errors, boolean allowCalculatedFields)
+    public void loadFromXML(QuerySchema schema, @Nullable Collection<TableType> xmlTables, Collection<QueryException> errors, boolean allowCalculatedColumns)
     {
         checkLocked();
 
         if (xmlTables != null)
         {
             for (TableType xmlTable : xmlTables)
-                loadFromXML(schema, xmlTable, errors, allowCalculatedFields);
+                loadFromXML(schema, xmlTable, errors, allowCalculatedColumns);
         }
     }
 
-    private void loadFromXML(QuerySchema schema, @Nullable TableType xmlTable, Collection<QueryException> errors, boolean allowCalculatedFields)
+    private void loadFromXML(QuerySchema schema, @Nullable TableType xmlTable, Collection<QueryException> errors, boolean allowCalculatedColumns)
     {
-        loadAllButCustomizerFromXML(schema, xmlTable, errors, allowCalculatedFields);
+        loadAllButCustomizerFromXML(schema, xmlTable, errors, allowCalculatedColumns);
 
         // This needs to happen AFTER all of the other XML-based config has been applied, so it should always
         // be at the end of this method
@@ -1298,7 +1298,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     }
 
     /** Applies XML metadata for everything, except for invoking any Java TableInfo customizer */
-    protected void loadAllButCustomizerFromXML(QuerySchema schema, @Nullable TableType xmlTable, Collection<QueryException> errors, boolean allowCalculatedFields)
+    protected void loadAllButCustomizerFromXML(QuerySchema schema, @Nullable TableType xmlTable, Collection<QueryException> errors, boolean allowCalculatedColumns)
     {
         if (xmlTable == null)
             return;
@@ -1381,7 +1381,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
                 {
                     wrappedColumns.add(xmlColumn);
                 }
-                else if (allowCalculatedFields && xmlColumn.isSetValueExpression() && isNotBlank(xmlColumn.getValueExpression()))
+                else if (allowCalculatedColumns && xmlColumn.isSetValueExpression() && isNotBlank(xmlColumn.getValueExpression()))
                 {
                     /* SPEC decision: for now we're not doing calculated columns over query. */
                     wrappedColumns.add(xmlColumn);
