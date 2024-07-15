@@ -1506,8 +1506,6 @@ public class ExpDataIterators
     @NotNull
     private static Pair<Set<? extends ExpMaterial>, Set<? extends ExpMaterial>> clearRunItemSourceRun(User user, ExpRunItem runItem, boolean clearAncestors) throws ValidationException, ExperimentException
     {
-        // Issue 50776: To update lineage we need to delete existing runs, so we need to assure the user has DeletePermission
-        LimitedUser limitedUser = new LimitedUser(user, DeletePermission.class);
         ExpProtocolApplication existingSourceApp = runItem.getSourceApplication();
         Set<? extends ExpMaterial> previousMaterialParents = Collections.emptySet();
         Set<? extends ExpMaterial> previousMaterialChildren = Collections.emptySet();
@@ -1544,14 +1542,14 @@ public class ExpDataIterators
             runItem.setSourceApplication(null);
             try
             {
-                runItem.save(limitedUser);
+                runItem.save(user);
             }
             catch (BatchValidationException e)
             {
                 throw new ExperimentException(e);
             }
 
-            existingDerivationRun.delete(limitedUser);
+            existingDerivationRun.delete(user);
             if (clearAncestors)
                 ExperimentServiceImpl.get().clearAncestors(runItem);
         }
@@ -1563,7 +1561,7 @@ public class ExpDataIterators
             runItem.setSourceApplication(null);
             try
             {
-                runItem.save(limitedUser);
+                runItem.save(user);
             }
             catch (BatchValidationException e)
             {
@@ -1574,14 +1572,14 @@ public class ExpDataIterators
             if (runItem instanceof ExpMaterial material)
             {
                 if (outputApp != null)
-                    outputApp.removeMaterialInput(limitedUser, material);
-                existingSourceApp.removeMaterialInput(limitedUser, material);
+                    outputApp.removeMaterialInput(user, material);
+                existingSourceApp.removeMaterialInput(user, material);
             }
             else if (runItem instanceof ExpData data)
             {
                 if (outputApp != null)
-                    outputApp.removeDataInput(limitedUser, data);
-                existingSourceApp.removeDataInput(limitedUser, data);
+                    outputApp.removeDataInput(user, data);
+                existingSourceApp.removeDataInput(user, data);
             }
             ExperimentService.get().queueSyncRunEdges(existingDerivationRun);
         }
