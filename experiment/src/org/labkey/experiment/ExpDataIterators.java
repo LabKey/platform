@@ -2463,8 +2463,6 @@ public class ExpDataIterators
                 {
                     // We do not need to configure the loader for renamed columns as that has been taken care of when writing the file.
                     configureLoader(loader, typeData.tableInfo, null, true);
-                    if (_context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.EscapedMultiLineText))
-                        loader.setHasEscapedMultiLineText(true);
                     updateService.loadRows(_user, typeData.container, loader, _context, null);
                 }
                 catch (SQLException | IOException e)
@@ -2918,8 +2916,14 @@ public class ExpDataIterators
                 {
                     if (s.contains("\""))
                     {
-                        s = s.replaceAll("\"", "&quot;");
-                        _context.putConfigParameter(QueryUpdateService.ConfigParameters.EscapedMultiLineText, true);
+                        /*
+                         * https://datatracker.ietf.org/doc/html/rfc4180
+                         * If double-quotes are used to enclose fields, then a double-quote
+                         *        appearing inside a field must be escaped by preceding it with
+                         *        another double quote.  For example:
+                         *        "aaa","b""bb","ccc"
+                         */
+                        s = s.replaceAll("\"", "\"\"");
                     }
                     s = "\"" + s + "\"";
                 }

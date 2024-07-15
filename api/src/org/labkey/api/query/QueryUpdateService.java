@@ -112,8 +112,7 @@ public interface QueryUpdateService extends HasPermission
         SkipInsertOptionValidation,  // (Bool) Skip assert(supportsInsertOption(context.getInsertOption())) for special scenarios (e.g., folder import uses merge action that's otherwise not supported for a table),
         PreferPKOverObjectUriAsKey,    // (Bool) Prefer getPkColumnNames instead of getObjectURIColumnName to use as keys
         SkipReselectRows, // (Bool) If true, skip qus.getRows and use raw returned rows. Applicable for CommandType.insert/insertWithKeys/update/updateChangingKeys
-        TargetContainer,
-        EscapedMultiLineText // (Bool) If true, "\"" has previously been substituted with "&quot;" as part of cross folder/type import file partition
+        TargetContainer
     }
 
 
