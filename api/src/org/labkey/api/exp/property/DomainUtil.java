@@ -794,7 +794,7 @@ public class DomainUtil
         }
 
         //replace update's locked fields with the orig for the same propertyId regardless of what we get from client
-        replaceLockedFields(getLockedFields(orig.getFields()), (List<GWTPropertyDescriptor>) update.getFields());
+        replaceLockedFields(getLockedFields(orig.getFields()), (List<GWTPropertyDescriptor>) update.getAllFields());
 
         int deletedCount = 0;
         for (int id : s)
@@ -961,7 +961,7 @@ public class DomainUtil
         {
             GWTPropertyDescriptor pd = updateFieldsIterator.next();
             int propertyId = pd.getPropertyId();
-            if (origLockedFieldMap.containsKey(propertyId))
+            if (pd.getValueExpression() == null && origLockedFieldMap.containsKey(propertyId))
             {
                 updateFieldsIterator.set(origLockedFieldMap.get(propertyId));
             }
