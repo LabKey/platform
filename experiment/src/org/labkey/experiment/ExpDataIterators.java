@@ -2463,6 +2463,8 @@ public class ExpDataIterators
                 {
                     // We do not need to configure the loader for renamed columns as that has been taken care of when writing the file.
                     configureLoader(loader, typeData.tableInfo, null, true);
+                    if (_context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.EscapedMultiLineText))
+                        loader.setHasEscapedMultiLineText(true);
                     updateService.loadRows(_user, typeData.container, loader, _context, null);
                 }
                 catch (SQLException | IOException e)
@@ -2909,6 +2911,20 @@ public class ExpDataIterators
         {
             if (data instanceof Date d && !(data instanceof Time))
                 return DateUtil.formatIsoDateLongTime(d, true);
+            if (data instanceof String s && (s.contains("\n") || s.contains("\t")))
+            {
+                s = s.trim();
+                if (!s.startsWith("\"") || !s.endsWith("\""))
+                {
+                    if (s.contains("\""))
+                    {
+                        s = s.replaceAll("\"", "&quot;");
+                        _context.putConfigParameter(QueryUpdateService.ConfigParameters.EscapedMultiLineText, true);
+                    }
+                    s = "\"" + s + "\"";
+                }
+                return s;
+            }
             return data;
         }
 

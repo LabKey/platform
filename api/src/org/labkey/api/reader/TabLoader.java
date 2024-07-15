@@ -72,6 +72,10 @@ public class TabLoader extends DataLoader
 
     private static final Logger _log = LogManager.getLogger(TabLoader.class);
 
+    private static final String ESCAPED_QUOTE = "&quot;";
+
+    private boolean hasEscapedMultiLineText;
+
     public static class TsvFactory extends AbstractDataLoaderFactory
     {
         @NotNull @Override
@@ -89,6 +93,17 @@ public class TabLoader extends DataLoader
 
         @NotNull @Override
         public FileType getFileType() { return TSV_FILE_TYPE; }
+    }
+
+    @Override
+    public void setHasEscapedMultiLineText(boolean hasEscapedMultiLineText)
+    {
+        this.hasEscapedMultiLineText = hasEscapedMultiLineText;
+    }
+
+    public boolean isHasEscapedMultiLineText()
+    {
+        return hasEscapedMultiLineText;
     }
 
     public static class CsvFactory extends AbstractDataLoaderFactory
@@ -488,7 +503,11 @@ public class TabLoader extends DataLoader
 
             // Add the field value only if we're inferring columns or column.load == true
             if (loadThisColumn)
+            {
+                if (_unescapeBackslashes && field != null && field.contains(ESCAPED_QUOTE))
+                    field = field.replaceAll(ESCAPED_QUOTE, "\"");
                 listParse.add(field);
+            }
 
             // there should be a delimiter or an EOL here
             if (end < buf.length() && buf.charAt(end) != _chDelimiter)

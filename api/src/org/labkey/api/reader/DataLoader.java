@@ -449,6 +449,10 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         return "column" + col;
     }
 
+    public void setHasEscapedMultiLineText(boolean hasEscapedMultiLineText)
+    {
+    }
+
     /**
      * Set the number of lines to look ahead in the file when inferring the data types of the columns.
      */
