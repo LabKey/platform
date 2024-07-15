@@ -108,6 +108,7 @@ import org.labkey.study.query.VisitTable;
 import org.labkey.study.reports.ReportManager;
 
 import java.lang.reflect.InvocationTargetException;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -1192,5 +1193,11 @@ public class StudyServiceImpl implements StudyService, ContainerSecurableResourc
     public ReportUtil.ReportFilter getStudyReportFilter(boolean editOnly)
     {
         return new ReportManager.StudyReportFilter(editOnly);
+    }
+
+    @Override
+    public Map<String, BigDecimal> getVisitImportMap(Study study, boolean includeStandardMapping)
+    {
+        return StudyManager.getInstance().getVisitImportMap(study, includeStandardMapping);
     }
 }

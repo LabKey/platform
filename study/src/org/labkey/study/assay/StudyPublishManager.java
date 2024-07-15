@@ -1734,6 +1734,11 @@ public class StudyPublishManager implements StudyPublishService
                     {
                         fieldKeyMap.put(LinkToStudyKeys.ParticipantId, ci.getFieldKey());
                     }
+
+                    if (col.getName().equalsIgnoreCase("VisitLabel"))
+                    {
+                        fieldKeyMap.put(LinkToStudyKeys.VisitLabel, ci.getFieldKey());
+                    }
                 }
             }
         }
