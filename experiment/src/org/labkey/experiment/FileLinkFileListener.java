@@ -183,19 +183,26 @@ public class FileLinkFileListener implements FileListener
             // Find the DbSchema/TableInfo/ColumnInfo for the FileLink column
             String storageSchemaName = row.get("StorageSchemaName").toString();
             String storageTableName = row.get("StorageTableName").toString();
-            DbSchema schema = DbSchema.get(storageSchemaName, DbSchemaType.Provisioned);
-            TableInfo tableInfo = schema.getTable(storageTableName);
-            if (tableInfo != null)
+            try
             {
-                String containerId = row.get("Container").toString();
-                ColumnInfo pathCol = tableInfo.getColumn(row.get("Name").toString());
-                if (pathCol != null && containerId != null)
+                DbSchema schema = DbSchema.get(storageSchemaName, DbSchemaType.Provisioned);
+                TableInfo tableInfo = schema.getTable(storageTableName);
+                if (tableInfo != null)
                 {
-                    block.exec(schema, tableInfo, pathCol, containerId);
+                    String containerId = row.get("Container").toString();
+                    ColumnInfo pathCol = tableInfo.getColumn(row.get("Name").toString());
+                    if (pathCol != null && containerId != null)
+                    {
+                        block.exec(schema, tableInfo, pathCol, containerId);
+                    }
                 }
-                // Issue 50781: LKSM: File fields in Sample Types sometimes showing as Text Fields
-                schema.getScope().invalidateTable(storageSchemaName, storageTableName, DbSchemaType.Provisioned);
             }
+            finally
+            {
+                // Issue 50781: LKSM: File fields in Sample Types sometimes showing as Text Fields
+                OntologyManager.getExpSchema().getScope().invalidateTable(storageSchemaName, storageTableName, DbSchemaType.Provisioned);
+            }
+
         });
     }
 
