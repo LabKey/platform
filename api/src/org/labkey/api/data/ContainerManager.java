@@ -82,6 +82,7 @@ import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.MinorConfigurationException;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.ReentrantLockWithName;
@@ -260,8 +261,6 @@ public class ContainerManager
     @NotNull
     public static Container createContainer(Container parent, String name, @Nullable String title, @Nullable String description, String type, @NotNull User user, @Nullable String auditMsg)
     {
-        Map<String, Object> properties = new HashMap<>();
-        properties.put("type", type);
         return createContainer(parent, name, title, description, type, user, auditMsg, null);
     }
 
@@ -1218,8 +1217,15 @@ public class ContainerManager
         {
             return getForPath("/");
         }
+        catch (MinorConfigurationException e)
+        {
+            // If the server is misconfigured, rethrow so some callers don't swallow it and other callers don't end up
+            // reporting it to mothership, Issue 50843.
+            throw e;
+        }
         catch (Exception e)
         {
+            // Some callers catch and ignore this exception, e.g., early in the bootstrap process
             throw new RootContainerException("Root container can't be retrieved", e);
         }
     }
