@@ -140,6 +140,8 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.ModuleLoader.SchemaActions;
+import org.labkey.api.module.ModuleLoader.SchemaAndModule;
 import org.labkey.api.module.SimpleModule;
 import org.labkey.api.moduleeditor.api.ModuleEditorService;
 import org.labkey.api.pipeline.DirectoryNotDeletedException;
@@ -9041,17 +9043,36 @@ public class AdminController extends SpringActionController
             ModuleContext ctx = form.getModuleContext();
             Module module = ModuleLoader.getInstance().getModule(ctx.getName());
             boolean hasSchemas = !ctx.getSchemaList().isEmpty();
-            boolean isSimple = SimpleModule.class.getName().equals(ctx.getClassName());
             boolean hasFiles = false;
             if (null != module)
                 hasFiles = null!=module.getExplodedPath() && module.getExplodedPath().isDirectory() || null!=module.getZippedPath() && module.getZippedPath().isFile();
 
             HtmlStringBuilder description = HtmlStringBuilder.of("\"" + ctx.getName() + "\" module");
+            HtmlStringBuilder skippedSchemas = HtmlStringBuilder.of();
             if (hasSchemas)
             {
-                List<String> schemas = ctx.getSchemaList();
-                description.append(" and delete all data in ");
-                description.append(schemas.size() > 1 ? "these schemas: " + StringUtils.join(schemas, ", ") : "the \"" + schemas.get(0) + "\" schema");
+                SchemaActions schemaActions = ModuleLoader.getInstance().getSchemaActions(module, ctx);
+                List<String> deleteList = schemaActions.deleteList();
+                List<SchemaAndModule> skipList = schemaActions.skipList();
+
+                // List all the schemas that will be deleted
+                if (!deleteList.isEmpty())
+                {
+                    description.append(" and delete all data in ");
+                    description.append(deleteList.size() > 1 ? "these schemas: " + StringUtils.join(deleteList, ", ") : "the \"" + deleteList.get(0) + "\" schema");
+                }
+
+                // For unknown modules, also list the schemas that won't be deleted
+                if (!skipList.isEmpty())
+                {
+                    skippedSchemas.append(HtmlString.BR);
+                    skipList.forEach(sam -> skippedSchemas.append(HtmlString.BR)
+                        .append("Note: Schema \"")
+                        .append(sam.schema())
+                        .append("\" will not be deleted because it's in use by module \"")
+                        .append(sam.module())
+                        .append("\""));
+                }
             }
 
             return new HtmlView(DIV(
@@ -9063,6 +9084,7 @@ public class AdminController extends SpringActionController
                 BR(),
                 "Are you sure you want to remove the ", description, "? ",
                 "This operation cannot be undone!",
+                skippedSchemas,
                 BR(),
                 !hasFiles ? null : "Deleting modules on a running server could leave it in an unpredictable state; be sure to restart your server."
             ));
