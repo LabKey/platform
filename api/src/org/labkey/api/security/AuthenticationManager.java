@@ -25,7 +25,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.action.ApiResponseWriter;
 import org.labkey.api.action.LabKeyError;
 import org.labkey.api.action.LabKeyErrorWithHtml;
 import org.labkey.api.action.LabKeyErrorWithLink;
@@ -61,7 +60,6 @@ import org.labkey.api.security.AuthenticationConfiguration.SecondaryAuthenticati
 import org.labkey.api.security.AuthenticationProvider.AuthenticationResponse;
 import org.labkey.api.security.AuthenticationProvider.DisableLoginProvider;
 import org.labkey.api.security.AuthenticationProvider.ExpireAccountProvider;
-import org.labkey.api.security.AuthenticationProvider.FailureReason;
 import org.labkey.api.security.AuthenticationProvider.LoginFormAuthenticationProvider;
 import org.labkey.api.security.AuthenticationProvider.PrimaryAuthenticationProvider;
 import org.labkey.api.security.AuthenticationProvider.ResetPasswordProvider;
@@ -97,7 +95,6 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
-import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -662,7 +659,7 @@ public class AuthenticationManager
         Success
         {
             @Override
-            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnURL, DisplayLocation location)
+            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnURL)
             {
                 throw new IllegalStateException("Shouldn't be adding an error message in success case");
             }
@@ -670,13 +667,12 @@ public class AuthenticationManager
         BadCredentials
         {
             @Override
-            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnURL, DisplayLocation location)
+            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnURL)
             {
-                String errorMessage = "The email address and password you entered did not match any accounts on file." + (DisplayLocation.WebUI == location ? "\nNote: Passwords are case sensitive; make sure your Caps Lock is off." : "");
-                errors.addError(new LabKeyError(errorMessage));
+                errors.addError(new LabKeyError("The email address and password you entered did not match any accounts on file.\nNote: Passwords are case sensitive; make sure your Caps Lock is off."));
 
                 // Provide additional guidance on failed login, pointing user toward the SSO configuration(s) claiming their email domain
-                if (null != fullEmailAddress && null != returnURL && DisplayLocation.WebUI == location)
+                if (null != fullEmailAddress && null != returnURL)
                 {
                     String domain = fullEmailAddress.split("@")[1]; // Callers must ensure that fullEmailAddress includes @
                     Collection<SSOAuthenticationConfiguration> ssoConfigs = AuthenticationConfigurationCache.getActiveConfigurationsForDomain(domain).stream()
@@ -706,7 +702,7 @@ public class AuthenticationManager
         InactiveUser
         {
             @Override
-            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnURL, DisplayLocation location)
+            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnURL)
             {
                 errors.addError(new ContactAnAdministratorError("Your account has been deactivated.", "to request reactivation of this account."));
             }
@@ -714,7 +710,7 @@ public class AuthenticationManager
         LoginDisabled
         {
             @Override
-            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnURL, DisplayLocation location)
+            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnURL)
             {
                 String errorMessage = result.getMessage() == null ? "Due to the number of recent failed login attempts, authentication has been temporarily paused.\nTry again in one minute." : result.getMessage();
                 errors.reject(ERROR_MSG, errorMessage);
@@ -723,7 +719,7 @@ public class AuthenticationManager
         LoginPaused
         {
             @Override
-            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnURL, DisplayLocation location)
+            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnURL)
             {
                 errors.reject(ERROR_MSG, "Due to the number of recent failed login attempts, authentication has been temporarily paused.\nTry again in one minute.");
             }
@@ -731,7 +727,7 @@ public class AuthenticationManager
         UserCreationError
         {
             @Override
-            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnURL, DisplayLocation location)
+            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnURL)
             {
                 errors.addError(new ContactAnAdministratorError("The server could not create your account.", "for assistance."));
             }
@@ -739,7 +735,7 @@ public class AuthenticationManager
         UserCreationNotAllowed
         {
             @Override
-            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnURL, DisplayLocation location)
+            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnURL)
             {
                 errors.addError(new ContactAnAdministratorError("This server is not configured to create new accounts automatically.", "to request a new account."));
             }
@@ -747,52 +743,29 @@ public class AuthenticationManager
         PasswordExpired
         {
             @Override
-            public boolean handleRedirect()
+            public boolean requiresRedirect()
             {
                 return true;
-            }
-
-            @Override
-            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnURL, DisplayLocation location)
-            {
-                errors.reject(ERROR_MSG, "Your password has expired; please choose a new password.");
             }
         },
         Complexity
         {
             @Override
-            public boolean handleRedirect()
+            public boolean requiresRedirect()
             {
                 return true;
             }
-
-            @Override
-            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnURL, DisplayLocation location)
-            {
-                errors.reject(ERROR_MSG, "Your password has expired; please choose a new password.");
-            }
         };
 
-        // Add an appropriate error message to display to the user in the web UI
-        public final void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnURL)
-        {
-            addUserErrorMessage(errors, result, fullEmailAddress, returnURL, DisplayLocation.WebUI);
-        }
-
-        // Add an appropriate error message to show the user in the specified DisplayLocation
-        public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnURL, DisplayLocation location)
+        // Add an appropriate error message to display to the user
+        public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnURL)
         {
         }
 
-        public boolean handleRedirect()
+        public boolean requiresRedirect()
         {
             return false;
         }
-    }
-
-    public enum DisplayLocation
-    {
-        WebUI, API
     }
 
     private static final class ContactAnAdministratorError extends LabKeyErrorWithLink
@@ -848,7 +821,7 @@ public class AuthenticationManager
         }
 
         // Failure case with redirect (e.g., reset password page)
-        private PrimaryAuthenticationResult(@Nullable URLHelper redirectURL, AuthenticationStatus status)
+        private PrimaryAuthenticationResult(@NotNull URLHelper redirectURL, AuthenticationStatus status)
         {
             _user = null;
             _response = null;
@@ -880,16 +853,9 @@ public class AuthenticationManager
             return _redirectURL;
         }
 
-        public @Nullable String getMessage()
+        public String getMessage()
         {
             return _message;
-        }
-
-        public @Nullable String getStatusErrorMessage(DisplayLocation location)
-        {
-            BindException errors = new BindException(new Object(), "dummy");
-            getStatus().addUserErrorMessage(errors, this, null, null, location);
-            return errors.hasErrors() ? errors.getAllErrors().get(0).getDefaultMessage() : null;
         }
     }
 
@@ -960,7 +926,7 @@ public class AuthenticationManager
                 }
                 else
                 {
-                    FailureReason reason = authResponse.getFailureReason();
+                    AuthenticationProvider.FailureReason reason = authResponse.getFailureReason();
 
                     switch (reason.getReportType())
                     {
@@ -1032,20 +998,22 @@ public class AuthenticationManager
                 // For now, redirectURL is only checked in the failure case, see #19778 for some history on redirect handling
                 ActionURL redirectURL = firstFailure.getRedirectURL();
 
-                // if labkey db authentication determines password has expired or does not meet requirements then return
-                // result with appropriate status. Note that redirectUrl might be null (e.g., API case).
-                FailureReason firstFailureReason = firstFailure.getFailureReason();
-                if (firstFailureReason == expired)
+                if (null != redirectURL)
                 {
-                    return new PrimaryAuthenticationResult(redirectURL, AuthenticationStatus.PasswordExpired);
-                }
-                else if (firstFailureReason == complexity)
-                {
-                    return new PrimaryAuthenticationResult(redirectURL, AuthenticationStatus.Complexity);
-                }
-                else if (null != redirectURL)
-                {
-                    throw new RedirectException(redirectURL);
+                    // if labkey db authenticate determines password has expired or that password does not meet complexity requirements then return url to redirect user
+                    firstFailure.getFailureReason();
+                    if (firstFailure.getFailureReason() == expired)
+                    {
+                        return new PrimaryAuthenticationResult(redirectURL, AuthenticationStatus.PasswordExpired);
+                    }
+                    else if (firstFailure.getFailureReason() == complexity)
+                    {
+                        return new PrimaryAuthenticationResult(redirectURL, AuthenticationStatus.Complexity);
+                    }
+                    else
+                    {
+                        throw new RedirectException(redirectURL);
+                    }
                 }
             }
         }
@@ -1223,11 +1191,10 @@ public class AuthenticationManager
 
     // Attempts to authenticate using only LoginFormAuthenticationProviders (e.g., DbLogin, LDAP). This is for the case
     // where you have an id & password in hand and want to ignore SSO and other delegated authentication mechanisms that
-    // rely on cookies, browser redirects, etc. Current usages include basic auth and a test case. Note that this will
-    // fail if any secondary authentication is enabled (e.g., Duo) unless an API key is passed.
+    // rely on cookies, browser redirects, etc. Current usages include basic auth, API keys, and test cases. Note that
+    // this will always fail if any secondary authentication is enabled (e.g., Duo).
 
-    // Throws UnauthorizedException if credentials are incorrect, user doesn't exist, user is inactive, or secondary
-    // auth is enabled and an API key hasn't been used.
+    // Returns null if credentials are incorrect, user doesn't exist, user is inactive, or secondary auth is enabled.
     public static @Nullable User authenticate(HttpServletRequest request, String id, String password) throws InvalidEmailException
     {
         PrimaryAuthenticationResult primaryResult = authenticate(request, id, password, null, true);
@@ -1240,12 +1207,7 @@ public class AuthenticationManager
             return handleAuthentication(request, ContainerManager.getRoot()).getUser();
         }
 
-        // Basic auth has failed so send failure response in a format that APIs can consume
-        // TODO: Shouldn't our client APIs set the "respFormat" attribute? Java library doesn't...
-        if (ApiResponseWriter.getResponseFormat(request, null) == null)
-            ApiResponseWriter.setResponseFormat(request, ApiResponseWriter.Format.JSON);
-        String message = primaryResult.getMessage();
-        throw new UnauthorizedException(message != null ? message : primaryResult.getStatusErrorMessage(DisplayLocation.API));
+        return null;
     }
 
 
