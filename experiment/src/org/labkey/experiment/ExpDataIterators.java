@@ -2757,9 +2757,6 @@ public class ExpDataIterators
                 }
             });
 
-            if (keys.isEmpty())
-                return keys;
-
             boolean hasCycle = false;
             while (keys.size() != allKeys.size() && !hasCycle)
             {
