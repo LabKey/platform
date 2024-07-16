@@ -1224,7 +1224,7 @@ public class AuthenticationManager
     // Attempts to authenticate using only LoginFormAuthenticationProviders (e.g., DbLogin, LDAP). This is for the case
     // where you have an id & password in hand and want to ignore SSO and other delegated authentication mechanisms that
     // rely on cookies, browser redirects, etc. Current usages include basic auth and a test case. Note that this will
-    // fail if any secondary authentication is enabled (e.g., Duo) unless an API key is passed.
+    // fail if any secondary authentication is enabled (e.g., TOTP, Duo) unless an API key is passed.
 
     // Throws UnauthorizedException if credentials are incorrect, user doesn't exist, user is inactive, or secondary
     // auth is enabled and an API key hasn't been used.

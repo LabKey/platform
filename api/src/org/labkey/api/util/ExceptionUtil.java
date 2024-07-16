@@ -816,7 +816,7 @@ public class ExceptionUtil
             // useful for when the page wants to handle 401s itself
             String headerHint = request.getHeader("X-ONUNAUTHORIZED");
 
-            boolean isGuest = user != null && user.isGuest();
+            boolean isGuest = user == null || user.isGuest();
             UnauthorizedException.Type type = uae.getType();
             boolean overrideBasicAuth = "UNAUTHORIZED".equals(headerHint);
             boolean isCSRFViolation = uae instanceof CSRFException;
