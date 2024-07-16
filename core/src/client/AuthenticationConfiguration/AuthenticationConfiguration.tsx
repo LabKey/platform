@@ -317,7 +317,7 @@ export class App extends PureComponent<{}, Partial<State>> {
                     actions={this.actions}
                 />
 
-                {dirty && <Alert>{UNSAVED_ALERT}</Alert>}
+                {dirty && <Alert bsStyle="info">{UNSAVED_ALERT}</Alert>}
                 {error && <Alert bsStyle="danger">{error}</Alert>}
 
                 {canEdit ? (
