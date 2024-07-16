@@ -240,7 +240,8 @@ public class LineageTableInfo extends VirtualTable
         ExpProtocol protocol = ExperimentService.get().getExpProtocol(cpasType);
         if (protocol != null)
         {
-            AssayProvider provider = AssayService.get().getProvider(protocol);
+            AssayService service = AssayService.get();
+            AssayProvider provider = service == null ? null : service.getProvider(protocol);
             return new LookupForeignKey("lsid", "Name")
             {
                 TableInfo _table;

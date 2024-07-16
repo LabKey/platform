@@ -1546,6 +1546,7 @@ public class ExpDataIterators
             {
                 throw new ExperimentException(e);
             }
+
             existingDerivationRun.delete(user);
             if (clearAncestors)
                 ExperimentServiceImpl.get().clearAncestors(runItem);
