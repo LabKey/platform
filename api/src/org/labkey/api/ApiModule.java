@@ -152,6 +152,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DomTestCase;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.ExtUtil;
+import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
