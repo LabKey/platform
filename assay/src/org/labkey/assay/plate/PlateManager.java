@@ -3551,6 +3551,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         if (options.isPreview())
             return new ReformatResult(plateData, null, null, null);
 
+        if (plateData.isEmpty())
+            throw new ValidationException("This operation as configured does not create any plates.");
+
         Integer plateSetRowId;
         String plateSetName;
         List<Plate> newPlates;
@@ -3705,7 +3708,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 }
             }
 
-            plates.add(new PlateData(null, plateType.getRowId(), null, targetWellData));
+            if (!targetWellData.isEmpty())
+                plates.add(new PlateData(null, plateType.getRowId(), null, targetWellData));
         }
 
         return plates;
