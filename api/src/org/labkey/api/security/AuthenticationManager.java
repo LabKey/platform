@@ -26,6 +26,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.ApiResponseWriter;
+import org.labkey.api.action.ApiResponseWriter.Format;
 import org.labkey.api.action.LabKeyError;
 import org.labkey.api.action.LabKeyErrorWithHtml;
 import org.labkey.api.action.LabKeyErrorWithLink;
@@ -1241,9 +1242,13 @@ public class AuthenticationManager
         }
 
         // Basic auth has failed so send failure response in a format that APIs can consume
-        // TODO: Shouldn't our client APIs set the "respFormat" attribute? Java library doesn't...
+        // TODO: Shouldn't our client APIs set a default "respFormat" attribute? Java library doesn't...
         if (ApiResponseWriter.getResponseFormat(request, null) == null)
-            ApiResponseWriter.setResponseFormat(request, ApiResponseWriter.Format.JSON);
+        {
+            String respFormat = request.getParameter("respFormat");
+            Format format = StringUtils.contains(respFormat, "xml") ? Format.XML : Format.JSON;
+            ApiResponseWriter.setResponseFormat(request, format);
+        }
         String message = primaryResult.getMessage();
         throw new UnauthorizedException(message != null ? message : primaryResult.getStatusErrorMessage(DisplayLocation.API));
     }
