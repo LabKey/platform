@@ -62,7 +62,7 @@ public class QuadrantOperation implements LayoutOperation
     }
 
     @Override
-    public void init(ReformatOptions options, List<Plate> sourcePlates, PlateType targetPlateType, List<? extends PlateType> allPlateTypes) throws ValidationException
+    public void init(ReformatOptions options, @NotNull List<Plate> sourcePlates, PlateType targetPlateType, List<? extends PlateType> allPlateTypes) throws ValidationException
     {
         _sourcePlateType = getSourcePlateType(sourcePlates);
         _targetPlateType = getTargetPlateType(_sourcePlateType, allPlateTypes);

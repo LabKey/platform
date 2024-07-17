@@ -12,7 +12,7 @@ public interface LayoutOperation
 {
     List<WellLayout> execute(ReformatOptions options, @NotNull List<Plate> sourcePlates, PlateType targetPlateType);
 
-    default void init(ReformatOptions options, List<Plate> sourcePlates, PlateType targetPlateType, List<? extends PlateType> allPlateTypes) throws ValidationException
+    default void init(ReformatOptions options, @NotNull List<Plate> sourcePlates, PlateType targetPlateType, List<? extends PlateType> allPlateTypes) throws ValidationException
     {
     }
 
@@ -24,9 +24,5 @@ public interface LayoutOperation
     default boolean requiresTargetPlateType()
     {
         return false;
-    }
-
-    default void validate(ReformatOptions options, @NotNull List<Plate> sourcePlates, PlateType targetPlateType) throws ValidationException
-    {
     }
 }

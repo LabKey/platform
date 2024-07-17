@@ -34,8 +34,6 @@ public class LayoutEngine
         if (_operation.requiresTargetPlateType() && _targetPlateType == null)
             throw new ValidationException("A target plate type is required for this operation.");
 
-        _operation.validate(_options, _sourcePlates, _targetPlateType);
-
         return _operation.execute(_options, _sourcePlates, _targetPlateType);
     }
 
