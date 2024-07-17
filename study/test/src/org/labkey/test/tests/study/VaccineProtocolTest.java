@@ -29,7 +29,7 @@ import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.params.FieldDefinition.ColumnType;
 import org.labkey.test.params.list.IntListDefinition;
 import org.labkey.test.util.DataRegionTable;
-import org.labkey.test.util.ExperimentalFeaturesHelper;
+import org.labkey.test.util.OptionalFeatureHelper;
 import org.labkey.test.util.PortalHelper;
 
 import java.io.File;
@@ -51,7 +51,7 @@ public class VaccineProtocolTest extends BaseWebDriverTest
     @Test
     public void testSteps() throws Exception
     {
-        ExperimentalFeaturesHelper.enableExperimentalFeature(createDefaultConnection(), "GWTStudyDesign");
+        OptionalFeatureHelper.enableOptionalFeature(createDefaultConnection(), "GWTStudyDesign");
 
         _containerHelper.createProject(PROJECT_NAME, null);
         _containerHelper.createSubfolder(PROJECT_NAME, PROJECT_NAME, FOLDER_NAME, "None", null);
@@ -387,7 +387,7 @@ public class VaccineProtocolTest extends BaseWebDriverTest
     @Override
     protected void doCleanup(boolean afterTest) throws TestTimeoutException
     {
-        ExperimentalFeaturesHelper.disableExperimentalFeature(createDefaultConnection(), "GWTStudyDesign");
+        OptionalFeatureHelper.disableOptionalFeature(createDefaultConnection(), "GWTStudyDesign");
         _containerHelper.deleteProject(getProjectName(), afterTest);
     }
 
