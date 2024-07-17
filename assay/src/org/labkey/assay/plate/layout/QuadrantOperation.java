@@ -12,6 +12,7 @@ import java.util.List;
 public class QuadrantOperation implements LayoutOperation
 {
     private PlateType _sourcePlateType;
+    private PlateType _targetPlateType;
 
     @Override
     public List<WellLayout> execute(ReformatOptions options, @NotNull List<Plate> sourcePlates, PlateType targetPlateType)
@@ -22,7 +23,7 @@ public class QuadrantOperation implements LayoutOperation
         for (int i = 0; i < sourcePlates.size(); i++)
         {
             if (target == null)
-                target = new WellLayout(targetPlateType);
+                target = new WellLayout(_targetPlateType);
 
             Plate sourcePlate = sourcePlates.get(i);
             Integer plateRowId = sourcePlate.getRowId();
@@ -61,26 +62,40 @@ public class QuadrantOperation implements LayoutOperation
     }
 
     @Override
-    public boolean requiresTargetPlateType()
+    public void init(ReformatOptions options, List<Plate> sourcePlates, PlateType targetPlateType, List<? extends PlateType> allPlateTypes) throws ValidationException
     {
-        return true;
+        _sourcePlateType = getSourcePlateType(sourcePlates);
+        _targetPlateType = getTargetPlateType(_sourcePlateType, allPlateTypes);
     }
 
-    @Override
-    public void validate(ReformatOptions options, @NotNull List<Plate> sourcePlates, PlateType targetPlateType) throws ValidationException
+    private @NotNull PlateType getSourcePlateType(@NotNull List<Plate> sourcePlates) throws ValidationException
     {
+        PlateType sourcePlateType = null;
+
         for (Plate plate : sourcePlates)
         {
-            if (_sourcePlateType == null)
-                _sourcePlateType = plate.getPlateType();
-            else if (!_sourcePlateType.equals(plate.getPlateType()))
+            if (sourcePlateType == null)
+                sourcePlateType = plate.getPlateType();
+            else if (!sourcePlateType.equals(plate.getPlateType()))
                 throw new ValidationException("Source plate type mismatch. All source plates must be of the same type.");
         }
 
-        if (_sourcePlateType == null)
+        if (sourcePlateType == null)
             throw new ValidationException("Source plate type missing. Unable to determine source plate type.");
 
-        if (_sourcePlateType.getWellCount() * 4 != targetPlateType.getWellCount())
-            throw new ValidationException("Quadrant operation only supports target plates types with exactly 4x the number of wells.");
+        return sourcePlateType;
+    }
+
+    private @NotNull PlateType getTargetPlateType(@NotNull PlateType sourcePlateType, List<? extends PlateType> allPlateTypes) throws ValidationException
+    {
+        int targetWellCount = sourcePlateType.getWellCount() * 4;
+
+        for (PlateType plateType : allPlateTypes)
+        {
+            if (!plateType.isArchived() && plateType.getWellCount() == targetWellCount)
+                return plateType;
+        }
+
+        throw new ValidationException(String.format("Cannot perform quadrant operation on %s plates.", sourcePlateType.getDescription()));
     }
 }

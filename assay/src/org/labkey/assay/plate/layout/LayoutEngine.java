@@ -13,19 +13,23 @@ public class LayoutEngine
     private final ReformatOptions _options;
     private final List<Plate> _sourcePlates;
     private final PlateType _targetPlateType;
+    private final List<? extends PlateType> _allPlateTypes;
 
-    public LayoutEngine(ReformatOptions options, List<Plate> sourcePlates, PlateType targetPlateType)
+    public LayoutEngine(ReformatOptions options, List<Plate> sourcePlates, PlateType targetPlateType, List<? extends PlateType> allPlateTypes)
     {
         _operation = layoutOperationFactory(options);
         _options = options;
         _sourcePlates = sourcePlates;
         _targetPlateType = targetPlateType;
+        _allPlateTypes = allPlateTypes;
     }
 
     public List<WellLayout> run() throws ValidationException
     {
         if (_sourcePlates.isEmpty())
             throw new ValidationException("Invalid configuration. Source plates are required to run the layout engine.");
+
+        _operation.init(_options, _sourcePlates, _targetPlateType, _allPlateTypes);
 
         if (_operation.requiresTargetPlateType() && _targetPlateType == null)
             throw new ValidationException("A target plate type is required for this operation.");

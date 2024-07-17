@@ -2371,6 +2371,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return PLATE_NAME_EXPRESSION;
     }
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public record PlateData(String name, Integer plateType, Integer templateId, List<Map<String, Object>> data) {}
 
     private List<Plate> addPlatesToPlateSet(
@@ -3502,7 +3503,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public record ReformatResult(List<PlateData> previewData, Integer plateSetRowId, String plateSetName, List<Integer> plateRowIds) {}
+    public record ReformatResult(List<PlateData> previewData, Integer plateCount, Integer plateSetRowId, String plateSetName, List<Integer> plateRowIds) {}
 
     /**
      * Reformat a set of source plates to new plates via a reformat operation (e.g. quadrant, stamp, etc.).
@@ -3533,7 +3534,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         if (options.getTargetPlateTypeId() != null)
             targetPlateType = requirePlateType(options.getTargetPlateTypeId(), null);
 
-        LayoutEngine engine = new LayoutEngine(options, sourcePlates, targetPlateType);
+        LayoutEngine engine = new LayoutEngine(options, sourcePlates, targetPlateType, getPlateTypes());
 
         List<WellLayout> wellLayouts = engine.run();
         int availablePlateCount = destinationPlateSet.availablePlateCount();
@@ -3550,7 +3551,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         List<PlateData> plateData = hydratePlateDataFromWellLayout(container, user, wellLayouts, engine.getOperation());
 
         if (options.isPreview())
-            return new ReformatResult(plateData, null, null, null);
+            return new ReformatResult(options.isPreviewData() ? plateData : null, plateData.size(), null, null, null);
 
         if (plateData.isEmpty())
             throw new ValidationException("This operation as configured does not create any plates.");
@@ -3574,7 +3575,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         }
 
         List<Integer> plateRowIds = newPlates.stream().map(Plate::getRowId).toList();
-        return new ReformatResult(null, plateSetRowId, plateSetName, plateRowIds);
+        return new ReformatResult(null, plateRowIds.size(), plateSetRowId, plateSetName, plateRowIds);
     }
 
     private @NotNull List<Integer> getReformatPlateRowIds(ReformatOptions options) throws ValidationException
