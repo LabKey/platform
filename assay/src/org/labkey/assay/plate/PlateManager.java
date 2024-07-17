@@ -3501,17 +3501,18 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public record ReformatResult(List<PlateData> previewData, Integer plateSetRowId, List<Integer> plateRowIds) {}
+    public record ReformatResult(List<PlateData> previewData, Integer plateSetRowId, String plateSetName, List<Integer> plateRowIds) {}
 
     /**
      * Reformat a set of source plates to new plates via a reformat operation (e.g. quadrant, stamp, etc.).
      * @return The return ReformatResult will contain different data when previewing versus saving (not previewing).
      * - preview:
      *      The previewData contains the preview data.
-     *      Both plateSetRowId and plateRowIds will be null.
+     *      Both plateSetRowId, plateSetName and plateRowIds will be null.
      * - saving (not preview):
      *      The previewData is null.
      *      The plateSetRowId is the rowId of the target plate set.
+     *      The plateSetName is the name of the target plate set.
      *      The plateRowIds are the rowIds of all newly generated plates.
      */
     public @NotNull ReformatResult reformat(Container container, User user, ReformatOptions options) throws Exception
@@ -3548,25 +3549,28 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         List<PlateData> plateData = hydratePlateDataFromWellLayout(container, user, wellLayouts);
 
         if (options.isPreview())
-            return new ReformatResult(plateData, null, null);
+            return new ReformatResult(plateData, null, null, null);
 
         Integer plateSetRowId;
+        String plateSetName;
         List<Plate> newPlates;
 
         if (destinationPlateSet.isNew())
         {
             PlateSet newPlateSet = createPlateSet(container, user, destinationPlateSet, plateData, options.getTargetPlateSet().getParentPlateSetId());
             plateSetRowId = newPlateSet.getRowId();
+            plateSetName = newPlateSet.getName();
             newPlates = newPlateSet.getPlates();
         }
         else
         {
             plateSetRowId = destinationPlateSet.getRowId();
+            plateSetName = destinationPlateSet.getName();
             newPlates = addPlatesToPlateSet(container, user, plateSetRowId, destinationPlateSet.isTemplate(), plateData);
         }
 
         List<Integer> plateRowIds = newPlates.stream().map(Plate::getRowId).toList();
-        return new ReformatResult(null, plateSetRowId, plateRowIds);
+        return new ReformatResult(null, plateSetRowId, plateSetName, plateRowIds);
     }
 
     private @NotNull List<Integer> getReformatPlateRowIds(ReformatOptions options) throws ValidationException

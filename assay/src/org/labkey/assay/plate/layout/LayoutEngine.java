@@ -39,6 +39,7 @@ public class LayoutEngine
     {
         return switch (reformatOptions.getOperation())
         {
+            case columnCompression -> new ColumnCompressionOperation();
             case quadrant -> new QuadrantOperation();
             case reverseQuadrant -> new ReverseQuadrantOperation();
             case stamp -> new StampOperation();

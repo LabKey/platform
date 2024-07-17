@@ -8,6 +8,7 @@ public class ReformatOptions
 {
     public enum ReformatOperation
     {
+        columnCompression,
         quadrant,
         reverseQuadrant,
         stamp
