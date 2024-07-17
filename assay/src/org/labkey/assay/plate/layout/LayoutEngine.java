@@ -39,9 +39,10 @@ public class LayoutEngine
     {
         return switch (reformatOptions.getOperation())
         {
-            case columnCompression -> new ColumnCompressionOperation();
+            case columnCompression -> new CompressionOperation(CompressionOperation.Layout.Column);
             case quadrant -> new QuadrantOperation();
             case reverseQuadrant -> new ReverseQuadrantOperation();
+            case rowCompression -> new CompressionOperation(CompressionOperation.Layout.Row);
             case stamp -> new StampOperation();
         };
     }

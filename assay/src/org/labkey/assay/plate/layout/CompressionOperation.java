@@ -3,19 +3,32 @@ package org.labkey.assay.plate.layout;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateType;
-import org.labkey.api.query.ValidationException;
 import org.labkey.assay.plate.model.ReformatOptions;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class ColumnCompressionOperation implements LayoutOperation
+public class CompressionOperation implements LayoutOperation
 {
+    public enum Layout
+    {
+        Column,
+        Row
+    }
+
+    private final Layout _layout;
+
+    public CompressionOperation(@NotNull Layout layout)
+    {
+        _layout = layout;
+    }
+
     @Override
     public List<WellLayout> execute(ReformatOptions options, @NotNull List<Plate> sourcePlates, PlateType targetPlateType)
     {
         List<WellLayout> layouts = new ArrayList<>();
         WellLayout target = null;
+        boolean isColumnLayout = Layout.Column.equals(_layout);
 
         int targetCols = targetPlateType.getColumns();
         int targetRows = targetPlateType.getRows();
@@ -37,17 +50,36 @@ public class ColumnCompressionOperation implements LayoutOperation
 
                     target.setWell(targetRowIdx, targetColIdx, sourceRowId, r, c);
 
-                    targetRowIdx++;
-                    if (targetRowIdx == targetRows)
+                    if (isColumnLayout)
                     {
-                        targetRowIdx = 0;
-                        targetColIdx++;
+                        targetRowIdx++;
+                        if (targetRowIdx == targetRows)
+                        {
+                            targetRowIdx = 0;
+                            targetColIdx++;
 
+                            if (targetColIdx == targetCols)
+                            {
+                                layouts.add(target);
+                                target = null;
+                                targetColIdx = 0;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        targetColIdx++;
                         if (targetColIdx == targetCols)
                         {
-                            layouts.add(target);
-                            target = null;
                             targetColIdx = 0;
+                            targetRowIdx++;
+
+                            if (targetRowIdx == targetRows)
+                            {
+                                layouts.add(target);
+                                target = null;
+                                targetRowIdx = 0;
+                            }
                         }
                     }
                 }
@@ -64,10 +96,5 @@ public class ColumnCompressionOperation implements LayoutOperation
     public boolean requiresTargetPlateType()
     {
         return true;
-    }
-
-    @Override
-    public void validate(ReformatOptions options, @NotNull List<Plate> sourcePlates, PlateType targetPlateType) throws ValidationException
-    {
     }
 }

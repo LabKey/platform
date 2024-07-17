@@ -11,6 +11,7 @@ public class ReformatOptions
         columnCompression,
         quadrant,
         reverseQuadrant,
+        rowCompression,
         stamp
     }
 
