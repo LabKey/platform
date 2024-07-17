@@ -19,11 +19,9 @@ package org.labkey.api.util;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Use this to report major configuration issues with server, database, smtp, pipeline, etc.  These problems should
+ * Use this to report major configuration issues with server, database, smtp, pipeline, etc. These problems should
  * represent configuration mistakes (NOT code problems) that prevent normal operation of the server, since the
- * exceptions are not reported to mothership.  The message text encourages administrators to contact LabKey for assistance.
- * User: adam
- * Date: Aug 13, 2009
+ * exceptions are not reported to mothership. The message text encourages administrators to contact LabKey for assistance.
  */
 
 public class ConfigurationException extends MinorConfigurationException implements ErrorRendererProperties

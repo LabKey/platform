@@ -1247,8 +1247,11 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         void executeIncrementalDelete()
         {
             var d = CoreSchema.getInstance().getSchema().getSqlDialect();
-            SQLFragment incremental = new SQLFragment("DELETE FROM temp.${NAME}\n")
-                    .append("WHERE rowid NOT IN (SELECT rowid FROM exp.material WHERE cpastype = ").appendValue(_lsid,d).append(")");
+            // POSTGRES bug??? the obvious query is _very_ slow O(n^2)
+            // DELETE FROM temp.${NAME} WHERE rowid NOT IN (SELECT rowid FROM exp.material WHERE cpastype = <<_lsid>>)
+            SQLFragment incremental = new SQLFragment()
+                    .append("WITH deleted AS (SELECT rowid FROM temp.${NAME} EXCEPT SELECT rowid FROM exp.material WHERE cpastype = ").appendValue(_lsid,d).append(")\n")
+                    .append("DELETE FROM temp.${NAME} WHERE rowid IN (SELECT rowid from deleted)\n");
             upsertWithRetry(incremental);
         }
 
