@@ -30,6 +30,9 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.api.StorageProvisioner;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.files.FileListener;
 import org.labkey.api.files.TableUpdaterFileListener;
 import org.labkey.api.security.User;
@@ -169,7 +172,7 @@ public class FileLinkFileListener implements FileListener
     private void hardTableFileLinkColumns(final ForEachFileLinkColumn block)
     {
         // Figure out all of the FileLink columns in hard tables managed by OntologyManager
-        SQLFragment sql = new SQLFragment("SELECT dd.Container, dd.StorageTableName, dd.StorageSchemaName, pd.Name FROM ");
+        SQLFragment sql = new SQLFragment("SELECT dd.Container, dd.DomainId, dd.StorageTableName, dd.StorageSchemaName, pd.Name FROM ");
         sql.append(OntologyManager.getTinfoDomainDescriptor(), "dd");
         sql.append(", ");
         sql.append(OntologyManager.getTinfoPropertyDescriptor(), "pd");
@@ -182,27 +185,18 @@ public class FileLinkFileListener implements FileListener
         new SqlSelector(OntologyManager.getExpSchema(), sql).forEachMap(row -> {
             // Find the DbSchema/TableInfo/ColumnInfo for the FileLink column
             String storageSchemaName = row.get("StorageSchemaName").toString();
-            String storageTableName = row.get("StorageTableName").toString();
-            try
+            DbSchema schema = DbSchema.get(storageSchemaName, DbSchemaType.Provisioned);
+            Domain domain = PropertyService.get().getDomain((Integer) row.get("DomainId"));
+            TableInfo tableInfo = StorageProvisioner.get().getSchemaTableInfo(domain);
+            if (tableInfo != null)
             {
-                DbSchema schema = DbSchema.get(storageSchemaName, DbSchemaType.Provisioned);
-                TableInfo tableInfo = schema.getTable(storageTableName);
-                if (tableInfo != null)
+                String containerId = row.get("Container").toString();
+                ColumnInfo pathCol = tableInfo.getColumn(row.get("Name").toString());
+                if (pathCol != null && containerId != null)
                 {
-                    String containerId = row.get("Container").toString();
-                    ColumnInfo pathCol = tableInfo.getColumn(row.get("Name").toString());
-                    if (pathCol != null && containerId != null)
-                    {
-                        block.exec(schema, tableInfo, pathCol, containerId);
-                    }
+                    block.exec(schema, tableInfo, pathCol, containerId);
                 }
             }
-            finally
-            {
-                // Issue 50781: LKSM: File fields in Sample Types sometimes showing as Text Fields
-                OntologyManager.getExpSchema().getScope().invalidateTable(storageSchemaName, storageTableName, DbSchemaType.Provisioned);
-            }
-
         });
     }
 
