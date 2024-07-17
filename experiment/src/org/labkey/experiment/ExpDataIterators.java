@@ -35,6 +35,7 @@ import org.labkey.api.data.CounterDefinition;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpdateableTableInfo;
@@ -2380,6 +2381,9 @@ public class ExpDataIterators
 
         private final boolean _isCrossFolderUpdate;
 
+        private final TSVWriter _tsvWriter;
+
+
         public MultiDataTypeCrossProjectDataIterator(DataIterator di, DataIteratorContext context, Container container, User user, boolean isCrossType, boolean isCrossFolder, ExpObject dataType, boolean isSamples)
         {
             super(di);
@@ -2393,6 +2397,15 @@ public class ExpDataIterators
             Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
 
             _dataIdIndex = map.getOrDefault("Name", -1);
+
+            _tsvWriter = new TSVWriter() // Used to quote values with newline/tabs/quotes
+            {
+                @Override
+                protected int write()
+                {
+                    throw new UnsupportedOperationException();
+                }
+            };
 
             _isCrossFolderUpdate = isCrossFolder && context.getInsertOption().updateOnly;
 
@@ -2909,6 +2922,8 @@ public class ExpDataIterators
         {
             if (data instanceof Date d && !(data instanceof Time))
                 return DateUtil.formatIsoDateLongTime(d, true);
+            if (data instanceof String s)
+                return _tsvWriter.quoteValue(s.trim());
             return data;
         }
 
