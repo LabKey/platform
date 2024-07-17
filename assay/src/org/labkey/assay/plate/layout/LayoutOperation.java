@@ -16,6 +16,11 @@ public interface LayoutOperation
 
     List<WellLayout> execute(ReformatOptions options, @NotNull List<Plate> sourcePlates, PlateType targetPlateType);
 
+    default boolean produceEmptyPlates()
+    {
+        return false;
+    }
+
     default boolean requiresTargetPlateType()
     {
         return false;

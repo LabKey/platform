@@ -30,4 +30,10 @@ public class StampOperation implements LayoutOperation
 
         return result;
     }
+
+    @Override
+    public boolean produceEmptyPlates()
+    {
+        return true;
+    }
 }

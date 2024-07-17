@@ -126,6 +126,7 @@ import org.labkey.assay.PlateController;
 import org.labkey.assay.TsvAssayProvider;
 import org.labkey.assay.plate.data.WellData;
 import org.labkey.assay.plate.layout.LayoutEngine;
+import org.labkey.assay.plate.layout.LayoutOperation;
 import org.labkey.assay.plate.layout.WellLayout;
 import org.labkey.assay.plate.model.PlateBean;
 import org.labkey.assay.plate.model.PlateSetAssays;
@@ -3546,7 +3547,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             ));
         }
 
-        List<PlateData> plateData = hydratePlateDataFromWellLayout(container, user, wellLayouts);
+        List<PlateData> plateData = hydratePlateDataFromWellLayout(container, user, wellLayouts, engine.getOperation());
 
         if (options.isPreview())
             return new ReformatResult(plateData, null, null, null);
@@ -3667,7 +3668,12 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return sourcePlates;
     }
 
-    private @NotNull List<PlateData> hydratePlateDataFromWellLayout(Container container, User user, List<WellLayout> wellLayouts)
+    private @NotNull List<PlateData> hydratePlateDataFromWellLayout(
+        Container container,
+        User user,
+        List<WellLayout> wellLayouts,
+        LayoutOperation operation
+    )
     {
         if (wellLayouts.isEmpty())
             return Collections.emptyList();
@@ -3708,7 +3714,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 }
             }
 
-            if (!targetWellData.isEmpty())
+            if (operation.produceEmptyPlates() || !targetWellData.isEmpty())
                 plates.add(new PlateData(null, plateType.getRowId(), null, targetWellData));
         }
 

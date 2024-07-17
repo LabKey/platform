@@ -35,6 +35,11 @@ public class LayoutEngine
         return _operation.execute(_options, _sourcePlates, _targetPlateType);
     }
 
+    public LayoutOperation getOperation()
+    {
+        return _operation;
+    }
+
     private static LayoutOperation layoutOperationFactory(ReformatOptions reformatOptions)
     {
         return switch (reformatOptions.getOperation())
