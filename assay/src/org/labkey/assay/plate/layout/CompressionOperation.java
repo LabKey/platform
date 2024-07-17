@@ -48,6 +48,9 @@ public class CompressionOperation implements LayoutOperation
                     if (target == null)
                         target = new WellLayout(targetPlateType);
 
+                    if (sourcePlate.getWell(r, c).getSampleId() == null)
+                        continue;
+
                     target.setWell(targetRowIdx, targetColIdx, sourceRowId, r, c);
 
                     if (isColumnLayout)
