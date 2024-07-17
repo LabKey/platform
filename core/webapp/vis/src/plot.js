@@ -1971,9 +1971,10 @@ boxPlot.render();
                         }
                     }
                     else if (config.properties.valueConversion === 'standardDeviation') {
+                        let isAbsolute = config.properties.boundType === LABKEY.vis.PlotProperties.BoundType.Absolute;
                         row.upperBound = convertToStandardDeviation(row.upperBound, row[meanProp], row[sdProp]);
                         row.lowerBound = convertToStandardDeviation(row.lowerBound, row[meanProp], row[sdProp]);
-                        if (config.legendData && config.legendData.length > 0) {
+                        if (config.legendData && config.legendData.length > 0 && !isAbsolute) {
                             for (let i = 0; i < config.legendData.length; i++) {
                                 let legendRow = config.legendData[i];
                                 if (legendRow.text.indexOf("SD") === -1) {
@@ -2272,7 +2273,7 @@ boxPlot.render();
 
                 if (config.properties.stdDev !== undefined &&
                         config.properties.boundType === LABKEY.vis.PlotProperties.BoundType.StandardDeviation &&
-                        config.properties.showBoundLines) {
+                        (config.properties.showBoundLines || config.properties.valueConversion === 'standardDeviation')) {
 
                     config.layers.push(new LABKEY.vis.Layer({
                         geom: new LABKEY.vis.Geom.ErrorBar({size: 1, color: LABKEY.vis.PlotProperties.Color.Outlier, dashed: true, width: barWidth, topOnly: true}),
@@ -2281,7 +2282,7 @@ boxPlot.render();
                             error: function (row) {
                                 return row[config.properties.stdDev] * config.properties.upperBound;
                             },
-                            yLeft: config.properties.combined ? config.properties.stdDev : config.properties.mean
+                            yLeft: config.properties.combined ? "upperBound" : config.properties.mean
                         }
                     }));
                     config.layers.push(new LABKEY.vis.Layer({
@@ -2291,7 +2292,7 @@ boxPlot.render();
                             error: function (row) {
                                 return row[config.properties.stdDev] * config.properties.lowerBound;
                             },
-                            yLeft: config.properties.combined ? config.properties.stdDev : config.properties.mean
+                            yLeft: config.properties.combined ? "lowerBound" : config.properties.mean
                         }
                     }));
                     if (config.properties.hideSDLines !== true) {
@@ -2335,44 +2336,56 @@ boxPlot.render();
                 }
 
                 // add the upper and lower bound lines for absolute bound types
-                if (config.properties.boundType === LABKEY.vis.PlotProperties.BoundType.Absolute && !config.properties.combined) {
-                    if (config.properties.lowerBound) {
-                        const lowerBoundLayer = new LABKEY.vis.Layer({
-                            geom: new LABKEY.vis.Geom.ErrorBar({
-                                size: 1,
-                                color: LABKEY.vis.PlotProperties.Color.Outlier,
-                                width: barWidth,
-                                dashed: true,
-                                topOnly: true
-                            }),
-                            data: meanStdDevData,
-                            aes: {
-                                error: function (row) {
-                                    return 0;
-                                },
-                                yLeft: 'lowerBound'
-                            }
-                        });
-                        config.layers.push(lowerBoundLayer);
+                if (config.properties.boundType === LABKEY.vis.PlotProperties.BoundType.Absolute) {
+                    let isCombined = config.properties.combined;
+                    let valueConversion = config.properties.valueConversion;
+                    let isValueConversionSD = valueConversion === 'standardDeviation';
+                    let isValueConversionPercentOfMean = valueConversion === 'percentDeviation';
+                    let showLines = true;
+                    if (isCombined) {
+                        if (isValueConversionSD || isValueConversionPercentOfMean) {
+                            showLines = false;
+                        }
                     }
-                    if (config.properties.upperBound) {
-                        const upperBoundLayer = new LABKEY.vis.Layer({
-                            geom: new LABKEY.vis.Geom.ErrorBar({
-                                size: 1,
-                                color: LABKEY.vis.PlotProperties.Color.Outlier,
-                                width: barWidth,
-                                dashed: true,
-                                topOnly: true
-                            }),
-                            data: meanStdDevData,
-                            aes: {
-                                error: function (row) {
-                                    return 0;
-                                },
-                                yLeft: 'upperBound'
-                            }
-                        });
-                        config.layers.push(upperBoundLayer);
+                    if (showLines) {
+                        if (config.properties.lowerBound) {
+                            const lowerBoundLayer = new LABKEY.vis.Layer({
+                                geom: new LABKEY.vis.Geom.ErrorBar({
+                                    size: 1,
+                                    color: LABKEY.vis.PlotProperties.Color.Outlier,
+                                    width: barWidth,
+                                    dashed: true,
+                                    topOnly: true
+                                }),
+                                data: meanStdDevData,
+                                aes: {
+                                    error: function (row) {
+                                        return 0;
+                                    },
+                                    yLeft: 'lowerBound'
+                                }
+                            });
+                            config.layers.push(lowerBoundLayer);
+                        }
+                        if (config.properties.upperBound) {
+                            const upperBoundLayer = new LABKEY.vis.Layer({
+                                geom: new LABKEY.vis.Geom.ErrorBar({
+                                    size: 1,
+                                    color: LABKEY.vis.PlotProperties.Color.Outlier,
+                                    width: barWidth,
+                                    dashed: true,
+                                    topOnly: true
+                                }),
+                                data: meanStdDevData,
+                                aes: {
+                                    error: function (row) {
+                                        return 0;
+                                    },
+                                    yLeft: 'upperBound'
+                                }
+                            });
+                            config.layers.push(upperBoundLayer);
+                        }
                     }
                 }
 
