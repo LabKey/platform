@@ -119,6 +119,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
+import static org.labkey.api.action.SpringActionController.RESPONSE_FORMAT_PARAMETER_NAME;
 import static org.labkey.api.security.AuthenticationProvider.FailureReason.complexity;
 import static org.labkey.api.security.AuthenticationProvider.FailureReason.expired;
 
@@ -1245,7 +1246,7 @@ public class AuthenticationManager
         // TODO: Shouldn't our client APIs set a default "respFormat" attribute? Java library doesn't...
         if (ApiResponseWriter.getResponseFormat(request, null) == null)
         {
-            String respFormat = request.getParameter("respFormat");
+            String respFormat = request.getParameter(RESPONSE_FORMAT_PARAMETER_NAME);
             Format format = StringUtils.contains(respFormat, "xml") ? Format.XML : Format.JSON;
             ApiResponseWriter.setResponseFormat(request, format);
         }
