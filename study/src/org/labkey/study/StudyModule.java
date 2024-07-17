@@ -67,7 +67,7 @@ import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
-import org.labkey.api.settings.ExperimentalFeatureService;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.specimen.SpecimenSampleTypeDomainKind;
 import org.labkey.api.specimen.model.AdditiveTypeDomainKind;
 import org.labkey.api.specimen.model.DerivativeTypeDomainKind;
@@ -699,7 +699,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         @Override
         public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
         {
-            if (ExperimentalFeatureService.get().isFeatureEnabled(Study.GWT_STUDY_DESIGN))
+            if (OptionalFeatureService.get().isFeatureEnabled(Study.GWT_STUDY_DESIGN))
                 return new StudyDesignsWebPart(portalCtx, true);
             else
                 return null;
@@ -708,7 +708,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         @Override
         public boolean isAvailable(Container c, String scope, String location)
         {
-            if (ExperimentalFeatureService.get().isFeatureEnabled(Study.GWT_STUDY_DESIGN))
+            if (OptionalFeatureService.get().isFeatureEnabled(Study.GWT_STUDY_DESIGN))
                 return super.isAvailable(c, scope, location);
             else
                 return false;

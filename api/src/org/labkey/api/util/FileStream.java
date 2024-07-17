@@ -19,7 +19,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.settings.ExperimentalFeatureService;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.logging.LogHelper;
 
 import java.io.BufferedInputStream;
@@ -83,7 +83,7 @@ public interface FileStream
         }
 
         long size = s.getSize();
-        if (ExperimentalFeatureService.get().isFeatureEnabled(STAGE_FILE_UPLOADS))
+        if (OptionalFeatureService.get().isFeatureEnabled(STAGE_FILE_UPLOADS))
         {
             File tempFile = FileUtil.createTempFile(STAGE_FILE_UPLOADS, ".tmp");
             try
