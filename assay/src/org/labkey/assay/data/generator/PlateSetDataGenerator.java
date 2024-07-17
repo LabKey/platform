@@ -15,6 +15,8 @@ import org.labkey.api.assay.plate.Position;
 import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.generator.DataGenerator;
+import org.labkey.api.data.statistics.MathStat;
+import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -22,6 +24,7 @@ import org.labkey.api.iterator.ValidatingDataRowIterator;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.CPUTimer;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.assay.TsvAssayProvider;
@@ -50,6 +53,7 @@ public class PlateSetDataGenerator extends DataGenerator<PlateSetDataGenerator.C
     private static final String INT_PROP_PREFIX = "IntegerProp";
     private static final String DOUBLE_PROP_PREFIX = "DoubleProp";
     private final List<PlateSet> _assayPlateSets = new ArrayList<>();
+    private final List<Double> _plateTimings = new ArrayList<>();
 
     public PlateSetDataGenerator(PipelineJob job, PlateSetDataGenerator.Config config)
     {
@@ -99,6 +103,8 @@ public class PlateSetDataGenerator extends DataGenerator<PlateSetDataGenerator.C
                     importPlatesets();
                     importTimer.stop();
                 }
+
+                logTimes();
             }
             catch (Exception e)
             {
@@ -276,7 +282,13 @@ public class PlateSetDataGenerator extends DataGenerator<PlateSetDataGenerator.C
             plates.add(new PlateData(null, _plateType.getRowId(), null, rows));
         }
         _plateSetsCreated++;
-        return PlateManager.get().createPlateSet(getContainer(), getUser(), plateSet, plates, parentPlateSet != null ? parentPlateSet.getRowId() : null);
+        CPUTimer timer = new CPUTimer("Plate");
+        timer.start();
+        PlateSet result = PlateManager.get().createPlateSet(getContainer(), getUser(), plateSet, plates, parentPlateSet != null ? parentPlateSet.getRowId() : null);
+        timer.stop();
+        _plateTimings.add(Double.valueOf((double) timer.getTotalMilliseconds() / plates.size()));
+
+        return result;
     }
 
     private void importPlatesets() throws Exception
@@ -346,6 +358,20 @@ public class PlateSetDataGenerator extends DataGenerator<PlateSetDataGenerator.C
             }
         }
         return data;
+    }
+
+    @Override
+    public void logTimes()
+    {
+        if (_plateTimings.size() > 1)
+        {
+            MathStat stats = StatsService.get().getStats(_plateTimings);
+
+            _log.info(String.format("%s\t%s", "Per Plate", DateUtil.formatDuration((long)stats.getMean())));
+            _log.info(String.format("%s\t%s", "Per Plate (std dev)", stats.getStdDev()));
+        }
+        else
+            _log.info(String.format("%s\t%s", "Per Plate", DateUtil.formatDuration(_plateTimings.get(0).longValue())));
     }
 
     public static class Config extends DataGenerator.Config

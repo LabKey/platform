@@ -1,5 +1,6 @@
 package org.labkey.assay.plate;
 
+import com.google.common.collect.Sets;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -24,8 +25,8 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
 
+import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 
 public class PlateMetadataDomainKind extends BaseAbstractDomainKind
@@ -33,25 +34,36 @@ public class PlateMetadataDomainKind extends BaseAbstractDomainKind
     public static final String KIND_NAME = "PlateMetadata";
     public static final String DOMAiN_NAME = "PlateMetadataDomain";
     private static final Set<String> RESERVED_NAMES;
+    private static final Set<PropertyStorageSpec.Index> INDEXES;
     private static final String PROVISIONED_SCHEMA_NAME = "assaywell";
+
+    public enum Column
+    {
+        Col,
+        Container,
+        Created,
+        CreatedBy,
+        Dilution,
+        Lsid,
+        Modified,
+        ModifiedBy,
+        PlateId,
+        Row,
+        RowId,
+        SampleId,
+        Value
+    }
 
     static
     {
-        RESERVED_NAMES = new CaseInsensitiveHashSet(List.of(
-                "rowId",
-                "lsid",
-                "created",
-                "createdBy",
-                "modified",
-                "modifiedBy",
-                "container",
-                "value",
-                "dilution",
-                "plateId",
-                "row",
-                "col",
-                "sampleId"
-        ));
+        RESERVED_NAMES = new CaseInsensitiveHashSet(Arrays.stream(Column.values()).map(Enum::name).toList());
+        INDEXES = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(new PropertyStorageSpec.Index(false, Column.Lsid.name()))));
+    }
+
+    @Override
+    public Set<PropertyStorageSpec.Index> getPropertyIndices(Domain domain)
+    {
+        return INDEXES;
     }
 
     @Override
@@ -68,7 +80,7 @@ public class PlateMetadataDomainKind extends BaseAbstractDomainKind
     @Override
     public Set<PropertyStorageSpec> getBaseProperties(Domain domain)
     {
-        return Collections.singleton(new PropertyStorageSpec("Lsid", JdbcType.VARCHAR, 200).setNullable(false));
+        return Collections.singleton(new PropertyStorageSpec(Column.Lsid.name(), JdbcType.VARCHAR, 200).setNullable(false));
     }
 
     @Override
