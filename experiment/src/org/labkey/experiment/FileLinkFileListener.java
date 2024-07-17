@@ -187,6 +187,8 @@ public class FileLinkFileListener implements FileListener
             String storageSchemaName = row.get("StorageSchemaName").toString();
             DbSchema schema = DbSchema.get(storageSchemaName, DbSchemaType.Provisioned);
             Domain domain = PropertyService.get().getDomain((Integer) row.get("DomainId"));
+            // Issue 50781: LKSM: File fields in Sample Types sometimes showing as Text Fields
+            // Don't use schema.getTable(storageTableName);
             TableInfo tableInfo = StorageProvisioner.get().getSchemaTableInfo(domain);
             if (tableInfo != null)
             {
