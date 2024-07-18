@@ -25,6 +25,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.settings.OptionalFeatureService.FeatureType;
 import org.labkey.api.view.ActionURL;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -264,6 +265,21 @@ public class AdminConsole
         return productFeatures;
     }
 
+    public static List<Product> getProducts()
+    {
+        List<Product> products = new ArrayList<>();
+        AdminConsole.getProductGroups().forEach(group -> {
+            products.addAll(group.getProducts());
+        });
+        products.sort((a, b) -> {
+            if (a == b) return 0;
+            if (null == a) return -1;
+            if (null == b) return 1;
+            return a.getOrderNum() - b.getOrderNum();
+        });
+        return products;
+    }
+
     public static Set<ProductGroup> getProductGroups(@Nullable String groupKey)
     {
         Set<ProductGroup> productGroups = new HashSet<>();
@@ -302,6 +318,8 @@ public class AdminConsole
 
     public interface Product
     {
+        Integer getOrderNum();
+
         String getName();
 
         String getKey();

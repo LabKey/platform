@@ -40,7 +40,7 @@
     }
 </style>
 
-<% if (AdminConsole.getProductGroups().isEmpty()) { %>
+<% if (AdminConsole.getProducts().isEmpty()) { %>
         <div class="description-text">
             No products requiring configuration have been registered for this deployment.
         </div>
@@ -52,10 +52,10 @@
     check the <a href="<%=h(AdminController.getShowAdminURL() + "#modules")%>">Module Information</a> page for more insight.
 </div>
 
-<% for (AdminConsole.ProductGroup productGroup : AdminConsole.getProductGroups()) { %>
+
 <div class="list-group">
-    <h4><%=h(productGroup.getName())%></h4>
-    <% for (AdminConsole.Product product : productGroup.getProducts() ) { %>
+    <h4>Products</h4>
+    <% for (AdminConsole.Product product : AdminConsole.getProducts()) { %>
     <div class="product-group-item">
         <label>
             <input type="radio" id="<%=h(product.getKey())%>" name="productKey" value="<%=h(product.getKey())%>" <%=checked(product.isEnabled())%>>
@@ -63,7 +63,6 @@
         </label>
     </div>
     <% } %>
-<% } %>
 
 </div>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
