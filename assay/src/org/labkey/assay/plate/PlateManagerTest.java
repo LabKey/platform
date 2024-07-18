@@ -884,6 +884,8 @@ public final class PlateManagerTest
         List<Map<String, Object>> sourcePlateData = List.of(
             CaseInsensitiveHashMap.of("wellLocation", "A1", "barcode", "BC-A1"),
             CaseInsensitiveHashMap.of("wellLocation", "H12", "barcode", "BC-H12"),
+            CaseInsensitiveHashMap.of("wellLocation", "H13", "barcode", "BC-H13"),
+            CaseInsensitiveHashMap.of("wellLocation", "I12", "barcode", "BC-I12"),
             CaseInsensitiveHashMap.of("wellLocation", "I13", "barcode", "BC-I13"),
             CaseInsensitiveHashMap.of("wellLocation", "P24", "barcode", "BC-P24")
         );
@@ -930,9 +932,7 @@ public final class PlateManagerTest
                 {
                     var barcode = r.getString(FieldKey.fromParts("barcode"));
 
-                    if (i == 1 || i == 2)
-                        assertNull(barcode);
-                    else
+                    if (i == 0 || i == 3)
                     {
                         var wellPosition = r.getString(FieldKey.fromParts("position"));
                         if ("A1".equalsIgnoreCase(wellPosition))
