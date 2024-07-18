@@ -2,6 +2,7 @@ package org.labkey.assay;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayResultDomainKind;
@@ -9,6 +10,7 @@ import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.plate.AbstractPlateBasedAssayProvider;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateBasedAssayProvider;
+import org.labkey.api.assay.plate.PlateCustomField;
 import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.data.ColumnInfo;
@@ -563,6 +565,48 @@ public class AssayUpgradeCode implements UpgradeCode
 
                 tx.commit();
             }
+        }
+    }
+
+    /**
+     * Called from assay-24.009-24.010.sql
+     * This does X, Y, and Z
+     */
+    @DeferredUpgrade
+    @SuppressWarnings({"UnusedDeclaration"})
+    public static void someNameHere(ModuleContext ctx) throws Exception
+    {
+        if (ctx.isNewInstall())
+            return;
+
+        List<Container> biologicsProjects = new ArrayList<>();
+        for (Container container : ContainerManager.getAllChildren(ContainerManager.getRoot()))
+        {
+            if (container != null)
+            {
+                if (isBiologicsFolder(container.getProject()))
+                {
+                    // ensure the plate metadata domain for the top level biologics projects
+                    if (container.isProject())
+                        biologicsProjects.add(container);
+                }
+            }
+        }
+
+        Set<String> disallowedFieldTitles = new HashSet<>(Arrays.asList("name1", "name2"));
+        for (Container container : biologicsProjects)
+        {
+            @NotNull List<PlateCustomField> fields = PlateManager.get().getPlateMetadataFields(container, User.getAdminServiceUser());
+            for (PlateCustomField field : fields)
+            {
+                String fieldNameOld = field.getName();
+                if (disallowedFieldTitles.contains(fieldNameOld))
+                {
+                    field.setName(fieldNameOld + "_Old");
+                }
+            }
+
+            // save newly renamed PlateCustomFields
         }
     }
 

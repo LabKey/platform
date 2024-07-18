@@ -50,7 +50,14 @@ public class PlateMetadataDomainKind extends BaseAbstractDomainKind
                 "plateId",
                 "row",
                 "col",
-                "sampleId"
+                "sampleId",
+                "amount",
+                "amountunits",
+                "concentration",
+                "concentrationunits",
+                "group",
+                "position",
+                "type"
         ));
     }
 

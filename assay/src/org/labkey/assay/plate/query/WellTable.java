@@ -81,7 +81,9 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         SampleId,
         Type,
         Value,
-        WellGroup
+        WellGroup,
+        Concentration,
+        Amount
     }
 
     private static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
@@ -94,6 +96,8 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         defaultVisibleColumns.add(FieldKey.fromParts(Column.Row.name()));
         defaultVisibleColumns.add(FieldKey.fromParts(Column.Col.name()));
         defaultVisibleColumns.add(FieldKey.fromParts(Column.Position.name()));
+        defaultVisibleColumns.add(FieldKey.fromParts(Column.Concentration.name()));
+        defaultVisibleColumns.add(FieldKey.fromParts(Column.Amount.name()));
 
         // for now don't surface value and dilution, we may choose to drop these fields from the
         // db schema at some point
