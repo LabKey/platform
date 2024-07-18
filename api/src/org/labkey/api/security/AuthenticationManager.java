@@ -25,7 +25,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.action.ApiResponseWriter;
 import org.labkey.api.action.ApiResponseWriter.Format;
 import org.labkey.api.action.LabKeyError;
 import org.labkey.api.action.LabKeyErrorWithHtml;
@@ -119,7 +118,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
-import static org.labkey.api.action.SpringActionController.RESPONSE_FORMAT_PARAMETER_NAME;
 import static org.labkey.api.security.AuthenticationProvider.FailureReason.complexity;
 import static org.labkey.api.security.AuthenticationProvider.FailureReason.expired;
 
@@ -1242,18 +1240,11 @@ public class AuthenticationManager
             return handleAuthentication(request, ContainerManager.getRoot()).getUser();
         }
 
-        // Basic auth has failed so send failure response in a format that APIs can consume
-        // TODO: Shouldn't our client APIs set a default "respFormat" attribute? Java library doesn't...
-        if (ApiResponseWriter.getResponseFormat(request, null) == null)
-        {
-            String respFormat = request.getParameter(RESPONSE_FORMAT_PARAMETER_NAME);
-            Format format = StringUtils.contains(respFormat, "xml") ? Format.XML : Format.JSON;
-            ApiResponseWriter.setResponseFormat(request, format);
-        }
+        // Basic auth has failed so send error response in a format that APIs can consume (JSON unless request specifies otherwise)
+        SpringActionController.setResponseFormat(request, Format.JSON);
         String message = primaryResult.getMessage();
         throw new UnauthorizedException(message != null ? message : primaryResult.getStatusErrorMessage(DisplayLocation.API));
     }
-
 
     public static URLHelper logout(@NotNull User user, @NotNull HttpServletRequest request, URLHelper returnURL)
     {
