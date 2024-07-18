@@ -2031,12 +2031,19 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                     if (updatedFile != null)
                     {
                         FileFieldRenameData renameData = new FileFieldRenameData(sampleType, sample.getName(), fileProp.getName(), new File(sourceFileName), updatedFile);
-                        fileService.fireFileMoveEvent(renameData.sourceFile, renameData.targetFile, user, targetContainer);
                         sampleFileRenames.putIfAbsent(sample.getRowId(), new ArrayList<>());
                         List<FileFieldRenameData> fieldRenameData = sampleFileRenames.get(sample.getRowId());
                         fieldRenameData.add(renameData);
                     }
                 }
+        }
+
+        // TODO, support batch fireFileMoveEvent to avoid excessive FileLinkFileListener.hardTableFileLinkColumns calls
+        for (int sampleId: sampleFileRenames.keySet())
+        {
+            List<FileFieldRenameData> fieldRenameRecords = sampleFileRenames.get(sampleId);
+            for (FileFieldRenameData renameData : fieldRenameRecords)
+                fileService.fireFileMoveEvent(renameData.sourceFile, renameData.targetFile, user, targetContainer);
         }
 
         return sampleFileRenames;
