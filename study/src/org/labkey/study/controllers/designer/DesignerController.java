@@ -49,6 +49,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.study.MapArrayExcelWriter;
 import org.labkey.api.study.Study;
@@ -243,7 +244,7 @@ public class DesignerController extends SpringActionController
                 }
                 params.put("revision", Integer.toString(revision));
                 params.put("edit", getViewContext().hasPermission(UpdatePermission.class) && form.isEdit() ? "true" : "false");
-                boolean canEdit = getViewContext().hasPermission(UpdatePermission.class);
+                boolean canEdit = OptionalFeatureService.get().isFeatureEnabled(Study.GWT_STUDY_DESIGN) && getViewContext().hasPermission(UpdatePermission.class);
                 params.put("canEdit",  Boolean.toString(canEdit));
                 boolean canAdmin = getViewContext().hasPermission(AdminPermission.class);
                 params.put("canAdmin", Boolean.toString(canAdmin));

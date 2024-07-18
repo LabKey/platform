@@ -338,7 +338,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             context.setDataSource((String) extraScriptContext.get(DataIteratorUtil.DATA_SOURCE));
         }
 
-        boolean skipTriggers = context.getConfigParameterBoolean(ConfigParameters.SkipTriggers) || context.isCrossTypeImport();
+        boolean skipTriggers = context.getConfigParameterBoolean(ConfigParameters.SkipTriggers) || context.isCrossTypeImport() || context.isCrossFolderImport();
         boolean hasTableScript = hasTableScript(container);
         TriggerDataBuilderHelper helper = new TriggerDataBuilderHelper(getQueryTable(), container, user, extraScriptContext, context.getInsertOption().useImportAliases);
         if (!skipTriggers)

@@ -259,7 +259,7 @@ public class Designer implements EntryPoint
             }
         }
 
-        if (null != panelName && "assays".equals(panelName.toLowerCase()) && "true".equals(PropertyUtil.getServerProperty("canAdmin")))
+        if (null != panelName && "assays".equals(panelName.toLowerCase()) && "true".equals(PropertyUtil.getServerProperty("canAdmin")) && canEdit)
         {
             if (definition.getAssaySchedule().getAssays().size() > 0)
             {
