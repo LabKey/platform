@@ -3528,7 +3528,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             throw new ValidationException("An \"operation\" must be specified.");
 
         PlateSetImpl destinationPlateSet = getReformatDestinationPlateSet(container, options);
-        List<Plate> sourcePlates = getReformatSourcePlates(container, options);
+        Pair<PlateSet, List<Plate>> source = getReformatSourcePlates(container, options);
+        PlateSetImpl sourcePlateSet = (PlateSetImpl) source.first;
+        List<Plate> sourcePlates = source.second;
 
         PlateType targetPlateType = null;
         if (options.getTargetPlateTypeId() != null)
@@ -3562,7 +3564,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         if (destinationPlateSet.isNew())
         {
-            PlateSet newPlateSet = createPlateSet(container, user, destinationPlateSet, plateData, options.getTargetPlateSet().getParentPlateSetId());
+            PlateSet newPlateSet = createPlateSet(container, user, destinationPlateSet, plateData, sourcePlateSet.getRowId());
             plateSetRowId = newPlateSet.getRowId();
             plateSetName = newPlateSet.getName();
             newPlates = newPlateSet.getPlates();
@@ -3644,7 +3646,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return plateSet;
     }
 
-    private List<Plate> getReformatSourcePlates(Container container, ReformatOptions options) throws ValidationException
+    private Pair<PlateSet, List<Plate>> getReformatSourcePlates(Container container, ReformatOptions options) throws ValidationException
     {
         List<Plate> sourcePlates = new ArrayList<>();
         PlateSet sourcePlateSet = null;
@@ -3666,7 +3668,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         if (sourcePlateSet != null && !container.equals(sourcePlateSet.getContainer()))
             throw new ValidationException(String.format("Plate set \"%s\" is not in the %s folder.", sourcePlateSet.getName(), container.getPath()));
 
-        return sourcePlates;
+        return Pair.of(sourcePlateSet, sourcePlates);
     }
 
     private @NotNull List<PlateData> hydratePlateDataFromWellLayout(
