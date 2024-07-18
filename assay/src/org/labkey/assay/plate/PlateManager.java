@@ -33,7 +33,6 @@ import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateCustomField;
 import org.labkey.api.assay.plate.PlateLayoutHandler;
-import org.labkey.assay.plate.data.PlateMapExcelWriter;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.plate.PlateSet;
 import org.labkey.api.assay.plate.PlateSetEdge;
@@ -124,6 +123,7 @@ import org.labkey.api.webdav.WebdavResource;
 import org.labkey.assay.AssayManager;
 import org.labkey.assay.PlateController;
 import org.labkey.assay.TsvAssayProvider;
+import org.labkey.assay.plate.data.PlateMapExcelWriter;
 import org.labkey.assay.plate.data.WellData;
 import org.labkey.assay.plate.layout.LayoutEngine;
 import org.labkey.assay.plate.layout.WellLayout;
@@ -155,7 +155,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
 
@@ -175,6 +178,10 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     // name expressions, currently not configurable
     private static final String PLATE_SET_NAME_EXPRESSION = "PLS-${now:date('yyyyMMdd')}-${RowId}";
     private static final String PLATE_NAME_EXPRESSION = "${${PlateSet/PlateSetId}-:withCounter}";
+
+    private final Queue<Pair<Container, Integer>> _plateIndexQueue = new ConcurrentLinkedQueue<>();
+    private final AtomicBoolean _pausePlateIndex = new AtomicBoolean(false);
+    private static final Object PLATE_INDEX_LOCK = new Object();
 
     // This flag is applied to the extraScriptContext of query mutating calls (e.g. insertRows, updateRows, etc.)
     // when those calls are being made for a plate copy operation.
@@ -1105,7 +1112,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             final Integer plateRowId = plateId;
             transaction.addCommitTask(() -> {
                 clearCache(container, plate);
-                indexPlate(container, plateRowId);
+                indexPlate(container, plateRowId, false);
             }, DbScope.CommitTaskOption.POSTCOMMIT);
             transaction.commit();
 
@@ -1982,15 +1989,43 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         ss.deleteResources(documentIds);
     }
 
-    private void indexPlate(Container c, Integer plateRowId)
+    private void pausePlateIndexing()
     {
-        Plate plate = getPlate(c, plateRowId);
-        SearchService ss = SearchService.get();
+        _pausePlateIndex.set(true);
+    }
 
-        if (ss == null || plate == null)
-            return;
+    private void resumePlateIndexing()
+    {
+        _pausePlateIndex.set(false);
+        if (!_plateIndexQueue.isEmpty())
+        {
+            synchronized (PLATE_INDEX_LOCK)
+            {
+                BulkPlateIndexer indexer = new BulkPlateIndexer(new LinkedList<>(_plateIndexQueue));
+                _plateIndexQueue.clear();
+                indexer.start();
+            }
+        }
+    }
 
-        indexPlate(ss.defaultTask(), plate);
+    private void indexPlate(Container c, Integer plateRowId, boolean ignorePauseFlag)
+    {
+        if (_pausePlateIndex.get() && !ignorePauseFlag)
+        {
+            Pair<Container, Integer> entry = new Pair<>(c, plateRowId);
+            if (!_plateIndexQueue.contains(entry))
+                _plateIndexQueue.add(entry);
+        }
+        else
+        {
+            Plate plate = getPlate(c, plateRowId);
+            SearchService ss = SearchService.get();
+
+            if (ss == null || plate == null)
+                return;
+
+            indexPlate(ss.defaultTask(), plate);
+        }
     }
 
     private void indexPlate(SearchService.IndexTask task, @NotNull Plate plate)
@@ -2385,6 +2420,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         try (DbScope.Transaction tx = ensureTransaction())
         {
+            pausePlateIndexing();
             List<Plate> platesAdded = new ArrayList<>();
 
             for (var plate : plates)
@@ -2397,6 +2433,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 platesAdded.add(createAndSavePlate(container, user, plateImpl, plateSetId, plate.data));
             }
 
+            tx.addCommitTask(this::resumePlateIndexing, DbScope.CommitTaskOption.POSTCOMMIT);
             tx.commit();
 
             return platesAdded;
@@ -3705,5 +3742,25 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         }
 
         return plates;
+    }
+
+    private class BulkPlateIndexer extends Thread
+    {
+        Queue<Pair<Container, Integer>> _queue;
+
+        public BulkPlateIndexer(Queue<Pair<Container, Integer>> queue)
+        {
+            _queue = queue;
+        }
+
+        @Override
+        public void run()
+        {
+            while (!_queue.isEmpty())
+            {
+                Pair<Container, Integer> entry = _queue.remove();
+                indexPlate(entry.first, entry.second, true);
+            }
+        }
     }
 }
