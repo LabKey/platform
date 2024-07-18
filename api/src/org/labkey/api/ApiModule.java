@@ -139,6 +139,7 @@ import org.labkey.api.security.RoleSet;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
+import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.AppPropsTestCase;
 import org.labkey.api.settings.ExperimentalFeatureStartupListener;
@@ -151,6 +152,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DomTestCase;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.ExtUtil;
+import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
@@ -221,6 +223,8 @@ public class ApiModule extends CodeOnlyModule
         AuthenticationManager.registerEncryptionMigrationHandler();
 
         LabKeyManagement.register(new StandardMBean(new OperationsMXBeanImpl(), OperationsMXBean.class, true), "Operations");
+
+        AdminConsole.addExperimentalFeatureFlag(FileStream.STAGE_FILE_UPLOADS, "Stage file uploads before moving to final destination", "When using a non-local file system, using a specific API that requires a locally staged copy of the file as the source can sometimes be significantly faster than streaming the uploaded file directly", false);
     }
 
     @NotNull
