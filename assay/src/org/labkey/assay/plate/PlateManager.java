@@ -2502,9 +2502,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         Integer primaryPlateSetId = null;
         if (parentPlateSet != null)
         {
-            if (PlateSetType.primary.equals(parentPlateSet.getType()))
+            if (parentPlateSet.isPrimary())
                 primaryPlateSetId = parentPlateSet.getRowId();
-            else if (PlateSetType.assay.equals(parentPlateSet.getType()))
+            else if (parentPlateSet.isAssay())
                 primaryPlateSetId = parentPlateSet.getPrimaryPlateSetId(); // could be null
         }
 
@@ -3509,10 +3509,12 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
      * Reformat a set of source plates to new plates via a reformat operation (e.g. quadrant, stamp, etc.).
      * @return The return ReformatResult will contain different data when previewing versus saving (not previewing).
      * - preview:
-     *      The previewData contains the preview data.
+     *      The previewData contains the preview data. Null if the "previewData" flag is false.
+     *      The plateCount is the count of the number of plates that will be created.
      *      Both plateSetRowId, plateSetName and plateRowIds will be null.
      * - saving (not preview):
      *      The previewData is null.
+     *      The plateCount is the count of the number of plates that have been created.
      *      The plateSetRowId is the rowId of the target plate set.
      *      The plateSetName is the name of the target plate set.
      *      The plateRowIds are the rowIds of all newly generated plates.
@@ -3564,7 +3566,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         if (destinationPlateSet.isNew())
         {
-            PlateSet newPlateSet = createPlateSet(container, user, destinationPlateSet, plateData, sourcePlateSet.getRowId());
+            PlateSet newPlateSet = createPlateSet(container, user, destinationPlateSet, plateData, getReformatParentPlateSetId(sourcePlateSet));
             plateSetRowId = newPlateSet.getRowId();
             plateSetName = newPlateSet.getName();
             newPlates = newPlateSet.getPlates();
@@ -3578,6 +3580,13 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         List<Integer> plateRowIds = newPlates.stream().map(Plate::getRowId).toList();
         return new ReformatResult(null, plateRowIds.size(), plateSetRowId, plateSetName, plateRowIds);
+    }
+
+    private @Nullable Integer getReformatParentPlateSetId(@NotNull PlateSet sourcePlateSet)
+    {
+        if (sourcePlateSet.isPrimary() || !sourcePlateSet.isStandalone())
+            return sourcePlateSet.getRowId();
+        return null;
     }
 
     private @NotNull List<Integer> getReformatPlateRowIds(ReformatOptions options) throws ValidationException
