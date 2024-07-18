@@ -3,21 +3,46 @@
  * any form or by any electronic or mechanical means without written permission from LabKey Corporation.
  */
 import React, { FC, memo, useCallback, useEffect, useState } from 'react';
+import { fromJS } from 'immutable';
 import {
     applyEditableGridChangesToModels,
+    initEditableGridModel,
     QueryModel,
     withQueryModels,
     EditableGridChange,
     EditableGridPanel,
+    EditableGridLoader,
     EditorModel,
-    loadEditorModelData,
     InjectedQueryModels,
     LoadingSpinner,
     Alert,
     resolveErrorMessage,
+    GridResponse,
+    EditorMode,
+    QueryInfo,
+    QueryColumn,
 } from '@labkey/components';
 
 import { SchemaQueryInputContext, SchemaQueryInputProvider } from './SchemaQueryInputProvider';
+
+class Loader implements EditableGridLoader {
+    columns: QueryColumn[];
+    id: string;
+    mode: EditorMode;
+    queryInfo: QueryInfo;
+
+    constructor(queryInfo: QueryInfo) {
+        this.mode = EditorMode.Insert;
+        this.queryInfo = queryInfo;
+    }
+
+    async fetch(model: QueryModel): Promise<GridResponse> {
+        return {
+            data: fromJS(model.rows),
+            dataIds: fromJS(model.orderedRows),
+        };
+    }
+}
 
 type EditableGridModels = {
     dataModel: QueryModel;
@@ -36,9 +61,14 @@ const EditableGridPageBody: FC<InjectedQueryModels> = memo(props => {
 
         (async () => {
             try {
-                const editorModelData = await loadEditorModelData(model);
-                const editorModel_ = new EditorModel({ id: model.id, ...editorModelData });
-                setModels({ dataModel: model, editorModel: editorModel_ });
+                const loader = new Loader(model.queryInfo);
+                const editorModelData = await initEditableGridModel(
+                    model,
+                    new EditorModel({ id: model.id }),
+                    loader,
+                    model
+                );
+                setModels(editorModelData);
             } catch (err) {
                 console.error(err);
                 setError(resolveErrorMessage(err));
