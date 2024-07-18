@@ -1226,8 +1226,8 @@ public class AuthenticationManager
     // rely on cookies, browser redirects, etc. Current usages include basic auth and a test case. Note that this will
     // fail if any secondary authentication is enabled (e.g., TOTP, Duo) unless an API key is passed.
 
-    // Throws UnauthorizedException if credentials are incorrect, user doesn't exist, user is inactive, or secondary
-    // auth is enabled and an API key hasn't been used.
+    // Throws UnauthorizedException if credentials are incorrect, password is expired, password is not complex enough,
+    // user doesn't exist, user is inactive, or secondary auth is enabled and an API key hasn't been used.
     public static @Nullable User authenticate(HttpServletRequest request, String id, String password) throws InvalidEmailException
     {
         PrimaryAuthenticationResult primaryResult = authenticate(request, id, password, null, true);
@@ -1240,9 +1240,14 @@ public class AuthenticationManager
             return handleAuthentication(request, ContainerManager.getRoot()).getUser();
         }
 
-        // Basic auth has failed so send error response in a format that APIs can consume (JSON unless request specifies otherwise)
+        // Basic auth has failed so send error response in a format that APIs can consume (JSON unless request specifies
+        // otherwise). Note: If needed to handle other pre-action cases, setResponseFormat() could be called earlier,
+        // e.g., in AuthFilter.doFilter(), but for now, the basic auth failure case is all we care about. Regardless,
+        // SpringActionController.handleRequest() will need to call this again since actions can specify the default
+        // format.
         SpringActionController.setResponseFormat(request, Format.JSON);
         String message = primaryResult.getMessage();
+
         throw new UnauthorizedException(message != null ? message : primaryResult.getStatusErrorMessage(DisplayLocation.API));
     }
 
