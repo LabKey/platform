@@ -73,15 +73,15 @@ public class AssayDesignGenerator extends DataGenerator<AssayDesignGenerator.Con
 
         // clear the batch domain fields
         GWTDomain<GWTPropertyDescriptor> batchDomain = domains.stream().filter(d -> "Batch Fields".equals(d.getName())).findFirst().orElseThrow();
-        batchDomain.getFields().clear();
+        batchDomain.getAllFields().clear();
 
         // clear the run domain fields
         GWTDomain<GWTPropertyDescriptor> runDomain = domains.stream().filter(d -> "Run Fields".equals(d.getName())).findFirst().orElseThrow();
-        runDomain.getFields().clear();
+        runDomain.getAllFields().clear();
 
         // clear the result domain fields and add a sample lookup
         GWTDomain<GWTPropertyDescriptor> resultDomain = domains.stream().filter(d -> "Data Fields".equals(d.getName())).findFirst().orElseThrow();
-        resultDomain.getFields().clear();
+        resultDomain.getAllFields().clear();
         GWTPropertyDescriptor sampleLookup = new GWTPropertyDescriptor("SampleID", "int");
         sampleLookup.setConceptURI(SAMPLE_CONCEPT_URI);
         sampleLookup.setLabel("Sample ID");
@@ -102,7 +102,7 @@ public class AssayDesignGenerator extends DataGenerator<AssayDesignGenerator.Con
         List<GWTPropertyDescriptor> props = new ArrayList<>();
         props.add(sampleLookup);
         addDomainProperties(props, randomInt(_config.getMinFields(), _config.getMaxFields()));
-        resultDomain.getFields().addAll(props);
+        resultDomain.getAllFields().addAll(props);
 
         // create the assay
         assayDomainService.saveChanges(assayTemplate, true);
