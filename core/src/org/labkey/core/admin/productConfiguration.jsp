@@ -55,7 +55,7 @@
 
 <div class="list-group">
     <h4>Products</h4>
-    <% for (AdminConsole.Product product : AdminConsole.getProducts()) { %>
+    <% for (AdminConsole.Product product : AdminConsole.getProducts(true)) { %>
     <div class="product-group-item">
         <label>
             <input type="radio" id="<%=h(product.getKey())%>" name="productKey" value="<%=h(product.getKey())%>" <%=checked(product.isEnabled())%>>

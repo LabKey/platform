@@ -15,9 +15,7 @@
  */
 package org.labkey.api.settings;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
@@ -33,10 +31,9 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 /**
@@ -67,7 +64,7 @@ public class AdminConsole
 
     private static final Map<SettingsLinkType, Collection<AdminLink>> _links = new HashMap<>();
     private static final Set<OptionalFeatureFlag> _optionalFlags = new ConcurrentSkipListSet<>();
-    private static final List<Product> _products = new ArrayList<>();
+    private static final Map<String, Product>  _products = new ConcurrentHashMap<>();
 
     static
     {
@@ -240,31 +237,38 @@ public class AdminConsole
         }
     }
 
-
-    public static void addProducts(Collection<Product> products)
+    public static void addProduct(Product product)
     {
-        _products.addAll(products);
+        _products.put(product.getKey(), product);
     }
 
     public static Set<String> getProductFeatureSet()
     {
         Set<String> productFeatures = new HashSet<>();
-        AdminConsole.getProducts().forEach(product -> {
-            if (product.isEnabled())
-                productFeatures.addAll(product.getFeatureFlags());
-        });
+        String product = new ProductConfiguration().getCurrentProduct();
+        if (_products.containsKey(product))
+            productFeatures.addAll(_products.get(product).getFeatureFlags());
         return productFeatures;
     }
 
-    public static List<Product> getProducts()
+    public static Collection<Product> getProducts()
     {
-        _products.sort((a, b) -> {
+        return getProducts(false);
+    }
+
+    public static Collection<Product> getProducts(boolean sorted)
+    {
+        if (!sorted)
+            return _products.values();
+
+        List<Product> orderedProducts = new ArrayList<>(_products.values());
+        orderedProducts.sort((a, b) -> {
             if (a == b) return 0;
             if (null == a) return -1;
             if (null == b) return 1;
             return a.getOrderNum() - b.getOrderNum();
         });
-        return _products;
+        return orderedProducts;
     }
 
     public static boolean isProductFeatureEnabled(ProductFeature feature)
