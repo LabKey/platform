@@ -54,7 +54,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "4.0.6-limsProduct.0",
+    "@labkey/components": "4.0.6-limsProduct.1",
     "@labkey/themes": "1.3.3"
   },
   "devDependencies": {
