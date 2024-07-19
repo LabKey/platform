@@ -33,8 +33,10 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 /**
@@ -65,7 +67,7 @@ public class AdminConsole
 
     private static final Map<SettingsLinkType, Collection<AdminLink>> _links = new HashMap<>();
     private static final Set<OptionalFeatureFlag> _optionalFlags = new ConcurrentSkipListSet<>();
-    private static final Set<ProductGroup> _productGroups = new ConcurrentSkipListSet<>();
+    private static final List<Product> _products = new ArrayList<>();
 
     static
     {
@@ -238,94 +240,54 @@ public class AdminConsole
         }
     }
 
-    public static void addProductGroup(ProductGroup group)
-    {
-        _productGroups.add(group);
-    }
 
-    public static Set<ProductGroup> getProductGroups()
+    public static void addProducts(Collection<Product> products)
     {
-        return Collections.unmodifiableSet(_productGroups);
+        _products.addAll(products);
     }
 
     public static Set<String> getProductFeatureSet()
     {
-        return getProductFeatureSet(null);
-    }
-
-    public static Set<String> getProductFeatureSet(@Nullable String groupKey)
-    {
         Set<String> productFeatures = new HashSet<>();
-        AdminConsole.getProductGroups(groupKey).forEach(group -> {
-            group.getProducts().forEach(product -> {
-                if (product.isEnabled())
-                    productFeatures.addAll(product.getFeatureFlags());
-            });
+        AdminConsole.getProducts().forEach(product -> {
+            if (product.isEnabled())
+                productFeatures.addAll(product.getFeatureFlags());
         });
         return productFeatures;
     }
 
     public static List<Product> getProducts()
     {
-        List<Product> products = new ArrayList<>();
-        AdminConsole.getProductGroups().forEach(group -> {
-            products.addAll(group.getProducts());
-        });
-        products.sort((a, b) -> {
+        _products.sort((a, b) -> {
             if (a == b) return 0;
             if (null == a) return -1;
             if (null == b) return 1;
             return a.getOrderNum() - b.getOrderNum();
         });
-        return products;
-    }
-
-    public static Set<ProductGroup> getProductGroups(@Nullable String groupKey)
-    {
-        Set<ProductGroup> productGroups = new HashSet<>();
-        AdminConsole.getProductGroups().forEach(group -> {
-            if (StringUtils.isEmpty(groupKey) || groupKey.equals(group.getKey()))
-                productGroups.add(group);
-        });
-        return productGroups;
+        return _products;
     }
 
     public static boolean isProductFeatureEnabled(ProductFeature feature)
     {
-        return isProductFeatureEnabled(feature, null);
+        return getProductFeatureSet().contains(feature.toString());
     }
 
-    // TODO This is currently (22.12) not in use, but could become useful. We will leave it for the time being.
-    public static boolean isProductFeatureEnabled(ProductFeature feature, @Nullable String groupKey)
+    public static abstract class Product implements Comparable<Product>
     {
-        return getProductFeatureSet(groupKey).contains(feature.toString());
-    }
+        public abstract Integer getOrderNum();
 
-    public static abstract class ProductGroup implements Comparable<ProductGroup>
-    {
         public abstract String getName();
 
         public abstract String getKey();
 
-        public abstract List<Product> getProducts();
+        public abstract boolean isEnabled();
+
+        public abstract @NotNull List<String> getFeatureFlags();
 
         @Override
-        public int compareTo(@NotNull ProductGroup o)
+        public int compareTo(@NotNull Product o)
         {
             return getName().compareToIgnoreCase(o.getName());
         }
-    }
-
-    public interface Product
-    {
-        Integer getOrderNum();
-
-        String getName();
-
-        String getKey();
-
-        boolean isEnabled();
-
-        @NotNull List<String> getFeatureFlags();
     }
 }

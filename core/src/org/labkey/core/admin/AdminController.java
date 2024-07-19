@@ -423,7 +423,7 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(Configuration, "email customization", new ActionURL(CustomizeEmailAction.class, root), AdminPermission.class);
         AdminConsole.addLink(Configuration, "deprecated features", new ActionURL(OptionalFeaturesAction.class, root).addParameter("type", FeatureType.Deprecated.name()), AdminOperationsPermission.class);
         AdminConsole.addLink(Configuration, "experimental features", new ActionURL(OptionalFeaturesAction.class, root).addParameter("type", FeatureType.Experimental.name()), AdminOperationsPermission.class);
-        if (!AdminConsole.getProductGroups().isEmpty())
+        if (!AdminConsole.getProducts().isEmpty())
             AdminConsole.addLink(Configuration, "product configuration", new ActionURL(ProductConfigurationAction.class, root), AdminOperationsPermission.class);
         // TODO move to FileContentModule
         if (ModuleLoader.getInstance().hasModule("FileContent"))
