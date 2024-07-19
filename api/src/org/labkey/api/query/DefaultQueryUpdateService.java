@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
@@ -326,7 +327,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             {
                 // convert "Property name"->value map into PropertyURI->value map
                 List<PropertyDescriptor> pds = new ArrayList<>();
-                Map<String, Object> values = new HashMap<>();
+                Map<String, Object> values = new CaseInsensitiveMapWrapper<>(new HashMap<>());
                 for (PropertyColumn pc : getPropertyColumns())
                 {
                     PropertyDescriptor pd = pc.getPropertyDescriptor();
@@ -524,7 +525,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             if (objectUriCol != null && domain != null && !domain.getProperties().isEmpty())
             {
                 // convert "Property name"->value map into PropertyURI->value map
-                Map<String, Object> newValues = new HashMap<>();
+                Map<String, Object> newValues = new CaseInsensitiveMapWrapper<>(new HashMap<>());
 
                 for (PropertyColumn pc : getPropertyColumns())
                 {
