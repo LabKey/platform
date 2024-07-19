@@ -328,8 +328,7 @@ public class DomainUtil
         }
 
         // add calculated columns to the list of properties
-        if (!calculatedFields.isEmpty())
-            list.addAll(calculatedFields);
+        list.addAll(calculatedFields);
 
         d.setFields(list);
 
