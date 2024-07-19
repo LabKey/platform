@@ -5,6 +5,7 @@ import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.DefaultAssayRunCreator;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.generator.DataGenerator;
+import org.labkey.api.dataiterator.AbstractMapDataIterator;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleType;
@@ -13,7 +14,6 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.assay.AssayException;
-import org.labkey.api.iterator.ValidatingDataRowIterator;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.ValidationException;
@@ -38,7 +38,7 @@ public class AssayRunDataGenerator extends DataGenerator<AssayRunDataGenerator.C
         super(job, config);
     }
 
-    public void generateAssayRunData() throws ValidationException, AssayException, ExperimentException
+    public void generateAssayRunData() throws ValidationException, ExperimentException
     {
         AssayProvider provider = AssayService.get().getProvider("General");
         if (provider == null)
@@ -94,7 +94,7 @@ public class AssayRunDataGenerator extends DataGenerator<AssayRunDataGenerator.C
                 var factory = provider.createRunUploadFactory(protocol, context)
                         .setName(protocol.getName() + " - Run " + (i+1) )
                         .setJobDescription("Run with " + rawData.size() + " results.")
-                        .setRawData(() -> ValidatingDataRowIterator.of(rawData))
+                        .setRawData(AbstractMapDataIterator.builderOf(rawData))
                         .setUploadedData(Collections.emptyMap());
                 Map<Object, String> outputData = new HashMap<>();
                 // Create an ExpData for the results
@@ -103,7 +103,7 @@ public class AssayRunDataGenerator extends DataGenerator<AssayRunDataGenerator.C
                 provider.getRunCreator().saveExperimentRun(factory.create(), null);
             }
             timer.stop();
-        };
+        }
     }
 
     private void updateSampleProps(String protocolName, List<Map<String, Object>> rawData, Domain resultsDomain)
@@ -121,9 +121,7 @@ public class AssayRunDataGenerator extends DataGenerator<AssayRunDataGenerator.C
                 {
                     _log.warn(String.format("Sample type '%s' referenced in assay design %s not found.", sampleTypeName, protocolName));
                     // remove the values set by the default data generator for the row since they won't be valid sample ids.
-                    rawData.forEach(row -> {
-                        row.put(sampleProp.getName(), null);
-                    });
+                    rawData.forEach(row -> row.put(sampleProp.getName(), null));
                 }
                 else
                 {

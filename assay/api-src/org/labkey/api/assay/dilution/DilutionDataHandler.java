@@ -32,6 +32,8 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.statistics.CurveFit;
 import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.data.statistics.StatsService;
+import org.labkey.api.dataiterator.AbstractMapDataIterator;
+import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
@@ -46,7 +48,6 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.iterator.ValidatingDataRowIterator;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.assay.plate.Plate;
@@ -72,7 +73,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Supplier;
 
 /**
  * User: klum
@@ -99,7 +99,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
     /** Lock object to only allow one thread to be populating well data at a time */
     public static final Object WELL_DATA_LOCK_OBJECT = new Object();
 
-    private String _dataRowLsidPrefix;
+    private final String _dataRowLsidPrefix;
 
     public DilutionDataHandler(String dataLsidPrefix)
     {
@@ -108,9 +108,9 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
 
     protected class DilutionDataFileParser
     {
-        private ExpData _data;
-        private File _dataFile;
-        private ViewBackgroundInfo _info;
+        private final ExpData _data;
+        private final File _dataFile;
+        private final ViewBackgroundInfo _info;
 
         public DilutionDataFileParser(ExpData data, File dataFile, ViewBackgroundInfo info)
         {
@@ -481,7 +481,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         DilutionDataFileParser parser = getDataFileParser(data, dataFile, info);
 
         List<Map<String, Object>> results = parser.getResults();
-        importRows(data, run, protocol, () -> ValidatingDataRowIterator.of(results), context.getUser());
+        importRows(data, run, protocol, AbstractMapDataIterator.builderOf(results), context.getUser());
     }
 
     public static final String POLY_SUFFIX = "_poly";
@@ -489,7 +489,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
     public static final String PL4_SUFFIX = "_4pl";
     public static final String PL5_SUFFIX = "_5pl";
 
-    protected abstract void importRows(ExpData data, ExpRun run, ExpProtocol protocol, Supplier<ValidatingDataRowIterator> rawData, User user) throws ExperimentException;
+    protected abstract void importRows(ExpData data, ExpRun run, ExpProtocol protocol, DataIteratorBuilder rawData, User user) throws ExperimentException;
 
     protected ObjectProperty getObjectProperty(Container container, ExpProtocol protocol, String objectURI, String propertyName, Object value, Map<Integer, String> cutoffFormats)
     {

@@ -34,6 +34,7 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.ColumnValidators;
+import org.labkey.api.dataiterator.AbstractMapDataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
@@ -46,7 +47,6 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.ValidatorContext;
-import org.labkey.api.iterator.ValidatingDataRowIterator;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.User;
@@ -70,7 +70,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
 /**
@@ -319,36 +318,40 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
     {
         assert (getQueryTable().supportsInsertOption(InsertOption.INSERT));
 
-        ColumnInfo objectUriCol = getObjectUriColumn();
-        Domain domain = getDomain();
-        if (objectUriCol != null && domain != null && !domain.getProperties().isEmpty())
-        {
-            // convert "Property name"->value map into PropertyURI->value map
-            List<PropertyDescriptor> pds = new ArrayList<>();
-            Map<String, Object> values = new HashMap<>();
-            for (PropertyColumn pc : getPropertyColumns())
-            {
-                PropertyDescriptor pd = pc.getPropertyDescriptor();
-                pds.add(pd);
-                Object value = getPropertyValue(row, pd);
-                values.put(pd.getPropertyURI(), value);
-            }
-
-            LsidCollector collector = new LsidCollector();
-            OntologyManager.insertTabDelimited(getDomainObjContainer(c), user, null, new ImportHelper(), pds, ValidatingDataRowIterator.of(Collections.singletonList(values).iterator()), true, collector);
-            String lsid = collector.getLsid();
-
-            // Add the new lsid to the row map.
-            row.put(objectUriCol.getName(), lsid);
-        }
-
         try
         {
+            ColumnInfo objectUriCol = getObjectUriColumn();
+            Domain domain = getDomain();
+            if (objectUriCol != null && domain != null && !domain.getProperties().isEmpty())
+            {
+                // convert "Property name"->value map into PropertyURI->value map
+                List<PropertyDescriptor> pds = new ArrayList<>();
+                Map<String, Object> values = new HashMap<>();
+                for (PropertyColumn pc : getPropertyColumns())
+                {
+                    PropertyDescriptor pd = pc.getPropertyDescriptor();
+                    pds.add(pd);
+                    Object value = getPropertyValue(row, pd);
+                    values.put(pd.getPropertyURI(), value);
+                }
+
+                LsidCollector collector = new LsidCollector();
+                OntologyManager.insertTabDelimited(getDomainObjContainer(c), user, null, new ImportHelper(), pds, AbstractMapDataIterator.of(Collections.singletonList(values), new DataIteratorContext()), true, collector);
+                String lsid = collector.getLsid();
+
+                // Add the new lsid to the row map.
+                row.put(objectUriCol.getName(), lsid);
+            }
+
             return Table.insert(user, getDbTable(), row);
         }
         catch (RuntimeValidationException e)
         {
             throw e.getValidationException();
+        }
+        catch (BatchValidationException e)
+        {
+            throw e.getLastRowError();
         }
     }
 
@@ -473,7 +476,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             Object value = row.get(col.getColumnName());
 
             // Check required values aren't null or empty
-            if (null == value || value instanceof String && 0 == ((String) value).length())
+            if (null == value || value instanceof String s && s.isEmpty())
             {
                 if (!col.isAutoIncrement() && col.isRequired() &&
                         !getAutoPopulatedColumns().contains(col.getName()) &&
@@ -507,72 +510,79 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
     {
         assert(getQueryTable().supportsInsertOption(InsertOption.UPDATE));
 
-        ColumnInfo objectUriCol = getObjectUriColumn();
-        Domain domain = getDomain();
-
-        // The lsid may be null for the row until a property has been inserted
-        String lsid = null;
-        if (objectUriCol != null)
-            lsid = (String)oldRow.get(objectUriCol.getName());
-
-        List<PropertyDescriptor> tableProperties = new ArrayList<>();
-        if (objectUriCol != null && domain != null && !domain.getProperties().isEmpty())
+        try
         {
-            // convert "Property name"->value map into PropertyURI->value map
-            Map<String, Object> newValues = new HashMap<>();
+            ColumnInfo objectUriCol = getObjectUriColumn();
+            Domain domain = getDomain();
 
-            for (PropertyColumn pc : getPropertyColumns())
+            // The lsid may be null for the row until a property has been inserted
+            String lsid = null;
+            if (objectUriCol != null)
+                lsid = (String) oldRow.get(objectUriCol.getName());
+
+            List<PropertyDescriptor> tableProperties = new ArrayList<>();
+            if (objectUriCol != null && domain != null && !domain.getProperties().isEmpty())
             {
-                PropertyDescriptor pd = pc.getPropertyDescriptor();
-                tableProperties.add(pd);
+                // convert "Property name"->value map into PropertyURI->value map
+                Map<String, Object> newValues = new HashMap<>();
 
-                // clear out the old value if it exists and is contained in the new row (it may be incoming as null)
-                if (lsid != null && (hasProperty(row, pd) && hasProperty(oldRow, pd)))
-                    OntologyManager.deleteProperty(lsid, pd.getPropertyURI(), getDomainObjContainer(c), getDomainContainer(c));
+                for (PropertyColumn pc : getPropertyColumns())
+                {
+                    PropertyDescriptor pd = pc.getPropertyDescriptor();
+                    tableProperties.add(pd);
 
-                Object value = getPropertyValue(row, pd);
-                if (value != null)
-                    newValues.put(pd.getPropertyURI(), value);
+                    // clear out the old value if it exists and is contained in the new row (it may be incoming as null)
+                    if (lsid != null && (hasProperty(row, pd) && hasProperty(oldRow, pd)))
+                        OntologyManager.deleteProperty(lsid, pd.getPropertyURI(), getDomainObjContainer(c), getDomainContainer(c));
+
+                    Object value = getPropertyValue(row, pd);
+                    if (value != null)
+                        newValues.put(pd.getPropertyURI(), value);
+                }
+
+                // Note: copy lsid into newValues map so it will be found by the ImportHelper.beforeImportObject()
+                newValues.put(objectUriCol.getName(), lsid);
+
+                LsidCollector collector = new LsidCollector();
+                OntologyManager.insertTabDelimited(getDomainObjContainer(c), user, null, new ImportHelper(), tableProperties, AbstractMapDataIterator.of(Collections.singletonList(newValues), new DataIteratorContext()), true, collector);
+
+                // Update the lsid in the row: the lsid may have not existed in the row before the update.
+                lsid = collector.getLsid();
+                row.put(objectUriCol.getName(), lsid);
             }
 
-            // Note: copy lsid into newValues map so it will be found by the ImportHelper.beforeImportObject()
-            newValues.put(objectUriCol.getName(), lsid);
-
-            LsidCollector collector = new LsidCollector();
-            OntologyManager.insertTabDelimited(getDomainObjContainer(c), user, null, new ImportHelper(), tableProperties, ValidatingDataRowIterator.of(Collections.singletonList(newValues).iterator()), true, collector);
-
-            // Update the lsid in the row: the lsid may have not existed in the row before the update.
-            lsid = collector.getLsid();
-            row.put(objectUriCol.getName(), lsid);
-        }
-
-        // Get lsid value if it hasn't been set.
-        // This should only happen if the QueryUpdateService doesn't have a DomainUpdateHelper (DataClass and SampleType)
-        if (lsid == null && getQueryTable() instanceof UpdateableTableInfo updateableTableInfo)
-        {
-            String objectUriColName = updateableTableInfo.getObjectURIColumnName();
-            if (objectUriColName != null)
-                lsid = (String)row.getOrDefault(objectUriColName, oldRow.get(objectUriColName));
-        }
-
-        // handle vocabulary properties
-        if (lsid != null)
-        {
-            for (Map.Entry<String, Object> rowEntry : row.entrySet())
+            // Get lsid value if it hasn't been set.
+            // This should only happen if the QueryUpdateService doesn't have a DomainUpdateHelper (DataClass and SampleType)
+            if (lsid == null && getQueryTable() instanceof UpdateableTableInfo updateableTableInfo)
             {
-                String colName = rowEntry.getKey();
-                Object value = rowEntry.getValue();
+                String objectUriColName = updateableTableInfo.getObjectURIColumnName();
+                if (objectUriColName != null)
+                    lsid = (String) row.getOrDefault(objectUriColName, oldRow.get(objectUriColName));
+            }
 
-                ColumnInfo col = getQueryTable().getColumn(colName);
-                if (col instanceof PropertyColumn propCol)
+            // handle vocabulary properties
+            if (lsid != null)
+            {
+                for (Map.Entry<String, Object> rowEntry : row.entrySet())
                 {
-                    PropertyDescriptor pd = propCol.getPropertyDescriptor();
-                    if (pd.isVocabulary() && !tableProperties.contains(pd))
+                    String colName = rowEntry.getKey();
+                    Object value = rowEntry.getValue();
+
+                    ColumnInfo col = getQueryTable().getColumn(colName);
+                    if (col instanceof PropertyColumn propCol)
                     {
-                        OntologyManager.updateObjectProperty(user, c, pd, lsid, value, null, false);
+                        PropertyDescriptor pd = propCol.getPropertyDescriptor();
+                        if (pd.isVocabulary() && !tableProperties.contains(pd))
+                        {
+                            OntologyManager.updateObjectProperty(user, c, pd, lsid, value, null, false);
+                        }
                     }
                 }
             }
+        }
+        catch (BatchValidationException e)
+        {
+            throw e.getLastRowError();
         }
 
         return Table.update(user, getDbTable(), row, keys); // Cache-invalidation handled in caller (TreatmentManager.saveAssaySpecimen())

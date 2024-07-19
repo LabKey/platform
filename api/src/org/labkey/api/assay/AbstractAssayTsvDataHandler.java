@@ -47,6 +47,11 @@ import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.ColumnValidators;
+import org.labkey.api.dataiterator.DataIterator;
+import org.labkey.api.dataiterator.DataIteratorBuilder;
+import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.dataiterator.DataIteratorUtil;
+import org.labkey.api.dataiterator.WrapperDataIterator;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.MvFieldWrapper;
@@ -67,9 +72,9 @@ import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.ValidatorContext;
-import org.labkey.api.iterator.ValidatingDataRowIterator;
 import org.labkey.api.qc.DataLoaderSettings;
 import org.labkey.api.qc.ValidationDataHandler;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.QueryService;
@@ -86,6 +91,7 @@ import org.labkey.api.study.assay.ParticipantVisitResolver;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -107,7 +113,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Supplier;
+import java.util.function.Function;
 
 import static java.util.stream.Collectors.toList;
 import static org.labkey.api.exp.OntologyManager.NO_OP_ROW_CALLBACK;
@@ -160,33 +166,33 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         // type conversion error).
         settings.setBestEffortConversion(true);
 
-        Map<DataType, Supplier<ValidatingDataRowIterator>> rawData = getValidationDataMap(data, dataFile, info, log, context, settings);
+        Map<DataType, DataIteratorBuilder> rawData = getValidationDataMap(data, dataFile, info, log, context, settings);
         assert(rawData.size() <= 1);
         try
         {
             importRows(data, info.getUser(), run, protocol, provider, rawData.values().iterator().next(), settings, autoFillDefaultResultColumns);
         }
-        catch (ValidationException e)
+        catch (BatchValidationException e)
         {
             throw new ExperimentException(e.toString(), e);
         }
     }
 
-    public void importTransformDataMap(ExpData data, AssayRunUploadContext<?> context, ExpRun run, Supplier<ValidatingDataRowIterator> dataMap) throws ExperimentException
+    public void importTransformDataMap(ExpData data, AssayRunUploadContext<?> context, ExpRun run, DataIteratorBuilder dataMap) throws ExperimentException
     {
         try
         {
             DataLoaderSettings settings = new DataLoaderSettings();
             importRows(data, context.getUser(), run, context.getProtocol(), context.getProvider(), dataMap, settings, context.shouldAutoFillDefaultResultColumns());
         }
-        catch (ValidationException e)
+        catch (BatchValidationException e)
         {
             throw new ExperimentException(e.toString(), e);
         }
     }
 
     @Override
-    public Map<DataType, Supplier<ValidatingDataRowIterator>> getValidationDataMap(ExpData data, File dataFile, ViewBackgroundInfo info, Logger log, XarContext context, DataLoaderSettings settings) throws ExperimentException
+    public Map<DataType, DataIteratorBuilder> getValidationDataMap(ExpData data, File dataFile, ViewBackgroundInfo info, Logger log, XarContext context, DataLoaderSettings settings) throws ExperimentException
     {
         ExpProtocol protocol = data.getRun().getProtocol();
         AssayProvider provider = AssayService.get().getProvider(protocol);
@@ -195,16 +201,14 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
         try (DataLoader loader = createLoaderForImport(dataFile, data.getRun(), dataDomain, settings, true))
         {
-            Map<DataType, Supplier<ValidatingDataRowIterator>> datas = new HashMap<>();
-            Supplier<ValidatingDataRowIterator> dataRows = () -> ValidatingDataRowIterator.of(loader.iterator());
+            Map<DataType, DataIteratorBuilder> datas = new HashMap<>();
+            DataIteratorBuilder dataRows = (diContext) -> loader.getDataIterator(diContext);
 
             if (plateMetadataEnabled && AssayPlateMetadataService.isExperimentalAppPlateEnabled())
             {
                 Integer plateSetId = getPlateSetValueFromRunProps(context, provider, protocol);
                 dataRows = AssayPlateMetadataService.get().parsePlateData(context.getContainer(), context.getUser(), provider, protocol, plateSetId, dataFile, dataRows);
             }
-
-            dataRows = adjustFirstRowOrder(dataRows, loader, settings, dataDomain);
 
             // assays with plate metadata support will merge the plate metadata with the data rows to make it easier for
             // transform scripts to perform metadata related calculations
@@ -215,13 +219,10 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
             return datas;
         }
-        catch (IOException ioe)
-        {
-            throw new ExperimentException("There was a problem loading the data file. " + (ioe.getMessage() == null ? "" : ioe.getMessage()), ioe);
-        }
     }
 
-    private Supplier<ValidatingDataRowIterator> mergePlateMetadata(XarContext context, AssayProvider provider, ExpProtocol protocol, Supplier<ValidatingDataRowIterator> dataRows) throws ExperimentException
+    private DataIteratorBuilder mergePlateMetadata(XarContext context, AssayProvider provider, ExpProtocol protocol, DataIteratorBuilder dataRows)
+            throws ExperimentException
     {
         Domain runDomain = provider.getRunDomain(protocol);
         DomainProperty propertyPlateSet = runDomain.getPropertyByName(AssayPlateMetadataService.PLATE_SET_COLUMN_NAME);
@@ -253,7 +254,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
      * Creates a DataLoader that can handle missing value indicators if the columns on the domain
      * are configured to support it.
      */
-    public static DataLoader createLoaderForImport(File dataFile, ExpRun run, @Nullable Domain dataDomain, DataLoaderSettings settings, boolean shouldInferTypes) throws ExperimentException
+    public static DataLoader createLoaderForImport(File dataFile, ExpRun run, @Nullable Domain dataDomain, DataLoaderSettings settings, boolean shouldInferTypes)
     {
         Map<String, DomainProperty> aliases = new HashMap<>();
         Set<String> mvEnabledColumns = Sets.newCaseInsensitiveHashSet();
@@ -330,58 +331,8 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         }
         catch (IOException ioe)
         {
-            throw new ExperimentException("There was a problem loading the data file. " + (ioe.getMessage() == null ? "" : ioe.getMessage()), ioe);
+            throw UnexpectedException.wrap(ioe);
         }
-    }
-
-    /**
-     * Reorders the first row of the list of rows to be in original column order. This is usually enough
-     * to cause serializers for tsv formats to respect the original file column order. A bit of a hack but
-     * the way row maps are generated make it difficult to preserve order at row map generation time.
-     */
-    private Supplier<ValidatingDataRowIterator> adjustFirstRowOrder(Supplier<ValidatingDataRowIterator> iter, DataLoader loader, DataLoaderSettings settings, Domain dataDomain) throws IOException
-    {
-        ColumnDescriptor[] columns = loader.getColumns();
-
-        return () -> new ValidatingDataRowIterator.Wrapper(iter.get())
-        {
-            @Override
-            public boolean hasNext() throws ValidationException
-            {
-                boolean result = super.hasNext();
-                if (!result && getCurrentRowNumber() == -1 && !settings.isAllowEmptyData() && !dataDomain.getProperties().isEmpty())
-                {
-                    throw new ValidationException("Unable to load any rows from the input data. Please check the format of the input data to make sure it matches the assay data columns.");
-                }
-                return result;
-             }
-
-            @Override
-            public Map<String, Object> next() throws ValidationException
-            {
-                Map<String, Object> result = super.next();
-                if (getCurrentRowNumber() == 0)
-                {
-                    Set<String> remainingFields = new HashSet<>(result.keySet());
-                    Map<String, Object> newRow = new LinkedHashMap<>();
-                    for (ColumnDescriptor column : columns)
-                    {
-                        if (result.containsKey(column.name))
-                        {
-                            remainingFields.remove(column.name);
-                            newRow.put(column.name, result.get(column.name));
-                        }
-                    }
-                    // Now propagate anything that's doesn't match exactly with a column
-                    for (String key : remainingFields)
-                    {
-                        newRow.put(key, result.get(key));
-                    }
-                    return newRow;
-                }
-                return result;
-            }
-        };
     }
 
     @Override
@@ -510,32 +461,35 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         }
     }
 
-    public void importRows(ExpData data, User user, ExpRun run, ExpProtocol protocol, AssayProvider provider, Supplier<ValidatingDataRowIterator> rawData, @Nullable DataLoaderSettings settings, boolean autoFillDefaultResultColumns)
-            throws ExperimentException, ValidationException
+    public void importRows(ExpData data, User user, ExpRun run, ExpProtocol protocol, AssayProvider provider, DataIteratorBuilder rawData, @Nullable DataLoaderSettings settings, boolean autoFillDefaultResultColumns)
+            throws ExperimentException, BatchValidationException
     {
         if (settings == null)
             settings = new DataLoaderSettings();
 
+        Domain dataDomain = provider.getResultsDomain(protocol);
+
         try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction();
-             ValidatingDataRowIterator iter = rawData.get())
+             DataIterator rawIter = rawData.getDataIterator(new DataIteratorContext()))
         {
+            DataIterator iter = new WrapperDataIterator(rawIter)
+            {
+                boolean foundRow = false;
+                @Override
+                public boolean next() throws BatchValidationException
+                {
+                    boolean result = super.next();
+                    foundRow = foundRow || result;
+                    if (!foundRow)
+                    {
+                        throw new NoRowsException();
+                    }
+                    return result;
+                }
+            };
+
             Container container = data.getContainer();
             ParticipantVisitResolver resolver = createResolver(user, run, protocol, provider, container);
-
-            Domain dataDomain = provider.getResultsDomain(protocol);
-
-            if (!iter.hasNext())
-            {
-                if (allowEmptyData() || dataDomain.getProperties().isEmpty())
-                {
-                    transaction.commit();
-                    return;
-                }
-                else
-                {
-                    throw new ExperimentException("Data file contained zero data rows");
-                }
-            }
 
             final ContainerFilter cf = QueryService.get().getContainerFilterForLookups(container, user);
             final TableInfo dataTable = provider.createProtocolSchema(user, container, protocol, null).createDataTable(cf);
@@ -552,7 +506,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             }
             Map<ExpMaterial, String> rowBasedInputMaterials = new LinkedHashMap<>();
 
-            ValidatingDataRowIterator fileData = checkData(container, user, dataTable, dataDomain, iter, settings, resolver, protocolInputMaterials, cf, rowBasedInputMaterials);
+            DataIterator fileData = checkData(container, user, dataTable, dataDomain, iter, settings, resolver, protocolInputMaterials, cf, rowBasedInputMaterials);
             fileData = convertPropertyNamesToURIs(fileData, dataDomain);
 
             OntologyManager.RowCallback rowCallback = NO_OP_ROW_CALLBACK;
@@ -577,7 +531,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             SampleTypeService sampleService = SampleTypeService.get();
             Collection<? extends ExpMaterial> lockedSamples = sampleService.getSamplesNotPermitted(rowBasedInputMaterials.keySet(), SampleTypeService.SampleOperations.AddAssayData);
             if (!lockedSamples.isEmpty())
-                throw new ValidationException(sampleService.getOperationNotPermittedMessage(lockedSamples, SampleTypeService.SampleOperations.AddAssayData));
+                throw new ExperimentException(sampleService.getOperationNotPermittedMessage(lockedSamples, SampleTypeService.SampleOperations.AddAssayData));
 
             if (shouldAddInputMaterials())
             {
@@ -593,6 +547,13 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         catch (IOException e)
         {
             throw new ExperimentException(e);
+        }
+        catch (NoRowsException e)
+        {
+            if (!allowEmptyData() && !dataDomain.getProperties().isEmpty())
+            {
+                throw new ExperimentException("Data file contained zero data rows");
+            }
         }
     }
 
@@ -611,11 +572,11 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         ExpProtocol protocol,
         AssayProvider provider,
         Domain dataDomain,
-        ValidatingDataRowIterator fileData,
+        DataIterator fileData,
         TableInfo tableInfo,
         boolean autoFillDefaultColumns,
         OntologyManager.RowCallback rowCallback
-    ) throws SQLException, ValidationException, ExperimentException
+    ) throws SQLException, BatchValidationException, ExperimentException
     {
         OntologyManager.UpdateableTableImportHelper importHelper = new SimpleAssayDataImportHelper(data, protocol, provider);
         if (provider.isPlateMetadataEnabled(protocol))
@@ -632,14 +593,17 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         }
     }
 
+    /** Signals that an import found no row to import. In some cases this is allowed, in others it's an error condition. */
+    private static class NoRowsException extends RuntimeException
+    {
+    }
+
     protected abstract boolean shouldAddInputMaterials();
 
-    private ValidatingDataRowIterator checkColumns(Domain dataDomain, Set<String> actual, ValidatingDataRowIterator rawData) throws ValidationException
+    private void checkColumns(Domain dataDomain, DataIterator rawData) throws BatchValidationException
     {
         List<String> missing = new ArrayList<>();
-        List<String> unexpected = new ArrayList<>();
 
-        ValidatingDataRowIterator result = rawData;
         Set<String> checkSet = new CaseInsensitiveHashSet();
         List<? extends DomainProperty> expected = dataDomain.getProperties();
         for (DomainProperty pd : expected)
@@ -648,15 +612,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             if (pd.isMvEnabled())
                 checkSet.add((pd.getName() + MvColumn.MV_INDICATOR_SUFFIX));
         }
-        for (String col : actual)
-        {
-            if (!checkSet.contains(col))
-                unexpected.add(col);
-        }
-
-        if (!unexpected.isEmpty())
-            result = filterColumns(dataDomain, actual, result);
-        unexpected.clear();
 
         // Now figure out what's missing but required
         Map<String, DomainProperty> importMap = dataDomain.createImportMap(true);
@@ -664,13 +619,14 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         LinkedHashSet<DomainProperty> missingProps = new LinkedHashSet<>(expected);
 
         // Iterate through the ones we got
-        for (String col : actual)
+        for (int i = 1; i <= rawData.getColumnCount(); i++)
         {
+            String col = rawData.getColumnInfo(i).getName();
             // Find the property that it maps to (via name, label, import alias, etc)
             DomainProperty prop = importMap.get(col);
             if (prop != null)
             {
-                // If there's a match, don't consider it missing any more
+                // If there's a match, don't consider it missing anymore
                 missingProps.remove(prop);
             }
         }
@@ -693,76 +649,30 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 else
                     builder.append(".  ");
             }
-            throw new ValidationException(builder.toString());
+            throw new BatchValidationException(new ValidationException(builder.toString()));
         }
-
-        return result;
-    }
-
-    private ValidatingDataRowIterator filterColumns(Domain domain, Set<String> actual, ValidatingDataRowIterator rawData)
-    {
-        Map<String,String> expectedKey2ActualKey = new HashMap<>();
-        for (Map.Entry<String,DomainProperty> aliased : domain.createImportMap(true).entrySet())
-        {
-            for (String actualKey : actual)
-            {
-                if (actualKey.equalsIgnoreCase(aliased.getKey()))
-                {
-                    expectedKey2ActualKey.put(aliased.getValue().getName(), actualKey);
-                }
-
-                if (actualKey.equalsIgnoreCase(ProvenanceService.PROVENANCE_INPUT_PROPERTY))
-                {
-                    expectedKey2ActualKey.put(actualKey, actualKey);
-                }
-            }
-        }
-        return new ValidatingDataRowIterator.Wrapper(rawData)
-        {
-            @Override
-            public Map<String, Object> next() throws ValidationException
-            {
-                Map<String, Object> filteredMap = new HashMap<>();
-                Map<String, Object> rawDataRow = super.next();
-                for (Map.Entry<String, String> expectedAndActualKeys : expectedKey2ActualKey.entrySet())
-                {
-                    filteredMap.put(expectedAndActualKeys.getKey(), rawDataRow.get(expectedAndActualKeys.getValue()));
-                }
-                return filteredMap;
-            }
-        };
     }
 
     /**
-     * TODO: Replace with a DataIterator pipeline
      * @param rowBasedInputMaterials the map of materials that are inputs to this run based on the data rows
      */
-    private ValidatingDataRowIterator checkData(Container container,
+    private DataIterator checkData(Container container,
                                                User user,
                                                TableInfo dataTable,
                                                Domain dataDomain,
-                                               ValidatingDataRowIterator rawData,
+                                               DataIterator rawData,
                                                DataLoaderSettings settings,
                                                ParticipantVisitResolver resolver,
                                                Map<String, ExpMaterial> inputMaterials,
                                                ContainerFilter containerFilter,
                                                Map<ExpMaterial, String> rowBasedInputMaterials)
-            throws ValidationException
+            throws BatchValidationException
     {
         final ExperimentService exp = ExperimentService.get();
 
-        Set<String> columnNames = Collections.emptySet();
-        assert rawData.getCurrentRowNumber() == -1;
-
-        Map<String, Object> firstRow = rawData.peek();
-        if (firstRow != null)
-        {
-            columnNames = firstRow.keySet();
-        }
-
         // For now, we'll only enforce that required columns are present.  In the future, we'd like to
         // do a strict check first, and then present ignorable warnings.
-        ValidatingDataRowIterator transformed = checkColumns(dataDomain, columnNames, rawData);
+        checkColumns(dataDomain, rawData);
 
         DomainProperty participantPropFinder = null;
         DomainProperty specimenPropFinder = null;
@@ -863,14 +773,15 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         DomainProperty datePD = datePropFinder;
         DomainProperty targetStudyPD = targetStudyPropFinder;
 
-        return new ValidatingDataRowIterator.Wrapper(transformed)
+        BatchValidationException bve = new BatchValidationException();
+
+        return DataIteratorUtil.mapTransformer(rawData, null, new Function<>()
         {
             int rowNum = 0;
-            @Override
-            public Map<String, Object> next() throws ValidationException
-            {
-                Map<String, Object> originalMap = super.next();
 
+            @Override
+            public Map<String, Object> apply(Map<String, Object> originalMap)
+            {
                 rowNum++;
                 Collection<ValidationError> errors = new ArrayList<>();
                 Set<String> rowInputLSIDs = new HashSet<>();
@@ -921,15 +832,15 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
                     if (participantPD == pd)
                     {
-                        participantID = o instanceof String ? (String)o : null;
+                        participantID = o instanceof String ? (String) o : null;
                     }
                     else if (specimenPD == pd)
                     {
-                        specimenID = o instanceof String ? (String)o : null;
+                        specimenID = o instanceof String ? (String) o : null;
                     }
                     else if (visitPD == pd && o != null)
                     {
-                        visitID = o instanceof Number ? ((Number)o).doubleValue() : null;
+                        visitID = o instanceof Number ? ((Number) o).doubleValue() : null;
                     }
                     else if (datePD == pd && o != null)
                     {
@@ -992,11 +903,18 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                         else
                         {
                             // File column values are stored as the absolute resolved path
-                            File resolvedFile = AssayUploadFileResolver.resolve(o, container, pd);
-                            if (resolvedFile != null)
+                            try
                             {
-                                o = resolvedFile;
-                                map.put(pd.getName(), o);
+                                File resolvedFile = AssayUploadFileResolver.resolve(o, container, pd);
+                                if (resolvedFile != null)
+                                {
+                                    o = resolvedFile;
+                                    map.put(pd.getName(), o);
+                                }
+                            }
+                            catch (ValidationException e)
+                            {
+                                bve.addRowError(e);
                             }
                         }
                     }
@@ -1013,7 +931,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                             if (remapped == null)
                             {
                                 if (pd.getConceptURI() != null && SAMPLE_CONCEPT_URI.equals(pd.getConceptURI()))
-                                    errors.add(new PropertyValidationError(  o + " not found in the current context.", pd.getName()));
+                                    errors.add(new PropertyValidationError(o + " not found in the current context.", pd.getName()));
                                 else
                                     errors.add(new PropertyValidationError("Failed to convert '" + pd.getName() + "': Could not translate value: " + o, pd.getName()));
                             }
@@ -1052,8 +970,15 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                             String materialName = o.toString();
                             if (inputMaterials.containsKey(materialName))
                                 material = inputMaterials.get(materialName);
-                            if (material == null)
-                                material = exp.findExpMaterial(lookupContainer, user, byNameSS, ssName, materialName, cache, materialCache);
+                            try
+                            {
+                                if (material == null)
+                                    material = exp.findExpMaterial(lookupContainer, user, byNameSS, ssName, materialName, cache, materialCache);
+                            }
+                            catch (ValidationException ve)
+                            {
+                                bve.addRowError(ve);
+                            }
                         }
                         else if (o instanceof Number n)
                             material = materialCache.computeIfAbsent(n.intValue(), (id) -> exp.getExpMaterial(id, containerFilter));
@@ -1075,7 +1000,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                         // show better error message then the "failed to convert" message that will be hit downstream
                         else if (o instanceof String && isSampleLookupById)
                         {
-                            errors.add(new PropertyValidationError(  o + " not found in the current context.", pd.getName()));
+                            errors.add(new PropertyValidationError(o + " not found in the current context.", pd.getName()));
                         }
                         // check for sample Lookup Validator
                         else if (validatorMap.containsKey(pd))
@@ -1091,7 +1016,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 }
 
                 if (!errors.isEmpty())
-                    throw new ValidationException(errors, rowNum);
+                    bve.addRowError(new ValidationException(errors, rowNum));
 
                 try
                 {
@@ -1131,7 +1056,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     ValidationException ve = new ValidationException(e.getMessage() == null ? "Failed to resolve participant visit information" : e.getMessage());
                     ve.setRowNumber(rowNum);
                     ve.initCause(e);
-                    throw ve;
+                    bve.addRowError(ve);
                 }
 
                 // Add any “prov:objectInputs” to the rowInputLSIDs
@@ -1140,7 +1065,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 {
                     if (provenanceInputs instanceof JSONArray inputJSONArr)
                     {
-                        for (Object lsid: inputJSONArr.toList())
+                        for (Object lsid : inputJSONArr.toList())
                         {
                             rowInputLSIDs.add(lsid.toString());
                         }
@@ -1166,13 +1091,13 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 }
                 return map;
             }
-        };
+        }).getDataIterator(new DataIteratorContext());
     }
 
 
     /** Wraps each map in a version that can be queried based on any of the aliases (name, property URI, import
      * aliases, etc for a given property */
-    protected ValidatingDataRowIterator convertPropertyNamesToURIs(ValidatingDataRowIterator dataMaps, Domain domain)
+    protected DataIterator convertPropertyNamesToURIs(DataIterator dataMaps, Domain domain)
     {
         // Get the mapping of different names to the set of domain properties
         final Map<String, DomainProperty> importMap = domain.createImportMap(true);
@@ -1188,15 +1113,9 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         // We want to share canonical casing between data rows, or we end up with an extra Map instance for each
         // data row which can add up quickly
         CaseInsensitiveHashMap<Object> caseMapping = new CaseInsensitiveHashMap<>();
-        return new ValidatingDataRowIterator.Wrapper(dataMaps)
-        {
-            @Override
-            public Map<String, Object> next() throws ValidationException
-            {
-                Map<String, Object> dataMap = super.next();
-                return new PropertyLookupMap(dataMap, caseMapping, importMap, propToNames);
-            }
-        };
+        return DataIteratorUtil.mapTransformer(dataMaps, null, dataMap ->
+                new PropertyLookupMap(dataMap, caseMapping, importMap, propToNames)
+        ).getDataIterator(new DataIteratorContext());
     }
 
     @Override

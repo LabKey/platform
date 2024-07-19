@@ -20,11 +20,14 @@ import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.assay.AbstractAssayTsvDataHandler;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
+import org.labkey.api.dataiterator.DataIteratorBuilder;
+import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.dataiterator.DataIteratorUtil;
+import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.iterator.ValidatingDataRowIterator;
-import org.labkey.api.query.ValidationException;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.writer.PrintWriters;
@@ -37,7 +40,6 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
 
 /**
  * User: klum
@@ -46,18 +48,35 @@ import java.util.function.Supplier;
 public class TsvDataSerializer implements DataExchangeHandler.DataSerializer
 {
     @Override
-    public void exportRunData(ExpProtocol protocol, Supplier<ValidatingDataRowIterator> data, File runDataFile) throws IOException, ValidationException
+    public void exportRunData(ExpProtocol protocol, List<DataIteratorBuilder> data, File runDataFile) throws IOException, BatchValidationException
     {
-        try (ValidatingDataRowIterator iter = data.get())
+        List<String> columns = null;
+        try (PrintWriter pw = PrintWriters.getPrintWriter(runDataFile))
         {
-            // Only write a file if there are data rows
-            if (iter.hasNext())
+            for (DataIteratorBuilder dib : data)
             {
-                try (PrintWriter pw = PrintWriters.getPrintWriter(runDataFile))
+                columns = exportData(dib, columns, pw);
+            }
+        }
+
+        if (columns == null)
+        {
+            // No data was written so delete the empty file
+            runDataFile.delete();
+        }
+    }
+
+    private List<String> exportData(DataIteratorBuilder data, List<String> columns, PrintWriter pw) throws IOException, BatchValidationException
+    {
+        try (MapDataIterator iter = DataIteratorUtil.wrapMap(data.getDataIterator(new DataIteratorContext()), true))
+        {
+            if (iter.next())
+            {
+                Map<String, Object> row = iter.getMap();
+                if (columns == null)
                 {
-                    Map<String, Object> row = iter.next();
                     // write the column header
-                    List<String> columns = new ArrayList<>(row.keySet());
+                    columns = new ArrayList<>(row.keySet());
                     String sep = "";
                     for (String name : columns)
                     {
@@ -67,16 +86,17 @@ public class TsvDataSerializer implements DataExchangeHandler.DataSerializer
                     }
                     pw.println();
                     writeRow(row, columns, pw);
+                }
 
-                    // write the remaining rows
-                    while (iter.hasNext())
-                    {
-                        row = iter.next();
-                        writeRow(row, columns, pw);
-                    }
+                // write the remaining rows
+                while (iter.next())
+                {
+                    row = iter.getMap();
+                    writeRow(row, columns, pw);
                 }
             }
         }
+        return columns;
     }
 
     private static void writeRow(Map<String, Object> row, List<String> columns, PrintWriter pw)
@@ -106,23 +126,24 @@ public class TsvDataSerializer implements DataExchangeHandler.DataSerializer
     }
 
     @Override
-    public Supplier<ValidatingDataRowIterator> importRunData(ExpProtocol protocol, File runData) throws Exception
+    public DataIteratorBuilder importRunData(ExpProtocol protocol, File runData) throws Exception
     {
         return _importRunData(protocol, runData, true);
     }
 
-    protected Supplier<ValidatingDataRowIterator> _importRunData(ExpProtocol protocol, File runData, boolean shouldInferTypes) throws Exception
+    protected DataIteratorBuilder _importRunData(ExpProtocol protocol, File runData, boolean shouldInferTypes)
     {
         AssayProvider provider = AssayService.get().getProvider(protocol);
         Domain dataDomain = provider.getResultsDomain(protocol);
         DataLoaderSettings loaderSettings = new DataLoaderSettings();
         loaderSettings.setAllowUnexpectedColumns(true);
 
-        try (DataLoader loader = AbstractAssayTsvDataHandler.createLoaderForImport(runData, null, dataDomain, loaderSettings, shouldInferTypes))
-        {
-            // TODO - streaming iterator
-            List<Map<String, Object>> rows = loader.load();
-            return () -> ValidatingDataRowIterator.of(rows);
-        }
+        return context -> {
+            try (DataLoader loader = AbstractAssayTsvDataHandler.createLoaderForImport(runData, null, dataDomain, loaderSettings, shouldInferTypes))
+            {
+                return loader.getDataIterator(new DataIteratorContext());
+            }
+        };
+
     }
 }

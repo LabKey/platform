@@ -43,7 +43,7 @@ public class BatchValidationException extends Exception
     public BatchValidationException()
     {
         super();
-        this.rowErrors = Collections.synchronizedList(new ArrayList<ValidationException>());
+        this.rowErrors = Collections.synchronizedList(new ArrayList<>());
     }
 
     public BatchValidationException(@Nullable List<ValidationException> rowErrors, @Nullable Map<String, Object> extraContext)
@@ -66,7 +66,7 @@ public class BatchValidationException extends Exception
 
     public boolean hasErrors()
     {
-        return rowErrors.size() > 0;
+        return !rowErrors.isEmpty();
     }
 
     @NotNull
@@ -121,7 +121,7 @@ public class BatchValidationException extends Exception
             message = rowError.getMessage();
             if (message != null)
             {
-                if (sb.length() > 0)  //dont append leading newline to empty message
+                if (!sb.isEmpty())  //dont append leading newline to empty message
                     sb.append("\n");
                 sb.append(rowError.getMessage());
             }

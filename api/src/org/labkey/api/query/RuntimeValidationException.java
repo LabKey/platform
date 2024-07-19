@@ -15,6 +15,8 @@
  */
 package org.labkey.api.query;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * Unchecked ValidationException.
  * Prefer throwing and handling ValidationException over using RuntimeValidationException if possible.
@@ -42,6 +44,7 @@ public class RuntimeValidationException extends RuntimeException
     }
 
 
+    @NotNull
     public ValidationException getValidationException()
     {
         return (ValidationException)getCause();

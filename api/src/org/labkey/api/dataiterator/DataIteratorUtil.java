@@ -36,6 +36,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderService;
@@ -96,7 +97,7 @@ public class DataIteratorUtil
         return map;
     }
 
-    public static Map<String,Integer> createColumnNameMap(DataIterator di)
+    public static Map<String, Integer> createColumnNameMap(DataIterator di)
     {
         Map<String,Integer> map = new CaseInsensitiveHashMap<>();
         for (int i=1 ; i<=di.getColumnCount() ; ++i)
@@ -385,9 +386,9 @@ public class DataIteratorUtil
 
     public static MapDataIterator wrapMap(DataIterator in, boolean mutable)
     {
-        if (!mutable && in instanceof MapDataIterator && ((MapDataIterator)in).supportsGetMap())
+        if (!mutable && in instanceof MapDataIterator mapIter && mapIter.supportsGetMap())
         {
-            return (MapDataIterator)in;
+            return mapIter;
         }
         return new MapDataIterator.MapDataIteratorImpl(in, mutable);
     }
@@ -397,8 +398,9 @@ public class DataIteratorUtil
      * This Function<> mechanism is very simple, but less efficient that an operator that takes an input map, and
      * a pre-created ArrayListMap for output.  For efficiency there are other DataIterator base classes to use.
      * Should return ArrayListMap or CaseInsensitiveMap.
+     * @param columns the columns present in the data. If null, inferred from the first row of data
      */
-    public static DataIteratorBuilder mapTransformer(DataIteratorBuilder dibIn, List<String> columns, Function<Map<String,Object>, Map<String,Object>> fn)
+    public static DataIteratorBuilder mapTransformer(DataIteratorBuilder dibIn, @Nullable List<String> columns, Function<Map<String,Object>, Map<String,Object>> fn)
     {
         return context -> new _MapTransformer(dibIn.getDataIterator(context), fn, columns);
     }
@@ -411,14 +413,21 @@ public class DataIteratorUtil
         Map<String,Object> _sourceMap;
         Map<String,Object> _outputMap;
 
-        _MapTransformer(DataIterator in, Function<Map<String,Object>, Map<String,Object>> fn, List<String> columnNames)
+        _MapTransformer(DataIterator in, Function<Map<String,Object>, Map<String,Object>> fn, @Nullable List<String> columnNames)
         {
             super(wrapMap(in, false), false);
             _fn = fn;
+
+            var map = DataIteratorUtil.createColumnNameMap(in);
+
+            if (columnNames == null)
+            {
+                columnNames = new ArrayList<>(map.keySet());
+            }
+
             // use source ColumnInfo where it matches
             _columns = new ArrayList<>(columnNames.size() + 1);
             _columns.add(in.getColumnInfo(0));
-            var map = DataIteratorUtil.createColumnNameMap(in);
             for (var name : columnNames)
             {
                 if (map.containsKey(name))
@@ -435,7 +444,14 @@ public class DataIteratorUtil
             if (!_input.next())
                 return false;
             _sourceMap = ((MapDataIterator)_input).getMap();
-            _outputMap = _fn.apply(_sourceMap);
+            try
+            {
+                _outputMap = _fn.apply(_sourceMap);
+            }
+            catch (RuntimeValidationException e)
+            {
+                throw new BatchValidationException(e.getValidationException());
+            }
             return true;
         }
 

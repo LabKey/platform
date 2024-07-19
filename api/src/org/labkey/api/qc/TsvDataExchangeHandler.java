@@ -33,6 +33,10 @@ import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.assay.actions.ProtocolIdForm;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TSVWriter;
+import org.labkey.api.dataiterator.AbstractMapDataIterator;
+import org.labkey.api.dataiterator.DataIterator;
+import org.labkey.api.dataiterator.DataIteratorBuilder;
+import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
@@ -45,7 +49,6 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.iterator.ValidatingDataRowIterator;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.PropertyValidationError;
@@ -126,13 +129,13 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
     public static final String TRANSFORMED_RUN_INFO_FILE = "transformedRunProperties.tsv";
     public static final String TRANS_ERR_FILE = "errors.html";
 
-    private Map<String, String> _formFields = new HashMap<>();
-    private Map<String, Supplier<ValidatingDataRowIterator>> _sampleProperties = new HashMap<>();
+    private final Map<String, String> _formFields = new HashMap<>();
+    private final Map<String, DataIteratorBuilder> _sampleProperties = new HashMap<>();
     private static final Logger LOG = LogManager.getLogger(TsvDataExchangeHandler.class);
-    private DataSerializer _serializer = new TsvDataSerializer();
+    private final DataSerializer _serializer = new TsvDataSerializer();
 
     /** Files that shouldn't be considered part of the run's output, such as the transform script itself */
-    private Set<File> _filesToIgnore = new HashSet<>();
+    private final Set<File> _filesToIgnore = new HashSet<>();
 
     // Map to store the working directory to span across a transform warning. See directoryKey() for the String key.
     // Container is saved to ensure the user has access to the container and File is the actual working directory.
@@ -164,7 +167,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             Set<File> dataFiles = writeRunData(context, run, scriptDir, pw);
 
             // any additional sample property sets
-            for (Map.Entry<String, Supplier<ValidatingDataRowIterator>> set : _sampleProperties.entrySet())
+            for (Map.Entry<String, DataIteratorBuilder> set : _sampleProperties.entrySet())
             {
                 File sampleData = new File(scriptDir, set.getKey() + ".tsv");
                 getDataSerializer().exportRunData(context.getProtocol(), set.getValue(), sampleData);
@@ -226,16 +229,16 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         List<File> result = new ArrayList<>();
 
         Map<String, File> uploadedData = context.getUploadedData();
-        Supplier<ValidatingDataRowIterator> rawData = context.getRawData();
+        DataIteratorBuilder rawData = context.getRawData();
 
         // For now, only one of uploadedData or rawData is used, not both at the same time.
         Collection<? extends ExpData> dataInputs = Collections.emptyList();
         boolean rawDataHasRows = false;
         if (uploadedData.isEmpty() && rawData != null)
         {
-            try (ValidatingDataRowIterator iterator = rawData.get())
+            try (DataIterator iterator = rawData.getDataIterator(new DataIteratorContext()))
             {
-                if (iterator.hasNext())
+                if (iterator.next())
                 {
                     rawDataHasRows = true;
                     dataInputs = run.getDataInputs().keySet();
@@ -248,7 +251,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         ViewBackgroundInfo info = new ViewBackgroundInfo(context.getContainer(), context.getUser(), context.getActionURL());
         XarContext xarContext = new AssayUploadXarContext("Simple Run Creation", context);
 
-        Map<DataType, Supplier<ValidatingDataRowIterator>> mergedDataMap = new HashMap<>();
+        Map<DataType, List<DataIteratorBuilder>> mergedDataMap = new HashMap<>();
 
         DataType dataType = context.getProvider().getDataType();
         if (dataType == null)
@@ -282,8 +285,8 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 settings.setAllowEmptyData(true);
                 settings.setThrowOnErrors(false);
 
-                Map<DataType, Supplier<ValidatingDataRowIterator>> newDataMaps = validationHandler.getValidationDataMap(expData, data, info, context.getLogger() != null ? context.getLogger() : LOG, xarContext, settings);
-                for (Map.Entry<DataType, Supplier<ValidatingDataRowIterator>> newEntry : newDataMaps.entrySet())
+                Map<DataType, DataIteratorBuilder> newDataMaps = validationHandler.getValidationDataMap(expData, data, info, context.getLogger() != null ? context.getLogger() : LOG, xarContext, settings);
+                for (Map.Entry<DataType, DataIteratorBuilder> newEntry : newDataMaps.entrySet())
                 {
                     mergedDataMap = mergeMaps(mergedDataMap, newEntry.getKey(), newEntry.getValue());
                 }
@@ -317,7 +320,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
         assert mergedDataMap.size() <= 1 : "Multiple input files are only supported if they are of the same type";
 
-        for (Map.Entry<DataType, Supplier<ValidatingDataRowIterator>> dataEntry : mergedDataMap.entrySet())
+        for (Map.Entry<DataType, List<DataIteratorBuilder>> dataEntry : mergedDataMap.entrySet())
         {
             File runData = new File(scriptDir, Props.runDataFile + ".tsv");
             getDataSerializer().exportRunData(context.getProtocol(), dataEntry.getValue(), runData);
@@ -344,18 +347,12 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         return new HashSet<>(result);
     }
 
-    protected Map<DataType, Supplier<ValidatingDataRowIterator>> mergeMaps(Map<DataType, Supplier<ValidatingDataRowIterator>> primaryMap, DataType additionalDataType, Supplier<ValidatingDataRowIterator> additionalRows)
+    protected Map<DataType, List<DataIteratorBuilder>> mergeMaps(Map<DataType, List<DataIteratorBuilder>> primaryMap, DataType additionalDataType, DataIteratorBuilder additionalRows)
     {
-        Map<DataType, Supplier<ValidatingDataRowIterator>> result = new HashMap<>(primaryMap);
+        Map<DataType, List<DataIteratorBuilder>> result = new HashMap<>(primaryMap);
 
-        if (result.containsKey(additionalDataType))
-        {
-            result.compute(additionalDataType, (k, initialRows) -> () -> ValidatingDataRowIterator.concat(initialRows.get(), additionalRows.get()));
-        }
-        else
-        {
-            result.put(additionalDataType, additionalRows);
-        }
+        List<DataIteratorBuilder> dibs = result.computeIfAbsent(additionalDataType, k -> new ArrayList<>());
+        dibs.add(additionalRows);
 
         return result;
     }
@@ -386,7 +383,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         AssayFileWriter.ensureUploadDirectory(context.getContainer());
         File workDir = getWorkingDirectory(context);
 
-        for (Map.Entry<ExpData, Supplier<ValidatingDataRowIterator>> entry : transformResult.getTransformedData().entrySet())
+        for (Map.Entry<ExpData, DataIteratorBuilder> entry : transformResult.getTransformedData().entrySet())
         {
             ExpData data = entry.getKey();
             File runData = new File(scriptDir, Props.runDataFile + ".tsv");
@@ -416,7 +413,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
     protected void addSampleProperties(String propertyName, List<Map<String, Object>> rows)
     {
-        _sampleProperties.put(propertyName, () -> ValidatingDataRowIterator.of(rows));
+        _sampleProperties.put(propertyName, AbstractMapDataIterator.builderOf(rows));
     }
 
     protected void writeRunProperties(AssayRunUploadContext<? extends AssayProvider> context, Map<DomainProperty, String> runProperties, File scriptDir, PrintWriter pw, TSVWriter writer)
@@ -725,11 +722,11 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 pw.append('\t');
                 pw.println(runData.getAbsolutePath());
 
-                getDataSerializer().exportRunData(protocol, () -> ValidatingDataRowIterator.of(dataRows), runData);
+                getDataSerializer().exportRunData(protocol, AbstractMapDataIterator.builderOf(dataRows), runData);
             }
 
             // any additional sample property sets
-            for (Map.Entry<String, Supplier<ValidatingDataRowIterator>> set : _sampleProperties.entrySet())
+            for (Map.Entry<String, DataIteratorBuilder> set : _sampleProperties.entrySet())
             {
                 File sampleData = new File(scriptDir, set.getKey() + ".tsv");
                 getDataSerializer().exportRunData(protocol, set.getValue(), sampleData);
@@ -1049,7 +1046,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 if (!transformedData.isEmpty())
                 {
                     // found some transformed data, create the ExpData objects and return in the transform result
-                    Map<ExpData, Supplier<ValidatingDataRowIterator>> dataMap = new HashMap<>();
+                    Map<ExpData, DataIteratorBuilder> dataMap = new HashMap<>();
 
                     for (Map.Entry<String, File> entry : transformedData.entrySet())
                     {

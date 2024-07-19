@@ -25,6 +25,7 @@ import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.data.MvUtil;
+import org.labkey.api.dataiterator.AbstractMapDataIterator;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.MvFieldWrapper;
@@ -40,7 +41,6 @@ import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.iterator.ValidatingDataRowIterator;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.view.ViewContext;
@@ -282,7 +282,7 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
                 factory.setBatchProperties(runProperties.toMap());
             }
             factory.setUploadedData(Collections.emptyMap());
-            factory.setRawData(() -> ValidatingDataRowIterator.of(dataRows));
+            factory.setRawData(AbstractMapDataIterator.builderOf(dataRows));
             factory.setInputDatas(inputData);
             factory.setOutputDatas(outputData);
             factory.setInputMaterials(inputMaterial);
