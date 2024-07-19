@@ -28,6 +28,7 @@ import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.data.*;
 import org.labkey.api.data.DbScope.Transaction;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -3546,13 +3547,13 @@ public class OntologyManager
 
             // test insertTabDelimited
             List<Map<String, Object>> rows = List.of(
-                Map.of(
+                new CaseInsensitiveMapWrapper<>(Map.of(
                     "lsid", child2ObjectLsid,
                     strPropURI, "Second value",
                     intPropURI, 62,
                     longPropURI, 72L
                 )
-            );
+            ));
             ImportHelper helper = new ImportHelper()
             {
                 @Override

@@ -155,7 +155,10 @@ public abstract class AbstractMapDataIterator extends AbstractDataIterator imple
                 for (Map<String, Object> row : rows)
                 {
                     // assumes all ArrayListMaps are case insensitive
-                    assert row instanceof CaseInsensitiveMapWrapper || row instanceof ArrayListMap : "all rows must be either CaseInsensitiveMapWrapper or ArrayListMap";
+                    if (!(row instanceof CaseInsensitiveMapWrapper || row instanceof ArrayListMap))
+                    {
+                        throw new IllegalArgumentException("all rows must be either CaseInsensitiveMapWrapper or ArrayListMap. At least one was of type: " + row.getClass());
+                    }
                     if (row instanceof ArrayListMap listMap)
                         listMap.setReadOnly(true);
                     else
