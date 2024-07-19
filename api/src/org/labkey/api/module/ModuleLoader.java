@@ -44,6 +44,7 @@ import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.FileSqlScriptProvider;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaNameCache;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
@@ -52,6 +53,7 @@ import org.labkey.api.data.SqlScriptRunner;
 import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptException;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -2225,10 +2227,22 @@ public class ModuleLoader implements MemTrackerListener
         return getModuleForController(HttpView.getRootContext().getActionURL().getController());
     }
 
-    public ModuleContext getModuleContext(String name)
+    @Nullable
+    public ModuleContext getModuleContext(@NotNull String name)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Name"), name);
-        return new TableSelector(getTableInfoModules(), filter, null).getObject(ModuleContext.class);
+        SQLFragment sql = new SQLFragment("SELECT * FROM ").
+                append(getTableInfoModules(), "m").
+                append(" WHERE LOWER(Name) = LOWER(?)").
+                add(name);
+        ModuleContext result = new SqlSelector(_core.getSchema(), sql).getObject(ModuleContext.class);
+        if (result != null && !result.getName().equals(name))
+        {
+            // Issue 50763: Improve handling of module case-only rename during startup
+            // It would be easy to fix up this record to match but other places store module names, like ETLs, reports, and more
+            throw new IllegalStateException("Found an existing module record with a different casing from the module's new name. " +
+                    "This is not supported. Existing: '" + result.getName() + "' New: '" + name + "'");
+        }
+        return result;
     }
 
     public Collection<ModuleContext> getAllModuleContexts()
