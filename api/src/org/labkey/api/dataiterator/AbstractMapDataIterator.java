@@ -22,6 +22,7 @@ import org.labkey.api.collections.Sets;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -157,7 +158,9 @@ public abstract class AbstractMapDataIterator extends AbstractDataIterator imple
                     // assumes all ArrayListMaps are case insensitive
                     if (!(row instanceof CaseInsensitiveMapWrapper || row instanceof ArrayListMap))
                     {
-                        throw new IllegalArgumentException("all rows must be either CaseInsensitiveMapWrapper or ArrayListMap. At least one was of type: " + row.getClass());
+                        IllegalArgumentException e = new IllegalArgumentException("all rows must be either CaseInsensitiveMapWrapper or ArrayListMap. At least one was of type: " + row.getClass());
+                        LogHelper.getLogger(AbstractMapDataIterator.class, "Data iterators backed by maps").error("Wrong argument", e);
+                        throw e;
                     }
                     if (row instanceof ArrayListMap listMap)
                         listMap.setReadOnly(true);
@@ -202,7 +205,7 @@ public abstract class AbstractMapDataIterator extends AbstractDataIterator imple
 
     public static DataIteratorBuilder builderOf(List<Map<String, Object>> maps)
     {
-        return context -> new ListOfMapsDataIterator(context, maps.get(0).keySet(), maps);
+        return context -> new ListOfMapsDataIterator(context, maps.isEmpty() ? Collections.emptySet() : maps.get(0).keySet(), maps);
     }
 
     public static DataIterator of(List<Map<String, Object>> maps, DataIteratorContext context)
