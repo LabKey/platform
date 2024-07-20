@@ -58,8 +58,8 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 /**
- * Metadata for a file-based html view in a module, supplied by a .view.xml file in a module's ./resources/views directory.
- * This is separate from ModuleHtmlView so that it can be cached.
+ * Metadata for a file-based html view in a module, typically supplied by a .view.xml file in a module's
+ * ./resources/views directory. This is separate from ModuleHtmlView so that it can be cached.
  */
 public class ModuleHtmlViewDefinition
 {
@@ -161,7 +161,7 @@ public class ModuleHtmlViewDefinition
         PermissionsListType permsList = _viewDef.getPermissions();
         if (permsList != null && permsList.getPermissionArray() != null)
         {
-            _log.warn("The \"<permissions>\" element used in \"{}\" is deprecated and support will be removed in LabKey Server 24.8! Migrate uses to \"<requiresPermissions>\", \"<requiresNoPermissions>\", or \"<requiresLogin>\".", resource);
+            _log.warn("The \"<permissions>\" element used in \"{}\" is deprecated and support will be removed in LabKey Server 24.8! Migrate uses to \"<requiresPermissions>\", \"<requiresNoPermission>\", or \"<requiresLogin>\".", resource);
             for (PermissionType permEntry : permsList.getPermissionArray())
             {
                 SimpleAction.PermissionEnum perm = SimpleAction.PermissionEnum.valueOf(permEntry.getName().toString());
@@ -178,7 +178,7 @@ public class ModuleHtmlViewDefinition
         if (_viewDef.isSetPermissionClasses() || _viewDef.isSetRequiresPermissions())
         {
             if (_viewDef.isSetRequiresNoPermission())
-                throw new ViewDefinitionException("The <requiresNoPermissions/> element can't be specified along with other permission elements");
+                throw new ViewDefinitionException("The <requiresNoPermission/> element can't be specified along with other permission elements");
 
             // <permissionClasses> and <requiresPermissions> are synonyms, so add all permission classes from both.
             // For now, allow but warn for empty <permissionClasses> element; throw for empty <requiresPermissions> element.
@@ -338,7 +338,7 @@ public class ModuleHtmlViewDefinition
             testPermissions("<requiresPermissions>\n<permissionClass name=\"org.labkey.api.security.permissions.InsertPermission\"/>\n<permissionClass name=\"org.labkey.api.security.permissions.UpdatePermission\"/>\n</requiresPermissions>", ACL.PERM_READ, Set.of(InsertPermission.class, UpdatePermission.class), false);
 
             testBadPermissions("<requiresPermissions/>", "Empty permissions class lists are not allowed");
-            testBadPermissions("<requiresPermissions>\n<permissionClass name=\"org.labkey.api.security.permissions.ReadPermission\"/>\n</requiresPermissions>\n<requiresNoPermission/>", "The <requiresNoPermissions/> element can't be specified along with other permission elements");
+            testBadPermissions("<requiresPermissions>\n<permissionClass name=\"org.labkey.api.security.permissions.ReadPermission\"/>\n</requiresPermissions>\n<requiresNoPermission/>", "The <requiresNoPermission/> element can't be specified along with other permission elements");
         }
 
         private void testPermissions(@Nullable String permissions, int expectedPerms, Set<Class<? extends Permission>> expectedPermissionClasses, boolean expectedLogin)
