@@ -210,7 +210,7 @@ public abstract class AbstractMapDataIterator extends AbstractDataIterator imple
 
     public static DataIterator of(List<Map<String, Object>> maps, DataIteratorContext context)
     {
-        return new ListOfMapsDataIterator(context, maps.get(0).keySet(), maps);
+        return new ListOfMapsDataIterator(context, maps.isEmpty() ? Collections.emptySet() : maps.get(0).keySet(), maps);
     }
 
     public static class IteratorOfMapsDataIterator extends AbstractMapDataIterator
