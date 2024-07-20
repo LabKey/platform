@@ -999,7 +999,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                     setWorkingDirectory(context, new File(runDataUploadedFiles.get(0).getParentFile().getAbsolutePath()));
                 }
 
-                // Loop through all of the files that are left after running the transform script
+                // Loop through all the files that are left after running the transform script
                 for (File file : runInfo.getParentFile().listFiles())
                 {
                     if (!isIgnorableOutput(file) && !runDataUploadedFiles.isEmpty())
@@ -1110,7 +1110,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                     // merge the transformed props with the props in the upload form
                     Map<DomainProperty, String> runProps = new HashMap<>();
                     boolean runPropTransformed = false;
-                    Map<DomainProperty, String> runProperties = result.getRunProperties().size() > 0 ? result.getRunProperties() : getRunProperties(context);
+                    Map<DomainProperty, String> runProperties = !result.getRunProperties().isEmpty() ? result.getRunProperties() : getRunProperties(context);
                     for (Map.Entry<DomainProperty, String> entry : runProperties.entrySet())
                     {
                         String propName = entry.getKey().getName();
@@ -1125,7 +1125,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
                     Map<DomainProperty, String> batchProps = new HashMap<>();
                     boolean batchPropTransformed = false;
-                    Map<DomainProperty, String> batchProperties = result.getBatchProperties().size() > 0 ? result.getBatchProperties() : context.getBatchProperties();
+                    Map<DomainProperty, String> batchProperties = !result.getBatchProperties().isEmpty() ? result.getBatchProperties() : context.getBatchProperties();
                     for (Map.Entry<DomainProperty, String> entry : batchProperties.entrySet())
                     {
                         String propName = entry.getKey().getName();
@@ -1169,19 +1169,17 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
     protected static String getSampleValue(DomainProperty prop)
     {
-        switch (prop.getPropertyDescriptor().getPropertyType().getJdbcType())
+        return switch (prop.getPropertyDescriptor().getPropertyType().getJdbcType())
         {
-            case BOOLEAN :
-                return "true";
-            case TIMESTAMP:
+            case BOOLEAN -> "true";
+            case TIMESTAMP ->
+            {
                 DateFormat format = new SimpleDateFormat("MM/dd/yyyy");
-                return format.format(new Date());
-            case DOUBLE:
-            case INTEGER:
-                return "1234";
-            default:
-                return "demo value";
-        }
+                yield format.format(new Date());
+            }
+            case DOUBLE, INTEGER -> "1234";
+            default -> "demo value";
+        };
     }
 
     private static class SampleRunUploadContext implements AssayRunUploadContext<AssayProvider>
