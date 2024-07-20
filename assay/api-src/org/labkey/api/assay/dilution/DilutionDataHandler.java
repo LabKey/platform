@@ -24,6 +24,7 @@ import org.json.JSONObject;
 import org.labkey.api.assay.nab.NabSpecimen;
 import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.OORDisplayColumnFactory;
@@ -142,13 +143,15 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
             ExpProtocol protocol = ExperimentService.get().getExpProtocol(run.getProtocol().getLSID());
             DilutionAssayProvider<?> provider = (DilutionAssayProvider<?>) AssayService.get().getProvider(protocol);
 
+            CaseInsensitiveMapWrapper<Object> casingMap = new CaseInsensitiveMapWrapper<>(Collections.emptyMap());
+
             for (int summaryIndex = 0; summaryIndex < assayResults.getSummaries().length; summaryIndex++)
             {
                 DilutionSummary dilution = assayResults.getSummaries()[summaryIndex];
                 WellGroup group = dilution.getFirstWellGroup();
                 ExpMaterial sampleInput = assayResults.getMaterial(group);
 
-                Map<String, Object> props = new HashMap<>();
+                Map<String, Object> props = new CaseInsensitiveMapWrapper<>(new HashMap<>(), casingMap);
                 results.add(props);
 
                 // generate curve ICs and AUCs for each curve fit type
