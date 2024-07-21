@@ -400,6 +400,7 @@ public class DataIteratorUtil
      * a pre-created ArrayListMap for output.  For efficiency there are other DataIterator base classes to use.
      * Should return ArrayListMap or CaseInsensitiveMap.
      * @param columns the columns present in the data. If null, inferred from the first row of data
+     * @param fn the function used to transform the map. May throw a RuntimeValidationException to communicate a problem.
      */
     public static DataIteratorBuilder mapTransformer(DataIteratorBuilder dibIn, @Nullable List<String> columns, Function<Map<String,Object>, Map<String,Object>> fn)
     {

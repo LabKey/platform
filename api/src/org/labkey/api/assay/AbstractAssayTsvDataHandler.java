@@ -78,6 +78,7 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
@@ -174,7 +175,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         }
         catch (BatchValidationException e)
         {
-            throw new ExperimentException(e.toString(), e);
+            throw new ExperimentException(e.getMessage() == null ? e.toString() : e.getMessage(), e);
         }
     }
 
@@ -773,8 +774,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         DomainProperty datePD = datePropFinder;
         DomainProperty targetStudyPD = targetStudyPropFinder;
 
-        BatchValidationException bve = new BatchValidationException();
-
         return DataIteratorUtil.mapTransformer(rawData, null, new Function<>()
         {
             int rowNum = 0;
@@ -914,7 +913,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                             }
                             catch (ValidationException e)
                             {
-                                bve.addRowError(e);
+                                throw new RuntimeValidationException(e);
                             }
                         }
                     }
@@ -977,7 +976,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                             }
                             catch (ValidationException ve)
                             {
-                                bve.addRowError(ve);
+                                throw new RuntimeValidationException(ve);
                             }
                         }
                         else if (o instanceof Number n)
@@ -1016,7 +1015,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 }
 
                 if (!errors.isEmpty())
-                    bve.addRowError(new ValidationException(errors, rowNum));
+                    throw new RuntimeValidationException(new ValidationException(errors, rowNum));
 
                 try
                 {
@@ -1056,7 +1055,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     ValidationException ve = new ValidationException(e.getMessage() == null ? "Failed to resolve participant visit information" : e.getMessage());
                     ve.setRowNumber(rowNum);
                     ve.initCause(e);
-                    bve.addRowError(ve);
+                    throw new RuntimeValidationException(ve);
                 }
 
                 // Add any “prov:objectInputs” to the rowInputLSIDs
