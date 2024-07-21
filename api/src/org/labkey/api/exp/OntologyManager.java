@@ -354,7 +354,7 @@ public class OntologyManager
                                           @Nullable RowCallback rowCallback)
             throws SQLException, BatchValidationException
     {
-        MapDataIterator rows = DataIteratorUtil.wrapMap(rawRows, true);
+        MapDataIterator rows = DataIteratorUtil.wrapMap(rawRows, false);
 
         rowCallback = rowCallback == null ? NO_OP_ROW_CALLBACK : rowCallback;
 

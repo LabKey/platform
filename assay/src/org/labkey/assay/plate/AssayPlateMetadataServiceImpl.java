@@ -192,7 +192,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         if (plates.isEmpty())
             throw new ExperimentException("No plates were found for the plate set (" + plateSetId + ").");
 
-        try (MapDataIterator i = DataIteratorUtil.wrapMap(data.getDataIterator(new DataIteratorContext()), true))
+        try (MapDataIterator i = DataIteratorUtil.wrapMap(data.getDataIterator(new DataIteratorContext()), false))
         {
             List<Map<String, Object>> rows = i.stream().toList();
 

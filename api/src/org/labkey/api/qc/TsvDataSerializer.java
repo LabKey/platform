@@ -68,7 +68,7 @@ public class TsvDataSerializer implements DataExchangeHandler.DataSerializer
 
     private List<String> exportData(DataIteratorBuilder data, List<String> columns, PrintWriter pw) throws IOException, BatchValidationException
     {
-        try (MapDataIterator iter = DataIteratorUtil.wrapMap(data.getDataIterator(new DataIteratorContext()), true))
+        try (MapDataIterator iter = DataIteratorUtil.wrapMap(data.getDataIterator(new DataIteratorContext()), false))
         {
             if (iter.next())
             {

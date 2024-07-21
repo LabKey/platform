@@ -384,13 +384,14 @@ public class DataIteratorUtil
     }
 
 
-    public static MapDataIterator wrapMap(DataIterator in, boolean mutable)
+    /** @param needMutableMapsReturned whether the maps returned are required to be mutable instances */
+    public static MapDataIterator wrapMap(DataIterator in, boolean needMutableMapsReturned)
     {
-        if (!mutable && in instanceof MapDataIterator mapIter && mapIter.supportsGetMap())
+        if (!needMutableMapsReturned && in instanceof MapDataIterator mapIter && mapIter.supportsGetMap())
         {
             return mapIter;
         }
-        return new MapDataIterator.MapDataIteratorImpl(in, mutable);
+        return new MapDataIterator.MapDataIteratorImpl(in, needMutableMapsReturned);
     }
 
 
