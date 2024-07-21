@@ -22,7 +22,6 @@ import org.labkey.api.collections.Sets;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
-import org.labkey.api.util.logging.LogHelper;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -44,12 +43,6 @@ public abstract class AbstractMapDataIterator extends AbstractDataIterator imple
     List<ColumnInfo> _cols = new ArrayList<>();
     Map<String, Object> _currentRowMap = null;
     int _currentRow = -1;
-
-    static boolean assertsEnabled = false;
-    static
-    {
-        assert assertsEnabled = true;
-    }
 
     protected AbstractMapDataIterator(DataIteratorContext context, Set<String> colNames)
     {
@@ -87,10 +80,8 @@ public abstract class AbstractMapDataIterator extends AbstractDataIterator imple
     @Override
     public Map<String, Object> getMap()
     {
-
         assert _currentRowMap != null;
-        //noinspection ReassignedVariable
-        return assertsEnabled ? Collections.unmodifiableMap(_currentRowMap) : _currentRowMap;
+        return Collections.unmodifiableMap(_currentRowMap);
     }
 
     @Override
@@ -119,6 +110,7 @@ public abstract class AbstractMapDataIterator extends AbstractDataIterator imple
     }
 
 
+    /** For maximum efficiency, supply a List<ArrayListMap> */
     public static class ListOfMapsDataIterator extends AbstractMapDataIterator
     {
         protected List<Map<String, Object>> _rows;
@@ -150,30 +142,40 @@ public abstract class AbstractMapDataIterator extends AbstractDataIterator imple
 
         protected List<Map<String, Object>> initRows(List<Map<String, Object>> rows)
         {
-            if (assertsEnabled)
+            for (Map<String, Object> row : rows)
             {
-                ArrayList<Map<String, Object>> copy = new ArrayList<>(rows.size());
-                for (Map<String, Object> row : rows)
+                // assumes all ArrayListMaps are case insensitive
+                if (!(row instanceof CaseInsensitiveMapWrapper || row instanceof ArrayListMap))
                 {
-                    // assumes all ArrayListMaps are case insensitive
-                    if (!(row instanceof CaseInsensitiveMapWrapper || row instanceof ArrayListMap))
-                    {
-                        IllegalArgumentException e = new IllegalArgumentException("all rows must be either CaseInsensitiveMapWrapper or ArrayListMap. At least one was of type: " + row.getClass());
-                        LogHelper.getLogger(AbstractMapDataIterator.class, "Data iterators backed by maps").error("Wrong argument", e);
-                        throw e;
-                    }
-                    if (row instanceof ArrayListMap listMap)
-                        listMap.setReadOnly(true);
-                    else
-                        row = Collections.unmodifiableMap(row);
-                    copy.add(row);
+                    return copyRows(rows);
                 }
-                return Collections.unmodifiableList(copy);
             }
-            else
+            return Collections.unmodifiableList(rows);
+        }
+
+        private List<Map<String, Object>> copyRows(List<Map<String, Object>> rows)
+        {
+            List<Map<String, Object>> result = new ArrayList<>(rows.size());
+            CaseInsensitiveMapWrapper<Object> firstWrappedRow = null;
+            for (Map<String, Object> row : rows)
             {
-                return rows;
+                if (row instanceof ArrayListMap)
+                {
+                    result.add(row);
+                }
+                else
+                {
+                    CaseInsensitiveMapWrapper<Object> wrappedRow = row instanceof CaseInsensitiveMapWrapper<Object> wrapped ?
+                            wrapped :
+                            new CaseInsensitiveMapWrapper<>(row, firstWrappedRow);
+                    result.add(wrappedRow);
+                    if (firstWrappedRow == null)
+                    {
+                        firstWrappedRow = wrappedRow;
+                    }
+                }
             }
+            return result;
         }
 
         @Override
@@ -232,11 +234,9 @@ public abstract class AbstractMapDataIterator extends AbstractDataIterator imple
                 return false;
 
             _currentRowMap = _it.next();
-            if (assertsEnabled)
-            {
-                assert _currentRowMap instanceof CaseInsensitiveHashMap<Object> || _currentRowMap instanceof ArrayListMap;
-                _currentRowMap = Collections.unmodifiableMap(_currentRowMap);
-            }
+            assert _currentRowMap instanceof CaseInsensitiveHashMap<Object> || _currentRowMap instanceof ArrayListMap;
+            _currentRowMap = Collections.unmodifiableMap(_currentRowMap);
+
             return true;
         }
 

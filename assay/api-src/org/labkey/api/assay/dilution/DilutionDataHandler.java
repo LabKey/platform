@@ -143,15 +143,13 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
             ExpProtocol protocol = ExperimentService.get().getExpProtocol(run.getProtocol().getLSID());
             DilutionAssayProvider<?> provider = (DilutionAssayProvider<?>) AssayService.get().getProvider(protocol);
 
-            CaseInsensitiveMapWrapper<Object> casingMap = new CaseInsensitiveMapWrapper<>(Collections.emptyMap());
-
             for (int summaryIndex = 0; summaryIndex < assayResults.getSummaries().length; summaryIndex++)
             {
                 DilutionSummary dilution = assayResults.getSummaries()[summaryIndex];
                 WellGroup group = dilution.getFirstWellGroup();
                 ExpMaterial sampleInput = assayResults.getMaterial(group);
 
-                Map<String, Object> props = new CaseInsensitiveMapWrapper<>(new HashMap<>(), casingMap);
+                Map<String, Object> props = new HashMap<>();
                 results.add(props);
 
                 // generate curve ICs and AUCs for each curve fit type

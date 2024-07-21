@@ -16,12 +16,10 @@
 
 package org.labkey.api.assay.plate;
 
-import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.qc.TsvDataExchangeHandler;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,7 +48,6 @@ public class PlateBasedDataExchangeHandler extends TsvDataExchangeHandler
                                     Plate plate, WellGroup.Type wellType)
     {
         List<Map<String, Object>> rows = new ArrayList<>();
-        CaseInsensitiveMapWrapper<Object> casingMap = new CaseInsensitiveMapWrapper<>(Collections.emptyMap());
 
         if (plate != null)
         {
@@ -64,7 +61,7 @@ public class PlateBasedDataExchangeHandler extends TsvDataExchangeHandler
                 {
                     for (Position pos : group.getPositions())
                     {
-                        Map<String, Object> row = new CaseInsensitiveMapWrapper<>(new HashMap<>(), casingMap);
+                        Map<String, Object> row = new HashMap<>();
                         row.put(groupColumnName, group.getName());
                         row.put(ROW_PROP_NAME, pos.getRow());
                         row.put(COL_PROP_NAME, pos.getColumn());

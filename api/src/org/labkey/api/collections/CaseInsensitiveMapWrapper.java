@@ -17,6 +17,7 @@
 package org.labkey.api.collections;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -35,18 +36,13 @@ public class CaseInsensitiveMapWrapper<V> extends MapWrapper<String, V> implemen
 
     public CaseInsensitiveMapWrapper(Map<String, V> map)
     {
-        super(map);
-        _correctCaseMap = new HashMap<>();
-        for (Map.Entry<? extends String, ? extends V> entry : map.entrySet())
-        {
-            _correctCaseMap.put(entry.getKey().toLowerCase(), entry.getKey());
-        }
+        this(map, null);
     }
 
-    public CaseInsensitiveMapWrapper(Map<String, V> map, CaseInsensitiveMapWrapper<V> caseMapping)
+    public CaseInsensitiveMapWrapper(Map<String, V> map, @Nullable CaseInsensitiveMapWrapper<V> caseMapping)
     {
         super(map);
-        _correctCaseMap = caseMapping._correctCaseMap;
+        _correctCaseMap = caseMapping == null ? new HashMap<>() : caseMapping._correctCaseMap;
         for (Map.Entry<? extends String, ? extends V> entry : map.entrySet())
         {
             _correctCaseMap.put(entry.getKey().toLowerCase(), entry.getKey());
@@ -62,9 +58,8 @@ public class CaseInsensitiveMapWrapper<V> extends MapWrapper<String, V> implemen
 
     protected String normalizeKey(Object key)
     {
-        if (!(key instanceof String))
+        if (!(key instanceof String s))
             return null;
-        String s = (String)key;
         String result = _correctCaseMap.get(s.toLowerCase());
         if (result == null)
         {
