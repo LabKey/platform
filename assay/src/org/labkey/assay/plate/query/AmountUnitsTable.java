@@ -11,7 +11,7 @@ import java.util.EnumSet;
 
 public class AmountUnitsTable extends EnumTableInfo<AmountUnitsTable.Units>
 {
-    public static final String NAME = "ConcentrationUnits";
+    public static final String NAME = "AmountUnits";
 
     enum Units
     {

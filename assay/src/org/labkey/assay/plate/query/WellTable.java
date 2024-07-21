@@ -49,6 +49,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.assay.plate.PlateManager;
+import org.labkey.assay.plate.PlateMetadataDomainKind;
 import org.labkey.assay.plate.TsvPlateLayoutHandler;
 import org.labkey.assay.plate.data.WellTriggerFactory;
 import org.labkey.assay.query.AssayDbSchema;
@@ -209,6 +210,16 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
                 var wrapped = wrapColumnFromJoinedTable(col.getName(), col);
                 if (col.isHidden())
                     wrapped.setHidden(true);
+
+                // set up the virtual FKs to the units lookups
+                if (PlateMetadataDomainKind.Column.AmountUnits.name().equalsIgnoreCase(col.getName()))
+                {
+                    wrapped.setFk(QueryForeignKey.from(getUserSchema(), getContainerFilter()).to(AmountUnitsTable.NAME, "Value", null));
+                }
+                else if (PlateMetadataDomainKind.Column.ConcentrationUnits.name().equalsIgnoreCase(col.getName()))
+                {
+                    wrapped.setFk(QueryForeignKey.from(getUserSchema(), getContainerFilter()).to(ConcentrationUnitsTable.NAME, "Value", null));
+                }
 
                 // Copy the property descriptor settings to the wrapped column.
                 String propertyURI = col.getPropertyURI();

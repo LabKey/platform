@@ -1,1 +1,1 @@
-SELECT core.executeJavaUpgradeCode('someNameHere');
+SELECT core.executeJavaUpgradeCode('renameWellMetadataFields');

@@ -228,32 +228,6 @@
       <column columnName="Col">
         <description>The zero-based column index of each well.</description>
       </column>
-      <column columnName="Concentration">
-        <description>The concentration value.</description>
-      </column>
-      <column columnName="ConcentrationUnits">
-        <columnTitle>ConcentrationUnits</columnTitle>
-        <description>The unit of concentration.</description>
-        <fk>
-          <fkDbSchema>plate</fkDbSchema>
-          <fkTable>ConcentrationUnits</fkTable>
-          <fkColumnName>Value</fkColumnName>
-          <fkDisplayColumnName>Value</fkDisplayColumnName>
-        </fk>
-      </column>
-      <column columnName="Amount">
-        <description>The amount of fluid within each well.</description>
-      </column>
-      <column columnName="AmountUnits">
-        <columnTitle>AmountUnits</columnTitle>
-        <description>The unit of volume.</description>
-        <fk>
-          <fkDbSchema>plate</fkDbSchema>
-          <fkTable>ConcentrationUnits</fkTable>
-          <fkColumnName>Value</fkColumnName>
-          <fkDisplayColumnName>Value</fkDisplayColumnName>
-        </fk>
-      </column>
     </columns>
   </table>
   <table tableName="WellGroup" tableDbType="TABLE">
