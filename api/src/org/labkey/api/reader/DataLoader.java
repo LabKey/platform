@@ -1026,11 +1026,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                         for (int i=0 ; i<_columns.length ; i++)
                         {
                             String columnName = _columns[i].getColumnName();
-                            Integer colIndex = _findMap.get(columnName);
-                            if (colIndex == null)
-                            {
-                                colIndex = _findMap.put(columnName, _findMap.size());
-                            }
+                            Integer colIndex = _findMap.computeIfAbsent(columnName, k -> _findMap.size());
                             // the found map index colIndex should match the columns index.
                             // UNLESS there are duplicate column names.  Someone else 'downstream' will (hopefully) sort that out
                             assert colIndex == i || Arrays.stream(_columns).anyMatch(col -> columnName.equalsIgnoreCase(col.getColumnName()));
