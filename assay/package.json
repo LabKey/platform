@@ -12,7 +12,7 @@
     "clean": "rimraf resources/web/assay/gen && rimraf resources/views/gen && rimraf resources/web/gen"
   },
   "dependencies": {
-    "@labkey/components": "4.0.5-fb-calcColsInFieldEditor.0"
+    "@labkey/components": "4.0.6-fb-calcColsInFieldEditor.0"
   },
   "devDependencies": {
     "@labkey/build": "7.3.0",
