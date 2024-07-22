@@ -1029,7 +1029,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                             Integer colIndex = _findMap.get(columnName);
                             if (colIndex == null)
                             {
-                                _findMap.put(columnName, _findMap.size());
+                                colIndex = _findMap.put(columnName, _findMap.size());
                             }
                             // the found map index colIndex should match the columns index.
                             // UNLESS there are duplicate column names.  Someone else 'downstream' will (hopefully) sort that out
