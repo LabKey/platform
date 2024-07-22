@@ -1162,7 +1162,8 @@ public class PipelineController extends SpringActionController
             ApiSimpleResponse resp = new ApiSimpleResponse();
             PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
             resp.put("containerPath", null != root ? root.getContainer().getPath() : null);
-            resp.put("webDavURL", null != root ? FileUtil.encodeForURL(root.getWebdavURL()) : null);
+            // Hack as temporary workaround for issue 43374
+            resp.put("webDavURL", null != root ? FileUtil.encodeForURL(root.getWebdavURL().replace("%25", "%").replace("%2B", "+")) : null);
             return resp;
         }
     }
