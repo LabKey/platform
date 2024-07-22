@@ -798,7 +798,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         if (null == dsd)
             return null;
 
-        return DatasetFactory.createDataset(schema, cf, dsd);
+        return schema.getTable(name, cf, true, false);
     }
 
     @Override
