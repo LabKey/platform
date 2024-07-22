@@ -42,7 +42,6 @@ import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
-import org.labkey.api.exp.api.SampleTypeDomainKindProperties;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
@@ -327,7 +326,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
             List<String> warnings = new ArrayList<>();
             List<String> previewNames = new ArrayList<>();
 
-            NameExpressionValidationResult results = NameGenerator.getValidationMessages(ExperimentService.get().getTinfoData(), domainDesign.getName(), options.getNameExpression(), domainDesign.getFields(), options.getImportAliases(), container);
+            NameExpressionValidationResult results = NameGenerator.getValidationMessages(ExperimentService.get().getTinfoData(), domainDesign.getName(), options.getNameExpression(), domainDesign.getStandardFields(), options.getImportAliases(), container);
             if (results.errors() != null && !results.errors().isEmpty())
                 results.errors().forEach(error -> errors.add("Name Pattern error: " + error));
             if (results.warnings() != null && !results.warnings().isEmpty())
@@ -346,7 +345,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
         super.validateOptions(container, user, options, name, domain, updatedDomainDesign);
         if (StringUtils.isNotBlank(options.getNameExpression()))
         {
-            ValidationException errors = getNamePatternValidationResult(name, options.getNameExpression(), updatedDomainDesign.getFields(), options.getImportAliases(), container);
+            ValidationException errors = getNamePatternValidationResult(name, options.getNameExpression(), updatedDomainDesign.getStandardFields(), options.getImportAliases(), container);
             if (errors.hasErrors())
                 throw new IllegalArgumentException(errors.getMessage());
         }
@@ -379,7 +378,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     public Domain createDomain(GWTDomain domain, DataClassDomainKindProperties options, Container container, User user, @Nullable TemplateInfo templateInfo)
     {
         String name = domain.getName();
-        List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getAllFields();
+        List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields();
         List<GWTIndex> indices = (List<GWTIndex>)domain.getIndices();
 
         // Issue 45042: Allow for the dataClass description to be set via the create domain API calls
