@@ -14,6 +14,7 @@ public enum ProductFeature
     ELN("labbook"),
     FreezerManagement("inventory"),
     Media("recipe"),
+    NonstandardAssay("nonstandardAssay"),
     Projects("sampleManagement"),
     SampleManagement("sampleManagement"),
     TransformScripts("core"),
