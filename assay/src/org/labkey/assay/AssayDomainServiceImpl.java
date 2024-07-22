@@ -574,7 +574,8 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                     if (domainErrors.hasErrors())
                         throw domainErrors;
 
-                    QueryService.get().saveCalculatedFieldsMetadata(domain.getSchemaName(), domain.getQueryName(), domain.getCalculatedFields(), false, getUser(), getContainer());
+                    GWTDomain<GWTPropertyDescriptor> savedDomain = DomainUtil.getDomainDescriptor(getUser(), domain.getDomainURI(), protocol.getContainer());
+                    QueryService.get().saveCalculatedFieldsMetadata(savedDomain.getSchemaName(), savedDomain.getQueryName(), domain.getCalculatedFields(), false, getUser(), protocol.getContainer());
                 }
 
                 if (assay.getExcludedContainerIds() != null && (!isNew || !assay.getExcludedContainerIds().isEmpty()))
