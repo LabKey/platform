@@ -12,7 +12,7 @@
     "clean": "rimraf resources/web/assay/gen && rimraf resources/views/gen && rimraf resources/web/gen"
   },
   "dependencies": {
-    "@labkey/components": "4.0.7-limsProduct.3"
+    "@labkey/components": "4.0.7-limsProduct.4"
   },
   "devDependencies": {
     "@labkey/build": "7.3.0",
