@@ -792,11 +792,12 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     DomainProperty prop = aliasMap.get(entry.getKey());
                     if (prop != null)
                     {
-                        map.put(prop.getName(), entry.getValue());
+                        // Don't stomp over existing non-null values, as mvIndicator columns map to the same property
+                        map.putIfAbsent(prop.getName(), entry.getValue());
                     }
                     else if (entry.getKey().equalsIgnoreCase(ProvenanceService.PROVENANCE_INPUT_PROPERTY))
                     {
-                        map.put(entry.getKey(), entry.getValue());
+                        map.putIfAbsent(entry.getKey(), entry.getValue());
                     }
                 }
 
