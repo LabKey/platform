@@ -2,11 +2,12 @@ package org.labkey.api.resource;
 
 import org.apache.commons.io.IOUtils;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.StringUtilsLabKey;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 
+// Minimal Resource for testing purposes
 public class TestResource extends AbstractResource
 {
     private final String _contents;
@@ -32,6 +33,6 @@ public class TestResource extends AbstractResource
     @Override
     public InputStream getInputStream() throws IOException
     {
-        return IOUtils.toInputStream(_contents, StandardCharsets.UTF_8);
+        return IOUtils.toInputStream(_contents, StringUtilsLabKey.DEFAULT_CHARSET);
     }
 }

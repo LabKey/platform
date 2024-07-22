@@ -316,7 +316,9 @@ public class ModuleHtmlViewDefinition
 
     public static class TestCase extends Assert
     {
-        private static final String HEADER = "<view xmlns=\"http://labkey.org/data/xml/view\" title=\"Test view.xml file\" frame=\"portal\">\n";
+        private static final String HEADER = """
+            <view xmlns="http://labkey.org/data/xml/view" title="Test view.xml file" frame="portal">
+            """;
         private static final String FOOTER = "\n</view>";
 
         @Test
@@ -326,19 +328,53 @@ public class ModuleHtmlViewDefinition
             testPermissions("", ACL.PERM_READ, Set.of(ReadPermission.class), false); // No permission elements -> read
             testPermissions("<requiresLogin/>", ACL.PERM_READ, Set.of(ReadPermission.class), true); // read + login
             testPermissions("<requiresNoPermission/>", ACL.PERM_NONE, Set.of(), false); // no permissions
-            testPermissions("<requiresNoPermission/>\n<requiresLogin/>", ACL.PERM_NONE, Set.of(), true); // just login required
+            testPermissions("""
+                <requiresNoPermission/>
+                <requiresLogin/>""", ACL.PERM_NONE, Set.of(), true); // just login required
             testPermissions("<permissionClasses/>", ACL.PERM_READ, Set.of(), false); // allow empty element for now
-            testPermissions("<permissionClasses>\n<permissionClass name=\"org.labkey.api.security.permissions.ReadPermission\"/>\n</permissionClasses>", ACL.PERM_READ, Set.of(ReadPermission.class), false);
-            testPermissions("<permissionClasses>\n<permissionClass name=\"org.labkey.api.security.permissions.ReadPermission\"/>\n</permissionClasses>\n<requiresLogin/>", ACL.PERM_READ, Set.of(ReadPermission.class), true);
-            testPermissions("<permissionClasses>\n<permissionClass name=\"org.labkey.api.security.permissions.InsertPermission\"/>\n</permissionClasses>", ACL.PERM_READ, Set.of(InsertPermission.class), false);
-            testPermissions("<permissionClasses>\n<permissionClass name=\"org.labkey.api.security.permissions.InsertPermission\"/>\n<permissionClass name=\"org.labkey.api.security.permissions.UpdatePermission\"/>\n</permissionClasses>", ACL.PERM_READ, Set.of(InsertPermission.class, UpdatePermission.class), false);
-            testPermissions("<requiresPermissions>\n<permissionClass name=\"org.labkey.api.security.permissions.ReadPermission\"/>\n</requiresPermissions>", ACL.PERM_READ, Set.of(ReadPermission.class), false);
-            testPermissions("<requiresPermissions>\n<permissionClass name=\"org.labkey.api.security.permissions.ReadPermission\"/>\n</requiresPermissions>\n<requiresLogin/>", ACL.PERM_READ, Set.of(ReadPermission.class), true);
-            testPermissions("<requiresPermissions>\n<permissionClass name=\"org.labkey.api.security.permissions.InsertPermission\"/>\n</requiresPermissions>", ACL.PERM_READ, Set.of(InsertPermission.class), false);
-            testPermissions("<requiresPermissions>\n<permissionClass name=\"org.labkey.api.security.permissions.InsertPermission\"/>\n<permissionClass name=\"org.labkey.api.security.permissions.UpdatePermission\"/>\n</requiresPermissions>", ACL.PERM_READ, Set.of(InsertPermission.class, UpdatePermission.class), false);
+            testPermissions("""
+                <permissionClasses>
+                    <permissionClass name="org.labkey.api.security.permissions.ReadPermission"/>
+                </permissionClasses>""", ACL.PERM_READ, Set.of(ReadPermission.class), false);
+            testPermissions("""
+                <permissionClasses>
+                    <permissionClass name="org.labkey.api.security.permissions.ReadPermission"/>
+                </permissionClasses>
+                <requiresLogin/>""", ACL.PERM_READ, Set.of(ReadPermission.class), true);
+            testPermissions("""
+                <permissionClasses>
+                    <permissionClass name="org.labkey.api.security.permissions.InsertPermission"/>
+                </permissionClasses>""", ACL.PERM_READ, Set.of(InsertPermission.class), false);
+            testPermissions("""
+                <permissionClasses>
+                    <permissionClass name="org.labkey.api.security.permissions.InsertPermission"/>
+                    <permissionClass name="org.labkey.api.security.permissions.UpdatePermission"/>
+                </permissionClasses>""", ACL.PERM_READ, Set.of(InsertPermission.class, UpdatePermission.class), false);
+            testPermissions("""
+                <requiresPermissions>
+                    <permissionClass name="org.labkey.api.security.permissions.ReadPermission"/>
+                </requiresPermissions>""", ACL.PERM_READ, Set.of(ReadPermission.class), false);
+            testPermissions("""
+                <requiresPermissions>
+                    <permissionClass name="org.labkey.api.security.permissions.ReadPermission"/>
+                </requiresPermissions>
+                <requiresLogin/>""", ACL.PERM_READ, Set.of(ReadPermission.class), true);
+            testPermissions("""
+                <requiresPermissions>
+                    <permissionClass name="org.labkey.api.security.permissions.InsertPermission"/>
+                </requiresPermissions>""", ACL.PERM_READ, Set.of(InsertPermission.class), false);
+            testPermissions("""
+                <requiresPermissions>
+                    <permissionClass name="org.labkey.api.security.permissions.InsertPermission"/>
+                    <permissionClass name="org.labkey.api.security.permissions.UpdatePermission"/>
+                </requiresPermissions>""", ACL.PERM_READ, Set.of(InsertPermission.class, UpdatePermission.class), false);
 
             testBadPermissions("<requiresPermissions/>", "Empty permissions class lists are not allowed");
-            testBadPermissions("<requiresPermissions>\n<permissionClass name=\"org.labkey.api.security.permissions.ReadPermission\"/>\n</requiresPermissions>\n<requiresNoPermission/>", "The <requiresNoPermission/> element can't be specified along with other permission elements");
+            testBadPermissions("""
+                <requiresPermissions>
+                    <permissionClass name="org.labkey.api.security.permissions.ReadPermission"/>
+                </requiresPermissions>
+                <requiresNoPermission/>""", "The <requiresNoPermission/> element can't be specified along with other permission elements");
         }
 
         private void testPermissions(@Nullable String permissions, int expectedPerms, Set<Class<? extends Permission>> expectedPermissionClasses, boolean expectedLogin)
