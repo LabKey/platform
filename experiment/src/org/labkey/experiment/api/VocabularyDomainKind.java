@@ -156,7 +156,7 @@ public class VocabularyDomainKind extends BaseAbstractDomainKind
         }
         String domainURI = generateDomainURI(name, container);
 
-        List<GWTPropertyDescriptor> properties = domain.getFields();
+        List<GWTPropertyDescriptor> properties = domain.getStandardFields();
         Domain vocabularyDomain = PropertyService.get().createDomain(container, domainURI, domain.getName(), templateInfo);
 
         Set<String> propertyUris = new HashSet<>();

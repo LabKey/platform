@@ -773,7 +773,7 @@ public class DomainUtil
         }
 
         //error if mandatory field name is not the same as orig or has been removed in updated domain
-        String missingMandatoryField = getMissingMandatoryField(update.getFields(), orig.getFields());
+        String missingMandatoryField = getMissingMandatoryField(update.getStandardFields(), orig.getStandardFields());
         if (StringUtils.isNotEmpty(missingMandatoryField))
         {
             validationException.addError(new SimpleValidationError("Mandatory field '" + missingMandatoryField + "' not found, it may have been removed or renamed. Unable to update domain."));
@@ -785,15 +785,15 @@ public class DomainUtil
 
         // first delete properties
         Set<Integer> s = new HashSet<>();
-        for (GWTPropertyDescriptor pd : orig.getFields())
+        for (GWTPropertyDescriptor pd : orig.getStandardFields())
             s.add(pd.getPropertyId());
-        for (GWTPropertyDescriptor pd : update.getFields())
+        for (GWTPropertyDescriptor pd : update.getStandardFields())
         {
             s.remove(pd.getPropertyId());
         }
 
         //replace update's locked fields with the orig for the same propertyId regardless of what we get from client
-        replaceLockedFields(getLockedFields(orig.getFields()), (List<GWTPropertyDescriptor>) update.getAllFields());
+        replaceLockedFields(getLockedFields(orig.getStandardFields()), (List<GWTPropertyDescriptor>) update.getFields());
 
         int deletedCount = 0;
         for (int id : s)
@@ -809,19 +809,19 @@ public class DomainUtil
         // If we're deleting all fields, set flag to potentially delete all data first.
         // "All fields" is defined to be the original property-driven field count, minus any that are known to be non-deleteable through the domain editor
         // Namely, that's the List key field.
-        if (deletedCount > 0 && deletedCount == (orig.getFields().size() - kind.getAdditionalProtectedProperties(d).size()))
+        if (deletedCount > 0 && deletedCount == (orig.getStandardFields().size() - kind.getAdditionalProtectedProperties(d).size()))
             d.setShouldDeleteAllData(true);
 
         Map<DomainProperty, Object> defaultValues = new HashMap<>();
         Map<DomainProperty, List<Map<String, Object>>> textChoiceValueUpdates = new HashMap<>();
 
         // and now update properties
-        for (GWTPropertyDescriptor pd : update.getFields())
+        for (GWTPropertyDescriptor pd : update.getStandardFields())
         {
             if (pd.getPropertyId() <= 0)
                 continue;
             GWTPropertyDescriptor old = null;
-            for (GWTPropertyDescriptor t : orig.getFields())
+            for (GWTPropertyDescriptor t : orig.getStandardFields())
             {
                 if (t.getPropertyId() == pd.getPropertyId())
                 {
@@ -854,12 +854,12 @@ public class DomainUtil
         // Need to ensure that any new properties are given a unique PropertyURI.  See #8329
         Set<String> propertyUrisInUse = new CaseInsensitiveHashSet();
 
-        for (GWTPropertyDescriptor pd : update.getFields())
+        for (GWTPropertyDescriptor pd : update.getStandardFields())
             if (!StringUtils.isEmpty(pd.getPropertyURI()))
                 propertyUrisInUse.add(pd.getPropertyURI());
 
         // now add properties
-        for (GWTPropertyDescriptor pd : update.getFields())
+        for (GWTPropertyDescriptor pd : update.getStandardFields())
         {
             addProperty(d, pd, defaultValues, propertyUrisInUse, validationException);
         }
@@ -875,7 +875,7 @@ public class DomainUtil
                     dps.put(dp.getPropertyURI(), dp);
                 }
                 int index = 0;
-                for (GWTPropertyDescriptor pd : update.getFields())
+                for (GWTPropertyDescriptor pd : update.getStandardFields())
                 {
                     DomainProperty dp = dps.get(pd.getPropertyURI());
                     d.setPropertyIndex(dp, index++);
@@ -1292,7 +1292,7 @@ public class DomainUtil
         ValidationException exception = new ValidationException();
         Map<Integer, String> propertyIdNameMap = getOriginalFieldPropertyIdNameMap(orig);//key: orig property id, value : orig field name
 
-        for (Object f : updates.getAllFields())
+        for (Object f : updates.getFields())
         {
             GWTPropertyDescriptor field = (GWTPropertyDescriptor)f;
 
@@ -1355,7 +1355,7 @@ public class DomainUtil
         {
             Map<Integer, String> propertyIdMap = new HashMap<>();
 
-            for (Object f : orig.getFields())
+            for (Object f : orig.getStandardFields())
             {
                 GWTPropertyDescriptor origField = (GWTPropertyDescriptor) f;
                 propertyIdMap.put(origField.getPropertyId(), origField.getName());

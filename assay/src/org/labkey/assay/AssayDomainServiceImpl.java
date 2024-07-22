@@ -600,7 +600,7 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
     private ValidationException updateDomainDescriptor(GWTDomain<GWTPropertyDescriptor> domain, ExpProtocol protocol, AssayProvider provider, boolean hasNameChange)
     {
         GWTDomain<GWTPropertyDescriptor> previous = DomainUtil.getDomainDescriptor(getUser(), domain.getDomainURI(), protocol.getContainer());
-        for (GWTPropertyDescriptor prop : domain.getFields())
+        for (GWTPropertyDescriptor prop : domain.getStandardFields())
         {
             if (prop.getLookupQuery() != null)
             {

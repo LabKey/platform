@@ -593,6 +593,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
         metadataTableJSON.setSchemaName(schemaName);
         metadataTableJSON.setQueryName(tableName);
         metadataTableJSON.setName(tableName);
+        metadataTableJSON.setAllowCalculatedFields(true);
 
         UserSchema schema = QueryService.get().getUserSchema(user, container, schemaName);
         if (schema == null)
@@ -725,7 +726,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                         if (metadataColumnJSON == null)
                         {
                             // Omit columns that are in the XML but are no longer in the underlying table/query
-                            break;
+                            continue;
                         }
                         if (column.isSetImportAliases())
                         {

@@ -245,7 +245,7 @@ public final class SpecimenEventDomainKind extends AbstractSpecimenDomainKind
             Domain domainEvent = stp.getDomain("specimenevent", false);
 
             Set<String> mandatoryPropertyNames = getMandatoryPropertyNames(domainEvent);
-            for (GWTPropertyDescriptor prop : update.getFields())
+            for (GWTPropertyDescriptor prop : update.getStandardFields())
             {
                 if (prop.getName() != null && !mandatoryPropertyNames.contains(prop.getName()))
                 {

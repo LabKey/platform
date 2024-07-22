@@ -192,7 +192,7 @@ public final class SpecimenDomainKind extends AbstractSpecimenDomainKind
 
             Set<String> mandatoryPropertyNames = getMandatoryPropertyNames(domainSpecimen);
             List<PropertyDescriptor> optionalSpecimenProps = new ArrayList<>();
-            for (GWTPropertyDescriptor prop : update.getFields())
+            for (GWTPropertyDescriptor prop : update.getStandardFields())
             {
                 if (null != prop.getName())
                 {

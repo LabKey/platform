@@ -16,7 +16,6 @@
 
 package org.labkey.api.gwt.client.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.gwt.user.client.rpc.IsSerializable;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.util.PropertyUtil;
@@ -117,10 +116,10 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
         }
 
         // include all fields here (standard and calculated) in the copy
-        if (src.getAllFields() == null)
+        if (src.getFields() == null)
             return;
-        for (int i=0 ; i<src.getAllFields().size() ; i++)
-            this.fields.add((FieldType)src.getAllFields().get(i).copy());
+        for (int i = 0; i<src.getFields().size() ; i++)
+            this.fields.add((FieldType)src.getFields().get(i).copy());
 
         if (src.mandatoryPropertyDescriptorNames != null)
         {
@@ -258,13 +257,12 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
         this.container = container;
     }
 
-    @JsonIgnore
-    public List<FieldType> getAllFields()
+    public List<FieldType> getFields()
     {
         return fields;
     }
 
-    public List<FieldType> getFields()
+    public List<FieldType> getStandardFields()
     {
         if (standardFields == null)
             standardFields = fields.stream().filter(f -> f.getValueExpression() == null).toList();
