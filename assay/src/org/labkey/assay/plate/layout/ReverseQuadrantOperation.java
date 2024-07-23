@@ -11,6 +11,8 @@ import java.util.List;
 
 public class ReverseQuadrantOperation implements LayoutOperation
 {
+    private PlateType _targetPlateType;
+
     @Override
     public List<WellLayout> execute(ReformatOptions options, @NotNull List<Plate> sourcePlates, PlateType targetPlateType)
     {
@@ -19,11 +21,11 @@ public class ReverseQuadrantOperation implements LayoutOperation
 
         List<WellLayout> layouts = new ArrayList<>();
         for (int i = 0; i < 4; i++)
-            layouts.add(new WellLayout(targetPlateType));
+            layouts.add(new WellLayout(_targetPlateType));
 
         PlateType sourcePlateType = sourcePlate.getPlateType();
-        int targetRows = targetPlateType.getRows();
-        int targetCols = targetPlateType.getColumns();
+        int targetRows = _targetPlateType.getRows();
+        int targetCols = _targetPlateType.getColumns();
         int lastTargetCol = targetCols - 1;
         int lastTargetRow = targetRows - 1;
 
@@ -61,18 +63,24 @@ public class ReverseQuadrantOperation implements LayoutOperation
     }
 
     @Override
-    public boolean requiresTargetPlateType()
-    {
-        return true;
-    }
-
-    @Override
-    public void validate(ReformatOptions options, @NotNull List<Plate> sourcePlates, PlateType targetPlateType) throws ValidationException
+    public void init(ReformatOptions options, @NotNull List<Plate> sourcePlates, PlateType targetPlateType, List<? extends PlateType> allPlateTypes) throws ValidationException
     {
         if (sourcePlates.size() != 1)
             throw new ValidationException("The reverse quadrant operation requires a single source plate.");
 
-        if (targetPlateType.getWellCount() * 4 != sourcePlates.get(0).getPlateType().getWellCount())
-            throw new ValidationException("The reverse quadrant operation only supports target plates types with exactly 1/4 the number of wells.");
+        _targetPlateType = getTargetPlateType(sourcePlates.get(0).getPlateType(), allPlateTypes);
+    }
+
+    private @NotNull PlateType getTargetPlateType(@NotNull PlateType sourcePlateType, List<? extends PlateType> allPlateTypes) throws ValidationException
+    {
+        int targetWellCount = sourcePlateType.getWellCount() / 4;
+
+        for (PlateType plateType : allPlateTypes)
+        {
+            if (!plateType.isArchived() && plateType.getWellCount() == targetWellCount)
+                return plateType;
+        }
+
+        throw new ValidationException(String.format("Cannot perform reverse quadrant operation on %s plates.", sourcePlateType.getDescription()));
     }
 }

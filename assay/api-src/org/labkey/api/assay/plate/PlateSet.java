@@ -21,6 +21,12 @@ public interface PlateSet
 
     boolean isArchived();
 
+    boolean isAssay();
+
+    boolean isPrimary();
+
+    boolean isStandalone();
+
     boolean isTemplate();
 
     List<Plate> getPlates();
