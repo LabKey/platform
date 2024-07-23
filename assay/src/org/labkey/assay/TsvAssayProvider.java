@@ -401,7 +401,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
 
         if (isPlateMetadataEnabled(protocol) && AssayPlateMetadataService.isExperimentalAppPlateEnabled())
         {
-            Set<String> existingFields = update.getStandardFields().stream().map(GWTPropertyDescriptor::getName).collect(Collectors.toSet());
+            Set<String> existingFields = update.getFields().stream().map(GWTPropertyDescriptor::getName).collect(Collectors.toSet());
             boolean hasRuns = !protocol.getExpRuns().isEmpty();
 
             // for plate metadata support we need to ensure specific fields on both the run and result domains
@@ -424,7 +424,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
 
                 if (!newFields.isEmpty())
                 {
-                    newFields.addAll(update.getStandardFields());
+                    newFields.addAll(update.getFields());
                     update.setFields(newFields);
                 }
             }
@@ -469,7 +469,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
 
                 if (!newFields.isEmpty())
                 {
-                    newFields.addAll(update.getStandardFields());
+                    newFields.addAll(update.getFields());
                     update.setFields(newFields);
                 }
             }

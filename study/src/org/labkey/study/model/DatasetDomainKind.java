@@ -454,7 +454,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
             if (isManagedField)
             {
                 String rangeUri = "";
-                for (GWTPropertyDescriptor a : (List<GWTPropertyDescriptor>)domain.getStandardFields())
+                for (GWTPropertyDescriptor a : (List<GWTPropertyDescriptor>)domain.getFields())
                 {
                     if (keyPropertyName.equalsIgnoreCase(a.getName()))
                     {
@@ -504,7 +504,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
 
             if (def.getDomain() != null)
             {
-                List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getStandardFields();
+                List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields();
 
                 Domain newDomain = def.getDomain();
                 if (newDomain != null)

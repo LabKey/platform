@@ -56,7 +56,7 @@ public abstract class ExtendedTableDomainKind extends SimpleTableDomainKind
 
         GWTDomain<GWTPropertyDescriptor> existingDomain = DomainUtil.getDomainDescriptor(user, domainURI, container);
         GWTDomain<GWTPropertyDescriptor> updatedDomain = new GWTDomain<>(existingDomain);
-        updatedDomain.setFields(gwtDomain.getStandardFields());
+        updatedDomain.setFields(gwtDomain.getFields());
         updatedDomain.setName(gwtDomain.getName());
 
         ValidationException errors = updateDomain(existingDomain, updatedDomain, options, container, user, false);
@@ -81,7 +81,7 @@ public abstract class ExtendedTableDomainKind extends SimpleTableDomainKind
         if (null != existingDomain)
         {
             // Reuse existing fields if they match in name and type. See issue 41282
-            for (GWTPropertyDescriptor newProp : gwtDomain.getStandardFields())
+            for (GWTPropertyDescriptor newProp : gwtDomain.getFields())
             {
                 DomainProperty existingProp = existingDomain.getPropertyByName(newProp.getName());
                 if (existingProp != null && existingProp.getRangeURI().equals(newProp.getRangeURI()))
@@ -95,7 +95,7 @@ public abstract class ExtendedTableDomainKind extends SimpleTableDomainKind
         }
         else
         {
-            List<? extends GWTPropertyDescriptor> properties = gwtDomain.getStandardFields();
+            List<? extends GWTPropertyDescriptor> properties = gwtDomain.getFields();
             Domain newDomain = PropertyService.get().createDomain(container, domainURI, gwtDomain.getName(), templateInfo);
 
             Set<String> propertyUris = new HashSet<>();

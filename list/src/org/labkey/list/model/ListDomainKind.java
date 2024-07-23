@@ -417,7 +417,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
             listProperties.setDescription(domain.getDescription());
         list.setDescription(listProperties.getDescription());
 
-        List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getStandardFields();
+        List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields();
         List<GWTIndex> indices = (List<GWTIndex>)domain.getIndices();
 
         try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
@@ -485,11 +485,11 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
                 return exception.addGlobalError("Expected table for list: " + listDefinition.getName());
 
             // Handle cases when existing key field is null or is not provided in the updated domainDesign
-            GWTPropertyDescriptor key = findField(listDefinition.getKeyName(), original.getStandardFields());
+            GWTPropertyDescriptor key = findField(listDefinition.getKeyName(), original.getFields());
             if (null != key)
             {
                 int id = key.getPropertyId();
-                GWTPropertyDescriptor newKey = findField(id, update.getStandardFields());
+                GWTPropertyDescriptor newKey = findField(id, update.getFields());
                 if (null == newKey)
                 {
                     return exception.addGlobalError("Key field not provided, expecting key field '" + key.getName() + "'");
@@ -551,7 +551,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
                 {
                     if (PropertyType.ATTACHMENT.equals(oldProp.getPropertyDescriptor().getPropertyType()))
                     {
-                        GWTPropertyDescriptor newGWTProp = findField(oldProp.getPropertyId(), update.getStandardFields());
+                        GWTPropertyDescriptor newGWTProp = findField(oldProp.getPropertyId(), update.getFields());
                         if (null == newGWTProp || !PropertyType.ATTACHMENT.equals(PropertyType.getFromURI(newGWTProp.getConceptURI(), newGWTProp.getRangeURI(), null)))
                         {
                             ColumnInfo column = table.getColumn(oldProp.getPropertyDescriptor().getName());

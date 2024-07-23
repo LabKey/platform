@@ -725,7 +725,7 @@ public class PropertyController extends SpringActionController
 
             if (form.deleteFields != null && !form.deleteFields.isEmpty())
             {
-                newDomain.getStandardFields().removeIf(field -> form.getDeleteFields().contains(field.getPropertyId()));
+                newDomain.getFields().removeIf(field -> form.getDeleteFields().contains(field.getPropertyId()));
             }
 
             if (form.updateFields != null && !form.updateFields.isEmpty())
@@ -740,12 +740,12 @@ public class PropertyController extends SpringActionController
 
                     // find and replace the field
                     // CONSIDER: only update field values that are present in the request
-                    for (var i = 0; i < newDomain.getStandardFields().size(); i++)
+                    for (var i = 0; i < newDomain.getFields().size(); i++)
                     {
-                        var existingField = newDomain.getStandardFields().get(i);
+                        var existingField = newDomain.getFields().get(i);
                         if (updateField.getPropertyId() > 0 && updateField.getPropertyId() == existingField.getPropertyId())
                         {
-                            newDomain.getStandardFields().set(i, updateField);
+                            newDomain.getFields().set(i, updateField);
                             break OUTER;
                         }
                     }
@@ -754,7 +754,7 @@ public class PropertyController extends SpringActionController
 
             if (form.createFields != null && !form.createFields.isEmpty())
             {
-                newDomain.getStandardFields().addAll(form.createFields);
+                newDomain.getFields().addAll(form.createFields);
             }
 
             boolean includeWarnings = form.isIncludeWarnings();

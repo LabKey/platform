@@ -645,7 +645,7 @@ public class PipelineController extends SpringActionController
 
                 if (domain != null)
                 {
-                    for (Object o : domain.getStandardFields())
+                    for (Object o : domain.getFields())
                     {
                         if (o instanceof GWTPropertyDescriptor)
                             properties.add((GWTPropertyDescriptor)o);

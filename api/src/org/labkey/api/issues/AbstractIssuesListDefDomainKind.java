@@ -321,7 +321,7 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
 
             issueDefId = IssuesListDefService.get().createIssueListDef(container, user, providerName, name, singularNoun, pluralNoun);
 
-            List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getStandardFields();
+            List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields();
             List<GWTIndex> indices = (List<GWTIndex>)domain.getIndices();
 
             Domain newDomain = IssuesListDefService.get().getDomainFromIssueDefId(issueDefId, container, user);
