@@ -816,7 +816,7 @@ public class ExceptionUtil
             // useful for when the page wants to handle 401s itself
             String headerHint = request.getHeader("X-ONUNAUTHORIZED");
 
-            boolean isGuest = user != null && user.isGuest();
+            boolean isGuest = user == null || user.isGuest();
             UnauthorizedException.Type type = uae.getType();
             boolean overrideBasicAuth = "UNAUTHORIZED".equals(headerHint);
             boolean isCSRFViolation = uae instanceof CSRFException;
@@ -825,7 +825,7 @@ public class ExceptionUtil
             if (isGET)
             {
                 // If user has not logged in or agreed to terms, not really unauthorized yet...
-                if (!isCSRFViolation && isGuest && type == UnauthorizedException.Type.redirectToLogin && !overrideBasicAuth)
+                if (!isCSRFViolation && isGuest && type == UnauthorizedException.Type.redirectToLogin && !overrideBasicAuth && HttpView.hasCurrentView())
                 {
                     // Issue 43307: If this is a locked project then just show the login page in the root. Register,
                     // forgot my password, profile update, password reset, etc. aren't going to work right in a locked
