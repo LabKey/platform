@@ -95,7 +95,6 @@ import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.property.DomainTemplateGroup;
 import org.labkey.api.files.FileSystemWatcherImpl;
 import org.labkey.api.iterator.MarkableIterator;
-import org.labkey.api.iterator.ValidatingDataRowIterator;
 import org.labkey.api.iterator.ValidatingDataRowIteratorTestCase;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.mbean.LabKeyManagement;
@@ -106,6 +105,7 @@ import org.labkey.api.module.JavaVersion;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleDependencySorter;
 import org.labkey.api.module.ModuleHtmlView;
+import org.labkey.api.module.ModuleHtmlViewDefinition;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleLoader.StartupPropertyStartupListener;
 import org.labkey.api.module.ModuleXml;
@@ -393,6 +393,7 @@ public class ApiModule extends CodeOnlyModule
             MemTracker.TestCase.class,
             ModuleContext.TestCase.class,
             ModuleDependencySorter.TestCase.class,
+            ModuleHtmlViewDefinition.TestCase.class,
             MultiValuedRenderContext.TestCase.class,
             NameGenerator.TestCase.class,
             NumberUtilsLabKey.TestCase.class,
