@@ -39,17 +39,17 @@ public class ProductConfiguration extends AbstractWriteableSettingsGroup impleme
     }
 
     @Nullable
-    public String getCurrentProduct()
+    public String getCurrentProductKey()
     {
         return lookupStringValue(PROPERTY_NAME, null);
     }
 
     public boolean isProductEnabled(@NotNull String productKey, boolean defaultValue)
     {
-        String currentProduct = getCurrentProduct();
-        if (currentProduct == null)
+        String currentProductKey = getCurrentProductKey();
+        if (currentProductKey == null)
             return defaultValue;
-        return productKey.equalsIgnoreCase(currentProduct);
+        return productKey.equalsIgnoreCase(currentProductKey);
     }
 
 

@@ -9277,7 +9277,7 @@ public class AdminController extends SpringActionController
                ProductConfiguration.setProductKey(form.getProductKey());
             }
 
-            ret.put("productKey", new ProductConfiguration().getCurrentProduct());
+            ret.put("productKey", new ProductConfiguration().getCurrentProductKey());
             return new ApiSimpleResponse(ret);
         }
     }
