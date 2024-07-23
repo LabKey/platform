@@ -1054,7 +1054,7 @@
             var records = results.rows;
             if (results.rows.length > 0 && results.rows[0].data !== undefined) {
                 records = results.rows.map(function(row) {
-                    return row.data;
+                    return new LABKEY.Query.Row(row);
                 });
             }
 
