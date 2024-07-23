@@ -313,6 +313,7 @@ public class PublishResultsQueryView extends QueryView
         private Map<Object, String> _reshowDates;
         private Map<Object, String> _reshowPtids;
         private Map<Object, String> _reshowTargetStudies;
+        private Map<String, BigDecimal> _translateMap;          // label to visit map, visit based studies only
 
         public ResolverHelper(Container targetStudyContainer,
                               User user,
@@ -451,14 +452,21 @@ public class PublishResultsQueryView extends QueryView
                 Study study = StudyService.get().getStudy(_targetStudyContainer);
                 if (study != null && visitLabel != null)
                 {
-                    // should cache this
-                    Map<String, BigDecimal> translateMap = StudyService.get().getVisitImportMap(study, true);
+                    Map<String, BigDecimal> translateMap = getVisitImportMap(study);
                     if (translateMap.containsKey(visitLabel))
                         result = translateMap.get(visitLabel).doubleValue();
                 }
             }
 
             return result;
+        }
+
+        private Map<String, BigDecimal> getVisitImportMap(Study study)
+        {
+            if (_translateMap == null)
+                _translateMap = StudyService.get().getVisitImportMap(study, true);
+
+            return _translateMap;
         }
 
         public String getUserParticipantId(RenderContext ctx)
