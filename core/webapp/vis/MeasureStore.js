@@ -1050,9 +1050,17 @@
                 responseMetadata.columnAliases = results.columnAliases;
             }
 
+            // Issue 49753: support requiredVersion 17.1 with formattedValue in response row data
+            var records = results.rows;
+            if (results.rows.length > 0 && results.rows[0].data !== undefined) {
+                records = results.rows.map(function(row) {
+                    return row.data;
+                });
+            }
+
             var ms = new MeasureStore({
                 measures: measures,
-                records: results.rows,
+                records: records,
                 responseMetadata: responseMetadata
             });
 

@@ -354,8 +354,14 @@ LABKEY.vis.naturalSortFn = function(aso, bso) {
 };
 
 LABKEY.vis.getValue = function(obj) {
-    if (obj && typeof obj == 'object')
-        return obj.hasOwnProperty('displayValue') ? obj.displayValue : obj.value;
+    if (obj && typeof obj == 'object') {
+        if (obj.hasOwnProperty('formattedValue')) {
+            return obj.formattedValue;
+        } else if (obj.hasOwnProperty('displayValue')) {
+            return obj.displayValue;
+        }
+        return obj.value;
+    }
 
     return obj;
 };
