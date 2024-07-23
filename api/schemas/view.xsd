@@ -13,7 +13,11 @@
     <xsd:complexType name="viewType">
         <xsd:sequence>
             <xsd:element name="permissions" type="vw:permissionsListType" minOccurs="0" maxOccurs="1"/>
+            <!-- <permissionClasses> and <requiresPermissions> are synonyms -->
             <xsd:element name="permissionClasses" type="vw:permissionClassListType" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="requiresPermissions" type="vw:permissionClassListType" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="requiresNoPermission" type="xsd:string" fixed="" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="requiresLogin" type="xsd:string" fixed="" minOccurs="0" maxOccurs="1"/>
             <xsd:element name="dependencies" type="vw:dependenciesType" minOccurs="0" maxOccurs="1"/>
             <xsd:element name="requiredModuleContext" type="cl:moduleContextType" minOccurs="0" maxOccurs="1"/>
         </xsd:sequence>

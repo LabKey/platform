@@ -35,6 +35,18 @@ if (!LABKEY.vis.PlotProperties) {
             TwoSD: 'blue',
         }
     }
+    if (!LABKEY.vis.PlotProperties.BoundLabel) {
+        LABKEY.vis.PlotProperties.BoundLabel = {
+            Upper: 'upperBound',
+            Lower: 'lowerBound'
+        }
+    }
+    if (!LABKEY.vis.PlotProperties.ValueConversion) {
+        LABKEY.vis.PlotProperties.ValueConversion = {
+            StandardDeviation: 'standardDeviation',
+            PercentDeviation: 'percentDeviation'
+        }
+    }
 }
 
 LABKEY.vis.makeLine = function(x1, y1, x2, y2){
