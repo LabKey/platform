@@ -396,7 +396,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         List<String> previewNames = new ArrayList<>();
         if (StringUtils.isNotBlank(options.getNameExpression()))
         {
-            NameExpressionValidationResult results = NameGenerator.getValidationMessages(ExperimentService.get().getTinfoMaterial(), domainDesign.getName(), options.getNameExpression(), domainDesign.getStandardFields(), options.getImportAliases(), container);
+            NameExpressionValidationResult results = NameGenerator.getValidationMessages(ExperimentService.get().getTinfoMaterial(), domainDesign.getName(), options.getNameExpression(), domainDesign.getFields(), options.getImportAliases(), container);
             if (results.errors() != null && !results.errors().isEmpty())
                 results.errors().forEach(error -> errors.add("Name Pattern error: " + error));
             if (results.warnings() != null && !results.warnings().isEmpty())
@@ -411,7 +411,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
 
         if (StringUtils.isNotBlank(options.getAliquotNameExpression()))
         {
-            NameExpressionValidationResult results = NameGenerator.getValidationMessages(ExperimentService.get().getTinfoMaterial(), domainDesign.getName(), options.getAliquotNameExpression(), domainDesign.getStandardFields(), options.getImportAliases(), container);
+            NameExpressionValidationResult results = NameGenerator.getValidationMessages(ExperimentService.get().getTinfoMaterial(), domainDesign.getName(), options.getAliquotNameExpression(), domainDesign.getFields(), options.getImportAliases(), container);
             if (results.errors() != null && !results.errors().isEmpty())
                 results.errors().forEach(error -> errors.add("Aliquot Name Pattern error: " + error));
             if (results.warnings() != null && !results.warnings().isEmpty())
@@ -509,7 +509,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
             ExperimentService.validateParentAlias(aliasMap, reservedNames, finalExistingAliases, updatedDomainDesign, "sample type");
         }
 
-        List<? extends GWTPropertyDescriptor> properties = updatedDomainDesign.getStandardFields();
+        List<? extends GWTPropertyDescriptor> properties = updatedDomainDesign.getFields();
 
         String errorMsg = "";
         if (StringUtils.isNotBlank(options.getNameExpression()))
@@ -538,7 +538,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
             throw new IllegalArgumentException("SampleSet name required");
 
         String description = domain.getDescription();
-        List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields();
+        List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getAllFields();
         List<GWTIndex> indices = (List<GWTIndex>)domain.getIndices();
 
         int idCol1 = -1;
