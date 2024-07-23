@@ -26,7 +26,7 @@
     JspView<CustomPropertiesView.CustomPropertiesBean> me = (JspView<CustomPropertiesView.CustomPropertiesBean>) HttpView.currentView();
     CustomPropertiesView.CustomPropertiesBean form = me.getModelBean();
 %>
-<table>
+<table class="lk-custom-properties">
 <%
     final JspWriter fout = out;
 
