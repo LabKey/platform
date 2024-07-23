@@ -2771,7 +2771,7 @@ public class ExpDataIterators
                 }
             });
 
-            boolean hasCycle = keys.isEmpty();
+            boolean hasCycle = false;
             while (keys.size() != allKeys.size() && !hasCycle)
             {
                 Set<String> addedTypeNames = new HashSet<>();
