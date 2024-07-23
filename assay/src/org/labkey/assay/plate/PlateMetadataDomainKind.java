@@ -33,12 +33,14 @@ import org.labkey.assay.plate.query.PlateSchema;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class PlateMetadataDomainKind extends BaseAbstractDomainKind
 {
     public static final String KIND_NAME = "PlateMetadata";
     public static final String DOMAiN_NAME = "PlateMetadataDomain";
     private static final Set<String> RESERVED_NAMES;
+    private static final Set<String> MANDATORY_PROPS;
     private static final Set<PropertyStorageSpec.Index> INDEXES;
     private static final Set<PropertyStorageSpec> REQUIRED_PROPS;
     private static final String PROVISIONED_SCHEMA_NAME = "assaywell";
@@ -77,6 +79,7 @@ public class PlateMetadataDomainKind extends BaseAbstractDomainKind
                 new PropertyStorageSpec(Column.Concentration.name(), JdbcType.DOUBLE),
                 new PropertyStorageSpec(Column.ConcentrationUnits.name(), JdbcType.VARCHAR, 60)
         );
+        MANDATORY_PROPS = REQUIRED_PROPS.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet());
     }
 
     @Override
@@ -99,15 +102,8 @@ public class PlateMetadataDomainKind extends BaseAbstractDomainKind
     @Override
     public Set<PropertyStorageSpec> getBaseProperties(Domain domain)
     {
-        return Set.of(
-                new PropertyStorageSpec(Column.Lsid.name(), JdbcType.VARCHAR, 200).setNullable(false),
-                new PropertyStorageSpec(Column.Amount.name(), JdbcType.DOUBLE),
-                new PropertyStorageSpec(Column.AmountUnits.name(), JdbcType.VARCHAR, 60),
-                new PropertyStorageSpec(Column.Concentration.name(), JdbcType.DOUBLE),
-                new PropertyStorageSpec(Column.ConcentrationUnits.name(), JdbcType.VARCHAR, 60)
-        );
+        return Set.of(new PropertyStorageSpec(Column.Lsid.name(), JdbcType.VARCHAR, 200).setNullable(false));
     }
-
 
     @Override
     public Set<PropertyStorageSpec.ForeignKey> getPropertyForeignKeys(Container container)
@@ -119,13 +115,19 @@ public class PlateMetadataDomainKind extends BaseAbstractDomainKind
     }
 
     @Override
+    public Set<String> getMandatoryPropertyNames(Domain domain)
+    {
+        return MANDATORY_PROPS;
+    }
+
+    @Override
     public Domain createDomain(GWTDomain<GWTPropertyDescriptor> domain, JSONObject arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
     {
         try
         {
             String domainURI = generateDomainURI(container);
             Domain metadataDomain = PropertyService.get().createDomain(container, domainURI, domain.getName(), templateInfo);
-            //ensureDomainProperties(metadataDomain, container);
+            ensureDomainProperties(metadataDomain, container);
             metadataDomain.save(user);
 
             return PropertyService.get().getDomain(container, domainURI);
@@ -136,22 +138,21 @@ public class PlateMetadataDomainKind extends BaseAbstractDomainKind
         }
     }
 
-    private void ensureDomainProperties(Domain domain, Container container)
+    public void ensureDomainProperties(Domain domain, Container container)
     {
         String typeUri = domain.getTypeURI();
         Map<String, PropertyStorageSpec.ForeignKey> foreignKeyMap = new CaseInsensitiveHashMap<>();
+        Set<String> propertyURIs = new CaseInsensitiveHashSet();
 
-        for (PropertyStorageSpec.ForeignKey fk : getPropertyForeignKeys(container))
-        {
-            foreignKeyMap.put(fk.getColumnName(), fk);
-        }
+        getPropertyForeignKeys(container).forEach(fk -> foreignKeyMap.put(fk.getColumnName(), fk));
+        domain.getProperties().forEach(dp -> propertyURIs.add(dp.getPropertyURI()));
 
         for (PropertyStorageSpec spec : REQUIRED_PROPS)
         {
             DomainProperty prop = domain.addProperty();
 
             prop.setName(spec.getName());
-            prop.setPropertyURI(typeUri + "#" + spec.getName());
+            prop.setPropertyURI(getUniqueURI(typeUri + "#" + spec.getName(), propertyURIs));
             prop.setRangeURI(spec.getTypeURI());
             prop.setScale(spec.getSize());
             prop.setRequired(!spec.isNullable());
@@ -164,6 +165,19 @@ public class PlateMetadataDomainKind extends BaseAbstractDomainKind
                 prop.setLookup(lookup);
             }
         }
+    }
+
+    private String getUniqueURI(String uri, Set<String> propertyURIs)
+    {
+        String result = uri;
+        int ordinal = 1;
+
+        while (propertyURIs.contains(result))
+        {
+            result = String.format("%s-%d", uri, ordinal++);
+        }
+        propertyURIs.add(result);
+        return result;
     }
 
     @Override

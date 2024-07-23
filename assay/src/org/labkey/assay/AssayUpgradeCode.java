@@ -50,6 +50,7 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.util.Pair;
 import org.labkey.assay.plate.PlateManager;
+import org.labkey.assay.plate.PlateMetadataDomainKind;
 import org.labkey.assay.plate.PlateSetImpl;
 import org.labkey.assay.plate.TsvPlateLayoutHandler;
 import org.labkey.assay.plate.model.PlateSetLineage;
@@ -590,12 +591,12 @@ public class AssayUpgradeCode implements UpgradeCode
             if (container != null)
             {
                 Domain domain = PlateManager.get().getPlateMetadataDomain(container, User.getAdminServiceUser());
-                boolean dirty = false;
 
                 if (domain != null)
                 {
                     try (DbScope.Transaction tx = scope.ensureTransaction())
                     {
+                        boolean dirty = false;
                         for (DomainProperty dp : domain.getProperties())
                         {
                             if (reservedNames.contains(dp.getName()))
@@ -611,8 +612,18 @@ public class AssayUpgradeCode implements UpgradeCode
                             domain.save(User.getAdminServiceUser());
 
                         // create the new fields in the existing domains
+                        DomainKind<?> domainKind = domain.getDomainKind();
+                        if (domainKind instanceof PlateMetadataDomainKind pmdk)
+                        {
+                            pmdk.ensureDomainProperties(domain, container);
+                            domain.save(User.getAdminServiceUser());
+                        }
 
                         tx.commit();
+                    }
+                    catch (Exception e)
+                    {
+                        _log.error(e);
                     }
                 }
             }
