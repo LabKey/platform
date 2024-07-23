@@ -117,10 +117,10 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
         }
 
         // include all fields here (standard and calculated) in the copy
-        if (src.getAllFields() == null)
+        if (src.getFields(true) == null)
             return;
-        for (int i=0 ; i<src.getAllFields().size() ; i++)
-            this.fields.add((FieldType)src.getAllFields().get(i).copy());
+        for (int i=0 ; i<src.getFields(true).size() ; i++)
+            this.fields.add((FieldType)src.getFields(true).get(i).copy());
 
         if (src.mandatoryPropertyDescriptorNames != null)
         {
@@ -259,9 +259,12 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     }
 
     @JsonIgnore
-    public List<FieldType> getAllFields()
+    public List<FieldType> getFields(boolean includeCalculated)
     {
-        return fields;
+        if (includeCalculated)
+            return fields;
+        else
+            return getFields();
     }
 
     public List<FieldType> getFields()

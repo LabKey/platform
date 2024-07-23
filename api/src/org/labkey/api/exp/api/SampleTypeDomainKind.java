@@ -538,7 +538,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
             throw new IllegalArgumentException("SampleSet name required");
 
         String description = domain.getDescription();
-        List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getAllFields();
+        List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields(true);
         List<GWTIndex> indices = (List<GWTIndex>)domain.getIndices();
 
         int idCol1 = -1;
