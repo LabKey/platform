@@ -126,6 +126,7 @@ import org.labkey.assay.PlateController;
 import org.labkey.assay.TsvAssayProvider;
 import org.labkey.assay.plate.data.WellData;
 import org.labkey.assay.plate.layout.LayoutEngine;
+import org.labkey.assay.plate.layout.LayoutOperation;
 import org.labkey.assay.plate.layout.WellLayout;
 import org.labkey.assay.plate.model.PlateBean;
 import org.labkey.assay.plate.model.PlateSetAssays;
@@ -2370,6 +2371,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return PLATE_NAME_EXPRESSION;
     }
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public record PlateData(String name, Integer plateType, Integer templateId, List<Map<String, Object>> data) {}
 
     private List<Plate> addPlatesToPlateSet(
@@ -2500,9 +2502,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         Integer primaryPlateSetId = null;
         if (parentPlateSet != null)
         {
-            if (PlateSetType.primary.equals(parentPlateSet.getType()))
+            if (parentPlateSet.isPrimary())
                 primaryPlateSetId = parentPlateSet.getRowId();
-            else if (PlateSetType.assay.equals(parentPlateSet.getType()))
+            else if (parentPlateSet.isAssay())
                 primaryPlateSetId = parentPlateSet.getPrimaryPlateSetId(); // could be null
         }
 
@@ -3501,17 +3503,20 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public record ReformatResult(List<PlateData> previewData, Integer plateSetRowId, List<Integer> plateRowIds) {}
+    public record ReformatResult(List<PlateData> previewData, Integer plateCount, Integer plateSetRowId, String plateSetName, List<Integer> plateRowIds) {}
 
     /**
      * Reformat a set of source plates to new plates via a reformat operation (e.g. quadrant, stamp, etc.).
      * @return The return ReformatResult will contain different data when previewing versus saving (not previewing).
      * - preview:
-     *      The previewData contains the preview data.
-     *      Both plateSetRowId and plateRowIds will be null.
+     *      The previewData contains the preview data. Null if the "previewData" flag is false.
+     *      The plateCount is the count of the number of plates that will be created.
+     *      Both plateSetRowId, plateSetName and plateRowIds will be null.
      * - saving (not preview):
      *      The previewData is null.
+     *      The plateCount is the count of the number of plates that have been created.
      *      The plateSetRowId is the rowId of the target plate set.
+     *      The plateSetName is the name of the target plate set.
      *      The plateRowIds are the rowIds of all newly generated plates.
      */
     public @NotNull ReformatResult reformat(Container container, User user, ReformatOptions options) throws Exception
@@ -3525,13 +3530,15 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             throw new ValidationException("An \"operation\" must be specified.");
 
         PlateSetImpl destinationPlateSet = getReformatDestinationPlateSet(container, options);
-        List<Plate> sourcePlates = getReformatSourcePlates(container, options);
+        Pair<PlateSet, List<Plate>> source = getReformatSourcePlates(container, options);
+        PlateSetImpl sourcePlateSet = (PlateSetImpl) source.first;
+        List<Plate> sourcePlates = source.second;
 
         PlateType targetPlateType = null;
         if (options.getTargetPlateTypeId() != null)
             targetPlateType = requirePlateType(options.getTargetPlateTypeId(), null);
 
-        LayoutEngine engine = new LayoutEngine(options, sourcePlates, targetPlateType);
+        LayoutEngine engine = new LayoutEngine(options, sourcePlates, targetPlateType, getPlateTypes());
 
         List<WellLayout> wellLayouts = engine.run();
         int availablePlateCount = destinationPlateSet.availablePlateCount();
@@ -3545,28 +3552,41 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             ));
         }
 
-        List<PlateData> plateData = hydratePlateDataFromWellLayout(container, user, wellLayouts);
+        List<PlateData> plateData = hydratePlateDataFromWellLayout(container, user, wellLayouts, engine.getOperation());
 
         if (options.isPreview())
-            return new ReformatResult(plateData, null, null);
+            return new ReformatResult(options.isPreviewData() ? plateData : null, plateData.size(), null, null, null);
+
+        if (plateData.isEmpty())
+            throw new ValidationException("This operation as configured does not create any plates.");
 
         Integer plateSetRowId;
+        String plateSetName;
         List<Plate> newPlates;
 
         if (destinationPlateSet.isNew())
         {
-            PlateSet newPlateSet = createPlateSet(container, user, destinationPlateSet, plateData, options.getTargetPlateSet().getParentPlateSetId());
+            PlateSet newPlateSet = createPlateSet(container, user, destinationPlateSet, plateData, getReformatParentPlateSetId(sourcePlateSet));
             plateSetRowId = newPlateSet.getRowId();
+            plateSetName = newPlateSet.getName();
             newPlates = newPlateSet.getPlates();
         }
         else
         {
             plateSetRowId = destinationPlateSet.getRowId();
+            plateSetName = destinationPlateSet.getName();
             newPlates = addPlatesToPlateSet(container, user, plateSetRowId, destinationPlateSet.isTemplate(), plateData);
         }
 
         List<Integer> plateRowIds = newPlates.stream().map(Plate::getRowId).toList();
-        return new ReformatResult(null, plateSetRowId, plateRowIds);
+        return new ReformatResult(null, plateRowIds.size(), plateSetRowId, plateSetName, plateRowIds);
+    }
+
+    private @Nullable Integer getReformatParentPlateSetId(@NotNull PlateSet sourcePlateSet)
+    {
+        if (sourcePlateSet.isPrimary() || !sourcePlateSet.isStandalone())
+            return sourcePlateSet.getRowId();
+        return null;
     }
 
     private @NotNull List<Integer> getReformatPlateRowIds(ReformatOptions options) throws ValidationException
@@ -3635,7 +3655,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return plateSet;
     }
 
-    private List<Plate> getReformatSourcePlates(Container container, ReformatOptions options) throws ValidationException
+    private Pair<PlateSet, List<Plate>> getReformatSourcePlates(Container container, ReformatOptions options) throws ValidationException
     {
         List<Plate> sourcePlates = new ArrayList<>();
         PlateSet sourcePlateSet = null;
@@ -3657,10 +3677,15 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         if (sourcePlateSet != null && !container.equals(sourcePlateSet.getContainer()))
             throw new ValidationException(String.format("Plate set \"%s\" is not in the %s folder.", sourcePlateSet.getName(), container.getPath()));
 
-        return sourcePlates;
+        return Pair.of(sourcePlateSet, sourcePlates);
     }
 
-    private @NotNull List<PlateData> hydratePlateDataFromWellLayout(Container container, User user, List<WellLayout> wellLayouts)
+    private @NotNull List<PlateData> hydratePlateDataFromWellLayout(
+        Container container,
+        User user,
+        List<WellLayout> wellLayouts,
+        LayoutOperation operation
+    )
     {
         if (wellLayouts.isEmpty())
             return Collections.emptyList();
@@ -3701,7 +3726,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 }
             }
 
-            plates.add(new PlateData(null, plateType.getRowId(), null, targetWellData));
+            if (operation.produceEmptyPlates() || !targetWellData.isEmpty())
+                plates.add(new PlateData(null, plateType.getRowId(), null, targetWellData));
         }
 
         return plates;

@@ -113,7 +113,7 @@ public class ModuleHtmlView extends HtmlView
 
     public ModuleHtmlView(Module module, String name, HtmlString body)
     {
-        this(new ModuleHtmlViewDefinition(name, body), module, null);
+        this(new ModuleHtmlViewDefinition(name, body, null, true), module, null);
     }
 
 

@@ -24,6 +24,7 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeService;
@@ -56,6 +57,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.labkey.api.exp.query.SamplesSchema.SCHEMA_SAMPLES;
 import static org.labkey.api.util.JunitUtil.deleteTestContainer;
 
 public final class PlateManagerTest
@@ -97,9 +99,8 @@ public final class PlateManagerTest
         // create sample type
         {
             List<GWTPropertyDescriptor> props = new ArrayList<>();
-            props.add(new GWTPropertyDescriptor("col1", "string"));
-            props.add(new GWTPropertyDescriptor("col2", "string"));
-            sampleType = SampleTypeService.get().createSampleType(container, user, "SampleType1", null, props, emptyList(), 0, -1, -1, -1, null, null);
+            props.add(new GWTPropertyDescriptor("name", "string"));
+            sampleType = SampleTypeService.get().createSampleType(container, user, "SampleType1", null, props, emptyList(), -1, -1, -1, -1, "PMT-${genId}", null);
         }
 
         // resolve plate types
@@ -582,14 +583,9 @@ public final class PlateManagerTest
     public void testGetInstrumentInstructions() throws Exception
     {
         // Arrange
-        ContainerFilter cf = ContainerFilter.Type.CurrentAndSubfolders.create(ContainerManager.getSharedContainer(), user);
-
-        final ExpMaterial sample1 = ExperimentService.get().createExpMaterial(container, sampleType.generateSampleLSID().setObjectId("sampleOne").toString(), "sampleOne");
-        sample1.setCpasType(sampleType.getLSID());
-        sample1.save(user);
-        final ExpMaterial sample2 = ExperimentService.get().createExpMaterial(container, sampleType.generateSampleLSID().setObjectId("sampleTwo").toString(), "sampleTwo");
-        sample2.setCpasType(sampleType.getLSID());
-        sample2.save(user);
+        List<ExpMaterial> samples = createSamples(2);
+        ExpMaterial sample1 = samples.get(0);
+        ExpMaterial sample2 = samples.get(1);
 
         List<Map<String, Object>> rows = List.of(
             CaseInsensitiveHashMap.of(
@@ -597,8 +593,8 @@ public final class PlateManagerTest
                 "sampleId", sample1.getRowId(),
                 "type", "SAMPLE",
                 "concentration", 2.25,
-                "barcode", "B1234")
-            ,
+                "barcode", "B1234"
+            ),
             CaseInsensitiveHashMap.of(
                 "wellLocation", "A2",
                 "sampleId", sample2.getRowId(),
@@ -608,19 +604,26 @@ public final class PlateManagerTest
             )
         );
         Plate plate = createPlate(PLATE_TYPE_96_WELLS, "myPlate", null, rows);
+        PlateSet plateSet = plate.getPlateSet();
+        assertNotNull(plateSet);
 
         // Act
-        List<FieldKey> includedMetadataCols = PlateManager.get().getMetadataColumns(plate.getPlateSet(), container, user, cf);
-        List<Object[]> result = PlateManager.get().getInstrumentInstructions(plate.getPlateSet().getRowId(), includedMetadataCols, container, user);
+        List<FieldKey> includedMetadataCols = PlateManager.get().getMetadataColumns(
+            plateSet,
+            container,
+            user,
+            ContainerFilter.Type.CurrentAndSubfolders.create(container, user)
+        );
+        List<Object[]> result = PlateManager.get().getInstrumentInstructions(plateSet.getRowId(), includedMetadataCols, container, user);
 
         // Assert
         Object[] row1 = result.get(0);
-        String[] valuesRow1 = new String[]{"myPlate", "A1", "96", "sampleOne", "B1234", "2.25"};
+        String[] valuesRow1 = new String[]{"myPlate", "A1", "96", sample1.getName(), "B1234", "2.25"};
         for (int i = 0; i < row1.length; i++)
             assertEquals(row1[i].toString(), valuesRow1[i]);
 
         Object[] row2 = result.get(1);
-        String[] valuesRow2 = new String[]{"myPlate", "A2", "96", "sampleTwo", "B5678", "1.25"};
+        String[] valuesRow2 = new String[]{"myPlate", "A2", "96", sample2.getName(), "B5678", "1.25"};
         for (int i = 0; i < row1.length; i++)
             assertEquals(row2[i].toString(), valuesRow2[i]);
     }
@@ -629,14 +632,11 @@ public final class PlateManagerTest
     public void testGetWorklist() throws Exception
     {
         // Arrange
-        ContainerFilter cf = ContainerFilter.Type.CurrentAndSubfolders.create(ContainerManager.getSharedContainer(), user);
+        ContainerFilter cf = ContainerFilter.Type.CurrentAndSubfolders.create(container, user);
 
-        final ExpMaterial sample1 = ExperimentService.get().createExpMaterial(container, sampleType.generateSampleLSID().setObjectId("sampleA").toString(), "sampleA");
-        sample1.setCpasType(sampleType.getLSID());
-        sample1.save(user);
-        final ExpMaterial sample2 = ExperimentService.get().createExpMaterial(container, sampleType.generateSampleLSID().setObjectId("sampleB").toString(), "sampleB");
-        sample2.setCpasType(sampleType.getLSID());
-        sample2.save(user);
+        List<ExpMaterial> samples = createSamples(2);
+        ExpMaterial sample1 = samples.get(0);
+        ExpMaterial sample2 = samples.get(1);
 
         List<Map<String, Object>> rows1 = List.of(
             CaseInsensitiveHashMap.of(
@@ -644,8 +644,8 @@ public final class PlateManagerTest
                 "sampleId", sample1.getRowId(),
                 "type", "SAMPLE",
                 "concentration", 2.25,
-                "barcode", "B1234")
-            ,
+                "barcode", "B1234"
+            ),
             CaseInsensitiveHashMap.of(
                 "wellLocation", "A2",
                 "sampleId", sample2.getRowId(),
@@ -682,17 +682,17 @@ public final class PlateManagerTest
 
         // Assert
         Object[] row1 = plateDataRows.get(0);
-        String[] valuesRow1 = new String[]{"myPlate1", "A1", "96", "sampleA", "B1234", "2.25", "myPlate2", "A2", "96"};
+        String[] valuesRow1 = new String[]{"myPlate1", "A1", "96", sample1.getName(), "B1234", "2.25", "myPlate2", "A2", "96"};
         for (int i = 0; i < row1.length; i++)
             assertEquals(row1[i].toString(), valuesRow1[i]);
 
         Object[] row2 = plateDataRows.get(1);
-        String[] valuesRow2 = new String[]{"myPlate1", "A2", "96", "sampleB", "B5678", "1.25", "myPlate2", "A1", "96"};
+        String[] valuesRow2 = new String[]{"myPlate1", "A2", "96", sample2.getName(), "B5678", "1.25", "myPlate2", "A1", "96"};
         for (int i = 0; i < row2.length; i++)
             assertEquals(row2[i].toString(), valuesRow2[i]);
 
         Object[] row3 = plateDataRows.get(2);
-        String[] valuesRow3 = new String[]{"myPlate1", "A2", "96", "sampleB", "B5678", "1.25", "myPlate2", "A3", "96"};
+        String[] valuesRow3 = new String[]{"myPlate1", "A2", "96", sample2.getName(), "B5678", "1.25", "myPlate2", "A3", "96"};
         for (int i = 0; i < row3.length; i++)
             assertEquals(row3[i].toString(), valuesRow3[i]);
     }
@@ -884,6 +884,8 @@ public final class PlateManagerTest
         List<Map<String, Object>> sourcePlateData = List.of(
             CaseInsensitiveHashMap.of("wellLocation", "A1", "barcode", "BC-A1"),
             CaseInsensitiveHashMap.of("wellLocation", "H12", "barcode", "BC-H12"),
+            CaseInsensitiveHashMap.of("wellLocation", "H13", "barcode", "BC-H13"),
+            CaseInsensitiveHashMap.of("wellLocation", "I12", "barcode", "BC-I12"),
             CaseInsensitiveHashMap.of("wellLocation", "I13", "barcode", "BC-I13"),
             CaseInsensitiveHashMap.of("wellLocation", "P24", "barcode", "BC-P24")
         );
@@ -930,9 +932,7 @@ public final class PlateManagerTest
                 {
                     var barcode = r.getString(FieldKey.fromParts("barcode"));
 
-                    if (i == 1 || i == 2)
-                        assertNull(barcode);
-                    else
+                    if (i == 0 || i == 3)
                     {
                         var wellPosition = r.getString(FieldKey.fromParts("position"));
                         if ("A1".equalsIgnoreCase(wellPosition))
@@ -953,6 +953,168 @@ public final class PlateManagerTest
         }
     }
 
+    @Test
+    public void testReformatCompressByColumn() throws Exception
+    {
+        List<Integer> sampleRowIds = createSamples(6).stream().map(ExpObject::getRowId).sorted().toList();
+
+        // Arrange
+        List<Map<String, Object>> sourcePlateData = List.of(
+            CaseInsensitiveHashMap.of("wellLocation", "A1", "sampleId", sampleRowIds.get(0), "type", "SAMPLE"),
+            CaseInsensitiveHashMap.of("wellLocation", "H12", "sampleId", sampleRowIds.get(1), "type", "SAMPLE"),
+            CaseInsensitiveHashMap.of("wellLocation", "H13", "sampleId", sampleRowIds.get(2), "type", "SAMPLE"),
+            CaseInsensitiveHashMap.of("wellLocation", "I12", "sampleId", sampleRowIds.get(3), "type", "SAMPLE"),
+            CaseInsensitiveHashMap.of("wellLocation", "I13", "sampleId", sampleRowIds.get(4), "type", "SAMPLE"),
+            CaseInsensitiveHashMap.of("wellLocation", "P12", "barcode", "BC-P12"),
+            CaseInsensitiveHashMap.of("wellLocation", "P24", "sampleId", sampleRowIds.get(5), "type", "SAMPLE")
+        );
+        Plate sourcePlate = createPlate(PLATE_TYPE_384_WELLS, "Column compression source plate", null, sourcePlateData);
+        Integer targetPlateSetId = sourcePlate.getPlateSet().getRowId();
+
+        ReformatOptions options = new ReformatOptions()
+                .setOperation(ReformatOptions.ReformatOperation.columnCompression)
+                .setPlateRowIds(List.of(sourcePlate.getRowId()))
+                .setTargetPlateSet(new ReformatOptions.ReformatPlateSet().setRowId(targetPlateSetId))
+                .setTargetPlateTypeId(PLATE_TYPE_12_WELLS.getRowId())
+                .setPreview(true);
+
+        // Act (preview)
+        PlateManager.ReformatResult result = PlateManager.get().reformat(container, user, options);
+
+        // Assert
+        assertNotNull(result.previewData());
+        assertEquals("Expected column compress operation on a 384-well plate to generate 1 12-well plates.", 1, result.previewData().size());
+
+        List<Map<String, Object>> plateData = result.previewData().get(0).data();
+        assertEquals("Expected well P12 to be dropped as it does not include a sample.", sourcePlateData.size() - 1, plateData.size());
+
+        assertEquals(sampleRowIds.get(0), plateData.get(0).get("sampleId"));
+        assertEquals("A1", plateData.get(0).get("wellLocation"));
+        assertEquals(sampleRowIds.get(1), plateData.get(2).get("sampleId"));
+        assertEquals("B1", plateData.get(2).get("wellLocation"));
+        assertEquals(sampleRowIds.get(2), plateData.get(4).get("sampleId"));
+        assertEquals("C1", plateData.get(4).get("wellLocation"));
+        assertEquals(sampleRowIds.get(3), plateData.get(1).get("sampleId"));
+        assertEquals("A2", plateData.get(1).get("wellLocation"));
+        assertEquals(sampleRowIds.get(4), plateData.get(3).get("sampleId"));
+        assertEquals("B2", plateData.get(3).get("wellLocation"));
+        assertEquals(sampleRowIds.get(5), plateData.get(5).get("sampleId"));
+        assertEquals("C2", plateData.get(5).get("wellLocation"));
+
+        // Act (saved)
+        result = PlateManager.get().reformat(container, user, options.setPreview(false));
+
+        // Assert
+        assertNull(result.previewData());
+        assertEquals("Expected target plate set to be used", targetPlateSetId, result.plateSetRowId());
+        assertEquals(1, result.plateRowIds().size());
+
+        Plate newPlate = PlateManager.get().getPlate(container, result.plateRowIds().get(0));
+        assertNotNull(newPlate);
+        assertEquals(PLATE_TYPE_12_WELLS, newPlate.getPlateType());
+
+        try (var r = getPlateWellResults(newPlate.getRowId()))
+        {
+            while (r.next())
+            {
+                var sampleId = r.getInt(FieldKey.fromParts("sampleId"));
+                var wellPosition = r.getString(FieldKey.fromParts("position"));
+
+                switch (wellPosition)
+                {
+                    case "A1" -> assertEquals(sampleRowIds.get(0).intValue(), sampleId);
+                    case "A2" -> assertEquals(sampleRowIds.get(3).intValue(), sampleId);
+                    case "B1" -> assertEquals(sampleRowIds.get(1).intValue(), sampleId);
+                    case "B2" -> assertEquals(sampleRowIds.get(4).intValue(), sampleId);
+                    case "C1" -> assertEquals(sampleRowIds.get(2).intValue(), sampleId);
+                    case "C2" -> assertEquals(sampleRowIds.get(5).intValue(), sampleId);
+                    default -> assertEquals(0, sampleId);
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testReformatCompressByRow() throws Exception
+    {
+        List<Integer> sampleRowIds = createSamples(6).stream().map(ExpObject::getRowId).sorted().toList();
+
+        // Arrange
+        List<Map<String, Object>> sourcePlateData = List.of(
+            CaseInsensitiveHashMap.of("wellLocation", "A1", "sampleId", sampleRowIds.get(0), "type", "SAMPLE"),
+            CaseInsensitiveHashMap.of("wellLocation", "H12", "sampleId", sampleRowIds.get(1), "type", "SAMPLE"),
+            CaseInsensitiveHashMap.of("wellLocation", "H13", "sampleId", sampleRowIds.get(2), "type", "SAMPLE"),
+            CaseInsensitiveHashMap.of("wellLocation", "I12", "sampleId", sampleRowIds.get(3), "type", "SAMPLE"),
+            CaseInsensitiveHashMap.of("wellLocation", "I13", "sampleId", sampleRowIds.get(4), "type", "SAMPLE"),
+            CaseInsensitiveHashMap.of("wellLocation", "P12", "barcode", "BC-P12"),
+            CaseInsensitiveHashMap.of("wellLocation", "P24", "sampleId", sampleRowIds.get(5), "type", "SAMPLE")
+        );
+        Plate sourcePlate = createPlate(PLATE_TYPE_384_WELLS, "Row compression source plate", null, sourcePlateData);
+        Integer targetPlateSetId = sourcePlate.getPlateSet().getRowId();
+
+        ReformatOptions options = new ReformatOptions()
+                .setOperation(ReformatOptions.ReformatOperation.rowCompression)
+                .setPlateRowIds(List.of(sourcePlate.getRowId()))
+                .setTargetPlateSet(new ReformatOptions.ReformatPlateSet().setRowId(targetPlateSetId))
+                .setTargetPlateTypeId(PLATE_TYPE_12_WELLS.getRowId())
+                .setPreview(true);
+
+        // Act (preview)
+        PlateManager.ReformatResult result = PlateManager.get().reformat(container, user, options);
+
+        // Assert
+        assertNotNull(result.previewData());
+        assertEquals("Expected row compress operation on a 384-well plate to generate 1 12-well plates.", 1, result.previewData().size());
+
+        List<Map<String, Object>> plateData = result.previewData().get(0).data();
+        assertEquals("Expected well P12 to be dropped as it does not include a sample.", sourcePlateData.size() - 1, plateData.size());
+
+        assertEquals(sampleRowIds.get(0), plateData.get(0).get("sampleId"));
+        assertEquals("A1", plateData.get(0).get("wellLocation"));
+        assertEquals(sampleRowIds.get(1), plateData.get(1).get("sampleId"));
+        assertEquals("A2", plateData.get(1).get("wellLocation"));
+        assertEquals(sampleRowIds.get(2), plateData.get(2).get("sampleId"));
+        assertEquals("A3", plateData.get(2).get("wellLocation"));
+        assertEquals(sampleRowIds.get(3), plateData.get(3).get("sampleId"));
+        assertEquals("A4", plateData.get(3).get("wellLocation"));
+        assertEquals(sampleRowIds.get(4), plateData.get(4).get("sampleId"));
+        assertEquals("B1", plateData.get(4).get("wellLocation"));
+        assertEquals(sampleRowIds.get(5), plateData.get(5).get("sampleId"));
+        assertEquals("B2", plateData.get(5).get("wellLocation"));
+
+        // Act (saved)
+        result = PlateManager.get().reformat(container, user, options.setPreview(false));
+
+        // Assert
+        assertNull(result.previewData());
+        assertEquals("Expected target plate set to be used", targetPlateSetId, result.plateSetRowId());
+        assertEquals(1, result.plateRowIds().size());
+
+        Plate newPlate = PlateManager.get().getPlate(container, result.plateRowIds().get(0));
+        assertNotNull(newPlate);
+        assertEquals(PLATE_TYPE_12_WELLS, newPlate.getPlateType());
+
+        try (var r = getPlateWellResults(newPlate.getRowId()))
+        {
+            while (r.next())
+            {
+                var sampleId = r.getInt(FieldKey.fromParts("sampleId"));
+                var wellPosition = r.getString(FieldKey.fromParts("position"));
+
+                switch (wellPosition)
+                {
+                    case "A1" -> assertEquals(sampleRowIds.get(0).intValue(), sampleId);
+                    case "A2" -> assertEquals(sampleRowIds.get(1).intValue(), sampleId);
+                    case "A3" -> assertEquals(sampleRowIds.get(2).intValue(), sampleId);
+                    case "A4" -> assertEquals(sampleRowIds.get(3).intValue(), sampleId);
+                    case "B1" -> assertEquals(sampleRowIds.get(4).intValue(), sampleId);
+                    case "B2" -> assertEquals(sampleRowIds.get(5).intValue(), sampleId);
+                    default -> assertEquals(0, sampleId);
+                }
+            }
+        }
+    }
+
     private Plate createPlate(@NotNull PlateType plateType) throws Exception
     {
         return createPlate(plateType, null, null, null);
@@ -967,6 +1129,24 @@ public final class PlateManagerTest
     {
         PlateImpl plate = new PlateImpl(container, plateName, plateType);
         return PlateManager.get().createAndSavePlate(container, user, plate, plateSetId, plateData);
+    }
+
+    private List<ExpMaterial> createSamples(int numSamples) throws Exception
+    {
+        List<Map<String, Object>> rows = new ArrayList<>();
+
+        for (int i = 0; i < numSamples; i++)
+            rows.add(CaseInsensitiveHashMap.of());
+
+        TableInfo table = QueryService.get().getUserSchema(user, container, SCHEMA_SAMPLES).getTable(sampleType.getName());
+
+        var errors = new BatchValidationException();
+        var insertedRows = table.getUpdateService().insertRows(user, container, rows, errors, null, null);
+        if (errors.hasErrors())
+            throw errors;
+
+        List<Integer> insertedRowIds = insertedRows.stream().map(row -> (Integer) row.get("RowId")).toList();
+        return new ArrayList<>(ExperimentService.get().getExpMaterials(insertedRowIds));
     }
 
     private @NotNull TableInfo getWellTable()

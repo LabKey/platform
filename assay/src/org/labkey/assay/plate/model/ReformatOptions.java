@@ -8,8 +8,10 @@ public class ReformatOptions
 {
     public enum ReformatOperation
     {
+        columnCompression,
         quadrant,
         reverseQuadrant,
+        rowCompression,
         stamp
     }
 
@@ -81,6 +83,7 @@ public class ReformatOptions
     private List<Integer> _plateRowIds;
     private String _plateSelectionKey;
     private Boolean _preview = false;
+    private Boolean _previewData = true;
     private ReformatPlateSet _targetPlateSet;
     private Integer _targetPlateTypeId;
 
@@ -126,6 +129,16 @@ public class ReformatOptions
     {
         _preview = preview;
         return this;
+    }
+
+    public Boolean isPreviewData()
+    {
+        return _previewData;
+    }
+
+    public void setPreviewData(Boolean previewData)
+    {
+        _previewData = previewData;
     }
 
     public ReformatPlateSet getTargetPlateSet()
