@@ -5245,11 +5245,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             );
          */
 
+        SqlDialect d = getExpSchema().getSqlDialect();
         SQLFragment idInClause = getAppendInClause(rowIds);
         SQLFragment siblingIdInClause = getAppendInClause(siblingRowIds);
 
-        SQLFragment sql = new SQLFragment(
-                "SELECT DISTINCT m.runId\n")
+        SQLFragment sql = new SQLFragment();
+        sql.appendComment("<getDeletableSourceRunsFromInputRowId>", d);
+        sql.append("SELECT DISTINCT m.runId\n")
                 .append("FROM ").append(primaryTableInfo, "m").append("\n")
                 .append("WHERE m.rowId ").append(idInClause).append("\n")
                 .append("AND NOT EXISTS (\n")
@@ -5276,7 +5278,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     .append(")");
         }
         sql.append(")");
-
+        sql.appendComment("</getDeletableSourceRunsFromInputRowId>", d);
 
         return ExpRunImpl.fromRuns(getRunsForRunIds(sql));
     }

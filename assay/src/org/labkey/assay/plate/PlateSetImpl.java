@@ -117,6 +117,27 @@ public class PlateSetImpl extends Entity implements PlateSet
     }
 
     @Override
+    @JsonIgnore
+    public boolean isAssay()
+    {
+        return PlateSetType.assay.equals(getType());
+    }
+
+    @Override
+    @JsonIgnore
+    public boolean isPrimary()
+    {
+        return PlateSetType.primary.equals(getType());
+    }
+
+    @Override
+    @JsonIgnore
+    public boolean isStandalone()
+    {
+        return getRootPlateSetId() == null && isAssay() && !isTemplate();
+    }
+
+    @Override
     public List<Plate> getPlates()
     {
         if (isNew())
@@ -175,12 +196,6 @@ public class PlateSetImpl extends Entity implements PlateSet
     public void setRootPlateSetId(Integer rootPlateSetId)
     {
         _rootPlateSetId = rootPlateSetId;
-    }
-
-    @JsonIgnore // TODO: Should probably just make this first class
-    public boolean isStandalone()
-    {
-        return getRootPlateSetId() == null && PlateSetType.assay.equals(getType()) && !isTemplate();
     }
 
     @Override

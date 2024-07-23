@@ -57,6 +57,7 @@ import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.SampleWorkflowDeletePermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.view.ActionURL;
@@ -564,9 +565,15 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     @Override
     public boolean canDelete(User user)
     {
-        boolean isWorkflow = ExpProtocol.isSampleWorkflowProtocol(getProtocol().getLSID());
+        ExpProtocolImpl protocol = getProtocol();
+        boolean isWorkflow = ExpProtocol.isSampleWorkflowProtocol(protocol.getLSID());
         if (isWorkflow && getContainer().hasPermission(user, SampleWorkflowDeletePermission.class))
             return true;
+
+        // Issue 50776: To update lineage we need to delete existing runs
+        if ((ExperimentServiceImpl.get().isSampleAliquot(protocol) || ExperimentServiceImpl.get().isSampleDerivation(protocol)) && getContainer().hasPermission(user, UpdatePermission.class))
+            return true;
+
         return !isWorkflow && getContainer().hasPermission(user, DeletePermission.class);
     }
 
@@ -651,10 +658,6 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
             ExperimentServiceImpl.get().populateRun(this);
             Collections.sort(_materialOutputs);
             Collections.sort(_dataOutputs);
-
-            _materialInputs = new TreeMap<>(_materialInputs);
-
-            _dataInputs = new TreeMap<>(_dataInputs);
 
             for (ExpProtocolApplicationImpl step : _protocolSteps)
             {
