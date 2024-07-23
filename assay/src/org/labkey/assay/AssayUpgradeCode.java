@@ -585,46 +585,49 @@ public class AssayUpgradeCode implements UpgradeCode
                 Column.Concentration.name(),
                 Column.ConcentrationUnits.name());
 
-        DbScope scope = AssayDbSchema.getInstance().getSchema().getScope();
+        Set<Container> metadataContainers = new HashSet<>();
         for (Container container : ContainerManager.getAllChildren(ContainerManager.getRoot()))
         {
-            if (container != null)
+            if (isBiologicsFolder(container))
+                metadataContainers.add(PlateManager.get().getPlateMetadataDomainContainer(container));
+        }
+
+        DbScope scope = AssayDbSchema.getInstance().getSchema().getScope();
+        for (Container container : metadataContainers)
+        {
+            Domain domain = PlateManager.get().getPlateMetadataDomain(container, User.getAdminServiceUser());
+            if (domain != null)
             {
-                Domain domain = PlateManager.get().getPlateMetadataDomain(container, User.getAdminServiceUser());
-
-                if (domain != null)
+                try (DbScope.Transaction tx = scope.ensureTransaction())
                 {
-                    try (DbScope.Transaction tx = scope.ensureTransaction())
+                    boolean dirty = false;
+                    for (DomainProperty dp : domain.getProperties())
                     {
-                        boolean dirty = false;
-                        for (DomainProperty dp : domain.getProperties())
+                        if (reservedNames.contains(dp.getName()))
                         {
-                            if (reservedNames.contains(dp.getName()))
-                            {
-                                String newName = ensureNewName(dp, domain);
-                                _log.info(String.format("Renaming plate metadata property %s to %s for folder %s", dp.getName(), newName, container.getPath()));
-                                dp.setName(newName);
-                                dirty = true;
-                            }
+                            String newName = ensureNewName(dp, domain);
+                            _log.info(String.format("Renaming plate metadata property %s to %s for folder %s", dp.getName(), newName, container.getPath()));
+                            dp.setName(newName);
+                            dirty = true;
                         }
-
-                        if (dirty)
-                            domain.save(User.getAdminServiceUser());
-
-                        // create the new fields in the existing domains
-                        DomainKind<?> domainKind = domain.getDomainKind();
-                        if (domainKind instanceof PlateMetadataDomainKind pmdk)
-                        {
-                            pmdk.ensureDomainProperties(domain, container);
-                            domain.save(User.getAdminServiceUser());
-                        }
-
-                        tx.commit();
                     }
-                    catch (Exception e)
+
+                    if (dirty)
+                        domain.save(User.getAdminServiceUser());
+
+                    // create the new fields in the existing domains
+                    DomainKind<?> domainKind = domain.getDomainKind();
+                    if (domainKind instanceof PlateMetadataDomainKind pmdk)
                     {
-                        _log.error(e);
+                        pmdk.ensureDomainProperties(domain, container);
+                        domain.save(User.getAdminServiceUser());
                     }
+
+                    tx.commit();
+                }
+                catch (Exception e)
+                {
+                    _log.error(e);
                 }
             }
         }
