@@ -70,7 +70,7 @@ public interface MapDataIterator extends DataIterator
             for (int i=0 ; i<=in.getColumnCount() ; i++)
             {
                 String name = in.getColumnInfo(i).getName();
-                if (name != null || skip.contains(name))
+                if (null == name || skip.contains(name))
                     continue;
                 if (_findMap.containsKey(name))
                 {
