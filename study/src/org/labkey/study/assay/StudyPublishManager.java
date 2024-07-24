@@ -1728,16 +1728,13 @@ public class StudyPublishManager implements StudyPublishService
                             fieldKeyMap.put(LinkToStudyKeys.VisitId, ci.getFieldKey());
                         if (!fieldKeyMap.containsKey(LinkToStudyKeys.Date) && col.getJdbcType().isDateOrTime())
                             fieldKeyMap.put(LinkToStudyKeys.Date, ci.getFieldKey());
+                        if (!fieldKeyMap.containsKey(LinkToStudyKeys.VisitLabel) && col.getJdbcType().isText())
+                            fieldKeyMap.put(LinkToStudyKeys.VisitLabel, ci.getFieldKey());
                     }
 
                     if (!fieldKeyMap.containsKey(LinkToStudyKeys.ParticipantId) && org.labkey.api.gwt.client.ui.PropertyType.PARTICIPANT_CONCEPT_URI.equalsIgnoreCase(col.getConceptURI()))
                     {
                         fieldKeyMap.put(LinkToStudyKeys.ParticipantId, ci.getFieldKey());
-                    }
-
-                    if (col.getName().equalsIgnoreCase("VisitLabel"))
-                    {
-                        fieldKeyMap.put(LinkToStudyKeys.VisitLabel, ci.getFieldKey());
                     }
                 }
             }
