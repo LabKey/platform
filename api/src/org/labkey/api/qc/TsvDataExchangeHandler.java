@@ -33,10 +33,10 @@ import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.assay.actions.ProtocolIdForm;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TSVWriter;
-import org.labkey.api.dataiterator.AbstractMapDataIterator;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
@@ -83,7 +83,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
@@ -115,7 +114,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         transformedRunPropertiesFile,
         severityLevel,
         maximumSeverity,
-        originalFileLocation;
+        originalFileLocation
     }
     public enum errLevel {
         NONE,
@@ -413,7 +412,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
     protected void addSampleProperties(String propertyName, List<Map<String, Object>> rows)
     {
-        _sampleProperties.put(propertyName, AbstractMapDataIterator.builderOf(rows));
+        _sampleProperties.put(propertyName, MapDataIterator.of(rows));
     }
 
     protected void writeRunProperties(AssayRunUploadContext<? extends AssayProvider> context, Map<DomainProperty, String> runProperties, File scriptDir, PrintWriter pw, TSVWriter writer)
@@ -722,7 +721,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 pw.append('\t');
                 pw.println(runData.getAbsolutePath());
 
-                getDataSerializer().exportRunData(protocol, AbstractMapDataIterator.builderOf(dataRows), runData);
+                getDataSerializer().exportRunData(protocol, MapDataIterator.of(dataRows), runData);
             }
 
             // any additional sample property sets

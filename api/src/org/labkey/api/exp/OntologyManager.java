@@ -81,7 +81,6 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -288,17 +287,6 @@ public class OntologyManager
         insertTabDelimited(c, user, ownerObjectId, helper, properties, rows, ensureObjects, rowCallback);
     }
 
-    public static void insertTabDelimited(Container c,
-                                          User user,
-                                          @Nullable Integer ownerObjectId,
-                                          ImportHelper helper,
-                                          List<PropertyDescriptor> descriptors,
-                                          DataIterator rows,
-                                          boolean ensureObjects) throws SQLException, BatchValidationException
-    {
-        insertTabDelimited(c, user, ownerObjectId, helper, descriptors, rows, ensureObjects, NO_OP_ROW_CALLBACK);
-    }
-
     public interface RowCallback
     {
         void rowProcessed(Map<String, Object> row, String lsid) throws BatchValidationException;
@@ -338,11 +326,7 @@ public class OntologyManager
         }
     }
 
-    public static final RowCallback NO_OP_ROW_CALLBACK = new RowCallback()
-    {
-        @Override
-        public void rowProcessed(Map<String, Object> row, String lsid) {}
-    };
+    public static final RowCallback NO_OP_ROW_CALLBACK = (row, lsid) -> {};
 
     public static void insertTabDelimited(Container c,
                                           User user,
@@ -494,15 +478,6 @@ public class OntologyManager
         _log.debug("\t" + insert);
     }
 
-    public static void insertTabDelimited(TableInfo tableInsert, Container c, User user,
-                                                               UpdateableTableImportHelper helper,
-                                                               DataIterator rows,
-                                                               Logger logger)
-            throws SQLException, BatchValidationException
-    {
-        insertTabDelimited(tableInsert, c, user, helper, rows, true, logger, null);
-    }
-
     /**
      * As an incremental step of QueryUpdateService cleanup, this is a version of insertTabDelimited that works on a
      * tableInfo that implements UpdateableTableInfo. Does not support ownerObjectid.
@@ -511,10 +486,12 @@ public class OntologyManager
      * of the world, validators are attached to PropertyDescriptors. Also, missing value handling is attached
      * to PropertyDescriptors.
      * <p>
-     * The original version of this method expects a data be be a map PropertyURI->value. This version will also
+     * The original version of this method expects a data to be a map PropertyURI->value. This version will also
      * accept Name->value.
      * <p>
      * Name->Value is preferred, we are using TableInfo after all.
+     *
+     * @deprecated switch to StandardDataIteratorBuilder and TableInsertDataIteratorBuilder
      */
     public static void insertTabDelimited(TableInfo tableInsert,
                                           Container c,
@@ -529,17 +506,9 @@ public class OntologyManager
         saveTabDelimited(tableInsert, c, user, helper, rows, logger, true, autoFillDefaultColumns, rowCallback);
     }
 
-    public static void updateTabDelimited(TableInfo tableInsert,
-                                          Container c,
-                                          User user,
-                                          UpdateableTableImportHelper helper,
-                                          DataIterator rows,
-                                          Logger logger)
-            throws SQLException, BatchValidationException
-    {
-        updateTabDelimited(tableInsert, c, user, helper, rows, true, logger);
-    }
-
+    /**
+     * @deprecated switch to StandardDataIteratorBuilder and TableInsertDataIteratorBuilder
+     */
     public static void updateTabDelimited(TableInfo tableInsert,
                                           Container c,
                                           User user,
@@ -3572,7 +3541,7 @@ public class OntologyManager
             };
             try (Transaction tx = getExpSchema().getScope().ensureTransaction())
             {
-                insertTabDelimited(c, TestContext.get().getUser(), oParent.getObjectId(), helper, pds, AbstractMapDataIterator.of(rows, new DataIteratorContext()), false);
+                insertTabDelimited(c, TestContext.get().getUser(), oParent.getObjectId(), helper, pds, MapDataIterator.of(rows).getDataIterator(new DataIteratorContext()), false, null);
                 tx.commit();
             }
 
@@ -3604,9 +3573,8 @@ public class OntologyManager
             return;
 
         // Handle field-level QC
-        if (v.first instanceof MvFieldWrapper)
+        if (v.first instanceof MvFieldWrapper mvWrapper)
         {
-            MvFieldWrapper mvWrapper = (MvFieldWrapper) v.first;
             v.second = mvWrapper.getMvIndicator();
             v.first = mvWrapper.getValue();
         }

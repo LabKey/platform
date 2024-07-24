@@ -24,7 +24,6 @@ import org.json.JSONObject;
 import org.labkey.api.assay.nab.NabSpecimen;
 import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.OORDisplayColumnFactory;
@@ -33,8 +32,8 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.statistics.CurveFit;
 import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.data.statistics.StatsService;
-import org.labkey.api.dataiterator.AbstractMapDataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
+import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
@@ -388,7 +387,6 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
     /**
      * If specimens get more dilute as you move down or right on the plate, return true, else
      * it is assumed that specimens get more dilute as you move up or left on the plate.
-     * @return
      */
     protected boolean isDilutionDownOrRight()
     {
@@ -482,7 +480,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         DilutionDataFileParser parser = getDataFileParser(data, dataFile, info);
 
         List<Map<String, Object>> results = parser.getResults();
-        importRows(data, run, protocol, AbstractMapDataIterator.builderOf(results), context.getUser());
+        importRows(data, run, protocol, MapDataIterator.of(results), context.getUser());
     }
 
     public static final String POLY_SUFFIX = "_poly";

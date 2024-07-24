@@ -76,12 +76,14 @@ public class TsvDataSerializer implements DataExchangeHandler.DataSerializer
                 if (columns == null)
                 {
                     // write the column header
-                    columns = new ArrayList<>(row.keySet());
+                    columns = new ArrayList<>();
                     String sep = "";
-                    for (String name : columns)
+                    for (int i = 1; i <= iter.getColumnCount(); i++)
                     {
                         pw.append(sep);
-                        pw.append(name);
+                        String colName = iter.getColumnInfo(i).getColumnName();
+                        pw.append(colName);
+                        columns.add(colName);
                         sep = "\t";
                     }
                     pw.println();

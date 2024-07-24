@@ -201,7 +201,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 List<Map<String, Object>> gridRows = parsePlateGrids(container, user, provider, protocol, plateSet, plates, dataFile);
 
                 // best attempt at returning something we can import
-                return AbstractMapDataIterator.builderOf(gridRows.isEmpty() && !rows.isEmpty() ? rows : gridRows);
+                return MapDataIterator.of(gridRows.isEmpty() && !rows.isEmpty() ? rows : gridRows);
             }
 
             return parsePlateRows(provider, protocol, plates, rows);
@@ -238,7 +238,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         boolean hasPlateIdentifiers = plateIdField != null && (data.stream().filter(row -> row.get(plateIdField) != null).findFirst().orElse(null) != null);
 
         if (hasPlateIdentifiers)
-            return AbstractMapDataIterator.builderOf(data);
+            return MapDataIterator.of(data);
 
         final String ERROR_MESSAGE = "Unable to automatically assign plate identifiers to the data rows because %s. Please include plate identifiers for the data rows.";
 
@@ -266,7 +266,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             // well location field is required, return if not provided or it will fail downstream
             String well = String.valueOf(row.get(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME));
             if (well == null)
-                return AbstractMapDataIterator.builderOf(data);
+                return MapDataIterator.of(data);
 
             Position position = new PositionImpl(null, well);
             if (positions.contains(position))
@@ -286,7 +286,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             }
         }
 
-        return AbstractMapDataIterator.builderOf(newData);
+        return MapDataIterator.of(newData);
     }
 
     /**

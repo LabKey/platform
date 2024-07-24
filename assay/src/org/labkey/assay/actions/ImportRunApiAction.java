@@ -36,7 +36,7 @@ import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.assay.DefaultAssayRunCreator;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.TSVMapWriter;
-import org.labkey.api.dataiterator.AbstractMapDataIterator;
+import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.AssayJSONConverter;
 import org.labkey.api.exp.api.ExpExperiment;
@@ -274,7 +274,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
 
             if (!saveDataAsFile)
             {
-                factory.setRawData(AbstractMapDataIterator.builderOf(rawData));
+                factory.setRawData(MapDataIterator.of(rawData));
                 factory.setUploadedData(Collections.emptyMap());
 
                 // Create an ExpData for the results if none exists in the outputData map

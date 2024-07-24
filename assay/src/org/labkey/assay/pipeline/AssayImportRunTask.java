@@ -27,7 +27,7 @@ import org.labkey.api.assay.AssayService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.dataiterator.AbstractMapDataIterator;
+import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpExperiment;
@@ -823,7 +823,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             // Add raw data if specified, either raw data or uploaded file can be used but not both
             List<Map<String, Object>> rawData = _factory.getRawData(getJob());
             if (rawData != null)
-                factory.setRawData(AbstractMapDataIterator.builderOf(rawData));
+                factory.setRawData(MapDataIterator.of(rawData));
 
             factory.setBatchProperties(getBatchProperties());
 

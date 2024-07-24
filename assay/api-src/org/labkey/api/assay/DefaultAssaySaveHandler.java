@@ -26,6 +26,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.dataiterator.AbstractMapDataIterator;
+import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.MvFieldWrapper;
@@ -282,7 +283,7 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
                 factory.setBatchProperties(runProperties.toMap());
             }
             factory.setUploadedData(Collections.emptyMap());
-            factory.setRawData(AbstractMapDataIterator.builderOf(dataRows));
+            factory.setRawData(MapDataIterator.of(dataRows));
             factory.setInputDatas(inputData);
             factory.setOutputDatas(outputData);
             factory.setInputMaterials(inputMaterial);

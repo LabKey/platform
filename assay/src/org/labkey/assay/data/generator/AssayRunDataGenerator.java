@@ -5,7 +5,7 @@ import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.DefaultAssayRunCreator;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.generator.DataGenerator;
-import org.labkey.api.dataiterator.AbstractMapDataIterator;
+import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleType;
@@ -94,7 +94,7 @@ public class AssayRunDataGenerator extends DataGenerator<AssayRunDataGenerator.C
                 var factory = provider.createRunUploadFactory(protocol, context)
                         .setName(protocol.getName() + " - Run " + (i+1) )
                         .setJobDescription("Run with " + rawData.size() + " results.")
-                        .setRawData(AbstractMapDataIterator.builderOf(rawData))
+                        .setRawData(MapDataIterator.of(rawData))
                         .setUploadedData(Collections.emptyMap());
                 Map<Object, String> outputData = new HashMap<>();
                 // Create an ExpData for the results

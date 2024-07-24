@@ -35,10 +35,10 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.ColumnValidators;
-import org.labkey.api.dataiterator.AbstractMapDataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
+import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.PropertyColumn;
@@ -337,7 +337,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                 }
 
                 LsidCollector collector = new LsidCollector();
-                OntologyManager.insertTabDelimited(getDomainObjContainer(c), user, null, new ImportHelper(), pds, AbstractMapDataIterator.of(Collections.singletonList(values), new DataIteratorContext()), true, collector);
+                OntologyManager.insertTabDelimited(getDomainObjContainer(c), user, null, new ImportHelper(), pds, MapDataIterator.of(Collections.singletonList(values)).getDataIterator(new DataIteratorContext()), true, collector);
                 String lsid = collector.getLsid();
 
                 // Add the new lsid to the row map.
@@ -545,7 +545,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                 newValues.put(objectUriCol.getName(), lsid);
 
                 LsidCollector collector = new LsidCollector();
-                OntologyManager.insertTabDelimited(getDomainObjContainer(c), user, null, new ImportHelper(), tableProperties, AbstractMapDataIterator.of(Collections.singletonList(newValues), new DataIteratorContext()), true, collector);
+                OntologyManager.insertTabDelimited(getDomainObjContainer(c), user, null, new ImportHelper(), tableProperties, MapDataIterator.of(Collections.singletonList(newValues)).getDataIterator(new DataIteratorContext()), true, collector);
 
                 // Update the lsid in the row: the lsid may have not existed in the row before the update.
                 lsid = collector.getLsid();
