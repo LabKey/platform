@@ -17,12 +17,12 @@
 package org.labkey.api.query;
 
 import org.apache.commons.collections4.SetValuedMap;
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.column.ColumnInfoTransformer;
 import org.labkey.api.data.*;
 import org.labkey.api.data.ColumnHeaderType;
@@ -224,6 +224,8 @@ public interface QueryService
     Collection<TableType> findMetadataOverride(UserSchema schema, String tableName, boolean customQuery, boolean allModules, @NotNull Collection<QueryException> errors, @Nullable Path dir);
 
     TableType parseMetadata(String metadataXML, Collection<QueryException> errors);
+
+    void saveCalculatedFieldsMetadata(String schemaName, String queryName, List<? extends GWTPropertyDescriptor> fields, boolean isUserDefinedQuery, User user, Container container) throws MetadataUnavailableException;
 
     /**
      * Create a TableSelector for a LabKey sql query string.

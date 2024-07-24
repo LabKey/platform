@@ -51,4 +51,10 @@ public class AssayBatchDomainKind extends AssayDomainKind
         result.add("Assay Id");
         return result;
     }
+
+    @Override
+    public boolean allowCalculatedFields()
+    {
+        return true;
+    }
 }

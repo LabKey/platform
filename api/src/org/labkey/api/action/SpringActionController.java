@@ -16,11 +16,16 @@
 
 package org.labkey.api.action;
 
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.labkey.api.action.ApiResponseWriter.Format;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
@@ -70,9 +75,6 @@ import org.springframework.web.servlet.ViewResolver;
 import org.springframework.web.servlet.mvc.Controller;
 import org.springframework.web.servlet.view.RedirectView;
 
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -378,6 +380,19 @@ public abstract class SpringActionController implements Controller, HasViewConte
        return null;
    }
 
+    public static void setResponseFormat(@NotNull HttpServletRequest request, @Nullable Format defaultFormat)
+    {
+        Format responseFormat = Format.getFormatByName(request.getParameter(RESPONSE_FORMAT_PARAMETER_NAME), null);
+        if (responseFormat == null)
+        {
+            responseFormat = defaultFormat;
+        }
+        if (responseFormat != null)
+        {
+            ApiResponseWriter.setResponseFormat(request, responseFormat);
+        }
+    }
+
     @Override
     public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response)
     {
@@ -407,15 +422,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
             if (!(controller instanceof PermissionCheckable checkable))
                 throw new IllegalStateException("All actions must implement PermissionCheckable. " + controller.getClass().getName() + " should extend PermissionCheckableAction or one of its subclasses.");
 
-            ApiResponseWriter.Format responseFormat = ApiResponseWriter.Format.getFormatByName(request.getParameter(RESPONSE_FORMAT_PARAMETER_NAME), null);
-            if (responseFormat == null)
-            {
-                responseFormat = checkable.getDefaultResponseFormat();
-            }
-            if (responseFormat != null)
-            {
-                ApiResponseWriter.setResponseFormat(request, responseFormat);
-            }
+            setResponseFormat(request, checkable.getDefaultResponseFormat());
 
             ActionURL redirectURL = getUpgradeMaintenanceRedirect(request, controller);
 

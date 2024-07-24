@@ -16,11 +16,7 @@
 
 package org.labkey.experiment;
 
-import org.jetbrains.annotations.Nullable;
-import org.labkey.api.action.Action;
-import org.labkey.api.attachments.Attachment;
-import org.labkey.api.attachments.AttachmentParent;
-import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
@@ -30,6 +26,10 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
@@ -122,7 +122,7 @@ public class CustomPropertiesView extends JspView<CustomPropertiesView.CustomPro
         setModelBean(new CustomPropertiesBean(map, _renderers, attachments));
     }
 
-    public CustomPropertiesView(ExpMaterialImpl m, Container c)
+    public CustomPropertiesView(ExpMaterialImpl m, Container c, User u)
     {
         super("/org/labkey/experiment/CustomProperties.jsp");
         setTitle("Custom Properties");
@@ -142,16 +142,29 @@ public class CustomPropertiesView extends JspView<CustomPropertiesView.CustomPro
         if (null != st)
         {
             Domain d = st.getDomain();
-            TableInfo ti = st.getTinfo();
-            if (null != ti)
+            UserSchema schema = QueryService.get().getUserSchema(u, c, SamplesSchema.SCHEMA_NAME);
+            TableInfo queryTable = schema.getTable(st.getName());
+
+            if (null != queryTable)
             {
                 SimpleFilter filter = new SimpleFilter("lsid", parentLSID);
-                Map<String,Object> tableProps = new TableSelector(ti, filter, null).getMap();
+                Map<String,Object> tableProps = new TableSelector(queryTable, filter, null).getMap();
                 for (DomainProperty dp : d.getProperties())
                 {
                     Object value = tableProps.get(dp.getName());
                     if (null != value)
                         map.put(dp.getName(), new ObjectProperty(parentLSID, c, dp.getPropertyURI(), value));
+                }
+                // include calculated fields from the domain / query as well
+                List<ColumnInfo> cols = queryTable.getColumns().stream()
+                        .filter(ColumnInfo::isShownInDetailsView)
+                        .filter(ColumnInfo::isValueExpressionColumn)
+                        .toList();
+                for (ColumnInfo column : cols)
+                {
+                    Object value = tableProps.get(column.getAlias());
+                    if (null != value)
+                        map.put(column.getName(), new ObjectProperty(parentLSID, c, column.getName(), value, column.getLabel()));
                 }
             }
         }
