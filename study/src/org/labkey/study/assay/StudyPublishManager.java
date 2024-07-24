@@ -38,7 +38,26 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.collections.ResultSetRowMapFactory;
-import org.labkey.api.data.*;
+import org.labkey.api.data.AbstractTableInfo;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.Filter;
+import org.labkey.api.data.ILineageDisplayColumn;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.Results;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -119,6 +138,7 @@ import org.springframework.beans.MutablePropertyValues;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -1179,9 +1199,10 @@ public class StudyPublishManager implements StudyPublishService
                     Map<FieldKey, Object> row = new HashMap<>();
                     ctx.setRow(factory.getRowMap(rs));
 
-                    getColumnValue(fieldKeyMap.get(StudyPublishService.LinkToStudyKeys.ParticipantId), ctx, selectColumns, row);
-                    getColumnValue(fieldKeyMap.get(StudyPublishService.LinkToStudyKeys.VisitId), ctx, selectColumns, row);
-                    getColumnValue(fieldKeyMap.get(StudyPublishService.LinkToStudyKeys.Date), ctx, selectColumns, row);
+                    getColumnValue(fieldKeyMap.get(LinkToStudyKeys.ParticipantId), ctx, selectColumns, row);
+                    getColumnValue(fieldKeyMap.get(LinkToStudyKeys.VisitId), ctx, selectColumns, row);
+                    getColumnValue(fieldKeyMap.get(LinkToStudyKeys.VisitLabel), ctx, selectColumns, row);
+                    getColumnValue(fieldKeyMap.get(LinkToStudyKeys.Date), ctx, selectColumns, row);
                     getColumnValue(FieldKey.fromParts(StudyPublishService.ROWID_PROPERTY_NAME), ctx, selectColumns, row);
 
                     rows.add(row);
@@ -1245,6 +1266,18 @@ public class StudyPublishManager implements StudyPublishService
                     Map<LinkToStudyKeys, FieldKey> publishKeys = StudyPublishService.get().getSamplePublishFieldKeys(user, container, sampleType, qs);
                     final boolean visitBased = study.getTimepointType().isVisitBased();
                     LinkToStudyKeys timePointKey = visitBased ? LinkToStudyKeys.VisitId : LinkToStudyKeys.Date;
+                    Map<String, BigDecimal> translateMap = Collections.emptyMap();
+
+                    if (visitBased)
+                    {
+                        // try visit label if we don't have visit ID
+                        if (!publishKeys.containsKey(LinkToStudyKeys.VisitId) && publishKeys.containsKey(LinkToStudyKeys.VisitLabel))
+                        {
+                            timePointKey = LinkToStudyKeys.VisitLabel;
+                            translateMap = StudyService.get().getVisitImportMap(study, true);
+                        }
+                    }
+
 
                     // the schema supports the subject/timepoint fields
                     if (publishKeys.containsKey(LinkToStudyKeys.ParticipantId) && publishKeys.containsKey(timePointKey))
@@ -1256,11 +1289,7 @@ public class StudyPublishManager implements StudyPublishService
                         {
                             if (row.containsKey(publishKeys.get(LinkToStudyKeys.ParticipantId)) && row.containsKey(timePointFieldKey))
                             {
-                                // Issue : 13647 - handle conversion for timepoint field
-                                Object timePointValue = visitBased
-                                        ? Float.parseFloat(String.valueOf(row.get(timePointFieldKey)))
-                                        : ConvertUtils.convert(String.valueOf(row.get(timePointFieldKey)), Date.class);
-
+                                Object timePointValue = getTimepointValue(row, timePointKey, timePointFieldKey, translateMap);
                                 dataMaps.add(Map.of(
                                         LinkToStudyKeys.ParticipantId.name(), row.get(publishKeys.get(LinkToStudyKeys.ParticipantId)),
                                         timePointPropName, timePointValue,
@@ -1298,6 +1327,18 @@ public class StudyPublishManager implements StudyPublishService
         }
     }
 
+    private Object getTimepointValue(Map<FieldKey, Object> row, LinkToStudyKeys linkKey, FieldKey timepointKey, Map<String, BigDecimal> translateMap)
+    {
+        String value = String.valueOf(row.get(timepointKey));
+        return switch (linkKey)
+        {
+            // Issue : 13647 - handle conversion for timepoint field
+            case Date -> ConvertUtils.convert(value, Date.class);
+            case VisitId -> Float.parseFloat(value);
+            case VisitLabel -> translateMap.get(value);
+            default -> null;
+        };
+    }
 
     @Nullable
     public ActionURL autoLinkResults(ExpProtocol protocol, AssayProvider provider, ExpRun run, User user, Container container,
