@@ -21,7 +21,9 @@ import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.InvalidFileException;
+import org.labkey.api.compliance.ComplianceFolderSettings;
 import org.labkey.api.compliance.ComplianceService;
+import org.labkey.api.compliance.PhiColumnBehavior;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
@@ -548,16 +550,22 @@ public class ListImporter
             boolean replaced = false;
             String name = tableType.getTableName();
 
-            int maxXmlIntPHI = PHIType.INT_NOT_PHI;
-            for (ColumnType column : tableType.getColumns().getColumnArray())
+            /* TODO this list should be consistent across all types, not just List */
+            ComplianceFolderSettings settings = ComplianceService.get().getFolderSettings(c, User.getAdminServiceUser());
+            PhiColumnBehavior columnBehavior = null==settings ? PhiColumnBehavior.show : settings.getPhiColumnBehavior();
+            if (PhiColumnBehavior.show != columnBehavior)
             {
-                maxXmlIntPHI = Math.max(maxXmlIntPHI, Optional.ofNullable(column.getPhi()).orElse(PHIType.NOT_PHI).intValue());
+                int maxXmlIntPHI = PHIType.INT_NOT_PHI;
+                for (ColumnType column : tableType.getColumns().getColumnArray())
+                {
+                    maxXmlIntPHI = Math.max(maxXmlIntPHI, Optional.ofNullable(column.getPhi()).orElse(PHIType.NOT_PHI).intValue());
+                }
+                PHI maxListPHI = PHI.valueOf(PHIType.Enum.forInt(maxXmlIntPHI).toString());
+                PHI maxAllowedPHI = ComplianceService.get().getMaxAllowedPhi(c, user);
+                if (!maxListPHI.isLevelAllowed(maxAllowedPHI))
+                    throw new ImportException("PHI level in list \"" + name + "\" exceeds level allowed for current user. List contains PHI level \"" + maxListPHI.getLabel() + "\" but user is only allowed up to \"" + maxAllowedPHI.getLabel() + "\".");
             }
-            PHI maxListPHI = PHI.valueOf(PHIType.Enum.forInt(maxXmlIntPHI).toString());
-            PHI maxAllowedPHI = ComplianceService.get().getMaxAllowedPhi(c, user);
-            if (!maxListPHI.isLevelAllowed(maxAllowedPHI))
-                throw new ImportException("PHI level in list \"" + name + "\" exceeds level allowed for current user. List contains PHI level \"" + maxListPHI.getLabel() + "\" but user is only allowed up to \"" + maxAllowedPHI.getLabel() + "\"." );
-
+            
             Set<Integer> preferredListIds = new LinkedHashSet<>();
             ListDefinition def = lists.get(name);
 
