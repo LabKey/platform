@@ -58,6 +58,8 @@ import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.lists.permissions.DesignListPermission;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.MetadataUnavailableException;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
@@ -160,6 +162,12 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
 
     @Override
     public boolean allowUniqueConstraintProperties()
+    {
+        return true;
+    }
+
+    @Override
+    public boolean allowCalculatedFields()
     {
         return true;
     }
@@ -442,6 +450,8 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
             list.save(user);
             updateListProperties(container, user, list.getListId(), listProperties);
 
+            QueryService.get().saveCalculatedFieldsMetadata(ListQuerySchema.NAME, name, domain.getCalculatedFields(), false, user, container);
+
             DefaultValueService.get().setDefaultValues(container, defaultValues);
 
             tx.commit();
@@ -574,6 +584,8 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
 
                 //update domain properties
                 exception.addErrors(DomainUtil.updateDomainDescriptor(original, update, container, user));
+
+                QueryService.get().saveCalculatedFieldsMetadata(ListQuerySchema.NAME, update.getQueryName(), update.getCalculatedFields(), false, user, container);
             }
             catch (RuntimeSQLException x)
             {
@@ -586,7 +598,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
                 }
                 return exception.addGlobalError(message);
             }
-            catch (DataIntegrityViolationException x)
+            catch (DataIntegrityViolationException | MetadataUnavailableException x)
             {
                 return exception.addGlobalError("A data error occurred: " + x.getMessage());
             }
