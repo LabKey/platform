@@ -119,7 +119,7 @@
         <tr class="<%=getShadeRowClass(rowIndex)%>">
             <td><%=unsafe(isKeyColumn ? "<b>" : "")%><%=h(col.getName())%><%=unsafe(isKeyColumn ? "</b>" : "")%></td>
             <td><%=h(col.getLabel())%></td>
-            <td><%=h(col.getFriendlyTypeName())%></td>
+            <td><%=h(col.getValueExpression() != null ? "Calculation (" + col.getFriendlyTypeName() + ")" : col.getFriendlyTypeName())%></td>
             <td><%=h(col.getFormat())%></td>
             <td align="center"><input type=checkbox disabled<%=checked(!col.isNullable() || col.isRequired())%>></td>
             <td align="center"><input type=checkbox disabled<%=checked(col.isMvEnabled())%>></td>

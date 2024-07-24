@@ -143,7 +143,10 @@ public abstract class DataView extends WebPartView<RenderContext>
         {
             DataRegion dr = new DataRegion();
             dr.setTable(form.getTable());
-            List<ColumnInfo> allCols = form.getTable().getUserEditableColumns();
+            // Include both columns that are user-editable (i.e. not the system defined fields) and valueExpression columns (i.e. calculated fields) in the data view
+            List<ColumnInfo> allCols = form.getTable().getColumns().stream()
+                    .filter(col -> col.isUserEditable() || col.isValueExpressionColumn())
+                    .toList();
             List<ColumnInfo> includedCols = new ArrayList<>();
             for (ColumnInfo col : allCols)
             {

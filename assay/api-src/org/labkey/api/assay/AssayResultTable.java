@@ -48,6 +48,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.ExprColumn;
@@ -232,6 +233,9 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
             addColumn(svc.createExcludedColumn(this, getUserSchema().getProvider()));
             addColumn(svc.createExclusionCommentColumn(this, getUserSchema().getProvider()));
         }
+
+        List<FieldKey> calculatedFieldKeys = DomainUtil.getCalculatedFieldsForDefaultView(this);
+        visibleColumns.addAll(calculatedFieldKeys);
 
         Domain runDomain = _provider.getRunDomain(_protocol);
         for (DomainProperty prop : runDomain.getProperties())
