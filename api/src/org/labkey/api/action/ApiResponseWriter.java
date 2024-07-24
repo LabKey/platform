@@ -52,11 +52,10 @@ public abstract class ApiResponseWriter implements AutoCloseable
     private static final String RESPONSE_FORMAT_ATTRIBUTE = ApiResponseWriter.class.getName() + "$responseFormat";
 
     /*
-     * (MAB) This code defaults to using setting the response to SC_BAD_REQUEST
-     * when any error is encountered.  I think this is wrong.  Expected
-     * errors should be encoded in a normal JSON response and SC_OK.
+     * (MAB) This code defaults to setting the response to SC_BAD_REQUEST when any error is encountered. I think this
+     * is wrong. Expected errors should be encoded in a normal JSON response and SC_OK.
      *
-     * Also, this using SC_BAD_REQUEST means failed APIs get taggd by BlockListFilter
+     * Also, this using SC_BAD_REQUEST means failed APIs get tagged by BlockListFilter
      *
      * Allow new code to specify that SC_OK should be used for errors
      */
@@ -341,7 +340,7 @@ public abstract class ApiResponseWriter implements AutoCloseable
 
     /**
      * Even though the default exception handling is implemented here, we require that response.render()
-     * invokes this method in its own catch() block before endResponse().  This seems cleaner than coordinating
+     * invokes this method in its own catch() block before endResponse(). This seems cleaner than coordinating
      * to have render() not output matching { open and close } braces.
      *
      * @see ApiResponse#render(ApiResponseWriter) 
