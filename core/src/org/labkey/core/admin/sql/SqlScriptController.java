@@ -1378,7 +1378,7 @@ public class SqlScriptController extends SpringActionController
                     try
                     {
                         _method = _code.getClass().getDeclaredMethod(form.getMethod(), ModuleContext.class);
-                        _ctx = ModuleLoader.getInstance().getModuleContext(form.getModule());
+                        _ctx = ModuleLoader.getInstance().getModuleContextFromDatabase(form.getModule());
                         if (null == _ctx)
                             errors.reject(ERROR_MSG, "ModuleContext not found");
                     }
