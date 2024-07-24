@@ -9,6 +9,7 @@ public enum ProductFeature
     Assay("assay"),
     AssayQC("premium"),
     BiologicsRegistry("biologics"),
+    CalculatedFields("core"),
     ChartBuilding("core"),
     DataChangeCommentRequirement("core"),
     ELN("labbook"),
