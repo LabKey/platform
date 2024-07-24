@@ -9019,7 +9019,7 @@ public class AdminController extends SpringActionController
         private ModuleContext getModuleContext()
         {
             ModuleLoader ml = ModuleLoader.getInstance();
-            ModuleContext ctx = ml.getModuleContext(getName());
+            ModuleContext ctx = ml.getModuleContextFromDatabase(getName());
 
             if (null == ctx)
                 throw new NotFoundException("Module not found");
