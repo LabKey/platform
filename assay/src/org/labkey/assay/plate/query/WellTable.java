@@ -143,6 +143,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         column.setLabel("Group");
         column.setUserEditable(true);
         column.setShownInInsertView(true);
+        column.setDescription("Identifies the group to which the plate belongs.");
         addColumn(column);
     }
 
@@ -162,6 +163,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         var positionCol = new ExprColumn(this, Column.Position.name(), positionSql, JdbcType.VARCHAR);
         positionCol.setSortFieldKeys(List.of(FieldKey.fromParts(Column.RowId.name())));
         positionCol.setUserEditable(false);
+        positionCol.setDescription("Indicates the position of the well in the plate.");
         addColumn(positionCol);
     }
 
@@ -186,6 +188,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         column.setFk(new QueryForeignKey(getUserSchema().getTable(WellGroupTypeTable.NAME), null, null));
         column.setUserEditable(true);
         column.setShownInInsertView(true);
+        column.setDescription("Specifies the type of plate.");
         addColumn(column);
     }
 
