@@ -335,7 +335,7 @@ public class LoginController extends SpringActionController
                     // Explicit test for valid email
                     ValidEmail email = new ValidEmail(form.getEmail());
 
-                    if (status.requiresRedirect())
+                    if (status.handleRedirect())
                     {
                         AuthenticationManager.setLoginReturnProperties(request, new LoginReturnProperties(result.getRedirectURL(), form.getUrlhash(), form.getSkipProfile()));
                     }

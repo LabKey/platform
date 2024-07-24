@@ -142,4 +142,10 @@ public class AssayResultDomainKind extends AssayDomainKind
 
         return mandatoryNames;
     }
+
+    @Override
+    public boolean allowCalculatedFields()
+    {
+        return true;
+    }
 }

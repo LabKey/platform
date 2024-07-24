@@ -49,6 +49,7 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.AliasManager;
@@ -441,6 +442,9 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         autoJoinFk.addSuggested(keyFieldKey);
         autoJoinColumn.setFk(autoJoinFk);
         addColumn(autoJoinColumn);
+
+        List<FieldKey> calculatedFieldKeys = DomainUtil.getCalculatedFieldsForDefaultView(this);
+        defaultVisibleCols.addAll(calculatedFieldKeys);
 
         setDefaultVisibleColumns(defaultVisibleCols);
 
