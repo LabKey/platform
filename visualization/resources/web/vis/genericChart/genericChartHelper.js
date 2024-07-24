@@ -691,12 +691,15 @@ LABKEY.vis.GenericChartHelper = new function(){
         if (row.hasOwnProperty(propName)) {
             // backwards compatibility for response row that is not a LABKEY.Query.Row
             if (!(row instanceof LABKEY.Query.Row)) {
-                return row[propName].displayValue || row[propName].value;
+                return row[propName].formattedValue || row[propName].displayValue || row[propName].value;
             }
 
             var propValue = row.get(propName);
             if (valueName != undefined && propValue.hasOwnProperty(valueName)) {
                 return propValue[valueName];
+            }
+            else if (propValue.hasOwnProperty('formattedValue')) {
+                return propValue['formattedValue'];
             }
             else if (propValue.hasOwnProperty('displayValue')) {
                 return propValue['displayValue'];
