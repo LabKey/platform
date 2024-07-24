@@ -295,6 +295,12 @@ public interface ColumnInfo extends ColumnRenderProperties
     @Nullable
     String getWrappedColumnName();
 
+    @Nullable
+    default String getValueExpression()
+    {
+        return null;
+    }
+
     Object getValue(ResultSet rs) throws SQLException;
 
     int getIntValue(ResultSet rs) throws SQLException;
@@ -341,6 +347,11 @@ public interface ColumnInfo extends ColumnRenderProperties
     }
 
     boolean isCalculated();
+
+    default boolean isValueExpressionColumn()
+    {
+        return getValueExpression() != null && getWrappedColumnName() == null;
+    }
 
     // If true, you can't use this column when auto-generating LabKey SQL, it is not selected in the underlying query
     // only query can set this true

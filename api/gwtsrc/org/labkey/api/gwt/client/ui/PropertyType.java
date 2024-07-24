@@ -50,6 +50,7 @@ public enum PropertyType
     public static final String VISIT_CONCEPT_URI = "http://cpas.labkey.com/Study#VisitId";
     public static final String SPECIMEN_CONCEPT_URI = "http://cpas.labkey.com/Study#SpecimenId";
     public static final String SAMPLE_CONCEPT_URI = "http://www.labkey.org/exp/xml#sample";
+    public static final String CALCULATED_CONCEPT_URI = "http://www.labkey.org/exp/xml#calculated";
 
     private final String _uri;
     private final String _display;

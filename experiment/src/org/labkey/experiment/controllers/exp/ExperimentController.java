@@ -876,7 +876,7 @@ public class ExperimentController extends SpringActionController
             detailsView.setTitle("Standard Properties");
             detailsView.setFrame(WebPartView.FrameType.PORTAL);
 
-            CustomPropertiesView cpv = new CustomPropertiesView(_material, c);
+            CustomPropertiesView cpv = new CustomPropertiesView(_material, c, getUser());
 
             return new VBox(new StandardAndCustomPropertiesView(detailsView, cpv));
         }

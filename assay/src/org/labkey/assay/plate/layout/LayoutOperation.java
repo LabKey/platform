@@ -10,11 +10,16 @@ import java.util.List;
 
 public interface LayoutOperation
 {
-    default void validate(ReformatOptions options, @NotNull List<Plate> sourcePlates, PlateType targetPlateType) throws ValidationException
+    List<WellLayout> execute(ReformatOptions options, @NotNull List<Plate> sourcePlates, PlateType targetPlateType);
+
+    default void init(ReformatOptions options, @NotNull List<Plate> sourcePlates, PlateType targetPlateType, List<? extends PlateType> allPlateTypes) throws ValidationException
     {
     }
 
-    List<WellLayout> execute(ReformatOptions options, @NotNull List<Plate> sourcePlates, PlateType targetPlateType);
+    default boolean produceEmptyPlates()
+    {
+        return false;
+    }
 
     default boolean requiresTargetPlateType()
     {

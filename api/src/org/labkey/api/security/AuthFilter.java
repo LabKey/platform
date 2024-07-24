@@ -16,6 +16,15 @@
 
 package org.labkey.api.security;
 
+import jakarta.servlet.Filter;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.FilterConfig;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.module.ModuleLoader;
@@ -31,18 +40,10 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.HttpUtil;
 import org.labkey.api.util.HttpsUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.template.PageConfig;
 
-import jakarta.servlet.Filter;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.FilterConfig;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.ServletRequest;
-import jakarta.servlet.ServletResponse;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
@@ -185,6 +186,11 @@ public class AuthFilter implements Filter
         catch (UnsupportedEncodingException uee)
         {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST, uee.getMessage());
+            return;
+        }
+        catch (UnauthorizedException ue)
+        {
+            ExceptionUtil.handleException(req, resp, ue, ue.getMessage(), false);
             return;
         }
 

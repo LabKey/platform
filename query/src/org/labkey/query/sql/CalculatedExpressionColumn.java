@@ -74,6 +74,11 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
         return null;
     }
 
+    @Override
+    public @Nullable String getValueExpression()
+    {
+        return _labKeySql;
+    }
 
     public void validate(Map<FieldKey, ColumnInfo> columnMap, @Nullable Set<FieldKey> referencedKeys) throws QueryParseException
     {

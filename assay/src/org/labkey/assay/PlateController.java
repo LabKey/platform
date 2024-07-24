@@ -1488,7 +1488,7 @@ public class PlateController extends SpringActionController
                 PlateSet plateSet = PlateManager.get().getPlateSet(getContainer(), form.getPlateSetId());
                 if (plateSet == null)
                     throw new NotFoundException("Unable to resolve Plate Set.");
-                if (plateSet.getType() != PlateSetType.assay)
+                if (!plateSet.isAssay())
                     throw new ValidationException("Instrument Instructions cannot be generated for non-Assay Plate Sets.");
 
                 ContainerFilter cf = ContainerFilter.Type.Current.create(getViewContext());

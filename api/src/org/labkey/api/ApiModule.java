@@ -104,6 +104,7 @@ import org.labkey.api.module.JavaVersion;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleDependencySorter;
 import org.labkey.api.module.ModuleHtmlView;
+import org.labkey.api.module.ModuleHtmlViewDefinition;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleLoader.StartupPropertyStartupListener;
 import org.labkey.api.module.ModuleXml;
@@ -391,6 +392,7 @@ public class ApiModule extends CodeOnlyModule
             MemTracker.TestCase.class,
             ModuleContext.TestCase.class,
             ModuleDependencySorter.TestCase.class,
+            ModuleHtmlViewDefinition.TestCase.class,
             MultiValuedRenderContext.TestCase.class,
             NameGenerator.TestCase.class,
             NumberUtilsLabKey.TestCase.class,
