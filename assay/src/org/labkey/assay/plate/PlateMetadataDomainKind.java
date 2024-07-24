@@ -31,6 +31,7 @@ import org.labkey.assay.plate.query.ConcentrationUnitsTable;
 import org.labkey.assay.plate.query.PlateSchema;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -42,7 +43,7 @@ public class PlateMetadataDomainKind extends BaseAbstractDomainKind
     private static final Set<String> RESERVED_NAMES;
     private static final Set<String> MANDATORY_PROPS;
     private static final Set<PropertyStorageSpec.Index> INDEXES;
-    private static final Set<PropertyStorageSpec> REQUIRED_PROPS;
+    private static final List<PropertyStorageSpec> REQUIRED_PROPS;
     private static final String PROVISIONED_SCHEMA_NAME = "assaywell";
 
     public enum Column
@@ -73,7 +74,7 @@ public class PlateMetadataDomainKind extends BaseAbstractDomainKind
     {
         RESERVED_NAMES = new CaseInsensitiveHashSet(Arrays.stream(Column.values()).map(Enum::name).toList());
         INDEXES = Set.of(new PropertyStorageSpec.Index(true, Column.Lsid.name()));
-        REQUIRED_PROPS = Set.of(
+        REQUIRED_PROPS = List.of(
                 new PropertyStorageSpec(Column.Amount.name(), JdbcType.DOUBLE),
                 new PropertyStorageSpec(Column.AmountUnits.name(), JdbcType.VARCHAR, 60),
                 new PropertyStorageSpec(Column.Concentration.name(), JdbcType.DOUBLE),
