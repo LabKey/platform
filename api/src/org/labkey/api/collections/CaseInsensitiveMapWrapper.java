@@ -36,7 +36,7 @@ public class CaseInsensitiveMapWrapper<V> extends MapWrapper<String, V> implemen
 
     public CaseInsensitiveMapWrapper(Map<String, V> map)
     {
-        this(map, null);
+        this(map, map instanceof CaseInsensitiveMapWrapper<V> m ? m : null);
     }
 
     public CaseInsensitiveMapWrapper(Map<String, V> map, @Nullable CaseInsensitiveMapWrapper<V> caseMapping)

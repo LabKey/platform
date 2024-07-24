@@ -22,12 +22,12 @@ import org.labkey.api.assay.plate.PositionImpl;
 import org.labkey.api.assay.plate.Well;
 import org.labkey.api.assay.plate.WellCustomField;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ParameterMapStatement;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.dataiterator.AbstractMapDataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
@@ -94,6 +94,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             final ContainerFilter cf = PlateManager.get().getPlateContainerFilter(protocol, container, user);
             int rowCounter = 0;
             final Map<Integer, ExpMaterial> sampleMap = new HashMap<>();
+            final CaseInsensitiveMapWrapper<Object> sharedCasing = new CaseInsensitiveMapWrapper<>(new HashMap<>());
 
             @Override
             public Map<String, Object> apply(Map<String, Object> row)
@@ -148,6 +149,9 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 
                     if (positionToWell.containsKey(well))
                     {
+                        // Copy so we can put new values
+                        row = new CaseInsensitiveMapWrapper<>(new HashMap<>(row), sharedCasing);
+
                         WellBean wellBean = positionToWell.get(well);
                         for (WellCustomField customField : PlateManager.get().getWellCustomFields(user, plate, wellBean.getRowId()))
                             row.put(customField.getName(), customField.getValue());
