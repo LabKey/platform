@@ -382,6 +382,41 @@ public class ExpDataIterators
             }
         }
 
+        private Pair<Boolean, Integer> determineRecalcFromExistingRecord(int i, Map<String, Object> existingMap)
+        {
+            if (_storedAmountCol == null && _unitsCol == null && _sampleStateCol == null)
+                return null; // update/merge existing will only trigger recompute if stored amount or unit or status is updated)
+
+            if (i == _parentNameToRecomputeCol) // only return lsid if existing map not null
+                return null;
+
+            Integer rootAliquot = (Integer) existingMap.get(RootMaterialRowId.name());
+            Double existingAmount = (Double) existingMap.get(StoredAmount.name());
+            String existingUnits = (String) existingMap.get(Units.name());
+            Integer existingState = (Integer) existingMap.get(SampleState.name());
+
+            if (!availableSampleStatuses.isEmpty())
+            {
+                Integer newState = _sampleStateCol == null ? null : (Integer) get(_sampleStateCol);
+                if (SampleTypeUpdateServiceDI.isAliquotStatusChangeNeedRecalc(availableSampleStatuses, existingState, newState))
+                    return new Pair<>(true, rootAliquot);
+            }
+
+            Double newAmount = _storedAmountCol == null ? null : (Double) get(_storedAmountCol);
+            String newUnits = _unitsCol == null ? null : (String) get(_unitsCol);
+
+            boolean amountChanged = !(Objects.equals(existingAmount, newAmount) && Objects.equals(existingUnits, newUnits));
+            if (!amountChanged && (_storedAmountCol == null || _unitsCol == null))
+            {
+                if (_storedAmountCol == null && !Objects.equals(existingUnits, newUnits))
+                    amountChanged = true;
+                if (_unitsCol == null && !Objects.equals(existingAmount, newAmount))
+                    amountChanged = true;
+            }
+
+            return amountChanged ? new Pair<>(true, rootAliquot) : null;
+        }
+
         @Override
         public Object get(int i)
         {
@@ -403,40 +438,14 @@ public class ExpDataIterators
                 Map<String, Object> existingMap = getExistingRecord();
                 if (existingMap != null && !existingMap.isEmpty())
                 {
-                    if (_storedAmountCol == null && _unitsCol == null && _sampleStateCol == null)
-                        return null; // update/merge existing will only trigger recompute if stored amount or unit or status is updated)
-
-                    if (i == _parentNameToRecomputeCol) // only return lsid if existing map not null
+                    Pair<Boolean, Integer> needRecac = determineRecalcFromExistingRecord(i, existingMap);
+                    if (needRecac == null)
                         return null;
-
-                    Integer rootAliquot = (Integer) existingMap.get(RootMaterialRowId.name());
-                    Double existingAmount = (Double) existingMap.get(StoredAmount.name());
-                    String existingUnits = (String) existingMap.get(Units.name());
-                    Integer existingState = (Integer) existingMap.get(SampleState.name());
-
-                    if (!availableSampleStatuses.isEmpty())
-                    {
-                        Integer newState = _sampleStateCol == null ? null : (Integer) get(_sampleStateCol);
-                        if (SampleTypeUpdateServiceDI.isAliquotStatusChangeNeedRecalc(availableSampleStatuses, existingState, newState))
-                            return rootAliquot;
-                    }
-
-                    Double newAmount = _storedAmountCol == null ? null : (Double) get(_storedAmountCol);
-                    String newUnits = _unitsCol == null ? null : (String) get(_unitsCol);
-
-                    boolean amountChanged = !(Objects.equals(existingAmount, newAmount) && Objects.equals(existingUnits, newUnits));
-                    if (!amountChanged && (_storedAmountCol == null || _unitsCol == null))
-                    {
-                        if (_storedAmountCol == null && !Objects.equals(existingUnits, newUnits))
-                            amountChanged = true;
-                        if (_unitsCol == null && !Objects.equals(existingAmount, newAmount))
-                            amountChanged = true;
-                    }
-
-                    return amountChanged ? rootAliquot : null;
+                    if (needRecac.first && needRecac.second != null)
+                        return needRecac.second;
                 }
 
-                // without existing record, we have to be conservative and assume this is a new aliquot, or a amount/status update
+                // without existing record, or if existing record is missing root information, we have to be conservative and assume this is a new aliquot, or a amount/status update
                 // merge: either a new record, or detailed audit disabled
                 if (!_isUpdate)
                 {
