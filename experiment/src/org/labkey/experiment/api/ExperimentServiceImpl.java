@@ -522,6 +522,21 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
+    public boolean hasExpRuns(Container container, @NotNull Predicate<ExpRun> filterFn)
+    {
+        SQLFragment sql = new SQLFragment(" SELECT ER.* "
+                + " FROM exp.ExperimentRun ER "
+                + " WHERE ER.Container = ? ");
+        sql.add(container.getId());
+
+        return new SqlSelector(getSchema(), sql)
+                .setJdbcCaching(false)
+                .stream(ExperimentRun.class)
+                .map(ExpRunImpl::new)
+                .anyMatch(filterFn);
+    }
+
+    @Override
     public List<ExpRunImpl> getExpRuns(@NotNull Container container, @Nullable SQLFragment filterSQL, @NotNull Predicate<ExpRun> filterFn)
     {
         SQLFragment sql = new SQLFragment(" SELECT ER.* "

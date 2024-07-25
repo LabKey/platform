@@ -158,6 +158,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     ExpRun getExpRun(String lsid);
 
+    boolean hasExpRuns(Container container, @NotNull Predicate<ExpRun> filterFn);
     /** @return a list of ExpRuns ordered by the RowId */
     List<? extends ExpRun> getExpRuns(Container container, @Nullable ExpProtocol parentProtocol, @Nullable ExpProtocol childProtocol);
 
