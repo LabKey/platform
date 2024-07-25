@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.query;
+package org.labkey.api.query;
 
 import java.io.Serializable;
 

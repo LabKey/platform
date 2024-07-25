@@ -47,6 +47,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.query.MetadataUnavailableException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.model.ViewCategory;
@@ -268,6 +269,12 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
 
     @Override
     public boolean allowUniqueConstraintProperties()
+    {
+        return true;
+    }
+
+    @Override
+    public boolean allowCalculatedFields()
     {
         return true;
     }
@@ -524,6 +531,8 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
                     List<GWTIndex> indices = (List<GWTIndex>)domain.getIndices();
                     newDomain.setPropertyIndices(indices, lowerReservedNames);
                     StorageProvisioner.get().addMissingRequiredIndices(newDomain);
+
+                    QueryService.get().saveCalculatedFieldsMetadata("study", name, domain.getCalculatedFields(), false, user, container);
                 }
                 else
                     throw new IllegalArgumentException("Failed to create domain for dataset : " + name + ".");
@@ -732,6 +741,8 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         {
             ValidationException exception = updateDomainDescriptor(original, update, container, user);
 
+            QueryService.get().saveCalculatedFieldsMetadata("study", update.getQueryName(), update.getCalculatedFields(), false, user, container);
+
             if (!exception.hasErrors() && def != null)
                 exception = updateDataset(datasetProperties, original.getDomainURI(), exception, study, container, user, def);
 
@@ -739,6 +750,10 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
                 transaction.commit();
 
             return exception;
+        }
+        catch (MetadataUnavailableException e)
+        {
+            return new ValidationException(e.getMessage());
         }
         finally
         {
@@ -783,7 +798,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         if (null == dsd)
             return null;
 
-        return DatasetFactory.createDataset(schema, cf, dsd);
+        return schema.getTable(name, cf, true, false);
     }
 
     @Override

@@ -62,6 +62,7 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.PropertyValidationError;
+import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
@@ -79,9 +80,11 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.ConditionalFormatFilterType;
 import org.labkey.data.xml.ConditionalFormatType;
+import org.labkey.data.xml.TableType;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -95,6 +98,7 @@ import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior;
+import static org.labkey.api.gwt.client.ui.PropertyType.CALCULATED_CONCEPT_URI;
 import static org.labkey.api.util.StringExpressionFactory.SUBSTITUTION_EXP_PATTERN;
 
 /**
@@ -267,14 +271,17 @@ public class DomainUtil
 
         Map<String, Object> pkColMap = new HashMap<>();
         TableInfo tableInfo = null;
+        List<GWTPropertyDescriptor> calculatedFields = new ArrayList<>();
         if (!skipPKCols)
         {
-            //get PK columns
             tableInfo = domainKind.getTableInfo(user, container, domain, null);
-
-            if (null != tableInfo && null != tableInfo.getPkColumns())
+            if (null != tableInfo)
             {
-                pkColMap = tableInfo.getPkColumns().stream().collect(Collectors.toMap(ColumnInfo :: getColumnName, ColumnInfo :: isKeyField));
+                // get PK columns
+                if (null != tableInfo.getPkColumns())
+                    pkColMap = tableInfo.getPkColumns().stream().collect(Collectors.toMap(ColumnInfo :: getColumnName, ColumnInfo :: isKeyField));
+
+                calculatedFields = getCalculatedFieldsForTableInfo(tableInfo);
             }
         }
 
@@ -320,6 +327,9 @@ public class DomainUtil
             list.add(p);
         }
 
+        // add calculated columns to the list of properties
+        list.addAll(calculatedFields);
+
         d.setFields(list);
 
         // Handle reserved property names
@@ -363,6 +373,51 @@ public class DomainUtil
         return d;
     }
 
+    // get calculated fields (i.e. those with value expressions) for a tableInfo from the related XML metadata
+    private static List<GWTPropertyDescriptor> getCalculatedFieldsForTableInfo(@NotNull TableInfo tableInfo)
+    {
+
+        ArrayList<QueryException> errors = new ArrayList<>();
+        Collection<TableType> metadata = QueryService.get().findMetadataOverride(tableInfo.getUserSchema(), tableInfo.getName(), false, false, errors, null);
+        if (metadata == null)
+            return Collections.emptyList();
+
+        TableType xmlTable = metadata.stream().findFirst().orElse(null);
+        if (xmlTable != null && xmlTable.isSetColumns())
+        {
+            List<GWTPropertyDescriptor> calculatedFields = new ArrayList<>();
+            for (ColumnType col : xmlTable.getColumns().getColumnArray())
+            {
+                if (col.getValueExpression() != null)
+                {
+                    GWTPropertyDescriptor propDesc = getPropertyDescriptor(col);
+                    propDesc.setConceptURI(CALCULATED_CONCEPT_URI);
+
+                    ColumnInfo colInfo = tableInfo.getColumn(propDesc.getName());
+                    if (colInfo != null)
+                        propDesc.setRangeURI(PropertyType.getFromJdbcType(colInfo.getJdbcType()).getTypeUri());
+
+                    calculatedFields.add(propDesc);
+                }
+            }
+
+            return calculatedFields;
+        }
+
+        return Collections.emptyList();
+    }
+
+    public static List<FieldKey> getCalculatedFieldsForDefaultView(@NotNull TableInfo tableInfo)
+    {
+        List<FieldKey> calculatedFieldKeys = new ArrayList<>();
+        for (GWTPropertyDescriptor calculatedField : DomainUtil.getCalculatedFieldsForTableInfo(tableInfo))
+        {
+            if (!calculatedField.isHidden())
+                calculatedFieldKeys.add(FieldKey.fromParts(calculatedField.getName()));
+        }
+        return calculatedFieldKeys;
+    }
+
     private static GWTDomain<GWTPropertyDescriptor> getDomain(Domain dd)
     {
         GWTDomain<GWTPropertyDescriptor> gwtDomain = new GWTDomain<>();
@@ -385,6 +440,7 @@ public class DomainUtil
             gwtDomain.setAllowSampleSubjectProperties(kind.allowSampleSubjectProperties());
             gwtDomain.setAllowTimepointProperties(kind.allowTimepointProperties());
             gwtDomain.setAllowUniqueConstraintProperties(kind.allowUniqueConstraintProperties());
+            gwtDomain.setAllowCalculatedFields(kind.allowCalculatedFields());
             gwtDomain.setShowDefaultValueSettings(kind.showDefaultValueSettings());
             gwtDomain.setInstructions(kind.getDomainEditorInstructions());
             gwtDomain.setSupportsPhiLevel(kind.supportsPhiLevel());
@@ -404,6 +460,7 @@ public class DomainUtil
         gwtDomain.setAllowTimepointProperties(kind.allowTimepointProperties());
         gwtDomain.setShowDefaultValueSettings(kind.showDefaultValueSettings());
         gwtDomain.setAllowUniqueConstraintProperties(kind.allowUniqueConstraintProperties());
+        gwtDomain.setAllowCalculatedFields(kind.allowCalculatedFields());
         gwtDomain.setInstructions(kind.getDomainEditorInstructions());
         gwtDomain.setDefaultValueOptions(kind.getDefaultValueOptions(null), kind.getDefaultDefaultType(null));
         return gwtDomain;
@@ -610,6 +667,8 @@ public class DomainUtil
             gwtProp.setScannable(columnXml.getScannable());
         if (columnXml.isSetDerivationDataScope())
             gwtProp.setDerivationDataScope(columnXml.getDerivationDataScope().toString());
+        if (columnXml.isSetValueExpression())
+            gwtProp.setValueExpression(columnXml.getValueExpression());
 
         return gwtProp;
     }
@@ -734,7 +793,7 @@ public class DomainUtil
         }
 
         //replace update's locked fields with the orig for the same propertyId regardless of what we get from client
-        replaceLockedFields(getLockedFields(orig.getFields()), (List<GWTPropertyDescriptor>) update.getFields());
+        replaceLockedFields(getLockedFields(orig.getFields()), (List<GWTPropertyDescriptor>) update.getFields(true));
 
         int deletedCount = 0;
         for (int id : s)
@@ -901,7 +960,7 @@ public class DomainUtil
         {
             GWTPropertyDescriptor pd = updateFieldsIterator.next();
             int propertyId = pd.getPropertyId();
-            if (origLockedFieldMap.containsKey(propertyId))
+            if (pd.getValueExpression() == null && origLockedFieldMap.containsKey(propertyId))
             {
                 updateFieldsIterator.set(origLockedFieldMap.get(propertyId));
             }
@@ -1233,7 +1292,7 @@ public class DomainUtil
         ValidationException exception = new ValidationException();
         Map<Integer, String> propertyIdNameMap = getOriginalFieldPropertyIdNameMap(orig);//key: orig property id, value : orig field name
 
-        for (Object f : updates.getFields())
+        for (Object f : updates.getFields(true))
         {
             GWTPropertyDescriptor field = (GWTPropertyDescriptor)f;
 

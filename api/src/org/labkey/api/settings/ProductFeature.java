@@ -5,9 +5,10 @@ package org.labkey.api.settings;
  */
 public enum ProductFeature
 {
+    ApiKeys("core"),
     Assay("assay"),
     AssayQC("premium"),
-    ApiKeys("core"),
+    CalculatedFields("core"),
     DataChangeCommentRequirement("core"),
     ELN("labbook"),
     FreezerManagement("inventory"),

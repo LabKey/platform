@@ -188,6 +188,7 @@ import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.MetadataUnavailableException;
 import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
@@ -7916,8 +7917,16 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         Map<DomainProperty, Object> defaultValues = new HashMap<>();
         Set<String> propertyUris = new HashSet<>();
+        List<GWTPropertyDescriptor> calculatedFields = new ArrayList<>();
         for (GWTPropertyDescriptor pd : properties)
         {
+            // calculatedFields will be handled separately
+            if (pd.getValueExpression() != null)
+            {
+                calculatedFields.add(pd);
+                continue;
+            }
+
             String propertyName = pd.getName().toLowerCase();
             if (lowerReservedNames.contains(propertyName))
             {
@@ -7969,6 +7978,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             domain.save(u);
             impl.save(u);
 
+            SchemaKey schemaKey = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, DataClassUserSchema.NAME);
+            QueryService.get().saveCalculatedFieldsMetadata(schemaKey.toString(), name, calculatedFields, false, u, c);
+
             //TODO do DataClasses actually support default values? The DataClassDomainKind does not override showDefaultValueSettings to return true so it isn't shown in the UI.
             DefaultValueService.get().setDefaultValues(domain.getContainer(), defaultValues);
 
@@ -7977,6 +7989,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             tx.addCommitTask(() -> clearDataClassCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
             tx.commit();
+        }
+        catch (MetadataUnavailableException e)
+        {
+            throw new ExperimentException(e.getMessage());
         }
 
         return impl;
@@ -8032,13 +8048,16 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             dataClass.save(u);
 
             String auditComment = null;
+            SchemaKey schemaKey = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, DataClassUserSchema.NAME);
             if (hasNameChange)
             {
-                QueryChangeListener.QueryPropertyChange.handleQueryNameChange(oldDataClassName, newName, SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, DataClassUserSchema.NAME), u, c);
+                QueryChangeListener.QueryPropertyChange.handleQueryNameChange(oldDataClassName, newName, schemaKey, u, c);
                 auditComment = "The name of the data class '" + oldDataClassName + "' was changed to '" + newName + "'.";
             }
 
             errors = DomainUtil.updateDomainDescriptor(original, update, c, u, hasNameChange, auditComment);
+
+            QueryService.get().saveCalculatedFieldsMetadata(schemaKey.toString(), update.getQueryName(), update.getCalculatedFields(), false, u, c);
 
             if (hasNameChange)
                 addObjectLegacyName(dataClass.getObjectId(), ExperimentServiceImpl.getNamespacePrefix(ExpDataClass.class), oldDataClassName, u);
@@ -8052,6 +8071,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 transaction.commit();
             }
         }
+        catch (MetadataUnavailableException e)
+        {
+            errors = new ValidationException();
+            errors.addError(new SimpleValidationError(e.getMessage()));
+        }
+
         return errors;
     }
 

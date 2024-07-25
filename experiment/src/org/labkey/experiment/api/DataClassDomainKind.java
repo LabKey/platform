@@ -379,7 +379,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     public Domain createDomain(GWTDomain domain, DataClassDomainKindProperties options, Container container, User user, @Nullable TemplateInfo templateInfo)
     {
         String name = domain.getName();
-        List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields();
+        List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields(true);
         List<GWTIndex> indices = (List<GWTIndex>)domain.getIndices();
 
         // Issue 45042: Allow for the dataClass description to be set via the create domain API calls
@@ -469,6 +469,12 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
 
     @Override
     public boolean allowUniqueConstraintProperties()
+    {
+        return true;
+    }
+
+    @Override
+    public boolean allowCalculatedFields()
     {
         return true;
     }
