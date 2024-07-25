@@ -89,6 +89,7 @@ import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.CSRFUtil;
@@ -2218,12 +2219,18 @@ public class LoginController extends SpringActionController
         }
     }
 
+    public static final String REMOTE_LOGIN_FEATURE_FLAG = "remoteLoginFeature";
+
     private static final String REMOTE_LOGIN_FEATURE_AREA = "remoteLoginInvocations";
 
     private static void handleRemoteLoginAction(String actionName)
     {
         SimpleMetricsService.get().increment(CoreModule.CORE_MODULE_NAME, REMOTE_LOGIN_FEATURE_AREA, actionName);
-        _log.warn("The Remote Login API has been deprecated and will be removed in LabKey Server 24.8! Migrate uses to the CAS identity provider.");
+
+        if (OptionalFeatureService.get().isFeatureEnabled(REMOTE_LOGIN_FEATURE_FLAG))
+            _log.warn("The Remote Login API has been deprecated and will be removed in LabKey Server 24.12! Migrate uses to the CAS identity provider.");
+        else
+            throw new ApiUsageException("The Remote Login API has been removed. Migrate uses to the CAS identity provider.");
     }
 
     @SuppressWarnings("unused")
@@ -2233,6 +2240,7 @@ public class LoginController extends SpringActionController
         @Override
         public ModelAndView getView(TokenAuthenticationForm form, BindException errors) throws Exception
         {
+            handleRemoteLoginAction("create");
             URLHelper returnUrl = form.getValidReturnUrl();
 
             if (null == returnUrl)
@@ -2249,7 +2257,7 @@ public class LoginController extends SpringActionController
             returnUrl.addParameter("labkeyEmail", user.getEmail());
 
             getViewContext().getResponse().sendRedirect(returnUrl.getURIString());
-            handleRemoteLoginAction("create");
+
             return null;
         }
 
@@ -2268,6 +2276,7 @@ public class LoginController extends SpringActionController
         @Override
         public ModelAndView getView(TokenAuthenticationForm form, BindException errors) throws Exception
         {
+            handleRemoteLoginAction("verify");
             String message = null;
             User user = null;
 
@@ -2303,7 +2312,6 @@ public class LoginController extends SpringActionController
             }
 
             response.flushBuffer();
-            handleRemoteLoginAction("verify");
             return null;
         }
 
@@ -2322,10 +2330,10 @@ public class LoginController extends SpringActionController
         @Override
         public @Nullable URLHelper getRedirectURL(TokenAuthenticationForm form)
         {
+            handleRemoteLoginAction("invalidate");
             if (null != form.getLabkeyToken())
                 TokenAuthenticationManager.get().invalidateKey(form.getLabkeyToken());
             URLHelper returnUrl = form.getValidReturnUrl();
-            handleRemoteLoginAction("invalidate");
             if (null != returnUrl)
                 return returnUrl;
             return AppProps.getInstance().getHomePageActionURL();

@@ -24,7 +24,7 @@ public enum MicrosoftSqlServerVersion
     SQL_SERVER_UNSUPPORTED(Integer.MIN_VALUE, "Unknown", true, false, false, null),
     SQL_SERVER_2008(100, "2008", true, true, false, MicrosoftSqlServer2008R2Dialect::new),
     SQL_SERVER_2012(110, "2012", true, true, false, MicrosoftSqlServer2012Dialect::new),
-    SQL_SERVER_2014(120, "2014", true, true, true, MicrosoftSqlServer2014Dialect::new),
+    SQL_SERVER_2014(120, "2014", true, true, false, MicrosoftSqlServer2014Dialect::new),
     SQL_SERVER_2016(130, "2016", false, true, true, MicrosoftSqlServer2016Dialect::new),
     SQL_SERVER_2017(140, "2017", false, true, true, MicrosoftSqlServer2017Dialect::new),
     SQL_SERVER_2019(150, "2019", false, true, true, MicrosoftSqlServer2019Dialect::new),
