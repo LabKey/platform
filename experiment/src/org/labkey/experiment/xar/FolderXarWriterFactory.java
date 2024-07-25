@@ -25,6 +25,7 @@ import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -102,14 +103,18 @@ public class FolderXarWriterFactory implements FolderWriterFactory
             // Don't include the sample derivation runs; we now have a separate exporter explicitly for sample types.
             // Also don't include recipe protocols; there's a separate folder writer and importer for the recipe module.
             // if an additional context has been furnished, filter out runs not included in this export
-            List<ExpRun> allRuns = ExperimentService.get().getExpRuns(c, null, null).stream()
-                    .filter(
+
+//            SQLFragment filter = new SQLFragment("ER.protocollsid NOT IN (").appendValue(ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID).append(",")
+//                    .appendValue(ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_LSID).append(")");
+//            List<ExpRun> allRuns = ExperimentService.get().getExpRuns(c, filter, run ->
+//                    !"recipe".equalsIgnoreCase(run.getProtocol().getImplementationName()) && !"recipe".equalsIgnoreCase(run.getProtocol().getLSIDNamespacePrefix()));
+            
+            List<ExpRun> allRuns = (List<ExpRun>) ExperimentService.get().getExpRuns(c, null, null,
                         run -> !run.getProtocol().getLSID().equals(ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID)
                                 && !run.getProtocol().getLSID().equals(ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_LSID)
                                 && !"recipe".equalsIgnoreCase(run.getProtocol().getImplementationName())
                                 && !"recipe".equalsIgnoreCase(run.getProtocol().getLSIDNamespacePrefix())
-                    )
-                    .collect(Collectors.toList());
+                    );
             // the smJobRuns can make reference to assay designs, so we will put all the SM Task and Protocols at the end to assure
             // the assay definitions have already been processed and can be resolved properly.
             List<ExpRun> reorderedRuns = allRuns.stream()

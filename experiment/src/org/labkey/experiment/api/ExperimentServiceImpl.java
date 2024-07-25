@@ -494,24 +494,51 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public List<ExpRunImpl> getExpRuns(Container container, @Nullable ExpProtocol parentProtocol, @Nullable ExpProtocol childProtocol)
     {
-        SQLFragment sql = new SQLFragment(" SELECT ER.* "
-                + " FROM exp.ExperimentRun ER "
-                + " WHERE ER.Container = ? ");
-        sql.add(container.getId());
+        return getExpRuns(container, parentProtocol, childProtocol, run -> true);
+    }
+
+    @Override
+    public List<ExpRunImpl> getExpRuns(Container container, @Nullable ExpProtocol parentProtocol, @Nullable ExpProtocol childProtocol, @NotNull Predicate<ExpRun> filterFn)
+    {
+
+        SQLFragment sql = new SQLFragment();
         if (parentProtocol != null)
         {
-            sql.append("\nAND ER.ProtocolLSID = ?");
+            sql.append("\nER.ProtocolLSID = ?");
             sql.add(parentProtocol.getLSID());
         }
         if (childProtocol != null)
         {
-            sql.append("\nAND ER.RowId IN (SELECT PA.RunId "
+            if (parentProtocol != null)
+                sql.append(" AND ");
+
+            sql.append("\nER.RowId IN (SELECT PA.RunId "
                     + " FROM exp.ProtocolApplication PA "
                     + " WHERE PA.ProtocolLSID = ? ) ");
             sql.add(childProtocol.getLSID());
         }
+
+        return getExpRuns(container, sql, filterFn);
+    }
+
+    @Override
+    public List<ExpRunImpl> getExpRuns(@NotNull Container container, @Nullable SQLFragment filterSQL, @NotNull Predicate<ExpRun> filterFn)
+    {
+        SQLFragment sql = new SQLFragment(" SELECT ER.* "
+                + " FROM exp.ExperimentRun ER "
+                + " WHERE ER.Container = ? ");
+        sql.add(container.getId());
+
+        if (null != filterSQL)
+            sql.append(" AND " ).append(filterSQL);
+
         sql.append(" ORDER BY ER.RowId ");
-        return ExpRunImpl.fromRuns(new SqlSelector(getSchema(), sql).getArrayList(ExperimentRun.class));
+        return new SqlSelector(getSchema(), sql)
+                .setJdbcCaching(false)
+                .stream(ExperimentRun.class)
+                .map(ExpRunImpl::new)
+                .filter(filterFn)
+                .toList();
     }
 
     @Override
