@@ -33,17 +33,15 @@ export class App extends React.Component<any, State> {
 
         this.state = this.getInitialState();
 
-        initQueryGridState(
-            fromJS({
-                schema: {
-                    lists: {
-                        queryDefaults: {
-                            appEditableTable: true,
-                        },
+        initQueryGridState({
+            schema: {
+                lists: {
+                    queryDefaults: {
+                        appEditableTable: true,
                     },
                 },
-            })
-        );
+            },
+        });
     }
 
     getInitialState = (): State => {

@@ -778,7 +778,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             dataRegionName: this.dataRegionName,
             queryLabel  : this.queryLabel,
             parameters  : this.parameters,
-            requiredVersion : 13.2,
+            requiredVersion : 17.1, // Issue 49753
             maxRows: -1,
             sort: LABKEY.vis.GenericChartHelper.getQueryConfigSortKey(this.measures),
             method: 'POST'
