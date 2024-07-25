@@ -2160,6 +2160,7 @@ public class ExpDataIterators
             ExpDataTable.Column.Created.toString(),
             ExpDataTable.Column.CreatedBy.toString(),
             AliquotedFromLSID.toString(),
+            RootMaterialRowId.toString(),
             "genId");
 
     public static class PersistDataIteratorBuilder implements DataIteratorBuilder

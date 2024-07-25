@@ -804,7 +804,7 @@ describe('Aliquot crud', () => {
             changeFields.sort((a, b) => {
                 return a.localeCompare(b);
             })
-            expect(changeFields).toEqual(['int', 'rootmaterialrowid', 'str']);
+            expect(changeFields).toEqual(['int', 'str']);
         });
     })
 });
