@@ -13,7 +13,7 @@ public class AmountUnitsTable extends EnumTableInfo<AmountUnitsTable.Units>
 {
     public static final String NAME = "AmountUnits";
 
-    enum Units
+    public enum Units
     {
         MICROLITERS ("µL"),
         MILLILITERS("mL"),
@@ -57,7 +57,7 @@ public class AmountUnitsTable extends EnumTableInfo<AmountUnitsTable.Units>
             sql.append("SELECT ? AS Value, ? AS RowId, ? AS Label, ? AS Ordinal");
             sql.add(e.getLabel());
             sql.add(_rowIdGetter.getRowId(e));
-            sql.add(_valueGetter.getValue(e).toLowerCase().replace("_", " ")); // flag todo
+            sql.add(_valueGetter.getValue(e).toLowerCase().replace("_", " "));
             sql.add(e.ordinal());
         }
         return sql;
