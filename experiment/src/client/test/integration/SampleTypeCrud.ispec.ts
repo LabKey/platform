@@ -689,8 +689,122 @@ describe('Aliquot crud', () => {
             });
         });
 
+        async function verifyIgnoreParentFields(parentInsertRow: any, parentSampleRowId: number, suffix: string = '', insertOption: string = 'IMPORT') {
+            let importText = (insertOption === 'IMPORT' ? '' : 'Name\t') + "Str\tInt\tMyparentcol\tMyaliquotcol\tMyindependentcol\tDescription\tAliquotedFrom\tIsAliquot\tAliquotCount\tAliquotVolume\n";
+            importText += (insertOption === 'IMPORT' ? '' : parentInsertRow.name + '-1\t') + "childstr\t55\tinvalidparentval\taliquotval" + suffix + "\toverridden!" + suffix + "\taliquotdes" + suffix + "\t" + parentInsertRow.name + "\tfalse\t5\t12.3\n";
+            await ExperimentCRUDUtils.importSample(server, importText, SAMPLE_ALIQUOT_IMPORT_TYPE_NAME, insertOption, topFolderOptions, editorUserOptions);
+            const aliquots = await ExperimentCRUDUtils.getAliquotsByRootId(server, parentSampleRowId, SAMPLE_ALIQUOT_IMPORT_TYPE_NAME, aliquotQueryCols + ',AliquotCount,AliquotVolume', topFolderOptions, readerUserOptions);
+            expect(aliquots.length).toEqual(1);
+            let aliquot = aliquots[0];
+            expect(caseInsensitive(aliquot, 'AliquotedFromLsid/name')).toEqual(parentInsertRow.name);
+            expect(caseInsensitive(aliquot, 'rootmaterialrowid')).toEqual(parentSampleRowId);
+            expect(caseInsensitive(aliquot, 'isaliquot')).toBeTruthy();
+            expect(caseInsensitive(aliquot, 'str')).toEqual(parentInsertRow.str);
+            expect(caseInsensitive(aliquot, 'int')).toEqual(parentInsertRow.int);
+            expect(caseInsensitive(aliquot, 'myparentcol')).toEqual(parentInsertRow.myparentcol);
+            expect(caseInsensitive(aliquot, 'Myaliquotcol')).toEqual('aliquotval' + suffix);
+            expect(caseInsensitive(aliquot, 'Myindependentcol')).toEqual('overridden!' + suffix);
+            expect(caseInsensitive(aliquot, 'description')).toEqual('aliquotdes' + suffix);
+            expect(caseInsensitive(aliquot, 'AliquotCount')).toBeNull();
+            expect(caseInsensitive(aliquot, 'AliquotVolume')).toBeNull();
+
+        }
+
+        /**
+         * <p>
+         *     Validate that the appropriate aliquot fields are ignored when importing/updating.
+         * </p>
+         * <p>
+         *     For aliquot ignore these fields during creation and update:
+         *     <ul>
+         *         <li>Str and Int fields.</li>
+         *         <li>ParentOnly</li>
+         *         <li>Is Aliquot</li>
+         *         <li>Aliquots Created</li>
+         *         <li>Total Aliquot Volume</li>
+         *     </ul>
+         *     for a sample ignore these fields during creation and update:
+         *     <ul>
+         *         <li>AliquotOnly</li>
+         *         <li>Is Aliquot</li>
+         *         <li>Aliquots Created</li>
+         *         <li>Total Aliquot Volume</li>
+         *     </ul>
+         *     Also check for timeline event detail for import with merge with ignored fields
+         * </p>
+         */
         it('testIgnoreFieldsOnImport', async () => {
-            // TODO
+            const parentSampleName = 'testIgnoreFieldsOnImportParent1';
+            const parentInsertRow = {
+                name: parentSampleName,
+                str: 'parentstr',
+                int: 99,
+                myparentcol: 'parentVal',
+                myaliquotcol: 'ignored',
+                myindependentcol: 'can override',
+                description: 'testIgnoreFieldsOnImport parent'
+            }
+            const parentSampleRows = await ExperimentCRUDUtils.insertSamples(server, [parentInsertRow], SAMPLE_ALIQUOT_IMPORT_TYPE_NAME, topFolderOptions, editorUserOptions);
+            const parentSampleRow = parentSampleRows[0];
+            const parentSampleRowId = caseInsensitive(parentSampleRow, 'RowId');
+
+            await verifyIgnoreParentFields(parentInsertRow, parentSampleRowId, '', 'IMPORT');
+            await verifyIgnoreParentFields(parentInsertRow, parentSampleRowId, '-up', 'UPDATE');
+            await verifyIgnoreParentFields(parentInsertRow, parentSampleRowId, '-merge', 'MERGE');
+
+            const sampleName = 'ignoreAliquotFieldSample';
+            let importText = "Name\tStr\tInt\tIsAliquot\tAliquotCount\tAliquotVolume\tMyaliquotcol\n";
+            importText += sampleName + "\tparentStr\t55\ttrue\t20\t12.3\tignored\n";
+            await ExperimentCRUDUtils.importSample(server, importText, SAMPLE_ALIQUOT_IMPORT_TYPE_NAME, 'IMPORT', topFolderOptions, editorUserOptions);
+            let sampleData = await ExperimentCRUDUtils.getSampleDataByName(server, sampleName, SAMPLE_ALIQUOT_IMPORT_TYPE_NAME, 'Str,Int,AliquotCount,AliquotVolume,Myaliquotcol,isAliquot', topFolderOptions, readerUserOptions);
+            expect(caseInsensitive(sampleData, 'Str')).toEqual('parentStr');
+            expect(caseInsensitive(sampleData, 'AliquotCount')).toEqual(0);
+            expect(caseInsensitive(sampleData, 'AliquotVolume')).toEqual(0);
+            expect(caseInsensitive(sampleData, 'IsAliquot')).toBeFalsy();
+            expect(caseInsensitive(sampleData, 'Myaliquotcol')).toBeNull();
+
+            importText = "Name\tInt\tIsAliquot\tAliquotCount\tAliquotVolume\tMyaliquotcol\n";
+            importText += sampleName + "\t66\ttrue\t20\t12.3\tignored\n";
+            await ExperimentCRUDUtils.importSample(server, importText, SAMPLE_ALIQUOT_IMPORT_TYPE_NAME, 'UPDATE', topFolderOptions, editorUserOptions);
+            sampleData = await ExperimentCRUDUtils.getSampleDataByName(server, sampleName, SAMPLE_ALIQUOT_IMPORT_TYPE_NAME, 'Str,Int,AliquotCount,AliquotVolume,Myaliquotcol,isAliquot', topFolderOptions, readerUserOptions);
+            expect(caseInsensitive(sampleData, 'Str')).toEqual('parentStr');
+            expect(caseInsensitive(sampleData, 'Int')).toEqual(66);
+            expect(caseInsensitive(sampleData, 'AliquotCount')).toEqual(0);
+            expect(caseInsensitive(sampleData, 'AliquotVolume')).toEqual(0);
+            expect(caseInsensitive(sampleData, 'IsAliquot')).toBeFalsy();
+            expect(caseInsensitive(sampleData, 'Myaliquotcol')).toBeNull();
+
+            importText = "Name\tStr\tInt\tIsAliquot\tAliquotCount\tAliquotVolume\tMyaliquotcol\n";
+            importText += sampleName + "\tupdatedStr\t77\ttrue\t20\t12.3\tignored\n";
+            await ExperimentCRUDUtils.importSample(server, importText, SAMPLE_ALIQUOT_IMPORT_TYPE_NAME, 'MERGE', topFolderOptions, editorUserOptions);
+            sampleData = await ExperimentCRUDUtils.getSampleDataByName(server, sampleName, SAMPLE_ALIQUOT_IMPORT_TYPE_NAME, 'Str,Int,AliquotCount,AliquotVolume,Myaliquotcol,isAliquot', topFolderOptions, readerUserOptions);
+            expect(caseInsensitive(sampleData, 'Str')).toEqual('updatedStr');
+            expect(caseInsensitive(sampleData, 'Int')).toEqual(77);
+            expect(caseInsensitive(sampleData, 'AliquotCount')).toEqual(0);
+            expect(caseInsensitive(sampleData, 'AliquotVolume')).toEqual(0);
+            expect(caseInsensitive(sampleData, 'IsAliquot')).toBeFalsy();
+            expect(caseInsensitive(sampleData, 'Myaliquotcol')).toBeNull();
+
+            const response = await server.post('query', 'selectRows', {
+                schemaName: 'auditlog',
+                queryName: 'sampletimelineevent',
+                'query.columns': 'rowid,newvalues',
+            }, { ...topFolderOptions, ...adminOptions }).expect(successfulResponse);
+            const audits = response.body.rows;
+            audits.sort((a, b) => {
+                return caseInsensitive(b, 'rowId') - caseInsensitive(a, 'rowId');
+            });
+            const lastAuditChanges = caseInsensitive(audits[0], 'newvalues');
+            const fields = lastAuditChanges.split('&');
+            const changeFields = [];
+            fields.forEach(field => {
+                const parts = field.split('=');
+                changeFields.push(parts[0].toLowerCase());
+            });
+            changeFields.sort((a, b) => {
+                return a.localeCompare(b);
+            })
+            expect(changeFields).toEqual(['int', 'rootmaterialrowid', 'str']);
         });
     })
 });
