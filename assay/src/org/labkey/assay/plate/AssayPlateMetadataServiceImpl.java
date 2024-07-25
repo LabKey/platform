@@ -106,6 +106,9 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 
                 if (AssayPlateMetadataService.isExperimentalAppPlateEnabled())
                 {
+                    // Copy so we can put new values
+                    row = new CaseInsensitiveMapWrapper<>(new HashMap<>(row), sharedCasing);
+
                     // include metadata that may have been applied directly to the plate
                     rowCounter++;
 
@@ -149,9 +152,6 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 
                     if (positionToWell.containsKey(well))
                     {
-                        // Copy so we can put new values
-                        row = new CaseInsensitiveMapWrapper<>(new HashMap<>(row), sharedCasing);
-
                         WellBean wellBean = positionToWell.get(well);
                         for (WellCustomField customField : PlateManager.get().getWellCustomFields(user, plate, wellBean.getRowId()))
                             row.put(customField.getName(), customField.getValue());
