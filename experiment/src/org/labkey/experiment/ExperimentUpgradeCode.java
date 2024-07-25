@@ -390,7 +390,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
         }
     }
 
-    // called from exp-24.004-24.005.sql
+    // called from exp-24.005-24.006.sql
     public static void repopulateAncestors(ModuleContext context)
     {
         if (context.isNewInstall())
