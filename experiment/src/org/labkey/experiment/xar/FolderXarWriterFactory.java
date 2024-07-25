@@ -104,11 +104,6 @@ public class FolderXarWriterFactory implements FolderWriterFactory
             // Also don't include recipe protocols; there's a separate folder writer and importer for the recipe module.
             // if an additional context has been furnished, filter out runs not included in this export
 
-//            SQLFragment filter = new SQLFragment("ER.protocollsid NOT IN (").appendValue(ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID).append(",")
-//                    .appendValue(ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_LSID).append(")");
-//            List<ExpRun> allRuns = ExperimentService.get().getExpRuns(c, filter, run ->
-//                    !"recipe".equalsIgnoreCase(run.getProtocol().getImplementationName()) && !"recipe".equalsIgnoreCase(run.getProtocol().getLSIDNamespacePrefix()));
-            
             List<ExpRun> allRuns = (List<ExpRun>) ExperimentService.get().getExpRuns(c, null, null,
                         run -> !run.getProtocol().getLSID().equals(ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID)
                                 && !run.getProtocol().getLSID().equals(ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_LSID)
