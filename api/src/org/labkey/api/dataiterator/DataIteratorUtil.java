@@ -25,6 +25,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -55,11 +56,11 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -152,7 +153,7 @@ public class DataIteratorUtil
         /* CONSIDER: move this functionality into a TableInfo method so this map (or maps) can be cached */
         List<ColumnInfo> cols = target.getColumns().stream()
                 .filter(col -> !col.isMvIndicatorColumn() && !col.isRawValueColumn())
-                .collect(Collectors.toList());
+                .toList();
 
         Map<String, Pair<ColumnInfo,MatchType>> targetAliasesMap = new CaseInsensitiveHashMap<>(cols.size()*4);
 
@@ -242,7 +243,7 @@ public class DataIteratorUtil
             {
                 // Check to see if the column i.e. propURI has a property descriptor and vocabulary domain is present
                 var vocabProperties = PropertyService.get().findVocabularyProperties(container, Collections.singleton(from.getColumnName()));
-                if (vocabProperties.size() > 0)
+                if (!vocabProperties.isEmpty())
                 {
                     var propCol = target.getColumn(from.getColumnName());
                     if (null != propCol)
@@ -415,6 +416,8 @@ public class DataIteratorUtil
         Map<String,Object> _sourceMap;
         Map<String,Object> _outputMap;
 
+        Set<String> _columnNames = new CaseInsensitiveHashSet();
+
         _MapTransformer(DataIterator in, Function<Map<String,Object>, Map<String,Object>> fn, @Nullable List<String> columnNames)
         {
             super(wrapMap(in, false), false);
@@ -437,6 +440,23 @@ public class DataIteratorUtil
                 else
                     _columns.add(new BaseColumnInfo(name, JdbcType.OTHER));
             }
+
+            for (ColumnInfo column : _columns)
+            {
+                _columnNames.add(column.getName());
+            }
+        }
+
+        @Override
+        public int getColumnCount()
+        {
+            return _columns.size() - 1;
+        }
+
+        @Override
+        public ColumnInfo getColumnInfo(int i)
+        {
+            return _columns.get(i);
         }
 
         @Override
@@ -454,6 +474,17 @@ public class DataIteratorUtil
             {
                 throw new BatchValidationException(e.getValidationException());
             }
+
+            // Add any columns that might not have been in the input map
+            for (String name : _outputMap.keySet())
+            {
+                if (!_columnNames.contains(name))
+                {
+                    _columnNames.add(name);
+                    _columns.add(new BaseColumnInfo(name, JdbcType.OTHER));
+                }
+            }
+
             return true;
         }
 

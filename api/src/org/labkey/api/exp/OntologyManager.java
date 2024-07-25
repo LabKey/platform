@@ -490,9 +490,8 @@ public class OntologyManager
      * accept Name->value.
      * <p>
      * Name->Value is preferred, we are using TableInfo after all.
-     *
-     * @deprecated switch to StandardDataIteratorBuilder and TableInsertDataIteratorBuilder
      */
+    @Deprecated // switch to StandardDataIteratorBuilder and TableInsertDataIteratorBuilder
     public static void insertTabDelimited(TableInfo tableInsert,
                                           Container c,
                                           User user,
@@ -506,9 +505,7 @@ public class OntologyManager
         saveTabDelimited(tableInsert, c, user, helper, rows, logger, true, autoFillDefaultColumns, rowCallback);
     }
 
-    /**
-     * @deprecated switch to StandardDataIteratorBuilder and TableInsertDataIteratorBuilder
-     */
+    @Deprecated // switch to StandardDataIteratorBuilder and TableInsertDataIteratorBuilder
     public static void updateTabDelimited(TableInfo tableInsert,
                                           Container c,
                                           User user,
