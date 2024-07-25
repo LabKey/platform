@@ -90,7 +90,7 @@ public final class PlateManagerTest
         {
             List<GWTPropertyDescriptor> customFields = List.of(
                 new GWTPropertyDescriptor("barcode", "http://www.w3.org/2001/XMLSchema#string"),
-                new GWTPropertyDescriptor("dilution", "http://www.w3.org/2001/XMLSchema#double"),
+                new GWTPropertyDescriptor("opacity", "http://www.w3.org/2001/XMLSchema#double"),
                 new GWTPropertyDescriptor("negativeControl", "http://www.w3.org/2001/XMLSchema#double")
             );
             PlateManager.get().createPlateMetadataFields(container, user, customFields);
@@ -395,7 +395,7 @@ public final class PlateManagerTest
         // Verify returned sorted by name should include built in as well as custom created fields
         assertEquals("Expected plate custom fields", 7, fields.size());
 
-        List<String> metadataFields = List.of("Amount", "AmountUnits", "barcode", "Concentration", "ConcentrationUnits", "dilution", "negativeControl");
+        List<String> metadataFields = List.of("Amount", "AmountUnits", "barcode", "Concentration", "ConcentrationUnits", "negativeControl", "opacity");
         for (int i=0; i < metadataFields.size(); i++)
         {
             String fieldName = metadataFields.get(i);
