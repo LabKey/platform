@@ -411,4 +411,13 @@ public class ExperimentUpgradeCode implements UpgradeCode
             transaction.commit();
         }
     }
+
+    // called from exp-24.004-24.005.sql
+    public static void repopulateAncestors(ModuleContext context)
+    {
+        if (context.isNewInstall())
+            return;
+
+        ClosureQueryHelper.truncateAndRecreate(LOG);
+    }
 }
