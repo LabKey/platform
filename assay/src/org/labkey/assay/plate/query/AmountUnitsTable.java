@@ -15,6 +15,7 @@ public class AmountUnitsTable extends EnumTableInfo<AmountUnitsTable.Units>
 
     public enum Units
     {
+        NANOLITERS("nL"),
         MICROLITERS ("µL"),
         MILLILITERS("mL"),
         LITERS("L");
