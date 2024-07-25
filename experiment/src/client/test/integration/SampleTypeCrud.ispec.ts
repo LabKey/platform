@@ -592,7 +592,7 @@ describe('Aliquot crud', () => {
             importText += aliquot01 + "\t" + aliquotDesc + "\t" + invalidRootSample + "\n";
             // Validate that if the AliquotedFrom field has an invalid value the import fails.
             resp = await ExperimentCRUDUtils.importSample(server, importText, SAMPLE_ALIQUOT_IMPORT_TYPE_NAME, "IMPORT", topFolderOptions, editorUserOptions);
-            expect(resp.text.indexOf("duplicate key value violates unique constraint") > -1).toBeTruthy();
+            expect(resp.text.indexOf("duplicate key value violates unique constraint") > -1 || resp.text.indexOf('Violation of UNIQUE KEY constraint') > -1).toBeTruthy();
 
             // Validate that the AliquotedFrom field of an aliquot cannot be updated.
             resp = await ExperimentCRUDUtils.importSample(server, importText, SAMPLE_ALIQUOT_IMPORT_TYPE_NAME, "MERGE", topFolderOptions, editorUserOptions);
