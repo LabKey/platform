@@ -481,10 +481,6 @@ LABKEY.vis.GenericChartHelper = new function(){
             else if (isMeasureXMatch && isNumericType(type)) {
                 scales.x.tickFormat = _getNumberFormatFn(fields[i], defaultFormatFn);
             }
-            else if (isMeasureXMatch && isDateType(type) && fields[i].extFormatFn && window.Ext4) {
-                // Issue 47898: use the Ext4 date format function if available
-                scales.x.tickFormat = fields[i].extFormatFn;
-            }
 
             var yMeasures = ensureMeasuresAsArray(measures.y);
             $.each(yMeasures, function(idx, yMeasure) {
@@ -539,6 +535,8 @@ LABKEY.vis.GenericChartHelper = new function(){
     var _isFieldKeyMatch = function(measure, fieldKey) {
         if (LABKEY.Utils.isFunction(fieldKey.getName)) {
             return fieldKey.getName() === measure.name || fieldKey.getName() === measure.fieldKey;
+        } else if (LABKEY.Utils.isArray(fieldKey)) {
+            fieldKey = fieldKey.join('/')
         }
 
         return fieldKey === measure.name || fieldKey === measure.fieldKey;
@@ -693,12 +691,15 @@ LABKEY.vis.GenericChartHelper = new function(){
         if (row.hasOwnProperty(propName)) {
             // backwards compatibility for response row that is not a LABKEY.Query.Row
             if (!(row instanceof LABKEY.Query.Row)) {
-                return row[propName].displayValue || row[propName].value;
+                return row[propName].formattedValue || row[propName].displayValue || row[propName].value;
             }
 
             var propValue = row.get(propName);
             if (valueName != undefined && propValue.hasOwnProperty(valueName)) {
                 return propValue[valueName];
+            }
+            else if (propValue.hasOwnProperty('formattedValue')) {
+                return propValue['formattedValue'];
             }
             else if (propValue.hasOwnProperty('displayValue')) {
                 return propValue['displayValue'];

@@ -54,16 +54,16 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "4.1.0",
+    "@labkey/components": "4.3.0",
     "@labkey/themes": "1.3.3"
   },
   "devDependencies": {
-    "@labkey/build": "7.3.0",
-    "@labkey/eslint-config-react": "0.0.14",
+    "@labkey/build": "7.4.0",
+    "@labkey/eslint-config-react": "0.0.15",
     "@types/enzyme": "3.10.18",
     "@types/enzyme-adapter-react-16": "1.0.9",
     "@types/jest": "29.5.12",
-    "@types/react": "16.14.59",
+    "@types/react": "16.14.60",
     "@types/react-dom": "16.9.24",
     "enzyme": "3.11.0",
     "enzyme-adapter-react-16": "1.15.8",
@@ -73,6 +73,6 @@
     "jest-environment-jsdom": "29.7.0",
     "jest-teamcity-reporter": "0.9.0",
     "react-test-renderer": "16.14.0",
-    "ts-jest": "29.1.2"
+    "ts-jest": "29.2.3"
   }
 }
