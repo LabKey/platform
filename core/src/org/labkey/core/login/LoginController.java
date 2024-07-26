@@ -2230,7 +2230,7 @@ public class LoginController extends SpringActionController
         if (OptionalFeatureService.get().isFeatureEnabled(REMOTE_LOGIN_FEATURE_FLAG))
             _log.warn("The Remote Login API has been deprecated and will be removed in LabKey Server 24.12! Migrate uses to the CAS identity provider.");
         else
-            throw new ApiUsageException("The Remote Login API has been removed. Migrate uses to the CAS identity provider.");
+            throw new ApiUsageException("The Remote Login API has been removed. Migrate uses to the CAS identity provider. Site administrators can turn on a deprecated feature flag to temporarily restore support and ease migration.");
     }
 
     @SuppressWarnings("unused")

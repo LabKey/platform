@@ -190,7 +190,7 @@ public class ModuleHtmlViewDefinition
             if (allowAcls)
                 _log.warn("The \"<permissions>\" element used in \"{}\" is deprecated and support will be removed in LabKey Server 24.12! Migrate uses to \"<requiresPermissions>\", \"<requiresNoPermission>\", or \"<requiresLogin>\".", resource);
             else
-                throw new ViewDefinitionException("The \"<permissions>\" element is no longer supported. Migrate uses to \"<requiresPermissions>\", \"<requiresNoPermission>\", or \"<requiresLogin>\".");
+                throw new ViewDefinitionException("The \"<permissions>\" element is no longer supported. Migrate uses to \"<requiresPermissions>\", \"<requiresNoPermission>\", or \"<requiresLogin>\". Site administrators can turn on a deprecated feature flag to temporarily restore support and ease migration of existing .view.xml files.");
 
             for (PermissionType permEntry : permsList.getPermissionArray())
             {
