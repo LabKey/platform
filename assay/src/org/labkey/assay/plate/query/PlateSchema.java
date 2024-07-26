@@ -21,13 +21,11 @@ import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.exp.property.Domain;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.security.User;
-import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.query.AssayDbSchema;
 
 import java.util.List;
@@ -45,7 +43,9 @@ public class PlateSchema extends SimpleUserSchema
         PlateTypeTable.NAME,
         WellTable.NAME,
         WellGroupTable.NAME,
-        WellGroupTypeTable.NAME
+        WellGroupTypeTable.NAME,
+        ConcentrationUnitsTable.NAME,
+        AmountUnitsTable.NAME
     ));
 
     public PlateSchema(User user, Container container)
@@ -77,6 +77,10 @@ public class PlateSchema extends SimpleUserSchema
             return new WellGroupTable(this, cf, false).init();
         if (WellGroupTypeTable.NAME.equalsIgnoreCase(name))
             return new WellGroupTypeTable(this);
+        if (ConcentrationUnitsTable.NAME.equalsIgnoreCase(name))
+            return new ConcentrationUnitsTable(this);
+        if (AmountUnitsTable.NAME.equalsIgnoreCase(name))
+            return new AmountUnitsTable(this);
 
         return null;
     }

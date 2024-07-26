@@ -470,7 +470,7 @@ describe('Move Samples', () => {
 
         it('success, move sample from parent project to subfolder, no audit logging', async () => {
             // Arrange
-            const sampleRowId = await createSample(server, 'top-movetosub1-1', topFolderOptions, editorUserOptions);
+            const sampleRowId = await createSample(server, 'top-movetosub1-1', topFolderOptions, editorUserOptions, 'NONE');
 
             // Act
             const response = await server.post('query', 'moveRows.api', {
