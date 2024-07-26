@@ -544,7 +544,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 + " WHERE ER.Container = ? ");
         sql.add(container.getId());
 
-        if (null != filterSQL)
+        if (null != filterSQL && !filterSQL.isEmpty())
             sql.append(" AND " ).append(filterSQL);
 
         sql.append(" ORDER BY ER.RowId ");
