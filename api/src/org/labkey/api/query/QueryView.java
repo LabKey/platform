@@ -473,19 +473,15 @@ public class QueryView extends WebPartView<Object>
 
     protected StringExpression urlExpr(QueryAction action)
     {
-        StringExpression expr = null;
-
-        // NOTE: details/update URL may not get picked up from TableInfo if subclass overrides createTable()
-        // but that case should use QueryView.setDetailsURL/setUpdateURL() anyway
-        switch (action)
+        StringExpression expr = switch (action)
         {
-            case detailsQueryRow:
-                expr = _detailsURL;
-                break;
-            case updateQueryRow:
-                expr = _updateURL;
-                break;
-        }
+            case detailsQueryRow -> _detailsURL;
+            case updateQueryRow -> _updateURL;
+            default -> null;
+
+            // NOTE: details/update URL may not get picked up from TableInfo if subclass overrides createTable()
+            // but that case should use QueryView.setDetailsURL/setUpdateURL() anyway
+        };
 
         if (null == expr)
             expr = getQueryDef().urlExpr(action, _schema.getContainer());
@@ -584,7 +580,7 @@ public class QueryView extends WebPartView<Object>
         // determine if the sort/filter originated from QuerySettings or from a user applied sort/filter.
         getSettings().getBaseFilter().applyToURL(ret, DATAREGIONNAME_DEFAULT);
 
-        if (getSettings().getBaseSort().getSortList().size() > 0)
+        if (!getSettings().getBaseSort().getSortList().isEmpty())
             getSettings().getBaseSort().applyToURL(ret, DATAREGIONNAME_DEFAULT, true);
 
         switch (action)

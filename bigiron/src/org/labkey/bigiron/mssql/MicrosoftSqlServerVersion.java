@@ -91,11 +91,15 @@ public enum MicrosoftSqlServerVersion
         @Test
         public void test()
         {
-            // Good
+            // Good for external data sources; bad for primary data source
             test(100, false, SQL_SERVER_2008);
+            test(100, true, SQL_SERVER_UNSUPPORTED);
             test(110, false, SQL_SERVER_2012);
-            test(120, true, SQL_SERVER_2014);
+            test(110, true, SQL_SERVER_UNSUPPORTED);
             test(120, false, SQL_SERVER_2014);
+            test(120, true, SQL_SERVER_UNSUPPORTED);
+
+            // Good for primary and external data sources
             test(130, true, SQL_SERVER_2016);
             test(130, false, SQL_SERVER_2016);
             test(140, true, SQL_SERVER_2017);

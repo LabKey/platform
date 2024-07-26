@@ -38,11 +38,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Set;
 
-/*
-* User: adam
-* Date: Nov 26, 2010
-* Time: 9:51:40 PM
-*/
 public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
 {
     private static final Logger LOG = LogHelper.getLogger(MicrosoftSqlServerDialectFactory.class, "Warnings about SQL Server versions");
@@ -78,7 +73,7 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
         String driverName = md.getDriverName();
 
         if (!driverName.startsWith("Microsoft"))
-            LOG.warn("LabKey Server has not been tested against " + driverName + ". Instead, we recommend configuring the Microsoft SQL Server JDBC Driver, which is distributed with LabKey Server.");
+            LOG.warn("LabKey Server has not been tested against {}. Instead, we recommend configuring the Microsoft SQL Server JDBC Driver, which is distributed with LabKey Server.", driverName);
 
         return dialect;
     }
