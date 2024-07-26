@@ -27,10 +27,6 @@ import org.labkey.api.view.ViewContext;
 
 import java.util.Map;
 
-/**
- * User: Karl Lum
- * Date: Feb 29, 2008
- */
 public interface ReportUrls extends UrlProvider
 {
     ActionURL urlDownloadData(Container c);

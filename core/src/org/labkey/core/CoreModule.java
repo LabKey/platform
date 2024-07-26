@@ -334,6 +334,7 @@ import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmai
 import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmailMessage;
 import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmailSubject;
 import static org.labkey.api.util.MothershipReport.EXPERIMENTAL_LOCAL_MARKETING_UPDATE;
+import static org.labkey.core.login.LoginController.REMOTE_LOGIN_FEATURE_FLAG;
 import static org.labkey.filters.ContentSecurityPolicyFilter.FEATURE_FLAG_DISABLE_ENFORCE_CSP;
 
 public class CoreModule extends SpringModule implements SearchService.DocumentProvider
@@ -1083,36 +1084,38 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         }
 
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP,
-                "Client-side Exception Logging To Mothership",
-                "Report unhandled JavaScript exceptions to mothership.",
-                false);
+            "Client-side Exception Logging To Mothership",
+            "Report unhandled JavaScript exceptions to mothership.",
+            false);
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_JAVASCRIPT_SERVER,
-                "Client-side Exception Logging To Server",
-                "Report unhandled JavaScript exceptions to the server log.",
-                false);
+            "Client-side Exception Logging To Server",
+            "Report unhandled JavaScript exceptions to the server log.",
+            false);
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_NO_GUESTS,
-                "No Guest Account",
-                "Disable the guest account",
-                false);
+            "No Guest Account",
+            "Disable the guest account",
+            false);
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_BLOCKER,
-                "Block malicious clients",
-                "Reject requests from clients that appear malicious. Turn this feature off if you want to run a security scanner.",
-                false);
-        AdminConsole.addOptionalFeatureFlag(new OptionalFeatureFlag(EXPERIMENTAL_LOCAL_MARKETING_UPDATE,
-                "Self test marketing updates", "Test marketing updates from this local server (requires the mothership module).", false, true, FeatureType.Experimental));
+            "Block malicious clients",
+            "Reject requests from clients that appear malicious. Turn this feature off if you want to run a security scanner.",
+            false);
         AdminConsole.addExperimentalFeatureFlag(FEATURE_FLAG_DISABLE_ENFORCE_CSP,
-                "Disable enforce Content Security Policy",
-                "Stop sending the " + ContentSecurityPolicyFilter.ContentSecurityPolicyType.Enforce.getHeaderName() + " header to browsers, " +
-                "but continue sending the " + ContentSecurityPolicyFilter.ContentSecurityPolicyType.Report.getHeaderName() + " header. " +
-                "This turns off an important layer of security for the entire site, so use it as a last resort only on a temporary basis " +
-                "(e.g., if an enforce CSP breaks critical functionality).",
-                false);
+            "Disable enforce Content Security Policy",
+            "Stop sending the " + ContentSecurityPolicyFilter.ContentSecurityPolicyType.Enforce.getHeaderName() + " header to browsers, " +
+            "but continue sending the " + ContentSecurityPolicyFilter.ContentSecurityPolicyType.Report.getHeaderName() + " header. " +
+            "This turns off an important layer of security for the entire site, so use it as a last resort only on a temporary basis " +
+            "(e.g., if an enforce CSP breaks critical functionality).",
+            false);
 
+        AdminConsole.addOptionalFeatureFlag(new OptionalFeatureFlag(EXPERIMENTAL_LOCAL_MARKETING_UPDATE,
+            "Self test marketing updates", "Test marketing updates from this local server (requires the mothership module).", false, true, FeatureType.Experimental));
         OptionalFeatureService.get().addFeatureListener(EXPERIMENTAL_LOCAL_MARKETING_UPDATE, (feature, enabled) -> {
             // update the timer task when this setting changes
             MothershipReport.setSelfTestMarketingUpdates(enabled);
             UsageReportingLevel.reportNow();
         });
+
+        AdminConsole.addOptionalFeatureFlag(new OptionalFeatureFlag(REMOTE_LOGIN_FEATURE_FLAG, "Restore ability to use the deprecated Remote Login API", "This option and all support for the Remote Login API will be removed in LabKey Server v24.12.", false, false, FeatureType.Deprecated));
 
         if (null != PropertyService.get())
         {
