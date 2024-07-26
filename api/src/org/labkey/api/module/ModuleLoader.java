@@ -95,6 +95,7 @@ import org.labkey.bootstrap.ExplodedModuleService;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
+import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.web.context.support.XmlWebApplicationContext;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -1524,16 +1525,6 @@ public class ModuleLoader implements MemTrackerListener
         }
     }
 
-    // Runs the drop and create scripts in a single module using the standard upgrade script runner
-    public void recreateViews(Module module)
-    {
-        synchronized (UPGRADE_LOCK)
-        {
-            runUpgradeScripts(module, SchemaUpdateType.Before);
-            runUpgradeScripts(module, SchemaUpdateType.After);
-        }
-    }
-
     /**
      * Module upgrade scripts have completed, and we are now completing module startup.
      * @return true if module startup in progress.
@@ -1705,6 +1696,11 @@ public class ModuleLoader implements MemTrackerListener
         {
             if (UserManager.getActiveRealUserCount() > 0)
                 SecurityManager.ensureAtLeastOneRootAdminExists();
+        }
+        catch (BadSqlGrammarException e)
+        {
+            // Issue 7527: Auto-detect missing sql views and attempt to recreate
+            _log.warn("core.Users and/or core.ActiveUsers DB views are likely missing. Skipping check for root admins. Schema validation will attempt to restore views");
         }
         catch (UnauthorizedException e)
         {
