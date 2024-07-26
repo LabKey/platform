@@ -324,28 +324,6 @@ public class ExperimentUpgradeCode implements UpgradeCode
         }
     }
 
-    /**
-     * Called from exp-24.002-24.003.sql
-     */
-    public static void populateMaterialAncestors(ModuleContext context)
-    {
-        if (context.isNewInstall())
-            return;
-
-        ClosureQueryHelper.populateMaterialAncestors(LOG);
-    }
-
-    /**
-     * Called from exp-24.002-24.003.sql
-     */
-    public static void populateDataAncestors(ModuleContext context)
-    {
-        if (context.isNewInstall())
-            return;
-
-        ClosureQueryHelper.populateDataAncestors(LOG);
-    }
-
     // called from exp-24.003-24.004.sql
     public static void addMissingSampleTypeIdsForSampleTimelineAudit(ModuleContext context)
     {
@@ -410,5 +388,14 @@ public class ExperimentUpgradeCode implements UpgradeCode
             }
             transaction.commit();
         }
+    }
+
+    // called from exp-24.005-24.006.sql
+    public static void repopulateAncestors(ModuleContext context)
+    {
+        if (context.isNewInstall())
+            return;
+
+        ClosureQueryHelper.truncateAndRecreate(LOG);
     }
 }

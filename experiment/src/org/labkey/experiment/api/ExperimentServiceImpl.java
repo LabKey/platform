@@ -3704,7 +3704,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 LOG.debug("Rebuilt all run-based edges: " + timing.getDuration() + " ms");
             }
         }
-        ClosureQueryHelper.truncateAndRecreate();
+        ClosureQueryHelper.truncateAndRecreate(LOG);
     }
 
     public void verifyRunEdges(ExpRun run)
