@@ -17,7 +17,7 @@
   },
   "devDependencies": {
     "@labkey/build": "7.4.0",
-    "@labkey/test": "1.6.0-fb-sampleCrudAPItest.1",
+    "@labkey/test": "1.6.0-fb-sampleCrudAPItest.2",
     "@types/jest": "29.5.12",
     "@types/react": "16.14.60",
     "@types/react-dom": "16.9.24",
