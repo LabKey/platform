@@ -164,7 +164,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     List<? extends ExpRun> getExpRuns(Container container, @Nullable ExpProtocol parentProtocol, @Nullable ExpProtocol childProtocol, @NotNull Predicate<ExpRun> filterFn);
     
-    List<? extends ExpRun> getExpRuns(@NotNull Container container, @Nullable SQLFragment filterSQL, @NotNull Predicate<ExpRun> filterFn);
+    List<? extends ExpRun> getExpRuns( @Nullable SQLFragment filterSQL, @NotNull Predicate<ExpRun> filterFn, @NotNull Container container);
 
     List<? extends ExpRun> getExpRunsForJobId(int jobId);
 

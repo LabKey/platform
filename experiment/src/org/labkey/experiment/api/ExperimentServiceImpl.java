@@ -518,7 +518,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             sql.add(childProtocol.getLSID());
         }
 
-        return getExpRuns(container, sql, filterFn);
+        return getExpRuns(sql, filterFn, container);
     }
 
     @Override
@@ -537,7 +537,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public List<ExpRunImpl> getExpRuns(@NotNull Container container, @Nullable SQLFragment filterSQL, @NotNull Predicate<ExpRun> filterFn)
+    public List<ExpRunImpl> getExpRuns(@Nullable SQLFragment filterSQL, @NotNull Predicate<ExpRun> filterFn, @NotNull Container container)
     {
         SQLFragment sql = new SQLFragment(" SELECT ER.* "
                 + " FROM exp.ExperimentRun ER "
