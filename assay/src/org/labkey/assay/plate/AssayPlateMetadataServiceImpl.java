@@ -25,6 +25,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.ParameterMapStatement;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
@@ -88,7 +89,18 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         DomainProperty plateProperty = resultDomain.getPropertyByName(AssayResultDomainKind.PLATE_COLUMN_NAME);
         DomainProperty wellLocationProperty = resultDomain.getPropertyByName(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME);
 
-        return DataIteratorUtil.mapTransformer(rows, null, new Function<>()
+        return DataIteratorUtil.mapTransformer(rows, cols ->
+        {
+            List<String> result = new ArrayList<>(cols);
+            Domain plateDomain = PlateManager.get().getPlateMetadataDomain(container, user);
+            if (plateDomain != null)
+            {
+                result.addAll(plateDomain.getProperties().stream().map(ImportAliasable::getName).toList());
+            }
+            result.add("SampleID");
+            result.add("SampleName");
+            return result;
+        }, new Function<>()
         {
             final Map<Object, Pair<Plate, Map<Position, WellBean>>> plateIdentifierMap = new HashMap<>();
             final ContainerFilter cf = PlateManager.get().getPlateContainerFilter(protocol, container, user);

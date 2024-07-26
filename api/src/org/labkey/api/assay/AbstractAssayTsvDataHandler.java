@@ -517,6 +517,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 if (provider.getResultRowLSIDPrefix() == null)
                 {
                     LOG.info("Import failed for run '" + run.getName() + "; Assay provider '" + provider.getName() + "' for assay '" + protocol.getName() + "' has no result row lsid prefix");
+                    transaction.commit();
                     return;
                 }
 
@@ -524,10 +525,20 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 rowCallback = rowCallback.chain(pvs.getAssayRowCallback(run, container));
             }
 
-            // Insert the data into the assay's data table.
-            // On insert, the raw data will have the provisioned table's rowId added to the list of maps
-            // autoFillDefaultResultColumns - only populate created/modified/by for results created separately from runs
-            insertRowData(data, user, container, run, protocol, provider, dataDomain, fileData, dataTable, autoFillDefaultResultColumns, rowCallback);
+            try
+            {
+                // Insert the data into the assay's data table.
+                // On insert, the raw data will have the provisioned table's rowId added to the list of maps
+                // autoFillDefaultResultColumns - only populate created/modified/by for results created separately from runs
+                insertRowData(data, user, container, run, protocol, provider, dataDomain, fileData, dataTable, autoFillDefaultResultColumns, rowCallback);
+            }
+            catch (NoRowsException e)
+            {
+                if (!allowEmptyData() && !dataDomain.getProperties().isEmpty())
+                {
+                    throw new ExperimentException("Data file contained zero data rows");
+                }
+            }
 
             SampleTypeService sampleService = SampleTypeService.get();
             Collection<? extends ExpMaterial> lockedSamples = sampleService.getSamplesNotPermitted(rowBasedInputMaterials.keySet(), SampleTypeService.SampleOperations.AddAssayData);
@@ -548,13 +559,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         catch (IOException e)
         {
             throw new ExperimentException(e);
-        }
-        catch (NoRowsException e)
-        {
-            if (!allowEmptyData() && !dataDomain.getProperties().isEmpty())
-            {
-                throw new ExperimentException("Data file contained zero data rows");
-            }
         }
     }
 
@@ -583,9 +587,9 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         if (provider.isPlateMetadataEnabled(protocol))
             importHelper = AssayPlateMetadataService.get().getImportHelper(container, user, run, data, protocol, provider);
 
-        if (tableInfo instanceof UpdateableTableInfo)
+        if (tableInfo instanceof UpdateableTableInfo uti)
         {
-            OntologyManager.insertTabDelimited(tableInfo, container, user, importHelper, fileData, autoFillDefaultColumns, LOG, rowCallback);
+            OntologyManager.insertTabDelimited(uti, container, user, importHelper, fileData, autoFillDefaultColumns, LOG, rowCallback);
         }
         else
         {
@@ -774,7 +778,12 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         DomainProperty datePD = datePropFinder;
         DomainProperty targetStudyPD = targetStudyPropFinder;
 
-        return DataIteratorUtil.mapTransformer(rawData, null, new Function<>()
+        return DataIteratorUtil.mapTransformer(rawData, inputCols ->
+        {
+            List<String> result = new ArrayList<>(inputCols);
+            result.addAll(aliasMap.values().stream().map(ImportAliasable::getName).toList());
+            return result;
+        }, new Function<>()
         {
             int rowNum = 0;
 

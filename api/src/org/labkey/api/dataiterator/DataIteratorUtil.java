@@ -400,12 +400,13 @@ public class DataIteratorUtil
      * This Function<> mechanism is very simple, but less efficient that an operator that takes an input map, and
      * a pre-created ArrayListMap for output.  For efficiency there are other DataIterator base classes to use.
      * Should return ArrayListMap or CaseInsensitiveMap.
-     * @param columns the columns present in the data. If null, inferred from the first row of data
+     * @param columnEnumerator function to determine the fields that may be part of the post-transform map.
+     *                         If null, the columns are assumed to be the same as the columns from the input DataIterator.
      * @param fn the function used to transform the map. May throw a RuntimeValidationException to communicate a problem.
      */
-    public static DataIteratorBuilder mapTransformer(DataIteratorBuilder dibIn, @Nullable List<String> columns, Function<Map<String,Object>, Map<String,Object>> fn)
+    public static DataIteratorBuilder mapTransformer(DataIteratorBuilder dibIn, Function<List<String>, List<String>> columnEnumerator, Function<Map<String,Object>, Map<String,Object>> fn)
     {
-        return context -> new _MapTransformer(dibIn.getDataIterator(context), fn, columns);
+        return context -> new _MapTransformer(dibIn.getDataIterator(context), fn, columnEnumerator);
     }
 
 
@@ -416,18 +417,17 @@ public class DataIteratorUtil
         Map<String,Object> _sourceMap;
         Map<String,Object> _outputMap;
 
-        Set<String> _columnNames = new CaseInsensitiveHashSet();
-
-        _MapTransformer(DataIterator in, Function<Map<String,Object>, Map<String,Object>> fn, @Nullable List<String> columnNames)
+        _MapTransformer(DataIterator in, Function<Map<String,Object>, Map<String,Object>> fn, @Nullable Function<List<String>, List<String>> columnEnumerator)
         {
             super(wrapMap(in, false), false);
             _fn = fn;
 
             var map = DataIteratorUtil.createColumnNameMap(in);
 
-            if (columnNames == null)
+            List<String> columnNames = List.copyOf(map.keySet());
+            if (columnEnumerator != null)
             {
-                columnNames = new ArrayList<>(map.keySet());
+                columnNames = Collections.unmodifiableList(columnEnumerator.apply(columnNames));
             }
 
             // use source ColumnInfo where it matches
@@ -440,23 +440,6 @@ public class DataIteratorUtil
                 else
                     _columns.add(new BaseColumnInfo(name, JdbcType.OTHER));
             }
-
-            for (ColumnInfo column : _columns)
-            {
-                _columnNames.add(column.getName());
-            }
-        }
-
-        @Override
-        public int getColumnCount()
-        {
-            return _columns.size() - 1;
-        }
-
-        @Override
-        public ColumnInfo getColumnInfo(int i)
-        {
-            return _columns.get(i);
         }
 
         @Override
@@ -473,16 +456,6 @@ public class DataIteratorUtil
             catch (RuntimeValidationException e)
             {
                 throw new BatchValidationException(e.getValidationException());
-            }
-
-            // Add any columns that might not have been in the input map
-            for (String name : _outputMap.keySet())
-            {
-                if (!_columnNames.contains(name))
-                {
-                    _columnNames.add(name);
-                    _columns.add(new BaseColumnInfo(name, JdbcType.OTHER));
-                }
             }
 
             return true;
@@ -605,7 +578,7 @@ public class DataIteratorUtil
         public void testTransform() throws BatchValidationException
         {
             DataIteratorContext ctx = new DataIteratorContext();
-            var tx = mapTransformer((context) -> data(), List.of("a","b","c","sum"),
+            var tx = mapTransformer((context) -> data(), cols -> List.of("a","b","c","sum"),
                     (row) ->
                     {
                         var ret = new HashMap<>(row);
