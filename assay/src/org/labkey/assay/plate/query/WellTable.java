@@ -81,7 +81,9 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         SampleId,
         Type,
         Value,
-        WellGroup
+        WellGroup,
+        Concentration,
+        Amount
     }
 
     private static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
@@ -94,6 +96,8 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         defaultVisibleColumns.add(FieldKey.fromParts(Column.Row.name()));
         defaultVisibleColumns.add(FieldKey.fromParts(Column.Col.name()));
         defaultVisibleColumns.add(FieldKey.fromParts(Column.Position.name()));
+        defaultVisibleColumns.add(FieldKey.fromParts(Column.Concentration.name()));
+        defaultVisibleColumns.add(FieldKey.fromParts(Column.Amount.name()));
 
         // for now don't surface value and dilution, we may choose to drop these fields from the
         // db schema at some point
@@ -139,6 +143,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         column.setLabel("Group");
         column.setUserEditable(true);
         column.setShownInInsertView(true);
+        column.setDescription("Identifies the group to which the plate belongs.");
         addColumn(column);
     }
 
@@ -158,6 +163,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         var positionCol = new ExprColumn(this, Column.Position.name(), positionSql, JdbcType.VARCHAR);
         positionCol.setSortFieldKeys(List.of(FieldKey.fromParts(Column.RowId.name())));
         positionCol.setUserEditable(false);
+        positionCol.setDescription("Indicates the position of the well in the plate.");
         addColumn(positionCol);
     }
 
@@ -182,6 +188,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         column.setFk(new QueryForeignKey(getUserSchema().getTable(WellGroupTypeTable.NAME), null, null));
         column.setUserEditable(true);
         column.setShownInInsertView(true);
+        column.setDescription("Specifies the type of plate.");
         addColumn(column);
     }
 

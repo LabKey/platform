@@ -11,6 +11,7 @@ import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateBasedAssayProvider;
 import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.collections.ArrayListMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -40,6 +41,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.security.LimitedUser;
@@ -48,6 +50,7 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.util.Pair;
 import org.labkey.assay.plate.PlateManager;
+import org.labkey.assay.plate.PlateMetadataDomainKind;
 import org.labkey.assay.plate.PlateSetImpl;
 import org.labkey.assay.plate.TsvPlateLayoutHandler;
 import org.labkey.assay.plate.model.PlateSetLineage;
@@ -66,6 +69,7 @@ import static org.labkey.api.data.Table.CREATED_BY_COLUMN_NAME;
 import static org.labkey.api.data.Table.CREATED_COLUMN_NAME;
 import static org.labkey.api.data.Table.MODIFIED_BY_COLUMN_NAME;
 import static org.labkey.api.data.Table.MODIFIED_COLUMN_NAME;
+import static org.labkey.assay.plate.PlateMetadataDomainKind.Column;
 
 public class AssayUpgradeCode implements UpgradeCode
 {
@@ -564,6 +568,82 @@ public class AssayUpgradeCode implements UpgradeCode
                 tx.commit();
             }
         }
+    }
+
+    /**
+     * Called from assay-24.009-24.010.sql to rename existing plate metadata fields that might collide with
+     * new concentration and amount fields.
+     */
+    @SuppressWarnings({"UnusedDeclaration"})
+    public static void renameWellMetadataFields(ModuleContext ctx) throws Exception
+    {
+        if (ctx.isNewInstall())
+            return;
+
+        Set<String> reservedNames = new CaseInsensitiveHashSet(Column.Amount.name(),
+                Column.AmountUnits.name(),
+                Column.Concentration.name(),
+                Column.ConcentrationUnits.name());
+
+        Set<Container> metadataContainers = new HashSet<>();
+        for (Container container : ContainerManager.getAllChildren(ContainerManager.getRoot()))
+        {
+            if (isBiologicsFolder(container))
+                metadataContainers.add(PlateManager.get().getPlateMetadataDomainContainer(container));
+        }
+
+        DbScope scope = AssayDbSchema.getInstance().getSchema().getScope();
+        for (Container container : metadataContainers)
+        {
+            Domain domain = PlateManager.get().getPlateMetadataDomain(container, User.getAdminServiceUser());
+            if (domain != null)
+            {
+                try (DbScope.Transaction tx = scope.ensureTransaction())
+                {
+                    boolean dirty = false;
+                    for (DomainProperty dp : domain.getProperties())
+                    {
+                        if (reservedNames.contains(dp.getName()))
+                        {
+                            String newName = ensureNewName(dp, domain);
+                            _log.info(String.format("Renaming plate metadata property %s to %s for folder %s", dp.getName(), newName, container.getPath()));
+                            dp.setName(newName);
+                            dirty = true;
+                        }
+                    }
+
+                    if (dirty)
+                        domain.save(User.getAdminServiceUser());
+
+                    // create the new fields in the existing domains
+                    DomainKind<?> domainKind = domain.getDomainKind();
+                    if (domainKind instanceof PlateMetadataDomainKind pmdk)
+                    {
+                        pmdk.ensureDomainProperties(domain, container);
+                        domain.save(User.getAdminServiceUser());
+                    }
+
+                    tx.commit();
+                }
+                catch (Exception e)
+                {
+                    _log.error(e);
+                }
+            }
+        }
+    }
+
+    private static final String METADATA_RENAME_SUFFIX = "_PREV";
+    private static String ensureNewName(DomainProperty dp, Domain domain)
+    {
+        String newName = dp.getName() + METADATA_RENAME_SUFFIX;
+        int ordinal = 1;
+
+        while (domain.getPropertyByName(newName) != null)
+        {
+            newName = String.format("%s%s%d", dp.getName(), METADATA_RENAME_SUFFIX, ordinal++);
+        }
+        return newName;
     }
 
     private static boolean isBiologicsFolder(Container container)
