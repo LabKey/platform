@@ -26,6 +26,8 @@ import org.labkey.api.collections.ConcurrentCaseInsensitiveSortedMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.module.Module;
+import org.labkey.api.settings.ProductConfiguration;
+import org.labkey.api.settings.ProductFeature;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
@@ -35,6 +37,7 @@ import org.labkey.api.view.ViewContext;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -46,9 +49,10 @@ public class ProductRegistry
     public static final String PRODUCT_ID_PROPERTY_NAME = "productId";
     private static final Logger _logger = LogHelper.getLogger(ProductRegistry.class, "Application product registry");
     private static final Map<String, ProductMenuProvider> _productMap = new ConcurrentCaseInsensitiveSortedMap<>();
-    private static final Map<String, ProductMenuProvider> _moduleProviderMap = new ConcurrentHashMap<>();
+    private static final Map<String, List<ProductMenuProvider>> _moduleProviderMap = new ConcurrentHashMap<>();
     private static final Map<String, ProductMenuProvider> _sectionMap = new ConcurrentCaseInsensitiveSortedMap<>();
     private static final ProductRegistry _instance = new ProductRegistry();
+    private static final Map<String, Product>  _products = new ConcurrentHashMap<>();
 
     private ProductRegistry()
     {
@@ -58,6 +62,63 @@ public class ProductRegistry
     public static ProductRegistry get()
     {
         return _instance;
+    }
+
+    public static void addProduct(Product product)
+    {
+        _products.put(product.getKey(), product);
+    }
+
+    public static Product getProduct(String key)
+    {
+        return _products.get(key);
+    }
+
+    public static Set<String> getProductFeatureSet()
+    {
+        Set<String> productFeatures = new HashSet<>();
+        String productKey = new ProductConfiguration().getCurrentProductKey();
+        if (productKey != null && _products.containsKey(productKey))
+            productFeatures.addAll(_products.get(productKey).getFeatureFlags());
+        else
+        {
+            // if no product is specifically configured, we'll return the feature set
+            // for the highest product that is enabled based on the modules on the server
+            for (Product product : getProducts(true, false))
+            {
+                if (product.isEnabled())
+                {
+                    productFeatures.addAll(product.getFeatureFlags());
+                    return productFeatures;
+                }
+            }
+        }
+        return productFeatures;
+    }
+
+    public static Collection<Product> getProducts()
+    {
+        return getProducts(false, true);
+    }
+
+    public static Collection<Product> getProducts(boolean sorted, boolean ascending)
+    {
+        if (!sorted)
+            return _products.values();
+
+        List<Product> orderedProducts = new ArrayList<>(_products.values());
+        orderedProducts.sort((a, b) -> {
+            if (a == b) return 0;
+            if (null == a) return ascending ? -1 : 1;
+            if (null == b) return ascending ? 1 : -1;
+            return ascending ? a.getOrderNum() - b.getOrderNum() : b.getOrderNum() - a.getOrderNum();
+        });
+        return orderedProducts;
+    }
+
+    public static boolean isProductFeatureEnabled(ProductFeature feature)
+    {
+        return getProductFeatureSet().contains(feature.toString());
     }
 
     public boolean containsProductId(String productId)
@@ -72,7 +133,9 @@ public class ProductRegistry
             throw new IllegalArgumentException("Product key '" + provider.getProductId() + " already registered by module '" + _productMap.get(provider.getProductId()).getModuleName() + "'");
 
         _productMap.put(provider.getProductId(), provider);
-        _moduleProviderMap.put(provider.getModuleName(), provider);
+        List<ProductMenuProvider> providers = _moduleProviderMap.computeIfAbsent(provider.getModuleName(), k -> new ArrayList<>());
+        providers.add(provider);
+
         provider.getSectionNames(null).forEach(name -> _sectionMap.put(name, provider));
     }
 
@@ -81,13 +144,19 @@ public class ProductRegistry
         if (_productMap.containsKey(provider.getProductId()))
         {
             _productMap.remove(provider.getProductId());
-            _moduleProviderMap.remove(provider.getModuleName());
+            List<ProductMenuProvider> providers = _moduleProviderMap.get(provider.getModuleName());
+            if (providers != null)
+            {
+                providers.remove(provider);
+                if (providers.isEmpty())
+                    _moduleProviderMap.remove(provider.getModuleName());
+            }
         }
         provider.getSectionNames(null).forEach(_sectionMap::remove);
     }
 
     @NotNull
-    public List<String> getProductIdsForContainer(@NotNull Container container)
+    private List<String> getProductIdsForContainer(@NotNull Container container)
     {
         List<String> productIds = new ArrayList<>();
 
@@ -95,7 +164,7 @@ public class ProductRegistry
         for (String module : modules)
         {
            if (_moduleProviderMap.containsKey(module))
-               productIds.add(_moduleProviderMap.get(module).getProductId());
+               productIds.addAll(_moduleProviderMap.get(module).stream().map(ProductMenuProvider::getProductId).toList());
         }
 
         return productIds;
@@ -111,7 +180,13 @@ public class ProductRegistry
     public ProductMenuProvider getPrimaryProductMenuForContainer(@NotNull Container container)
     {
         List<String> productIds = getProductIdsForContainer(container);
-        return getRegisteredProducts().stream().filter(product -> productIds.contains(product.getProductId())).findFirst().orElse(null);
+        List<ProductMenuProvider> providers = getRegisteredProducts().stream().filter(provider -> productIds.contains(provider.getProductId())).toList();
+        if (providers.size() == 1)
+            return providers.get(0);
+        Product product = new ProductConfiguration().getCurrentProduct();
+        if (product == null)
+            return providers.get(0);
+        return providers.stream().filter(provider -> product.getProductGroupId().equals(provider.getProductId())).findFirst().orElse(null);
     }
 
     @Nullable

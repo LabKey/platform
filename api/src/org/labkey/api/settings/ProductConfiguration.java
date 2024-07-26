@@ -4,6 +4,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.products.Product;
+import org.labkey.api.products.ProductRegistry;
 
 import java.util.Collection;
 
@@ -42,6 +44,15 @@ public class ProductConfiguration extends AbstractWriteableSettingsGroup impleme
     public String getCurrentProductKey()
     {
         return lookupStringValue(PROPERTY_NAME, null);
+    }
+
+    @Nullable
+    public Product getCurrentProduct()
+    {
+        String productKey = getCurrentProductKey();
+        if (productKey == null)
+            return null;
+        return ProductRegistry.getProduct(productKey);
     }
 
     public boolean isProductEnabled(@NotNull String productKey, boolean defaultValue)

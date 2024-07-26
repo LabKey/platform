@@ -19,6 +19,8 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="org.labkey.api.products.Product" %>
+<%@ page import="org.labkey.api.products.ProductRegistry" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -40,7 +42,7 @@
     }
 </style>
 
-<% if (AdminConsole.getProducts().isEmpty()) { %>
+<% if (ProductRegistry.getProducts().isEmpty()) { %>
         <div class="description-text">
             No products requiring configuration have been registered for this deployment.
         </div>
@@ -55,7 +57,7 @@
 
 <div class="list-group">
     <h4>Products</h4>
-    <% for (AdminConsole.Product product : AdminConsole.getProducts(true, true)) { %>
+    <% for (Product product : ProductRegistry.getProducts(true, true)) { %>
     <div class="product-group-item">
         <label>
             <input type="radio" id="<%=h(product.getKey())%>" name="productKey" value="<%=h(product.getKey())%>" <%=checked(product.isEnabled())%>>

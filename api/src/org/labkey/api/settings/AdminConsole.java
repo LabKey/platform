@@ -23,17 +23,14 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.settings.OptionalFeatureService.FeatureType;
 import org.labkey.api.view.ActionURL;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 /**
@@ -64,7 +61,6 @@ public class AdminConsole
 
     private static final Map<SettingsLinkType, Collection<AdminLink>> _links = new HashMap<>();
     private static final Set<OptionalFeatureFlag> _optionalFlags = new ConcurrentSkipListSet<>();
-    private static final Map<String, Product>  _products = new ConcurrentHashMap<>();
 
     static
     {
@@ -237,74 +233,4 @@ public class AdminConsole
         }
     }
 
-    public static void addProduct(Product product)
-    {
-        _products.put(product.getKey(), product);
-    }
-
-    public static Set<String> getProductFeatureSet()
-    {
-        Set<String> productFeatures = new HashSet<>();
-        String productKey = new ProductConfiguration().getCurrentProductKey();
-        if (productKey != null && _products.containsKey(productKey))
-            productFeatures.addAll(_products.get(productKey).getFeatureFlags());
-        else
-        {
-            // if no product is specifically configured, we'll return the feature set
-            // for the highest product that is enabled based on the modules on the server
-            for (Product product : getProducts(true, false))
-            {
-                if (product.isEnabled())
-                {
-                    productFeatures.addAll(product.getFeatureFlags());
-                    return productFeatures;
-                }
-            }
-        }
-        return productFeatures;
-    }
-
-    public static Collection<Product> getProducts()
-    {
-        return getProducts(false, true);
-    }
-
-    public static Collection<Product> getProducts(boolean sorted, boolean ascending)
-    {
-        if (!sorted)
-            return _products.values();
-
-        List<Product> orderedProducts = new ArrayList<>(_products.values());
-        orderedProducts.sort((a, b) -> {
-            if (a == b) return 0;
-            if (null == a) return ascending ? -1 : 1;
-            if (null == b) return ascending ? 1 : -1;
-            return ascending ? a.getOrderNum() - b.getOrderNum() : b.getOrderNum() - a.getOrderNum();
-        });
-        return orderedProducts;
-    }
-
-    public static boolean isProductFeatureEnabled(ProductFeature feature)
-    {
-        return getProductFeatureSet().contains(feature.toString());
-    }
-
-    public static abstract class Product implements Comparable<Product>
-    {
-        public abstract Integer getOrderNum();
-
-        public abstract String getName();
-
-        public abstract String getKey();
-
-        public abstract boolean isEnabled();
-
-        public abstract @NotNull List<String> getFeatureFlags();
-
-        @Override
-        public int compareTo(@NotNull Product o)
-        {
-            return getName().compareToIgnoreCase(o.getName());
-        }
-    }
 }

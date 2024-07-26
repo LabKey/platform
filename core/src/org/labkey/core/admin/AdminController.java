@@ -152,6 +152,7 @@ import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.view.SetupForm;
+import org.labkey.api.products.ProductRegistry;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySchema;
@@ -423,7 +424,7 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(Configuration, "email customization", new ActionURL(CustomizeEmailAction.class, root), AdminPermission.class);
         AdminConsole.addLink(Configuration, "deprecated features", new ActionURL(OptionalFeaturesAction.class, root).addParameter("type", FeatureType.Deprecated.name()), AdminOperationsPermission.class);
         AdminConsole.addLink(Configuration, "experimental features", new ActionURL(OptionalFeaturesAction.class, root).addParameter("type", FeatureType.Experimental.name()), AdminOperationsPermission.class);
-        if (!AdminConsole.getProducts().isEmpty())
+        if (!ProductRegistry.getProducts().isEmpty())
             AdminConsole.addLink(Configuration, "product configuration", new ActionURL(ProductConfigurationAction.class, root), AdminOperationsPermission.class);
         // TODO move to FileContentModule
         if (ModuleLoader.getInstance().hasModule("FileContent"))
