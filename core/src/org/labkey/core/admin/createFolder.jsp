@@ -622,7 +622,7 @@
         var getTemplateFolders = function(data) {
             // add the container itself to the templateFolder object if it is not the root and the user has admin perm to it
             // and if it is not a workbook or container tab folder
-            if (data.path != "/" && LABKEY.Security.hasPermission(data.userPermissions, LABKEY.Security.permissions.admin)
+            if (data.path != "/" && LABKEY.Security.hasEffectivePermission(data.effectivePermissions, LABKEY.Security.effectivePermissions.admin)
                     && !data.isWorkbook && !data.isContainerTab)
             {
                 templateFolders.push([data.id, data.path]);
