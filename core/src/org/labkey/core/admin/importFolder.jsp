@@ -206,11 +206,10 @@
         <%
             if (getContainer().hasPermission(getUser(), AdminPermission.class))
             {
-                for (TaskPipeline taskPipeline : PipelineJobService.get().getTaskPipelines(getContainer()))
+                for (TaskPipeline<?> taskPipeline : PipelineJobService.get().getTaskPipelines(getContainer()))
                 {
-                    if (taskPipeline instanceof FileAnalysisTaskPipeline)
+                    if (taskPipeline instanceof FileAnalysisTaskPipeline fatp)
                     {
-                        FileAnalysisTaskPipeline fatp = (FileAnalysisTaskPipeline) taskPipeline;
                         if (fatp.isAllowForTriggerConfiguration())
                         {
         %>
@@ -242,9 +241,32 @@
 %>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
     Ext4.onReady(function()  {
-        // note: client dependencies declared in ManagementTabStrip
-        var templateFolders = [];
-        var sourceRadioGroup = Ext4.create('Ext.form.RadioGroup', {
+
+        let templateFolders = [];
+
+        // todo: this combobox of available template folders script is very similar to script in createFolder.jsp and should be broken out into a common js file
+        const folderTemplatesComponent = Ext4.create('Ext.form.field.ComboBox', {
+            xtype: 'combo',
+            name: 'sourceTemplateFolder',
+            hiddenName: 'sourceTemplateFolderId',
+            itemId: 'sourceFolderCombo',
+            width: 500,
+            allowBlank: false,
+            displayField: 'path',
+            valueField: 'id',
+            editable: false,
+            validateOnBlur: false,
+            hidden: true,
+            store: Ext4.create('Ext.data.ArrayStore', {
+                fields: ['id', 'path'],
+                data: templateFolders
+            }),
+            tpl : new Ext4.XTemplate(
+                '<tpl for="."><div class="x4-boundlist-item">{path:htmlEncode}</div></tpl>'
+            ),
+        });
+// note: client dependencies declared in ManagementTabStrip
+        const sourceRadioGroup = Ext4.create('Ext.form.RadioGroup', {
             width: 300,
             columns: 2,
             items: [
@@ -265,39 +287,19 @@
                 scope: this,
                 change: function(rg, newValue)
                 {
-                    this.isZipFile = newValue.folderSource == 'zipFile';
+                    this.isZipFile = newValue.folderSource === 'zipFile';
                     folderTemplatesComponent.setVisible(!this.isZipFile);
                     zipFileComponent.setVisible(this.isZipFile);
                 }
             }
         });
 
-        // todo: this combobox of available template folders script is very similar to script in createFolder.jsp and should be broken out into a common js file
-        var folderTemplatesComponent = Ext4.create('Ext.form.field.ComboBox', {
-                xtype: 'combo',
-                name: 'sourceTemplateFolder',
-                hiddenName: 'sourceTemplateFolderId',
-                itemId: 'sourceFolderCombo',
-                width: 500,
-                allowBlank: false,
-                displayField: 'path',
-                valueField: 'id',
-                editable: false,
-                validateOnBlur: false,
-                hidden: true,
-                store: Ext4.create('Ext.data.ArrayStore', {
-                    fields: ['id', 'path'],
-                    data: templateFolders
-                })
-                }
-         );
-
-        var zipFileComponent = Ext4.create('Ext.Component', {
+        const zipFileComponent = Ext4.create('Ext.Component', {
             html: '<input type="file" name="folderZip" size="50" style="border: none;">',
             hidden: false
         });
 
-        var initTemplateFolders = function(combo) {
+        const initTemplateFolders = function(combo) {
             return function(data) {
                 getTemplateFolders(data);
                 templateFolders = templateFolders.sort(function(a,b) {
@@ -309,21 +311,21 @@
             }
         };
 
-        var getTemplateFolders = function(data) {
+        const getTemplateFolders = function(data) {
             // add the container itself to the templateFolder object if it is not the root and the user has admin perm to it
             // and if it is not a workbook or container tab folder
-            if (data.path != "/" && LABKEY.Security.hasEffectivePermission(data.effectivePermissions, LABKEY.Security.effectivePermissions.admin)
+            if (data.path !== "/" && LABKEY.Security.hasEffectivePermission(data.effectivePermissions, LABKEY.Security.effectivePermissions.admin)
                     && !data.isWorkbook && !data.isContainerTab) {
                 templateFolders.push([data.id, data.path]);
             }
             // add the container's children to the templateFolder object
             if (data.children.length > 0) {
-                for (var i = 0; i < data.children.length; i++)
+                for (let i = 0; i < data.children.length; i++)
                     getTemplateFolders(data.children[i]);
             }
         };
 
-        var folderTemplatesPanel = Ext4.create('Ext.form.Panel', {
+        Ext4.create('Ext.form.Panel', {
             border : false,
             renderTo : 'SourcePicker',
             items : [
@@ -332,7 +334,7 @@
                 zipFileComponent]
         });
 
-        if (templateFolders.length == 0) {
+        if (templateFolders.length === 0) {
             folderTemplatesComponent.setLoading(true);
             LABKEY.Security.getContainers({
                 containerPath: '/',
