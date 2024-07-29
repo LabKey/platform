@@ -36,6 +36,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.ColumnValidators;
+import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
@@ -62,9 +63,6 @@ import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
-import org.labkey.api.iterator.CloseableIterator;
-import org.labkey.api.iterator.ValidatingDataRowIterator;
-import org.labkey.api.iterator.WrappingCloseableIterator;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.qc.DataTransformer;
@@ -97,7 +95,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.unmodifiableCollection;
@@ -444,7 +441,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         catch (ExperimentException | IOException e)
         {
             // clean up the run results file dir here if it was created, for non-async imports
-            AssayResultsFileWriter resultsFileWriter = new AssayResultsFileWriter(context.getProtocol(), run, null);
+            AssayResultsFileWriter<?> resultsFileWriter = new AssayResultsFileWriter<>(context.getProtocol(), run, null);
             resultsFileWriter.cleanupPostedFiles(context.getContainer(), false);
 
             if (e instanceof ExperimentException)
@@ -511,9 +508,9 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         ViewBackgroundInfo info,
         XarContext xarContext,
         List<ExpData> insertedDatas
-    ) throws ExperimentException, ValidationException
+    ) throws ExperimentException, BatchValidationException
     {
-        Supplier<ValidatingDataRowIterator> rawData = context.getRawData();
+        DataIteratorBuilder rawData = context.getRawData();
         if (rawData != null)
         {
             insertedDatas.addAll(outputDatas.keySet());
@@ -569,7 +566,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         XarContext xarContext,
         TransformResult transformResult,
         List<ExpData> insertedDatas
-    ) throws ExperimentException, ValidationException
+    ) throws ExperimentException, BatchValidationException
     {
         if (transformResult.getTransformedData().isEmpty())
         {
@@ -588,7 +585,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             // this should assert to always be true
             if (handler instanceof TransformDataHandler transformDataHandler)
             {
-                for (Map.Entry<ExpData, Supplier<ValidatingDataRowIterator>> entry : transformResult.getTransformedData().entrySet())
+                for (Map.Entry<ExpData, DataIteratorBuilder> entry : transformResult.getTransformedData().entrySet())
                 {
                     ExpData expData = entry.getKey();
                     // The object may have already been claimed by
@@ -694,10 +691,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             return false;
 
         JdbcType type = dp.getPropertyType().getJdbcType();
-        if (!(type.isText() || type.isInteger()))
-            return false;
-
-        return true;
+        return type.isText() || type.isInteger();
     }
 
     protected void addInputDatas(AssayRunUploadContext<ProviderType> context,

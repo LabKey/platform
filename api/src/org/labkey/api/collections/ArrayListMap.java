@@ -96,8 +96,11 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Iterable<V>
         @Override
         public Integer put(K k, Integer integer)
         {
-            assert null != integer;
-            assert !containsValue(integer);
+            if (null == integer)
+            {
+                throw new IllegalArgumentException("Indices must be non-null");
+            }
+            assert !containsValue(integer) : "Duplicate index " + integer + ". Current values: " + _map;
             if (integer > _max)
                 _max = integer;
             return _map.put(k,integer);
