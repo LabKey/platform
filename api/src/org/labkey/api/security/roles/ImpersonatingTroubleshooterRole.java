@@ -1,7 +1,5 @@
 package org.labkey.api.security.roles;
 
-import org.labkey.api.security.Group;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.CanImpersonatePrivilegedSiteRolesPermission;
 import org.labkey.api.security.permissions.CanImpersonateSiteRolesPermission;
 import org.labkey.api.security.permissions.ExemptFromAccountDisablingPermission;
@@ -20,7 +18,7 @@ public class ImpersonatingTroubleshooterRole extends AbstractRootContainerRole
                 ExemptFromAccountDisablingPermission.class
             )
         );
-        addExcludedPrincipal(SecurityManager.getGroup(Group.groupUsers));
+        excludeUsers();
     }
 
     @Override
