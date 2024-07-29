@@ -17,9 +17,7 @@ package org.labkey.api.security.roles;
 
 import org.labkey.api.admin.FolderExportPermission;
 import org.labkey.api.data.Container;
-import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurableResource;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DesignDataClassPermission;
@@ -52,7 +50,7 @@ public class FolderAdminRole extends AbstractRole implements AdminRoleListener
         );
 
         excludeGuests();
-        addExcludedPrincipal(SecurityManager.getGroup(Group.groupUsers));
+        excludeUsers();
     }
 
     @Override

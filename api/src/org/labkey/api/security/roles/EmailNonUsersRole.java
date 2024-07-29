@@ -15,21 +15,12 @@
  */
 package org.labkey.api.security.roles;
 
-import org.labkey.api.security.Group;
-import org.labkey.api.security.SecurityManager;
-
-/*
-* User: adam
-* Date: Jan 22, 2010
-* Time: 1:22:04 PM
-*/
 public class EmailNonUsersRole extends AbstractRootContainerRole
 {
     public EmailNonUsersRole()
     {
         super("Email Non-Users", "Allows users to send emails to addresses that are not associated with LabKey Server accounts.  Use caution when enabling this if you have self-sign-on enabled.",
-                EmailNonUsersPermission.class);
-
-        addExcludedPrincipal(SecurityManager.getGroup(Group.groupGuests));
+            EmailNonUsersPermission.class
+        );
     }
 }
