@@ -29,7 +29,10 @@ public class ProductConfiguration extends AbstractWriteableSettingsGroup impleme
     public static void setProductKey(String productKey)
     {
         ProductConfiguration config = getWritableConfig();
-        config.storeStringValue(PROPERTY_NAME, productKey);
+        if (productKey == null)
+            config.remove(PROPERTY_NAME);
+        else
+            config.storeStringValue(PROPERTY_NAME, productKey);
         config.save();
     }
 
