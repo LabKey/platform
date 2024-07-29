@@ -23,11 +23,6 @@ import org.labkey.api.security.permissions.Permission;
 
 import java.util.Collections;
 
-/*
-* User: Dave
-* Date: Apr 28, 2009
-* Time: 10:13:55 AM
-*/
 public class ProjectAdminRole extends AbstractRole implements AdminRoleListener
 {
     public ProjectAdminRole()
