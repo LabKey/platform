@@ -22,11 +22,6 @@ import org.labkey.api.security.permissions.SeeUserDetailsPermission;
 import java.util.Collection;
 import java.util.Collections;
 
-/*
-* User: adam
-* Date: Jan 22, 2010
-* Time: 1:22:04 PM
-*/
 public class SeeUserAndGroupDetailsRole extends AbstractRootContainerRole
 {
     public static final String NAME = "See User and Group Details";

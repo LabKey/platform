@@ -21,17 +21,12 @@ import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
 import java.util.Collection;
 import java.util.Set;
 
-/*
-* User: Dave
-* Date: May 18, 2009
-* Time: 2:23:42 PM
-*/
 public class SpecimenRequesterRole extends AbstractSpecimenRole
 {
     public SpecimenRequesterRole()
     {
         super("Specimen Requester",
-                "Specimen Requesters may request specimen vials.",
+            "Specimen Requesters may request specimen vials.",
             RequestSpecimensPermission.class
         );
         excludeGuests();
