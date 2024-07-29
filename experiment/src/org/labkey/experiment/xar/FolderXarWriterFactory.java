@@ -25,7 +25,6 @@ import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -34,6 +33,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
 import org.labkey.experiment.XarExporter;
+import org.labkey.experiment.api.ExperimentServiceImpl;
 
 import java.io.OutputStream;
 import java.util.ArrayList;
@@ -116,13 +116,13 @@ public class FolderXarWriterFactory implements FolderWriterFactory
             // Also don't include recipe protocols; there's a separate folder writer and importer for the recipe module.
             // if an additional context has been furnished, filter out runs not included in this export
 
-            List<ExpRun> allRuns = (List<ExpRun>) ExperimentService.get().getExpRuns(c, null, null, this::runFilter);
+            List<? extends ExpRun> allRuns = ExperimentServiceImpl.get().getExpRuns(c, null, null, this::runFilter);
             // the smJobRuns can make reference to assay designs, so we will put all the SM Task and Protocols at the end to assure
             // the assay definitions have already been processed and can be resolved properly.
             List<ExpRun> reorderedRuns = allRuns.stream()
                     .filter((run -> !ExpProtocol.isSampleWorkflowProtocol(run.getProtocol().getLSID())))
                     .collect(Collectors.toList());
-            List<ExpRun> smJobRuns = allRuns.stream()
+            List<? extends ExpRun> smJobRuns = allRuns.stream()
                     .filter((run -> ExpProtocol.isSampleWorkflowProtocol(run.getProtocol().getLSID())))
                     .toList();
 
