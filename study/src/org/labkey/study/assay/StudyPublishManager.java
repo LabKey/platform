@@ -1265,31 +1265,23 @@ public class StudyPublishManager implements StudyPublishService
 
                     Map<LinkToStudyKeys, FieldKey> publishKeys = StudyPublishService.get().getSamplePublishFieldKeys(user, container, sampleType, qs);
                     final boolean visitBased = study.getTimepointType().isVisitBased();
-                    LinkToStudyKeys timePointKey = visitBased ? LinkToStudyKeys.VisitId : LinkToStudyKeys.Date;
                     Map<String, BigDecimal> translateMap = Collections.emptyMap();
 
-                    if (visitBased)
+                    if (visitBased && publishKeys.containsKey(LinkToStudyKeys.VisitLabel))
                     {
                         // try visit label if we don't have visit ID
-                        if (!publishKeys.containsKey(LinkToStudyKeys.VisitId) && publishKeys.containsKey(LinkToStudyKeys.VisitLabel))
-                        {
-                            timePointKey = LinkToStudyKeys.VisitLabel;
-                            translateMap = StudyService.get().getVisitImportMap(study, true);
-                        }
+                        translateMap = StudyService.get().getVisitImportMap(study, true);
                     }
 
-
                     // the schema supports the subject/timepoint fields
-                    if (publishKeys.containsKey(LinkToStudyKeys.ParticipantId) && publishKeys.containsKey(timePointKey))
+                    if (publishKeys.containsKey(LinkToStudyKeys.ParticipantId))
                     {
-                        FieldKey timePointFieldKey = publishKeys.get(timePointKey);
                         String timePointPropName = visitBased ? StudyPublishService.SEQUENCENUM_PROPERTY_NAME : StudyPublishService.DATE_PROPERTY_NAME;
-
                         for (Map<FieldKey, Object> row : results)
                         {
-                            if (row.containsKey(publishKeys.get(LinkToStudyKeys.ParticipantId)) && row.containsKey(timePointFieldKey))
+                            Object timePointValue = getTimepointValue(row, publishKeys, visitBased, translateMap);
+                            if (row.containsKey(publishKeys.get(LinkToStudyKeys.ParticipantId)) && timePointValue != null)
                             {
-                                Object timePointValue = getTimepointValue(row, timePointKey, timePointFieldKey, translateMap);
                                 dataMaps.add(Map.of(
                                         LinkToStudyKeys.ParticipantId.name(), row.get(publishKeys.get(LinkToStudyKeys.ParticipantId)),
                                         timePointPropName, timePointValue,
@@ -1327,17 +1319,35 @@ public class StudyPublishManager implements StudyPublishService
         }
     }
 
-    private Object getTimepointValue(Map<FieldKey, Object> row, LinkToStudyKeys linkKey, FieldKey timepointKey, Map<String, BigDecimal> translateMap)
+    /**
+     * @param row The data row
+     * @param fieldKeyMap Map of link to study keys to the configured column field key
+     * @param isVisitBased
+     * @param translateMap Map of visit label to sequence numbers
+     */
+    private Object getTimepointValue(Map<FieldKey, Object> row, Map<LinkToStudyKeys, FieldKey> fieldKeyMap, boolean isVisitBased, Map<String, BigDecimal> translateMap)
     {
-        String value = String.valueOf(row.get(timepointKey));
-        return switch (linkKey)
+        Object result  = null;
+        FieldKey timepointFK = isVisitBased ? fieldKeyMap.get(LinkToStudyKeys.VisitId) : fieldKeyMap.get(LinkToStudyKeys.Date);
+        if (timepointFK != null)
+            result = row.get(timepointFK);
+
+        if (result != null)
         {
             // Issue : 13647 - handle conversion for timepoint field
-            case Date -> ConvertUtils.convert(value, Date.class);
-            case VisitId -> Float.parseFloat(value);
-            case VisitLabel -> translateMap.get(value);
-            default -> null;
-        };
+            if (isVisitBased)
+                result = Float.parseFloat(String.valueOf(result));
+            else
+                result = ConvertUtils.convert(String.valueOf(result), Date.class);
+        }
+
+        // try a visit label if one is configured
+        if (result == null && fieldKeyMap.containsKey(LinkToStudyKeys.VisitLabel))
+        {
+            timepointFK = fieldKeyMap.get(LinkToStudyKeys.VisitLabel);
+            result = translateMap.get(String.valueOf(row.get(timepointFK)));
+        }
+        return result;
     }
 
     @Nullable
