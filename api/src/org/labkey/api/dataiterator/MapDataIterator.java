@@ -16,11 +16,13 @@
 package org.labkey.api.dataiterator;
 
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -36,6 +38,9 @@ import java.util.Set;
  */
 public interface MapDataIterator extends DataIterator
 {
+
+    Logger LOGGER = LogHelper.getLogger(MapDataIterator.class, "DataIterators backed by Maps");
+
     boolean supportsGetMap();
     Map<String,Object> getMap();
 
@@ -65,11 +70,11 @@ public interface MapDataIterator extends DataIterator
             for (int i=0 ; i<=in.getColumnCount() ; i++)
             {
                 String name = in.getColumnInfo(i).getName();
-                if (skip.contains(name))
+                if (null == name || skip.contains(name))
                     continue;
                 if (_findMap.containsKey(name))
                 {
-                    LogManager.getLogger(MapDataIterator.class).warn("Map already has column named '" + name + "'");
+                    LOGGER.warn("Map already has column named '" + name + "'");
                     continue;
                 }
                 _findMap.put(in.getColumnInfo(i).getName(),i);
@@ -197,7 +202,7 @@ public interface MapDataIterator extends DataIterator
         return (context) -> new AbstractMapDataIterator.ListOfMapsDataIterator(context, colNames, rows).setDebugName(debugName);
     }
 
-    static DataIteratorBuilder  of(@NotNull Set<String> colNames, @NotNull Iterator<Map<String, Object>> rows)
+    static DataIteratorBuilder of(@NotNull Set<String> colNames, @NotNull Iterator<Map<String, Object>> rows)
     {
         if (colNames.isEmpty())
             throw new IllegalArgumentException("names are required");

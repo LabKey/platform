@@ -4,18 +4,17 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.iterator.ValidatingDataRowIterator;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.OptionalFeatureService;
 
 import java.io.File;
-import java.util.function.Supplier;
 
 public interface AssayPlateMetadataService
 {
@@ -50,11 +49,11 @@ public interface AssayPlateMetadataService
      *
      * @return the merged rows
      */
-    Supplier<ValidatingDataRowIterator> mergePlateMetadata(
+    DataIteratorBuilder mergePlateMetadata(
         Container container,
         User user,
         Integer plateSetId,
-        Supplier<ValidatingDataRowIterator> rows,
+        DataIteratorBuilder rows,
         AssayProvider provider,
         ExpProtocol protocol
     ) throws ExperimentException;
@@ -62,16 +61,15 @@ public interface AssayPlateMetadataService
     /**
      * Handles the validation and parsing of the plate data (or data file) including plate graphical formats as
      * well as cases where plate identifiers have not been supplied.
-     * TODO - convert to take a ValidatingDataRowIterator instead of a list of maps
      */
-    Supplier<ValidatingDataRowIterator> parsePlateData(
+    DataIteratorBuilder parsePlateData(
         Container container,
         User user,
         AssayProvider provider,
         ExpProtocol protocol,
         Integer plateSetId,
         File dataFile,
-        Supplier<ValidatingDataRowIterator> data
+        DataIteratorBuilder data
     ) throws ExperimentException;
 
     /**

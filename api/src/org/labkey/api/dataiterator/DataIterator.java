@@ -82,6 +82,7 @@ public interface DataIterator extends DataIteratorBuilder, Closeable
         return false;
     }
 
+    /** Fetches the existing record from the target DB table (for detailed audit logging purposes) */
     @Nullable
     default Map<String,Object> getExistingRecord()
     {
