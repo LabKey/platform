@@ -443,6 +443,18 @@ public class DataIteratorUtil
         }
 
         @Override
+        public int getColumnCount()
+        {
+            return _columns.size() - 1;
+        }
+
+        @Override
+        public ColumnInfo getColumnInfo(int i)
+        {
+            return _columns.get(i);
+        }
+
+        @Override
         public boolean next() throws BatchValidationException
         {
             _currentMap = null;
