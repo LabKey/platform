@@ -185,7 +185,7 @@ public class ProductRegistry
             return providers.get(0);
         Product product = new ProductConfiguration().getCurrentProduct();
         if (product == null)
-            return providers.get(0);
+            return providers.isEmpty() ? null : providers.get(0);
         return providers.stream().filter(provider -> product.getProductGroupId().equals(provider.getProductId())).findFirst().orElse(null);
     }
 
