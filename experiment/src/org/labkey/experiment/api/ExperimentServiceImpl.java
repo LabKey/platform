@@ -274,6 +274,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
@@ -529,11 +530,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 + " WHERE ER.Container = ? ");
         sql.add(container.getId());
 
-        return new SqlSelector(getSchema(), sql)
-                .setJdbcCaching(false)
-                .stream(ExperimentRun.class)
-                .map(ExpRunImpl::new)
-                .anyMatch(filterFn);
+        try (Stream<ExperimentRun> runs = new SqlSelector(getSchema(), sql).setJdbcCaching(false).uncachedStream(ExperimentRun.class))
+        {
+            return runs.map(ExpRunImpl::new).anyMatch(filterFn);
+        }
     }
 
     @Override
@@ -548,12 +548,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             sql.append(" AND " ).append(filterSQL);
 
         sql.append(" ORDER BY ER.RowId ");
-        return new SqlSelector(getSchema(), sql)
-                .setJdbcCaching(false)
-                .stream(ExperimentRun.class)
-                .map(ExpRunImpl::new)
-                .filter(filterFn)
-                .toList();
+
+        try (Stream<ExperimentRun> runs = new SqlSelector(getSchema(), sql).setJdbcCaching(false).uncachedStream(ExperimentRun.class))
+        {
+            return runs.map(ExpRunImpl::new).filter(filterFn).toList();
+        }
     }
 
     @Override
