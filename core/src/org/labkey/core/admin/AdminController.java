@@ -9268,14 +9268,12 @@ public class AdminController extends SpringActionController
         public ApiResponse execute(ProductConfigForm form, BindException errors)
         {
             String productKey = StringUtils.trimToNull(form.getProductKey());
-            if (productKey == null)
-                throw new ApiUsageException("productKey is required");
 
             Map<String, Object> ret = new HashMap<>();
 
             if (isPost())
             {
-               ProductConfiguration.setProductKey(form.getProductKey());
+               ProductConfiguration.setProductKey(productKey);
             }
 
             ret.put("productKey", new ProductConfiguration().getCurrentProductKey());
