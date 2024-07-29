@@ -26,6 +26,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
@@ -39,31 +40,8 @@ import java.util.Set;
 /**
  * Action for simple .html file-backed views in a module's ./resources directory.
  */
-public class SimpleAction extends BaseViewAction implements NavTrailAction
+public class SimpleAction extends BaseViewAction<Object> implements NavTrailAction
 {
-    public enum PermissionEnum
-    {
-        login(0),
-        read(ACL.PERM_READ),
-        insert(ACL.PERM_INSERT),
-        update(ACL.PERM_UPDATE),
-        delete(ACL.PERM_DELETE),
-        admin(ACL.PERM_ADMIN),
-        none(ACL.PERM_NONE);
-
-        private int _value = 0;
-
-        PermissionEnum(int value)
-        {
-            _value = value;
-        }
-
-        public int toInt()
-        {
-            return _value;
-        }
-    }
-
     private ModuleHtmlView _view;
     private Exception _exception;
 
@@ -73,7 +51,7 @@ public class SimpleAction extends BaseViewAction implements NavTrailAction
         {
             _view = ModuleHtmlView.get(module, path);
         }
-        catch(Exception e)
+        catch (Exception e)
         {
             //hold onto it so we can show it during handleRequest()
             _exception = e;
@@ -128,25 +106,29 @@ public class SimpleAction extends BaseViewAction implements NavTrailAction
             if (_view.isRequiresLogin() && user.isGuest())
                 throw new UnauthorizedException("You must sign in to see this content.");
 
-            Set<Class<? extends Permission>> oldStylePerms = new HashSet<>();
-            // Handle old-style permission bits, for backward compatibility
-            int perm = _view.getRequiredPerms();
-
-            if ((perm & ACL.PERM_READ) > 0 || (perm & ACL.PERM_READOWN) > 0)
-                oldStylePerms.add(ReadPermission.class);
-            if ((perm & ACL.PERM_INSERT) > 0)
-                oldStylePerms.add(InsertPermission.class);
-            if ((perm & ACL.PERM_UPDATE) > 0 || (perm & ACL.PERM_UPDATEOWN) > 0)
-                oldStylePerms.add(UpdatePermission.class);
-            if ((perm & ACL.PERM_DELETE) > 0 || (perm & ACL.PERM_DELETEOWN) > 0)
-                oldStylePerms.add(DeletePermission.class);
-            if ((perm & ACL.PERM_ADMIN) > 0)
-                oldStylePerms.add(AdminPermission.class);
-
-            if (!container.hasPermissions(user, oldStylePerms))
+            if (OptionalFeatureService.get().isFeatureEnabled(ACL.RESTORE_USE_OF_ACLS))
             {
-                container.throwIfForbiddenProject(user);
-                throw new UnauthorizedException("You do not have permission to view this content.");
+                Set<Class<? extends Permission>> oldStylePerms = new HashSet<>();
+
+                // Handle old-style permission bits, for backward compatibility
+                int perm = _view.getRequiredPerms();
+
+                if ((perm & ACL.PERM_READ) > 0 || (perm & ACL.PERM_READOWN) > 0)
+                    oldStylePerms.add(ReadPermission.class);
+                if ((perm & ACL.PERM_INSERT) > 0)
+                    oldStylePerms.add(InsertPermission.class);
+                if ((perm & ACL.PERM_UPDATE) > 0 || (perm & ACL.PERM_UPDATEOWN) > 0)
+                    oldStylePerms.add(UpdatePermission.class);
+                if ((perm & ACL.PERM_DELETE) > 0 || (perm & ACL.PERM_DELETEOWN) > 0)
+                    oldStylePerms.add(DeletePermission.class);
+                if ((perm & ACL.PERM_ADMIN) > 0)
+                    oldStylePerms.add(AdminPermission.class);
+
+                if (!container.hasPermissions(user, oldStylePerms))
+                {
+                    container.throwIfForbiddenProject(user);
+                    throw new UnauthorizedException("You do not have permission to view this content.");
+                }
             }
 
             Set<Class<? extends Permission>> perms = _view.getRequiredPermissionClasses();

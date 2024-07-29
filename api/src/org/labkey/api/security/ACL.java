@@ -22,6 +22,8 @@ package org.labkey.api.security;
 @Deprecated
 public class ACL implements Cloneable
 {
+    public static final String RESTORE_USE_OF_ACLS = "restoreUseOfAcls";
+
     public static final int PERM_NONE = 0x00000000;
 
     /** {@link org.labkey.api.security.permissions.ReadPermission} */

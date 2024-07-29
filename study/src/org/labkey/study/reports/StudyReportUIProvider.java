@@ -26,6 +26,7 @@ import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.util.URLHelper;
@@ -41,15 +42,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/*
- * User: Karl Lum
- * Date: May 16, 2008
- * Time: 5:19:28 PM
- */
 public class StudyReportUIProvider extends DefaultReportUIProvider
 {
-    private static Map<String, String> _typeToIconMap = new HashMap<>();
-    private static Map<String, String> _typeToIconClsMap = new HashMap<>();
+    private static final Map<String, String> _typeToIconMap = new HashMap<>();
+    private static final Map<String, String> _typeToIconClsMap = new HashMap<>();
 
     static
     {
@@ -83,7 +79,7 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
     };
 
     /**
-     * Add report creation to UI's that aren't associated with a query (manage views, data views)
+     * Add report creation to UIs that aren't associated with a query (manage views, data views)
      */
     @Override
     public List<ReportService.DesignerInfo> getDesignerInfo(ViewContext context)
@@ -162,13 +158,16 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
                         _getIconPath(StudyRReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(StudyRReport.TYPE)));
             }
 
-            // external report - keep in sync with ExternalReportAction permissions checks
-            if (context.getContainer().hasPermission(context.getUser(), InsertPermission.class) && context.getUser().isPlatformDeveloper())
+            if (OptionalFeatureService.get().isFeatureEnabled(ExternalReport.ENABLE_EXTERNAL_REPORT))
             {
-                ActionURL buttonURL = context.getActionURL().clone();
-                buttonURL.setAction(ReportsController.ExternalReportAction.class);
-                designers.add(new DesignerInfoImpl(ExternalReport.TYPE, "Advanced Report", "An External Command Report",
-                        buttonURL, _getIconPath(ExternalReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(ExternalReport.TYPE)));
+                // external report - keep in sync with ExternalReportAction permissions checks
+                if (context.getContainer().hasPermission(context.getUser(), InsertPermission.class) && context.getUser().isPlatformDeveloper())
+                {
+                    ActionURL buttonURL = context.getActionURL().clone();
+                    buttonURL.setAction(ReportsController.ExternalReportAction.class);
+                    designers.add(new DesignerInfoImpl(ExternalReport.TYPE, "Advanced Report", "An External Command Report",
+                            buttonURL, _getIconPath(ExternalReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(ExternalReport.TYPE)));
+                }
             }
         }
         else
