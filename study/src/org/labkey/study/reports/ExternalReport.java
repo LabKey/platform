@@ -61,13 +61,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-/**
- * User: migra
- * Date: Mar 9, 2006
- * Time: 11:21:04 AM
- */
 public class ExternalReport extends AbstractReport
 {
+    public static final String ENABLE_EXTERNAL_REPORT = "enableExternalReport";
     public static final String TYPE = "Study.externalReport";
 
     private RecomputeWhen recomputeWhen = RecomputeWhen.Always;

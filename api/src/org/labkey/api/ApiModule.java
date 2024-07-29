@@ -95,7 +95,6 @@ import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.property.DomainTemplateGroup;
 import org.labkey.api.files.FileSystemWatcherImpl;
 import org.labkey.api.iterator.MarkableIterator;
-import org.labkey.api.iterator.ValidatingDataRowIteratorTestCase;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.mbean.LabKeyManagement;
 import org.labkey.api.mbean.OperationsMXBean;
@@ -143,6 +142,7 @@ import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.AppPropsTestCase;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.settings.OptionalFeatureStartupListener;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.util.ChecksumUtil;
@@ -196,6 +196,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static java.util.EnumSet.allOf;
+import static org.labkey.api.security.ACL.RESTORE_USE_OF_ACLS;
 import static org.labkey.api.settings.LookAndFeelProperties.Properties.applicationMenuDisplayMode;
 import static org.labkey.api.settings.SiteSettingsProperties.allowApiKeys;
 import static org.labkey.api.settings.SiteSettingsProperties.allowSessionKeys;
@@ -225,6 +226,10 @@ public class ApiModule extends CodeOnlyModule
         LabKeyManagement.register(new StandardMBean(new OperationsMXBeanImpl(), OperationsMXBean.class, true), "Operations");
 
         AdminConsole.addExperimentalFeatureFlag(FileStream.STAGE_FILE_UPLOADS, "Stage file uploads before moving to final destination", "When using a non-local file system, using a specific API that requires a locally staged copy of the file as the source can sometimes be significantly faster than streaming the uploaded file directly", false);
+        AdminConsole.addOptionalFeatureFlag(new AdminConsole.OptionalFeatureFlag(RESTORE_USE_OF_ACLS,
+            "Restore ability to use deprecated bitmask-based permissions",
+            "If enabled, module HTML view metadata (.view.xml) files with \"<permission name='read'>\"-type elements will be accepted and specific API responses will include user permissions as integer bitmasks. This option and all support for bitmask based permissions will be removed in LabKey Server v24.12.",
+            false, false, OptionalFeatureService.FeatureType.Deprecated));
     }
 
     @NotNull
@@ -424,8 +429,7 @@ public class ApiModule extends CodeOnlyModule
             ValidEmail.TestCase.class,
             URIUtil.TestCase.class,
             AssayFileWriter.TestCase.class,
-            AssayResultsFileWriter.TestCase.class,
-            ValidatingDataRowIteratorTestCase.class
+            AssayResultsFileWriter.TestCase.class
         );
     }
 

@@ -17,6 +17,7 @@
 %>
 <%@ page import="org.json.JSONArray"%>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.util.JavaScriptFragment" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -24,7 +25,6 @@
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.portal.CollaborationFolderType" %>
 <%@ page import="org.labkey.core.portal.ProjectController" %>
-<%@ page import="org.labkey.api.util.JavaScriptFragment" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -100,8 +100,8 @@
                 });
                 folderTypes = folderTypes.sort(function(a,b){
                     //force custom to appear at end
-                    return b.label == 'Custom' ? -1
-                        : a.label == 'Custom' ? 1
+                    return b.label === 'Custom' ? -1
+                        : a.label === 'Custom' ? 1
                         : (a.label.toLowerCase() > b.label.toLowerCase()) ? 1
                         : (a.label.toLowerCase() < b.label.toLowerCase()) ? -1
                         : 0
@@ -200,7 +200,7 @@
                             field.focus('', 10);
                         },
                         specialkey: function(field, e){
-                            if(e.getKey() == e.ENTER){
+                            if(e.getKey() === e.ENTER){
                                 var f = field.up('form').getForm();
                                 if(!f.submitInProgress)
                                     f.submit();
@@ -264,10 +264,10 @@
                                 var parent = this.up('form');
                                 parent.down('#additionalTypeInfo').removeAll();
                                 parent.doLayout();
-                                if (val.folderType == 'None') {
+                                if (val.folderType === 'None') {
                                     parent.renderModules();
                                 }
-                                else if (val.folderType == 'Template') {
+                                else if (val.folderType === 'Template') {
                                     parent.renderTemplateInfo();
                                 }
                                 parent.doLayout();
@@ -288,7 +288,7 @@
                                     value: ft.name,
                                     boxLabel: ft.label,
                                     labelWidth: 500,
-                                    checked: ft.name == <%=q(folderTypeName)%>,
+                                    checked: ft.name === <%=q(folderTypeName)%>,
                                     listeners: {
                                         scope: this,
                                         single: true,
@@ -317,7 +317,7 @@
                 buttons: [{
                     text: 'Cancel',
                     cls: 'labkey-button',
-                    handler: function(btn) {
+                    handler: function() {
                         window.location = <%= q(form.getReturnURLHelper(new ActionURL(ProjectController.StartAction.class, ContainerManager.getHomeContainer()))) %>;
                     }
                 },{
@@ -482,7 +482,7 @@
                             writerConfig.listeners = {
                                 change: function(cb, checked)
                                 {
-                                    var childCbs = cb.up('panel').queryBy(function(childCb){ return childCb.parentId == cb.itemId; });
+                                    const childCbs = cb.up('panel').queryBy(function(childCb){ return childCb.parentId === cb.itemId; });
                                     Ext4.each(childCbs, function(childCb){ childCb.setValue(checked); });
                                 }
                             }
@@ -521,7 +521,7 @@
                     }
                 },
                 renderTemplateInfo : function() {
-                    var target = this.down('#additionalTypeInfo');
+                    const target = this.down('#additionalTypeInfo');
                     target.add([
                         {
                             html: 'Choose Template Folder:',
@@ -584,9 +584,9 @@
                         }
                     ]);
 
-                    if (templateFolders.length == 0) {
+                    if (templateFolders.length === 0) {
                         // mask the combo while loading the container list
-                        var combo = this.down('#sourceFolderCombo');
+                        const combo = this.down('#sourceFolderCombo');
                         combo.setLoading(true);
 
                         LABKEY.Security.getContainers({
@@ -606,7 +606,7 @@
             });
         };
 
-        var initTemplateFolders = function(combo) {
+        const initTemplateFolders = function(combo) {
             return function(data)
             {
                 getTemplateFolders(data);
@@ -619,10 +619,10 @@
             }
         };
 
-        var getTemplateFolders = function(data) {
+        const getTemplateFolders = function(data) {
             // add the container itself to the templateFolder object if it is not the root and the user has admin perm to it
             // and if it is not a workbook or container tab folder
-            if (data.path != "/" && LABKEY.Security.hasPermission(data.userPermissions, LABKEY.Security.permissions.admin)
+            if (data.path !== "/" && LABKEY.Security.hasEffectivePermission(data.effectivePermissions, LABKEY.Security.effectivePermissions.admin)
                     && !data.isWorkbook && !data.isContainerTab)
             {
                 templateFolders.push([data.id, data.path]);
@@ -631,7 +631,7 @@
             // add the container's children to the templateFolder object
             if (data.children.length > 0)
             {
-                for (var i = 0; i < data.children.length; i++)
+                for (let i = 0; i < data.children.length; i++)
                     getTemplateFolders(data.children[i]);
             }
         };

@@ -79,34 +79,19 @@ import org.labkey.api.view.TabStripView;
 import org.labkey.api.view.ViewContext;
 import org.springframework.validation.Errors;
 
-import javax.imageio.ImageIO;
 import javax.script.ScriptEngine;
-import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.io.IOException;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-/**
- * User: Karl Lum
- * Date: Apr 20, 2007
- */
 public class ReportUtil
 {
-    public static final String FORWARD_URL = "forwardUrl";
-
     @Deprecated // use getScriptReportDesignerURL instead
     public static ActionURL getRReportDesignerURL(ViewContext context, ScriptReportBean bean)
     {
-        ActionURL url = PageFlowUtil.urlProvider(ReportUrls.class).urlCreateScriptReport(context.getContainer());
-        url.addParameters(context.getActionURL().getParameters());
-        url.replaceParameter(TabStripView.TAB_PARAM, ScriptReport.TAB_SOURCE);
-
-        return _getChartDesignerURL(url, bean);
+        return getScriptReportDesignerURL(context, bean);
     }
 
     public static ActionURL getScriptReportDesignerURL(ViewContext context, ScriptReportBean bean)
@@ -116,13 +101,13 @@ public class ReportUtil
         url.replaceParameter(ScriptReportDescriptor.Prop.scriptExtension.name(), bean.getScriptExtension());
         url.replaceParameter(TabStripView.TAB_PARAM, ScriptReport.TAB_SOURCE);
 
-        // issue 18390, don't want reportId on the create report action
+        // issue 18390, don't want reportId on the "create" action
         url.deleteParameter(ReportDescriptor.Prop.reportId);
 
         return _getChartDesignerURL(url, bean);
     }
 
-    protected static ActionURL _getChartDesignerURL(ActionURL url, ReportDesignBean bean)
+    protected static ActionURL _getChartDesignerURL(ActionURL url, ReportDesignBean<?> bean)
     {
         url.replaceParameter("reportType", bean.getReportType());
         if (bean.getSchemaName() != null)
@@ -316,35 +301,9 @@ public class ReportUtil
         return parts;
     }
 
-
-    public static void renderErrorImage(OutputStream outputStream, Report r, String errorMessage) throws IOException
-    {
-        int width = 640;
-        int height = 480;
-
-        renderErrorImage(outputStream, width, height, errorMessage);
-    }
-
-    public static void renderErrorImage(OutputStream outputStream, int width, int height, String errorMessage) throws IOException
-    {
-        if (errorMessage == null)
-        {
-            errorMessage = "ERROR";
-        }
-        BufferedImage bi = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-        Graphics2D g = bi.createGraphics();
-        g.setColor(Color.white);
-        g.fillRect(0, 0, width, height);
-        g.setColor(Color.black);
-        g.drawString(errorMessage, (width - g.getFontMetrics().stringWidth(errorMessage)) / 2, (height - g.getFontMetrics().getHeight()) / 2);
-        ImageIO.write(bi, "png", outputStream);
-        outputStream.flush();
-    }
-
     public static List<Report> getReportsIncludingInherited(Container c, User user, @Nullable String reportKey)
     {
-        List<Report> reports = new ArrayList<>();
-        reports.addAll(ReportService.get().getReports(user, c, reportKey));
+        List<Report> reports = new ArrayList<>(ReportService.get().getReports(user, c, reportKey));
 
         while (!c.isRoot())
         {

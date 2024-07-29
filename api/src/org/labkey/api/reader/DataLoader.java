@@ -1016,9 +1016,9 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
             if (hasNext)
             {
                 Map<String, Object> nextRow = _it.next();
-                if (nextRow instanceof ArrayListMap)
+                if (nextRow instanceof ArrayListMap arrayListMap)
                 {
-                    _row = (ArrayListMap)nextRow;
+                    _row = arrayListMap;
                     if (_rowNumber == 0)
                     {
                         // verify that map returned by iterator matches ColumnDescriptor list
@@ -1026,11 +1026,10 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                         for (int i=0 ; i<_columns.length ; i++)
                         {
                             String columnName = _columns[i].getColumnName();
-                            Integer I = _findMap.get(columnName);
-                            assert null != I;
-                            // the found map index I should match the columns index.
+                            Integer colIndex = _findMap.get(columnName);
+                            // the found map index colIndex should match the columns index.
                             // UNLESS there are duplicate column names.  Someone else 'downstream' will (hopefully) sort that out
-                            assert I == i || Arrays.stream(_columns).anyMatch(col -> columnName.equalsIgnoreCase(col.getColumnName()));
+                            assert colIndex == null || colIndex == i || Arrays.stream(_columns).anyMatch(col -> columnName.equalsIgnoreCase(col.getColumnName()));
                         }
                     }
                 }

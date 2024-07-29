@@ -36,6 +36,7 @@ import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.assay.DefaultAssayRunCreator;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.TSVMapWriter;
+import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.AssayJSONConverter;
 import org.labkey.api.exp.api.ExpExperiment;
@@ -43,7 +44,6 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.iterator.ValidatingDataRowIterator;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
@@ -274,8 +274,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
 
             if (!saveDataAsFile)
             {
-                List<Map<String, Object>> rows = rawData;
-                factory.setRawData(() -> ValidatingDataRowIterator.of(rows));
+                factory.setRawData(MapDataIterator.of(rawData));
                 factory.setUploadedData(Collections.emptyMap());
 
                 // Create an ExpData for the results if none exists in the outputData map

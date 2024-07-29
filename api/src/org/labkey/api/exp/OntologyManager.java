@@ -28,9 +28,15 @@ import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.data.*;
 import org.labkey.api.data.DbScope.Transaction;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.dataiterator.AbstractMapDataIterator;
+import org.labkey.api.dataiterator.DataIterator;
+import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.dataiterator.DataIteratorUtil;
+import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.api.ExperimentService;
@@ -43,7 +49,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.SystemProperty;
 import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.gwt.client.ui.domain.CancellationException;
-import org.labkey.api.iterator.ValidatingDataRowIterator;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.QueryService;
@@ -75,7 +81,6 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -269,10 +274,10 @@ public class OntologyManager
                                           @Nullable Integer ownerObjectId,
                                           ImportHelper helper,
                                           Domain domain,
-                                          ValidatingDataRowIterator rows,
+                                          DataIterator rows,
                                           boolean ensureObjects,
                                           @Nullable RowCallback rowCallback)
-            throws SQLException, ValidationException
+            throws SQLException, BatchValidationException
     {
         List<PropertyDescriptor> properties = new ArrayList<>(domain.getProperties().size());
         for (DomainProperty prop : domain.getProperties())
@@ -282,22 +287,11 @@ public class OntologyManager
         insertTabDelimited(c, user, ownerObjectId, helper, properties, rows, ensureObjects, rowCallback);
     }
 
-    public static void insertTabDelimited(Container c,
-                                          User user,
-                                          @Nullable Integer ownerObjectId,
-                                          ImportHelper helper,
-                                          List<PropertyDescriptor> descriptors,
-                                          ValidatingDataRowIterator rows,
-                                          boolean ensureObjects) throws SQLException, ValidationException
-    {
-        insertTabDelimited(c, user, ownerObjectId, helper, descriptors, rows, ensureObjects, NO_OP_ROW_CALLBACK);
-    }
-
     public interface RowCallback
     {
-        void rowProcessed(Map<String, Object> row, String lsid) throws ValidationException;
+        void rowProcessed(Map<String, Object> row, String lsid) throws BatchValidationException;
 
-        default void complete() throws ValidationException
+        default void complete() throws BatchValidationException
         {}
 
         default RowCallback chain(RowCallback other)
@@ -316,14 +310,14 @@ public class OntologyManager
             return new RowCallback()
             {
                 @Override
-                public void rowProcessed(Map<String, Object> row, String lsid) throws ValidationException
+                public void rowProcessed(Map<String, Object> row, String lsid) throws BatchValidationException
                 {
                     original.rowProcessed(row, lsid);
                     other.rowProcessed(row, lsid);
                 }
 
                 @Override
-                public void complete() throws ValidationException
+                public void complete() throws BatchValidationException
                 {
                     original.complete();
                     other.complete();
@@ -332,22 +326,20 @@ public class OntologyManager
         }
     }
 
-    public static final RowCallback NO_OP_ROW_CALLBACK = new RowCallback()
-    {
-        @Override
-        public void rowProcessed(Map<String, Object> row, String lsid) {}
-    };
+    public static final RowCallback NO_OP_ROW_CALLBACK = (row, lsid) -> {};
 
     public static void insertTabDelimited(Container c,
                                           User user,
                                           @Nullable Integer ownerObjectId,
                                           ImportHelper helper,
                                           List<PropertyDescriptor> descriptors,
-                                          ValidatingDataRowIterator rows,
+                                          DataIterator rawRows,
                                           boolean ensureObjects,
                                           @Nullable RowCallback rowCallback)
-            throws SQLException, ValidationException
+            throws SQLException, BatchValidationException
     {
+        MapDataIterator rows = DataIteratorUtil.wrapMap(rawRows, false);
+
         rowCallback = rowCallback == null ? NO_OP_ROW_CALLBACK : rowCallback;
 
         CPUTimer total = new CPUTimer("insertTabDelimited");
@@ -384,9 +376,9 @@ public class OntologyManager
             int rowCount = 0;
             int batchCount = 0;
 
-            while (rows.hasNext())
+            while (rows.next())
             {
-                Map<String, Object> map = rows.next();
+                Map<String, Object> map = rows.getMap();
                 // TODO: hack -- should exit and return cancellation status instead of throwing
                 if (Thread.currentThread().isInterrupted())
                     throw new CancellationException();
@@ -417,7 +409,7 @@ public class OntologyManager
                     if (null == value)
                     {
                         if (pd.isRequired())
-                            throw new ValidationException("Missing value for required property " + pd.getName());
+                            throw new BatchValidationException(new ValidationException("Missing value for required property " + pd.getName()));
                         else
                         {
                             continue;
@@ -435,7 +427,7 @@ public class OntologyManager
                     }
                     catch (ConversionException e)
                     {
-                        throw new ValidationException(ConvertHelper.getStandardConversionErrorMessage(value, pd.getName(), pd.getPropertyType().getJavaType()));
+                        throw new BatchValidationException(new ValidationException(ConvertHelper.getStandardConversionErrorMessage(value, pd.getName(), pd.getPropertyType().getJavaType())));
                     }
                 }
                 assert ensure.stop();
@@ -462,7 +454,7 @@ public class OntologyManager
             }
 
             if (!errors.isEmpty())
-                throw new ValidationException(errors);
+                throw new BatchValidationException(new ValidationException(errors));
 
             assert insert.start();
             insertPropertiesBulk(c, propsToInsert, false);
@@ -486,15 +478,6 @@ public class OntologyManager
         _log.debug("\t" + insert);
     }
 
-    public static void insertTabDelimited(TableInfo tableInsert, Container c, User user,
-                                                               UpdateableTableImportHelper helper,
-                                                               ValidatingDataRowIterator rows,
-                                                               Logger logger)
-            throws SQLException, ValidationException
-    {
-        insertTabDelimited(tableInsert, c, user, helper, rows, true, logger, null);
-    }
-
     /**
      * As an incremental step of QueryUpdateService cleanup, this is a version of insertTabDelimited that works on a
      * tableInfo that implements UpdateableTableInfo. Does not support ownerObjectid.
@@ -503,43 +486,34 @@ public class OntologyManager
      * of the world, validators are attached to PropertyDescriptors. Also, missing value handling is attached
      * to PropertyDescriptors.
      * <p>
-     * The original version of this method expects a data be be a map PropertyURI->value. This version will also
+     * The original version of this method expects a data to be a map PropertyURI->value. This version will also
      * accept Name->value.
      * <p>
      * Name->Value is preferred, we are using TableInfo after all.
      */
+    @Deprecated // switch to StandardDataIteratorBuilder and TableInsertDataIteratorBuilder
     public static void insertTabDelimited(TableInfo tableInsert,
                                           Container c,
                                           User user,
                                           UpdateableTableImportHelper helper,
-                                          ValidatingDataRowIterator rows,
+                                          DataIterator rows,
                                           boolean autoFillDefaultColumns,
                                           Logger logger,
                                           RowCallback rowCallback)
-            throws SQLException, ValidationException
+            throws SQLException, BatchValidationException
     {
         saveTabDelimited(tableInsert, c, user, helper, rows, logger, true, autoFillDefaultColumns, rowCallback);
     }
 
+    @Deprecated // switch to StandardDataIteratorBuilder and TableInsertDataIteratorBuilder
     public static void updateTabDelimited(TableInfo tableInsert,
                                           Container c,
                                           User user,
                                           UpdateableTableImportHelper helper,
-                                          ValidatingDataRowIterator rows,
-                                          Logger logger)
-            throws SQLException, ValidationException
-    {
-        updateTabDelimited(tableInsert, c, user, helper, rows, true, logger);
-    }
-
-    public static void updateTabDelimited(TableInfo tableInsert,
-                                          Container c,
-                                          User user,
-                                          UpdateableTableImportHelper helper,
-                                          ValidatingDataRowIterator rows,
+                                          DataIterator rows,
                                           boolean autoFillDefaultColumns,
                                           Logger logger)
-            throws SQLException, ValidationException
+            throws SQLException, BatchValidationException
     {
         saveTabDelimited(tableInsert, c, user, helper, rows, logger, false, autoFillDefaultColumns, NO_OP_ROW_CALLBACK);
     }
@@ -548,20 +522,15 @@ public class OntologyManager
                                          Container c,
                                          User user,
                                          UpdateableTableImportHelper helper,
-                                         ValidatingDataRowIterator rows,
+                                         DataIterator in,
                                          Logger logger,
                                          boolean insert,
                                          boolean autoFillDefaultColumns,
                                          @Nullable RowCallback rowCallback)
-            throws SQLException, ValidationException
+            throws SQLException, BatchValidationException
     {
         if (!(table instanceof UpdateableTableInfo))
             throw new IllegalArgumentException();
-
-        if (!rows.hasNext())
-        {
-            return;
-        }
 
         if (rowCallback == null)
         {
@@ -582,6 +551,7 @@ public class OntologyManager
 
         Map<String, Object> currentRow = null;
 
+        MapDataIterator rows = DataIteratorUtil.wrapMap(in, false);
         try
         {
             conn = scope.getConnection();
@@ -620,9 +590,10 @@ public class OntologyManager
 
             int rowCount = 0;
 
-            while (rows.hasNext())
+            while (rows.next())
             {
-                currentRow = new CaseInsensitiveHashMap<>(rows.next());
+
+                currentRow = new CaseInsensitiveHashMap<>(rows.getMap());
 
                 // TODO: hack -- should exit and return cancellation status instead of throwing
                 if (Thread.currentThread().isInterrupted())
@@ -655,7 +626,7 @@ public class OntologyManager
                     {
                         // TODO col.isNullable() doesn't seem to work here
                         if (null != pd && pd.isRequired())
-                            throw new ValidationException("Missing value for required property " + col.getName());
+                            throw new BatchValidationException(new ValidationException("Missing value for required property " + col.getName()));
                     }
                     else
                     {
@@ -667,12 +638,12 @@ public class OntologyManager
                                 ObjectProperty objectProperty = new ObjectProperty(lsid, c, pd, value);
                                 if (!validateProperty(validatorMap.get(propertyURI), pd, objectProperty, errors, validatorCache))
                                 {
-                                    throw new ValidationException(errors);
+                                    throw new BatchValidationException(new ValidationException(errors));
                                 }
                             }
                             catch (ConversionException e)
                             {
-                                throw new ValidationException(ConvertHelper.getStandardConversionErrorMessage(value, pd.getName(), pd.getJavaClass()));
+                                throw new BatchValidationException(new ValidationException(ConvertHelper.getStandardConversionErrorMessage(value, pd.getName(), pd.getJavaClass())));
                             }
                         }
                     }
@@ -741,13 +712,17 @@ public class OntologyManager
 
 
             if (!errors.isEmpty())
-                throw new ValidationException(errors);
+                throw new BatchValidationException(new ValidationException(errors));
 
             rowCallback.complete();
 
             helper.afterBatchInsert(rowCount);
             if (logger != null)
                 logger.debug("inserted row " + rowCount + ".");
+        }
+        catch (ValidationException e)
+        {
+            throw new BatchValidationException(e);
         }
         catch (SQLException x)
         {
@@ -3538,13 +3513,13 @@ public class OntologyManager
 
             // test insertTabDelimited
             List<Map<String, Object>> rows = List.of(
-                Map.of(
+                new CaseInsensitiveMapWrapper<>(Map.of(
                     "lsid", child2ObjectLsid,
                     strPropURI, "Second value",
                     intPropURI, 62,
                     longPropURI, 72L
                 )
-            );
+            ));
             ImportHelper helper = new ImportHelper()
             {
                 @Override
@@ -3563,7 +3538,7 @@ public class OntologyManager
             };
             try (Transaction tx = getExpSchema().getScope().ensureTransaction())
             {
-                insertTabDelimited(c, TestContext.get().getUser(), oParent.getObjectId(), helper, pds, ValidatingDataRowIterator.of(rows.iterator()), false);
+                insertTabDelimited(c, TestContext.get().getUser(), oParent.getObjectId(), helper, pds, MapDataIterator.of(rows).getDataIterator(new DataIteratorContext()), false, null);
                 tx.commit();
             }
 
@@ -3595,9 +3570,8 @@ public class OntologyManager
             return;
 
         // Handle field-level QC
-        if (v.first instanceof MvFieldWrapper)
+        if (v.first instanceof MvFieldWrapper mvWrapper)
         {
-            MvFieldWrapper mvWrapper = (MvFieldWrapper) v.first;
             v.second = mvWrapper.getMvIndicator();
             v.first = mvWrapper.getValue();
         }

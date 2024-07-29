@@ -182,7 +182,9 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
                     }
                     catch (Exception e)
                     {
-                        throw new ValidationException(e.getMessage() == null ? e.toString() : e.getMessage());
+                        ValidationException ve = new ValidationException(e.getMessage() == null ? e.toString() : e.getMessage());
+                        ve.initCause(e);
+                        throw ve;
                     }
                     finally
                     {
