@@ -156,9 +156,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
@@ -180,7 +179,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     private static final String PLATE_SET_NAME_EXPRESSION = "PLS-${now:date('yyyyMMdd')}-${RowId}";
     private static final String PLATE_NAME_EXPRESSION = "${${PlateSet/PlateSetId}-:withCounter}";
 
-    private final Queue<Pair<Container, Integer>> _plateIndexQueue = new ConcurrentLinkedQueue<>();
+    private final Map<Container, Set<Integer>> _plateIndexMap = new ConcurrentHashMap<>();
     private final AtomicBoolean _pausePlateIndex = new AtomicBoolean(false);
     private static final Object PLATE_INDEX_LOCK = new Object();
 
@@ -1998,12 +1997,13 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     private void resumePlateIndexing()
     {
         _pausePlateIndex.set(false);
-        if (!_plateIndexQueue.isEmpty())
+        if (!_plateIndexMap.isEmpty())
         {
             synchronized (PLATE_INDEX_LOCK)
             {
-                BulkPlateIndexer indexer = new BulkPlateIndexer(new LinkedList<>(_plateIndexQueue));
-                _plateIndexQueue.clear();
+                LOG.debug("Resume indexing");
+                BulkPlateIndexer indexer = new BulkPlateIndexer(new HashMap<>(_plateIndexMap));
+                _plateIndexMap.clear();
                 indexer.start();
             }
         }
@@ -2013,9 +2013,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     {
         if (_pausePlateIndex.get() && !ignorePauseFlag)
         {
-            Pair<Container, Integer> entry = new Pair<>(c, plateRowId);
-            if (!_plateIndexQueue.contains(entry))
-                _plateIndexQueue.add(entry);
+            _plateIndexMap.computeIfAbsent(c, k -> new HashSet<>()).add(plateRowId);
         }
         else
         {
@@ -2439,6 +2437,11 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             tx.commit();
 
             return platesAdded;
+        }
+        catch (Exception e)
+        {
+            resumePlateIndexing();
+            throw UnexpectedException.wrap(e);
         }
     }
 
@@ -3772,20 +3775,23 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
     private class BulkPlateIndexer extends Thread
     {
-        Queue<Pair<Container, Integer>> _queue;
+        Map<Container, Set<Integer>> _plates;
 
-        public BulkPlateIndexer(Queue<Pair<Container, Integer>> queue)
+        public BulkPlateIndexer(Map<Container, Set<Integer>> plates)
         {
-            _queue = queue;
+            _plates = plates;
         }
 
         @Override
         public void run()
         {
-            while (!_queue.isEmpty())
+            for (Map.Entry<Container, Set<Integer>> entry : _plates.entrySet())
             {
-                Pair<Container, Integer> entry = _queue.remove();
-                indexPlate(entry.first, entry.second, true);
+                for (Integer plateId : entry.getValue())
+                {
+                    LOG.debug("Indexing plate ID " + plateId);
+                    indexPlate(entry.getKey(), plateId, true);
+                }
             }
         }
     }
