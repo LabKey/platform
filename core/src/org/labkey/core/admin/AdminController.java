@@ -609,12 +609,6 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public ActionURL getExperimentalFeaturesURL()
-        {
-            return new ActionURL(OptionalFeaturesAction.class, ContainerManager.getRoot());
-        }
-
-        @Override
         public ActionURL getProjectSettingsURL(Container c)
         {
             return new ActionURL(ProjectSettingsAction.class, LookAndFeelProperties.getSettingsContainer(c));
@@ -830,6 +824,11 @@ public class AdminController extends SpringActionController
         public ActionURL getSystemMaintenanceURL()
         {
             return new ActionURL(ConfigureSystemMaintenanceAction.class, ContainerManager.getRoot());
+        }
+
+        public static ActionURL getDeprecatedFeaturesURL()
+        {
+            return new ActionURL(OptionalFeaturesAction.class, ContainerManager.getRoot()).addParameter("type", FeatureType.Deprecated.name());
         }
     }
 

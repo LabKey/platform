@@ -34,6 +34,7 @@ import org.labkey.api.admin.AdminConsoleService;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.HealthCheck;
 import org.labkey.api.admin.HealthCheckRegistry;
+import org.labkey.api.admin.TableXmlUtils;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.admin.sitevalidation.SiteValidationService;
 import org.labkey.api.analytics.AnalyticsService;
@@ -60,6 +61,7 @@ import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.FileSqlScriptProvider;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.NormalContainerType;
 import org.labkey.api.data.OutOfRangeDisplayColumn;
@@ -94,6 +96,7 @@ import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.SchemaUpdateType;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.module.Summary;
 import org.labkey.api.notification.EmailMessage;
@@ -898,6 +901,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         // Any containers in the cache have bogus folder types since they aren't registered until startup().  See #10310
         ContainerManager.clearCache();
 
+        checkForMissingDbViews();
+
         ProductConfiguration.handleStartupProperties();
         // This listener deletes all properties; make sure it executes after most of the other listeners
         ContainerManager.addContainerListener(new CoreContainerListener(), ContainerManager.ContainerListener.Order.Last);
@@ -1227,6 +1232,23 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         MessageConfigService.setInstance(new EmailPreferenceConfigServiceImpl());
         ContainerManager.addContainerListener(new EmailPreferenceContainerListener());
         UserManager.addUserListener(new EmailPreferenceUserListener());
+    }
+
+    // Issue 7527: Auto-detect missing sql views and attempt to recreate
+    private void checkForMissingDbViews()
+    {
+        ModuleLoader.getInstance().getModules().stream()
+                .map(FileSqlScriptProvider::new)
+                .flatMap(p -> p.getSchemas().stream()
+                        .filter(schema-> SchemaUpdateType.Before.getScript(p, schema) != null || SchemaUpdateType.After.getScript(p, schema) != null)
+                )
+                .filter(schema -> TableXmlUtils.compareXmlToMetaData(schema, false, false, true).hasViewProblem())
+                .findAny()
+                .ifPresent(schema ->
+                {
+                    LOG.warn("At least one database view was not as expected in the {} schema. Attempting to recreate views automatically", schema.getName());
+                    ModuleLoader.getInstance().recreateViews();
+                });
     }
 
     @Override

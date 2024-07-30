@@ -2856,14 +2856,14 @@ public class CoreController extends SpringActionController
             String mode = form.getMode();
             boolean isReset = "reset".equalsIgnoreCase(mode);
             if (isReset)
-                _customLabelProvider.resetLabels(getContainer());
+                _customLabelProvider.resetLabels(getContainer(), getUser());
             else
             {
                 try
                 {
                     HashMap<String, String> labels =
                             JsonUtil.DEFAULT_MAPPER.readValue(form.getLabelsJson(), HashMap.class);
-                    _customLabelProvider.saveLabels(labels, getContainer());
+                    _customLabelProvider.saveLabels(labels, getContainer(), getUser());
                 }
                 catch (Exception e)
                 {
