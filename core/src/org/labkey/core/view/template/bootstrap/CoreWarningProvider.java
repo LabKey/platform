@@ -32,7 +32,10 @@ import org.labkey.api.security.DbLoginService;
 import org.labkey.api.security.impersonation.AbstractImpersonationContextFactory;
 import org.labkey.api.security.permissions.SiteAdminPermission;
 import org.labkey.api.security.permissions.TroubleshooterPermission;
+import org.labkey.api.settings.AdminConsole;
+import org.labkey.api.settings.AdminConsole.OptionalFeatureFlag;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
@@ -56,6 +59,7 @@ import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -135,6 +139,8 @@ public class CoreWarningProvider implements WarningProvider
             getDbSchemaWarnings(warnings, showAllWarnings);
 
             getPasswordRuleWarnings(warnings, showAllWarnings);
+
+            getDeprecatedFeatureWarnings(warnings, showAllWarnings);
         }
 
         // Issue 50015 - only show upgrade message to full site admins
@@ -365,6 +371,22 @@ public class CoreWarningProvider implements WarningProvider
                 html.append(" " + leakCount + " probable leak" + (leakCount == 1 ? "" : "s") + ".");
                 warnings.add(html);
             }
+        }
+    }
+
+    private void getDeprecatedFeatureWarnings(Warnings warnings, boolean showAllWarnings)
+    {
+        Collection<OptionalFeatureFlag> flags = AdminConsole.getOptionalFeatureFlags(OptionalFeatureService.FeatureType.Deprecated);
+        List<String> deprecated = flags.stream()
+            .filter(flag -> showAllWarnings || flag.isEnabled())
+            .map(flag -> "\"" + flag.getTitle() + "\"")
+            .toList();
+
+        if (!deprecated.isEmpty())
+        {
+            String message = "The following deprecated feature" + (deprecated.size() == 1 ? " is" : "s are") + " enabled but should not be relied on: " +
+                StringUtilsLabKey.joinWithConjunction(deprecated, "and") + ". For more information, visit the ";
+            addStandardWarning(warnings, message, "Deprecated Features page", AdminController.AdminUrlsImpl.getDeprecatedFeaturesURL());
         }
     }
 
