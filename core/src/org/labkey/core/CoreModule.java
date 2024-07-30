@@ -34,6 +34,7 @@ import org.labkey.api.admin.AdminConsoleService;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.HealthCheck;
 import org.labkey.api.admin.HealthCheckRegistry;
+import org.labkey.api.admin.TableXmlUtils;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.admin.sitevalidation.SiteValidationService;
 import org.labkey.api.analytics.AnalyticsService;
@@ -60,6 +61,7 @@ import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.FileSqlScriptProvider;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.NormalContainerType;
 import org.labkey.api.data.OutOfRangeDisplayColumn;
@@ -94,6 +96,7 @@ import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.SchemaUpdateType;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.module.Summary;
 import org.labkey.api.notification.EmailMessage;
@@ -334,12 +337,14 @@ import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmai
 import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmailMessage;
 import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmailSubject;
 import static org.labkey.api.util.MothershipReport.EXPERIMENTAL_LOCAL_MARKETING_UPDATE;
+import static org.labkey.core.login.LoginController.REMOTE_LOGIN_FEATURE_FLAG;
 import static org.labkey.filters.ContentSecurityPolicyFilter.FEATURE_FLAG_DISABLE_ENFORCE_CSP;
 
 public class CoreModule extends SpringModule implements SearchService.DocumentProvider
 {
     private static final Logger LOG = LogHelper.getLogger(CoreModule.class, "Errors during server startup and shut down");
     public static final String PROJECTS_WEB_PART_NAME = "Projects";
+    private static final String EXPERIMENTAL_CALCULATED_FIELDS = "experimental-calculated-fields";
 
     static Runnable _afterUpdateRunnable = null;
 
@@ -482,6 +487,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 "SQLFragment now has very strict usage validation, these checks may cause errors in code that has not been updated. Turn on this feature to disable checks.", false);
         AdminConsole.addExperimentalFeatureFlag(LoginController.FEATUREFLAG_DISABLE_LOGIN_XFRAME, "Disable Login X-FRAME-OPTIONS=DENY",
                 "By default LabKey disables all framing of login related actions. Disabling this feature will revert to using the standard site settings.", false);
+        AdminConsole.addExperimentalFeatureFlag(EXPERIMENTAL_CALCULATED_FIELDS, "Calculated Fields",
+                "Allow defining calculated fields in the Field Editor for supported data types: Sample Type, Data Class, List, Study Dataset, Assay Design", false);
 
         SiteValidationService svc = SiteValidationService.get();
         if (null != svc)
@@ -894,6 +901,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         // Any containers in the cache have bogus folder types since they aren't registered until startup().  See #10310
         ContainerManager.clearCache();
 
+        checkForMissingDbViews();
+
         ProductConfiguration.handleStartupProperties();
         // This listener deletes all properties; make sure it executes after most of the other listeners
         ContainerManager.addContainerListener(new CoreContainerListener(), ContainerManager.ContainerListener.Order.Last);
@@ -1080,36 +1089,38 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         }
 
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP,
-                "Client-side Exception Logging To Mothership",
-                "Report unhandled JavaScript exceptions to mothership.",
-                false);
+            "Client-side Exception Logging To Mothership",
+            "Report unhandled JavaScript exceptions to mothership.",
+            false);
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_JAVASCRIPT_SERVER,
-                "Client-side Exception Logging To Server",
-                "Report unhandled JavaScript exceptions to the server log.",
-                false);
+            "Client-side Exception Logging To Server",
+            "Report unhandled JavaScript exceptions to the server log.",
+            false);
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_NO_GUESTS,
-                "No Guest Account",
-                "Disable the guest account",
-                false);
+            "No Guest Account",
+            "Disable the guest account",
+            false);
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_BLOCKER,
-                "Block malicious clients",
-                "Reject requests from clients that appear malicious. Turn this feature off if you want to run a security scanner.",
-                false);
-        AdminConsole.addOptionalFeatureFlag(new OptionalFeatureFlag(EXPERIMENTAL_LOCAL_MARKETING_UPDATE,
-                "Self test marketing updates", "Test marketing updates from this local server (requires the mothership module).", false, true, FeatureType.Experimental));
+            "Block malicious clients",
+            "Reject requests from clients that appear malicious. Turn this feature off if you want to run a security scanner.",
+            false);
         AdminConsole.addExperimentalFeatureFlag(FEATURE_FLAG_DISABLE_ENFORCE_CSP,
-                "Disable enforce Content Security Policy",
-                "Stop sending the " + ContentSecurityPolicyFilter.ContentSecurityPolicyType.Enforce.getHeaderName() + " header to browsers, " +
-                "but continue sending the " + ContentSecurityPolicyFilter.ContentSecurityPolicyType.Report.getHeaderName() + " header. " +
-                "This turns off an important layer of security for the entire site, so use it as a last resort only on a temporary basis " +
-                "(e.g., if an enforce CSP breaks critical functionality).",
-                false);
+            "Disable enforce Content Security Policy",
+            "Stop sending the " + ContentSecurityPolicyFilter.ContentSecurityPolicyType.Enforce.getHeaderName() + " header to browsers, " +
+            "but continue sending the " + ContentSecurityPolicyFilter.ContentSecurityPolicyType.Report.getHeaderName() + " header. " +
+            "This turns off an important layer of security for the entire site, so use it as a last resort only on a temporary basis " +
+            "(e.g., if an enforce CSP breaks critical functionality).",
+            false);
 
+        AdminConsole.addOptionalFeatureFlag(new OptionalFeatureFlag(EXPERIMENTAL_LOCAL_MARKETING_UPDATE,
+            "Self test marketing updates", "Test marketing updates from this local server (requires the mothership module).", false, true, FeatureType.Experimental));
         OptionalFeatureService.get().addFeatureListener(EXPERIMENTAL_LOCAL_MARKETING_UPDATE, (feature, enabled) -> {
             // update the timer task when this setting changes
             MothershipReport.setSelfTestMarketingUpdates(enabled);
             UsageReportingLevel.reportNow();
         });
+
+        AdminConsole.addOptionalFeatureFlag(new OptionalFeatureFlag(REMOTE_LOGIN_FEATURE_FLAG, "Restore ability to use the deprecated Remote Login API", "This option and all support for the Remote Login API will be removed in LabKey Server v24.12.", false, false, FeatureType.Deprecated));
 
         if (null != PropertyService.get())
         {
@@ -1223,6 +1234,23 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         UserManager.addUserListener(new EmailPreferenceUserListener());
     }
 
+    // Issue 7527: Auto-detect missing sql views and attempt to recreate
+    private void checkForMissingDbViews()
+    {
+        ModuleLoader.getInstance().getModules().stream()
+                .map(FileSqlScriptProvider::new)
+                .flatMap(p -> p.getSchemas().stream()
+                        .filter(schema-> SchemaUpdateType.Before.getScript(p, schema) != null || SchemaUpdateType.After.getScript(p, schema) != null)
+                )
+                .filter(schema -> TableXmlUtils.compareXmlToMetaData(schema, false, false, true).hasViewProblem())
+                .findAny()
+                .ifPresent(schema ->
+                {
+                    LOG.warn("At least one database view was not as expected in the {} schema. Attempting to recreate views automatically", schema.getName());
+                    ModuleLoader.getInstance().recreateViews();
+                });
+    }
+
     @Override
     public void registerServlets(ServletContext servletCtx)
     {
@@ -1307,6 +1335,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     {
         JSONObject json = new JSONObject(getDefaultPageContextJson(context.getContainer()));
         json.put("productFeatures", AdminConsole.getProductFeatureSet());
+        json.put(EXPERIMENTAL_CALCULATED_FIELDS, OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_CALCULATED_FIELDS));
         return json;
     }
 

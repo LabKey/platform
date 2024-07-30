@@ -1,4 +1,4 @@
-import { IntegrationTestServer, RequestOptions, successfulResponse } from '@labkey/test';
+import { ExperimentCRUDUtils, IntegrationTestServer, RequestOptions, successfulResponse } from '@labkey/test';
 import { caseInsensitive, SAMPLE_TYPE_DESIGNER_ROLE } from '@labkey/components';
 import { PermissionRoles } from '@labkey/api';
 
@@ -12,54 +12,30 @@ export const ATTACHMENT_FIELD_1_NAME = 'SourceFile1';
 export const ATTACHMENT_FIELD_2_NAME = 'SourceFile2';
 
 export async function getSampleData(server: IntegrationTestServer, sampleRowId: number, folderOptions: RequestOptions, userOptions: RequestOptions, sampleType: string = SAMPLE_TYPE_NAME_1, columns: string = 'RowId') {
-    const response = await server.post('query', 'selectRows', {
-        schemaName: 'samples',
-        queryName: sampleType,
-        'query.RowId~eq': sampleRowId,
-        'query.columns': columns,
-    }, { ...folderOptions, ...userOptions }).expect(successfulResponse);
-    return response.body.rows
+    return await ExperimentCRUDUtils.getSamplesData(server, [sampleRowId], sampleType, columns, folderOptions, userOptions);
 }
 
 export async function sampleExists(server: IntegrationTestServer, sampleRowId: number, folderOptions: RequestOptions, userOptions: RequestOptions, sampleType: string = SAMPLE_TYPE_NAME_1) {
-    const response = await getSampleData(server, sampleRowId, folderOptions, userOptions, sampleType);
-    return response.length === 1;
+    return await ExperimentCRUDUtils.sampleExists(server, sampleRowId, sampleType, folderOptions, userOptions);
 }
 
-export async function createSource(server: IntegrationTestServer, sourceName: string, folderOptions: RequestOptions, userOptions: RequestOptions, auditBehavior?: string, sourceType: string = SOURCE_TYPE_NAME_1) {
-    const dataResponse = await server.post('query', 'insertRows', {
-        schemaName: 'exp.data',
-        queryName: sourceType,
-        rows: [{ name: sourceName }],
-        auditBehavior,
-    }, { ...folderOptions, ...userOptions }).expect(successfulResponse);
-    return caseInsensitive(dataResponse.body.rows[0], 'rowId');
+export async function createSource(server: IntegrationTestServer, sourceName: string, folderOptions: RequestOptions, userOptions: RequestOptions, auditBehavior?, sourceType: string = SOURCE_TYPE_NAME_1) {
+    const rows = await ExperimentCRUDUtils.createSource(server, sourceName, sourceType, folderOptions, userOptions, auditBehavior);
+    return caseInsensitive(rows[0], 'rowId');
 }
 
 export async function getSourceData(server: IntegrationTestServer, rowId: number, folderOptions: RequestOptions, userOptions: RequestOptions, sourceType: string = SOURCE_TYPE_NAME_1, columns: string = 'RowId') {
-    const response = await server.post('query', 'selectRows', {
-        schemaName: 'exp.data',
-        queryName: sourceType,
-        'query.RowId~eq': rowId,
-        'query.columns': columns,
-    }, { ...folderOptions, ...userOptions }).expect(successfulResponse);
-    return response.body.rows
+    return await ExperimentCRUDUtils.getSourcesData(server, [rowId], sourceType, columns, folderOptions, userOptions);
 }
 
 export async function sourceExists(server: IntegrationTestServer, rowId: number, folderOptions: RequestOptions, userOptions: RequestOptions, sourceType: string = SOURCE_TYPE_NAME_1) {
-    const response = await getSourceData(server, rowId, folderOptions, userOptions, sourceType);
-    return response.length === 1;
+    return await ExperimentCRUDUtils.sourceExists(server, rowId, sourceType, folderOptions, userOptions);
 }
 
 
-export async function createSample(server: IntegrationTestServer, sampleName: string, folderOptions: RequestOptions, userOptions: RequestOptions, auditBehavior?: string, sampleType: string = SAMPLE_TYPE_NAME_1) {
-    const materialResponse = await server.post('query', 'insertRows', {
-        schemaName: 'samples',
-        queryName: sampleType,
-        rows: [{ name: sampleName }],
-        auditBehavior,
-    }, { ...folderOptions, ...userOptions }).expect(successfulResponse);
-    return caseInsensitive(materialResponse.body.rows[0], 'rowId');
+export async function createSample(server: IntegrationTestServer, sampleName: string, folderOptions: RequestOptions, userOptions: RequestOptions, auditBehavior?, sampleType: string = SAMPLE_TYPE_NAME_1) {
+    const rows = await ExperimentCRUDUtils.createSample(server, sampleName, sampleType, folderOptions, userOptions, auditBehavior);
+    return caseInsensitive(rows[0], 'rowId');
 }
 
 export async function createDerivedObjects(

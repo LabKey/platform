@@ -131,26 +131,26 @@
 
         // clear the batch domain fields
         GWTDomain<GWTPropertyDescriptor> batchDomain = domains.stream().filter(d -> "Batch Fields".equals(d.getName())).findFirst().orElseThrow();
-        batchDomain.getFields().clear();
+        batchDomain.getFields(true).clear();
 
         // clear the run domain fields
         GWTDomain<GWTPropertyDescriptor> runDomain = domains.stream().filter(d -> "Run Fields".equals(d.getName())).findFirst().orElseThrow();
-        runDomain.getFields().clear();
+        runDomain.getFields(true).clear();
 
         // clear the result domain fields and add a sample lookup
         GWTDomain<GWTPropertyDescriptor> resultDomain = domains.stream().filter(d -> "Data Fields".equals(d.getName())).findFirst().orElseThrow();
-        resultDomain.getFields().clear();
+        resultDomain.getFields(true).clear();
         GWTPropertyDescriptor sampleLookup = new GWTPropertyDescriptor("SampleLookup", "int");
         sampleLookup.setLookupSchema(ExpSchema.SCHEMA_NAME);
         sampleLookup.setLookupQuery(ExpSchema.TableType.Materials.name());
-        resultDomain.getFields().add(sampleLookup);
+        resultDomain.getFields(true).add(sampleLookup);
 
         if (editableRunsAndResults)
         {
             GWTPropertyDescriptor runProp = new GWTPropertyDescriptor("runProp", "int");
-            runDomain.getFields().add(runProp);
+            runDomain.getFields(true).add(runProp);
             GWTPropertyDescriptor resultProp = new GWTPropertyDescriptor("resultProp", "int");
-            resultDomain.getFields().add(resultProp);
+            resultDomain.getFields(true).add(resultProp);
         }
 
         // create the assay

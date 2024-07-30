@@ -17,10 +17,10 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.generator.DataGenerator;
 import org.labkey.api.data.statistics.MathStat;
 import org.labkey.api.data.statistics.StatsService;
+import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
-import org.labkey.api.iterator.ValidatingDataRowIterator;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.CPUTimer;
@@ -224,7 +224,7 @@ public class PlateSetDataGenerator extends DataGenerator<PlateSetDataGenerator.C
     private PlateSet createPlateSet(PlateSetType plateSetType, @Nullable PlateSet parentPlateSet) throws Exception
     {
         int plateWells = _plateType.getColumns() * _plateType.getRows();
-        int samplesNeeded = plateWells;
+        int samplesNeeded;
         checkAlive(_job);
 
         if (plateSetType.equals(PlateSetType.primary))
@@ -329,7 +329,7 @@ public class PlateSetDataGenerator extends DataGenerator<PlateSetDataGenerator.C
             List<Map<String, Object>> rawData = createRunData(plateSet, measure);
             var factory = provider.createRunUploadFactory(assayToImport, context)
                     .setRunProperties(Map.of(AssayPlateMetadataService.PLATE_SET_COLUMN_NAME, plateSet.getRowId()))
-                    .setRawData(() -> ValidatingDataRowIterator.of(rawData))
+                    .setRawData(MapDataIterator.of(rawData))
                     .setUploadedData(Collections.emptyMap());
             Map<Object, String> outputData = new HashMap<>();
 

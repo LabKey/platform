@@ -53,7 +53,7 @@ public class DataspaceStudyFolderType extends StudyFolderType
             if (container.isProject())
             {
                 study.setShareDatasetDefinitions(Boolean.TRUE);
-                // NOTE: consider setShareVisitDefincitons(Boolean.TRUE);
+                // NOTE: consider setShareVisitDefinitions(Boolean.TRUE);
             }
             StudyManager.getInstance().createStudy(user, study);
         }

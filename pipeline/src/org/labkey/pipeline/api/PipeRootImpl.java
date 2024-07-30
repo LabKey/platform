@@ -616,7 +616,6 @@ public class PipeRootImpl implements PipeRoot
     {
         String davName = _defaultRoot.getDavName();
         Container c = getContainer();
-        assert null != c;
         if (null == c)
             return null;
         return FilesWebPart.getRootPath(getContainer(), davName, _cloudStoreName);

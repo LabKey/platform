@@ -44,21 +44,21 @@ import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.FileSqlScriptProvider;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaNameCache;
-import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlScriptManager;
 import org.labkey.api.data.SqlScriptRunner;
 import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptException;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.DatabaseNotSupportedException;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.ModuleUpgrader.Execution;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.UserManager;
@@ -634,7 +634,7 @@ public class ModuleLoader implements MemTrackerListener
             modules = getModules();
             for (Module module : modules)
             {
-                ModuleContext context = _moduleContextMap.get(module.getName());
+                ModuleContext context = getModuleContext(module);
 
                 if (null == context)
                 {
@@ -1330,7 +1330,7 @@ public class ModuleLoader implements MemTrackerListener
         if (getTableInfoModules().getTableType() == DatabaseTableType.NOT_IN_DB)
             coreContext = new ModuleContext(coreModule);
         else
-            coreContext = getModuleContext("Core");
+            coreContext = getModuleContextFromDatabase("Core");
 
         // Does the core module need to be upgraded?
         if (!coreContext.needsUpgrade(coreModule.getSchemaVersion()))
@@ -1456,7 +1456,12 @@ public class ModuleLoader implements MemTrackerListener
     {
         synchronized (_modulesLock)
         {
-            return _moduleContextMap.get(module.getName());
+            ModuleContext result = _moduleContextMap.get(module.getName());
+            if (result != null)
+            {
+                verifyModuleName(result, module.getName());
+            }
+            return result;
         }
     }
 
@@ -1516,16 +1521,6 @@ public class ModuleLoader implements MemTrackerListener
         if (_startupState == StartupState.StartupComplete)
         {
             WarningService.get().rerunSchemaCheck();
-        }
-    }
-
-    // Runs the drop and create scripts in a single module using the standard upgrade script runner
-    public void recreateViews(Module module)
-    {
-        synchronized (UPGRADE_LOCK)
-        {
-            runUpgradeScripts(module, SchemaUpdateType.Before);
-            runUpgradeScripts(module, SchemaUpdateType.After);
         }
     }
 
@@ -1711,7 +1706,7 @@ public class ModuleLoader implements MemTrackerListener
 
     public void saveModuleContext(ModuleContext context)
     {
-        ModuleContext stored = getModuleContext(context.getName());
+        ModuleContext stored = getModuleContextFromDatabase(context.getName());
         if (null == stored)
             Table.insert(null, getTableInfoModules(), context);
         else if (!stored.isDowngrade(context.getSchemaVersion())) // Never "downgrade" a module version, #30773
@@ -2225,10 +2220,32 @@ public class ModuleLoader implements MemTrackerListener
         return getModuleForController(HttpView.getRootContext().getActionURL().getController());
     }
 
-    public ModuleContext getModuleContext(String name)
+    @Nullable
+    public ModuleContext getModuleContextFromDatabase(@NotNull String name)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Name"), name);
-        return new TableSelector(getTableInfoModules(), filter, null).getObject(ModuleContext.class);
+        SQLFragment sql = new SQLFragment("SELECT * FROM ").
+                append(getTableInfoModules(), "m").
+                append(" WHERE LOWER(Name) = LOWER(?)").
+                add(name);
+        ModuleContext result = new SqlSelector(_core.getSchema(), sql).getObject(ModuleContext.class);
+        if (result != null)
+        {
+            verifyModuleName(result, name);
+        }
+        return result;
+    }
+
+    /**
+     * Issue 50763: Improve handling of module case-only rename during startup
+     * It would be easy to fix up this record to match but other places store module names, like ETLs, reports, and more
+     */
+    private void verifyModuleName(ModuleContext moduleContext, String name)
+    {
+        if (!name.equals(moduleContext.getName()))
+        {
+            throw new IllegalStateException("Found an existing module record with a different casing from the module's new name. " +
+                    "This is not supported. Existing: '" + moduleContext.getName() + "' New: '" + name + "'");
+        }
     }
 
     public Collection<ModuleContext> getAllModuleContexts()

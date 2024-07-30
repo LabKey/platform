@@ -74,6 +74,7 @@ import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.MetadataUnavailableException;
 import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
@@ -789,10 +790,18 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         String idUri1 = null, idUri2 = null, idUri3 = null, parentUri = null;
         Map<DomainProperty, Object> defaultValues = new HashMap<>();
         Set<String> propertyUris = new HashSet<>();
+        List<GWTPropertyDescriptor> calculatedFields = new ArrayList<>();
         for (int i = 0; i < properties.size(); i++)
         {
             GWTPropertyDescriptor pd = properties.get(i);
             String propertyName = pd.getName().toLowerCase();
+
+            // calculatedFields will be handled separately
+            if (pd.getValueExpression() != null)
+            {
+                calculatedFields.add(pd);
+                continue;
+            }
 
             if (ExpMaterialTable.Column.Name.name().equalsIgnoreCase(propertyName))
             {
@@ -877,6 +886,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 {
                     domain.save(u);
                     st.save(u);
+                    QueryService.get().saveCalculatedFieldsMetadata(SamplesSchema.SCHEMA_NAME, name, calculatedFields, false, u, c);
                     DefaultValueService.get().setDefaultValues(domain.getContainer(), defaultValues);
                     if (excludedContainerIds != null && !excludedContainerIds.isEmpty())
                         ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.SampleType, excludedContainerIds, st.getRowId(), u);
@@ -885,7 +895,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                     transaction.addCommitTask(() -> clearMaterialSourceCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
                     return st;
                 }
-                catch (ExperimentException eex)
+                catch (ExperimentException | MetadataUnavailableException eex)
                 {
                     throw new DbScope.RetryPassthroughException(eex);
                 }
@@ -1007,7 +1017,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 {
                     errors = new ValidationException();
                     errors.addError(new SimpleValidationError(container.hasProductProjects() ? NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS : NAME_EXPRESSION_REQUIRED_MSG));
-
                     return errors;
                 }
             }
@@ -1049,6 +1058,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
             if (!errors.hasErrors())
             {
+                QueryService.get().saveCalculatedFieldsMetadata(SamplesSchema.SCHEMA_NAME, update.getQueryName(), update.getCalculatedFields(), false, user, container);
+
                 if (hasNameChange)
                     ExperimentService.get().addObjectLegacyName(st.getObjectId(), ExperimentServiceImpl.getNamespacePrefix(ExpSampleType.class), oldSampleTypeName, user);
 
@@ -1078,6 +1089,11 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 transaction.commit();
                 refreshSampleTypeMaterializedView(st, SampleChangeType.schema);
             }
+        }
+        catch (MetadataUnavailableException e)
+        {
+            errors = new ValidationException();
+            errors.addError(new SimpleValidationError(e.getMessage()));
         }
 
         return errors;
@@ -2031,12 +2047,19 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                     if (updatedFile != null)
                     {
                         FileFieldRenameData renameData = new FileFieldRenameData(sampleType, sample.getName(), fileProp.getName(), new File(sourceFileName), updatedFile);
-                        fileService.fireFileMoveEvent(renameData.sourceFile, renameData.targetFile, user, targetContainer);
                         sampleFileRenames.putIfAbsent(sample.getRowId(), new ArrayList<>());
                         List<FileFieldRenameData> fieldRenameData = sampleFileRenames.get(sample.getRowId());
                         fieldRenameData.add(renameData);
                     }
                 }
+        }
+
+        // TODO, support batch fireFileMoveEvent to avoid excessive FileLinkFileListener.hardTableFileLinkColumns calls
+        for (int sampleId: sampleFileRenames.keySet())
+        {
+            List<FileFieldRenameData> fieldRenameRecords = sampleFileRenames.get(sampleId);
+            for (FileFieldRenameData renameData : fieldRenameRecords)
+                fileService.fireFileMoveEvent(renameData.sourceFile, renameData.targetFile, user, targetContainer);
         }
 
         return sampleFileRenames;

@@ -83,4 +83,10 @@ public class SpecimenSampleTypeDomainKind extends SampleTypeDomainKind
     {
         return false;
     }
+
+    @Override
+    public boolean allowCalculatedFields()
+    {
+        return false;
+    }
 }

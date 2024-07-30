@@ -16,6 +16,7 @@
 
 package org.labkey.api.gwt.client.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.gwt.user.client.rpc.IsSerializable;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.util.PropertyUtil;
@@ -47,10 +48,13 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     private boolean allowSampleSubjectProperties;
     private boolean allowTimepointProperties;
     private boolean allowUniqueConstraintProperties;
+    private boolean allowCalculatedFields;
     private boolean showDefaultValueSettings;
     private DefaultValueType defaultDefaultValueType = null;
     private DefaultValueType[] defaultValueOptions = new DefaultValueType[0];
     private List<FieldType> fields = new ArrayList<FieldType>();
+    private List<FieldType> standardFields = null;
+    private List<FieldType> calculatedFields = null;
     private List<GWTIndex> indices = new ArrayList<GWTIndex>();
     private String defaultValuesURL = null;
 
@@ -98,6 +102,7 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
         this.allowSampleSubjectProperties = src.allowSampleSubjectProperties;
         this.allowTimepointProperties = src.allowTimepointProperties;
         this.allowUniqueConstraintProperties = src.allowUniqueConstraintProperties;
+        this.allowCalculatedFields = src.allowCalculatedFields;
         this.showDefaultValueSettings = src.showDefaultValueSettings;
         this.defaultDefaultValueType = src.defaultDefaultValueType;
         this.defaultValueOptions = src.defaultValueOptions;
@@ -111,10 +116,11 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
                 this.indices.add(src.indices.get(i).copy());
         }
 
-        if (src.getFields() == null)
+        // include all fields here (standard and calculated) in the copy
+        if (src.getFields(true) == null)
             return;
-        for (int i=0 ; i<src.getFields().size() ; i++)
-            this.fields.add((FieldType)src.getFields().get(i).copy());
+        for (int i=0 ; i<src.getFields(true).size() ; i++)
+            this.fields.add((FieldType)src.getFields(true).get(i).copy());
 
         if (src.mandatoryPropertyDescriptorNames != null)
         {
@@ -252,14 +258,36 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
         this.container = container;
     }
 
+    @JsonIgnore
+    public List<FieldType> getFields(boolean includeCalculated)
+    {
+        if (includeCalculated)
+            return fields;
+        else
+            return getFields();
+    }
+
     public List<FieldType> getFields()
     {
-        return fields;
+        if (standardFields == null)
+            standardFields = fields.stream().filter(f -> f.getValueExpression() == null).toList();
+        return standardFields;
+    }
+
+    public List<FieldType> getCalculatedFields()
+    {
+        if (calculatedFields == null)
+            calculatedFields = fields.stream().filter(f -> f.getValueExpression() != null).toList();
+        return calculatedFields;
     }
 
     public void setFields(List<FieldType> list)
     {
         fields = list;
+
+        // reset the cached lists of fields so they will be recalculated on next call to getters
+        standardFields = null;
+        calculatedFields = null;
     }
 
     public FieldType getFieldByName(String name)
@@ -350,6 +378,16 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     public void setAllowUniqueConstraintProperties(boolean allowUniqueConstraintProperties)
     {
         this.allowUniqueConstraintProperties = allowUniqueConstraintProperties;
+    }
+
+    public boolean isAllowCalculatedFields()
+    {
+        return allowCalculatedFields;
+    }
+
+    public void setAllowCalculatedFields(boolean allowCalculatedFields)
+    {
+        this.allowCalculatedFields = allowCalculatedFields;
     }
 
     /**

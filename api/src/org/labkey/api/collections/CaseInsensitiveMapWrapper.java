@@ -17,6 +17,7 @@
 package org.labkey.api.collections;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -35,21 +36,19 @@ public class CaseInsensitiveMapWrapper<V> extends MapWrapper<String, V> implemen
 
     public CaseInsensitiveMapWrapper(Map<String, V> map)
     {
-        super(map);
-        _correctCaseMap = new HashMap<>();
-        for (Map.Entry<? extends String, ? extends V> entry : map.entrySet())
-        {
-            _correctCaseMap.put(entry.getKey().toLowerCase(), entry.getKey());
-        }
+        this(map, map instanceof CaseInsensitiveMapWrapper<V> m ? m : null);
     }
 
-    public CaseInsensitiveMapWrapper(Map<String, V> map, CaseInsensitiveMapWrapper<V> caseMapping)
+    public CaseInsensitiveMapWrapper(Map<String, V> map, @Nullable CaseInsensitiveMapWrapper<V> caseMapping)
     {
         super(map);
-        _correctCaseMap = caseMapping._correctCaseMap;
+        _correctCaseMap = caseMapping == null ? new HashMap<>() : caseMapping._correctCaseMap;
         for (Map.Entry<? extends String, ? extends V> entry : map.entrySet())
         {
-            _correctCaseMap.put(entry.getKey().toLowerCase(), entry.getKey());
+            if (entry.getKey() != null)
+            {
+                _correctCaseMap.put(entry.getKey().toLowerCase(), entry.getKey());
+            }
         }
     }
 
@@ -62,9 +61,8 @@ public class CaseInsensitiveMapWrapper<V> extends MapWrapper<String, V> implemen
 
     protected String normalizeKey(Object key)
     {
-        if (!(key instanceof String))
+        if (!(key instanceof String s))
             return null;
-        String s = (String)key;
         String result = _correctCaseMap.get(s.toLowerCase());
         if (result == null)
         {
@@ -232,18 +230,18 @@ public class CaseInsensitiveMapWrapper<V> extends MapWrapper<String, V> implemen
 
             Assert.assertEquals("Key set is wrong size", 2, m.keySet().size());
 
-            Assert.assertTrue("Key set should be case-insensitive too", m.keySet().contains("test"));
-            Assert.assertTrue("Key set should be case-insensitive too", m.keySet().contains("TEST"));
-            Assert.assertTrue("Key set should be case-insensitive too", m.keySet().contains("Test"));
+            Assert.assertTrue("Key set should be case-insensitive too", m.containsKey("test"));
+            Assert.assertTrue("Key set should be case-insensitive too", m.containsKey("TEST"));
+            Assert.assertTrue("Key set should be case-insensitive too", m.containsKey("Test"));
 
             Assert.assertTrue("Key set should be case-insensitive too", m.keySet().containsAll(Arrays.asList("Test", "test2")));
             Assert.assertTrue("Key set should be case-insensitive too", m.keySet().containsAll(Arrays.asList("test", "TEST2")));
 
             Assert.assertTrue("Key set should be able to remove elements", m.keySet().remove("TEST"));
 
-            Assert.assertFalse("Key set should have removed element", m.keySet().contains("test"));
-            Assert.assertFalse("Key set should have removed element", m.keySet().contains("TEST"));
-            Assert.assertFalse("Key set should have removed element", m.keySet().contains("Test"));
+            Assert.assertFalse("Key set should have removed element", m.containsKey("test"));
+            Assert.assertFalse("Key set should have removed element", m.containsKey("TEST"));
+            Assert.assertFalse("Key set should have removed element", m.containsKey("Test"));
         }
     }
 }

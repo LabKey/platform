@@ -86,8 +86,7 @@ public interface OptionalFeatureService
                     """
                     <strong>WARNING</strong>:
                     Experimental features may change, break, or disappear at any time.
-                    We make absolutely no guarantees about what may happen if you turn on these experimental
-                    features. Enabling or disabling some features will require a restart of the server.
+                    We make absolutely no guarantee about what will happen if you turn on any experimental feature.
                     """
                 );
             }

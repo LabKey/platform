@@ -376,7 +376,6 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     }
 
     /** When a table a) overrides (String alias, Set<FieldKey> cols) b) has CalculatedColumns we need to make sure that
-
      * we include the dependent columns in the Set<>.
      */
     protected Set<FieldKey> expandColumns(Set<FieldKey> columns)

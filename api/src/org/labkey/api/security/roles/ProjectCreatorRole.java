@@ -1,7 +1,5 @@
 package org.labkey.api.security.roles;
 
-import org.labkey.api.security.Group;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.CreateProjectPermission;
 
 public class ProjectCreatorRole extends AbstractRootContainerRole
@@ -15,7 +13,6 @@ public class ProjectCreatorRole extends AbstractRootContainerRole
             CreateProjectPermission.class
         );
 
-        addExcludedPrincipal(SecurityManager.getGroup(Group.groupGuests));
-        addExcludedPrincipal(SecurityManager.getGroup(Group.groupUsers));
+        excludeUsers();
     }
 }

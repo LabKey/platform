@@ -454,7 +454,7 @@ describe('Move Sources', () => {
 
         it('success, move from parent project to subfolder, no audit logging', async () => {
             // Arrange
-            const sourceRowId = await _createSource('top-movetosub1-1', topFolderOptions);
+            const sourceRowId = await _createSource('top-movetosub1-1', topFolderOptions,'NONE',undefined);
 
             // Act
             const response = await server.post('query', 'moveRows.api', {
