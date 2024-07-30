@@ -1524,16 +1524,6 @@ public class ModuleLoader implements MemTrackerListener
         }
     }
 
-    // Runs the drop and create scripts in a single module using the standard upgrade script runner
-    public void recreateViews(Module module)
-    {
-        synchronized (UPGRADE_LOCK)
-        {
-            runUpgradeScripts(module, SchemaUpdateType.Before);
-            runUpgradeScripts(module, SchemaUpdateType.After);
-        }
-    }
-
     /**
      * Module upgrade scripts have completed, and we are now completing module startup.
      * @return true if module startup in progress.

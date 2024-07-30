@@ -62,9 +62,25 @@ public class TableXmlUtils
         return xmlTablesDoc;
     }
 
-    public static SiteValidationResultList compareXmlToMetaData(DbSchema schema, boolean bFull, boolean bCaseSensitive, boolean errorOnXmlMiss)
+    public static class SchemaValidationList extends SiteValidationResultList
     {
-        SiteValidationResultList resultList = new SiteValidationResultList();
+        private boolean _viewProblem = false;
+
+        /** @return true if there is a schema mismatch that's likely to be fixed by dropping and recreating all DB views */
+        public boolean hasViewProblem()
+        {
+            return _viewProblem;
+        }
+
+        public void setViewProblem(boolean viewProblem)
+        {
+            _viewProblem = viewProblem;
+        }
+    }
+
+    public static SchemaValidationList compareXmlToMetaData(DbSchema schema, boolean bFull, boolean bCaseSensitive, boolean errorOnXmlMiss)
+    {
+        SchemaValidationList resultList = new SchemaValidationList();
 
         try
         {
@@ -87,7 +103,7 @@ public class TableXmlUtils
                                               TablesDocument xmlTablesDoc,
                                               boolean bFull,
                                               boolean bCaseSensitive,
-                                              SiteValidationResultList rlOut,
+                                              SchemaValidationList rlOut,
                                               boolean errorOnXmlMiss,
                                               DbSchema schema)
     {
@@ -143,6 +159,10 @@ public class TableXmlUtils
 
                     if (!xmlTableType.equals("NOT_IN_DB"))
                     {
+                        if ("VIEW".equalsIgnoreCase(xmlTableType))
+                        {
+                            rlOut.setViewProblem(true);
+                        }
                         rlOut.addError("ERROR: TableName \"").append(xmlTableName).append("\" type \"").append(xmlTableType).append("\" found in XML but not in database.");
                     }
                     continue;
