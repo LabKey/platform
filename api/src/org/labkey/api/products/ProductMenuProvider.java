@@ -57,6 +57,9 @@ public abstract class ProductMenuProvider
         return getProductId();
     }
 
+    @Nullable
+    public abstract String getFolderTypeName();
+
     @NotNull
     public abstract ActionURL getAppURL(Container container);
 

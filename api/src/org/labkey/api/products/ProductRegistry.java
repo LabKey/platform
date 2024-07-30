@@ -183,10 +183,21 @@ public class ProductRegistry
         List<ProductMenuProvider> providers = getRegisteredProducts().stream().filter(provider -> productIds.contains(provider.getProductId())).toList();
         if (providers.size() == 1)
             return providers.get(0);
+
         Product product = new ProductConfiguration().getCurrentProduct();
         if (product == null)
             return providers.isEmpty() ? null : providers.get(0);
-        return providers.stream().filter(provider -> product.getProductGroupId().equals(provider.getProductId())).findFirst().orElse(null);
+        ProductMenuProvider selectedProvider = null;
+        for (ProductMenuProvider provider : providers)
+        {
+            if (product.getProductGroupId().equals(provider.getProductId()))
+                return provider;
+            if (container.getFolderType().getName().equals(provider.getFolderTypeName()))
+                return provider;
+            if (selectedProvider == null)
+                selectedProvider = provider;
+        }
+        return selectedProvider;
     }
 
     @Nullable
@@ -303,6 +314,12 @@ public class ProductRegistry
             public @NotNull String getModuleName()
             {
                 return _moduleName;
+            }
+
+            @Override
+            public @Nullable String getFolderTypeName()
+            {
+                return null;
             }
 
             @Override
