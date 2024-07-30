@@ -90,7 +90,7 @@ public final class PlateManagerTest
         {
             List<GWTPropertyDescriptor> customFields = List.of(
                 new GWTPropertyDescriptor("barcode", "http://www.w3.org/2001/XMLSchema#string"),
-                new GWTPropertyDescriptor("concentration", "http://www.w3.org/2001/XMLSchema#double"),
+                new GWTPropertyDescriptor("opacity", "http://www.w3.org/2001/XMLSchema#double"),
                 new GWTPropertyDescriptor("negativeControl", "http://www.w3.org/2001/XMLSchema#double")
             );
             PlateManager.get().createPlateMetadataFields(container, user, customFields);
@@ -392,14 +392,18 @@ public final class PlateManagerTest
 
         List<PlateCustomField> fields = PlateManager.get().getPlateMetadataFields(container, user);
 
-        // Verify returned sorted by name
-        assertEquals("Expected plate custom fields", 3, fields.size());
-        assertEquals("Expected barcode custom field", "barcode", fields.get(0).getName());
-        assertEquals("Expected concentration custom field", "concentration", fields.get(1).getName());
-        assertEquals("Expected negativeControl custom field", "negativeControl", fields.get(2).getName());
+        // Verify returned sorted by name should include built in as well as custom created fields
+        assertEquals("Expected plate custom fields", 7, fields.size());
+
+        List<String> metadataFields = List.of("Amount", "AmountUnits", "barcode", "Concentration", "ConcentrationUnits", "negativeControl", "opacity");
+        for (int i=0; i < metadataFields.size(); i++)
+        {
+            String fieldName = metadataFields.get(i);
+            assertEquals(String.format("Expected %s custom field", fieldName), fieldName, fields.get(i).getName());
+        }
 
         // assign custom fields to the plate
-        assertEquals("Expected custom fields to be added to the plate", 3, PlateManager.get().addFields(container, user, plateId, fields).size());
+        assertEquals("Expected custom fields to be added to the plate", 7, PlateManager.get().addFields(container, user, plateId, fields).size());
 
         // verification when adding custom fields to the plate
         try
@@ -409,14 +413,14 @@ public final class PlateManagerTest
         }
         catch (IllegalArgumentException e)
         {
-            assertEquals("Expected validation exception", "Failed to add plate custom fields. Custom field \"barcode\" already is associated with this plate.", e.getMessage());
+            assertEquals("Expected validation exception", "Failed to add plate custom fields. Custom field \"Amount\" already is associated with this plate.", e.getMessage());
         }
 
-        // remove a plate custom field
-        fields = PlateManager.get().removeFields(container, user, plateId, List.of(fields.get(0)));
-        assertEquals("Expected 2 plate custom fields", 2, fields.size());
-        assertEquals("Expected concentration custom field", "concentration", fields.get(0).getName());
-        assertEquals("Expected negativeControl custom field", "negativeControl", fields.get(1).getName());
+        // remove amount and amountUnits metadata fields
+        fields = PlateManager.get().removeFields(container, user, plateId, List.of(fields.get(0), fields.get(1)));
+        assertEquals("Expected 5 plate custom fields", 5, fields.size());
+        assertEquals("Expected Concentration custom field", "Concentration", fields.get(0).getName());
+        assertEquals("Expected ConcentrationUnits custom field", "ConcentrationUnits", fields.get(1).getName());
 
         // select wells
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);

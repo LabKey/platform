@@ -33,7 +33,6 @@ import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateCustomField;
 import org.labkey.api.assay.plate.PlateLayoutHandler;
-import org.labkey.assay.plate.data.PlateMapExcelWriter;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.plate.PlateSet;
 import org.labkey.api.assay.plate.PlateSetEdge;
@@ -124,6 +123,7 @@ import org.labkey.api.webdav.WebdavResource;
 import org.labkey.assay.AssayManager;
 import org.labkey.assay.PlateController;
 import org.labkey.assay.TsvAssayProvider;
+import org.labkey.assay.plate.data.PlateMapExcelWriter;
 import org.labkey.assay.plate.data.WellData;
 import org.labkey.assay.plate.layout.LayoutEngine;
 import org.labkey.assay.plate.layout.LayoutOperation;
@@ -408,7 +408,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             }
         }
 
-        return includedMetadataCols.stream().sorted(Comparator.comparing(FieldKey::getName)).toList();
+        return includedMetadataCols.stream().sorted(Comparator.comparing(k -> k.getName().toLowerCase())).toList();
     }
 
     @NotNull
@@ -2138,7 +2138,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return metadataDomain.getProperties()
                 .stream()
                 .map(PlateCustomField::new)
-                .sorted(Comparator.comparing(PlateCustomField::getName))
+                .sorted(Comparator.comparing(k -> k.getName().toLowerCase()))
                 .toList();
     }
 

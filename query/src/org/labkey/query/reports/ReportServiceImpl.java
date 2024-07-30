@@ -216,7 +216,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
             throw new IllegalArgumentException("Invalid report instance");
 
         if (null != _reports.putIfAbsent(report.getType(), report.getClass()))
-            _log.warn("Report type : " + report.getType() + " has previously been registered.");
+            _log.warn("Report type : {} has previously been registered.", report.getType());
     }
 
     @Override
@@ -677,7 +677,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         {
             inheritable = inheritable.stream()
                 .filter(report -> reportKey.equals(report.getDescriptor().getReportKey()))
-                .collect(Collectors.toList());
+                .toList();
         }
 
         List<Report> reportsList = new ArrayList<>(inheritable);
@@ -787,9 +787,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
 
             if (null != claimingProvider)
             {
-                String iconClass = claimingProvider.getIconCls(report);  // may be null if report does not support CSS icons
-
-                return iconClass;
+                return claimingProvider.getIconCls(report);
             }
 
             for (UIProvider provider : _uiProviders)

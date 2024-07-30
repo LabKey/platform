@@ -15,8 +15,6 @@
  */
 package org.labkey.api.security.roles;
 
-import org.labkey.api.security.Group;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.AddUserPermission;
 import org.labkey.api.security.permissions.ApplicationAdminPermission;
 import org.labkey.api.security.permissions.CanImpersonateSiteRolesPermission;
@@ -56,8 +54,7 @@ public class ApplicationAdminRole extends AbstractRootContainerRole implements A
             PERMISSIONS
         );
 
-        addExcludedPrincipal(SecurityManager.getGroup(Group.groupGuests));
-        addExcludedPrincipal(SecurityManager.getGroup(Group.groupUsers));
+        excludeUsers();
     }
 
     @Override

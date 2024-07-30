@@ -17,14 +17,10 @@
 package org.labkey.api.qc;
 
 import org.labkey.api.assay.AssayRunUploadContext;
+import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.iterator.ValidatingDataRowIterator;
-
-import java.util.List;
-import java.util.Map;
-import java.util.function.Supplier;
 
 /**
  * User: klum
@@ -35,5 +31,5 @@ public interface TransformDataHandler extends ValidationDataHandler
     /**
      * Imports the data map which may have been transformed by an external script.
      */
-    void importTransformDataMap(ExpData data, AssayRunUploadContext<?> context, ExpRun run, Supplier<ValidatingDataRowIterator> dataMap) throws ExperimentException;
+    void importTransformDataMap(ExpData data, AssayRunUploadContext<?> context, ExpRun run, DataIteratorBuilder dataMap) throws ExperimentException;
 }

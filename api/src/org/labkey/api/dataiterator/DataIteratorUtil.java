@@ -25,6 +25,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -36,6 +37,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderService;
@@ -54,11 +56,11 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -96,7 +98,7 @@ public class DataIteratorUtil
         return map;
     }
 
-    public static Map<String,Integer> createColumnNameMap(DataIterator di)
+    public static Map<String, Integer> createColumnNameMap(DataIterator di)
     {
         Map<String,Integer> map = new CaseInsensitiveHashMap<>();
         for (int i=1 ; i<=di.getColumnCount() ; ++i)
@@ -151,7 +153,7 @@ public class DataIteratorUtil
         /* CONSIDER: move this functionality into a TableInfo method so this map (or maps) can be cached */
         List<ColumnInfo> cols = target.getColumns().stream()
                 .filter(col -> !col.isMvIndicatorColumn() && !col.isRawValueColumn())
-                .collect(Collectors.toList());
+                .toList();
 
         Map<String, Pair<ColumnInfo,MatchType>> targetAliasesMap = new CaseInsensitiveHashMap<>(cols.size()*4);
 
@@ -241,7 +243,7 @@ public class DataIteratorUtil
             {
                 // Check to see if the column i.e. propURI has a property descriptor and vocabulary domain is present
                 var vocabProperties = PropertyService.get().findVocabularyProperties(container, Collections.singleton(from.getColumnName()));
-                if (vocabProperties.size() > 0)
+                if (!vocabProperties.isEmpty())
                 {
                     var propCol = target.getColumn(from.getColumnName());
                     if (null != propCol)
@@ -383,13 +385,14 @@ public class DataIteratorUtil
     }
 
 
-    public static MapDataIterator wrapMap(DataIterator in, boolean mutable)
+    /** @param needMutableMapsReturned whether the maps returned are required to be mutable instances */
+    public static MapDataIterator wrapMap(DataIterator in, boolean needMutableMapsReturned)
     {
-        if (!mutable && in instanceof MapDataIterator && ((MapDataIterator)in).supportsGetMap())
+        if (!needMutableMapsReturned && in instanceof MapDataIterator mapIter && mapIter.supportsGetMap())
         {
-            return (MapDataIterator)in;
+            return mapIter;
         }
-        return new MapDataIterator.MapDataIteratorImpl(in, mutable);
+        return new MapDataIterator.MapDataIteratorImpl(in, needMutableMapsReturned);
     }
 
 
@@ -397,10 +400,13 @@ public class DataIteratorUtil
      * This Function<> mechanism is very simple, but less efficient that an operator that takes an input map, and
      * a pre-created ArrayListMap for output.  For efficiency there are other DataIterator base classes to use.
      * Should return ArrayListMap or CaseInsensitiveMap.
+     * @param columnEnumerator function to determine the fields that may be part of the post-transform map.
+     *                         If null, the columns are assumed to be the same as the columns from the input DataIterator.
+     * @param fn the function used to transform the map. May throw a RuntimeValidationException to communicate a problem.
      */
-    public static DataIteratorBuilder mapTransformer(DataIteratorBuilder dibIn, List<String> columns, Function<Map<String,Object>, Map<String,Object>> fn)
+    public static DataIteratorBuilder mapTransformer(DataIteratorBuilder dibIn, Function<List<String>, List<String>> columnEnumerator, Function<Map<String,Object>, Map<String,Object>> fn)
     {
-        return context -> new _MapTransformer(dibIn.getDataIterator(context), fn, columns);
+        return context -> new _MapTransformer(dibIn.getDataIterator(context), fn, columnEnumerator);
     }
 
 
@@ -411,14 +417,22 @@ public class DataIteratorUtil
         Map<String,Object> _sourceMap;
         Map<String,Object> _outputMap;
 
-        _MapTransformer(DataIterator in, Function<Map<String,Object>, Map<String,Object>> fn, List<String> columnNames)
+        _MapTransformer(DataIterator in, Function<Map<String,Object>, Map<String,Object>> fn, @Nullable Function<List<String>, List<String>> columnEnumerator)
         {
             super(wrapMap(in, false), false);
             _fn = fn;
+
+            var map = DataIteratorUtil.createColumnNameMap(in);
+
+            List<String> columnNames = List.copyOf(map.keySet());
+            if (columnEnumerator != null)
+            {
+                columnNames = Collections.unmodifiableList(columnEnumerator.apply(columnNames));
+            }
+
             // use source ColumnInfo where it matches
             _columns = new ArrayList<>(columnNames.size() + 1);
             _columns.add(in.getColumnInfo(0));
-            var map = DataIteratorUtil.createColumnNameMap(in);
             for (var name : columnNames)
             {
                 if (map.containsKey(name))
@@ -429,13 +443,33 @@ public class DataIteratorUtil
         }
 
         @Override
+        public int getColumnCount()
+        {
+            return _columns.size() - 1;
+        }
+
+        @Override
+        public ColumnInfo getColumnInfo(int i)
+        {
+            return _columns.get(i);
+        }
+
+        @Override
         public boolean next() throws BatchValidationException
         {
             _currentMap = null;
             if (!_input.next())
                 return false;
             _sourceMap = ((MapDataIterator)_input).getMap();
-            _outputMap = _fn.apply(_sourceMap);
+            try
+            {
+                _outputMap = _fn.apply(_sourceMap);
+            }
+            catch (RuntimeValidationException e)
+            {
+                throw new BatchValidationException(e.getValidationException());
+            }
+
             return true;
         }
 
@@ -556,7 +590,7 @@ public class DataIteratorUtil
         public void testTransform() throws BatchValidationException
         {
             DataIteratorContext ctx = new DataIteratorContext();
-            var tx = mapTransformer((context) -> data(), List.of("a","b","c","sum"),
+            var tx = mapTransformer((context) -> data(), cols -> List.of("a","b","c","sum"),
                     (row) ->
                     {
                         var ret = new HashMap<>(row);

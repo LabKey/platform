@@ -43,11 +43,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-/**
- * User: Mark Igra
- * Date: May 10, 2006
- * Time: 1:01:50 PM
- */
 public interface Report extends AttachmentParent, ThumbnailProvider
 {
     String SHARE_REPORT_TYPE = "Report.ShareReport";

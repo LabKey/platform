@@ -42,7 +42,7 @@ public class CachingDataIterator extends AbstractDataIterator implements Scrolla
     int _inputPosition = -1;        // the zero-based position of input
     Object[] _currentRowArray = null;
 
-    protected class _ArrayList<T> extends ArrayList<T>
+    protected static class _ArrayList<T> extends ArrayList<T>
     {
         @Override
         public void removeRange(int fromIndex, int toIndex)
@@ -56,15 +56,15 @@ public class CachingDataIterator extends AbstractDataIterator implements Scrolla
 
     public static ScrollableDataIterator wrap(DataIterator in)
     {
-        if (in instanceof ScrollableDataIterator && ((ScrollableDataIterator)in).isScrollable())
-            return (ScrollableDataIterator)in;
+        if (in instanceof ScrollableDataIterator sdi && sdi.isScrollable())
+            return sdi;
         return new CachingDataIterator(in);
     }
 
     public static ScrollableDataIterator wrap(DataIterator in, boolean overflowToDisk)
     {
-        if (in instanceof ScrollableDataIterator && ((ScrollableDataIterator)in).isScrollable())
-            return (ScrollableDataIterator)in;
+        if (in instanceof ScrollableDataIterator sdi && sdi.isScrollable())
+            return sdi;
         return new DiskCachingDataIterator(in);
     }
 
