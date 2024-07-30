@@ -17,9 +17,7 @@ package org.labkey.api.security.roles;
 
 import org.labkey.api.admin.FolderExportPermission;
 import org.labkey.api.data.Container;
-import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurableResource;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DesignDataClassPermission;
@@ -29,19 +27,14 @@ import org.labkey.api.security.permissions.Permission;
 import java.util.Arrays;
 import java.util.Collection;
 
-/*
-* User: Dave
-* Date: Apr 28, 2009
-* Time: 10:16:08 AM
-*/
 public class FolderAdminRole extends AbstractRole implements AdminRoleListener
 {
     // Most permissions are assigned to all admin roles automatically, and shouldn't be added to this list
     static Collection<Class<? extends Permission>> PERMISSIONS = Arrays.asList(
         AdminPermission.class,
-        FolderExportPermission.class,
         DesignDataClassPermission.class,
-        DesignSampleTypePermission.class
+        DesignSampleTypePermission.class,
+        FolderExportPermission.class
     );
 
     public FolderAdminRole()
@@ -52,7 +45,7 @@ public class FolderAdminRole extends AbstractRole implements AdminRoleListener
         );
 
         excludeGuests();
-        addExcludedPrincipal(SecurityManager.getGroup(Group.groupUsers));
+        excludeUsers();
     }
 
     @Override

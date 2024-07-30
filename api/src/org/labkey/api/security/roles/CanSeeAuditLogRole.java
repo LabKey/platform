@@ -16,8 +16,6 @@
 package org.labkey.api.security.roles;
 
 import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
-import org.labkey.api.security.Group;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.SeeUserDetailsPermission;
 
 public class CanSeeAuditLogRole extends AbstractRootContainerRole
@@ -25,9 +23,8 @@ public class CanSeeAuditLogRole extends AbstractRootContainerRole
     public CanSeeAuditLogRole()
     {
         super("See Audit Log Events", "Allows non-administrators to view audit log events",
-                CanSeeAuditLogPermission.class,
-                SeeUserDetailsPermission.class);
-
-        addExcludedPrincipal(SecurityManager.getGroup(Group.groupGuests));
+            CanSeeAuditLogPermission.class,
+            SeeUserDetailsPermission.class
+        );
     }
 }

@@ -18,11 +18,6 @@ package org.labkey.api.reports.report.view;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.reports.report.ScriptReport;
 
-/*
-* User: Karl Lum
-* Date: Dec 29, 2008
-* Time: 3:35:00 PM
-*/
 public class ScriptReportBean extends ReportDesignBean<ScriptReport>
 {
     protected boolean _runInBackground;

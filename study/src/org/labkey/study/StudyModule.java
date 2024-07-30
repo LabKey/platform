@@ -200,6 +200,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.stream.Collectors;
 
+import static org.labkey.study.reports.ExternalReport.ENABLE_EXTERNAL_REPORT;
 
 public class StudyModule extends SpringModule implements SearchService.DocumentProvider
 {
@@ -366,7 +367,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         AuditLogService.get().registerAuditType(new ParticipantGroupAuditProvider());
 
         ReportService.get().registerReport(new StudyQueryReport());
-        ReportService.get().registerReport(new ExternalReport());
+        if (OptionalFeatureService.get().isFeatureEnabled(ENABLE_EXTERNAL_REPORT))
+            ReportService.get().registerReport(new ExternalReport());
         ReportService.get().registerReport(new CrosstabReport());
         ReportService.get().registerReport(new StudyCrosstabReport());
         ReportService.get().registerReport(new StudyRReport());
@@ -407,25 +409,30 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         DatasetDefinition.cleanupOrphanedDatasetDomains();
 
         AdminConsole.addExperimentalFeatureFlag(StudyQuerySchema.EXPERIMENTAL_STUDY_SUBSCHEMAS, "Use sub-schemas in Study",
-                "Separate study tables into three groups 'datasets', 'specimens', and 'design'", false);
+            "Separate study tables into three groups 'datasets', 'specimens', and 'design'", false);
 
         AdminConsole.addExperimentalFeatureFlag(DatasetQueryView.EXPERIMENTAL_LINKED_DATASET_CHECK,
-                "Assay linked to study consistency check",
-                "Flags rows in assay linked datasets where the subject and timepoint may be different from the source assay.",
-                false);
+            "Assay linked to study consistency check",
+            "Flags rows in assay linked datasets where the subject and timepoint may be different from the source assay.",
+            false);
 
         AdminConsole.addExperimentalFeatureFlag(DatasetQueryView.EXPERIMENTAL_ALLOW_MERGE_WITH_MANAGED_KEYS,
-                "Allow merge of study dataset that uses server-managed additional key fields",
-                "Merging of dataset that uses server-managed third key (such as GUID or auto RowId) is not officially supported. Unexpected outcome might be experienced when merge is performed.",
-                false);
+            "Allow merge of study dataset that uses server-managed additional key fields",
+            "Merging of dataset that uses server-managed third key (such as GUID or auto RowId) is not officially supported. Unexpected outcome might be experienced when merge is performed.",
+            false);
 
         AdminConsole.addExperimentalFeatureFlag(Study.GWT_STUDY_DESIGN,
-                "Vaccine Study Protocol Editor",
-                "The study protocol editor (accessed from the Vaccine Study Protocols webpart) has been deprecated and protocol " +
-                        "information will be shown in a read only mode. The edit button can be shown by enabling this feature, " +
-                        "but this capability will be removed permanently in a future release. " +
-                        "Please create any new study protocols in the format as defined by the \"Manage Study Products\" link on the study Manage tab.",
-                false);
+            "Vaccine Study Protocol Editor",
+            "The study protocol editor (accessed from the Vaccine Study Protocols webpart) has been deprecated and protocol " +
+            "information will be shown in a read only mode. The edit button can be shown by enabling this feature, " +
+            "but this capability will be removed permanently in a future release. " +
+            "Please create any new study protocols in the format as defined by the \"Manage Study Products\" link on the study Manage tab.",
+            false);
+
+        AdminConsole.addOptionalFeatureFlag(new AdminConsole.OptionalFeatureFlag(ENABLE_EXTERNAL_REPORT,
+            "Restore support for deprecated advanced reports",
+            "This option and all support for advanced reports will be removed in LabKey Server v24.12.",
+            true, false, OptionalFeatureService.FeatureType.Deprecated));
 
         ReportAndDatasetChangeDigestProvider.get().addNotificationInfoProvider(new DatasetNotificationInfoProvider());
 

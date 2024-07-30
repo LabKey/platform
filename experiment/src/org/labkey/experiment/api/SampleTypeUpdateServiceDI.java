@@ -1052,7 +1052,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (null == remap)
             remap = CaseInsensitiveHashMap.of();
 
-        Set<String> includedColumns = new CaseInsensitiveHashSet("name", "lsid", "rowid", "samplestate");
+        // AliquotRollupDataIterator needs "samplestate", "storedamount", "rootmaterialrowId", "units" for MERGE option
+        Set<String> includedColumns = new CaseInsensitiveHashSet("name", "lsid", "rowid", "samplestate", "storedamount", "rootmaterialrowId", "units");
         for (ColumnInfo column : getQueryTable().getColumns())
         {
             if (dataColumns.contains(column.getColumnName()))

@@ -26,10 +26,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.springframework.web.servlet.mvc.Controller;
 
-/**
- * User: jgarms
- * Date: Jan 27, 2008
- */
 public interface AdminUrls extends UrlProvider
 {
     ActionURL getModuleErrorsURL();
@@ -37,7 +33,6 @@ public interface AdminUrls extends UrlProvider
     ActionURL getModuleStatusURL(URLHelper returnURL);
     ActionURL getCustomizeSiteURL();
     ActionURL getCustomizeSiteURL(boolean upgradeInProgress);
-    ActionURL getExperimentalFeaturesURL();
     ActionURL getMaintenanceURL(URLHelper returnURL);
     ActionURL getModulesDetailsURL();
     ActionURL getDeleteModuleURL(String moduleName);

@@ -70,7 +70,7 @@ public class ModuleXml
                 }
                 catch (XmlValidationException e)
                 {
-                    LOG.error("Module XML file failed validation for module: " + module.getName() + ". Error: " + e.getDetails());
+                    LOG.error("Module XML file failed validation for module: {}. Error: {}", module.getName(), e.getDetails());
                 }
             }
 
@@ -122,7 +122,7 @@ public class ModuleXml
                                 editPermissions.add(permClass);
                         }
 
-                        if (editPermissions.size() > 0)
+                        if (!editPermissions.isEmpty())
                             mp.setEditPermissions(editPermissions);
                     }
 
@@ -139,7 +139,7 @@ public class ModuleXml
                     moduleName -> {
                         if (module.getName().equalsIgnoreCase(moduleName))
                         {
-                            LOG.error("Module " + module.getName() + " lists itself as a dependency in its module.xml!");
+                            LOG.error("Module {} lists itself as a dependency in its module.xml!", module.getName());
                             return false;
                         }
 

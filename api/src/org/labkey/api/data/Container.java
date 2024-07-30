@@ -58,6 +58,7 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.settings.ProductFeature;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.ContainerContext;
@@ -1398,7 +1399,10 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
             if (includePermissions)
             {
-                containerProps.put("userPermissions", getPermsAsOldBitMask(user));
+                if (OptionalFeatureService.get().isFeatureEnabled(ACL.RESTORE_USE_OF_ACLS))
+                {
+                    containerProps.put("userPermissions", getPermsAsOldBitMask(user));
+                }
                 containerProps.put("effectivePermissions", SecurityManager.getPermissionNames(this, user));
             }
 

@@ -79,7 +79,7 @@ public class ReportUIProvider extends DefaultReportUIProvider
     }
 
     /**
-     * Add report creation to UI's that aren't associated with a query (manage views, data views)
+     * Add report creation to UIs that aren't associated with a query (manage views, data views)
      */
     @Override
     public List<ReportService.DesignerInfo> getDesignerInfo(ViewContext context)

@@ -18,20 +18,22 @@ package org.labkey.api.qc;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayRunUploadContext;
+import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.iterator.ValidatingDataRowIterator;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewContext;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Supplier;
 
 /**
  * Used to process input and output data between the server and externally executed qc and analysis scripts.
@@ -52,7 +54,12 @@ public interface DataExchangeHandler
         /**
          * Called to save or import transformed or QC'd run data to the specified reader or writer.
          */
-        void exportRunData(ExpProtocol protocol, Supplier<ValidatingDataRowIterator> data, File runData) throws IOException, ValidationException;
-        Supplier<ValidatingDataRowIterator> importRunData(ExpProtocol protocol, File runData) throws Exception;
+        void exportRunData(ExpProtocol protocol, List<DataIteratorBuilder> data, File runData) throws IOException, BatchValidationException;
+
+        default void exportRunData(ExpProtocol protocol, DataIteratorBuilder data, File runData) throws IOException, BatchValidationException
+        {
+            exportRunData(protocol, Collections.singletonList(data), runData);
+        }
+        DataIteratorBuilder importRunData(ExpProtocol protocol, File runData) throws Exception;
     }
 }

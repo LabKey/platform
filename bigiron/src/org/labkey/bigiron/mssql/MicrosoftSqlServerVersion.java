@@ -24,7 +24,7 @@ public enum MicrosoftSqlServerVersion
     SQL_SERVER_UNSUPPORTED(Integer.MIN_VALUE, "Unknown", true, false, false, null),
     SQL_SERVER_2008(100, "2008", true, true, false, MicrosoftSqlServer2008R2Dialect::new),
     SQL_SERVER_2012(110, "2012", true, true, false, MicrosoftSqlServer2012Dialect::new),
-    SQL_SERVER_2014(120, "2014", true, true, true, MicrosoftSqlServer2014Dialect::new),
+    SQL_SERVER_2014(120, "2014", true, true, false, MicrosoftSqlServer2014Dialect::new),
     SQL_SERVER_2016(130, "2016", false, true, true, MicrosoftSqlServer2016Dialect::new),
     SQL_SERVER_2017(140, "2017", false, true, true, MicrosoftSqlServer2017Dialect::new),
     SQL_SERVER_2019(150, "2019", false, true, true, MicrosoftSqlServer2019Dialect::new),
@@ -91,11 +91,15 @@ public enum MicrosoftSqlServerVersion
         @Test
         public void test()
         {
-            // Good
+            // Good for external data sources; bad for primary data source
             test(100, false, SQL_SERVER_2008);
+            test(100, true, SQL_SERVER_UNSUPPORTED);
             test(110, false, SQL_SERVER_2012);
-            test(120, true, SQL_SERVER_2014);
+            test(110, true, SQL_SERVER_UNSUPPORTED);
             test(120, false, SQL_SERVER_2014);
+            test(120, true, SQL_SERVER_UNSUPPORTED);
+
+            // Good for primary and external data sources
             test(130, true, SQL_SERVER_2016);
             test(130, false, SQL_SERVER_2016);
             test(140, true, SQL_SERVER_2017);
