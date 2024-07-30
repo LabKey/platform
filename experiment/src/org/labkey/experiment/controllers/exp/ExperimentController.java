@@ -4101,6 +4101,8 @@ public class ExperimentController extends SpringActionController
                 SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "sampleImport", "crossTypeImport");
                 if (_context.getInsertOption() == QueryUpdateService.InsertOption.UPDATE)
                     SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "sampleImport", "crossTypeUpdate");
+                else if (_context.getInsertOption() == QueryUpdateService.InsertOption.MERGE)
+                    SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "sampleImport", "crossTypeMerge");
             }
 
             return count;
