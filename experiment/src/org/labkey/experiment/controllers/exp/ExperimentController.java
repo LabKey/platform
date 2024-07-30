@@ -4097,7 +4097,11 @@ public class ExperimentController extends SpringActionController
             int count = importData(dl, tInfo, updateService, _context, auditEvent, getUser(), getContainer());
 
             if (getOptionParamValue(Params.crossTypeImport))
+            {
                 SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "sampleImport", "crossTypeImport");
+                if (_context.getInsertOption() == QueryUpdateService.InsertOption.UPDATE)
+                    SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "sampleImport", "crossTypeUpdate");
+            }
 
             return count;
         }
