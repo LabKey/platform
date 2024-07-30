@@ -17,8 +17,8 @@
 package org.labkey.api.study.query;
 
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.data.ActionButton;
@@ -76,6 +76,7 @@ import org.springframework.validation.BindException;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -91,6 +92,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static org.labkey.api.study.publish.StudyPublishService.LinkToStudyKeys;
 
 public class PublishResultsQueryView extends QueryView
 {
@@ -301,51 +305,27 @@ public class PublishResultsQueryView extends QueryView
         private final Container _targetStudyContainer;
         private final User _user;
 
-        private final ColumnInfo _sourceIdCol;
+        private final Map<LinkToStudyKeys, ColumnInfo> _linkedColumnMap;
         private final ColumnInfo _objectIdCol;
-        private final ColumnInfo _ptidCol;
-        private final ColumnInfo _visitIdCol;
-        private final ColumnInfo _dateCol;
-        private final ColumnInfo _specimenIDCol;
-        private final ColumnInfo _assayMatchCol;
-        private final ColumnInfo _specimenPTIDCol;
-        private final ColumnInfo _specimenVisitCol;
-        private final ColumnInfo _specimenDateCol;
-        private final ColumnInfo _targetStudyCol;
-        private final ColumnInfo _sampleIdCol;
         private final Map<Integer, ParticipantVisitResolver> _resolvers = new HashMap<>();
 
         private Map<Object, String> _reshowVisits;
         private Map<Object, String> _reshowDates;
         private Map<Object, String> _reshowPtids;
         private Map<Object, String> _reshowTargetStudies;
+        private Map<String, BigDecimal> _translateMap;          // label to visit map, visit based studies only
 
         public ResolverHelper(Container targetStudyContainer,
                               User user,
                               Dataset.PublishSource publishSource,
-                              ColumnInfo sourceIdCol, ColumnInfo objectIdCol,
-                              ColumnInfo ptidCol, ColumnInfo visitIdCol, ColumnInfo dateCol,
-                              ColumnInfo specimenIDCol, ColumnInfo assayMatchCol,
-                              ColumnInfo specimenPTIDCol, ColumnInfo specimenVisitCol, ColumnInfo specimenDateCol,
-                              ColumnInfo targetStudyCol,
-                              ColumnInfo sampleIdCol)
+                              Map<LinkToStudyKeys, ColumnInfo> linkedColumnMap,
+                              ColumnInfo objectIdCol)
         {
             _publishSource = publishSource;
             _targetStudyContainer = targetStudyContainer;
             _user = user;
-
-            _sourceIdCol = sourceIdCol;
             _objectIdCol = objectIdCol;
-            _ptidCol = ptidCol;
-            _visitIdCol = visitIdCol;
-            _dateCol = dateCol;
-            _specimenIDCol = specimenIDCol;
-            _assayMatchCol = assayMatchCol;
-            _specimenPTIDCol = specimenPTIDCol;
-            _specimenVisitCol = specimenVisitCol;
-            _specimenDateCol = specimenDateCol;
-            _targetStudyCol = targetStudyCol;
-            _sampleIdCol = sampleIdCol;
+            _linkedColumnMap = linkedColumnMap;
         }
 
         private User getUser()
@@ -363,23 +343,27 @@ public class PublishResultsQueryView extends QueryView
 
         private ParticipantVisitResolver getResolver(RenderContext ctx)
         {
-            Integer sourceId = _sourceIdCol != null ? (Integer)_sourceIdCol.getValue(ctx) : null;
-            if (sourceId != null && !_resolvers.containsKey(sourceId))
+            if (_linkedColumnMap.containsKey(LinkToStudyKeys.SourceId))
             {
-                // resolving ptid/timepoint by specimen or sample ID is only supported for Assays
-                if (_publishSource == Dataset.PublishSource.Assay)
+                Integer sourceId = (Integer)_linkedColumnMap.get(LinkToStudyKeys.SourceId).getValue(ctx);
+                if (sourceId != null && !_resolvers.containsKey(sourceId))
                 {
-                    ExpRun run = ExperimentService.get().getExpRun(sourceId);
-                    if (run != null)
+                    // resolving ptid/timepoint by specimen or sample ID is only supported for Assays
+                    if (_publishSource == Dataset.PublishSource.Assay)
                     {
-                        if (_specimenIDCol != null)
-                            _resolvers.put(sourceId, new StudyParticipantVisitResolver(run.getContainer(), _targetStudyContainer, getUser()));
-                        else if (_sampleIdCol != null)
-                            _resolvers.put(sourceId, new  SampleParticipantVisitResolver(run.getContainer(), _targetStudyContainer, getUser()));
+                        ExpRun run = ExperimentService.get().getExpRun(sourceId);
+                        if (run != null)
+                        {
+                            if (_linkedColumnMap.containsKey(LinkToStudyKeys.SpecimenId))
+                                _resolvers.put(sourceId, new StudyParticipantVisitResolver(run.getContainer(), _targetStudyContainer, getUser()));
+                            else if (_linkedColumnMap.containsKey(LinkToStudyKeys.SampleId))
+                                _resolvers.put(sourceId, new  SampleParticipantVisitResolver(run.getContainer(), _targetStudyContainer, getUser()));
+                        }
                     }
                 }
+                return _resolvers.get(sourceId);
             }
-            return _resolvers.get(sourceId);
+            return null;
         }
 
         private ParticipantVisit resolve(RenderContext ctx)
@@ -393,28 +377,44 @@ public class PublishResultsQueryView extends QueryView
             Study targetStudy = null;
             if (_targetStudyContainer == null)
             {
-                Object resultsDomainTargetStudyValue = _targetStudyCol == null ? null : _targetStudyCol.getValue(ctx);
-                if (resultsDomainTargetStudyValue != null)
+                if (_linkedColumnMap.containsKey(LinkToStudyKeys.TargetStudy))
                 {
-                    Set<Study> studies = StudyService.get().findStudy(resultsDomainTargetStudyValue, null);
-                    if (!studies.isEmpty())
-                        targetStudy = studies.iterator().next();
+                    Object resultsDomainTargetStudyValue = _linkedColumnMap.get(LinkToStudyKeys.TargetStudy).getValue(ctx);
+                    if (resultsDomainTargetStudyValue != null)
+                    {
+                        Set<Study> studies = StudyService.get().findStudy(resultsDomainTargetStudyValue, null);
+                        if (!studies.isEmpty())
+                            targetStudy = studies.iterator().next();
+                    }
                 }
             }
 
             TimepointType timepointType = targetStudy == null ? null : targetStudy.getTimepointType();
             Container targetStudyContainer = targetStudy == null ? null : targetStudy.getContainer();
 
-            Double visitId = _visitIdCol != null && timepointType == TimepointType.VISIT ? convertObjectToDouble(getColumnValue(_visitIdCol, ctx)) : null;
-            Date date = _dateCol != null && timepointType == TimepointType.DATE ? convertObjectToDate(ctx.getContainer(), getColumnValue(_dateCol, ctx)) : null;
+            Double visitId = null;
+            if (_linkedColumnMap.containsKey(LinkToStudyKeys.VisitId) && timepointType == TimepointType.VISIT)
+                visitId = convertObjectToDouble(getColumnValue(_linkedColumnMap.get(LinkToStudyKeys.VisitId), ctx));
 
-            String specimenID = _specimenIDCol == null ? null : convertObjectToString(getColumnValue(_specimenIDCol, ctx));
-            String participantID = _ptidCol == null ? null : convertObjectToString(getColumnValue(_ptidCol, ctx));
-            String sampleID = _sampleIdCol == null ? null : convertObjectToString(getColumnValue(_sampleIdCol, ctx));
+            Date date = null;
+            if (_linkedColumnMap.containsKey(LinkToStudyKeys.Date) && timepointType == TimepointType.DATE)
+                date = convertObjectToDate(ctx.getContainer(), getColumnValue(_linkedColumnMap.get(LinkToStudyKeys.Date), ctx));
+
+            String specimenID = null;
+            if (_linkedColumnMap.containsKey(LinkToStudyKeys.SpecimenId))
+                specimenID = convertObjectToString(getColumnValue(_linkedColumnMap.get(LinkToStudyKeys.SpecimenId), ctx));
+
+            String participantID = null;
+            if (_linkedColumnMap.containsKey(LinkToStudyKeys.ParticipantId))
+                participantID = convertObjectToString(getColumnValue(_linkedColumnMap.get(LinkToStudyKeys.ParticipantId), ctx));
+
+            String sampleID = null;
+            if (_linkedColumnMap.containsKey(LinkToStudyKeys.SampleId))
+                specimenID = convertObjectToString(getColumnValue(_linkedColumnMap.get(LinkToStudyKeys.SampleId), ctx));
 
             try
             {
-                if (_specimenIDCol != null)
+                if (_linkedColumnMap.containsKey(LinkToStudyKeys.SpecimenId))
                     return resolver.resolve(specimenID, participantID, visitId, date, targetStudyContainer);
                 else
                     return resolver.resolve(sampleID, participantID, visitId, date, targetStudyContainer);
@@ -434,13 +434,39 @@ public class PublishResultsQueryView extends QueryView
                 Object key = ctx.getRow().get(_objectIdCol.getName());
                 return _reshowVisits.get(key);
             }
-            Double result = _visitIdCol == null ? null : convertObjectToDouble(getColumnValue(_visitIdCol, ctx));
+
+            Double result = null;
+            if (_linkedColumnMap.containsKey(LinkToStudyKeys.VisitId))
+                result = convertObjectToDouble(getColumnValue(_linkedColumnMap.get(LinkToStudyKeys.VisitId), ctx));
+
             if (result == null)
             {
                 ParticipantVisit pv = resolve(ctx);
                 result = pv == null ? null : pv.getVisitID();
             }
+
+            // for samples only, attempt to match via a visit label
+            if (result == null && _publishSource == Dataset.PublishSource.SampleType && _linkedColumnMap.containsKey(LinkToStudyKeys.VisitLabel))
+            {
+                String visitLabel = convertObjectToString(getColumnValue(_linkedColumnMap.get(LinkToStudyKeys.VisitLabel), ctx));
+                Study study = StudyService.get().getStudy(_targetStudyContainer);
+                if (study != null && visitLabel != null)
+                {
+                    Map<String, BigDecimal> translateMap = getVisitImportMap(study);
+                    if (translateMap.containsKey(visitLabel))
+                        result = translateMap.get(visitLabel).doubleValue();
+                }
+            }
+
             return result;
+        }
+
+        private Map<String, BigDecimal> getVisitImportMap(Study study)
+        {
+            if (_translateMap == null)
+                _translateMap = StudyService.get().getVisitImportMap(study, true);
+
+            return _translateMap;
         }
 
         public String getUserParticipantId(RenderContext ctx)
@@ -451,7 +477,10 @@ public class PublishResultsQueryView extends QueryView
                 return _reshowPtids.get(key);
             }
             
-            String result = _ptidCol == null ? null : convertObjectToString(getColumnValue(_ptidCol, ctx));
+            String result = null;
+            if (_linkedColumnMap.containsKey(LinkToStudyKeys.ParticipantId))
+                result = convertObjectToString(getColumnValue(_linkedColumnMap.get(LinkToStudyKeys.ParticipantId), ctx));
+
             if (result == null)
             {
                 ParticipantVisit pv = resolve(ctx);
@@ -467,7 +496,11 @@ public class PublishResultsQueryView extends QueryView
                 Object key = ctx.getRow().get(_objectIdCol.getName());
                 return _reshowDates.get(key);
             }
-            Date result = _dateCol == null ? null : convertObjectToDate(ctx.getContainer(), getColumnValue(_dateCol, ctx));
+
+            Date result = null;
+            if (_linkedColumnMap.containsKey(LinkToStudyKeys.Date))
+                result = convertObjectToDate(ctx.getContainer(), getColumnValue(_linkedColumnMap.get(LinkToStudyKeys.Date), ctx));
+
             if (result == null)
             {
                 ParticipantVisit pv = resolve(ctx);
@@ -484,8 +517,8 @@ public class PublishResultsQueryView extends QueryView
                 Object key = ctx.getRow().get(_objectIdCol.getName());
                 result = _reshowTargetStudies.get(key);
             }
-            if (result == null)
-                result = _targetStudyCol == null ? null : convertObjectToString(_targetStudyCol.getValue(ctx));
+            if (result == null && _linkedColumnMap.containsKey(LinkToStudyKeys.TargetStudy))
+                result = convertObjectToString(_linkedColumnMap.get(LinkToStudyKeys.TargetStudy).getValue(ctx));
             if (result == null)
             {
                 ParticipantVisit pv = resolve(ctx);
@@ -565,13 +598,13 @@ public class PublishResultsQueryView extends QueryView
 
             // First, figure out if we can match the specimen ID to the study
             Boolean assayAndTargetSpecimenMatch;
-            if (_assayMatchCol == null)
+            if (!_linkedColumnMap.containsKey(LinkToStudyKeys.SpecimenMatch))
             {
                 assayAndTargetSpecimenMatch = null;
             }
             else
             {
-                assayAndTargetSpecimenMatch = (Boolean)_assayMatchCol.getValue(ctx);
+                assayAndTargetSpecimenMatch = (Boolean)_linkedColumnMap.get(LinkToStudyKeys.SpecimenMatch).getValue(ctx);
             }
 
             // Whether the input from the form matches up with the specimen from the assay row's specimen ID
@@ -581,17 +614,18 @@ public class PublishResultsQueryView extends QueryView
             {
                 // See if the value in the form matches up with at least one specimen
                 boolean userInputMatchesASpecimen;
+                ColumnInfo specimenPTIDCol = _linkedColumnMap.get(LinkToStudyKeys.SpecimenPtid);
 
                 String userParticipantId = getUserParticipantId(ctx);
                 if (timepointType == TimepointType.VISIT)
                 {
                     Double userVisitId = convertObjectToDouble(getUserVisitId(ctx));
                     userInputMatchesASpecimen = isValidPtidVisit(targetStudy, userParticipantId, userVisitId);
-                    if (_specimenVisitCol != null && _specimenPTIDCol != null && assayAndTargetSpecimenMatch != null)
+                    if (_linkedColumnMap.containsKey(LinkToStudyKeys.SpecimenVisit) && specimenPTIDCol != null && assayAndTargetSpecimenMatch != null)
                     {
                         // Need to grab the study specimen's participant and visit
-                        String targetSpecimenPTID = convertObjectToString(_specimenPTIDCol.getValue(ctx));
-                        Double targetSpecimenVisit = convertObjectToDouble(_specimenVisitCol.getValue(ctx));
+                        String targetSpecimenPTID = convertObjectToString(specimenPTIDCol.getValue(ctx));
+                        Double targetSpecimenVisit = convertObjectToDouble(_linkedColumnMap.get(LinkToStudyKeys.SpecimenVisit).getValue(ctx));
                         userInputMatchesTargetSpecimen = Objects.equals(targetSpecimenPTID, userParticipantId) &&
                                 Objects.equals(targetSpecimenVisit, userVisitId);
                     }
@@ -604,11 +638,11 @@ public class PublishResultsQueryView extends QueryView
                 {
                     Date userDate = convertObjectToDate(ctx.getContainer(), getUserDate(ctx, false));
                     userInputMatchesASpecimen = isValidPtidDate(targetStudy, userParticipantId, userDate);
-                    if (_specimenDateCol != null && _specimenPTIDCol != null && assayAndTargetSpecimenMatch != null)
+                    if (_linkedColumnMap.containsKey(LinkToStudyKeys.SpecimenDate) && specimenPTIDCol != null && assayAndTargetSpecimenMatch != null)
                     {
                         // Need to grab the study specimen's participant and date
-                        String targetSpecimenPTID = convertObjectToString(_specimenPTIDCol.getValue(ctx));
-                        Date targetSpecimenDate = convertObjectToDate(ctx.getContainer(), _specimenDateCol.getValue(ctx));
+                        String targetSpecimenPTID = convertObjectToString(specimenPTIDCol.getValue(ctx));
+                        Date targetSpecimenDate = convertObjectToDate(ctx.getContainer(), _linkedColumnMap.get(LinkToStudyKeys.SpecimenDate).getValue(ctx));
                         if (userDate == null || targetSpecimenDate == null)
                         {
                             // Do a simple object equality on the dates if one or both of them is null
@@ -671,10 +705,12 @@ public class PublishResultsQueryView extends QueryView
                     }
                     sb.append(" a vial in the study.</p>");
                 }
-                else if (_specimenIDCol != null && _specimenIDCol.getValue(ctx) != null)
+                else if (_linkedColumnMap.containsKey(LinkToStudyKeys.SpecimenId))
                 {
-                    // Otherwise, if the assay row has a specimen ID let the user know what we couldn't resolve it
-                    sb.append("<p>The Specimen ID in this row does <strong>not</strong> match a vial in the study.</p>");
+                    ColumnInfo specimenCol = _linkedColumnMap.get(LinkToStudyKeys.SpecimenId);
+                    if (specimenCol.getValue(ctx) != null)
+                        // Otherwise, if the assay row has a specimen ID let the user know what we couldn't resolve it
+                        sb.append("<p>The Specimen ID in this row does <strong>not</strong> match a vial in the study.</p>");
                 }
 
                 return new Pair<>(overallStatus, HtmlString.unsafe(sb.toString()));
@@ -700,10 +736,12 @@ public class PublishResultsQueryView extends QueryView
             boolean isSampleMatched = false;
             if (resolver instanceof SampleParticipantVisitResolver)
             {
-                Object sampleId = _sampleIdCol.getValue(ctx);
-                if (sampleId instanceof Integer)
+                ColumnInfo sampleCol = _linkedColumnMap.get(LinkToStudyKeys.SampleId);
+                if (sampleCol != null)
                 {
-                    isSampleMatched = ((SampleParticipantVisitResolver) resolver).isSampleMatched((Integer)sampleId);
+                    Object sampleId = sampleCol.getValue(ctx);
+                    if (sampleId instanceof Integer)
+                        isSampleMatched = ((SampleParticipantVisitResolver) resolver).isSampleMatched((Integer)sampleId);
                 }
             }
 
@@ -718,13 +756,13 @@ public class PublishResultsQueryView extends QueryView
 
         public void addQueryColumns(Set<ColumnInfo> set)
         {
-            if (_sourceIdCol != null) { set.add(_sourceIdCol); }
-            if (_ptidCol != null) { set.add(_ptidCol); }
-            if (_visitIdCol != null) { set.add(_visitIdCol); }
-            if (_dateCol != null) { set.add(_dateCol); }
+            if (_linkedColumnMap.containsKey(LinkToStudyKeys.SourceId)) { set.add(_linkedColumnMap.get(LinkToStudyKeys.SourceId)); }
+            if (_linkedColumnMap.containsKey(LinkToStudyKeys.ParticipantId)) { set.add(_linkedColumnMap.get(LinkToStudyKeys.ParticipantId)); }
+            if (_linkedColumnMap.containsKey(LinkToStudyKeys.VisitId)) { set.add(_linkedColumnMap.get(LinkToStudyKeys.VisitId)); }
+            if (_linkedColumnMap.containsKey(LinkToStudyKeys.Date)) { set.add(_linkedColumnMap.get(LinkToStudyKeys.Date)); }
             if (_objectIdCol != null) { set.add(_objectIdCol); }
-            if (_specimenIDCol != null) { set.add(_specimenIDCol); }
-            if (_targetStudyCol != null) { set.add(_targetStudyCol); }
+            if (_linkedColumnMap.containsKey(LinkToStudyKeys.SpecimenId)) { set.add(_linkedColumnMap.get(LinkToStudyKeys.SpecimenId)); }
+            if (_linkedColumnMap.containsKey(LinkToStudyKeys.TargetStudy)) { set.add(_linkedColumnMap.get(LinkToStudyKeys.TargetStudy)); }
         }
     }
 
@@ -965,26 +1003,34 @@ public class PublishResultsQueryView extends QueryView
         
         Map<FieldKey, ColumnInfo> colInfos = QueryService.get().getColumns(getTable(), fieldKeys, selectColumns);
         ColumnInfo objectIdCol = colInfos.get(_objectIdFieldKey);
-        if (_additionalColumns.containsKey(StudyPublishService.LinkToStudyKeys.ObjectId))
-            objectIdCol = colInfos.get(_additionalColumns.get(StudyPublishService.LinkToStudyKeys.ObjectId));
-        ColumnInfo ptidCol = colInfos.get(_additionalColumns.get(StudyPublishService.LinkToStudyKeys.ParticipantId));
-        if (ptidCol == null)
+
+        Map<LinkToStudyKeys, ColumnInfo> linkedColumnMap = Stream.of(
+                        LinkToStudyKeys.Date,
+                        LinkToStudyKeys.ParticipantId,
+                        LinkToStudyKeys.SampleId,
+                        LinkToStudyKeys.SourceId,
+                        LinkToStudyKeys.SpecimenDate,
+                        LinkToStudyKeys.SpecimenId,
+                        LinkToStudyKeys.SpecimenMatch,
+                        LinkToStudyKeys.SpecimenPtid,
+                        LinkToStudyKeys.SpecimenVisit,
+                        LinkToStudyKeys.TargetStudy,
+                        LinkToStudyKeys.VisitLabel,
+                        LinkToStudyKeys.VisitId)
+                .filter(k -> colInfos.containsKey(_additionalColumns.get(k)))
+                .collect(Collectors.toMap(k -> k, k -> colInfos.get(_additionalColumns.get(k))));
+
+        if (_additionalColumns.containsKey(LinkToStudyKeys.ObjectId))
+            objectIdCol = colInfos.get(_additionalColumns.get(LinkToStudyKeys.ObjectId));
+
+        if (!linkedColumnMap.containsKey(LinkToStudyKeys.ParticipantId))
         {
             //NOTE: the name of the assay PTID field might not always match ParticipantId.  this allows us to also
             //support PARTICIPANT_CONCEPT_URI
-            ptidCol = selectColumns.stream().filter(c -> PropertyType.PARTICIPANT_CONCEPT_URI.equals(c.getConceptURI())).findFirst().orElse(null);
+            ColumnInfo ptidCol = selectColumns.stream().filter(c -> PropertyType.PARTICIPANT_CONCEPT_URI.equals(c.getConceptURI())).findFirst().orElse(null);
+            if (ptidCol != null)
+                linkedColumnMap.put(LinkToStudyKeys.ParticipantId, ptidCol);
         }
-
-        ColumnInfo sourceIdCol = colInfos.get(_additionalColumns.get(StudyPublishService.LinkToStudyKeys.SourceId));
-        ColumnInfo visitIDCol = colInfos.get(_additionalColumns.get(StudyPublishService.LinkToStudyKeys.VisitId));
-        ColumnInfo dateCol = colInfos.get(_additionalColumns.get(StudyPublishService.LinkToStudyKeys.Date));
-        ColumnInfo specimenIDCol = colInfos.get(_additionalColumns.get(StudyPublishService.LinkToStudyKeys.SpecimenId));
-        ColumnInfo matchCol = colInfos.get(_additionalColumns.get(StudyPublishService.LinkToStudyKeys.SpecimenMatch));
-        ColumnInfo specimenPTIDCol = colInfos.get(_additionalColumns.get(StudyPublishService.LinkToStudyKeys.SpecimenPtid));
-        ColumnInfo specimenVisitCol = colInfos.get(_additionalColumns.get(StudyPublishService.LinkToStudyKeys.SpecimenVisit));
-        ColumnInfo specimenDateCol = colInfos.get(_additionalColumns.get(StudyPublishService.LinkToStudyKeys.SpecimenDate));
-        ColumnInfo targetStudyCol = colInfos.get(_additionalColumns.get(StudyPublishService.LinkToStudyKeys.TargetStudy));
-        ColumnInfo sampleIdCol = colInfos.get(_additionalColumns.get(StudyPublishService.LinkToStudyKeys.SampleId));
 
         // if visit or date columns don't exist, see if they can be resolved through the standard concept URIs
         List<ColumnInfo> timepointCols = selectColumns.stream()
@@ -993,56 +1039,55 @@ public class PublishResultsQueryView extends QueryView
 
         for (ColumnInfo col : timepointCols)
         {
-            if (dateCol == null && col.getJdbcType().isDateOrTime())
-                dateCol = col;
-            if (visitIDCol == null && col.getJdbcType().isReal())
-                visitIDCol = col;
+            if (!linkedColumnMap.containsKey(LinkToStudyKeys.Date) && col.getJdbcType().isDateOrTime())
+                linkedColumnMap.put(LinkToStudyKeys.Date, col);
+            if (!linkedColumnMap.containsKey(LinkToStudyKeys.VisitId) && col.getJdbcType().isReal())
+                linkedColumnMap.put(LinkToStudyKeys.VisitId, col);
         }
 
         ResolverHelper resolverHelper = new ResolverHelper(
                 _targetStudyContainer, getUser(),
                 _publishSource,
-                sourceIdCol, objectIdCol, ptidCol, visitIDCol, dateCol, specimenIDCol, matchCol, specimenPTIDCol,
-                specimenVisitCol, specimenDateCol, targetStudyCol, sampleIdCol);
+                linkedColumnMap,
+                objectIdCol);
         resolverHelper.setReshow(_reshowVisits, _reshowDates, _reshowPtids, _reshowTargetStudies);
 
         TargetStudyInputColumn targetStudyInputColumn = null;
-        if (targetStudyCol != null)
+        if (linkedColumnMap.containsKey(LinkToStudyKeys.TargetStudy))
         {
-            targetStudyInputColumn = new TargetStudyInputColumn(resolverHelper, targetStudyCol);
+            targetStudyInputColumn = new TargetStudyInputColumn(resolverHelper, linkedColumnMap.get(LinkToStudyKeys.TargetStudy));
             columns.add(targetStudyInputColumn);
         }
 
-        if (specimenPTIDCol != null)
+        if (linkedColumnMap.containsKey(LinkToStudyKeys.SpecimenPtid))
         {
-            // This is ugly but we need to hold on to a reference to this ColumnInfo and make sure that it's in the select list
-            DataColumn c = new DataColumn(specimenPTIDCol);
+            // This is ugly, but we need to hold on to a reference to this ColumnInfo and make sure that it's in the select list
+            DataColumn c = new DataColumn(linkedColumnMap.get(LinkToStudyKeys.SpecimenPtid));
             c.setVisible(false);
             columns.add(c);
             // We eliminate duplicate columns later based on labels, so make sure these have unique ones
             c.setCaption("Specimen PTID - hidden");
         }
-        if (specimenVisitCol != null)
+        if (linkedColumnMap.containsKey(LinkToStudyKeys.SpecimenVisit))
         {
-            // This is ugly but we need to hold on to a reference to this ColumnInfo and make sure that it's in the select list
-            DataColumn c = new DataColumn(specimenVisitCol);
+            DataColumn c = new DataColumn(linkedColumnMap.get(LinkToStudyKeys.SpecimenVisit));
             c.setVisible(false);
             columns.add(c);
             // We eliminate duplicate columns later based on labels, so make sure these have unique ones
             c.setCaption("Specimen Visit - hidden");
         }
-        if (specimenDateCol != null)
+        if (linkedColumnMap.containsKey(LinkToStudyKeys.SpecimenDate))
         {
-            // This is ugly but we need to hold on to a reference to this ColumnInfo and make sure that it's in the select list
-            DataColumn c = new DataColumn(specimenDateCol);
+            DataColumn c = new DataColumn(linkedColumnMap.get(LinkToStudyKeys.SpecimenDate));
             c.setVisible(false);
             columns.add(c);
             // We eliminate duplicate columns later based on labels, so make sure these have unique ones
             c.setCaption("Specimen Date - hidden");
         }
+
+        ColumnInfo matchCol = linkedColumnMap.get(LinkToStudyKeys.SpecimenMatch);
         if (matchCol != null)
         {
-            // This is ugly but we need to hold on to a reference to this ColumnInfo and make sure that it's in the select list
             DataColumn c = new DataColumn(matchCol);
             c.setVisible(false);
             columns.add(c);
@@ -1051,20 +1096,20 @@ public class PublishResultsQueryView extends QueryView
         }
 
         if (_showSpecimenMatch)
-            columns.add(new ValidParticipantVisitDisplayColumn(resolverHelper, specimenIDCol, sampleIdCol));
+            columns.add(new ValidParticipantVisitDisplayColumn(resolverHelper, linkedColumnMap.get(LinkToStudyKeys.SpecimenId), linkedColumnMap.get(LinkToStudyKeys.SampleId)));
 
-        if (sourceIdCol != null && objectIdCol != null)
-            columns.add(new SourceDataLinkDisplayColumn(null, resolverHelper, _publishSource, sourceIdCol, objectIdCol));
+        if (linkedColumnMap.containsKey(LinkToStudyKeys.SourceId) && objectIdCol != null)
+            columns.add(new SourceDataLinkDisplayColumn(null, resolverHelper, _publishSource, linkedColumnMap.get(LinkToStudyKeys.SourceId), objectIdCol));
         else
             throw new IllegalStateException("Both sourceId and objectId columns are required for the view");
 
-        ParticipantIDDataInputColumn participantColumn = new ParticipantIDDataInputColumn(resolverHelper, ptidCol);
+        ParticipantIDDataInputColumn participantColumn = new ParticipantIDDataInputColumn(resolverHelper, linkedColumnMap.get(LinkToStudyKeys.ParticipantId));
         columns.add(participantColumn);
 
         // UNDONE: If selected ids contain studies of different timepoint types, include both Date and Visit columns and enable and disable the inputs when the study picker changes.
         // For now, just include both Date and Visit columns if the target study isn't known yet.
-        VisitIDDataInputColumn visitIDInputColumn = new VisitIDDataInputColumn(resolverHelper, visitIDCol);
-        DateDataInputColumn dateInputColumn = new DateDataInputColumn(null, resolverHelper, dateCol, _includeTimestamp);
+        VisitIDDataInputColumn visitIDInputColumn = new VisitIDDataInputColumn(resolverHelper, linkedColumnMap.get(LinkToStudyKeys.VisitId));
+        DateDataInputColumn dateInputColumn = new DateDataInputColumn(null, resolverHelper, linkedColumnMap.get(LinkToStudyKeys.Date), _includeTimestamp);
         if (_timepointType == null || _timepointType == TimepointType.VISIT)
         {
             columns.add(visitIDInputColumn);
