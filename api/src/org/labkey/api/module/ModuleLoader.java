@@ -1697,11 +1697,6 @@ public class ModuleLoader implements MemTrackerListener
             if (UserManager.getActiveRealUserCount() > 0)
                 SecurityManager.ensureAtLeastOneRootAdminExists();
         }
-        catch (BadSqlGrammarException e)
-        {
-            // Issue 7527: Auto-detect missing sql views and attempt to recreate
-            _log.warn("core.Users and/or core.ActiveUsers DB views are likely missing. Skipping check for root admins. Schema validation will attempt to restore views");
-        }
         catch (UnauthorizedException e)
         {
             throw new IllegalArgumentException("This deployment lacks a root administrator; it must have a Site Administrator, " +

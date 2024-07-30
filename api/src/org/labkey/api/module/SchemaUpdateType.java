@@ -31,7 +31,7 @@ public enum SchemaUpdateType
     {
         @Nullable
         @Override
-        SqlScript getScript(SqlScriptProvider provider, DbSchema schema)
+        public SqlScript getScript(SqlScriptProvider provider, DbSchema schema)
         {
             return provider.getDropScript(schema);
         }
@@ -49,7 +49,7 @@ public enum SchemaUpdateType
     {
         @Nullable
         @Override
-        SqlScript getScript(SqlScriptProvider provider, DbSchema schema)
+        public SqlScript getScript(SqlScriptProvider provider, DbSchema schema)
         {
             // Execute the drop scripts in order, e.g., core-drop.sql before test-drop.sql
             return provider.getCreateScript(schema);
@@ -64,5 +64,5 @@ public enum SchemaUpdateType
     };
 
     abstract @NotNull Collection<DbSchema> orderSchemas(Collection<DbSchema> schemas);
-    abstract @Nullable SqlScript getScript(SqlScriptProvider provider, DbSchema schema);
+    public abstract @Nullable SqlScript getScript(SqlScriptProvider provider, DbSchema schema);
 }

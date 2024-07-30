@@ -82,8 +82,6 @@ public class CoreWarningProvider implements WarningProvider
         AbstractImpersonationContextFactory.registerSessionAttributeToStash(SESSION_WARNINGS_BANNER_KEY);
     }
 
-    private boolean _attemptedViewReload = false;
-
     public void startSchemaCheck(int delaySeconds)
     {
         // Issue 46264 - proactively check all DB schemas against the schema XML
@@ -94,16 +92,7 @@ public class CoreWarningProvider implements WarningProvider
             for (DbSchema schema : DbSchema.getAllSchemasToTest())
             {
                 var schemaWarnings = TableXmlUtils.compareXmlToMetaData(schema, false, false, true);
-                if (schemaWarnings.hasViewProblem() && !_attemptedViewReload)
-                {
-                    // Issue 7527: Auto-detect missing sql views and attempt to recreate
-                    LOG.warn("At least one database view in the {} schema is not as expected. Attempting to recreate views automatically.", schema.getName());
 
-                    // Only attempt to recreate views once
-                    _attemptedViewReload = true;
-                    ModuleLoader.getInstance().recreateViews();
-                    return;
-                }
                 if (schemaWarnings.hasErrors())
                 {
                     _dbSchemaWarnings.put(schema.getName(), schemaWarnings.getResults());
@@ -323,7 +312,7 @@ public class CoreWarningProvider implements WarningProvider
         }
         catch (Exception x)
         {
-            LogHelper.getLogger(CoreWarningProvider.class, "core warning provider").warn("Exception encountered while verifying Tomcat configuration", x);
+            LOG.warn("Exception encountered while verifying Tomcat configuration", x);
         }
     }
 
