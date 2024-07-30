@@ -16,6 +16,7 @@
 package org.labkey.core.view.template.bootstrap;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AdminUrls;
@@ -74,6 +75,8 @@ import static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNE
 
 public class CoreWarningProvider implements WarningProvider
 {
+    private static final Logger LOG = LogHelper.getLogger(CoreWarningProvider.class, "Collects many site-level warnings to show to admins");
+
     /** Schema name -> problem list */
     private final Map<String, List<SiteValidationResult>> _dbSchemaWarnings = new ConcurrentHashMap<>();
     private static Set<String> _deployedApps;
@@ -93,6 +96,7 @@ public class CoreWarningProvider implements WarningProvider
             for (DbSchema schema : DbSchema.getAllSchemasToTest())
             {
                 var schemaWarnings = TableXmlUtils.compareXmlToMetaData(schema, false, false, true);
+
                 if (schemaWarnings.hasErrors())
                 {
                     _dbSchemaWarnings.put(schema.getName(), schemaWarnings.getResults());
@@ -314,7 +318,7 @@ public class CoreWarningProvider implements WarningProvider
         }
         catch (Exception x)
         {
-            LogHelper.getLogger(CoreWarningProvider.class, "core warning provider").warn("Exception encountered while verifying Tomcat configuration", x);
+            LOG.warn("Exception encountered while verifying Tomcat configuration", x);
         }
     }
 
