@@ -16,26 +16,20 @@
 package org.labkey.specimen.security.roles;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.security.Group;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
 
 import java.util.Collection;
 import java.util.Set;
 
-/*
-* User: Dave
-* Date: May 18, 2009
-* Time: 2:23:42 PM
-*/
 public class SpecimenRequesterRole extends AbstractSpecimenRole
 {
     public SpecimenRequesterRole()
     {
         super("Specimen Requester",
-                "Specimen Requesters may request specimen vials.",
-                RequestSpecimensPermission.class);
-        addExcludedPrincipal(SecurityManager.getGroup(Group.groupGuests));
+            "Specimen Requesters may request specimen vials.",
+            RequestSpecimensPermission.class
+        );
+        excludeGuests();
     }
 
     @Override
