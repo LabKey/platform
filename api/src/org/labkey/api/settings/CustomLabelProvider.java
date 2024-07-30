@@ -18,6 +18,7 @@ package org.labkey.api.settings;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.User;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -30,9 +31,9 @@ public interface CustomLabelProvider
      */
     Map<String, String> getCustomLabels(@Nullable Container container);
 
-    void resetLabels(@Nullable Container container);
+    void resetLabels(@Nullable Container container, @Nullable User auditUser);
 
-    void saveLabels(HashMap<String, String> updatedLabels, @Nullable Container container) throws ValidationException;
+    void saveLabels(HashMap<String, String> updatedLabels, @Nullable Container container, @Nullable User auditUser) throws ValidationException;
 
     String getName();
 

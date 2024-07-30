@@ -2,10 +2,16 @@ package org.labkey.api.settings;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.AuditTypeEvent;
+import org.labkey.api.audit.provider.SiteSettingsAuditProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyStore;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.User;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 
 import java.util.HashMap;
 import java.util.List;
@@ -67,8 +73,13 @@ public abstract class AbstractCustomLabelProvider implements CustomLabelProvider
         return container;
     }
 
-    @Override
     public void saveLabels(HashMap<String, String> updatedLabels, @Nullable Container container) throws ValidationException
+    {
+        saveLabels(updatedLabels, container, null);
+    }
+
+    @Override
+    public void saveLabels(HashMap<String, String> updatedLabels, @Nullable Container container, @Nullable User auditUser) throws ValidationException
     {
         Map<String, String> sanitizedLabels = new HashMap<>();
         for (Map.Entry<String, String> labelEntry: updatedLabels.entrySet())
@@ -88,18 +99,82 @@ public abstract class AbstractCustomLabelProvider implements CustomLabelProvider
             return;
 
         Container labelContainer = getLabelContainer(container);
+
+        AuditTypeEvent event = null;
+        if (auditUser != null)
+            event = getUpdateLabelEvent(labelContainer, sanitizedLabels);
+
         PropertyManager.PropertyMap labelStore = labelContainer == null ? _normalStore.getWritableProperties(getLabelGroup(), true) : _normalStore.getWritableProperties(labelContainer, getLabelGroup(), true);
         labelStore.putAll(sanitizedLabels);
         labelStore.save();
+
+        if (event != null)
+            AuditLogService.get().addEvent(auditUser, event);
+    }
+
+    public void resetLabels(@Nullable Container container)
+    {
+        resetLabels(container, null);
     }
 
     @Override
-    public void resetLabels(@Nullable Container container)
+    public void resetLabels(@Nullable Container container, @Nullable User auditUser)
     {
         Container labelContainer = getLabelContainer(container);
         if (labelContainer == null)
             _normalStore.deletePropertySet(getLabelGroup());
         else
             _normalStore.deletePropertySet(labelContainer, getLabelGroup());
+
+        if (auditUser != null)
+        {
+            SiteSettingsAuditProvider.SiteSettingsAuditEvent event = new SiteSettingsAuditProvider.SiteSettingsAuditEvent(labelContainer.getId(), getProviderLabel() + " labels have been reset to default.");
+            AuditLogService.get().addEvent(auditUser, event);
+        }
     }
+
+    private AuditTypeEvent getUpdateLabelEvent(Container labelContainer, Map<String, String> sanitizedLabels)
+    {
+        Map<String, String> defaultLabels = new HashMap<>();
+        for(CustomLabel defaultLabel : getDefaultLabels())
+            defaultLabels.put(defaultLabel.key(), defaultLabel.defaultLabel());
+        Map<String, String> existingLabels = getCustomLabels(labelContainer);
+        Map<String, Pair<String, String>> changedLabels = new HashMap<>();
+        for (Map.Entry<String, String> entry : sanitizedLabels.entrySet())
+        {
+            String updatedLabel = entry.getValue();
+            String existingLabel = existingLabels.get(entry.getKey());
+            if (StringUtils.isEmpty(updatedLabel))
+                updatedLabel = defaultLabels.get(entry.getKey());
+            if (updatedLabel != null && !updatedLabel.equals(existingLabel))
+                changedLabels.put(entry.getKey(), new Pair<>(existingLabel, updatedLabel));
+        }
+
+        if (changedLabels.isEmpty())
+            return null;
+
+        StringBuilder html = new StringBuilder("<table>");
+        for (Map.Entry<String, Pair<String, String>> entry : changedLabels.entrySet())
+        {
+            html.append("<tr><td class='labkey-form-label'>");
+            html.append(PageFlowUtil.filter(entry.getKey()));
+            html.append("</td><td>");
+            html.append(PageFlowUtil.filter(entry.getValue().first));
+            html.append("&nbsp;&raquo;&nbsp;");
+            html.append(PageFlowUtil.filter(entry.getValue().second));
+            html.append("</td></tr>");
+        }
+        html.append("</table>");
+
+        SiteSettingsAuditProvider.SiteSettingsAuditEvent event = new SiteSettingsAuditProvider.SiteSettingsAuditEvent(labelContainer.getId(), getProviderLabel() + " labels have been updated.");
+        event.setChanges(html.toString());
+
+        return event;
+    }
+
+    public String getProviderLabel()
+    {
+        return getName();
+    }
+
 }

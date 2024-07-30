@@ -369,18 +369,20 @@ public class ClosureQueryHelper
         DbSchema schema = ExperimentService.get().getSchema();
 
         ContainerManager.getAllChildren(ContainerManager.getRoot()).forEach(
-                container -> {
-                    logger.info("Adding rows to exp.materialAncestors from samples in container " + container.getPath());
-                    SampleTypeService.get().getSampleTypes(container, null, false).forEach(
-                            sampleType -> {
-                                logger.debug("   Adding rows from samples in sampleType " + sampleType.getName() + " in container " + container.getPath());
-                                SQLFragment from = new SQLFragment(" FROM exp.material WHERE container = ?").add(container.getEntityId())
-                                        .append(" AND materialSourceId = ?").add(sampleType.getRowId());
-                                SQLFragment sql = ClosureQueryHelper.selectAndInsertSql(schema.getSqlDialect(), from, null, "INSERT INTO exp.materialAncestors (RowId, AncestorRowId, AncestorTypeId) ");
-                                new SqlExecutor(schema.getScope()).execute(sql);
-                            }
-                    );
+            container -> {
+                int totalRows = 0;
+                logger.info("Adding rows to exp.materialAncestors from sample types in container " + container.getPath());
+                for (ExpSampleType sampleType : SampleTypeService.get().getSampleTypes(container, null, false))
+                {
+                    logger.debug("   Adding rows from samples in sampleType " + sampleType.getName());
+                    SQLFragment from = new SQLFragment(" FROM exp.material WHERE materialSourceId = ?").add(sampleType.getRowId());
+                    SQLFragment sql = ClosureQueryHelper.selectAndInsertSql(schema.getSqlDialect(), from, null, "INSERT INTO exp.materialAncestors (RowId, AncestorRowId, AncestorTypeId) ");
+                    int numRows = new SqlExecutor(schema.getScope()).execute(sql);
+                    totalRows += numRows;
+                    logger.debug("    Added " + numRows + " rows for data class " + sampleType.getName());
                 }
+                logger.info("Added " + totalRows + " rows for sample types in container " + container.getPath());
+            }
         );
         logger.info("Finished populating exp.materialAncestors");
     }
@@ -390,24 +392,31 @@ public class ClosureQueryHelper
         DbSchema schema = ExperimentService.get().getSchema();
 
         ContainerManager.getAllChildren(ContainerManager.getRoot()).forEach(
-                container -> {
-                    logger.info("Adding rows to exp.dataAncestors from data objects in container " + container.getPath());
-                    ExperimentService.get().getDataClasses(container, null, false).forEach(
-                            dataClass -> {
-                                logger.debug("    Adding rows to exp.dataAncestors from data class " + dataClass.getName() + " in container " + container.getPath());
-                                SQLFragment from = new SQLFragment(" FROM exp.data WHERE container = ?").add(container.getEntityId())
-                                        .append(" AND classId = ?").add(dataClass.getRowId());
-                                SQLFragment sql = ClosureQueryHelper.selectAndInsertSql(schema.getSqlDialect(), from, null,
-                                        "INSERT INTO exp.dataAncestors (RowId, AncestorRowId, AncestorTypeId) ");
-                                new SqlExecutor(schema.getScope()).execute(sql);
-                            }
-                    );
+            container -> {
+                int totalRows = 0;
+                logger.info("Adding rows to exp.dataAncestors from data classes in container " + container.getPath());
+                for (ExpDataClass dataClass : ExperimentService.get().getDataClasses(container, null, false))
+                {
+                    logger.debug("   Adding rows to exp.dataAncestors from data class " + dataClass.getName());
+                    SQLFragment from = new SQLFragment(" FROM exp.data WHERE classId = ?").add(dataClass.getRowId());
+                    SQLFragment sql = ClosureQueryHelper.selectAndInsertSql(schema.getSqlDialect(), from, null,
+                            "INSERT INTO exp.dataAncestors (RowId, AncestorRowId, AncestorTypeId) ");
+                    int numRows = new SqlExecutor(schema.getScope()).execute(sql);
+                    totalRows += numRows;
+                    logger.debug("    Added " + numRows + " rows for data class " + dataClass.getName());
                 }
+                logger.info("Added " + totalRows + " rows for data classes in container " + container.getPath());
+            }
         );
         logger.info("Finished populating exp.dataAncestors");
     }
 
     public static void truncateAndRecreate()
+    {
+        truncateAndRecreate(logger);
+    }
+
+    public static void truncateAndRecreate(Logger logger)
     {
         try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction())
         {
