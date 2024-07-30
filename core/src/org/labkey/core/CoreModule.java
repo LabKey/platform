@@ -1149,7 +1149,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     Collectors.mapping(flag -> flag, Collectors.toMap(OptionalFeatureFlag::getFlag, OptionalFeatureFlag::isEnabled))
                 ))
             );
-            results.put("productFeaturesEnabled", AdminConsole.getProductFeatureSet());
+            results.put("productFeaturesEnabled", ProductRegistry.getProductFeatureSet());
             results.put("analyticsTrackingStatus", AnalyticsServiceImpl.get().getTrackingStatus().toString());
             String labkeyContextPath = AppProps.getInstance().getContextPath();
             results.put("webappContextPath", labkeyContextPath);
@@ -1334,7 +1334,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     public JSONObject getPageContextJson(ContainerUser context)
     {
         JSONObject json = new JSONObject(getDefaultPageContextJson(context.getContainer()));
-        json.put("productFeatures", AdminConsole.getProductFeatureSet());
+        json.put("productFeatures", ProductRegistry.getProductFeatureSet());
         json.put(EXPERIMENTAL_CALCULATED_FIELDS, OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_CALCULATED_FIELDS));
         return json;
     }

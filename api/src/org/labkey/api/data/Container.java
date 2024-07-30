@@ -55,7 +55,6 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.Role;
-import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.OptionalFeatureService;
@@ -1045,7 +1044,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
     public Boolean getAuditCommentsRequired()
     {
         Map<String, String> props = PropertyManager.getProperties(this, AUDIT_SETTINGS_PROPERTY_SET_NAME);
-        if (!AdminConsole.isProductFeatureEnabled(ProductFeature.DataChangeCommentRequirement))
+        if (!ProductRegistry.isProductFeatureEnabled(ProductFeature.DataChangeCommentRequirement))
             return false;
         return Boolean.parseBoolean(props.getOrDefault(REQUIRE_USER_COMMENTS_PROPERTY_NAME, "false"));
     }
@@ -1669,7 +1668,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         if (isWorkbook())
             return false;
 
-        return AdminConsole.isProductFeatureEnabled(feature);
+        return ProductRegistry.isProductFeatureEnabled(feature);
     }
 
     public boolean isFeatureEnabled(ProductFeature feature)
