@@ -16,8 +16,6 @@
 package org.labkey.specimen.security.roles;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.security.Group;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.EditSharedViewPermission;
 import org.labkey.api.specimen.security.permissions.EditSpecimenDataPermission;
 import org.labkey.api.specimen.security.permissions.ManageRequestSettingsPermission;
@@ -36,11 +34,6 @@ import org.labkey.specimen.security.permissions.SetSpecimenCommentsPermission;
 import java.util.Collection;
 import java.util.Set;
 
-/*
-* User: Dave
-* Date: May 13, 2009
-* Time: 3:16:54 PM
-*/
 public class SpecimenCoordinatorRole extends AbstractSpecimenRole
 {
     public SpecimenCoordinatorRole()
@@ -63,8 +56,8 @@ public class SpecimenCoordinatorRole extends AbstractSpecimenRole
             RequestSpecimensPermission.class,
             SetSpecimenCommentsPermission.class
         );
-        addExcludedPrincipal(SecurityManager.getGroup(Group.groupGuests));
-        addExcludedPrincipal(SecurityManager.getGroup(Group.groupUsers));
+        excludeGuests();
+        excludeUsers();
     }
 
     @Override
