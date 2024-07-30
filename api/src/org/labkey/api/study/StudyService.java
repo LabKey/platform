@@ -36,6 +36,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.FolderTab;
 
+import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -232,4 +233,6 @@ public interface StudyService
     boolean participantExists(Study study, String participantId);
 
     ReportUtil.ReportFilter getStudyReportFilter(boolean editOnly);
+
+    Map<String, BigDecimal> getVisitImportMap(Study study, boolean includeStandardMapping);
 }
