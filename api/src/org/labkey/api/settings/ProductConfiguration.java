@@ -34,6 +34,7 @@ public class ProductConfiguration extends AbstractWriteableSettingsGroup impleme
         else
             config.storeStringValue(PROPERTY_NAME, productKey);
         config.save();
+        ProductRegistry.clearProductFeatureSetCache();
     }
 
     private static ProductConfiguration getWritableConfig()

@@ -53,6 +53,7 @@ public class ProductRegistry
     private static final Map<String, ProductMenuProvider> _sectionMap = new ConcurrentCaseInsensitiveSortedMap<>();
     private static final ProductRegistry _instance = new ProductRegistry();
     private static final Map<String, Product>  _products = new ConcurrentHashMap<>();
+    private static final Set<String> _productFeaturesCache = new HashSet<>();
 
     private ProductRegistry()
     {
@@ -74,26 +75,34 @@ public class ProductRegistry
         return _products.get(key);
     }
 
+    public static void clearProductFeatureSetCache()
+    {
+        _productFeaturesCache.clear();
+    }
+
     public static Set<String> getProductFeatureSet()
     {
-        Set<String> productFeatures = new HashSet<>();
-        String productKey = new ProductConfiguration().getCurrentProductKey();
-        if (productKey != null && _products.containsKey(productKey))
-            productFeatures.addAll(_products.get(productKey).getFeatureFlags());
-        else
+        if (_productFeaturesCache.isEmpty())
         {
-            // if no product is specifically configured, we'll return the feature set
-            // for the highest product that is enabled based on the modules on the server
-            for (Product product : getProducts(true, false))
+            Set<String> productFeatures = new HashSet<>();
+            String productKey = new ProductConfiguration().getCurrentProductKey();
+            if (productKey != null && _products.containsKey(productKey))
+                _productFeaturesCache.addAll(_products.get(productKey).getFeatureFlags());
+            else
             {
-                if (product.isEnabled())
+                // if no product is specifically configured, we'll return the feature set
+                // for the highest product that is enabled based on the modules on the server
+                for (Product product : getProducts(true, false))
                 {
-                    productFeatures.addAll(product.getFeatureFlags());
-                    return productFeatures;
+                    if (product.isEnabled())
+                    {
+                        _productFeaturesCache.addAll(product.getFeatureFlags());
+                        return productFeatures;
+                    }
                 }
             }
         }
-        return productFeatures;
+        return _productFeaturesCache;
     }
 
     public static Collection<Product> getProducts()
