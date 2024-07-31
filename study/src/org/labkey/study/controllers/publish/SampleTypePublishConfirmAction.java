@@ -21,7 +21,6 @@ import org.labkey.api.study.publish.AbstractPublishConfirmAction;
 import org.labkey.api.study.publish.PublishConfirmForm;
 import org.labkey.api.study.publish.PublishKey;
 import org.labkey.api.study.publish.StudyPublishService;
-import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
@@ -72,55 +71,6 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
         {
             _sampleType = sampleType;
         }
-    }
-
-    /**
-     * Names need to match those found in PublishConfirmForm.DefaultValueSource
-     */
-    public enum DefaultValueSource
-    {
-        PublishSource
-                {
-                    @Override
-                    public FieldKey getParticipantIDFieldKey(Map<LinkToStudyKeys, FieldKey> fieldKeyMap)
-                    {
-                        return fieldKeyMap.get(LinkToStudyKeys.ParticipantId);
-                    }
-                    @Override
-                    public FieldKey getVisitIDFieldKey(Map<LinkToStudyKeys, FieldKey> fieldKeyMap)
-                    {
-                        return fieldKeyMap.get(LinkToStudyKeys.VisitId);
-                    }
-                    @Override
-                    public FieldKey getDateFieldKey(Map<LinkToStudyKeys, FieldKey> fieldKeyMap)
-                    {
-                        return fieldKeyMap.get(LinkToStudyKeys.Date);
-                    }
-                },
-        UserSpecified
-                {
-                    @Override
-                    public FieldKey getParticipantIDFieldKey(Map<LinkToStudyKeys, FieldKey> fieldKeyMap)
-                    {
-                        return null;
-                    }
-                    @Override
-                    public FieldKey getVisitIDFieldKey(Map<LinkToStudyKeys, FieldKey> fieldKeyMap)
-                    {
-                        return null;
-                    }
-                    @Override
-                    public FieldKey getDateFieldKey(Map<LinkToStudyKeys, FieldKey> fieldKeyMap)
-                    {
-                        return null;
-                    }
-                };
-
-        // In order to match PublishConfirmForm.DefaultValueSource, we use trivial implementations
-        // of functions here that simply return what they are given
-        public abstract FieldKey getParticipantIDFieldKey(Map<LinkToStudyKeys, FieldKey> fieldKeyMap);
-        public abstract FieldKey getVisitIDFieldKey(Map<LinkToStudyKeys, FieldKey> fieldKeyMap);
-        public abstract FieldKey getDateFieldKey(Map<LinkToStudyKeys, FieldKey> fieldKeyMap);
     }
 
     private void initializeFieldKeys(SampleTypePublishConfirmForm form)
@@ -187,13 +137,12 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
     @Override
     protected Map<LinkToStudyKeys, FieldKey> getAdditionalColumns(SampleTypePublishConfirmForm form)
     {
-        String valueSource = form.getDefaultValueSource();
-        DefaultValueSource defaultValueSource = DefaultValueSource.valueOf(valueSource);
-
         Map<LinkToStudyKeys, FieldKey> additionalCols = new HashMap<>();
-        additionalCols.put(LinkToStudyKeys.ParticipantId, defaultValueSource.getParticipantIDFieldKey(_fieldKeyMap));
-        additionalCols.put(LinkToStudyKeys.VisitId, defaultValueSource.getVisitIDFieldKey(_fieldKeyMap));
-        additionalCols.put(LinkToStudyKeys.Date, defaultValueSource.getDateFieldKey(_fieldKeyMap));
+
+        additionalCols.put(LinkToStudyKeys.ParticipantId, _fieldKeyMap.get(LinkToStudyKeys.ParticipantId));
+        additionalCols.put(LinkToStudyKeys.VisitId, _fieldKeyMap.get(LinkToStudyKeys.VisitId));
+        additionalCols.put(LinkToStudyKeys.VisitLabel, _fieldKeyMap.get(LinkToStudyKeys.VisitLabel));
+        additionalCols.put(LinkToStudyKeys.Date, _fieldKeyMap.get(LinkToStudyKeys.Date));
         additionalCols.put(LinkToStudyKeys.SourceId, FieldKey.fromParts(
                 ExpMaterialProtocolInputTable.Column.SampleSet.name(),
                 ExpMaterialProtocolInputTable.Column.RowId.name()));

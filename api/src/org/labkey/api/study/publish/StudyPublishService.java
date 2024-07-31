@@ -72,18 +72,19 @@ public interface StudyPublishService
     // special fields that are used during the link to study process
     enum LinkToStudyKeys
     {
-        SourceId,               // the source ID for the published rows, eg. runId or sampleId
+        Date,
         ObjectId,               // the identifier for the result row
         ParticipantId,
-        VisitId,
-        Date,
+        SampleId,
+        SourceId,               // the source ID for the published rows, eg. runId or sampleId
+        SpecimenDate,
         SpecimenId,             // legacy specimen match columns
         SpecimenMatch,
         SpecimenPtid,
         SpecimenVisit,
-        SpecimenDate,
         TargetStudy,            // for assays the run level target study value
-        SampleId
+        VisitId,
+        VisitLabel              // used for translating visit label to sequence num for visit maps
     }
 
     static void setInstance(StudyPublishService serviceImpl)

@@ -8,7 +8,6 @@ import {
 
 import './RunGraph.scss';
 
-initQueryGridState();
 
 export interface AppContext {
     lsid: string;
