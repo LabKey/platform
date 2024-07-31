@@ -788,6 +788,11 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
     public static DataIteratorContext createDataIteratorContext(QueryUpdateService.InsertOption insertOption, Map<Params, Boolean> optionParamsMap, @Nullable AuditBehaviorType auditBehaviorType, @Nullable String auditUserComment, BatchValidationException errors, @Nullable Logger logger, @Nullable Container container)
     {
+        return createDataIteratorContext(insertOption, optionParamsMap, auditBehaviorType, auditUserComment, errors, logger, container, null);
+    }
+
+    public static DataIteratorContext createDataIteratorContext(QueryUpdateService.InsertOption insertOption, Map<Params, Boolean> optionParamsMap, @Nullable AuditBehaviorType auditBehaviorType, @Nullable String auditUserComment, BatchValidationException errors, @Nullable Logger logger, @Nullable Container container, QueryImportPipelineJob importJob)
+    {
         boolean importLookupByAlternateKey = optionParamsMap.getOrDefault(AbstractQueryImportAction.Params.importLookupByAlternateKey, false);
         boolean importIdentity = optionParamsMap.getOrDefault(AbstractQueryImportAction.Params.importIdentity, false);
         boolean crossTypeImport = optionParamsMap.getOrDefault(AbstractQueryImportAction.Params.crossTypeImport, false);
@@ -796,6 +801,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         boolean useTransactionAuditCache = optionParamsMap.getOrDefault(Params.useTransactionAuditCache, false);
 
         DataIteratorContext context = new DataIteratorContext(errors);
+        context.setBackgroundJob(importJob);
         context.setInsertOption(insertOption);
         context.setAllowImportLookupByAlternateKey(importLookupByAlternateKey);
         if (auditBehaviorType != null)
