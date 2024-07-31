@@ -673,9 +673,10 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             metadataColumnJSON.setDerivationDataScope(columnInfo.getDerivationDataScope());
 
             if (columnInfo.getWrappedColumnName() != null)
+            {
                 metadataColumnJSON.setWrappedColumnName(columnInfo.getWrappedColumnName());
-
-            if (columnInfo.getValueExpression() != null)
+            }
+            else if (columnInfo.getValueExpression() != null)
             {
                 metadataColumnJSON.setConceptURI(CALCULATED_CONCEPT_URI);
                 metadataColumnJSON.setValueExpression(columnInfo.getValueExpression());
