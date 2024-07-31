@@ -1170,20 +1170,16 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             results.put("otherDeployedWebapps", StringUtils.join(deployedApps, ","));
 
             // Report the total number of login entries in the audit log
-            User user = new LimitedUser(User.getSearchUser(), CanSeeAuditLogRole.class);
-            UserSchema auditSchema = AuditLogService.get().createSchema(user, ContainerManager.getRoot());
-            TableInfo userAuditTable = auditSchema.getTableOrThrow(UserManager.USER_AUDIT_EVENT);
-            SimpleFilter loginFilter = new SimpleFilter(FieldKey.fromParts("comment"), UserManager.UserAuditEvent.LOGGED_IN, CompareType.CONTAINS);
-            results.put("totalLogins", new TableSelector(userAuditTable, loginFilter, null).getRowCount());
-            loginFilter.addClause(new CompareType.ContainsClause(FieldKey.fromParts("comment"), UserManager.UserAuditEvent.API_KEY));
-            results.put("apiKeyLogins", new TableSelector(userAuditTable, loginFilter, null).getRowCount());
+            results.put("totalLogins", UserManager.getAuthCount(null, false, false, false));
+            results.put("apiKeyLogins", UserManager.getAuthCount(null, false, true, false));
             results.put("userLimits", new LimitActiveUsersSettings().getMetricsMap());
             results.put("systemUserCount", UserManager.getSystemUserCount());
             results.put("workbookCount", ContainerManager.getWorkbookCount());
             results.put("databaseSize", CoreSchema.getInstance().getSchema().getScope().getDatabaseSize());
             Calendar cal = new GregorianCalendar();
-            cal.set(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), 1, 0, 0, 0);
-            results.put("uniqueUserCountThisMonth", UserManager.getUniqueUsersCount(cal.getTime()));
+            cal.add(Calendar.DATE, -30);
+            results.put("uniqueRecentUserCount", UserManager.getAuthCount(cal.getTime(), false, false, true));
+            results.put("uniqueRecentNonSystemUserCount", UserManager.getAuthCount(cal.getTime(), true, false, true));
             results.put("scriptEngines", LabKeyScriptEngineManager.get().getScriptEngineMetrics());
             results.put("customLabels", CustomLabelService.get().getCustomLabelMetrics());
             Map<String, Long> roleAssignments = new HashMap<>();
