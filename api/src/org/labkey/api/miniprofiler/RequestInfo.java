@@ -198,7 +198,6 @@ public class RequestInfo implements AutoCloseable
         return _root;
     }
 
-    @JsonIgnore
     public String getSessionId()
     {
         return _sessionId;
