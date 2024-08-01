@@ -8,13 +8,17 @@ public enum ProductFeature
     ApiKeys("core"),
     Assay("assay"),
     AssayQC("premium"),
+    BiologicsRegistry("biologics"),
     CalculatedFields("core"),
+    ChartBuilding("core"),
     DataChangeCommentRequirement("core"),
     ELN("labbook"),
     FreezerManagement("inventory"),
     Media("recipe"),
+    NonstandardAssay("nonstandardAssay"),
     Projects("sampleManagement"),
     SampleManagement("sampleManagement"),
+    TransformScripts("core"),
     Workflow("sampleManagement");
 
     private final String _module;

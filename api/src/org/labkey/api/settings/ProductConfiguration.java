@@ -4,6 +4,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.products.Product;
+import org.labkey.api.products.ProductRegistry;
 
 import java.util.Collection;
 
@@ -27,8 +29,12 @@ public class ProductConfiguration extends AbstractWriteableSettingsGroup impleme
     public static void setProductKey(String productKey)
     {
         ProductConfiguration config = getWritableConfig();
-        config.storeStringValue(PROPERTY_NAME, productKey);
+        if (productKey == null)
+            config.remove(PROPERTY_NAME);
+        else
+            config.storeStringValue(PROPERTY_NAME, productKey);
         config.save();
+        ProductRegistry.clearProductFeatureSetCache();
     }
 
     private static ProductConfiguration getWritableConfig()
@@ -39,17 +45,26 @@ public class ProductConfiguration extends AbstractWriteableSettingsGroup impleme
     }
 
     @Nullable
-    public String getCurrentProduct()
+    public String getCurrentProductKey()
     {
         return lookupStringValue(PROPERTY_NAME, null);
     }
 
+    @Nullable
+    public Product getCurrentProduct()
+    {
+        String productKey = getCurrentProductKey();
+        if (productKey == null)
+            return null;
+        return ProductRegistry.getProduct(productKey);
+    }
+
     public boolean isProductEnabled(@NotNull String productKey, boolean defaultValue)
     {
-        String currentProduct = getCurrentProduct();
-        if (currentProduct == null)
+        String currentProductKey = getCurrentProductKey();
+        if (currentProductKey == null)
             return defaultValue;
-        return productKey.equalsIgnoreCase(currentProduct);
+        return productKey.equalsIgnoreCase(currentProductKey);
     }
 
 
