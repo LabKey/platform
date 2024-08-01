@@ -312,9 +312,10 @@
         };
 
         const getTemplateFolders = function(data) {
-            // add the container itself to the templateFolder object if it is not the root and the user has admin perm to it
-            // and if it is not a workbook or container tab folder
-            if (data.path !== "/" && LABKEY.Security.hasEffectivePermission(data.effectivePermissions, LABKEY.Security.effectivePermissions.admin)
+            // add the container itself to the templateFolder object if it is not the root, it has effectivePermissions,
+            // (note that getContainers.api includes effectivePermissions only if the user has read in that container),
+            // effectivePermissions includes admin perm, and it is not a workbook or container tab folder
+            if (data.path !== "/" && data.effectivePermissions && LABKEY.Security.hasEffectivePermission(data.effectivePermissions, LABKEY.Security.effectivePermissions.admin)
                     && !data.isWorkbook && !data.isContainerTab) {
                 templateFolders.push([data.id, data.path]);
             }
