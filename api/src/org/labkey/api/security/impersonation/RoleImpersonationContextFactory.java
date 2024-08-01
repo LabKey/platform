@@ -194,13 +194,13 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
             .filter(role -> !role.isPrivileged() || canImpersonatePrivilegedRoles);
     }
 
-    private static class RoleImpersonationContext extends AbstractImpersonationContext
+    public static class RoleImpersonationContext extends AbstractImpersonationContext
     {
         private final RoleSet _roles;
         private final String _cacheKey;
 
         @JsonCreator
-        private RoleImpersonationContext(
+        public RoleImpersonationContext(
                 @JsonProperty("_project") @Nullable Container project,
                 @JsonProperty("_adminUser") User adminUser,
                 @JsonProperty("_roles") RoleSet roles,
@@ -297,6 +297,11 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
         {
             super.addMenu(menu, c, user, currentURL);
             RoleImpersonationContextFactory.addMenu(menu, "Adjust Impersonation");
+        }
+
+        public RoleSet getRoles()
+        {
+            return _roles;
         }
     }
 }
