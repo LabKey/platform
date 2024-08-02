@@ -4115,7 +4115,8 @@ if (!LABKEY.DataRegions) {
             timeout,
             locked = false,
             lastLeft = 0,
-            pos = [ 0, 0, 0, 0 ];
+            pos = [ 0, 0, 0, 0 ],
+            domObserver = null;
 
         // init
         var floatRow = headerRow
@@ -4183,8 +4184,8 @@ if (!LABKEY.DataRegions) {
                     .unbind('load', domTask)
                     .unbind('resize', resizeTask)
                     .unbind('scroll', onScroll);
-            $(document)
-                    .unbind('DOMNodeInserted', domTask);
+            
+            domObserver.disconnect();
         };
 
         /**
@@ -4300,8 +4301,12 @@ if (!LABKEY.DataRegions) {
                 .one('load', domTask)
                 .on('resize', resizeTask)
                 .on('scroll', onScroll);
-        $(document)
-                .on('DOMNodeInserted', domTask); // Issue 13121
+
+        domObserver = new MutationObserver(mutationList =>
+                mutationList.filter(m => m.type === 'childList').forEach(m => {
+                    m.addedNodes.forEach(domTask);
+                }));
+        domObserver.observe(document,{childList: true, subtree: true}); // Issue 13121, 50939
 
         // ensure that resize/scroll fire at the end of initialization
         domTask();
