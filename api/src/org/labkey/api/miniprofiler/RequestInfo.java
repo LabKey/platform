@@ -36,7 +36,7 @@ public class RequestInfo implements AutoCloseable
 {
     private static final AtomicLong NEXT_ID = new AtomicLong(0);
 
-    private final long _id = NEXT_ID.incrementAndGet(); // CONSIDER: use guid instead
+    private final long _id = NEXT_ID.incrementAndGet();
     private final String _url;
     private final Date _date = new Date();
     private final Timing _root;
