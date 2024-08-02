@@ -70,6 +70,8 @@ public class TabLoader extends DataLoader
     public static final FileType TSV_FILE_TYPE = new TabFileType(Arrays.asList(".tsv", ".txt"), ".tsv", "text/tab-separated-values");
     public static final FileType CSV_FILE_TYPE = new TabFileType(Collections.singletonList(".csv"), ".csv", "text/comma-separated-values");
 
+    private boolean _IncludeComments = false;
+
     private static final Logger _log = LogManager.getLogger(TabLoader.class);
 
     public static class TsvFactory extends AbstractDataLoaderFactory
@@ -298,6 +300,15 @@ public class TabLoader extends DataLoader
         return Collections.unmodifiableMap(_comments);
     }
 
+    public boolean isIncludeComments()
+    {
+        return _IncludeComments;
+    }
+
+    public void setIncludeComments(boolean includeComments)
+    {
+        _IncludeComments = includeComments;
+    }
 
     /**
      * called for non-quoted strings
@@ -380,7 +391,7 @@ public class TabLoader extends DataLoader
 
     private String[] readFields(TabBufferedReader r, @Nullable ColumnDescriptor[] columns)
     {
-        CharSequence line = readLine(r, true, !isIncludeBlankLines());
+        CharSequence line = readLine(r, !isIncludeComments(), !isIncludeBlankLines());
 
         if (line == null)
             return null;
