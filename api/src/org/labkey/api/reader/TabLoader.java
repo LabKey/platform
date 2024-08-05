@@ -70,7 +70,7 @@ public class TabLoader extends DataLoader
     public static final FileType TSV_FILE_TYPE = new TabFileType(Arrays.asList(".tsv", ".txt"), ".tsv", "text/tab-separated-values");
     public static final FileType CSV_FILE_TYPE = new TabFileType(Collections.singletonList(".csv"), ".csv", "text/comma-separated-values");
 
-    private boolean _IncludeComments = false;
+    private boolean _includeComments = false;
 
     private static final Logger _log = LogManager.getLogger(TabLoader.class);
 
@@ -302,12 +302,12 @@ public class TabLoader extends DataLoader
 
     public boolean isIncludeComments()
     {
-        return _IncludeComments;
+        return _includeComments;
     }
 
     public void setIncludeComments(boolean includeComments)
     {
-        _IncludeComments = includeComments;
+        _includeComments = includeComments;
     }
 
     /**
