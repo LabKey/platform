@@ -307,6 +307,9 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
             context.getDontUpdateColumnNames().addAll(unusedColNames);
         }
 
+        if (context.isBackgroundJob())
+            last = new QueryImportJobStatusCheckDataIterator(last, context, 1000);
+
         return LoggingDataIterator.wrap(ErrorIterator.wrap(last, context, false, setupError));
     }
 

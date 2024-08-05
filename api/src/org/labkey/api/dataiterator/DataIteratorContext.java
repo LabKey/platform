@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.QueryImportPipelineJob;
 import org.labkey.api.query.QueryUpdateService;
 
 import java.util.HashMap;
@@ -49,6 +50,7 @@ public class DataIteratorContext
     boolean _verbose = false;
     boolean _supportAutoIncrementKey = false;
     boolean _allowImportLookupByAlternateKey = false;
+    QueryImportPipelineJob _backgroundJob = null;
     boolean _crossTypeImport = false;
     boolean _crossFolderImport = false;
     boolean _allowCreateStorage = false;
@@ -290,4 +292,20 @@ public class DataIteratorContext
     {
         _logger = logger;
     }
+
+    public boolean isBackgroundJob()
+    {
+        return _backgroundJob != null;
+    }
+
+    public void setBackgroundJob(QueryImportPipelineJob job)
+    {
+        _backgroundJob = job;
+    }
+
+    public QueryImportPipelineJob getBackgroundJob()
+    {
+        return _backgroundJob;
+    }
+
 }

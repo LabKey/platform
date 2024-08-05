@@ -306,6 +306,16 @@ public class QueryImportPipelineJob extends PipelineJob
                 notificationProvider.onJobSuccess(this, results);
             }
         }
+        catch (QueryImportJobCancelledException e)
+        {
+            // don't call error() as it would set import status to ERROR, instead of CANCELLED
+            // don't log exception stacktrace as it's not informative
+            if (getLogger() != null)
+                info("Import cancelled");
+
+            if (notificationProvider != null)
+                notificationProvider.onJobError(this, e.getMessage());
+        }
         catch (Exception e)
         {
             error("Import failed", e);
@@ -325,7 +335,7 @@ public class QueryImportPipelineJob extends PipelineJob
 
     private DataIteratorContext createDataIteratorContext(BatchValidationException errors, Container container)
     {
-        return AbstractQueryImportAction.createDataIteratorContext(_importContextBuilder.getInsertOption(), _importContextBuilder.getOptionParamsMap(), _importContextBuilder.getAuditBehaviorType(), _importContextBuilder.getAuditUserComment(), errors, getLogger(), container);
+        return AbstractQueryImportAction.createDataIteratorContext(_importContextBuilder.getInsertOption(), _importContextBuilder.getOptionParamsMap(), _importContextBuilder.getAuditBehaviorType(), _importContextBuilder.getAuditUserComment(), errors, getLogger(), container, this);
     }
 
     @Override
