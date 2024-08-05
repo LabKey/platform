@@ -948,6 +948,8 @@ public class ExpDataIterators
                             {
                                 tabLoader.setDelimiterCharacter(',');
                                 tabLoader.setUnescapeBackslashes(false);
+                                // Issue 50924: LKSM: Importing samples using naming expression referencing parent inputs with # result in error
+                                tabLoader.setIncludeComments(true);
                                 try
                                 {
                                     String[][] values = tabLoader.getFirstNLines(1);
