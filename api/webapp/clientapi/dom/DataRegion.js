@@ -4184,8 +4184,11 @@ if (!LABKEY.DataRegions) {
                     .unbind('load', domTask)
                     .unbind('resize', resizeTask)
                     .unbind('scroll', onScroll);
-            
-            domObserver.disconnect();
+
+            if (domObserver) {
+                domObserver.disconnect();
+                domObserver = null;
+            }
         };
 
         /**
