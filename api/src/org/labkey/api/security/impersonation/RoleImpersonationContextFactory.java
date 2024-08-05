@@ -200,7 +200,7 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
         private final String _cacheKey;
 
         @JsonCreator
-        public RoleImpersonationContext(
+        private RoleImpersonationContext(
                 @JsonProperty("_project") @Nullable Container project,
                 @JsonProperty("_adminUser") User adminUser,
                 @JsonProperty("_roles") RoleSet roles,

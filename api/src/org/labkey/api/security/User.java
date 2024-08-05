@@ -398,7 +398,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
         _lastActivity = lastActivity;
     }
 
-    public void setImpersonationContext(ImpersonationContext impersonationContext)
+    void setImpersonationContext(ImpersonationContext impersonationContext)
     {
         _impersonationContext = impersonationContext;
     }
