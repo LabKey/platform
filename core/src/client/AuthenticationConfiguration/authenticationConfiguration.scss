@@ -31,7 +31,7 @@
   margin-left: 14px;
 }
 
-.configurations__auth-tab{
+.configurations__auth-tab {
   margin-top: 14px;
   border-bottom: 1px solid #eee;
   margin-bottom: 16px;
@@ -96,7 +96,7 @@
 
 .sso-fields__image-holder {
   float: left;
-  width: 255px;
+  width: 240px;
   height: 95px;
   display: flex;
   align-items: center;
@@ -191,4 +191,11 @@
 }
 .configurations__dropdown .dropdown .dropdown-menu .disabled:hover::after {
   display: inline;
+}
+
+// Issue 50926
+.modal {
+  .modal-dialog {
+    margin-top: 30px;
+  }
 }
