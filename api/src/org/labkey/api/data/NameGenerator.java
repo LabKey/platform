@@ -656,9 +656,18 @@ public class NameGenerator
             if (StringUtils.isEmpty((valueStr).trim()))
                 return Stream.empty();
 
+            TSVWriter tsvWriter = new TSVWriter() // Used to quote values with newline/tabs/quotes
+            {
+                @Override
+                protected int write()
+                {
+                    throw new UnsupportedOperationException();
+                }
+            };
+
             // Issue 44841: The names of the parents may include commas, so we parse the set of parent names
             // using TabLoader instead of just splitting on the comma.
-            try (TabLoader tabLoader = new TabLoader(valueStr))
+            try (TabLoader tabLoader = new TabLoader(tsvWriter.quoteValue(valueStr)))
             {
                 tabLoader.setDelimiterCharacter(',');
                 tabLoader.setUnescapeBackslashes(false);
