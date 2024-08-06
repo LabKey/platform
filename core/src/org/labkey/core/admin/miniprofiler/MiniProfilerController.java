@@ -271,7 +271,7 @@ public class MiniProfilerController extends SpringActionController
                     .filter(requestInfo -> sessionId.equals(requestInfo.getSessionId()))
                     .toList();
 
-            return Map.of("requests", requests);
+            return Map.of("requests", requests, "sessionId", sessionId);
         }
     }
 
