@@ -87,7 +87,6 @@ const EditableGridPageBody: FC<InjectedQueryModels> = memo(props => {
             allowBulkRemove
             allowBulkUpdate
             bulkAddProps={{ title: 'Bulk Add' }}
-            model={undefined}
             editorModel={editorModel}
             onChange={onGridChange}
             title="EditableGridPanel"
