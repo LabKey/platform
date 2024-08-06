@@ -15,6 +15,7 @@
  */
 package org.labkey.query.controllers;
 
+import jakarta.servlet.http.HttpServletResponse;
 import mondrian.olap.Annotated;
 import mondrian.olap.Annotation;
 import mondrian.olap.MondrianException;
@@ -108,7 +109,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-import jakarta.servlet.http.*;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -1138,7 +1138,7 @@ public class OlapController extends SpringActionController
             _cube = cube;
             return _cube;
         }
-        catch (SQLException|IOException x)
+        catch (SQLException x)
         {
             throw new ConfigurationException("Error getting mondrian connection", x);
         }

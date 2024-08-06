@@ -222,9 +222,8 @@ public class ServerManager
         return ret;
     }
 
-
     public static Cube getCachedCube(@NotNull OlapSchemaDescriptor sd, OlapConnection conn, final Container c, final User user, String schemaName, String cubeName, BindException errors)
-            throws SQLException, IOException
+            throws SQLException
     {
         if (!sd.usesMondrian())
             return getCachedCubeRolap(sd, c, user, cubeName, null);
@@ -287,7 +286,7 @@ public class ServerManager
     }
 
     public static Cube getCachedCubeRolap(OlapSchemaDescriptor d, final Container c, final User user, String cubeName, @Nullable final UserSchema schema)
-            throws SQLException, IOException
+            throws SQLException
     {
         RolapCubeDef rolap = d.getRolapCubeDefinitionByName(cubeName);
 
@@ -494,7 +493,7 @@ public class ServerManager
             result = "Warming the " + cubeName + " in container " + fullContainerPath + " took: " + DateUtil.formatDuration(end - start);
             LOG.info(result);
         }
-        catch(Exception e)
+        catch (Exception e)
         {
             result = "Error trying to warm the " + cubeName + " in container " + c.getName();
             LOG.warn(result, e);
@@ -542,8 +541,6 @@ public class ServerManager
                 ref.decrement();
         }
     }
-
-
 
     /*
      * This is to support XmlaServlet, don't hang on to this for more than one request.  If you need to hold on
