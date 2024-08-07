@@ -1098,6 +1098,10 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     boolean useStrictCounter();
 
+    void registerNameExpressionType(String dataType, TableInfo tableInfo, String nameExpressionCol);
+
+    Map<String, Object> getNameExpressionMetrics();
+
     class XarExportOptions
     {
         String _lsidRelativizer = LSID_OPTION_FOLDER_RELATIVE;
