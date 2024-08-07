@@ -1628,11 +1628,12 @@ public class AdminController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class ViewValidationResultsAction extends SimpleViewAction<ViewValidationResultsForm>
     {
-        @Override
         public ModelAndView getView(ViewValidationResultsForm form, BindException errors) throws Exception
         {
+            if (StringUtils.isBlank(form.getFileName()))
+                throw new NotFoundException();
             PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
-            File results = new File(root.getLogDirectory(), form.getFileName());
+            File results = FileUtil.appendName(root.getLogDirectory(), form.getFileName());
             if (!results.isFile())
                 throw new NotFoundException("File not found: " + form.getFileName());
 
