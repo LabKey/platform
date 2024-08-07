@@ -87,7 +87,9 @@ import org.labkey.api.cache.CacheStats;
 import org.labkey.api.cache.TrackingCache;
 import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.compliance.ComplianceFolderSettings;
 import org.labkey.api.compliance.ComplianceService;
+import org.labkey.api.compliance.PhiColumnBehavior;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ConnectionWrapper;
@@ -4970,7 +4972,11 @@ public class AdminController extends SpringActionController
         {
             form.setExportType(PageFlowUtil.filter(getViewContext().getActionURL().getParameter("exportType")));
 
-            form.setExportPhiLevel(ComplianceService.get().getMaxAllowedPhi(getContainer(), getUser()));
+            ComplianceFolderSettings settings = ComplianceService.get().getFolderSettings(getContainer(), User.getAdminServiceUser());
+            PhiColumnBehavior columnBehavior = null==settings ? PhiColumnBehavior.show : settings.getPhiColumnBehavior();
+            PHI maxAllowedPhiForExport = PhiColumnBehavior.show == columnBehavior ? PHI.Restricted : ComplianceService.get().getMaxAllowedPhi(getContainer(), getUser());
+            form.setExportPhiLevel(maxAllowedPhiForExport);
+
             return new JspView<>("/org/labkey/core/admin/exportFolder.jsp", form, errors);
         }
 
