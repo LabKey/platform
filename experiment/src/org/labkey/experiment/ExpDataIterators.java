@@ -954,7 +954,8 @@ public class ExpDataIterators
                         {
                             // Issue 44841: The names of the parents may include commas, so we parse the set of parent names
                             // using TabLoader instead of just splitting on the comma.
-                            try (TabLoader tabLoader = new TabLoader(_tsvWriter.quoteValue((String) o)))
+                            String quotedStr = ((String) o).contains(",") ? (String) o : _tsvWriter.quoteValue((String) o); // if value contains comma, no need to quote again
+                            try (TabLoader tabLoader = new TabLoader(quotedStr))
                             {
                                 tabLoader.setDelimiterCharacter(',');
                                 tabLoader.setUnescapeBackslashes(false);
