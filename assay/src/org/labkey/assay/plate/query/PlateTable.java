@@ -22,10 +22,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
@@ -80,11 +82,13 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
     public static final String NAME = "Plate";
     private static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
     private final boolean _allowInsert;
+    public static final String PLATE_BARCODE_SEQUENCE = "org.labkey.assay.plate.barcode";
 
     public enum Column
     {
         Archived,
         AssayType,
+        Barcode,
         Container,
         Created,
         CreatedBy,
@@ -105,6 +109,7 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
     static
     {
         defaultVisibleColumns.add(FieldKey.fromParts(Column.Name.name()));
+        defaultVisibleColumns.add(FieldKey.fromParts(Column.Barcode.name()));
         defaultVisibleColumns.add(FieldKey.fromParts(Column.Description.name()));
         defaultVisibleColumns.add(FieldKey.fromParts(Column.PlateType.name()));
         defaultVisibleColumns.add(FieldKey.fromParts(Column.PlateSet.name()));
@@ -263,6 +268,11 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
                 nameExpressionTranslator.addColumn(nameCol, (Supplier) () -> null);
             }
 
+            // Add generated barcode column for use in BarcodeDataIterator
+            String barcodeGeneratedName = "barcodeGenerated";
+            ColumnInfo genIdCol = new BaseColumnInfo(FieldKey.fromParts(barcodeGeneratedName), JdbcType.VARCHAR);
+            nameExpressionTranslator.addDbSequenceColumn(ContainerManager.getRoot(), genIdCol, PLATE_BARCODE_SEQUENCE);
+
             DataIterator builtInColumnsTranslator = SimpleTranslator.wrapBuiltInColumns(nameExpressionTranslator, context, container, user, plateTable);
             DataIterator di = LoggingDataIterator.wrap(new NamePlusIdDataIterator(builtInColumnsTranslator, context, plateTable,
                     container,
@@ -270,6 +280,7 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
                     "plateId",
                     PlateManager.get().getPlateNameExpression()));
 
+            di = LoggingDataIterator.wrap(new BarcodeDataIterator(di, Column.Barcode.name(), barcodeGeneratedName, Column.Template.name()));
             di = LoggingDataIterator.wrap(new DuplicatePlateValidator(di, context, container, user));
 
             DataIteratorBuilder dib = StandardDataIteratorBuilder.forInsert(plateTable, di, container, user, context);

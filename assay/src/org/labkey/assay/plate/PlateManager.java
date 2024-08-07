@@ -265,7 +265,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     @Override
     public @NotNull Plate createPlate(Container container, String assayType, @NotNull PlateType plateType)
     {
-        return new PlateImpl(container, null, assayType, plateType);
+        return new PlateImpl(container, null, null, assayType, plateType);
     }
 
     public @NotNull Plate createAndSavePlate(
@@ -992,6 +992,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 plate.setLsid((String) row.get("Lsid"));
                 plate.setName((String) row.get("Name"));
                 plate.setPlateId((String) row.get("PlateId"));
+                plate.setBarcode((String) row.get("Barcode"));
             }
             savePropertyBag(container, user, plate.getLSID(), plate.getProperties(), updateExisting);
 
@@ -1761,7 +1762,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
         {
             // Copy the plate
-            PlateImpl newPlate = new PlateImpl(container, name, sourcePlate.getAssayType(), sourcePlate.getPlateType());
+            PlateImpl newPlate = new PlateImpl(container, name, null, sourcePlate.getAssayType(), sourcePlate.getPlateType());
             newPlate.setCustomFields(sourcePlate.getCustomFields());
             newPlate.setDescription(description);
 
@@ -2405,7 +2406,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public record PlateData(String name, Integer plateType, Integer templateId, List<Map<String, Object>> data) {}
+    public record PlateData(String name, Integer plateType, Integer templateId, String barcode, List<Map<String, Object>> data) {}
 
     private List<Plate> addPlatesToPlateSet(
         Container container,
@@ -2426,7 +2427,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             for (var plate : plates)
             {
                 var plateType = requirePlateType(plate.plateType, "Failed to add plates to plate set.");
-                var plateImpl = new PlateImpl(container, plate.name, plateType);
+                var plateImpl = new PlateImpl(container, plate.name, plate.barcode, plateType);
                 plateImpl.setTemplate(plateSetIsTemplate);
 
                 // TODO: Write a cheaper plate create/save for multiple plates
@@ -3030,7 +3031,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                         .map(WellData::getData)
                         .toList();
 
-                plateData.add(new PlateData(plate.name, plate.plateType, plate.templateId, data));
+                plateData.add(new PlateData(plate.name, plate.plateType, plate.templateId, null, data));
             }
         }
 
@@ -3092,14 +3093,14 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
                 // Hydrate a CreatePlateSetPlate and add it to plate data
                 List<Map<String, Object>> data = wellData.stream().map(WellData::getData).toList();
-                platesData.add(new PlateData(plate.name, plateType.getRowId(), plate.templateId, data));
+                platesData.add(new PlateData(plate.name, plateType.getRowId(), plate.templateId, null, data)); // PR, templates note: empty string barcode?
             }
             else
             {
                 // Iterate through sorted samples array and place them in ascending order in each plate's wells
                 Pair<Integer, List<Map<String, Object>>> pair;
                 pair = getWellSampleData(container, selectedSampleIds, plateType.getRows(), plateType.getColumns(), sampleIdsCounter);
-                platesData.add(new PlateData(plate.name, plateType.getRowId(), null, pair.second));
+                platesData.add(new PlateData(plate.name, plateType.getRowId(), null, null, pair.second));
                 sampleIdsCounter = pair.first;
             }
         }
@@ -3767,7 +3768,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             }
 
             if (operation.produceEmptyPlates() || !targetWellData.isEmpty())
-                plates.add(new PlateData(null, plateType.getRowId(), null, targetWellData));
+                plates.add(new PlateData(null, plateType.getRowId(), null, null, targetWellData));
         }
 
         return plates;

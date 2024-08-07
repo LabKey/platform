@@ -29,6 +29,7 @@ public class PlateSetExport
     public static final String ROW_ID_COL = "rowid";
     public static final String PLATE_SET_ID_COL = "plateSetId";
     public static final String PLATE_NAME_COL = "plateName";
+    public static final String PLATE_BARCODE_COL = "barcode";
 
     private final Map<String, FieldKey> FKMap = Map.of(
         SAMPLE_ID_COL, FieldKey.fromParts("sampleid", "name"),
@@ -38,7 +39,8 @@ public class PlateSetExport
         WellTable.Column.Col.name(), FieldKey.fromParts("plateid", "platetype", "columns"),
         WellTable.Column.PlateId.name(), FieldKey.fromParts("plateid"),
         PLATE_SET_ID_COL, FieldKey.fromParts("plateid", "plateset"),
-        PLATE_NAME_COL, FieldKey.fromParts("plateid", "name")
+        PLATE_NAME_COL, FieldKey.fromParts("plateid", "name"),
+        PLATE_BARCODE_COL, FieldKey.fromParts("plateid", "barcode")
     );
 
     public PlateSetExport()
@@ -58,6 +60,7 @@ public class PlateSetExport
         List<Object> baseColumns = new ArrayList<>(
             Arrays.asList(
                 rs.getString(FKMap.get(PLATE_NAME_COL)),
+                rs.getString(FKMap.get(PLATE_BARCODE_COL)),
                 rs.getString(FKMap.get(WellTable.Column.Position.name())),
                 rs.getInt(FKMap.get(WellTable.Column.Row.name())) * rs.getInt(FKMap.get(WellTable.Column.Col.name()))
             )
@@ -78,6 +81,7 @@ public class PlateSetExport
         List<ColumnDescriptor> baseColumns = new ArrayList<>(
             Arrays.asList(
                 new ColumnDescriptor(prefix + "Plate ID"),
+                new ColumnDescriptor(prefix + "Barcode"),
                 new ColumnDescriptor(prefix + "Well"),
                 new ColumnDescriptor(prefix + "Plate Type")
             )

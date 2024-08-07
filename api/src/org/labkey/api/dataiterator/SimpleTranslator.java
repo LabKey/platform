@@ -1457,6 +1457,11 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         });
     }
 
+    public void addDbSequenceColumn(@Nullable Container c, @NotNull ColumnInfo columnInfo, String sequenceName)
+    {
+        addTextSequenceColumn(columnInfo, columnInfo.getDbSequenceContainer(c), sequenceName, null, 100);
+    }
+
     public Set<String> addDbSequenceColumns(@Nullable Container c, @NotNull TableInfo target)
     {
         final var added = new HashSet<String>();

@@ -145,7 +145,7 @@ public final class PlateManagerTest
 
             List<PlateManager.PlateData> fullPlates = new ArrayList<>();
             for (int i = 0; i < PlateSet.MAX_PLATES; i++)
-                fullPlates.add(new PlateManager.PlateData(null, PLATE_TYPE_12_WELLS.getRowId(), null, null));
+                fullPlates.add(new PlateManager.PlateData(null, PLATE_TYPE_12_WELLS.getRowId(), null, null, null));
 
             fullPlateSet = PlateManager.get().createPlateSet(container, user, fullPlateSet, fullPlates, null);
             assertTrue(fullPlateSet.isFull());
@@ -290,7 +290,7 @@ public final class PlateManagerTest
         assertNotNull("96 well plate type was not found", plateType);
 
         // Act
-        PlateImpl plateImpl = new PlateImpl(container, "testCreateAndSavePlate plate", plateType);
+        PlateImpl plateImpl = new PlateImpl(container, "testCreateAndSavePlate plate", null, plateType);
         Plate plate = PlateManager.get().createAndSavePlate(container, user, plateImpl, null, null);
 
         // Assert
@@ -322,9 +322,9 @@ public final class PlateManagerTest
 
         // Act
         PlateSet plateSet = PlateManager.get().createPlateSet(container, user, plateSetImpl, List.of(
-                new PlateManager.PlateData("testAccessPlateByIdentifiersFirst", plateType.getRowId(), null, null),
-                new PlateManager.PlateData("testAccessPlateByIdentifiersSecond", plateType.getRowId(), null, null),
-                new PlateManager.PlateData("testAccessPlateByIdentifiersThird", plateType.getRowId(), null, null)
+                new PlateManager.PlateData("testAccessPlateByIdentifiersFirst", plateType.getRowId(), null, null, null),
+                new PlateManager.PlateData("testAccessPlateByIdentifiersSecond", plateType.getRowId(), null, null, null),
+                new PlateManager.PlateData("testAccessPlateByIdentifiersThird", plateType.getRowId(), null, null, null)
         ), null);
 
         // Assert
@@ -1131,7 +1131,7 @@ public final class PlateManagerTest
         @Nullable List<Map<String, Object>> plateData
     ) throws Exception
     {
-        PlateImpl plate = new PlateImpl(container, plateName, plateType);
+        PlateImpl plate = new PlateImpl(container, plateName, null, plateType);
         return PlateManager.get().createAndSavePlate(container, user, plate, plateSetId, plateData);
     }
 

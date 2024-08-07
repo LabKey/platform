@@ -64,7 +64,7 @@ public final class PlateSchemaTest
     @Test
     public void testPlateRenaming() throws Exception
     {
-        Plate plate = PlateManager.get().createAndSavePlate(container, user, new PlateImpl(container, null, PLATE_TYPE_12_WELL), null, null);
+        Plate plate = PlateManager.get().createAndSavePlate(container, user, new PlateImpl(container, null, null, PLATE_TYPE_12_WELL), null, null);
         assertEquals("A null plate \"Name\" is expected to result in a plate with the \"Name\" being set to the \"PlateId\".", plate.getPlateId(), plate.getName());
 
         // Issue 50658: Clearing plate name should reset the plate name to equal the PlateId
@@ -88,7 +88,7 @@ public final class PlateSchemaTest
     @Test
     public void testPlateUpdates() throws Exception
     {
-        Plate plate = PlateManager.get().createAndSavePlate(container, user, new PlateImpl(container, null, PLATE_TYPE_12_WELL), null, null);
+        Plate plate = PlateManager.get().createAndSavePlate(container, user, new PlateImpl(container, null, null, PLATE_TYPE_12_WELL), null, null);
 
         // Verify updating AssayType is not allowed
         {

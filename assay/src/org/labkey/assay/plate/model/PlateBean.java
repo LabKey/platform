@@ -19,6 +19,7 @@ public class PlateBean extends Entity
     private Integer _plateType;
     private String _plateId;
     private String _description;
+    private String _barcode;
 
     public static PlateBean from(PlateImpl plate)
     {
@@ -35,6 +36,7 @@ public class PlateBean extends Entity
         bean.setPlateType(plate.getPlateType().getRowId());
         bean.setPlateId(plate.getPlateId());
         bean.setDescription(plate.getDescription());
+        bean.setBarcode(plate.getBarcode());
 
         return bean;
     }
@@ -147,5 +149,15 @@ public class PlateBean extends Entity
     public void setDescription(String description)
     {
         _description = description;
+    }
+
+    public String getBarcode()
+    {
+        return _barcode;
+    }
+
+    public void setBarcode(String barcode)
+    {
+        _barcode = barcode;
     }
 }
