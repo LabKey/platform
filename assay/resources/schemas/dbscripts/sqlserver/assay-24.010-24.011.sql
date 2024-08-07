@@ -1,4 +1,4 @@
-ALTER TABLE assay.plate ADD Barcode VARCHAR(255);
+ALTER TABLE assay.plate ADD Barcode NVARCHAR(255);
 
 ALTER TABLE assay.plate ADD CONSTRAINT UQ_Barcode UNIQUE (Barcode);
 

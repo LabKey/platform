@@ -271,7 +271,7 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
             // Add generated barcode column for use in BarcodeDataIterator
             String barcodeGeneratedName = "barcodeGenerated";
             ColumnInfo genIdCol = new BaseColumnInfo(FieldKey.fromParts(barcodeGeneratedName), JdbcType.VARCHAR);
-            nameExpressionTranslator.addDbSequenceColumn(ContainerManager.getRoot(), genIdCol, PLATE_BARCODE_SEQUENCE);
+            nameExpressionTranslator.addTextSequenceColumn(genIdCol, genIdCol.getDbSequenceContainer(ContainerManager.getRoot()), PLATE_BARCODE_SEQUENCE, null, 100);
 
             DataIterator builtInColumnsTranslator = SimpleTranslator.wrapBuiltInColumns(nameExpressionTranslator, context, container, user, plateTable);
             DataIterator di = LoggingDataIterator.wrap(new NamePlusIdDataIterator(builtInColumnsTranslator, context, plateTable,
