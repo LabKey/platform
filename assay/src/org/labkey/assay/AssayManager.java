@@ -670,22 +670,16 @@ public class AssayManager implements AssayService
         ActionURL assayBeginURL = PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(c, protocol, AssayController.AssayBeginAction.class);
         assayBeginURL.setExtraPath(c.getId());
         String keywords = StringUtilsLabKey.joinNonBlank(" ", name, instrument, provider.getName());
-        String body = StringUtilsLabKey.joinNonBlank(" ", provider.getName(), description, comment);
+        StringBuilder body = new StringBuilder(StringUtilsLabKey.joinNonBlank(" ", provider.getName(), description, comment));
         Map<String, Object> m = new HashMap<>();
         m.put(SearchService.PROPERTY.title.toString(), name);
         m.put(SearchService.PROPERTY.keywordsMed.toString(), keywords);
         m.put(SearchService.PROPERTY.categories.toString(), ASSAY_CATEGORY.getName());
 
-        String docId = protocol.getDocumentId();
+        ExperimentService.get().getExpRuns(c, protocol, null)
+            .forEach(run -> {
+                StringBuilder runKeywords = new StringBuilder();
 
-        List<? extends ExpRun> runs = ExperimentService.get().getExpRuns(c, protocol, null);
-
-        if (!runs.isEmpty())
-        {
-            StringBuilder runKeywords = new StringBuilder();
-
-            for (ExpRun run : runs)
-            {
                 runKeywords.append(" ");
                 runKeywords.append(run.getName());
 
@@ -694,11 +688,12 @@ public class AssayManager implements AssayService
                     runKeywords.append(" ");
                     runKeywords.append(run.getComments());
                 }
-            }
 
-            body += runKeywords.toString();
-        }
-        WebdavResource r = new SimpleDocumentResource(new Path(docId), docId, c.getId(), "text/plain", body, assayBeginURL, createdBy, created, modifiedBy, modified, m);
+                body.append(runKeywords);
+            });
+
+        String docId = protocol.getDocumentId();
+        WebdavResource r = new SimpleDocumentResource(new Path(docId), docId, c.getId(), "text/plain", body.toString(), assayBeginURL, createdBy, created, modifiedBy, modified, m);
         task.addResource(r, SearchService.PRIORITY.item);
     }
 
@@ -784,11 +779,9 @@ public class AssayManager implements AssayService
 
     private void indexAssayRuns(SearchService.IndexTask task, Container c, ExpProtocol protocol, @Nullable Date modifiedSince)
     {
-        for (ExpRun run : ExperimentService.get().getExpRuns(c, protocol, null))
-        {
-            if (modifiedSince == null || modifiedSince.before(run.getModified()))
-                indexAssayRun(task, run);
-        }
+        ExperimentService.get().getExpRuns(c, protocol, null, run ->
+                        modifiedSince == null || modifiedSince.before(run.getModified())
+                ).forEach(r -> indexAssayRun(task, r));
     }
 
     public void indexAssayRun(int expRunRowId)

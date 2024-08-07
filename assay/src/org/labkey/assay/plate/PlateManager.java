@@ -2422,6 +2422,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         try (DbScope.Transaction tx = ensureTransaction())
         {
             pausePlateIndexing();
+            tx.addCommitTask(this::resumePlateIndexing, DbScope.CommitTaskOption.POSTCOMMIT, DbScope.CommitTaskOption.POSTROLLBACK);
+
             List<Plate> platesAdded = new ArrayList<>();
 
             for (var plate : plates)
@@ -2434,15 +2436,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 platesAdded.add(createAndSavePlate(container, user, plateImpl, plateSetId, plate.data));
             }
 
-            tx.addCommitTask(this::resumePlateIndexing, DbScope.CommitTaskOption.POSTCOMMIT);
             tx.commit();
 
             return platesAdded;
-        }
-        catch (Exception e)
-        {
-            resumePlateIndexing();
-            throw UnexpectedException.wrap(e);
         }
     }
 
