@@ -83,7 +83,7 @@ public class DefaultReportUIProvider implements ReportService.UIProvider
         bean.setReportType(type);
         bean.setRedirectUrl(context.getActionURL().toString());
 
-        ActionURL designerURL = ReportUtil.getRReportDesignerURL(context, bean);
+        ActionURL designerURL = ReportUtil.getScriptReportDesignerURL(context, bean);
         designerURL = addForwardParams(designerURL, context, params);
 
         Report report = ReportService.get().createReportInstance(type);
