@@ -3684,8 +3684,14 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         {
             plateSet = new PlateSetImpl();
             plateSet.setType(targetPlateSetOptions.getType());
-            if (StringUtils.trimToNull(targetPlateSetOptions.getDescription()) != null)
-                plateSet.setDescription(targetPlateSetOptions.getDescription());
+
+            String plateSetName = StringUtils.trimToNull(targetPlateSetOptions.getName());
+            if (plateSetName != null)
+                plateSet.setName(plateSetName);
+
+            String description = StringUtils.trimToNull(targetPlateSetOptions.getDescription());
+            if (description != null)
+                plateSet.setDescription(description);
         }
 
         return plateSet;
