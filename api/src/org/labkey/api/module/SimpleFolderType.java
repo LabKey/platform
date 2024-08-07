@@ -54,11 +54,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * User: brittp
- * Date: Apr 19, 2010
- * Time: 4:20:27 PM
- */
 public class SimpleFolderType extends MultiPortalFolderType
 {
     private static final Logger LOG = LogHelper.getLogger(SimpleFolderType.class, "File-based folder types");
@@ -107,7 +102,7 @@ public class SimpleFolderType extends MultiPortalFolderType
             _folderTabs = createDefaultTab(type);
         }
 
-        if (_folderTabs.size() > 0)
+        if (!_folderTabs.isEmpty())
         {
             _defaultTab = _folderTabs.get(0);
             _folderTabs.get(0).setIsDefaultTab(true);

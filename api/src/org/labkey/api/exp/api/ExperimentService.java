@@ -91,6 +91,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
+import java.util.function.Predicate;
 
 import static org.labkey.api.exp.api.ExpDataClass.NEW_DATA_CLASS_ALIAS_VALUE;
 import static org.labkey.api.exp.api.SampleTypeService.NEW_SAMPLE_TYPE_ALIAS_VALUE;
@@ -158,8 +159,13 @@ public interface ExperimentService extends ExperimentRunTypeSource
     @Nullable
     ExpRun getExpRun(String lsid);
 
+    boolean hasExpRuns(Container container, @NotNull Predicate<ExpRun> filterFn);
     /** @return a list of ExpRuns ordered by the RowId */
     List<? extends ExpRun> getExpRuns(Container container, @Nullable ExpProtocol parentProtocol, @Nullable ExpProtocol childProtocol);
+
+    List<? extends ExpRun> getExpRuns(Container container, @Nullable ExpProtocol parentProtocol, @Nullable ExpProtocol childProtocol, @NotNull Predicate<ExpRun> filterFn);
+    
+    List<? extends ExpRun> getExpRuns( @Nullable SQLFragment filterSQL, @NotNull Predicate<ExpRun> filterFn, @NotNull Container container);
 
     List<? extends ExpRun> getExpRunsForJobId(int jobId);
 

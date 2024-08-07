@@ -280,8 +280,8 @@ dependencies {
             "XZ for Java",
             "tukaani.org",
             "https://tukaani.org/xz/java.html",
-            "public",
-            "https://tukaani.org/xz/java.html#Licensing",
+            "BSD Zero Clause",
+            "https://tukaani.org/xz/java.html#:~:text=Licensing",
             "Transitive dependency of commons-compress to support additional compression types for search"
         )
     )
