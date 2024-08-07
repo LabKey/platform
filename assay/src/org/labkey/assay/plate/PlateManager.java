@@ -3093,7 +3093,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
                 // Hydrate a CreatePlateSetPlate and add it to plate data
                 List<Map<String, Object>> data = wellData.stream().map(WellData::getData).toList();
-                platesData.add(new PlateData(plate.name, plateType.getRowId(), plate.templateId, null, data)); // PR, templates note: empty string barcode?
+                platesData.add(new PlateData(plate.name, plateType.getRowId(), plate.templateId, null, data));
             }
             else
             {

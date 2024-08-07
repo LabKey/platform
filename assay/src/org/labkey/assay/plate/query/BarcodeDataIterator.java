@@ -26,7 +26,7 @@ public class BarcodeDataIterator extends WrapperDataIterator
     @Override
     public Object get(int i)
     {
-        // Return user-supplied barcode value if present, defaulting to generated value
+        // If plate is not a template, return user-supplied barcode value if present, defaulting to generated value
         if (i == _barcodeCol)
         {
             if ((boolean) super.get(_template))
