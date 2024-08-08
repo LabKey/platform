@@ -88,12 +88,6 @@ import java.util.regex.Pattern;
 
 public class ReportUtil
 {
-    @Deprecated // use getScriptReportDesignerURL instead
-    public static ActionURL getRReportDesignerURL(ViewContext context, ScriptReportBean bean)
-    {
-        return getScriptReportDesignerURL(context, bean);
-    }
-
     public static ActionURL getScriptReportDesignerURL(ViewContext context, ScriptReportBean bean)
     {
         ActionURL url = PageFlowUtil.urlProvider(ReportUrls.class).urlCreateScriptReport(context.getContainer());

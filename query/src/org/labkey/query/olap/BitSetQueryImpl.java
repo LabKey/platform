@@ -1351,8 +1351,6 @@ public class BitSetQueryImpl
         return new MemberSetResult(set);
     }
 
-
-
     //
     // special optimized subset of query/mdx functionality
     // this method supports:
@@ -1370,10 +1368,10 @@ public class BitSetQueryImpl
             columnsExpr = processExpr(qq.onColumns);
         if (null != qq.onRows)
             rowsExpr = processExpr(qq.onRows);
-        if (null != qq.countFilters && qq.countFilters.arguments.size() > 0)
+        if (null != qq.countFilters && !qq.countFilters.arguments.isEmpty())
             countFilterExpr = processExpr(qq.countFilters);
 
-        if (null != qq.whereFilters && qq.whereFilters.arguments.size() > 0)
+        if (null != qq.whereFilters && !qq.whereFilters.arguments.isEmpty())
             whereFilterExpr = processExpr(qq.whereFilters);
 
         CellSet ret;

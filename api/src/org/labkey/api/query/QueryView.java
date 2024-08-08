@@ -676,7 +676,7 @@ public class QueryView extends WebPartView<Object>
                 bean.setDataRegionName(getDataRegionName());
 
                 bean.setRedirectUrl(getReturnURL().getLocalURIString());
-                return ReportUtil.getRReportDesignerURL(_viewContext, bean);
+                return ReportUtil.getScriptReportDesignerURL(_viewContext, bean);
         }
         return ret;
     }

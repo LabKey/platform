@@ -16,6 +16,10 @@
 
 package org.labkey.core.portal;
 
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -94,10 +98,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-import jakarta.servlet.RequestDispatcher;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1581,7 +1581,7 @@ public class ProjectController extends SpringActionController
                 List<Map<String, Object>> children = getVisibleChildren(container, user, propertiesToSerialize, 0, form);
                 resultMap.put("children", children);
 
-                if (children.size() > 0)
+                if (!children.isEmpty())
                 {
                     // If user has permissions to at least one child container, then make sure that at least the
                     // parent name is shown (even if the user doesn't have permission in the parent container)

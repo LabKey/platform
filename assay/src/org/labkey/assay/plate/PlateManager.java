@@ -2421,6 +2421,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         try (DbScope.Transaction tx = ensureTransaction())
         {
             pausePlateIndexing();
+            tx.addCommitTask(this::resumePlateIndexing, DbScope.CommitTaskOption.POSTCOMMIT, DbScope.CommitTaskOption.POSTROLLBACK);
+
             List<Plate> platesAdded = new ArrayList<>();
 
             for (var plate : plates)
@@ -2433,15 +2435,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 platesAdded.add(createAndSavePlate(container, user, plateImpl, plateSetId, plate.data));
             }
 
-            tx.addCommitTask(this::resumePlateIndexing, DbScope.CommitTaskOption.POSTCOMMIT);
             tx.commit();
 
             return platesAdded;
-        }
-        catch (Exception e)
-        {
-            resumePlateIndexing();
-            throw UnexpectedException.wrap(e);
         }
     }
 
@@ -3688,8 +3684,14 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         {
             plateSet = new PlateSetImpl();
             plateSet.setType(targetPlateSetOptions.getType());
-            if (StringUtils.trimToNull(targetPlateSetOptions.getDescription()) != null)
-                plateSet.setDescription(targetPlateSetOptions.getDescription());
+
+            String plateSetName = StringUtils.trimToNull(targetPlateSetOptions.getName());
+            if (plateSetName != null)
+                plateSet.setName(plateSetName);
+
+            String description = StringUtils.trimToNull(targetPlateSetOptions.getDescription());
+            if (description != null)
+                plateSet.setDescription(description);
         }
 
         return plateSet;

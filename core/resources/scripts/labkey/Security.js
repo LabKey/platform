@@ -28,7 +28,7 @@ LABKEY.Security = new function()
     return {
 
         /**
-         * @deprecated Do not use this anymore! Use effectivePermissions instead.
+         * @deprecated Do not use this! Use effectivePermissions instead.
          */
         permissions : {
             read: 1,
@@ -1419,7 +1419,7 @@ LABKEY.Security = new function()
          */
         addGroupMembers : function(config)
         {
-            var params = {
+            const params = {
                 groupId: config.groupId,
                 principalIds: (LABKEY.Utils.isArray(config.principalIds) ? config.principalIds : [config.principalIds])
             };
@@ -1463,7 +1463,7 @@ LABKEY.Security = new function()
          */
         removeGroupMembers : function(config)
         {
-            var params = {
+            const params = {
                 groupId: config.groupId,
                 principalIds: (LABKEY.Utils.isArray(config.principalIds) ? config.principalIds : [config.principalIds])
             };
@@ -1507,7 +1507,7 @@ LABKEY.Security = new function()
          */
         createNewUser : function(config)
         {
-            var params = {
+            const params = {
                 email: config.email,
                 sendEmail: config.sendEmail,
                 optionalMessage: config.optionalMessage
