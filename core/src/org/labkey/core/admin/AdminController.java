@@ -1628,6 +1628,7 @@ public class AdminController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class ViewValidationResultsAction extends SimpleViewAction<ViewValidationResultsForm>
     {
+        @Override
         public ModelAndView getView(ViewValidationResultsForm form, BindException errors) throws Exception
         {
             if (StringUtils.isBlank(form.getFileName()))
