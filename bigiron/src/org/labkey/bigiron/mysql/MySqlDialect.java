@@ -317,4 +317,28 @@ public class MySqlDialect extends SimpleSqlDialect
     {
         return dbmd.getCatalogs();
     }
+
+    @Override
+    public String getStdDevFunction()
+    {
+        return "stddev";
+    }
+
+    @Override
+    public String getStdDevPopFunction()
+    {
+        return "stddev_pop";
+    }
+
+    @Override
+    public String getVarianceFunction()
+    {
+        return "variance";
+    }
+
+    @Override
+    public String getVarPopFunction()
+    {
+        return "var_pop";
+    }
 }

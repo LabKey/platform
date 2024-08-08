@@ -281,8 +281,8 @@ public class Aggregate
                     }
                 };
 
-        private String _fullLabel;
-        private String _displayValue;
+        private final String _fullLabel;
+        private final String _displayValue;
 
         BaseType(String fullLabel)
         {
