@@ -41,6 +41,7 @@ import org.labkey.api.data.dialect.TableResolver;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
@@ -138,12 +139,6 @@ public class MySqlDialect extends SimpleSqlDialect
                 public String getCatalogName()
                 {
                     return super.getSchemaName();
-                }
-
-                @Override
-                public boolean supportsSchemas()
-                {
-                    return false;
                 }
             };
         }
@@ -315,5 +310,11 @@ public class MySqlDialect extends SimpleSqlDialect
     public @Nullable String getApplicationNameParameter()
     {
         return "ApplicationName";
+    }
+
+    @Override
+    public ResultSet getSchemas(DatabaseMetaData dbmd, String databaseName) throws SQLException
+    {
+        return dbmd.getCatalogs();
     }
 }

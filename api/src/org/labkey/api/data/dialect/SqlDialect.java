@@ -1056,6 +1056,12 @@ public abstract class SqlDialect
         return null;
     }
 
+    public ResultSet getSchemas(DatabaseMetaData dbmd, String databaseName) throws SQLException
+    {
+        // TODO: On develop, consider calling getSchemas(databaseName, null) by default and eliminating Snowflake override
+        return dbmd.getSchemas();
+    }
+
     protected static class SQLSyntaxException extends SQLException
     {
         private final Collection<String> _errors;
@@ -1073,8 +1079,7 @@ public abstract class SqlDialect
     }
 
     /**
-     * Transform the JDBC error message into something the user is more likely
-     * to understand.
+     * Transform the JDBC error message into something the user is more likely to understand.
      */
     public abstract String sanitizeException(SQLException ex);
 

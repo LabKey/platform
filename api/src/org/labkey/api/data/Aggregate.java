@@ -87,7 +87,9 @@ public class Aggregate
             if (distinct)
                 sb.append("DISTINCT ");
             sb.append(dialect.getColumnSelectName(columnName));
-            sb.append(") AS ").append(asName);
+            sb.append(")");
+            if (asName != null)
+                sb.append(" AS ").append(asName);
             return sb;
         }
 
