@@ -24,7 +24,6 @@ import org.labkey.api.exp.Identifiable;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -202,15 +201,6 @@ public class ExpLineage
 
         ExpLineageTree ancestorTree = ExpLineageTree.getAncestorTree(this, seed);
         return ExpLineageTree.getNodes(ancestorTree, ancestorPaths, user);
-    }
-
-    public List<Identifiable> findAncestorByType(ExpRunItem seed, Pair<ExpLineageOptions.LineageExpType, String> ancestorType, User user)
-    {
-        if (!_seeds.contains(seed))
-            throw new UnsupportedOperationException();
-
-        ExpLineageTree ancestorTree = ExpLineageTree.getAncestorTree(this, seed);
-        return ExpLineageTree.getNodes(ancestorTree, ancestorType, user);
     }
 
     /**
@@ -631,24 +621,6 @@ public class ExpLineage
                 if (isValidNode(child.getExpObject(), expType, cpas, user))
                     targetNodes.addAll(getNodes(child, ancestorPaths.subList(1, ancestorPaths.size()), user));
             }
-
-            return targetNodes;
-        }
-
-        public static List<Identifiable> getNodes(ExpLineageTree tree, Pair<ExpLineageOptions.LineageExpType, String> ancestorType, User user)
-        {
-            if (ancestorType == null)
-                return null;
-
-            ExpLineageOptions.LineageExpType expType = ancestorType.first;
-            String cpas = ancestorType.second;
-
-            List<Identifiable> targetNodes = new ArrayList<>();
-            if (isValidNode(tree.getExpObject(), expType, cpas, user))
-                targetNodes.add(tree.getExpObject());
-
-            for (ExpLineageTree child : tree.getChildren())
-                targetNodes.addAll(getNodes(child, ancestorType, user));
 
             return targetNodes;
         }

@@ -70,6 +70,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
@@ -1933,18 +1934,17 @@ public class NameGenerator
 
                     if (ancestorOptions.ancestorSearchType() != null)
                     {
-                        List<Identifiable> candidateAncestors = lineage.findAncestorByType(parentObject, ancestorOptions.ancestorSearchType(), _user);
-                        Collections.reverse(candidateAncestors); // return furthest ancestors first
-                        for (Identifiable candidate : candidateAncestors)
+                        boolean isMaterials = ancestorOptions.ancestorSearchType().first == ExpLineageOptions.LineageExpType.Material;
+                        Set<? extends ExpRunItem> candidateAncestors = isMaterials ? lineage.getMaterials() : lineage.getDatas();
+                        List<? extends ExpRunItem> sortedCandidateAncestors = new ArrayList<>(candidateAncestors);
+                        sortedCandidateAncestors.sort(Comparator.comparing((ExpRunItem a) -> a.getName()));
+                        for (ExpRunItem candidate : sortedCandidateAncestors)
                         {
-                            if (candidate instanceof ExpMaterial || candidate instanceof ExpData)
+                            if (candidate.getCpasType().equals(ancestorOptions.ancestorSearchType().second))
                             {
-                                if (((ExpRunItem) candidate).getCpasType().equals(ancestorOptions.ancestorSearchType().second))
-                                {
-                                    Object lookupValue = getParentFieldValue((ExpObject) candidate, fieldName);
-                                    if (lookupValue != null)
-                                        ancestorLookupValues.add(lookupValue);
-                                }
+                                Object lookupValue = getParentFieldValue(candidate, fieldName);
+                                if (lookupValue != null)
+                                    ancestorLookupValues.add(lookupValue);
                             }
                         }
                         _ancestorSearchCache.put(ancestorFieldKey + "-" + parentObject.getObjectId(), ancestorLookupValues);
