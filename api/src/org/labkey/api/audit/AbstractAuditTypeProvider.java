@@ -256,7 +256,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
                 updateIndices(domain, domainKind);
                 // Issue 50059, don't cache the DB schema table queried by updateIndices in order for the provisioned
                 // domain fields to be properly fixed up.
-                transaction.addCommitTask(() -> domainKind.invalidate(domain), DbScope.CommitTaskOption.POSTCOMMIT);
+                //transaction.addCommitTask(() -> domainKind.invalidate(domain), DbScope.CommitTaskOption.POSTCOMMIT);
                 transaction.commit();
             }
             catch (ChangePropertyDescriptorException e)
