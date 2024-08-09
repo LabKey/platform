@@ -550,7 +550,7 @@ public class ListImporter
             boolean replaced = false;
             String name = tableType.getTableName();
 
-            /* TODO this list should be consistent across all types, not just List */
+            /* TODO this list should be consistent across all types, not just List, see StudyManager.importDatasetSchemas() */
             ComplianceFolderSettings settings = ComplianceService.get().getFolderSettings(c, User.getAdminServiceUser());
             PhiColumnBehavior columnBehavior = null==settings ? PhiColumnBehavior.show : settings.getPhiColumnBehavior();
             if (PhiColumnBehavior.show != columnBehavior)
