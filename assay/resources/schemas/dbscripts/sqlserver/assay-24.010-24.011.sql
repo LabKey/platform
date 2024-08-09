@@ -1,6 +1,6 @@
 ALTER TABLE assay.plate ADD Barcode NVARCHAR(255);
-
 ALTER TABLE assay.plate ADD CONSTRAINT UQ_Barcode UNIQUE (Barcode);
+GO
 
 UPDATE assay.plate
 SET Barcode = RIGHT(REPLICATE('0', 9) + CAST(rowid AS VARCHAR(9)), 9)
