@@ -147,7 +147,7 @@ public class PlateSetExport
 
                 List<Object[]> destinationDataRows = sampleIdToDestinationRow.get(sampleId);
                 if (destinationDataRows == null)
-                     destinationDataRows = Collections.singletonList(new Object[destinationIncludedMetadataCols.size() + 3]); // 3 is the number of base (non-metadata) columns
+                     destinationDataRows = Collections.singletonList(new Object[destinationIncludedMetadataCols.size() + 4]); // 4 is the number of base (non-metadata) columns
 
                 for (Object[] dataRow : destinationDataRows)
                     plateDataRows.add(ArrayUtils.addAll(sourceDataRow, dataRow));

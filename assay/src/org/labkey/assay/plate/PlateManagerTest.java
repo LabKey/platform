@@ -622,12 +622,12 @@ public final class PlateManagerTest
 
         // Assert
         Object[] row1 = result.get(0);
-        String[] valuesRow1 = new String[]{"myPlate", "A1", "96", sample1.getName(), "B1234", "2.25"};
+        String[] valuesRow1 = new String[]{"myPlate", plate.getBarcode(), "A1", "96", sample1.getName(), "B1234", "2.25"};
         for (int i = 0; i < row1.length; i++)
             assertEquals(row1[i].toString(), valuesRow1[i]);
 
         Object[] row2 = result.get(1);
-        String[] valuesRow2 = new String[]{"myPlate", "A2", "96", sample2.getName(), "B5678", "1.25"};
+        String[] valuesRow2 = new String[]{"myPlate", plate.getBarcode(), "A2", "96", sample2.getName(), "B5678", "1.25"};
         for (int i = 0; i < row1.length; i++)
             assertEquals(row2[i].toString(), valuesRow2[i]);
     }
