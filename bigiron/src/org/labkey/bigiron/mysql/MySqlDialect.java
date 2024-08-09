@@ -257,7 +257,6 @@ public class MySqlDialect extends SimpleSqlDialect
         return "";
     }
 
-    // Haven't tested this
     @Override
     public boolean allowSortOnSubqueryWithoutLimit()
     {

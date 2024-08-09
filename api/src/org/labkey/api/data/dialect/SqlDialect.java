@@ -1200,6 +1200,14 @@ public abstract class SqlDialect
      */
     abstract public SQLFragment sqlLocate(SQLFragment littleString, SQLFragment bigString, SQLFragment startIndex);
 
+    /**
+     * Most databases are fine with queries like:
+     * <p>
+     * {@code SELECT * FROM (SELECT * FROM core.Modules ORDER BY Name) x}
+     * </p>
+     * SQL Server is not, unless you append {@code OFFSET 0 ROWS} to the end of that {@code ORDER BY} clause
+     * @return true unless you have a weird database server like SQL Server
+     */
     abstract public boolean allowSortOnSubqueryWithoutLimit();
 
     public void appendSortOnSubqueryWithoutLimitQualifier(SQLFragment builder)
