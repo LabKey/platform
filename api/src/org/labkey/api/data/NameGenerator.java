@@ -1934,17 +1934,18 @@ public class NameGenerator
 
                     if (ancestorOptions.ancestorSearchType() != null)
                     {
-                        boolean isMaterials = ancestorOptions.ancestorSearchType().first == ExpLineageOptions.LineageExpType.Material;
-                        Set<? extends ExpRunItem> candidateAncestors = isMaterials ? lineage.getMaterials() : lineage.getDatas();
-                        List<? extends ExpRunItem> sortedCandidateAncestors = new ArrayList<>(candidateAncestors);
-                        sortedCandidateAncestors.sort(Comparator.comparing((ExpRunItem a) -> a.getName()));
-                        for (ExpRunItem candidate : sortedCandidateAncestors)
+                        List<Identifiable> candidateAncestors = lineage.findAncestorByType(parentObject, ancestorOptions.ancestorSearchType(), _user);
+                        candidateAncestors.sort(Comparator.comparing(a -> a.getName()));
+                        for (Identifiable candidateAncestor : candidateAncestors)
                         {
-                            if (candidate.getCpasType().equals(ancestorOptions.ancestorSearchType().second))
+                            if (candidateAncestor instanceof ExpRunItem candidate)
                             {
-                                Object lookupValue = getParentFieldValue(candidate, fieldName);
-                                if (lookupValue != null)
-                                    ancestorLookupValues.add(lookupValue);
+                                if (candidate.getCpasType().equals(ancestorOptions.ancestorSearchType().second))
+                                {
+                                    Object lookupValue = getParentFieldValue(candidate, fieldName);
+                                    if (lookupValue != null)
+                                        ancestorLookupValues.add(lookupValue);
+                                }
                             }
                         }
                         _ancestorSearchCache.put(ancestorFieldKey + "-" + parentObject.getObjectId(), ancestorLookupValues);
