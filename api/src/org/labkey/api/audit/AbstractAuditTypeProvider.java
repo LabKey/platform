@@ -107,7 +107,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
 
         // Issue 20310: initialize AuditTypeProvider when registered during startup
         User auditUser = new LimitedUser(UserManager.getGuestUser(), ReaderRole.class);
-        initializeProvider(auditUser);
+        //initializeProvider(auditUser);
     }
 
     protected AbstractAuditDomainKind getDomainKind()

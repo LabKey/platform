@@ -237,8 +237,6 @@ public class DefaultFolderType implements FolderType
         {
             folderTab.initializeContent(c);
         }
-
-        PropertyService.get().ensureDomains(c, user);
     }
 
     @Override
