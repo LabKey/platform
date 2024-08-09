@@ -99,14 +99,11 @@
 <%@ page import="java.util.Collections" %>
 <%@ page import="org.labkey.api.query.QueryUpdateService" %>
 <%@ page import="org.labkey.api.data.Sort" %>
+<%@ page import="org.labkey.api.exp.api.DataClassDomainKindProperties" %>
 
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
 
 <%!
-/**
- * User: kevink
- * Date: 12/27/15
- */
 ExpProvisionedTableTestHelper helper = new ExpProvisionedTableTestHelper();
 Container c;
 
@@ -138,7 +135,7 @@ public void nameNotNull() throws Exception
         List<GWTPropertyDescriptor> props = new ArrayList<>();
         props.add(new GWTPropertyDescriptor("foo", "string"));
 
-        ExperimentServiceImpl.get().createDataClass(c, user, null, null, props, emptyList(), null);
+        ExperimentServiceImpl.get().createDataClass(c, user, null, null, props, emptyList(), null, null);
     }
     catch (IllegalArgumentException e)
     {
@@ -158,7 +155,7 @@ public void nameScale() throws Exception
         props.add(new GWTPropertyDescriptor("foo", "string"));
 
         String name = StringUtils.repeat("a", 1000);
-        ExperimentServiceImpl.get().createDataClass(c, user, name, null, props, emptyList(), null);
+        ExperimentServiceImpl.get().createDataClass(c, user, name, null, props, emptyList(), null, null);
     }
     catch (IllegalArgumentException e)
     {
@@ -177,8 +174,10 @@ public void nameExpressionScale() throws Exception
         List<GWTPropertyDescriptor> props = new ArrayList<>();
         props.add(new GWTPropertyDescriptor("foo", "string"));
 
-        String nameExpr = StringUtils.repeat("a", 1000);
-        ExperimentServiceImpl.get().createDataClass(c, user, "testing", null, props, emptyList(), null, nameExpr, null, null);
+        DataClassDomainKindProperties options = new DataClassDomainKindProperties();
+        options.setNameExpression(StringUtils.repeat("a", 1000));
+
+        ExperimentServiceImpl.get().createDataClass(c, user, "testing", options, props, emptyList(), null, null);
     }
     catch (IllegalArgumentException e)
     {
@@ -200,9 +199,10 @@ public void testDataClass() throws Exception
     List<GWTIndex> indices = new ArrayList<>();
     indices.add(new GWTIndex(Arrays.asList("aa"), true));
 
-    String nameExpr = "JUNIT-${genId}-${aa}";
+    DataClassDomainKindProperties options = new DataClassDomainKindProperties();
+    options.setNameExpression("JUNIT-${genId}-${aa}");
 
-    final ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user, "testing", null, props, indices, null, nameExpr, null, null);
+    final ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user, "testing", options, props, indices, null, null);
     assertNotNull(dataClass);
 
     final Domain domain = dataClass.getDomain();
@@ -274,12 +274,6 @@ private void testInsertIntoSubfolder(ExpDataClassImpl dataClass, TableInfo table
     ExpData data = ExperimentService.get().getExpData(dataClass, expectedSubName);
     assertNotNull(data);
     assertEquals(sub, data.getContainer());
-
-    // TODO: Why is my filter not working?
-//            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("container"), Arrays.asList(c, sub), CompareType.IN);
-//            TableSelector ts = new TableSelector(table, filter, null);
-//            assertEquals(2L, ts.getRowCount());
-
     assertEquals(2, dataClass.getDatas().size());
 }
 
@@ -671,7 +665,7 @@ public void testContainerDelete() throws Exception
     List<GWTPropertyDescriptor> props = new ArrayList<>();
     props.add(new GWTPropertyDescriptor("aa", "int"));
 
-    final ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user, "testing", null, props, emptyList(), null);
+    final ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user, "testing", null, props, emptyList(), null, null);
     final int dataClassId = dataClass.getRowId();
 
     UserSchema schema = QueryService.get().getUserSchema(user, c, helper.expDataSchemaKey);
@@ -758,7 +752,7 @@ public void testLargeUniqueOnSingleColumnOnly() throws ExperimentException
     boolean sqlServer = ExperimentService.get().getSchema().getSqlDialect().isSqlServer();
     try
     {
-        final ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user, "largeUnique", null, props, indices, null);
+        final ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user, "largeUnique", null, props, indices, null, null);
         if (sqlServer)
             fail("Expected exception creating large index over two columns");
     }
@@ -785,14 +779,13 @@ public void testLargeUnique() throws Exception
     prop.setScale(20000);
     props.add(prop);
 
-
     List<GWTIndex> indices = new ArrayList<>();
     indices.add(new GWTIndex(Arrays.asList("bb"), true));
 
-    String nameExpr = "JUNIT-${genId}-${aa}";
+    DataClassDomainKindProperties options = new DataClassDomainKindProperties();
+    options.setNameExpression("JUNIT-${genId}-${aa}");
 
-    final ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user, "largeUnique2", null, props, indices, null, nameExpr, null, null);
-    final int dataClassId = dataClass.getRowId();
+    final ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user, "largeUnique2", options, props, indices, null, null);
 
     List<Map<String, Object>> rows = new ArrayList<>();
     Map<String, Object> row = new CaseInsensitiveHashMap<>();
@@ -810,14 +803,14 @@ public void testLargeUnique() throws Exception
     // first insert should succeed
     try (DbScope.Transaction tx = ExperimentService.get().getSchema().getScope().beginTransaction())
     {
-        helper.insertRows(c, rows, "largeUnique2");
+        helper.insertRows(c, rows, dataClass.getName());
         tx.commit();
     }
 
     // second insert should fail
     try (DbScope.Transaction tx = ExperimentService.get().getSchema().getScope().beginTransaction())
     {
-        helper.insertRows(c, rows, "largeUnique2");
+        helper.insertRows(c, rows, dataClass.getName());
         fail("Expected constraint exception");
     }
     catch (BatchValidationException e)
@@ -859,7 +852,7 @@ public void testDataClassWithVocabularyProperties() throws Exception
     final String typePropertyURI = vocabularyPropertyURIs.get(helper.typePropertyName);
 
     ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user, dataClassName, null,
-            List.of(new GWTPropertyDescriptor("OtherProp", "string")), emptyList(), null);
+            List.of(new GWTPropertyDescriptor("OtherProp", "string")), emptyList(), null, null);
     assertNotNull(dataClass);
 
     // insert a data class
@@ -968,7 +961,7 @@ public void testViewSupportForVocabularyDomains() throws Exception
     String carName1 = "Tesla";
 
     ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user, dataClassName, null,
-            List.of(new GWTPropertyDescriptor("OtherProp", "string")), emptyList(), null);
+            List.of(new GWTPropertyDescriptor("OtherProp", "string")), emptyList(), null, null);
 
     UserSchema userSchema = QueryService.get().getUserSchema(user, c, helper.expDataSchemaKey);
 
@@ -1006,7 +999,7 @@ public void testInsertOptionUpdate() throws Exception
     List<GWTPropertyDescriptor> props = new ArrayList<>();
     props.add(new GWTPropertyDescriptor("prop", "string"));
 
-    ExpDataClass dataClass = ExperimentServiceImpl.get().createDataClass(c, user, dataClassName, null, props, emptyList(), null);
+    ExpDataClass dataClass = ExperimentServiceImpl.get().createDataClass(c, user, dataClassName, null, props, emptyList(), null, null);
     List<Map<String, Object>> rowsToAdd = new ArrayList<>();
     rowsToAdd.add(CaseInsensitiveHashMap.of("name", "D-1", "prop", "a"));
     rowsToAdd.add(CaseInsensitiveHashMap.of("name", "D-1-d", "prop", "c"));

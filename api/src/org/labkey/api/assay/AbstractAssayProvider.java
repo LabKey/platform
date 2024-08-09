@@ -51,6 +51,7 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.XarContext;
@@ -1941,7 +1942,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
         for (ExpRun run : runs)
         {
-            for (DomainProperty fileProp : fileDomainProps )
+            for (DomainProperty fileProp : fileDomainProps)
             {
                 String sourceFileName;
                 File sourceFile;
@@ -2105,6 +2106,66 @@ public abstract class AbstractAssayProvider implements AssayProvider
                             .append(" WHERE rowId = ").appendValue(resultRowId);
                     new SqlExecutor(assayResultTable.getSchema()).execute(updateSql);
                 }
+            }
+        }
+    }
+
+    @Override
+    public void updateRunPropertyLineage(Container container, User user, TableInfo runsTable, ExpRun run, Map<String, Object> row) throws ValidationException
+    {
+        Domain domain = runsTable.getDomain();
+        if (domain == null)
+            return;
+
+        Set<Integer> removedMaterialInputs = new HashSet<>();
+        Map<ExpMaterial, String> addedMaterialInputs = new HashMap<>();
+
+        for (var entry : row.entrySet())
+        {
+            String columnName = entry.getKey();
+            ColumnInfo column = runsTable.getColumn(columnName);
+
+            // There can be multiple columns within a row that are lineage-backed material lookups.
+            // Coalesce these material input updates across columns.
+            if (column instanceof PropertyColumn)
+            {
+                DomainProperty dp = domain.getPropertyByURI(column.getPropertyURI());
+                if (DefaultAssayRunCreator.isLookupToMaterials(dp))
+                {
+                    // Remove all material inputs with the same role
+                    for (var materialEntry : run.getMaterialInputs().entrySet())
+                    {
+                        if (columnName.equalsIgnoreCase(materialEntry.getValue()))
+                            removedMaterialInputs.add(materialEntry.getKey().getRowId());
+                    }
+
+                    ExpSampleType sampleType = DefaultAssayRunCreator.getLookupSampleType(dp, container, user);
+                    ExpMaterial newInputMaterial = ExperimentService.get().resolveExpMaterial(container, user, entry.getValue(), sampleType, null, null);
+                    if (newInputMaterial != null)
+                        addedMaterialInputs.put(newInputMaterial, dp.getName());
+                }
+            }
+        }
+
+        if (!removedMaterialInputs.isEmpty())
+        {
+            var pa = run.getInputProtocolApplication();
+            if (pa != null)
+                pa.removeMaterialInputs(user, removedMaterialInputs);
+        }
+
+        if (!addedMaterialInputs.isEmpty())
+        {
+            var pa = run.getInputProtocolApplication();
+            if (pa != null)
+            {
+                for (var entry : addedMaterialInputs.entrySet())
+                    pa.addMaterialInput(user, entry.getKey(), entry.getValue());
+
+                // Fetch the most up-to-date run to validate input/output cycles
+                ExpRun updatedRun = ExperimentService.get().getExpRun(run.getRowId());
+                if (updatedRun != null)
+                    ExperimentService.get().checkForCycles(updatedRun.getMaterialInputs(), updatedRun.getMaterialOutputs());
             }
         }
     }

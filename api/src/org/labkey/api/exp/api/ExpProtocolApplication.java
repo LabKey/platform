@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * An individual step inside of an {@link ExpRun}, which can consume or produce {@link ExpData} or {@link ExpMaterial}
+ * An individual step inside an {@link ExpRun}, which can consume or produce {@link ExpData} or {@link ExpMaterial}
  */
 public interface ExpProtocolApplication extends ExpObject
 {

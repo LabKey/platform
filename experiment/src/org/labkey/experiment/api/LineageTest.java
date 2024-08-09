@@ -150,10 +150,10 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         List<GWTPropertyDescriptor> dcProps = new ArrayList<>();
         dcProps.add(new GWTPropertyDescriptor("age", "string"));
         final String firstDataClassName = "firstDataClass";
-        final ExpDataClassImpl firstDataClass = ExperimentServiceImpl.get().createDataClass(c, user, firstDataClassName, null, dcProps, emptyList(), null);
+        final ExpDataClassImpl firstDataClass = ExperimentServiceImpl.get().createDataClass(c, user, firstDataClassName, null, dcProps, emptyList(), null, null);
 
         final String secondDataClassName = "secondDataClass";
-        final ExpDataClassImpl secondDataClass = ExperimentServiceImpl.get().createDataClass(c, user, secondDataClassName, null, dcProps, emptyList(), null);
+        final ExpDataClassImpl secondDataClass = ExperimentServiceImpl.get().createDataClass(c, user, secondDataClassName, null, dcProps, emptyList(), null, null);
 
         // insert data class rows
         insertRows(c, Arrays.asList(new CaseInsensitiveHashMap<>(Collections.singletonMap("name", "jimbo"))), secondDataClassName);
@@ -342,7 +342,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         List<GWTPropertyDescriptor> dcProps = new ArrayList<>();
         dcProps.add(new GWTPropertyDescriptor("age", "int"));
         final String myDataClassName = "MyData";
-        final ExpDataClassImpl myDataClass = ExperimentServiceImpl.get().createDataClass(c, user, myDataClassName, null, dcProps, emptyList(), null);
+        final ExpDataClassImpl myDataClass = ExperimentServiceImpl.get().createDataClass(c, user, myDataClassName, null, dcProps, emptyList(), null, null);
 
         // Import data and derive from "100"
         List<Map<String, Object>> rows = new ArrayList<>();
@@ -729,7 +729,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         var dcProps = new ArrayList<GWTPropertyDescriptor>();
         dcProps.add(new GWTPropertyDescriptor("number", "int"));
         dcProps.add(new GWTPropertyDescriptor("position", "string"));
-        var dataClass = expSvc.createDataClass(c, user, dataClassName, null, dcProps, emptyList(), null);
+        var dataClass = expSvc.createDataClass(c, user, dataClassName, null, dcProps, emptyList(), null, null);
 
         // Create a Sample Type
         var sampleTypeName = "Games";

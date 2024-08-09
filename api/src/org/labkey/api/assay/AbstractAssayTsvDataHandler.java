@@ -661,17 +661,18 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     /**
      * @param rowBasedInputMaterials the map of materials that are inputs to this run based on the data rows
      */
-    private DataIterator checkData(Container container,
-                                               User user,
-                                               TableInfo dataTable,
-                                               Domain dataDomain,
-                                               DataIterator rawData,
-                                               DataLoaderSettings settings,
-                                               ParticipantVisitResolver resolver,
-                                               Map<String, ExpMaterial> inputMaterials,
-                                               ContainerFilter containerFilter,
-                                               Map<ExpMaterial, String> rowBasedInputMaterials)
-            throws BatchValidationException
+    private DataIterator checkData(
+        Container container,
+        User user,
+        TableInfo dataTable,
+        Domain dataDomain,
+        DataIterator rawData,
+        DataLoaderSettings settings,
+        ParticipantVisitResolver resolver,
+        Map<String, ExpMaterial> inputMaterials,
+        ContainerFilter containerFilter,
+        Map<ExpMaterial, String> rowBasedInputMaterials
+    ) throws BatchValidationException
     {
         final ExperimentService exp = ExperimentService.get();
 
@@ -892,7 +893,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                                 errors.add(new PropertyValidationError(columnName + " must be a valid MV indicator.", columnName));
                             }
                         }
-
                     }
                     else
                     {
@@ -1105,7 +1105,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
 
     /** Wraps each map in a version that can be queried based on any of the aliases (name, property URI, import
-     * aliases, etc for a given property */
+     * aliases, etc.) for a given property */
     protected DataIterator convertPropertyNamesToURIs(DataIterator dataMaps, Domain domain)
     {
         // Get the mapping of different names to the set of domain properties

@@ -17,6 +17,7 @@ package org.labkey.api.assay;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -279,16 +280,16 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             }
         }
 
-        // TODO: Share these RemapCache and materialCache instances with AbstractAssayTsvDataHandler.checkData and ExpressionMatrixDataHandler.importFile
+        // TODO: Share these RemapCache and materialCache instances with .checkData and ExpressionMatrixDataHandler.importFile
         // Cache of resolved alternate lookup keys -> rowId
         final RemapCache cache = new RemapCache(true);
         // Cache of rowId -> ExpMaterial
         final Map<Integer, ExpMaterial> materialCache = new HashMap<>();
 
-        addInputMaterials(context, inputMaterials, resolverType, cache, materialCache);
-        addInputDatas(context, inputDatas, resolverType);
-        addOutputMaterials(context, outputMaterials, resolverType, cache, materialCache);
-        addOutputDatas(context, inputDatas, outputDatas, resolverType);
+        addInputMaterials(context, inputMaterials, cache, materialCache);
+        addInputDatas(context, inputDatas);
+        addOutputMaterials(context, outputMaterials, cache, materialCache);
+        addOutputDatas(context, inputDatas, outputDatas);
 
         DbScope scope = ExperimentService.get().getSchema().getScope();
         try (DbScope.Transaction transaction = scope.ensureTransaction(ExperimentService.get().getProtocolImportLock()))
@@ -301,8 +302,8 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             resolveParticipantVisits(context, inputMaterials, inputDatas, outputMaterials, outputDatas, allProperties, resolverType);
 
             // Check for circular inputs/outputs
-            checkForCycles(inputMaterials, outputMaterials);
-            checkForCycles(inputDatas, outputDatas);
+            ExperimentService.get().checkForCycles(inputMaterials, outputMaterials.keySet());
+            ExperimentService.get().checkForCycles(inputDatas, outputDatas.keySet());
 
             // Create the batch, if needed
             if (batch == null)
@@ -320,15 +321,17 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             ViewBackgroundInfo info = new ViewBackgroundInfo(context.getContainer(), context.getUser(), context.getActionURL());
             XarContext xarContext = new AssayUploadXarContext("Simple Run Creation", context);
 
-            run = ExperimentService.get().saveSimpleExperimentRun(run,
-                    inputMaterials,
-                    inputDatas,
-                    outputMaterials,
-                    outputDatas,
-                    transformedDatas,
-                    info,
-                    context.getLogger() != null ? context.getLogger() : LOG,
-                    false);
+            run = ExperimentService.get().saveSimpleExperimentRun(
+                run,
+                inputMaterials,
+                inputDatas,
+                outputMaterials,
+                outputDatas,
+                transformedDatas,
+                info,
+                context.getLogger() != null ? context.getLogger() : LOG,
+                false
+            );
 
             // handle data transformation
             TransformResult transformResult = transform(context, run);
@@ -605,59 +608,34 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         }
     }
 
-    // See also AbstractAssayTsvDataHandler.resolveSampleNames
     protected void addInputMaterials(
         AssayRunUploadContext<ProviderType> context,
         Map<ExpMaterial, String> inputMaterials,
-        ParticipantVisitResolverType resolverType,
         @NotNull RemapCache cache,
         @NotNull Map<Integer, ExpMaterial> materialCache
     ) throws ExperimentException, ValidationException
     {
-        addMaterials(context, inputMaterials, context.getInputMaterials(), cache, materialCache);
+        addMaterials(context, inputMaterials, context.getInputMaterials(), null, cache, materialCache);
 
         // Find lookups to a SampleType and add the resolved material as an input sample
         for (Map.Entry<DomainProperty, String> entry : context.getRunProperties().entrySet())
         {
-            String value = entry.getValue();
-            if (value == null || value.isEmpty())
-                continue;
-
-            DomainProperty dp = entry.getKey();
-            PropertyType pt = dp.getPropertyType();
-            if (pt == null)
+            String value = StringUtils.trimToNull(entry.getValue());
+            if (value == null)
                 continue;
 
             // Lookup must point at "Samples.*", "exp.materials.*", or "exp.Materials"
-            @Nullable ExpSampleType st = getLookupSampleType(dp, context.getContainer(), context.getUser());
+            DomainProperty dp = entry.getKey();
+            ExpSampleType st = getLookupSampleType(dp, context.getContainer(), context.getUser());
             if (st == null && !isLookupToMaterials(dp))
                 continue;
 
             // Use the DomainProperty name as the role
             String role = dp.getName();
-
-            if (pt.getJdbcType().isText())
-            {
-                addMaterialByName(context, inputMaterials, value, role, st, cache, materialCache);
-            }
-            else if (pt.getJdbcType().isInteger())
-            {
-                try
-                {
-                    int sampleRowId = Integer.parseInt(value);
-                    addMaterialById(context, inputMaterials, sampleRowId, role, st, materialCache);
-                }
-                catch (NumberFormatException ex)
-                {
-                    Logger logger = context.getLogger() != null ? context.getLogger() : LOG;
-                    logger.warn("Failed to parse sample lookup '" + value + "' as integer.");
-                }
-            }
+            addMaterials(context, inputMaterials, Map.of(value, role), st, cache, materialCache);
         }
     }
 
-    static final SchemaKey SCHEMA_EXP = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME);
-    static final SchemaKey SCHEMA_SAMPLES = SchemaKey.fromParts(SamplesSchema.SCHEMA_NAME);
     static final SchemaKey SCHEMA_EXP_MATERIALS = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, ExpSchema.TableType.Materials.name());
 
     /** returns the lookup ExpSampleType if the property has a lookup to samples.<SampleTypeName> or exp.materials.<SampleTypeName> and is an int or string. */
@@ -669,7 +647,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             return null;
 
         // TODO: Use concept URI instead of the lookup target schema to determine if the column is a sample.
-        if (!(SCHEMA_SAMPLES.equals(lookup.getSchemaKey()) || SCHEMA_EXP_MATERIALS.equals(lookup.getSchemaKey())))
+        if (!(SamplesSchema.SCHEMA_SAMPLES.equals(lookup.getSchemaKey()) || SCHEMA_EXP_MATERIALS.equals(lookup.getSchemaKey())))
             return null;
 
         JdbcType type = dp.getPropertyType().getJdbcType();
@@ -681,22 +659,26 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     }
 
     /** returns true if the property has a lookup to exp.Materials and is an int or string. */
-    public static boolean isLookupToMaterials(@NotNull DomainProperty dp)
+    public static boolean isLookupToMaterials(DomainProperty dp)
     {
+        if (dp == null)
+            return false;
+
         Lookup lookup = dp.getLookup();
         if (lookup == null)
             return false;
 
-        if (!(SCHEMA_EXP.equals(lookup.getSchemaKey()) && ExpSchema.TableType.Materials.name().equalsIgnoreCase(lookup.getQueryName())))
+        if (!(ExpSchema.SCHEMA_EXP.equals(lookup.getSchemaKey()) && ExpSchema.TableType.Materials.name().equalsIgnoreCase(lookup.getQueryName())))
             return false;
 
         JdbcType type = dp.getPropertyType().getJdbcType();
         return type.isText() || type.isInteger();
     }
 
-    protected void addInputDatas(AssayRunUploadContext<ProviderType> context,
-                                 @NotNull Map<ExpData, String> inputDatas,
-                                 ParticipantVisitResolverType resolverType) throws ExperimentException, ValidationException
+    protected void addInputDatas(
+        AssayRunUploadContext<ProviderType> context,
+        @NotNull Map<ExpData, String> inputDatas
+    ) throws ExperimentException, ValidationException
     {
         Logger log = context.getLogger() != null ? context.getLogger() : LOG;
 
@@ -882,97 +864,43 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     protected void addOutputMaterials(
         AssayRunUploadContext<ProviderType> context,
         Map<ExpMaterial, String> outputMaterials,
-        ParticipantVisitResolverType resolverType,
         @NotNull RemapCache cache,
         @NotNull Map<Integer, ExpMaterial> materialCache
     ) throws ExperimentException, ValidationException
     {
-        addMaterials(context, outputMaterials, context.getOutputMaterials(), cache, materialCache);
+        addMaterials(context, outputMaterials, context.getOutputMaterials(), null, cache, materialCache);
     }
 
-    // CONSIDER: Move this to ExperimentService
-    // Resolve submitted values into ExpMaterial objects
     protected void addMaterials(
         AssayRunUploadContext<ProviderType> context,
         @NotNull Map<ExpMaterial, String> resolved,
         @NotNull Map<?, String> unresolved,
+        @Nullable ExpSampleType sampleType,
         @NotNull RemapCache cache,
         @NotNull Map<Integer, ExpMaterial> materialCache
     ) throws ExperimentException, ValidationException
     {
         for (Map.Entry<?, String> entry : unresolved.entrySet())
         {
-            Object o = entry.getKey();
-            String role = entry.getValue();
+            Object sampleIdentifier = entry.getKey();
+            ExpMaterial material = ExperimentService.get().resolveExpMaterial(context.getContainer(), context.getUser(), sampleIdentifier, sampleType, cache, materialCache);
+            if (material == null)
+                throw new ExperimentException("Unable to resolve sample: " + sampleIdentifier);
 
-            if (o instanceof ExpMaterial m)
+            if (!resolved.containsKey(material))
             {
-                addMaterialById(context, resolved, m.getRowId(), role, null, materialCache);
+                if (!material.isOperationPermitted(SampleTypeService.SampleOperations.AddAssayData))
+                    throw new ExperimentException(SampleTypeService.get().getOperationNotPermittedMessage(Collections.singleton(material), SampleTypeService.SampleOperations.AddAssayData));
+                if (sampleType == null || sampleType.getLSID().equals(material.getCpasType()))
+                    resolved.put(material, entry.getValue());
             }
-            else if (o instanceof Integer sampleRowId)
-            {
-                addMaterialById(context, resolved, sampleRowId, role, null, materialCache);
-            }
-            else if (o instanceof String sampleName)
-            {
-                addMaterialByName(context, resolved, sampleName, role, null, cache, materialCache);
-            }
-            else
-                throw new ExperimentException("Unable to resolve sample: " + o);
-        }
-    }
-
-    protected void addMaterialByName(
-        AssayRunUploadContext<ProviderType> context,
-        Map<ExpMaterial, String> resolved,
-        String sampleName,
-        String role,
-        @Nullable ExpSampleType st,
-        @NotNull RemapCache cache,
-        @NotNull Map<Integer, ExpMaterial> materialCache
-    ) throws ValidationException
-    {
-        ExpMaterial material = ExperimentService.get().findExpMaterial(context.getContainer(), context.getUser(), st, st != null ? st.getName() : null, sampleName, cache, materialCache);
-        if (material == null)
-        {
-            Logger logger = context.getLogger() != null ? context.getLogger() : LOG;
-            logger.warn("No sample found for sample name '" + sampleName + "'");
-        }
-
-        if (material != null && !resolved.containsKey(material))
-        {
-            if (st == null || st.getLSID().equals(material.getCpasType()))
-                resolved.put(material, role);
-        }
-    }
-
-    protected void addMaterialById(
-        AssayRunUploadContext<ProviderType> context,
-        Map<ExpMaterial, String> resolved,
-        Integer sampleRowId,
-        String role,
-        @Nullable ExpSampleType st,
-        @NotNull Map<Integer, ExpMaterial> materialCache
-    ) throws ExperimentException
-    {
-        final Container c = context.getContainer();
-        final User user = context.getUser();
-        ExpMaterial material = materialCache.computeIfAbsent(sampleRowId, (x) -> ExperimentService.get().getExpMaterial(c, user, sampleRowId, null));
-
-        if (material != null && !resolved.containsKey(material))
-        {
-            if (!material.isOperationPermitted(SampleTypeService.SampleOperations.AddAssayData))
-                throw new ExperimentException(SampleTypeService.get().getOperationNotPermittedMessage(Collections.singleton(material), SampleTypeService.SampleOperations.AddAssayData));
-            if (st == null || st.getLSID().equals(material.getCpasType()))
-                resolved.put(material, role);
         }
     }
 
     protected void addOutputDatas(
         AssayRunUploadContext<ProviderType> context,
         Map<ExpData, String> inputDatas,
-        Map<ExpData, String> outputDatas,
-        ParticipantVisitResolverType resolverType
+        Map<ExpData, String> outputDatas
     ) throws ExperimentException, ValidationException
     {
         Logger log = context.getLogger() != null ? context.getLogger() : LOG;

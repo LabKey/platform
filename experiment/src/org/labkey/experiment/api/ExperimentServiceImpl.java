@@ -637,9 +637,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public @Nullable ExpDataImpl getExpData(int rowid)
+    public @Nullable ExpDataImpl getExpData(int rowId)
     {
-        return getExpData(new SimpleFilter(FieldKey.fromParts("RowId"), rowid));
+        return getExpData(new SimpleFilter(FieldKey.fromParts("RowId"), rowId));
     }
 
     @Override
@@ -932,6 +932,41 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         filter.addClause(containerFilter.createFilterClause(getSchema(), FieldKey.fromParts("Container")));
 
         return getExpMaterials(filter);
+    }
+
+    @Override
+    public @Nullable ExpMaterial resolveExpMaterial(
+        Container container,
+        User user,
+        Object sampleIdentifier,
+        @Nullable ExpSampleType sampleType,
+        @Nullable RemapCache cache,
+        @Nullable Map<Integer, ExpMaterial> materialCache
+    ) throws ValidationException
+    {
+        if (sampleIdentifier == null)
+            return null;
+
+        if (sampleIdentifier instanceof ExpMaterial m)
+        {
+            if (materialCache != null)
+                materialCache.put(m.getRowId(), m);
+            return m;
+        }
+
+        if (sampleIdentifier instanceof Integer rowId)
+        {
+            if (materialCache != null)
+                return materialCache.computeIfAbsent(rowId, id -> getExpMaterial(container, user, id, sampleType));
+            return getExpMaterial(container, user, rowId, sampleType);
+        }
+
+        if (sampleIdentifier instanceof String sampleName)
+        {
+            return findExpMaterial(container, user, sampleType, sampleType != null ? sampleType.getName() : null, sampleName, cache, materialCache);
+        }
+
+        return null;
     }
 
     @Override
@@ -1262,7 +1297,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public ExpExperimentImpl createExpExperiment(Container container, String name)
+    public @NotNull ExpExperimentImpl createExpExperiment(Container container, String name)
     {
         Experiment exp = new Experiment();
         exp.setContainer(container);
@@ -1776,7 +1811,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     // Prefer using one of the getDataClass methods that accept a Container and User for permission checking.
     @Override
-    public ExpDataClassImpl getDataClass(@NotNull String lsid)
+    public @Nullable ExpDataClassImpl getDataClass(@NotNull String lsid)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("lsid"), lsid);
         DataClass dataClass = new TableSelector(getTinfoDataClass(), filter, null).getObject(DataClass.class);
@@ -6483,7 +6518,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return protApp;
     }
 
-
     public List<ProtocolActionPredecessor> getProtocolActionPredecessors(String parentProtocolLSID, String childProtocolLSID)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ChildProtocolLSID"), childProtocolLSID);
@@ -6839,12 +6873,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         @Nullable Set<Pair<String, String>> finalOutputLsids
     ) throws ExperimentException
     {
-        ExpRunImpl run = (ExpRunImpl)baseRun;
+        ExpRunImpl run = (ExpRunImpl) baseRun;
 
         if (run.getFilePathRootPath() == null)
-        {
             throw new IllegalArgumentException("You must set the file path root on the experiment run");
-        }
 
         List<ExpData> insertedDatas;
         User user = info.getUser();
@@ -6853,15 +6885,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         try (DbScope.Transaction transaction = getExpSchema().getScope().ensureTransaction(XAR_IMPORT_LOCK))
         {
             if (run.getContainer() == null)
-            {
                 run.setContainer(info.getContainer());
-            }
+
             run.save(user);
             insertedDatas = ensureSimpleExperimentRunParameters(inputMaterials.keySet(), inputDatas.keySet(), outputMaterials.keySet(), outputDatas.keySet(), transformedDatas.keySet(), user);
 
-            // add any transformed data to the outputDatas collection
-            for (Map.Entry<ExpData, String> entry : transformedDatas.entrySet())
-                outputDatas.put(entry.getKey(), entry.getValue());
+            HashMap<ExpData, String> allOutputDatas = new HashMap<>();
+            allOutputDatas.putAll(outputDatas);
+            allOutputDatas.putAll(transformedDatas);
 
             ExpProtocolImpl parentProtocol = run.getProtocol();
 
@@ -6953,7 +6984,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 Table.update(user, getTinfoMaterial(), ((ExpMaterialImpl)outputMaterial)._object, outputMaterial.getRowId());
             }
 
-            for (ExpData outputData : outputDatas.keySet())
+            for (ExpData outputData : allOutputDatas.keySet())
             {
                 ExpRun existingRun = outputData.getRun();
                 if (existingRun != null && !existingRun.equals(run))
@@ -6978,7 +7009,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 protApp3.addProvenanceMapping(finalOutputLsids);
             }
 
-            addDataInputs(outputDatas, protApp3._object, user);
+            addDataInputs(allOutputDatas, protApp3._object, user);
             addMaterialInputs(outputMaterials, protApp3._object, user);
 
             transaction.commit();
@@ -7003,7 +7034,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return run;
     }
 
-    private ExpProtocolApplication initializeProtocolApplication(ExpProtocolApplication protApp, Date activityDate, ExpProtocolActionImpl action, ExpRun run, ExpProtocol parentProtocol, XarContext context ) throws XarFormatException
+    private void initializeProtocolApplication(
+        ExpProtocolApplication protApp,
+        Date activityDate,
+        ExpProtocolActionImpl action,
+        ExpRun run,
+        ExpProtocol parentProtocol,
+        XarContext context
+    ) throws XarFormatException
     {
         protApp.setActivityDate(activityDate);
         protApp.setActionSequence(action.getActionSequence());
@@ -7016,8 +7054,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         assert parentNameTemplateParam != null : "Parent Name Template was null";
         protApp.setLSID(LsidUtils.resolveLsidFromTemplate(parentLSIDTemplateParam.getStringValue(), context, "ProtocolApplication"));
         protApp.setName(parentNameTemplateParam.getStringValue());
-
-        return protApp;
     }
 
     @Override
@@ -7907,40 +7943,15 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     @Override
     public ExpDataClassImpl createDataClass(
-            @NotNull Container c, @NotNull User u, @NotNull String name, String description,
-            List<GWTPropertyDescriptor> properties,
-            List<GWTIndex> indices, Integer sampleTypeId, String nameExpression,
-            @Nullable TemplateInfo templateInfo, @Nullable String category)
-        throws ExperimentException
-    {
-        DataClassDomainKindProperties options = new DataClassDomainKindProperties();
-        options.setDescription(description);
-        options.setNameExpression(StringUtilsLabKey.replaceBadCharacters(nameExpression));
-        options.setSampleType(sampleTypeId);
-        options.setCategory(category);
-        return createDataClass(c, u, name, options, properties, indices, templateInfo);
-    }
-
-    @Override
-    public ExpDataClassImpl createDataClass(@NotNull Container c, @NotNull User u, @NotNull String name, @Nullable DataClassDomainKindProperties options,
-                                            List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, @Nullable TemplateInfo templateInfo)
-            throws ExperimentException
-    {
-        return createDataClass(c, u, name, options, properties, indices, templateInfo, null);
-    }
-
-    @Override
-    public ExpDataClassImpl createDataClass(@NotNull Container c, @NotNull User u, @NotNull String name, @Nullable DataClassDomainKindProperties options,
-                                            List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, @Nullable TemplateInfo templateInfo, @Nullable List<String> disabledSystemField)
-            throws ExperimentException
-    {
-        return createDataClass(c, u, name, options, properties, indices, templateInfo, disabledSystemField, null);
-    }
-
-    @Override
-    public ExpDataClassImpl createDataClass(@NotNull Container c, @NotNull User u, @NotNull String name, @Nullable DataClassDomainKindProperties options,
-                                        List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, @Nullable TemplateInfo templateInfo, @Nullable List<String> disabledSystemField, @Nullable Map<String, String> importAliases)
-            throws ExperimentException
+        @NotNull Container c,
+        @NotNull User u,
+        @NotNull String name,
+        @Nullable DataClassDomainKindProperties options,
+        List<GWTPropertyDescriptor> properties,
+        List<GWTIndex> indices,
+        @Nullable TemplateInfo templateInfo,
+        @Nullable List<String> disabledSystemField
+    ) throws ExperimentException
     {
         name = StringUtils.trimToNull(name);
         validateDataClassName(c, u, name);
@@ -7948,13 +7959,19 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         Lsid lsid = getDataClassLsid(c);
         Domain domain = PropertyService.get().createDomain(c, lsid.toString(), name, templateInfo);
-        DomainKind kind = domain.getDomainKind();
+        DomainKind<?> kind = domain.getDomainKind();
+        Set<String> lowerReservedNames;
 
         if (kind != null)
+        {
             domain.setDisabledSystemFields(kind.getDisabledSystemFields(disabledSystemField));
-
-        Set<String> reservedNames = kind.getReservedPropertyNames(domain, u);
-        Set<String> lowerReservedNames = reservedNames.stream().map(String::toLowerCase).collect(toSet());
+            lowerReservedNames = kind.getReservedPropertyNames(domain, u)
+                    .stream()
+                    .map(String::toLowerCase)
+                    .collect(toSet());
+        }
+        else
+            lowerReservedNames = emptySet();
 
         Map<DomainProperty, Object> defaultValues = new HashMap<>();
         Set<String> propertyUris = new HashSet<>();
@@ -7971,7 +7988,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             String propertyName = pd.getName().toLowerCase();
             if (lowerReservedNames.contains(propertyName))
             {
-                if (options.isStrictFieldValidation())
+                if (options != null && options.isStrictFieldValidation())
                     throw new IllegalArgumentException("Property name '" + propertyName + "' is a reserved name.");
             }
             else if (domain.getPropertyByName(propertyName) != null) // issue 25275
@@ -7982,7 +7999,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         domain.setPropertyIndices(indices, lowerReservedNames);
 
-        String importAliasJson = ExperimentJSONConverter.getAliasJson(importAliases, name);
+        String importAliasJson = ExperimentJSONConverter.getAliasJson(options == null ? null : options.getImportAliases(), name);
 
         DataClass bean = new DataClass();
         bean.setContainer(c);
@@ -8015,7 +8032,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             OntologyManager.ensureObject(c, lsid.toString());
 
-            domain.setPropertyForeignKeys(kind.getPropertyForeignKeys(c));
+            if (kind != null)
+                domain.setPropertyForeignKeys(kind.getPropertyForeignKeys(c));
             domain.save(u);
             impl.save(u);
 
@@ -9714,6 +9732,19 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         else
         {
             return !AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_ALLOW_GAP_COUNTER);
+        }
+    }
+
+    @Override
+    public void checkForCycles(Map<? extends ExpRunItem, String> inputs, Collection<? extends ExpRunItem> outputs) throws ValidationException
+    {
+        for (ExpRunItem input : inputs.keySet())
+        {
+            if (outputs.contains(input))
+            {
+                String role = inputs.get(input);
+                throw new ValidationException("Circular input/output '" + input.getName() + "' with role '" + role + "'");
+            }
         }
     }
 

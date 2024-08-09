@@ -83,10 +83,6 @@ import static org.labkey.api.data.Table.CREATED_COLUMN_NAME;
 import static org.labkey.api.data.Table.MODIFIED_BY_COLUMN_NAME;
 import static org.labkey.api.data.Table.MODIFIED_COLUMN_NAME;
 
-/**
- * User: jeckels
- * Date: Dec 14, 2010
- */
 public class AssayResultTable extends FilteredTable<AssayProtocolSchema> implements UpdateableTableInfo
 {
     protected final ExpProtocol _protocol;
@@ -131,7 +127,8 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
             }
             else if (baseColumn.isMvIndicatorColumn())
             {
-                col = null;     // skip and instead add AliasedColumn below
+                // skip and instead add AliasedColumn below
+                col = null;
             }
             else
             {

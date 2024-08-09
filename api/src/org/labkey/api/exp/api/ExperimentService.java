@@ -165,7 +165,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     List<? extends ExpRun> getExpRuns(Container container, @Nullable ExpProtocol parentProtocol, @Nullable ExpProtocol childProtocol, @NotNull Predicate<ExpRun> filterFn);
     
-    List<? extends ExpRun> getExpRuns( @Nullable SQLFragment filterSQL, @NotNull Predicate<ExpRun> filterFn, @NotNull Container container);
+    List<? extends ExpRun> getExpRuns(@Nullable SQLFragment filterSQL, @NotNull Predicate<ExpRun> filterFn, @NotNull Container container);
 
     List<? extends ExpRun> getExpRunsForJobId(int jobId);
 
@@ -252,34 +252,28 @@ public interface ExperimentService extends ExperimentRunTypeSource
     /**
      * Create a new DataClass with the provided domain properties and top level options.
      */
-    @Deprecated
-    ExpDataClass createDataClass(@NotNull Container c, @NotNull User u, @NotNull String name, String description,
-                                 List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, Integer sampleTypeId, String nameExpression,
-                                 @Nullable TemplateInfo templateInfo, @Nullable String category)
-            throws ExperimentException;
-
-    ExpDataClass createDataClass(@NotNull Container c, @NotNull User u, @NotNull String name, @Nullable DataClassDomainKindProperties options,
-                                 List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, @Nullable TemplateInfo templateInfo)
-            throws ExperimentException;
-
-    ExpDataClass createDataClass(@NotNull Container c, @NotNull User u, @NotNull String name, @Nullable DataClassDomainKindProperties options,
-                                 List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, @Nullable TemplateInfo templateInfo, @Nullable List<String> disabledSystemField)
-            throws ExperimentException;
-
-    /**
-     * Create a new DataClass with the provided domain properties and top level options.
-     */
-    ExpDataClass createDataClass(@NotNull Container c, @NotNull User u, @NotNull String name, @Nullable DataClassDomainKindProperties options,
-                                            List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, @Nullable TemplateInfo templateInfo, @Nullable List<String> disabledSystemField, @Nullable Map<String, String> importAliases)
-            throws ExperimentException;
+    ExpDataClass createDataClass(
+        @NotNull Container c,
+        @NotNull User u,
+        @NotNull String name,
+        @Nullable DataClassDomainKindProperties options,
+        List<GWTPropertyDescriptor> properties,
+        List<GWTIndex> indices,
+        @Nullable TemplateInfo templateInfo,
+        @Nullable List<String> disabledSystemField
+    ) throws ExperimentException;
 
     /**
      * Update a DataClass with the provided domain properties and top level options.
      */
-    ValidationException updateDataClass(@NotNull Container c, @NotNull User u, @NotNull ExpDataClass dataClass,
-                                        @Nullable DataClassDomainKindProperties options,
-                                        GWTDomain<? extends GWTPropertyDescriptor> original,
-                                        GWTDomain<? extends GWTPropertyDescriptor> update);
+    ValidationException updateDataClass(
+        @NotNull Container c,
+        @NotNull User u,
+        @NotNull ExpDataClass dataClass,
+        @Nullable DataClassDomainKindProperties options,
+        GWTDomain<? extends GWTPropertyDescriptor> original,
+        GWTDomain<? extends GWTPropertyDescriptor> update
+    );
 
     /**
      * Get all DataClass definitions in the container.  If <code>includeOtherContainers</code> is true,
@@ -291,16 +285,6 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * Get a DataClass by name within the definition container.
      */
     ExpDataClass getDataClass(@NotNull Container definitionContainer, @NotNull String dataClassName);
-
-    /**
-     * Get a DataClass with name at a specific time.
-     */
-    ExpDataClass getEffectiveDataClass(@NotNull Container definitionContainer, @NotNull User user, @NotNull String dataClassName, @NotNull Date effectiveDate, @Nullable ContainerFilter cf);
-
-    /**
-     * Get a ExpProtocol with name at a specific time.
-     */
-    ExpProtocol getEffectiveProtocol(Container container, User user, String schemaName, Date effectiveDate, ContainerFilter dataTypeCF);
 
     /**
      * Get a DataClass by name within scope -- current, project, and shared.
@@ -323,13 +307,29 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * Get a DataClass by LSID.
      * NOTE: Prefer using one of the getDataClass methods that accept a Container and User for permission checking.
      */
-    ExpDataClass getDataClass(@NotNull String lsid);
+    @Nullable ExpDataClass getDataClass(@NotNull String lsid);
 
     /**
      * Get a DataClass by RowId
      * NOTE: Prefer using one of the getDataClass methods that accept a Container and User for permission checking.
      */
     ExpDataClass getDataClass(int rowId);
+
+    /**
+     * Get a DataClass with name at a specific time.
+     */
+    ExpDataClass getEffectiveDataClass(
+        @NotNull Container definitionContainer,
+        @NotNull User user,
+        @NotNull String dataClassName,
+        @NotNull Date effectiveDate,
+        @Nullable ContainerFilter cf
+    );
+
+    /**
+     * Get a ExpProtocol with name at a specific time.
+     */
+    ExpProtocol getEffectiveProtocol(Container container, User user, String schemaName, Date effectiveDate, ContainerFilter dataTypeCF);
 
     /**
      * Get materials by rowId in this, project, or shared container and within the provided sample type.
@@ -362,11 +362,20 @@ public interface ExperimentService extends ExperimentRunTypeSource
      */
     ExpMaterial getExpMaterial(Container c, User u, int rowId, @Nullable ExpSampleType sampleType);
 
-    @NotNull List<? extends ExpMaterial> getExpMaterials(Collection<Integer> rowids);
+    @NotNull List<? extends ExpMaterial> getExpMaterials(Collection<Integer> rowIds);
 
     @NotNull List<? extends ExpMaterial> getExpMaterialsByLsid(Collection<String> lsids);
 
     @Nullable ExpMaterial getExpMaterial(String lsid);
+
+    @Nullable ExpMaterial resolveExpMaterial(
+        Container container,
+        User user,
+        Object sampleIdentifier,
+        @Nullable ExpSampleType sampleType,
+        @Nullable RemapCache cache,
+        @Nullable Map<Integer, ExpMaterial> materialCache
+    ) throws ValidationException;
 
     /**
      * Looks in all the sample types visible from the given container for a single match with the specified name
@@ -387,7 +396,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     ExpExperiment createHiddenRunGroup(Container container, User user, ExpRun... runs);
 
-    ExpExperiment createExpExperiment(Container container, String name);
+    @NotNull ExpExperiment createExpExperiment(Container container, String name);
 
     @Nullable ExpExperiment getExpExperiment(int rowId);
 
@@ -397,7 +406,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     List<? extends ExpExperiment> getExperiments(Container container, User user, boolean includeOtherContainers, boolean includeBatches);
 
-    @Nullable ExpProtocol getExpProtocol(int rowid);
+    @Nullable ExpProtocol getExpProtocol(int rowId);
 
     @Nullable ExpProtocol getExpProtocol(String lsid);
 
@@ -798,7 +807,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
     ExpProtocol insertSimpleProtocol(ExpProtocol baseProtocol, User user) throws ExperimentException;
 
     /**
-     * The run must be a instance of a protocol created with insertSimpleProtocol().
+     * The run must be an instance of a protocol created with insertSimpleProtocol().
      * The run must have at least one input and one output.
      *
      * @param run             ExperimentRun, populated with protocol, name, etc
@@ -1097,6 +1106,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
     void handleAssayNameChange(String newAssayName, String oldAssayName, AssayProvider provider, ExpProtocol protocol, User user, Container container);
 
     boolean useStrictCounter();
+
+    void checkForCycles(Map<? extends ExpRunItem, String> inputs, Collection<? extends ExpRunItem> outputs) throws ValidationException;
 
     class XarExportOptions
     {
