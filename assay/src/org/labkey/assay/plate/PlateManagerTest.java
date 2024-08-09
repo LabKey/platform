@@ -686,17 +686,17 @@ public final class PlateManagerTest
 
         // Assert
         Object[] row1 = plateDataRows.get(0);
-        String[] valuesRow1 = new String[]{"myPlate1", "A1", "96", sample1.getName(), "B1234", "2.25", "myPlate2", "A2", "96"};
+        String[] valuesRow1 = new String[]{"myPlate1", plateSource.getBarcode(), "A1", "96", sample1.getName(), "B1234", "2.25", "myPlate2", plateDestination.getBarcode(), "A2", "96"};
         for (int i = 0; i < row1.length; i++)
             assertEquals(row1[i].toString(), valuesRow1[i]);
 
         Object[] row2 = plateDataRows.get(1);
-        String[] valuesRow2 = new String[]{"myPlate1", "A2", "96", sample2.getName(), "B5678", "1.25", "myPlate2", "A1", "96"};
+        String[] valuesRow2 = new String[]{"myPlate1", plateSource.getBarcode(),"A2", "96", sample2.getName(), "B5678", "1.25", "myPlate2", plateDestination.getBarcode(), "A1", "96"};
         for (int i = 0; i < row2.length; i++)
             assertEquals(row2[i].toString(), valuesRow2[i]);
 
         Object[] row3 = plateDataRows.get(2);
-        String[] valuesRow3 = new String[]{"myPlate1", "A2", "96", sample2.getName(), "B5678", "1.25", "myPlate2", "A3", "96"};
+        String[] valuesRow3 = new String[]{"myPlate1", plateSource.getBarcode(),"A2", "96", sample2.getName(), "B5678", "1.25", "myPlate2", plateDestination.getBarcode(), "A3", "96"};
         for (int i = 0; i < row3.length; i++)
             assertEquals(row3[i].toString(), valuesRow3[i]);
     }
