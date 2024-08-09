@@ -1975,9 +1975,13 @@ public class NameGenerator
 
                     if (!ancestorLookupValues.isEmpty())
                     {
-                        if (!inputLookupValues.containsKey(ancestorFieldKey))
-                            inputLookupValues.put(ancestorFieldKey, new ArrayList<>());
-                        inputLookupValues.get(ancestorFieldKey).addAll(ancestorLookupValues);
+                        inputLookupValues.putIfAbsent(ancestorFieldKey, new ArrayList<>());
+                        List<Object> lookupValues = inputLookupValues.get(ancestorFieldKey);
+                        for (Object lookupVal : ancestorLookupValues)
+                        {
+                            if (!lookupValues.contains(lookupVal))
+                                lookupValues.add(lookupVal);
+                        }
                     }
                 }
             }
@@ -2151,14 +2155,14 @@ public class NameGenerator
                     Object inputValue = value;
                     if (value.size() == 1)
                         inputValue = value.iterator().next();
-                    else if (value.size() == 0)
+                    else if (value.isEmpty())
                         inputValue = null;
                     inputValues.put(key, inputValue);
                 });
                 ctx.putAll(inputValues);
 
                 Map<String, Object> lookupValues = new HashMap<>();
-                inputLookupValues.forEach((key, value) -> lookupValues.put(key, value.size() > 1 ? value : value.get(0)));
+                inputLookupValues.forEach((key, value) -> lookupValues.put(key, value.size() > 1 ? value : (value.size() == 1 ? value.get(0) : null)));
                 ctx.putAll(lookupValues);
             }
 
