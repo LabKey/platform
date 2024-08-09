@@ -603,7 +603,7 @@ public class SubstitutionFormat
                 if (nameExpression.startsWith("..[", start-3))
                     return messages;
                 // check for ancestor search
-                if (nameExpression.startsWith("${~"))
+                if (nameExpression.startsWith("${", start-3))
                     return messages;
             }
             messages.add(String.format("The '%s' %s starting at position %d should be preceded by the string '${'.", formatName, noun, start));
