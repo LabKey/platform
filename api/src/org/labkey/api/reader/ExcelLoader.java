@@ -1014,22 +1014,26 @@ public class ExcelLoader extends DataLoader
         @Test
         public void testDatesWithSeconds() throws Exception
         {
-            try (ExcelLoader loader = getExcelLoader("DatesWithSeconds.xlsx"))
+            final String date1 = "2023-01-02 09:14:34";
+            final String date2 = "2023-01-02 15:14:15";
+            final String date3 = "2023-01-02 09:28:30";
+
+            // Repeatedly try in a loop as a test failure on TeamCity hints there may be a race condition in the loader
+            for (int i = 0; i < 1000; i++)
             {
-                String date1 = "2023-01-02 09:14:34";
-                String date2 = "2023-01-02 15:14:15";
-                String date3 = "2023-01-02 09:28:30";
+                try (ExcelLoader loader = getExcelLoader("DatesWithSeconds.xlsx"))
+                {
+                    String[][] rows = loader.getFirstNLines(4);
+                    assertEquals(date1, rows[1][0]);
+                    assertEquals(date2, rows[2][0]);
+                    assertEquals(date3, rows[3][0]);
 
-                String[][] rows = loader.getFirstNLines(4);
-                assertEquals(date1, rows[1][0]);
-                assertEquals(date2, rows[2][0]);
-                assertEquals(date3, rows[3][0]);
-
-                List<Map<String, Object>> list = loader.load();
-                assertEquals(3, list.size());
-                assertEquals(date1, formatDate(list.get(0)));
-                assertEquals(date2, formatDate(list.get(1)));
-                assertEquals(date3, formatDate(list.get(2)));
+                    List<Map<String, Object>> list = loader.load();
+                    assertEquals(3, list.size());
+                    assertEquals(date1, formatDate(list.get(0)));
+                    assertEquals(date2, formatDate(list.get(1)));
+                    assertEquals(date3, formatDate(list.get(2)));
+                }
             }
         }
 
