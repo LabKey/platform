@@ -302,8 +302,8 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             resolveParticipantVisits(context, inputMaterials, inputDatas, outputMaterials, outputDatas, allProperties, resolverType);
 
             // Check for circular inputs/outputs
-            ExperimentService.get().checkForCycles(inputMaterials, outputMaterials.keySet());
-            ExperimentService.get().checkForCycles(inputDatas, outputDatas.keySet());
+            checkForCycles(inputMaterials, outputMaterials);
+            checkForCycles(inputDatas, outputDatas);
 
             // Create the batch, if needed
             if (batch == null)

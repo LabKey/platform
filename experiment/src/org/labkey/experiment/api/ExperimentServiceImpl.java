@@ -9735,19 +9735,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
     }
 
-    @Override
-    public void checkForCycles(Map<? extends ExpRunItem, String> inputs, Collection<? extends ExpRunItem> outputs) throws ValidationException
-    {
-        for (ExpRunItem input : inputs.keySet())
-        {
-            if (outputs.contains(input))
-            {
-                String role = inputs.get(input);
-                throw new ValidationException("Circular input/output '" + input.getName() + "' with role '" + role + "'");
-            }
-        }
-    }
-
     public Map<String, Map<String, MissingFilesCheckInfo>> doMissingFilesCheck(User user, Container container, boolean trackMissingFiles) throws SQLException
     {
         if (container == null)

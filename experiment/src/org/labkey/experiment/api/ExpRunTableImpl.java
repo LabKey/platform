@@ -18,13 +18,13 @@ package org.labkey.experiment.api;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.collections4.map.LRUMap;
 import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
-import org.labkey.api.assay.DefaultAssayRunCreator;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.*;
@@ -37,12 +37,10 @@ import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpRunGroupMapTable;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpSchema;
@@ -906,6 +904,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
     private static class RunTableUpdateService extends AbstractQueryUpdateService
     {
         private final RemapCache _cache = new RemapCache();
+        private Map<Integer, ExpMaterial> _materialsCache;
 
         RunTableUpdateService(ExpRunTable queryTable)
         {
@@ -1041,7 +1040,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
 
                 AssayProvider assayProvider = AssayService.get().getProvider(run);
                 if (assayProvider != null)
-                    assayProvider.updateRunPropertyLineage(container, user, getQueryTable(), run, row);
+                    assayProvider.updatePropertyLineage(container, user, getQueryTable(), run, row, true, _cache, getMaterialsCache());
 
                 run.save(user);
 
@@ -1198,6 +1197,13 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
 
             ExperimentServiceImpl.get().deleteExperimentRunsByRowIds(c, user, runIds);
             return runIds.length;
+        }
+
+        private Map<Integer, ExpMaterial> getMaterialsCache()
+        {
+            if (_materialsCache == null)
+                _materialsCache = new LRUMap<>(1_000);
+            return _materialsCache;
         }
     }
 }

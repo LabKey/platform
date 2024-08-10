@@ -1107,8 +1107,6 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     boolean useStrictCounter();
 
-    void checkForCycles(Map<? extends ExpRunItem, String> inputs, Collection<? extends ExpRunItem> outputs) throws ValidationException;
-
     class XarExportOptions
     {
         String _lsidRelativizer = LSID_OPTION_FOLDER_RELATIVE;

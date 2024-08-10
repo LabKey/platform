@@ -17,16 +17,19 @@ package org.labkey.api.assay;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.collections4.map.LRUMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ProvenanceService;
@@ -49,27 +52,27 @@ import java.util.Objects;
 
 import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment;
 
-/**
- * User: jeckels
- * Date: 7/1/11
- */
 public class AssayResultUpdateService extends DefaultQueryUpdateService
 {
-    private final AssayProtocolSchema _schema;
+    private RemapCache _remapCache;
+    private Map<Integer, ExpMaterial> _materialsCache;
 
     public AssayResultUpdateService(AssayProtocolSchema schema, FilteredTable table)
     {
         super(table, table.getRealTable(), createMVMapping(schema.getProvider().getResultsDomain(schema.getProtocol())));
         if (!(table instanceof AssayResultTable))
             throw new IllegalArgumentException("Expected AssayResultTable");
-        _schema = schema;
     }
 
     @Override
-    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, @Nullable Map<Enum, Object> configParameters) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+    protected Map<String, Object> updateRow(
+        User user,
+        Container container,
+        Map<String, Object> row,
+        @NotNull Map<String, Object> oldRow,
+        @Nullable Map<Enum, Object> configParameters
+    ) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
-        _schema.getProtocol();
-
         Map<String, Object> originalRow = getRow(user, container, oldRow);
         if (originalRow == null)
         {
@@ -111,6 +114,11 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
                 appendPropertyIfChanged(sb, col.getLabel(), oldValue, newValue);
             }
         }
+
+        AssayProvider assayProvider = AssayService.get().getProvider(run);
+        if (assayProvider != null)
+            assayProvider.updatePropertyLineage(container, user, getQueryTable(), run, updatedValues, false, getRemapCache(), getMaterialsCache());
+
         String userComment = configParameters == null ? null : (String) configParameters.get(AuditUserComment);
         ExperimentService.get().auditRunEvent(user, run.getProtocol(), run, null, sb.toString(), userComment);
 
@@ -216,5 +224,19 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
         sb.append(" to ");
         sb.append(newValue == null ? "blank" : "'" + newValue + "'");
         sb.append(".");
+    }
+
+    private RemapCache getRemapCache()
+    {
+        if (_remapCache == null)
+            _remapCache = new RemapCache();
+        return _remapCache;
+    }
+
+    private Map<Integer, ExpMaterial> getMaterialsCache()
+    {
+        if (_materialsCache == null)
+            _materialsCache = new LRUMap<>(1_000);
+        return _materialsCache;
     }
 }

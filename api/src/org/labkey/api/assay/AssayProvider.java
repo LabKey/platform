@@ -23,6 +23,7 @@ import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.assay.pipeline.AssayRunAsyncContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Handler;
@@ -31,6 +32,7 @@ import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpExperiment;
+import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.IAssayDomainType;
@@ -379,11 +381,20 @@ public interface AssayProvider extends Handler<ExpProtocol>
     }
 
     /**
-     * Some assay implementations support experiment lineage representation of run property values.
-     * This can be called during the update of a run to ensure the associated lineage is updated when run property
-     * values change.
+     * Some assay implementations support experiment lineage representation of run/result property values.
+     * This can be called during the update of a run/result to ensure the associated lineage is updated when
+     * associated run/result property values change.
      */
-    default void updateRunPropertyLineage(Container container, User user, TableInfo runsTable, ExpRun run, Map<String, Object> row) throws ValidationException
+    default void updatePropertyLineage(
+        Container container,
+        User user,
+        TableInfo table,
+        ExpRun run,
+        Map<String, Object> row,
+        boolean isRunProperties,
+        @Nullable RemapCache cache,
+        @Nullable Map<Integer, ExpMaterial> materialsCache
+    ) throws ValidationException
     {
     }
 }

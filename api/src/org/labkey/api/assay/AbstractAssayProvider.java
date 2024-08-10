@@ -36,6 +36,7 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DetailsColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.ImportAliasable;
+import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -2111,23 +2112,32 @@ public abstract class AbstractAssayProvider implements AssayProvider
     }
 
     @Override
-    public void updateRunPropertyLineage(Container container, User user, TableInfo runsTable, ExpRun run, Map<String, Object> row) throws ValidationException
+    public void updatePropertyLineage(
+        Container container,
+        User user,
+        TableInfo table,
+        ExpRun run,
+        Map<String, Object> row,
+        boolean isRunProperties,
+        @Nullable RemapCache cache,
+        @Nullable Map<Integer, ExpMaterial> materialsCache
+    ) throws ValidationException
     {
-        Domain domain = runsTable.getDomain();
+        Domain domain = table.getDomain();
         if (domain == null)
             return;
 
         Set<Integer> removedMaterialInputs = new HashSet<>();
         Map<ExpMaterial, String> addedMaterialInputs = new HashMap<>();
 
+        // There can be multiple columns within a row that are lineage-backed material lookups.
+        // Coalesce these material input updates across columns.
         for (var entry : row.entrySet())
         {
             String columnName = entry.getKey();
-            ColumnInfo column = runsTable.getColumn(columnName);
+            ColumnInfo column = table.getColumn(columnName);
 
-            // There can be multiple columns within a row that are lineage-backed material lookups.
-            // Coalesce these material input updates across columns.
-            if (column instanceof PropertyColumn)
+            if (!isRunProperties || column instanceof PropertyColumn)
             {
                 DomainProperty dp = domain.getPropertyByURI(column.getPropertyURI());
                 if (DefaultAssayRunCreator.isLookupToMaterials(dp))
@@ -2140,9 +2150,15 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     }
 
                     ExpSampleType sampleType = DefaultAssayRunCreator.getLookupSampleType(dp, container, user);
-                    ExpMaterial newInputMaterial = ExperimentService.get().resolveExpMaterial(container, user, entry.getValue(), sampleType, null, null);
+                    ExpMaterial newInputMaterial = ExperimentService.get().resolveExpMaterial(container, user, entry.getValue(), sampleType, cache, materialsCache);
                     if (newInputMaterial != null)
+                    {
+                        // Prevent direct cycles
+                        if (run.getMaterialOutputs().contains(newInputMaterial))
+                            throw new ValidationException();
+
                         addedMaterialInputs.put(newInputMaterial, dp.getName());
+                    }
                 }
             }
         }
@@ -2161,11 +2177,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
             {
                 for (var entry : addedMaterialInputs.entrySet())
                     pa.addMaterialInput(user, entry.getKey(), entry.getValue());
-
-                // Fetch the most up-to-date run to validate input/output cycles
-                ExpRun updatedRun = ExperimentService.get().getExpRun(run.getRowId());
-                if (updatedRun != null)
-                    ExperimentService.get().checkForCycles(updatedRun.getMaterialInputs(), updatedRun.getMaterialOutputs());
             }
         }
     }
