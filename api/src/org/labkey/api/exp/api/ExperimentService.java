@@ -42,6 +42,7 @@ import org.labkey.api.exp.ProtocolApplicationParameter;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.XarSource;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpDataClassDataTable;
 import org.labkey.api.exp.query.ExpDataClassTable;
 import org.labkey.api.exp.query.ExpDataInputTable;
@@ -1106,6 +1107,15 @@ public interface ExperimentService extends ExperimentRunTypeSource
     void handleAssayNameChange(String newAssayName, String oldAssayName, AssayProvider provider, ExpProtocol protocol, User user, Container container);
 
     boolean useStrictCounter();
+
+    /**
+     * Returns the lookup ExpSampleType if the property has a lookup to samples.<SampleTypeName> or
+     * exp.materials.<SampleTypeName> and is an int or string.
+     */
+    @Nullable ExpSampleType getLookupSampleType(@NotNull DomainProperty dp, @NotNull Container container, @NotNull User user);
+
+    /** Returns true if the property has a lookup to exp.Materials and is an int or string. */
+    boolean isLookupToMaterials(DomainProperty dp);
 
     class XarExportOptions
     {

@@ -2134,30 +2134,32 @@ public abstract class AbstractAssayProvider implements AssayProvider
         // Coalesce these material input updates across columns.
         for (var entry : row.entrySet())
         {
-            String columnName = entry.getKey();
-            ColumnInfo column = table.getColumn(columnName);
+            ColumnInfo column = table.getColumn(entry.getKey());
 
             if (!isRunProperties || column instanceof PropertyColumn)
             {
                 DomainProperty dp = domain.getPropertyByURI(column.getPropertyURI());
-                if (DefaultAssayRunCreator.isLookupToMaterials(dp))
+                if (dp != null && ExperimentService.get().isLookupToMaterials(dp))
                 {
+                    String inputRole = AssayService.get().getInputRole(dp, false);
+                    String deprecatedInputRole = AssayService.get().getInputRole(dp, true);
+
                     // Remove all material inputs with the same role
                     for (var materialEntry : run.getMaterialInputs().entrySet())
                     {
-                        if (columnName.equalsIgnoreCase(materialEntry.getValue()))
+                        if (inputRole.equalsIgnoreCase(materialEntry.getValue()) || deprecatedInputRole.equalsIgnoreCase(materialEntry.getValue()))
                             removedMaterialInputs.add(materialEntry.getKey().getRowId());
                     }
 
-                    ExpSampleType sampleType = DefaultAssayRunCreator.getLookupSampleType(dp, container, user);
+                    ExpSampleType sampleType = ExperimentService.get().getLookupSampleType(dp, container, user);
                     ExpMaterial newInputMaterial = ExperimentService.get().resolveExpMaterial(container, user, entry.getValue(), sampleType, cache, materialsCache);
                     if (newInputMaterial != null)
                     {
                         // Prevent direct cycles
                         if (run.getMaterialOutputs().contains(newInputMaterial))
-                            throw new ValidationException();
+                            throw new ValidationException(String.format("Material \"%s\" is already marked as an output of this run and cannot be used as an input.", newInputMaterial.getName()));
 
-                        addedMaterialInputs.put(newInputMaterial, dp.getName());
+                        addedMaterialInputs.put(newInputMaterial, inputRole);
                     }
                 }
             }

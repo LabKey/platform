@@ -730,19 +730,15 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             }
             else
             {
-                ExpSampleType st = DefaultAssayRunCreator.getLookupSampleType(pd, container, user);
+                ExpSampleType st = ExperimentService.get().getLookupSampleType(pd, container, user);
                 if (st != null)
                 {
                     if (pd.getPropertyType().getJdbcType().isText())
-                    {
                         lookupToSampleTypeByName.put(pd, st);
-                    }
                     else
-                    {
                         lookupToSampleTypeById.put(pd, st);
-                    }
                 }
-                else if (DefaultAssayRunCreator.isLookupToMaterials(pd))
+                else if (ExperimentService.get().isLookupToMaterials(pd))
                 {
                     if (pd.getPropertyType().getJdbcType().isText())
                         lookupToAllSamplesByName.add(pd);
@@ -994,7 +990,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
                         if (material != null)
                         {
-                            rowBasedInputMaterials.putIfAbsent(material, pd.getName());
+                            rowBasedInputMaterials.putIfAbsent(material, AssayService.get().getInputRole(pd, false));
                             rowInputLSIDs.add(material.getLSID());
 
                             // If the lookup was defined with an explicit container, verify that the sample is in that container

@@ -832,13 +832,13 @@ public class NameGenerator
         for (ExpObject dataType : dataTypes)
         {
             Domain domain = null;
-            if (dataType instanceof ExpSampleType)
+            if (dataType instanceof ExpSampleType sampleType)
             {
-                domain = ((ExpSampleType)dataType).getDomain();
+                domain = sampleType.getDomain();
             }
-            else if (dataType instanceof ExpDataClass)
+            else if (dataType instanceof ExpDataClass dataClass)
             {
-                domain = ((ExpDataClass)dataType).getDomain();
+                domain = dataClass.getDomain();
             }
             if (domain != null)
             {

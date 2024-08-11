@@ -58,6 +58,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.pipeline.PipeRoot;
@@ -1131,5 +1132,11 @@ public class AssayManager implements AssayService
             log.error(String.format("Assay provider not found for protocol : %s in folder : %s", protocol.getName(), container.getPath()));
 
         return null;
+    }
+
+    @Override
+    public @NotNull String getInputRole(@NotNull DomainProperty dp, boolean useDeprecated)
+    {
+        return useDeprecated ? dp.getName() : String.format("dp-%d", dp.getPropertyId());
     }
 }

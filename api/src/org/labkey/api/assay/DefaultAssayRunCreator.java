@@ -33,7 +33,6 @@ import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.data.ForeignKey;
-import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.ColumnValidators;
@@ -62,8 +61,6 @@ import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.ValidatorContext;
-import org.labkey.api.exp.query.ExpSchema;
-import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.qc.DataTransformer;
@@ -71,7 +68,6 @@ import org.labkey.api.qc.TransformDataHandler;
 import org.labkey.api.qc.TransformResult;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.PropertyValidationError;
-import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
@@ -626,53 +622,16 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             // Lookup must point at "Samples.*", "exp.materials.*", or "exp.Materials"
             DomainProperty dp = entry.getKey();
-            ExpSampleType st = getLookupSampleType(dp, context.getContainer(), context.getUser());
-            if (st == null && !isLookupToMaterials(dp))
+            if (!ExperimentService.get().isLookupToMaterials(dp))
                 continue;
 
-            // Use the DomainProperty name as the role
-            String role = dp.getName();
+            ExpSampleType st = ExperimentService.get().getLookupSampleType(dp, context.getContainer(), context.getUser());
+            if (st == null)
+                continue;
+
+            String role = AssayService.get().getInputRole(dp, false);
             addMaterials(context, inputMaterials, Map.of(value, role), st, cache, materialCache);
         }
-    }
-
-    static final SchemaKey SCHEMA_EXP_MATERIALS = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, ExpSchema.TableType.Materials.name());
-
-    /** returns the lookup ExpSampleType if the property has a lookup to samples.<SampleTypeName> or exp.materials.<SampleTypeName> and is an int or string. */
-    @Nullable
-    public static ExpSampleType getLookupSampleType(@NotNull DomainProperty dp, @NotNull Container container, @NotNull User user)
-    {
-        Lookup lookup = dp.getLookup();
-        if (lookup == null)
-            return null;
-
-        // TODO: Use concept URI instead of the lookup target schema to determine if the column is a sample.
-        if (!(SamplesSchema.SCHEMA_SAMPLES.equals(lookup.getSchemaKey()) || SCHEMA_EXP_MATERIALS.equals(lookup.getSchemaKey())))
-            return null;
-
-        JdbcType type = dp.getPropertyType().getJdbcType();
-        if (!(type.isText() || type.isInteger()))
-            return null;
-
-        Container c = lookup.getContainer() != null ? lookup.getContainer() : container;
-        return SampleTypeService.get().getSampleType(c, user, lookup.getQueryName());
-    }
-
-    /** returns true if the property has a lookup to exp.Materials and is an int or string. */
-    public static boolean isLookupToMaterials(DomainProperty dp)
-    {
-        if (dp == null)
-            return false;
-
-        Lookup lookup = dp.getLookup();
-        if (lookup == null)
-            return false;
-
-        if (!(ExpSchema.SCHEMA_EXP.equals(lookup.getSchemaKey()) && ExpSchema.TableType.Materials.name().equalsIgnoreCase(lookup.getQueryName())))
-            return false;
-
-        JdbcType type = dp.getPropertyType().getJdbcType();
-        return type.isText() || type.isInteger();
     }
 
     protected void addInputDatas(
@@ -919,7 +878,6 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         AssayDataType dataType;
         for (Map.Entry<String, File> entry : files.entrySet())
         {
-            String key = entry.getKey();
             File file = entry.getValue();
             dataType = context.getProvider().getDataType();
 

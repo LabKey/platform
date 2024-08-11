@@ -151,6 +151,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainUtil;
+import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.DataClassUserSchema;
 import org.labkey.api.exp.query.ExpDataClassDataTable;
@@ -9733,6 +9734,42 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             return !AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_ALLOW_GAP_COUNTER);
         }
+    }
+
+    @Override
+    public @Nullable ExpSampleType getLookupSampleType(@NotNull DomainProperty dp, @NotNull Container container, @NotNull User user)
+    {
+        Lookup lookup = dp.getLookup();
+        if (lookup == null)
+            return null;
+
+        // TODO: Use concept URI instead of the lookup target schema to determine if the column is a sample.
+        if (!(SamplesSchema.SCHEMA_SAMPLES.equals(lookup.getSchemaKey()) || SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, ExpSchema.TableType.Materials.name()).equals(lookup.getSchemaKey())))
+            return null;
+
+        JdbcType type = dp.getPropertyType().getJdbcType();
+        if (!(type.isText() || type.isInteger()))
+            return null;
+
+        Container c = lookup.getContainer() != null ? lookup.getContainer() : container;
+        return SampleTypeService.get().getSampleType(c, user, lookup.getQueryName());
+    }
+
+    @Override
+    public boolean isLookupToMaterials(DomainProperty dp)
+    {
+        if (dp == null)
+            return false;
+
+        Lookup lookup = dp.getLookup();
+        if (lookup == null)
+            return false;
+
+        if (!(ExpSchema.SCHEMA_EXP.equals(lookup.getSchemaKey()) && ExpSchema.TableType.Materials.name().equalsIgnoreCase(lookup.getQueryName())))
+            return false;
+
+        JdbcType type = dp.getPropertyType().getJdbcType();
+        return type.isText() || type.isInteger();
     }
 
     public Map<String, Map<String, MissingFilesCheckInfo>> doMissingFilesCheck(User user, Container container, boolean trackMissingFiles) throws SQLException
