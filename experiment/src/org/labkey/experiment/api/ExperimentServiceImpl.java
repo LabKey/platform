@@ -274,6 +274,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
@@ -494,24 +495,64 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public List<ExpRunImpl> getExpRuns(Container container, @Nullable ExpProtocol parentProtocol, @Nullable ExpProtocol childProtocol)
     {
-        SQLFragment sql = new SQLFragment(" SELECT ER.* "
-                + " FROM exp.ExperimentRun ER "
-                + " WHERE ER.Container = ? ");
-        sql.add(container.getId());
+        return getExpRuns(container, parentProtocol, childProtocol, run -> true);
+    }
+
+    @Override
+    public List<ExpRunImpl> getExpRuns(Container container, @Nullable ExpProtocol parentProtocol, @Nullable ExpProtocol childProtocol, @NotNull Predicate<ExpRun> filterFn)
+    {
+
+        SQLFragment sql = new SQLFragment();
         if (parentProtocol != null)
         {
-            sql.append("\nAND ER.ProtocolLSID = ?");
+            sql.append("\nER.ProtocolLSID = ?");
             sql.add(parentProtocol.getLSID());
         }
         if (childProtocol != null)
         {
-            sql.append("\nAND ER.RowId IN (SELECT PA.RunId "
+            if (parentProtocol != null)
+                sql.append(" AND ");
+
+            sql.append("\nER.RowId IN (SELECT PA.RunId "
                     + " FROM exp.ProtocolApplication PA "
                     + " WHERE PA.ProtocolLSID = ? ) ");
             sql.add(childProtocol.getLSID());
         }
+
+        return getExpRuns(sql, filterFn, container);
+    }
+
+    @Override
+    public boolean hasExpRuns(Container container, @NotNull Predicate<ExpRun> filterFn)
+    {
+        SQLFragment sql = new SQLFragment(" SELECT ER.* "
+                + " FROM exp.ExperimentRun ER "
+                + " WHERE ER.Container = ? ");
+        sql.add(container.getId());
+
+        try (Stream<ExperimentRun> runs = new SqlSelector(getSchema(), sql).setJdbcCaching(false).uncachedStream(ExperimentRun.class))
+        {
+            return runs.map(ExpRunImpl::new).anyMatch(filterFn);
+        }
+    }
+
+    @Override
+    public List<ExpRunImpl> getExpRuns(@Nullable SQLFragment filterSQL, @NotNull Predicate<ExpRun> filterFn, @NotNull Container container)
+    {
+        SQLFragment sql = new SQLFragment(" SELECT ER.* "
+                + " FROM exp.ExperimentRun ER "
+                + " WHERE ER.Container = ? ");
+        sql.add(container.getId());
+
+        if (null != filterSQL && !filterSQL.isEmpty())
+            sql.append(" AND " ).append(filterSQL);
+
         sql.append(" ORDER BY ER.RowId ");
-        return ExpRunImpl.fromRuns(new SqlSelector(getSchema(), sql).getArrayList(ExperimentRun.class));
+
+        try (Stream<ExperimentRun> runs = new SqlSelector(getSchema(), sql).setJdbcCaching(false).uncachedStream(ExperimentRun.class))
+        {
+            return runs.map(ExpRunImpl::new).filter(filterFn).toList();
+        }
     }
 
     @Override
@@ -3704,7 +3745,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 LOG.debug("Rebuilt all run-based edges: " + timing.getDuration() + " ms");
             }
         }
-        ClosureQueryHelper.truncateAndRecreate();
+        ClosureQueryHelper.truncateAndRecreate(LOG);
     }
 
     public void verifyRunEdges(ExpRun run)

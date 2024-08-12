@@ -41,7 +41,9 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.LabKeyCollectors;
+import org.labkey.api.compliance.ComplianceFolderSettings;
 import org.labkey.api.compliance.ComplianceService;
+import org.labkey.api.compliance.PhiColumnBehavior;
 import org.labkey.api.data.Activity;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
@@ -3631,21 +3633,27 @@ public class StudyManager
         }
 
         // Check PHI levels; Must check activity level here, because we're in pipeline job, so Compliance can't get activity from HttpContext
-        PHI maxAllowedPhi = ComplianceService.get().getMaxAllowedPhi(createDatasetStudy.getContainer(), user);
-        if (null != activity && !maxAllowedPhi.isLevelAllowed(activity.getPHI()))
-            maxAllowedPhi = activity.getPHI();      // Reduce allowed level
-
-        PHI maxContainedPhi = PHI.NotPHI;
-        for (ImportPropertyDescriptor ipd : list.properties)
+        /* TODO this list should be consistent across all types, not just List, see ListImporter.createDefinedLists() */
+        ComplianceFolderSettings settings = ComplianceService.get().getFolderSettings(createDatasetStudy.getContainer(), User.getAdminServiceUser());
+        PhiColumnBehavior columnBehavior = null==settings ? PhiColumnBehavior.show : settings.getPhiColumnBehavior();
+        if (PhiColumnBehavior.show != columnBehavior)
         {
-            if (maxContainedPhi.getRank() < ipd.pd.getPHI().getRank())
-                maxContainedPhi = ipd.pd.getPHI();
-        }
+            PHI maxAllowedPhi = ComplianceService.get().getMaxAllowedPhi(createDatasetStudy.getContainer(), user);
+            if (null != activity && !maxAllowedPhi.isLevelAllowed(activity.getPHI()))
+                maxAllowedPhi = activity.getPHI();      // Reduce allowed level
 
-        if (!maxContainedPhi.isLevelAllowed(maxAllowedPhi))
-        {
-            errors.reject(ERROR_MSG, "User's max allowed PHI is '" + maxAllowedPhi.getLabel() + "', but imported datasets contain higher PHI '" + maxContainedPhi.getLabel() + "'.");
-            return false;
+            PHI maxContainedPhi = PHI.NotPHI;
+            for (ImportPropertyDescriptor ipd : list.properties)
+            {
+                if (maxContainedPhi.getRank() < ipd.pd.getPHI().getRank())
+                    maxContainedPhi = ipd.pd.getPHI();
+            }
+
+            if (!maxContainedPhi.isLevelAllowed(maxAllowedPhi))
+            {
+                errors.reject(ERROR_MSG, "User's max allowed PHI is '" + maxAllowedPhi.getLabel() + "', but imported datasets contain higher PHI '" + maxContainedPhi.getLabel() + "'.");
+                return false;
+            }
         }
 
         for (ImportPropertyDescriptor ipd : list.properties)
