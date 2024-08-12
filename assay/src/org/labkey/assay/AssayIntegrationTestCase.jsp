@@ -54,7 +54,6 @@
 <%@ page import="org.labkey.api.exp.query.ExpSchema" %>
 <%@ page import="org.labkey.api.files.FileContentService" %>
 <%@ page import="org.labkey.api.files.FilesAdminOptions" %>
-<%@ page import="org.labkey.api.gwt.client.assay.AssayException" %>
 <%@ page import="org.labkey.api.gwt.client.assay.model.GWTProtocol" %>
 <%@ page import="org.labkey.api.gwt.client.model.GWTDomain" %>
 <%@ page import="org.labkey.api.gwt.client.model.GWTPropertyDescriptor" %>
@@ -76,24 +75,38 @@
 <%@ page import="java.io.File" %>
 <%@ page import="java.nio.charset.StandardCharsets" %>
 <%@ page import="java.nio.file.Files" %>
+<%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Collections" %>
 <%@ page import="java.util.HashSet" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Set" %>
-
 <%@ page import="static org.junit.Assert.*" %>
 <%@ page import="static org.labkey.api.files.FileContentService.UPLOADED_FILE" %>
 <%@ page import="static org.hamcrest.CoreMatchers.hasItem" %>
 <%@ page import="static org.hamcrest.CoreMatchers.not" %>
 <%@ page import="static java.util.Collections.emptySet" %>
+<%@ page import="org.labkey.api.exp.api.ExpSampleType" %>
+<%@ page import="org.labkey.api.exp.api.SampleTypeService" %>
+<%@ page import="static java.util.Collections.emptyList" %>
+<%@ page import="org.labkey.api.exp.query.SamplesSchema" %>
+<%@ page import="org.labkey.api.query.QueryService" %>
+<%@ page import="static org.labkey.api.exp.query.SamplesSchema.SCHEMA_SAMPLES" %>
+<%@ page import="org.labkey.api.pipeline.PipeRoot" %>
+<%@ page import="org.jetbrains.annotations.Nullable" %>
+<%@ page import="java.io.IOException" %>
 
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
 <%!
-    Logger log;
-    User user;
-    Container c;
     final String ASSAY_NAME = "MyAssay";
+    final String SAMPLE_TYPE_NAME = "MySampleType";
+
+    Container c;
+    ViewContext context;
+    ViewBackgroundInfo info;
+    Logger log;
+    PipeRoot pipeRoot;
+    User user;
 
     @Before
     public void setUp()
@@ -102,24 +115,23 @@
         JunitUtil.deleteTestContainer();
         c = JunitUtil.getTestContainer();
         user = TestContext.get().getUser();
+
+        info = new ViewBackgroundInfo(c, user, null);
+        context = new ViewContext(info);
+        pipeRoot = PipelineService.get().findPipelineRoot(info.getContainer());
     }
 
     @After
     public void tearDown()
     {
+        c = null;
+        context = null;
+        info = null;
+        pipeRoot = null;
+        user = null;
     }
 
-    public ExpMaterial createMaterial()
-    {
-        final String materialName = "TestMaterial";
-        final String materialLsid = ExperimentService.get().generateLSID(c, ExpMaterial.class, "TestMaterial");
-        ExpMaterial material = ExperimentService.get().createExpMaterial(c, materialLsid, materialName);
-        material.save(user);
-        return material;
-    }
-
-    public Pair<AssayProvider, ExpProtocol> createAssay(ViewContext context, boolean editableRunsAndResults)
-            throws ValidationException
+    private Pair<AssayProvider, ExpProtocol> createAssay(ViewContext context, boolean editableRunsAndResults, boolean includeSampleTypeLookups) throws Exception
     {
         // create assay design
         AssayDomainService assayDomainService = new AssayDomainServiceImpl(context);
@@ -140,10 +152,6 @@
         // clear the result domain fields and add a sample lookup
         GWTDomain<GWTPropertyDescriptor> resultDomain = domains.stream().filter(d -> "Data Fields".equals(d.getName())).findFirst().orElseThrow();
         resultDomain.getFields(true).clear();
-        GWTPropertyDescriptor sampleLookup = new GWTPropertyDescriptor("SampleLookup", "int");
-        sampleLookup.setLookupSchema(ExpSchema.SCHEMA_NAME);
-        sampleLookup.setLookupQuery(ExpSchema.TableType.Materials.name());
-        resultDomain.getFields(true).add(sampleLookup);
 
         if (editableRunsAndResults)
         {
@@ -151,6 +159,35 @@
             runDomain.getFields(true).add(runProp);
             GWTPropertyDescriptor resultProp = new GWTPropertyDescriptor("resultProp", "int");
             resultDomain.getFields(true).add(resultProp);
+        }
+
+        // Lookup to exp.Materials on run domain
+        GWTPropertyDescriptor runExpMaterialLookup = new GWTPropertyDescriptor("RunExpMaterialsLookup", "int");
+        runExpMaterialLookup.setLookupSchema(ExpSchema.SCHEMA_NAME);
+        runExpMaterialLookup.setLookupQuery(ExpSchema.TableType.Materials.name());
+        runDomain.getFields(true).add(runExpMaterialLookup);
+
+        // Lookup to exp.Materials on results domain
+        GWTPropertyDescriptor resultExpMaterialLookup = new GWTPropertyDescriptor("ResultExpMaterialsLookup", "int");
+        resultExpMaterialLookup.setLookupSchema(ExpSchema.SCHEMA_NAME);
+        resultExpMaterialLookup.setLookupQuery(ExpSchema.TableType.Materials.name());
+        resultDomain.getFields(true).add(resultExpMaterialLookup);
+
+        if (includeSampleTypeLookups)
+        {
+            ExpSampleType sampleType = createSampleType();
+
+            // Lookup to samples.<sample type name>
+            GWTPropertyDescriptor sampleTypeLookup = new GWTPropertyDescriptor("SampleTypeLookup", "string");
+            sampleTypeLookup.setLookupSchema(SamplesSchema.SCHEMA_NAME);
+            sampleTypeLookup.setLookupQuery(sampleType.getName());
+            resultDomain.getFields(true).add(sampleTypeLookup);
+
+            // Lookup to exp.materials.<sample type name>
+            GWTPropertyDescriptor expMaterialsSampleTypeLookup = new GWTPropertyDescriptor("ExpMaterialSampleTypeLookup", "int");
+            expMaterialsSampleTypeLookup.setLookupSchema(ExpSchema.SCHEMA_EXP_MATERIALS.toString());
+            expMaterialsSampleTypeLookup.setLookupQuery(sampleType.getName());
+            resultDomain.getFields(true).add(expMaterialsSampleTypeLookup);
         }
 
         // create the assay
@@ -162,18 +199,75 @@
         return Pair.of(provider, assayProtocol);
     }
 
-    private ExpRun assayImportFile(Container c, User user, AssayProvider provider, ExpProtocol assayProtocol, File file, boolean allowCrossRunFileInputs)
-            throws ExperimentException, ValidationException
+    private File createAssayDataFile(String fileContents) throws IOException
+    {
+        var file = FileUtil.createTempFile(getClass().getSimpleName(), ".tsv", pipeRoot.getRootPath());
+        Files.writeString(file.toPath(), fileContents, StandardCharsets.UTF_8);
+        return file;
+    }
+
+    // Creates an exp material that does not reside in a sample type
+    private ExpMaterial createMaterial()
+    {
+        final String materialName = "TestMaterial";
+        final String materialLsid = ExperimentService.get().generateLSID(c, ExpMaterial.class, "TestMaterial");
+        ExpMaterial material = ExperimentService.get().createExpMaterial(c, materialLsid, materialName);
+        material.save(user);
+        return material;
+    }
+
+    private ExpSampleType createSampleType() throws Exception
+    {
+        List<GWTPropertyDescriptor> props = new ArrayList<>();
+        props.add(new GWTPropertyDescriptor("name", "string"));
+
+        return SampleTypeService.get().createSampleType(c, user, SAMPLE_TYPE_NAME, null, props, emptyList(), -1, -1, -1, -1, "S-${genId}", null);
+    }
+
+    private List<ExpMaterial> createSamples(int numSamples) throws Exception
+    {
+        List<Map<String, Object>> rows = new ArrayList<>();
+
+        for (int i = 0; i < numSamples; i++)
+            rows.add(CaseInsensitiveHashMap.of());
+
+        ExpSampleType sampleType = SampleTypeService.get().getSampleType(c, SAMPLE_TYPE_NAME);
+        TableInfo table = QueryService.get().getUserSchema(user, c, SCHEMA_SAMPLES).getTable(sampleType.getName());
+
+        var errors = new BatchValidationException();
+        var insertedRows = table.getUpdateService().insertRows(user, c, rows, errors, null, null);
+        if (errors.hasErrors())
+            throw errors;
+
+        List<Integer> insertedRowIds = insertedRows.stream().map(row -> (Integer) row.get("RowId")).toList();
+        return new ArrayList<>(ExperimentService.get().getExpMaterials(insertedRowIds));
+    }
+
+    private ExpRun assayImportFile(
+        Container c,
+        User user,
+        AssayProvider provider,
+        ExpProtocol assayProtocol,
+        File file,
+        boolean allowCrossRunFileInputs,
+        @Nullable Map<String, Object> requestParameters
+    ) throws ExperimentException, ValidationException
     {
         HttpSession session = TestContext.get().getRequest().getSession();
 
-        // Use the AssayFileUploadForm and the PipelineDataCollector to simulate the user selecting a file from the filebrowser.
+        // Use the AssayFileUploadForm and the PipelineDataCollector to simulate the user selecting a file from the file browser.
         PipelineDataCollector.setFileCollection(session, c, assayProtocol, List.of(Map.of(AssayDataCollector.PRIMARY_FILE, file)));
 
-        // Use a multipart request to trigger the AssayFileWriter.savePipelineFiles() code path that copies files into the assayupload directory
+        // Use a multipart request to trigger the AssayFileWriter.savePipelineFiles() code path that copies files into the assay upload directory
         var mockRequest = new MockMultipartHttpServletRequest();
         mockRequest.setUserPrincipal(user);
         mockRequest.setSession(session);
+
+        if (requestParameters != null)
+        {
+            for (var entry : requestParameters.entrySet())
+                mockRequest.addParameter(entry.getKey(), entry.getValue().toString());
+        }
 
         var mockContext = new ViewContext(mockRequest, null, null);
         mockContext.setContainer(c);
@@ -207,11 +301,6 @@
     @Test
     public void testIssue41675() throws Exception
     {
-        final var info = new ViewBackgroundInfo(c, user, null);
-        final var context = new ViewContext(info);
-        final var pipeRoot = PipelineService.get().findPipelineRoot(info.getContainer());
-
-
         // create a custom file property
         FileContentService fileSvc = FileContentService.get();
         PropertyDescriptor someStuffProp = null;
@@ -227,7 +316,7 @@
         }
 
         // create the assay
-        var assayPair = createAssay(context, false);
+        var assayPair = createAssay(context, false, false);
         var provider = assayPair.first;
         var assayProtocol = assayPair.second;
 
@@ -237,12 +326,11 @@
         final var materialName = material.getName();
 
         // create a file in the pipeline root to import
-        var file = FileUtil.createTempFile(getClass().getSimpleName(), ".tsv", pipeRoot.getRootPath());
-        Files.writeString(file.toPath(), "SampleLookup\n" + materialName + "\n", StandardCharsets.UTF_8);
+        var file = createAssayDataFile("ResultExpMaterialsLookup\n" + materialName + "\n");
 
         // import the file
         log.info("first import");
-        var run = assayImportFile(c, user, provider, assayProtocol, file, false);
+        var run = assayImportFile(c, user, provider, assayProtocol, file, false, null);
 
         // verify the exp.data is attached to the run
         assertEquals(1, run.getDataOutputs().size());
@@ -291,7 +379,7 @@
 
         // import the same file again
         log.info("second import");
-        var run2 = assayImportFile(c, user, provider, assayProtocol, file, false);
+        var run2 = assayImportFile(c, user, provider, assayProtocol, file, false, null);
 
         // verify the exp.data and exp.object again
         log.info("verifying second upload");
@@ -323,12 +411,8 @@
     @Test
     public void testCrossRunFileInputs() throws Exception
     {
-        final var info = new ViewBackgroundInfo(c, user, null);
-        final var context = new ViewContext(info);
-        final var pipeRoot = PipelineService.get().findPipelineRoot(info.getContainer());
-
         // create the assay
-        var assayPair = createAssay(context, false);
+        var assayPair = createAssay(context, false, false);
         var provider = assayPair.first;
         var assayProtocol = assayPair.second;
 
@@ -338,8 +422,7 @@
         final var materialName = material.getName();
 
         // create a file in the pipeline root to import
-        var file = FileUtil.createTempFile(getClass().getSimpleName(), ".tsv", pipeRoot.getRootPath());
-        Files.writeString(file.toPath(), "SampleLookup\n" + materialName + "\n", StandardCharsets.UTF_8);
+        var file = createAssayDataFile("ResultExpMaterialsLookup\n" + materialName + "\n");
 
         var firstData = ExperimentService.get().createData(c, UPLOADED_FILE, file.getName());
         firstData.setDataFileURI(FileUtil.getAbsoluteCaseSensitiveFile(file).toURI());
@@ -353,26 +436,26 @@
         run.setProtocol(protocol);
 
         run = ExperimentService.get().saveSimpleExperimentRun(run,
-                Map.of(material, "sample"),
-                Collections.emptyMap(),
-                Collections.emptyMap(),
-                Map.of(firstData, "output file"),
-                Collections.emptyMap(),
-                info,
-                null,
-                false,
-                emptySet(),
-                emptySet());
+            Map.of(material, "sample"),
+            Collections.emptyMap(),
+            Collections.emptyMap(),
+            Map.of(firstData, "output file"),
+            Collections.emptyMap(),
+            info,
+            null,
+            false,
+            emptySet(),
+            emptySet()
+        );
 
         // verify the material is an input and the file is an output
         assertTrue(run.getMaterialInputs().containsKey(material));
         MatcherAssert.assertThat(run.getDataOutputs(), hasItem(firstData));
 
-
         log.info("first assay import attempt");
         try
         {
-            assayImportFile(c, user, provider, assayProtocol, file, false);
+            assayImportFile(c, user, provider, assayProtocol, file, false, null);
             fail("Expected to throw an exception");
         }
         catch (ValidationException e)
@@ -382,7 +465,7 @@
         }
 
         log.info("second assay import attempt");
-        var assayRun = assayImportFile(c, user, provider, assayProtocol, file, true);
+        var assayRun = assayImportFile(c, user, provider, assayProtocol, file, true, null);
 
         // verify the first exp.data is attached as an input and not as an output
         assertTrue(assayRun.getMaterialInputs().containsKey(material));
@@ -419,28 +502,22 @@
      * - result created/modified/by matches run's created/modified/by on initial run upload from query view
      * - provisioned result db table have created/modified/by as null on initial run upload
      * - on run edit, result created/modified/by stays unchanged from query view, and remains null in DB
-     * - on result edit, result created/by stays unchanged, but result modified/by is popuated in DB and differs from run
-     * @throws Exception
+     * - on result edit, result created/by stays unchanged, but result modified/by is populated in DB and differs from run
      */
     @Test
     public void testAssayResultCreatedModified() throws Exception
     {
-        final var info = new ViewBackgroundInfo(c, user, null);
-        final var context = new ViewContext(info);
-        final var pipeRoot = PipelineService.get().findPipelineRoot(info.getContainer());
-
         // create the assay with editable runs/results
-        var assayPair = createAssay(context, true);
+        var assayPair = createAssay(context, true, false);
         var provider = assayPair.first;
         var assayProtocol = assayPair.second;
 
         // create a file in the pipeline root to import
-        var file = FileUtil.createTempFile(getClass().getSimpleName(), ".tsv", pipeRoot.getRootPath());
-        Files.writeString(file.toPath(), "ResultProp\n" + 100 + "\n", StandardCharsets.UTF_8);
+        var file = createAssayDataFile("ResultProp\n" + 100 + "\n");
 
         // import the file
         log.info("first import");
-        var run = assayImportFile(c, user, provider, assayProtocol, file, false);
+        var run = assayImportFile(c, user, provider, assayProtocol, file, false, null);
         int runRowId = run.getRowId();
 
         AssayProtocolSchema schema = provider.createProtocolSchema(user, c, assayProtocol, null);
@@ -515,7 +592,62 @@
         assertFalse(dbResult.get("Modified") == null || dbResult.get("ModifiedBy") == null);
         assertTrue(dbResult.get("Modified").equals(modifiedResults.get("Modified")));
         assertTrue(dbResult.get("ModifiedBy").equals(modifiedResults.get("ModifiedBy")));
-
     }
 
+    @Test
+    public void testRunResultLineageUpdate() throws Exception
+    {
+        // Regression coverage for Issue 45594.
+        // Verify run/result properties backed by lineage update when query data is updated.
+
+        // Arrange
+        var assayPair = createAssay(context, true, true);
+        var provider = assayPair.first;
+        var assayProtocol = assayPair.second;
+
+        var samples = createSamples(5);
+        var runSample1 = samples.get(0);
+        var runSample2 = samples.get(1);
+        var resultSample1 = samples.get(2);
+        var resultSample2 = samples.get(3);
+        var sampleLookupSample = samples.get(4);
+
+        // create a file in the pipeline root to import
+        var fileContents = String.format("ResultExpMaterialsLookup\tSampleTypeLookup\n%s\t%s\n", resultSample1.getName(), sampleLookupSample.getName());
+        var file = createAssayDataFile(fileContents);
+
+        // create a run
+        var run = assayImportFile(c, user, provider, assayProtocol, file, false, Map.of("runExpMaterialsLookup", runSample1.getName()));
+
+        // Verify pre-conditions
+        assertEquals(3, run.getMaterialInputs().size());
+        assertEquals("RunExpMaterialsLookup", run.getMaterialInputs().get(runSample1));
+        assertEquals("ResultExpMaterialsLookup", run.getMaterialInputs().get(resultSample1));
+        assertEquals("SampleTypeLookup", run.getMaterialInputs().get(sampleLookupSample));
+
+        AssayProtocolSchema schema = provider.createProtocolSchema(user, c, assayProtocol, null);
+        TableInfo runsTable = schema.getTable("Runs");
+        TableInfo resultsTable = schema.getTable("Data");
+
+        // Act
+        var errors = new BatchValidationException();
+        var updatedRunRow = CaseInsensitiveHashMap.of("RowId", run.getRowId(), "RunExpMaterialsLookup", runSample2.getRowId());
+        runsTable.getUpdateService().updateRows(user, c, List.of((Map) updatedRunRow), null, errors, null, null);
+        if (errors.hasErrors())
+            throw errors;
+
+        var resultRow = new TableSelector(resultsTable).getMapArray()[0];
+        var updatedResultRow = CaseInsensitiveHashMap.of("RowId", resultRow.get("RowId"), "ResultExpMaterialsLookup", resultSample2.getRowId());
+        resultsTable.getUpdateService().updateRows(user, c, List.of((Map) updatedResultRow), null, errors, null, null);
+        if (errors.hasErrors())
+            throw errors;
+
+        // Assert
+        var updatedRun = ExperimentService.get().getExpRun(run.getRowId());
+        assertNotNull(updatedRun);
+        assertEquals(3, updatedRun.getMaterialInputs().size());
+        assertEquals("RunExpMaterialsLookup", updatedRun.getMaterialInputs().get(runSample2));
+        assertEquals("ResultExpMaterialsLookup", updatedRun.getMaterialInputs().get(resultSample2));
+        assertEquals("SampleTypeLookup", updatedRun.getMaterialInputs().get(sampleLookupSample));
+    }
 %>
