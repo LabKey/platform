@@ -2139,7 +2139,11 @@ public abstract class AbstractAssayProvider implements AssayProvider
             if (!isRunProperties || column instanceof PropertyColumn)
             {
                 DomainProperty dp = domain.getPropertyByURI(column.getPropertyURI());
-                if (dp != null && ExperimentService.get().isLookupToMaterials(dp))
+                if (dp == null)
+                    continue;
+
+                ExpSampleType sampleType = ExperimentService.get().getLookupSampleType(dp, container, user);
+                if (sampleType != null || ExperimentService.get().isLookupToMaterials(dp))
                 {
                     String inputRole = AssayService.get().getPropertyInputLineageRole(dp);
 
@@ -2150,7 +2154,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
                             removedMaterialInputs.add(materialEntry.getKey().getRowId());
                     }
 
-                    ExpSampleType sampleType = ExperimentService.get().getLookupSampleType(dp, container, user);
                     ExpMaterial newInputMaterial = ExperimentService.get().findExpMaterial(container, user, entry.getValue(), sampleType, cache, materialsCache);
                     if (newInputMaterial != null)
                     {

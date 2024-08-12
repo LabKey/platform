@@ -622,12 +622,11 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             // Lookup must point at "Samples.*", "exp.materials.*", or "exp.Materials"
             DomainProperty dp = entry.getKey();
-            if (!ExperimentService.get().isLookupToMaterials(dp))
+            ExpSampleType st = ExperimentService.get().getLookupSampleType(dp, context.getContainer(), context.getUser());
+            if (st == null && !ExperimentService.get().isLookupToMaterials(dp))
                 continue;
 
-            ExpSampleType st = ExperimentService.get().getLookupSampleType(dp, context.getContainer(), context.getUser());
             String role = AssayService.get().getPropertyInputLineageRole(dp);
-
             addMaterials(context, inputMaterials, Map.of(value, role), st, cache, materialCache);
         }
     }
