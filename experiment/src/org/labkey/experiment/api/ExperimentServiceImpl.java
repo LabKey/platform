@@ -9229,8 +9229,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     withCounterMatch++;
             }
 
-            typeMetrics.put("grandParent", grandParentMatch);
-            typeMetrics.put("withCounter", withCounterMatch);
+            if (grandParentMatch > 0)
+                typeMetrics.put("grandParent", grandParentMatch);
+            if (withCounterMatch > 0)
+                typeMetrics.put("withCounter", withCounterMatch);
 
             metrics.put(nameExpressionType.dataType, typeMetrics);
         }

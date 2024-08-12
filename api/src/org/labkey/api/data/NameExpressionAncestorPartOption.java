@@ -11,7 +11,7 @@ import java.util.List;
  * For the above example, the params will be as follows:
  * options: The ExpLineageOptions configuration for this ancestor path (depth, etc)
  * parentType: Nullable, the sample type or dataclass name. If ancestorPaths is null, parentType must not be null
- * ancestorType: <ExpLineageOptions.LineageExpType, ancestorDataTypeName>. nullable, used if querying for all ancestors
+ * ancestorSearchType: <ExpLineageOptions.LineageExpType, ancestorDataTypeName>. nullable, used if querying for all ancestors
  * ancestorPaths: [{'Material', 'GrandParentType-LSID'}, {'Data', 'GreatGrandParentType-LSID'}], nullable
  * lookupColumn: barcode
  */
