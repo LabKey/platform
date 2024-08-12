@@ -91,6 +91,10 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Part
     };
 
     areRequiredFieldsEmpty = (): boolean => {
+        if (!this.state.fieldValues.enabled) {
+            return false;
+        }
+
         // Array of all required fields
         const requiredFields = this.props.modalType.settingsFields.reduce((accum, current) => {
             if (current.required) {
