@@ -51,7 +51,8 @@ public abstract class JdbcHelperTest extends Assert
         {
             try
             {
-                if (helper.getDatabase(url).equals("database"))
+                String database = helper.getDatabase(url);
+                if ("database".equals(database))
                     fail("JdbcHelper test failed: database in " + url + " should not have resolved to 'database'");
             }
             catch (ServletException e)
