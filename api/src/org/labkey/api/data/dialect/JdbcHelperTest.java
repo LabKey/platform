@@ -22,11 +22,6 @@ import org.junit.Assert;
 import jakarta.servlet.ServletException;
 import java.util.Set;
 
-/*
-* User: adam
-* Date: Jul 15, 2011
-* Time: 1:49:06 PM
-*/
 public abstract class JdbcHelperTest extends Assert
 {
     protected abstract @NotNull SqlDialect getDialect();
@@ -41,8 +36,11 @@ public abstract class JdbcHelperTest extends Assert
         try
         {
             for (String url : getGoodUrls())
-                if (!helper.getDatabase(url).equals("database"))
-                    fail("JdbcHelper test failed: database in " + url + " did not resolve to 'database'");
+            {
+                String database = helper.getDatabase(url);
+                if (!"database".equals(database))
+                    fail("JdbcHelper test failed: database in '" + url + "' resolved as '" + database + "' instead of 'database' as expected");
+            }
         }
         catch (Exception e)
         {
