@@ -840,7 +840,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         for (Map.Entry<?, String> entry : unresolved.entrySet())
         {
             Object sampleIdentifier = entry.getKey();
-            ExpMaterial material = ExperimentService.get().resolveExpMaterial(context.getContainer(), context.getUser(), sampleIdentifier, sampleType, cache, materialCache);
+            ExpMaterial material = ExperimentService.get().findExpMaterial(context.getContainer(), context.getUser(), sampleIdentifier, sampleType, cache, materialCache);
             if (material == null)
                 throw new ExperimentException("Unable to resolve sample: " + sampleIdentifier);
 

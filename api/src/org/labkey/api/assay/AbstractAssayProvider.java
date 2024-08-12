@@ -2119,8 +2119,8 @@ public abstract class AbstractAssayProvider implements AssayProvider
         ExpRun run,
         Map<String, Object> row,
         boolean isRunProperties,
-        @Nullable RemapCache cache,
-        @Nullable Map<Integer, ExpMaterial> materialsCache
+        @NotNull RemapCache cache,
+        @NotNull Map<Integer, ExpMaterial> materialsCache
     ) throws ValidationException
     {
         Domain domain = table.getDomain();
@@ -2151,7 +2151,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     }
 
                     ExpSampleType sampleType = ExperimentService.get().getLookupSampleType(dp, container, user);
-                    ExpMaterial newInputMaterial = ExperimentService.get().resolveExpMaterial(container, user, entry.getValue(), sampleType, cache, materialsCache);
+                    ExpMaterial newInputMaterial = ExperimentService.get().findExpMaterial(container, user, entry.getValue(), sampleType, cache, materialsCache);
                     if (newInputMaterial != null)
                     {
                         // Prevent direct cycles

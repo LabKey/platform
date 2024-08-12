@@ -50,7 +50,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
@@ -254,7 +253,7 @@ public class NameGenerator
     private final Map<String, ExpDataClass> _dataClasses = new HashMap<>();
     private final Map<Integer, ExpMaterial> materialCache = new HashMap<>();
     private final Map<Integer, ExpData> dataCache = new HashMap<>();
-    private RemapCache renameCache;
+    private final RemapCache renameCache;
     private final Map<String, Map<String, Object>> objectPropertiesCache = new HashMap<>();
 
     private final Container _container;
@@ -1878,7 +1877,7 @@ public class NameGenerator
             try
             {
                 ExpRunItem parentObject = isMaterialParent ?
-                        ExperimentService.get().findExpMaterial(_container, _user, (ExpSampleType) parentObjectType, parentTypeName, parentName, renameCache, materialCache)
+                        ExperimentService.get().findExpMaterial(_container, _user, parentName, (ExpSampleType) parentObjectType, renameCache, materialCache)
                         : ExperimentService.get().findExpData(_container, _user, (ExpDataClass) parentObjectType, parentTypeName, parentName, renameCache, dataCache);
 
                 if (parentObject == null)

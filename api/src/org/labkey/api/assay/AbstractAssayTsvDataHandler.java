@@ -963,7 +963,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     if (o != null && (isSampleLookupById || isSampleLookupByName))
                     {
                         ExpSampleType byNameSS = isSampleLookupByName ? lookupToSampleTypeByName.get(pd) : lookupToSampleTypeById.get(pd);
-                        String ssName = byNameSS != null ? byNameSS.getName() : null;
                         Container lookupContainer = pd.getLookup().getContainer() != null ? pd.getLookup().getContainer() : container;
 
                         // Issue 47509: When samples have names that are numbers, they can be incorrectly interpreted as rowIds during the insert.
@@ -978,7 +977,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                             try
                             {
                                 if (material == null)
-                                    material = exp.findExpMaterial(lookupContainer, user, byNameSS, ssName, materialName, cache, materialCache);
+                                    material = exp.findExpMaterial(lookupContainer, user, materialName, byNameSS, cache, materialCache);
                             }
                             catch (ValidationException ve)
                             {

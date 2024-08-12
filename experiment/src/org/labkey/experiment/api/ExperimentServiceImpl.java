@@ -850,8 +850,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    @Nullable
-    public ExpMaterialImpl getExpMaterial(Container c, User u, int rowId, @Nullable ExpSampleType sampleType)
+    public @Nullable ExpMaterialImpl getExpMaterial(Container c, User u, int rowId, @Nullable ExpSampleType sampleType)
     {
         List<ExpMaterialImpl> materials = getExpMaterials(c, u, List.of(rowId), sampleType);
         if (materials == null || materials.isEmpty())
@@ -933,41 +932,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         filter.addClause(containerFilter.createFilterClause(getSchema(), FieldKey.fromParts("Container")));
 
         return getExpMaterials(filter);
-    }
-
-    @Override
-    public @Nullable ExpMaterial resolveExpMaterial(
-        Container container,
-        User user,
-        Object sampleIdentifier,
-        @Nullable ExpSampleType sampleType,
-        @Nullable RemapCache cache,
-        @Nullable Map<Integer, ExpMaterial> materialCache
-    ) throws ValidationException
-    {
-        if (sampleIdentifier == null)
-            return null;
-
-        if (sampleIdentifier instanceof ExpMaterial m)
-        {
-            if (materialCache != null)
-                materialCache.put(m.getRowId(), m);
-            return m;
-        }
-
-        if (sampleIdentifier instanceof Integer rowId)
-        {
-            if (materialCache != null)
-                return materialCache.computeIfAbsent(rowId, id -> getExpMaterial(container, user, id, sampleType));
-            return getExpMaterial(container, user, rowId, sampleType);
-        }
-
-        if (sampleIdentifier instanceof String sampleName)
-        {
-            return findExpMaterial(container, user, sampleType, sampleType != null ? sampleType.getName() : null, sampleName, cache, materialCache);
-        }
-
-        return null;
     }
 
     @Override
@@ -1741,7 +1705,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public ExpDataClass getEffectiveDataClass(@NotNull Container definitionContainer, @NotNull User user, @NotNull String dataClassName, @NotNull Date effectiveDate, @Nullable ContainerFilter cf)
+    public @Nullable ExpDataClass getEffectiveDataClass(
+        @NotNull Container definitionContainer,
+        @NotNull User user,
+        @NotNull String dataClassName,
+        @NotNull Date effectiveDate,
+        @Nullable ContainerFilter cf
+    )
     {
         Integer legacyObjectId = getObjectIdWithLegacyName(dataClassName, ExperimentServiceImpl.getNamespacePrefix(ExpDataClass.class), effectiveDate, definitionContainer, cf);
         if (legacyObjectId != null)
@@ -1970,16 +1940,32 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     @Override
     public @Nullable ExpMaterial findExpMaterial(
-        Container c,
+        Container container,
         User user,
-        ExpSampleType sampleType,
-        String sampleTypeName,
-        String sampleName,
-        RemapCache cache,
-        Map<Integer, ExpMaterial> materialCache
+        Object sampleIdentifier,
+        @Nullable ExpSampleType sampleType,
+        @NotNull RemapCache cache,
+        @NotNull Map<Integer, ExpMaterial> materialCache
     ) throws ValidationException
     {
+        if (sampleIdentifier == null)
+            return null;
+
+        if (sampleIdentifier instanceof Integer rowId)
+            return materialCache.computeIfAbsent(rowId, id -> getExpMaterial(container, user, id, sampleType));
+
+        if (sampleIdentifier instanceof ExpMaterial m)
+        {
+            materialCache.put(m.getRowId(), m);
+            return m;
+        }
+
+        if (!(sampleIdentifier instanceof String sampleName))
+            throw new ValidationException(String.format("Failed to resolve a %s into a sample.", sampleIdentifier.getClass().getName()));
+
         StringBuilder errors = new StringBuilder();
+        String sampleTypeName = sampleType == null ? null : sampleType.getName();
+
         // Issue 44568, Issue 40302: Unable to use samples or data class with integer like names as material or data input
         // First attempt to resolve by name.
         try
@@ -1987,11 +1973,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             // TODO, rowId is not found for samples newly created in the same import.
             // This is causing name patterns containing lineage lookup to fail to generate the correct names if the child samples and their parents are created from the same import file
             Integer rowId = (sampleTypeName == null) ?
-                    cache.remap(ExpSchema.SCHEMA_EXP, ExpSchema.TableType.Materials.name(), user, c, getContainerFilterTypeForFind(c), sampleName) :
-                    cache.remap(SamplesSchema.SCHEMA_SAMPLES, sampleTypeName, user, c, getContainerFilterTypeForFind(c), sampleName);
+                    cache.remap(ExpSchema.SCHEMA_EXP, ExpSchema.TableType.Materials.name(), user, container, getContainerFilterTypeForFind(container), sampleName) :
+                    cache.remap(SamplesSchema.SCHEMA_SAMPLES, sampleTypeName, user, container, getContainerFilterTypeForFind(container), sampleName);
 
             if (rowId != null)
-                return materialCache.computeIfAbsent(rowId, (x) -> getExpMaterial(c, user, rowId, sampleType));
+                return materialCache.computeIfAbsent(rowId, id -> getExpMaterial(container, user, id, sampleType));
         }
         catch (ConversionException e2)
         {
@@ -2010,7 +1996,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             Integer rowId = ConvertHelper.convert(sampleName, Integer.class);
 
             if (rowId != null)
-                return materialCache.computeIfAbsent(rowId, (x) -> getExpMaterial(c, user, rowId, sampleType));
+                return materialCache.computeIfAbsent(rowId, id -> getExpMaterial(container, user, id, sampleType));
         }
         catch (ConversionException e1)
         {

@@ -392,8 +392,8 @@ public interface AssayProvider extends Handler<ExpProtocol>
         ExpRun run,
         Map<String, Object> row,
         boolean isRunProperties,
-        @Nullable RemapCache cache,
-        @Nullable Map<Integer, ExpMaterial> materialsCache
+        @NotNull RemapCache cache,
+        @NotNull Map<Integer, ExpMaterial> materialsCache
     ) throws ValidationException
     {
     }

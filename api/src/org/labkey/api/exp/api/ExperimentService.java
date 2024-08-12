@@ -319,7 +319,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
     /**
      * Get a DataClass with name at a specific time.
      */
-    ExpDataClass getEffectiveDataClass(
+    @Nullable ExpDataClass getEffectiveDataClass(
         @NotNull Container definitionContainer,
         @NotNull User user,
         @NotNull String dataClassName,
@@ -343,15 +343,13 @@ public interface ExperimentService extends ExperimentRunTypeSource
     List<? extends ExpMaterial> getExpMaterials(Container container, User user, Collection<Integer> rowIds, @Nullable ExpSampleType sampleType);
 
     /* This version of createExpMaterial() takes name from lsid.getObjectId() */
-    ExpMaterial createExpMaterial(Container container, Lsid lsid);
+    @NotNull ExpMaterial createExpMaterial(Container container, Lsid lsid);
 
-    ExpMaterial createExpMaterial(Container container, String lsid, String name);
+    @NotNull ExpMaterial createExpMaterial(Container container, String lsid, String name);
 
-    @Nullable
-    ExpMaterial getExpMaterial(int rowId);
+    @Nullable ExpMaterial getExpMaterial(int rowId);
 
-    @Nullable
-    ExpMaterial getExpMaterial(int rowId, ContainerFilter containerFilter);
+    @Nullable ExpMaterial getExpMaterial(int rowId, ContainerFilter containerFilter);
 
     /**
      * Get material by rowId in this, project, or shared container and within the provided sample type.
@@ -361,7 +359,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * @param rowId           The sample rowId.
      * @param sampleType      Optional sample type that the sample must live in.
      */
-    ExpMaterial getExpMaterial(Container c, User u, int rowId, @Nullable ExpSampleType sampleType);
+    @Nullable ExpMaterial getExpMaterial(Container c, User u, int rowId, @Nullable ExpSampleType sampleType);
 
     @NotNull List<? extends ExpMaterial> getExpMaterials(Collection<Integer> rowIds);
 
@@ -369,31 +367,40 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     @Nullable ExpMaterial getExpMaterial(String lsid);
 
-    @Nullable ExpMaterial resolveExpMaterial(
-        Container container,
-        User user,
-        Object sampleIdentifier,
-        @Nullable ExpSampleType sampleType,
-        @Nullable RemapCache cache,
-        @Nullable Map<Integer, ExpMaterial> materialCache
-    ) throws ValidationException;
-
     /**
      * Looks in all the sample types visible from the given container for a single match with the specified name
      */
     @NotNull List<? extends ExpMaterial> getExpMaterialsByName(String name, @Nullable Container container, User user);
 
-    @Nullable ExpData findExpData(Container c, User user,
-                                  @NotNull ExpDataClass dataClass,
-                                  @NotNull String dataClassName, String dataName,
-                                  RemapCache cache, Map<Integer, ExpData> dataCache)
-            throws ValidationException;
+    @Nullable ExpData findExpData(
+        Container c,
+        User user,
+        @NotNull ExpDataClass dataClass,
+        @NotNull String dataClassName,
+        String dataName,
+        RemapCache cache,
+        Map<Integer, ExpData> dataCache
+    ) throws ValidationException;
 
-    @Nullable ExpMaterial findExpMaterial(Container c, User user,
-                                          ExpSampleType sampleType,
-                                          String sampleTypeName, String sampleName,
-                                          RemapCache cache, Map<Integer, ExpMaterial> materialCache)
-            throws ValidationException;
+    /**
+     * Attempts to resolve an ExpMaterial from an Object.
+     *
+     * @param container        The container in which to scope the resolution.
+     * @param user             The user that is attempting to resolve the material.
+     * @param sampleIdentifier An identifier object (ExpMaterial, Integer, String, etc.) that identifies an individual material.
+     * @param sampleType       An optional ExpSampleType in which to scope the resolution.
+     * @param cache            Caller-supplied remapping cache that remaps underlying queries for samples
+     * @param materialCache    Caller-supplied Map used to cache materials by rowId.
+     * @return The resolved ExpMaterial or null if the Object does not resolve to a material.
+     */
+    @Nullable ExpMaterial findExpMaterial(
+        Container container,
+        User user,
+        Object sampleIdentifier,
+        @Nullable ExpSampleType sampleType,
+        @NotNull RemapCache cache,
+        @NotNull Map<Integer, ExpMaterial> materialCache
+    ) throws ValidationException;
 
     ExpExperiment createHiddenRunGroup(Container container, User user, ExpRun... runs);
 
