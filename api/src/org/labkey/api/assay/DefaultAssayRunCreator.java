@@ -626,10 +626,8 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 continue;
 
             ExpSampleType st = ExperimentService.get().getLookupSampleType(dp, context.getContainer(), context.getUser());
-            if (st == null)
-                continue;
+            String role = AssayService.get().getPropertyInputLineageRole(dp);
 
-            String role = AssayService.get().getInputRole(dp, false);
             addMaterials(context, inputMaterials, Map.of(value, role), st, cache, materialCache);
         }
     }

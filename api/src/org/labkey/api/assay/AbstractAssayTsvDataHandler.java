@@ -990,7 +990,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
                         if (material != null)
                         {
-                            rowBasedInputMaterials.putIfAbsent(material, AssayService.get().getInputRole(pd, false));
+                            rowBasedInputMaterials.putIfAbsent(material, AssayService.get().getPropertyInputLineageRole(pd));
                             rowInputLSIDs.add(material.getLSID());
 
                             // If the lookup was defined with an explicit container, verify that the sample is in that container

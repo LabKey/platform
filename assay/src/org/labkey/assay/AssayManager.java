@@ -1135,8 +1135,11 @@ public class AssayManager implements AssayService
     }
 
     @Override
-    public @NotNull String getInputRole(@NotNull DomainProperty dp, boolean useDeprecated)
+    public @NotNull String getPropertyInputLineageRole(@NotNull DomainProperty dp)
     {
-        return useDeprecated ? dp.getName() : String.format("dp-%d", dp.getPropertyId());
+        // TODO: Issue 51038: This is not sufficiently unique across domains. Make unique and verify across folder export/import.
+        // The assay run and assay result may have properties that have the same name which will
+        // result in lineage inputs which we are unable to disambiguate when processing based on "role".
+        return dp.getName();
     }
 }

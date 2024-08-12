@@ -75,9 +75,7 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
     {
         Map<String, Object> originalRow = getRow(user, container, oldRow);
         if (originalRow == null)
-        {
             throw new InvalidKeyException("Could not find row");
-        }
 
         ExpRun run = getRun(originalRow, user, UpdatePermission.class);
 
@@ -89,7 +87,6 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
         convertTypes(user, container, row, getDbTable(), assayResultsRunDir);
 
         Map<String, Object> result = super.updateRow(user, container, row, oldRow, configParameters);
-
         Map<String, Object> updatedValues = getRow(user, container, oldRow);
 
         StringBuilder sb = new StringBuilder("Data row, id " + oldRow.get("RowId") + ", edited in " + run.getProtocol().getName() + ".");

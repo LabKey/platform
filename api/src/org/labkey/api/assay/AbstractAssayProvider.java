@@ -2141,13 +2141,12 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 DomainProperty dp = domain.getPropertyByURI(column.getPropertyURI());
                 if (dp != null && ExperimentService.get().isLookupToMaterials(dp))
                 {
-                    String inputRole = AssayService.get().getInputRole(dp, false);
-                    String deprecatedInputRole = AssayService.get().getInputRole(dp, true);
+                    String inputRole = AssayService.get().getPropertyInputLineageRole(dp);
 
                     // Remove all material inputs with the same role
                     for (var materialEntry : run.getMaterialInputs().entrySet())
                     {
-                        if (inputRole.equalsIgnoreCase(materialEntry.getValue()) || deprecatedInputRole.equalsIgnoreCase(materialEntry.getValue()))
+                        if (inputRole.equalsIgnoreCase(materialEntry.getValue()))
                             removedMaterialInputs.add(materialEntry.getKey().getRowId());
                     }
 

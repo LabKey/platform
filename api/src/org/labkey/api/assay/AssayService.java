@@ -246,7 +246,8 @@ public interface AssayService
     @NotNull Collection<Map<String, Object>> checkResults(Container container, User user, ExpProtocol protocol, ResultsCheckHelper checker);
     @NotNull <E> Collection<E> checkResults(Container container, User user, ExpProtocol protocol, ResultsCheckHelper checker, Class<E> clazz);
 
-    @NotNull String getInputRole(@NotNull DomainProperty dp, boolean useDeprecated);
+    /** Returns the lineage "role" for an assay run/result property. */
+    @NotNull String getPropertyInputLineageRole(@NotNull DomainProperty dp);
 
     interface ResultsCheckHelper
     {
