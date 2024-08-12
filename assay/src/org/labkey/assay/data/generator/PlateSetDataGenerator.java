@@ -279,7 +279,7 @@ public class PlateSetDataGenerator extends DataGenerator<PlateSetDataGenerator.C
                     rows.add(rowMap);
                 }
             }
-            plates.add(new PlateData(null, _plateType.getRowId(), null, rows));
+            plates.add(new PlateData(null, _plateType.getRowId(), null, null, rows));
         }
         _plateSetsCreated++;
         CPUTimer timer = new CPUTimer("Plate");

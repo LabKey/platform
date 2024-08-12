@@ -572,6 +572,7 @@ public class PlateController extends SpringActionController
         private List<Map<String, Object>> _data;
         private String _description;
         private String _name;
+        private String _barcode;
         private Integer _plateSetId;
         private Integer _plateType;
         private boolean _template;
@@ -585,6 +586,11 @@ public class PlateController extends SpringActionController
         public String getName()
         {
             return _name;
+        }
+
+        public String getBarcode()
+        {
+            return _barcode;
         }
 
         public Integer getPlateSetId()
@@ -622,6 +628,9 @@ public class PlateController extends SpringActionController
         {
             if (json.has("name"))
                 _name = json.getString("name");
+
+            if (json.has("barcode"))
+                _barcode = json.getString("barcode");
 
             if (json.has("plateSetId"))
                 _plateSetId = json.getInt("plateSetId");
@@ -685,7 +694,7 @@ public class PlateController extends SpringActionController
         {
             try
             {
-                PlateImpl newPlate = new PlateImpl(getContainer(), form.getName(), form.getAssayType(), _plateType);
+                PlateImpl newPlate = new PlateImpl(getContainer(), form.getName(), form.getBarcode(), form.getAssayType(), _plateType);
                 if (form.getData() == null && form.getTemplateId() != null && TsvPlateLayoutHandler.TYPE.equalsIgnoreCase(newPlate.getAssayType()))
                 {
                     newPlate = (PlateImpl) PlateManager.get().copyPlate(
