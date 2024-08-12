@@ -1,5 +1,6 @@
 ALTER TABLE assay.plate ADD Barcode NVARCHAR(255);
-ALTER TABLE assay.plate ADD CONSTRAINT UQ_Barcode UNIQUE (Barcode);
+GO
+CREATE UNIQUE NONCLUSTERED INDEX UQ_Barcode ON assay.plate(Barcode) WHERE Barcode IS NOT NULL;
 GO
 
 UPDATE assay.plate
