@@ -22,6 +22,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
+import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
 import org.labkey.api.audit.SampleTimelineAuditEvent;
 import org.labkey.api.cache.Cache;
@@ -34,6 +35,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
@@ -103,6 +105,16 @@ public class AuditLogImpl implements AuditLogService, StartupListener
     {
         synchronized (STARTUP_LOCK)
         {
+            // perform final domain initialization
+            for (AuditTypeProvider provider : AuditLogService.get().getAuditProviders())
+            {
+                if (provider instanceof AbstractAuditTypeProvider auditTypeProvider)
+                {
+                    Domain domain = auditTypeProvider.getDomain();
+                    auditTypeProvider.ensureProperties(User.getAdminServiceUser(), domain);
+                }
+            }
+
             _logToDatabase.set(true);
 
             while (!_eventTypeQueue.isEmpty())
