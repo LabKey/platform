@@ -881,11 +881,13 @@ public class NameGenerator
 
         boolean isCurrentDataType = inputDataType != null && inputDataType.equals(currentDataType);
 
+        String fieldKeyDisplay = QueryKey.decodePart(fkTok.toString());
+
         if (inputDataType != null && dataTypes.isEmpty())
         {
             if (!isCurrentDataType)
             {
-                _syntaxErrors.add("Invalid parent lookup: " + fkTok.toString() + ".");
+                _syntaxErrors.add("Invalid parent lookup: " + fieldKeyDisplay + ".");
                 return null;
             }
         }
@@ -934,13 +936,13 @@ public class NameGenerator
                     return getNamePartPreviewValue(pt, lookupField);
                 else
                 {
-                    _syntaxErrors.add("Invalid parent lookup: " + fkTok.toString() + ".");
+                    _syntaxErrors.add("Invalid parent lookup: " + fieldKeyDisplay + ".");
                     return null;
                 }
             }
         }
 
-        _syntaxErrors.add("Parent lookup field does not exist: " + fkTok.toString());
+        _syntaxErrors.add("Parent lookup field does not exist: " + fieldKeyDisplay);
         return null;
     }
 
@@ -1097,6 +1099,8 @@ public class NameGenerator
                     boolean isAncestorSearch = isAncestorSearch(fieldParts, importAliases, _container, user);
                     if (isAncestorSearch)
                         hasAncestorSearch = true;
+
+                    String fieldKeyDisplay = QueryKey.decodePart(fkTok.toString());
                     if (isParentLookup || isAncestorSearch)
                     {
                         String alias = fieldParts.get(0);
@@ -1136,7 +1140,7 @@ public class NameGenerator
                         }
                         else
                         {
-                            String errorMsg = "Only one level of lookup is supported for parent input: " + fkTok + ".";
+                            String errorMsg = "Only one level of lookup is supported for parent input: " + fieldKeyDisplay + ".";
                             if (_validateSyntax)
                                 _syntaxErrors.add(errorMsg);
                             else
@@ -1160,7 +1164,7 @@ public class NameGenerator
                     {
                         // for now, we only support one level of lookup: ${ingredient/name}
                         // future versions could support multiple levels
-                        String errorMsg = "Only one level of lookup is supported: " + fkTok + ".";
+                        String errorMsg = "Only one level of lookup is supported: " + fieldKeyDisplay + ".";
                         if (_validateSyntax)
                             _syntaxErrors.add(errorMsg);
                         else
@@ -1178,7 +1182,7 @@ public class NameGenerator
                     {
                         if (_parentTable == null && domainFields.isEmpty())
                         {
-                            String errorMsg = "Parent table is required for name expressions with lookups: " + fkTok + ".";
+                            String errorMsg = "Parent table is required for name expressions with lookups: " + fieldKeyDisplay + ".";
                             if (_validateSyntax)
                                 _syntaxErrors.add(errorMsg);
                             else
@@ -3159,7 +3163,7 @@ public class NameGenerator
 
             validateNameResult("S-${Inputs/SampleTypeNotExist}", withErrors("Parent lookup field does not exist: Inputs/SampleTypeNotExist"));
 
-            validateNameResult("S-${~MaterialInputs/a/b/c}", withErrors("Only one level of lookup is supported: $TMaterialInputs/a/b/c."));
+            validateNameResult("S-${~MaterialInputs/a/b/c}", withErrors("Only one level of lookup is supported: ~MaterialInputs/a/b/c."));
 
         }
 
