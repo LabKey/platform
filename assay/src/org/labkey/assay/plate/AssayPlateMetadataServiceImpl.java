@@ -623,8 +623,8 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             assertNotNull("Expected 8x12 plate type to resolve", plateType);
 
             List<PlateManager.PlateData> plates = List.of(
-                new PlateManager.PlateData(null, plateType.getRowId(), null, Collections.emptyList()),
-                new PlateManager.PlateData(null, plateType.getRowId(), null, Collections.emptyList())
+                new PlateManager.PlateData(null, plateType.getRowId(), null, null, Collections.emptyList()),
+                new PlateManager.PlateData(null, plateType.getRowId(), null, null, Collections.emptyList())
             );
 
             PlateSet plateSet = PlateManager.get().createPlateSet(container, user, new PlateSetImpl(), plates, null);

@@ -54,6 +54,7 @@ import org.labkey.assay.plate.PlateMetadataDomainKind;
 import org.labkey.assay.plate.PlateSetImpl;
 import org.labkey.assay.plate.TsvPlateLayoutHandler;
 import org.labkey.assay.plate.model.PlateSetLineage;
+import org.labkey.assay.plate.query.PlateTable;
 import org.labkey.assay.query.AssayDbSchema;
 
 import java.util.ArrayList;
@@ -644,6 +645,33 @@ public class AssayUpgradeCode implements UpgradeCode
             newName = String.format("%s%s%d", dp.getName(), METADATA_RENAME_SUFFIX, ordinal++);
         }
         return newName;
+    }
+
+    /**
+     * Called from assay-24.010-24.011.sql, which populates the new barcode field with formatted rowid values.
+     * We then set the barcode DbSequence here to the maximum rowId to ensure subsequently unique values.
+     */
+    @SuppressWarnings({"UnusedDeclaration"})
+    public static void updateBarcodeSequence(ModuleContext ctx) throws Exception
+    {
+        if (ctx.isNewInstall())
+            return;
+
+        DbScope scope = AssayDbSchema.getInstance().getSchema().getScope();
+        try (DbScope.Transaction tx = scope.ensureTransaction())
+        {
+            SQLFragment sql = new SQLFragment("SELECT MAX(rowId) FROM ").append(AssayDbSchema.getInstance().getTableInfoPlate(), "");
+            Integer maxRowId = new SqlSelector(AssayDbSchema.getInstance().getSchema(), sql).getObject(Integer.class);
+
+            if (maxRowId != null)
+            {
+                TableInfo plateTable = AssayDbSchema.getInstance().getTableInfoPlate();
+                DbSequence sequence = DbSequenceManager.get(ContainerManager.getRoot(), PlateTable.PLATE_BARCODE_SEQUENCE);
+                sequence.ensureMinimum(maxRowId);
+            }
+
+            tx.commit();
+        }
     }
 
     private static boolean isBiologicsFolder(Container container)
