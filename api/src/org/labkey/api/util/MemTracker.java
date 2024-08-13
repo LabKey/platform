@@ -183,7 +183,8 @@ public class MemTracker
     public RequestInfo startProfiler(HttpServletRequest request, @Nullable String name)
     {
         String url = request.getRequestURI() + (request.getQueryString() == null ? "" : "?" + request.getQueryString());
-        return startProfiler(url, request.getUserPrincipal(), name, request.getSession(false).getId());
+        HttpSession session = request.getSession(false);
+        return startProfiler(url, request.getUserPrincipal(), name, session != null ? session.getId() : null);
     }
 
     /**
