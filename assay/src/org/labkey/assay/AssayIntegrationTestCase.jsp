@@ -85,7 +85,6 @@
 <%@ page import="static org.labkey.api.files.FileContentService.UPLOADED_FILE" %>
 <%@ page import="static org.hamcrest.CoreMatchers.hasItem" %>
 <%@ page import="static org.hamcrest.CoreMatchers.not" %>
-<%@ page import="static java.util.Collections.emptySet" %>
 <%@ page import="org.labkey.api.exp.api.ExpSampleType" %>
 <%@ page import="org.labkey.api.exp.api.SampleTypeService" %>
 <%@ page import="static java.util.Collections.emptyList" %>
@@ -443,9 +442,7 @@
             Collections.emptyMap(),
             info,
             null,
-            false,
-            emptySet(),
-            emptySet()
+            false
         );
 
         // verify the material is an input and the file is an output

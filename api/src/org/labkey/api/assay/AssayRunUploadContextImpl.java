@@ -49,10 +49,6 @@ import java.util.stream.Collectors;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableMap;
 
-/**
- * User: kevink
- * Date: 12/18/13
- */
 public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> implements AssayRunUploadContext<ProviderType>
 {
     private static final String FILE_INPUT_NAME = "file";
@@ -134,20 +130,13 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
 
     public static class Factory<ProviderType extends AssayProvider> extends AssayRunUploadContext.Factory<ProviderType, Factory<ProviderType>>
     {
-        public Factory(
-                @NotNull ExpProtocol protocol,
-                @NotNull ProviderType provider,
-                @NotNull ViewContext context)
+        public Factory(@NotNull ExpProtocol protocol, @NotNull ProviderType provider, @NotNull ViewContext context)
         {
             super(protocol, provider, context.getUser(), context.getContainer());
             setViewContext(context);
         }
 
-        public Factory(
-                @NotNull ExpProtocol protocol,
-                @NotNull ProviderType provider,
-                @NotNull User user,
-                @NotNull Container container)
+        public Factory(@NotNull ExpProtocol protocol, @NotNull ProviderType provider, @NotNull User user, @NotNull Container container)
         {
             super(protocol, provider, user, container);
         }
@@ -341,28 +330,28 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
 
     @NotNull
     @Override
-    public Map<? extends Object, String> getInputDatas()
+    public Map<?, String> getInputDatas()
     {
         return _inputDatas;
     }
 
     @NotNull
     @Override
-    public Map<? extends Object, String> getOutputDatas()
+    public Map<?, String> getOutputDatas()
     {
         return _outputDatas;
     }
 
     @NotNull
     @Override
-    public Map<? extends Object, String> getInputMaterials()
+    public Map<?, String> getInputMaterials()
     {
         return _inputMaterials;
     }
 
     @NotNull
     @Override
-    public Map<? extends Object, String> getOutputMaterials()
+    public Map<?, String> getOutputMaterials()
     {
         return _outputMaterials;
     }
@@ -459,6 +448,4 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     {
         _autoFillDefaultResultColumns = autoFill;
     }
-
-
 }
