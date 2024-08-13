@@ -64,8 +64,6 @@ import static java.lang.Math.min;
 
 /**
  * In-memory representation of a ResultSet, no longer directly backed by a database connection
- * User: mbellew
- * Date: Nov 29, 2005
  */
 public class CachedResultSet implements ResultSet, TableResultSet
 {
@@ -98,14 +96,14 @@ public class CachedResultSet implements ResultSet, TableResultSet
 
         stackTrace is used to set an alternate stack trace -- good for async queries, to indicate original creation stack trace
      */
-    CachedResultSet(ResultSetMetaData md, boolean cacheMetaData, ArrayList<RowMap<Object>> maps, boolean isComplete, @Nullable StackTraceElement[] stackTrace)
+    CachedResultSet(ResultSetMetaData md, ArrayList<RowMap<Object>> maps, boolean isComplete, @Nullable StackTraceElement[] stackTrace)
     {
         _rowMaps = maps;
         _isComplete = isComplete;
 
         try
         {
-            _md = cacheMetaData ? new CachedResultSetMetaData(md) : md;
+            _md = md;
             _columns = new HashMap<>(_md.getColumnCount() * 2);
 
             for (int col = _md.getColumnCount(); col >= 1; col--)

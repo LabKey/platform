@@ -36,8 +36,6 @@ import java.util.Map;
 /**
  * Configuration to track that a column should be displayed with summary information about its content, such as
  * its maximum value or the sum of all of its values.
- * User: brittp
- * Date: Aug 6, 2006
  */
 public class Aggregate
 {
@@ -77,7 +75,7 @@ public class Aggregate
          * @param tableInnerSql SQLFragment for the FROM clause in the case where the aggregate needs to do a "subselect"
          * @return SQLFragment generated SQL
          */
-        default SQLFragment getSQLColumnFragment(SqlDialect dialect, String columnName, String asName, @Nullable JdbcType jdbcType, boolean distinct, SQLFragment tableInnerSql)
+        default SQLFragment getSQLColumnFragment(SqlDialect dialect, String columnName, @Nullable String asName, @Nullable JdbcType jdbcType, boolean distinct, SQLFragment tableInnerSql)
         {
             if (jdbcType != null && !isLegal(jdbcType))
                 return null;
@@ -87,7 +85,11 @@ public class Aggregate
             if (distinct)
                 sb.append("DISTINCT ");
             sb.append(dialect.getColumnSelectName(columnName));
-            sb.append(") AS ").append(asName);
+            sb.append(")");
+            if (asName != null)
+            {
+                sb.append(" AS ").append(asName);
+            }
             return sb;
         }
 
@@ -103,18 +105,11 @@ public class Aggregate
 
         static JdbcType returnTypeDecimal(JdbcType jdbcType)
         {
-            switch (jdbcType)
+            return switch (jdbcType)
             {
-                case BIGINT:   return JdbcType.DECIMAL;
-                case DECIMAL:  return JdbcType.DECIMAL;
-                case DOUBLE:   return JdbcType.DECIMAL;
-                case REAL:     return JdbcType.DECIMAL;
-
-                case INTEGER:  return JdbcType.DECIMAL;
-                case SMALLINT: return JdbcType.DECIMAL;
-
-                default:       return null;
-            }
+                case BIGINT, DECIMAL, DOUBLE, REAL, INTEGER, SMALLINT -> JdbcType.DECIMAL;
+                default -> null;
+            };
         }
 
         /**
@@ -134,153 +129,145 @@ public class Aggregate
     public enum BaseType implements Type
     {
         SUM("Sum")
+        {
+            @Override
+            public SQLFragment getSQLColumnFragment(SqlDialect dialect, String columnName, String asName, @Nullable JdbcType jdbcType, boolean distinct, SQLFragment tableInnerSql)
+            {
+                if (jdbcType != null && !isLegal(jdbcType))
+                    return null;
+
+                if (jdbcType != null)
                 {
-                    @Override
-                    public SQLFragment getSQLColumnFragment(SqlDialect dialect, String columnName, String asName, @Nullable JdbcType jdbcType, boolean distinct, SQLFragment tableInnerSql)
+                    SQLFragment sb = new SQLFragment();
+                    sb.append("SUM(");
+                    if (distinct)
+                        sb.append("DISTINCT ");
+                    if (dialect.isSqlServer() && castType(jdbcType) != null)
                     {
-                        if (jdbcType != null && !isLegal(jdbcType))
-                            return null;
-
-                        if (jdbcType != null)
-                        {
-                            SQLFragment sb = new SQLFragment();
-                            sb.append("SUM(");
-                            if (distinct)
-                                sb.append("DISTINCT ");
-                            if (dialect.isSqlServer() && castType(jdbcType) != null)
-                            {
-                                sb.append("CAST(").append(dialect.getColumnSelectName(columnName)).append(" AS ")
-                                        .append(castType(jdbcType)).append(")");
-                            }
-                            else
-                            {
-                                sb.append(dialect.getColumnSelectName(columnName));
-                            }
-                            sb.append(") AS ").append(asName);
-                            return sb;
-                        }
-                        else
-                        {
-                            return super.getSQLColumnFragment(dialect, columnName, asName, null, distinct, tableInnerSql);
-                        }
+                        sb.append("CAST(").append(dialect.getColumnSelectName(columnName)).append(" AS ")
+                            .append(castType(jdbcType)).append(")");
                     }
-
-                    /**
-                     * Upcast to the wider datatypes to avoid overflows in the database. Postgres does this implicitly, but SQL Server does not
-                     * @param jdbcType type of column
-                     * @return cast datatype, if a wider datatype is available
-                     */
-                    private String castType(JdbcType jdbcType)
+                    else
                     {
-                        switch (jdbcType)
-                        {
-                            case BIGINT:
-                            case INTEGER:
-                            case SMALLINT:
-                                return JdbcType.BIGINT.toString();
-                            case DECIMAL:
-                            case DOUBLE:
-                            case REAL:
-                                return "FLOAT";
-                            default:
-                                return null;
-                        }
+                        sb.append(dialect.getColumnSelectName(columnName));
                     }
-
-                    @Override
-                    public JdbcType returnType(JdbcType jdbcType)
-                    {
-                        switch (jdbcType)
-                        {
-                            case BIGINT:   return JdbcType.DECIMAL;
-                            case DECIMAL:  return JdbcType.DECIMAL;
-                            case DOUBLE:   return JdbcType.DECIMAL;
-                            case REAL:     return JdbcType.DECIMAL;
-
-                            case INTEGER:  return JdbcType.BIGINT;
-                            case SMALLINT: return JdbcType.BIGINT;
-
-                            default:       return null;
-                        }
-                    }
-                },
-        MEAN("Mean")
+                    sb.append(") AS ").append(asName);
+                    return sb;
+                }
+                else
                 {
-                    @Override
-                    public String getSQLFunctionName(@Nullable SqlDialect dialect)
-                    {
-                        return "AVG";
-                    }
+                    return super.getSQLColumnFragment(dialect, columnName, asName, null, distinct, tableInnerSql);
+                }
+            }
 
-                    @Override
-                    public SQLFragment getSQLColumnFragment(SqlDialect dialect, String columnName, String asName, @Nullable JdbcType jdbcType, boolean distinct, SQLFragment tableInnerSql)
-                    {
-                        if (jdbcType != null && !isLegal(jdbcType))
-                            return null;
-
-                        // special case for casting INTEGER to FLOAT
-                        if (jdbcType != null && (jdbcType.equals(JdbcType.INTEGER) || jdbcType.equals(JdbcType.BIGINT) || jdbcType.equals(JdbcType.SMALLINT)))
-                        {
-                            SQLFragment sb = new SQLFragment();
-                            sb.append(getSQLFunctionName(dialect)).append("(");
-                            if (distinct)
-                                sb.append("DISTINCT ");
-                            sb.append("CAST(").append(dialect.getColumnSelectName(columnName)).append(" AS FLOAT)");
-                            sb.append(") AS ").append(asName);
-                            return sb;
-                        }
-                        else
-                        {
-                            return super.getSQLColumnFragment(dialect, columnName, asName, jdbcType, distinct, tableInnerSql);
-                        }
-                    }
-
-                    @Override
-                    public JdbcType returnType(JdbcType jdbcType)
-                    {
-                        return Type.returnTypeDecimal(jdbcType);
-                    }
-                },
-        COUNT("Count (non-blank)")
+            /**
+             * Upcast to the wider datatypes to avoid overflows in the database. Postgres does this implicitly, but SQL Server does not
+             * @param jdbcType type of column
+             * @return cast datatype, if a wider datatype is available
+             */
+            private String castType(JdbcType jdbcType)
+            {
+                return switch (jdbcType)
                 {
-                    @Nullable
-                    @Override
-                    public String getDescription()
-                    {
-                        return "Count of the number of values in the set that have a non-blank value (i.e. value is not NULL).";
-                    }
-
-                    @Override
-                    public JdbcType returnType(JdbcType jdbcType)
-                    {
-                        return JdbcType.BIGINT;
-                    }
-                },
-        MIN("Minimum", "Min")
-                {
-                    @Override
-                    public JdbcType returnType(JdbcType jdbcType)
-                    {
-                        if (jdbcType.isNumeric() || jdbcType.isDateOrTime() || jdbcType.isText() || jdbcType.equals(JdbcType.BINARY))
-                            return jdbcType;
-
-                        return null;
-                    }
-                },
-        MAX("Maximum", "Max")
-                {
-                    @Override
-                    public JdbcType returnType(JdbcType jdbcType)
-                    {
-                        if (jdbcType.isNumeric() || jdbcType.isDateOrTime() || jdbcType.isText() || jdbcType.equals(JdbcType.BINARY))
-                            return jdbcType;
-
-                        return null;
-                    }
+                    case BIGINT, INTEGER, SMALLINT -> JdbcType.BIGINT.toString();
+                    case DECIMAL, DOUBLE, REAL -> "FLOAT";
+                    default -> null;
                 };
+            }
 
-        private String _fullLabel;
-        private String _displayValue;
+            @Override
+            public JdbcType returnType(JdbcType jdbcType)
+            {
+                return switch (jdbcType)
+                {
+                    case BIGINT, DECIMAL, DOUBLE, REAL -> JdbcType.DECIMAL;
+                    case INTEGER, SMALLINT -> JdbcType.BIGINT;
+                    default -> null;
+                };
+            }
+        },
+        MEAN("Mean")
+        {
+            @Override
+            public String getSQLFunctionName(@Nullable SqlDialect dialect)
+            {
+                return "AVG";
+            }
+
+            @Override
+            public SQLFragment getSQLColumnFragment(SqlDialect dialect, String columnName, @Nullable String asName, @Nullable JdbcType jdbcType, boolean distinct, SQLFragment tableInnerSql)
+            {
+                if (jdbcType != null && !isLegal(jdbcType))
+                    return null;
+
+                // special case for casting INTEGER to FLOAT
+                if (jdbcType != null && (jdbcType.equals(JdbcType.INTEGER) || jdbcType.equals(JdbcType.BIGINT) || jdbcType.equals(JdbcType.SMALLINT)))
+                {
+                    SQLFragment sb = new SQLFragment();
+                    sb.append(getSQLFunctionName(dialect)).append("(");
+                    if (distinct)
+                        sb.append("DISTINCT ");
+                    sb.append("CAST(").append(dialect.getColumnSelectName(columnName)).append(" AS FLOAT)");
+                    sb.append(")");
+
+                    if (asName != null)
+                    {
+                        sb.append(" AS ").append(asName);
+                    }
+
+                    return sb;
+                }
+                else
+                {
+                    return super.getSQLColumnFragment(dialect, columnName, asName, jdbcType, distinct, tableInnerSql);
+                }
+            }
+
+            @Override
+            public JdbcType returnType(JdbcType jdbcType)
+            {
+                return Type.returnTypeDecimal(jdbcType);
+            }
+        },
+        COUNT("Count (non-blank)")
+        {
+            @Override
+            public String getDescription()
+            {
+                return "Count of the number of values in the set that have a non-blank value (i.e. value is not NULL).";
+            }
+
+            @Override
+            public JdbcType returnType(JdbcType jdbcType)
+            {
+                return JdbcType.BIGINT;
+            }
+        },
+        MIN("Minimum", "Min")
+        {
+            @Override
+            public JdbcType returnType(JdbcType jdbcType)
+            {
+                if (jdbcType.isNumeric() || jdbcType.isDateOrTime() || jdbcType.isText() || jdbcType.equals(JdbcType.BINARY))
+                    return jdbcType;
+
+                return null;
+            }
+        },
+        MAX("Maximum", "Max")
+        {
+            @Override
+            public JdbcType returnType(JdbcType jdbcType)
+            {
+                if (jdbcType.isNumeric() || jdbcType.isDateOrTime() || jdbcType.isText() || jdbcType.equals(JdbcType.BINARY))
+                    return jdbcType;
+
+                return null;
+            }
+        };
+
+        private final String _fullLabel;
+        private final String _displayValue;
 
         BaseType(String fullLabel)
         {
