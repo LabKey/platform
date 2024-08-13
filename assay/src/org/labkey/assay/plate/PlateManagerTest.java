@@ -145,7 +145,7 @@ public final class PlateManagerTest
 
             List<PlateManager.PlateData> fullPlates = new ArrayList<>();
             for (int i = 0; i < PlateSet.MAX_PLATES; i++)
-                fullPlates.add(new PlateManager.PlateData(null, PLATE_TYPE_12_WELLS.getRowId(), null, null));
+                fullPlates.add(new PlateManager.PlateData(null, PLATE_TYPE_12_WELLS.getRowId(), null, null, null));
 
             fullPlateSet = PlateManager.get().createPlateSet(container, user, fullPlateSet, fullPlates, null);
             assertTrue(fullPlateSet.isFull());
@@ -290,7 +290,7 @@ public final class PlateManagerTest
         assertNotNull("96 well plate type was not found", plateType);
 
         // Act
-        PlateImpl plateImpl = new PlateImpl(container, "testCreateAndSavePlate plate", plateType);
+        PlateImpl plateImpl = new PlateImpl(container, "testCreateAndSavePlate plate", null, plateType);
         Plate plate = PlateManager.get().createAndSavePlate(container, user, plateImpl, null, null);
 
         // Assert
@@ -322,9 +322,9 @@ public final class PlateManagerTest
 
         // Act
         PlateSet plateSet = PlateManager.get().createPlateSet(container, user, plateSetImpl, List.of(
-                new PlateManager.PlateData("testAccessPlateByIdentifiersFirst", plateType.getRowId(), null, null),
-                new PlateManager.PlateData("testAccessPlateByIdentifiersSecond", plateType.getRowId(), null, null),
-                new PlateManager.PlateData("testAccessPlateByIdentifiersThird", plateType.getRowId(), null, null)
+                new PlateManager.PlateData("testAccessPlateByIdentifiersFirst", plateType.getRowId(), null, null, null),
+                new PlateManager.PlateData("testAccessPlateByIdentifiersSecond", plateType.getRowId(), null, null, null),
+                new PlateManager.PlateData("testAccessPlateByIdentifiersThird", plateType.getRowId(), null, null, null)
         ), null);
 
         // Assert
@@ -622,12 +622,12 @@ public final class PlateManagerTest
 
         // Assert
         Object[] row1 = result.get(0);
-        String[] valuesRow1 = new String[]{"myPlate", "A1", "96", sample1.getName(), "B1234", "2.25"};
+        String[] valuesRow1 = new String[]{"myPlate", plate.getBarcode(), "A1", "96", sample1.getName(), "B1234", "2.25"};
         for (int i = 0; i < row1.length; i++)
             assertEquals(row1[i].toString(), valuesRow1[i]);
 
         Object[] row2 = result.get(1);
-        String[] valuesRow2 = new String[]{"myPlate", "A2", "96", sample2.getName(), "B5678", "1.25"};
+        String[] valuesRow2 = new String[]{"myPlate", plate.getBarcode(), "A2", "96", sample2.getName(), "B5678", "1.25"};
         for (int i = 0; i < row1.length; i++)
             assertEquals(row2[i].toString(), valuesRow2[i]);
     }
@@ -686,17 +686,17 @@ public final class PlateManagerTest
 
         // Assert
         Object[] row1 = plateDataRows.get(0);
-        String[] valuesRow1 = new String[]{"myPlate1", "A1", "96", sample1.getName(), "B1234", "2.25", "myPlate2", "A2", "96"};
+        String[] valuesRow1 = new String[]{"myPlate1", plateSource.getBarcode(), "A1", "96", sample1.getName(), "B1234", "2.25", "myPlate2", plateDestination.getBarcode(), "A2", "96"};
         for (int i = 0; i < row1.length; i++)
             assertEquals(row1[i].toString(), valuesRow1[i]);
 
         Object[] row2 = plateDataRows.get(1);
-        String[] valuesRow2 = new String[]{"myPlate1", "A2", "96", sample2.getName(), "B5678", "1.25", "myPlate2", "A1", "96"};
+        String[] valuesRow2 = new String[]{"myPlate1", plateSource.getBarcode(),"A2", "96", sample2.getName(), "B5678", "1.25", "myPlate2", plateDestination.getBarcode(), "A1", "96"};
         for (int i = 0; i < row2.length; i++)
             assertEquals(row2[i].toString(), valuesRow2[i]);
 
         Object[] row3 = plateDataRows.get(2);
-        String[] valuesRow3 = new String[]{"myPlate1", "A2", "96", sample2.getName(), "B5678", "1.25", "myPlate2", "A3", "96"};
+        String[] valuesRow3 = new String[]{"myPlate1", plateSource.getBarcode(),"A2", "96", sample2.getName(), "B5678", "1.25", "myPlate2", plateDestination.getBarcode(), "A3", "96"};
         for (int i = 0; i < row3.length; i++)
             assertEquals(row3[i].toString(), valuesRow3[i]);
     }
@@ -1131,7 +1131,7 @@ public final class PlateManagerTest
         @Nullable List<Map<String, Object>> plateData
     ) throws Exception
     {
-        PlateImpl plate = new PlateImpl(container, plateName, plateType);
+        PlateImpl plate = new PlateImpl(container, plateName, null, plateType);
         return PlateManager.get().createAndSavePlate(container, user, plate, plateSetId, plateData);
     }
 

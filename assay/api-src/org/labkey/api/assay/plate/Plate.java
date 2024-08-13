@@ -32,6 +32,10 @@ public interface Plate extends PropertySet, Identifiable
 
     void setName(String name);
 
+    String getBarcode();
+
+    void setBarcode(String barcode);
+
     int getRows();
 
     int getColumns();
