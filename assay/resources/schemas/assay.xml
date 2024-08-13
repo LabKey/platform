@@ -26,6 +26,7 @@
         <isUserEditable>false</isUserEditable>
       </column>
       <column columnName="Container"/>
+      <column columnName="Barcode"/>
       <column columnName="Name">
         <description>The unique admin-provided name of each plate template (""NAb: 5 specimens in duplicate", for example).</description>
       </column>

@@ -63,6 +63,7 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
 {
     private boolean _archived;
     private String _assayType = TsvPlateLayoutHandler.TYPE;
+    private String _barcode;
     private long _created;
     private int _createdBy;
     private List<PlateCustomField> _customFields = Collections.emptyList();
@@ -90,24 +91,26 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     {
     }
 
-    public PlateImpl(Container container, String name, String assayType, @NotNull PlateType plateType)
+    public PlateImpl(Container container, String name, @Nullable String barcode, String assayType, @NotNull PlateType plateType)
     {
         super(container);
         _name = StringUtils.trimToNull(name);
+        _barcode = StringUtils.trimToNull(barcode);
         if (StringUtils.trimToNull(assayType) != null)
             _assayType = assayType;
         _dataFileId = GUID.makeGUID();
         _plateType = plateType;
     }
 
-    public PlateImpl(Container container, String name, @NotNull PlateType plateType)
+    public PlateImpl(Container container, String name, @Nullable String barcode, @NotNull PlateType plateType)
     {
-        this(container, name, null, plateType);
+        this(container, name, barcode, null, plateType);
     }
 
+    // Note that barcode values will be auto-generated
     public PlateImpl(@NotNull PlateImpl plate, double[][] wellValues, boolean[][] excluded, int runId, int plateNumber)
     {
-        this(plate.getContainer(), plate.getName(), plate.getAssayType(), plate.getPlateType());
+        this(plate.getContainer(), plate.getName(), null, plate.getAssayType(), plate.getPlateType());
 
         if (wellValues == null)
             wellValues = new double[plate.getRows()][plate.getColumns()];
@@ -140,6 +143,7 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
         plate.setRowId(bean.getRowId());
         plate.setLsid(bean.getLsid());
         plate.setName(bean.getName());
+        plate.setBarcode(bean.getBarcode());
         plate.setTemplate(bean.getTemplate());
         plate.setDataFileId(bean.getDataFileId());
         plate.setAssayType(bean.getAssayType());
@@ -396,6 +400,18 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     public void setName(String name)
     {
         _name = name;
+    }
+
+    @Override
+    public String getBarcode()
+    {
+        return _barcode;
+    }
+
+    @Override
+    public void setBarcode(String barcode)
+    {
+        _barcode = barcode;
     }
 
     public Date getCreated()
