@@ -20,6 +20,7 @@ import jakarta.servlet.ServletContext;
 import org.apache.commons.collections4.Factory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AbstractTsvAssayProvider;
 import org.labkey.api.assay.AssayBatchDomainKind;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayProviderSchema;
@@ -306,7 +307,10 @@ public class AssayModule extends SpringModule
     @NotNull
     public Set<String> getProvisionedSchemaNames()
     {
-        return PageFlowUtil.set("assayresult");
+        return Set.of(
+                AbstractTsvAssayProvider.ASSAY_SCHEMA_NAME,
+                PlateMetadataDomainKind.PROVISIONED_SCHEMA_NAME
+        );
     }
 
     @Override
