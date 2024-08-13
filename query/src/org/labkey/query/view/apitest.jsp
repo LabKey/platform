@@ -285,30 +285,54 @@
 
     function recordTest()
     {
+        var pairs = [];
         var getUrl = document.getElementById("txtUrlGet").value;
         var postUrl = document.getElementById("txtUrlPost").value;
         var postData = document.getElementById("txtPost").value;
+        var response = responseJSON;
 
-        LABKEY.Ajax.request({
-            url: LABKEY.ActionURL.buildURL('query', 'saveApiTest.api'),
-            method: 'POST',
-            jsonData: {
-                getUrl: getUrl,
-                postUrl: postUrl,
-                postData: postData,
-                apiResponse: responseJSON
-            },
-            success: LABKEY.Utils.getCallbackWrapper(function (json, xhr, config) {
-                showTest(json);
-            }, this),
-            failure: LABKEY.Utils.getCallbackWrapper(function (json, xhr, config) {
-                onError(json);
-            }, this)
-        })
+        pairs.push('getUrl=' + encodeURIComponent(encodeURI(getUrl)));
+        pairs.push('postUrl=' + encodeURIComponent(encodeURI(postUrl)));
+
+        if (postData != null)
+            pairs.push('postData=' + encodeURIComponent(postData));
+        if (response != null)
+            pairs.push('response=' + encodeURIComponent(response));
+
+        var req = getXmlHttpRequest();
+
+        if (null == req)
+        {
+            onError("Couldn't get the XMLHttpRequest object!");
+            return;
+        }
+
+        setStatus("Recording the data as a Test Case...");
+        try
+        {
+            req.onreadystatechange = function()
+            {
+                if (req.readyState == 4)
+                {
+                    if (req.status == 200 && onSuccess)
+                        showTest(req.responseText);
+                    if (req.status != 200 && onError)
+                        onError(req.statusText, req.responseText);
+                }
+            };
+            req.open("POST", <%=q(new ActionURL(QueryController.SaveApiTestAction.class, getContainer()))%>, true);
+            req.setRequestHeader("content-type", "application/x-www-form-urlencoded");
+            req.send(pairs.join('&'));
+        }
+        catch(e)
+        {
+            onError(e);
+        }
     }
 
-    function showTest(obj)
+    function showTest(responseText)
     {
+        var obj = eval("(" + responseText + ")");
         var win = Ext4.create('Ext.Window', {
             title: 'Recorded Test',
             border: false,
