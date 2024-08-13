@@ -726,7 +726,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                         if (metadataColumnJSON == null)
                         {
                             // Omit columns that are in the XML but are no longer in the underlying table/query
-                            break;
+                            continue;
                         }
                         if (column.isSetImportAliases())
                         {
