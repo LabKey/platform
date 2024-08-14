@@ -72,19 +72,19 @@ public interface ExpRun extends ExpObject, Identifiable
     Map<? extends ExpData, String> getDataInputs();
 
     /**
-     * @return all of the materials objects marked as outputs of this run.
-     * This may be a subset of all of the materials that were created by the run if some were intermediate/transient.
+     * @return all the materials objects marked as outputs of this run.
+     * This may be a subset of all the materials that were created by the run if some were intermediate/transient.
      */
     List<ExpMaterial> getMaterialOutputs();
 
     /**
-     * @return all of the data objects marked as outputs of this run.
-     * This may be a subset of all of the files that were created by the run if some were intermediate/transient.
+     * @return all the data objects marked as outputs of this run.
+     * This may be a subset of all the files that were created by the run if some were intermediate/transient.
      */
     List<ExpData> getDataOutputs();
 
     /**
-     * @return all of the data objects referenced by this run,
+     * @return all the data objects referenced by this run,
      * including top-level inputs and outputs, as well as intermediate files
      */
     List<? extends ExpData> getAllDataUsedByRun();
@@ -92,11 +92,11 @@ public interface ExpRun extends ExpObject, Identifiable
 
     List<? extends ExpProtocolApplication> getProtocolApplications();
 
-    /** Get the protocol application that marks all of the inputs to the run as a whole */
-    ExpProtocolApplication getInputProtocolApplication();
+    /** Get the protocol application that marks all the inputs to the run as a whole */
+    @Nullable ExpProtocolApplication getInputProtocolApplication();
 
-    /** Get the protocol application that marks all of the outputs to the run as a whole */
-    ExpProtocolApplication getOutputProtocolApplication();
+    /** Get the protocol application that marks all the outputs to the run as a whole */
+    @Nullable ExpProtocolApplication getOutputProtocolApplication();
 
     void deleteProtocolApplications(User user);
 

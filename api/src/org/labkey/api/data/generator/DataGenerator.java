@@ -18,6 +18,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.ListofMapsDataIterator;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.api.DataClassDomainKindProperties;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpObject;
@@ -659,12 +660,13 @@ public class DataGenerator<T extends DataGenerator.Config>
         List<GWTPropertyDescriptor> props = new ArrayList<>();
         addDomainProperties(props, numFields);
 
-        ExperimentService service = ExperimentService.get();
-
         log.info(String.format("Creating Data Class '%s' with %d fields", dataClassName, numFields));
-        return service.createDataClass(_container, _user, dataClassName, "Custom data class with " + numFields + " fields",
-                props, List.of(), null,
-                namingPattern, null, category);
+        DataClassDomainKindProperties options = new DataClassDomainKindProperties();
+        options.setDescription("Custom data class with " + numFields + " fields");
+        options.setNameExpression(namingPattern);
+        options.setCategory(category);
+
+        return ExperimentService.get().createDataClass(_container, _user, dataClassName, options, props, List.of(), null, null);
     }
 
 

@@ -18,10 +18,13 @@ package org.labkey.experiment.api;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.collections4.map.LRUMap;
 import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayFileWriter;
+import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssayService;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.*;
@@ -901,6 +904,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
     private static class RunTableUpdateService extends AbstractQueryUpdateService
     {
         private final RemapCache _cache = new RemapCache();
+        private Map<Integer, ExpMaterial> _materialsCache;
 
         RunTableUpdateService(ExpRunTable queryTable)
         {
@@ -920,127 +924,138 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         }
 
         @Override
-        protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, @Nullable Map<Enum, Object> configParameters) throws ValidationException, QueryUpdateServiceException
+        protected Map<String, Object> updateRow(
+            User user,
+            Container container,
+            Map<String, Object> row,
+            @NotNull Map<String, Object> oldRow,
+            @Nullable Map<Enum, Object> configParameters
+        ) throws ValidationException, QueryUpdateServiceException
         {
             ExpRunImpl run = getRun(oldRow);
-            if (run != null)
+            if (run == null)
+                return getRow(user, container, oldRow);
+
+            // Don't trust that they're trying to edit a run from the current container
+            if (!run.getContainer().hasPermission(user, UpdatePermission.class))
+                throw new UnauthorizedException("You do not have permission to edit a run in " + run.getContainer());
+
+            try
             {
-                // Don't trust that they're trying to edit a run from the current container
-                if (!run.getContainer().hasPermission(user, UpdatePermission.class))
+                StringBuilder auditComment = new StringBuilder("Run edited.");
+                for (Map.Entry<String, Object> entry : row.entrySet())
                 {
-                    throw new UnauthorizedException("You do not have permission to edit a run in " + run.getContainer());
-                }
+                    // Most fields in the hard table can't be modified, but there are a few
+                    final String columnName = entry.getKey();
+                    Object value = entry.getValue();
 
-                try
-                {
-                    StringBuilder sb = new StringBuilder("Run edited.");
-                    for (Map.Entry<String, Object> entry : row.entrySet())
+                    if (Column.Name.toString().equalsIgnoreCase(columnName))
                     {
-                        // Most fields in the hard table can't be modified, but there are a few
-                        Object value = entry.getValue();
-                        if (entry.getKey().equalsIgnoreCase(Column.Name.toString()))
-                        {
-                            String newName = value == null ? null : (String)ConvertUtils.convert(value.toString(), String.class);
-                            appendPropertyIfChanged(sb, "Name", run.getName(), newName);
-                            run.setName(newName);
-                        }
-                        else if (entry.getKey().equalsIgnoreCase(Column.Comments.toString()))
-                        {
-                            String newComment = value == null ? null : (String)ConvertUtils.convert(value.toString(), String.class);
-                            appendPropertyIfChanged(sb, "Comment", run.getComments(), newComment);
-                            run.setComments(newComment);
-                        }
-                        else if (entry.getKey().equalsIgnoreCase(Column.Flag.toString()))
-                        {
-                            String newFlag = value == null ? null : (String)ConvertUtils.convert(value.toString(), String.class);
-                            appendPropertyIfChanged(sb, "Flag", run.getComment(), newFlag);
-                            run.setComment(user, newFlag);
-                        }
-                        else if (entry.getKey().equalsIgnoreCase(Column.WorkflowTask.toString()))
-                        {
-                            Integer newWorkflowTaskId = value == null ? null : (Integer)ConvertUtils.convert(value.toString(), Integer.class);
-                            Integer oldWorkflowTaskID = null;
-                            if (run.getWorkflowTask() != null)
-                                oldWorkflowTaskID = run.getWorkflowTask().getRowId();
-
-                            appendPropertyIfChanged(sb, "WorkflowTask", oldWorkflowTaskID, newWorkflowTaskId);
-                            run.setWorkflowTaskId(newWorkflowTaskId);
-                        }
-
-                        // Also check for properties
-                        ColumnInfo col = getQueryTable().getColumn(entry.getKey());
-                        if (col instanceof PropertyColumn)
-                        {
-                            PropertyColumn propColumn = (PropertyColumn)col;
-                            PropertyDescriptor propertyDescriptor = propColumn.getPropertyDescriptor();
-                            Object oldValue = run.getProperty(propertyDescriptor);
-                            if (propertyDescriptor.getPropertyType() == PropertyType.FILE_LINK && (value instanceof MultipartFile || value instanceof SpringAttachmentFile))
-                            {
-                                value = saveFile(user, container, col.getName(), value, AssayFileWriter.DIR_NAME);
-                            }
-
-                            ForeignKey fk = col.getFk();
-                            if (fk != null && fk.allowImportByAlternateKey() && value != null)
-                            {
-                                try
-                                {
-                                    value = ConvertUtils.convert(String.valueOf(value), col.getJavaClass());
-                                }
-                                catch (ConversionException e)
-                                {
-                                    Container remapContainer = fk.getLookupContainer() != null ? fk.getLookupContainer() : container;
-                                    Object remappedValue = _cache.remap(SchemaKey.fromParts(fk.getLookupSchemaName()), fk.getLookupTableName(), user, remapContainer, ContainerFilter.Type.CurrentPlusProjectAndShared, String.valueOf(value));
-                                    if (remappedValue != null)
-                                        value = remappedValue;
-                                }
-                            }
-                            run.setProperty(user, propertyDescriptor, value);
-
-                            Object newValue = value;
-                            TableInfo fkTableInfo = fk != null ? fk.getLookupTableInfo() : null;
-                            String lookupColumnName = fk != null ? fk.getLookupColumnName() : null;
-                            ColumnInfo lookupColumn = fkTableInfo != null && lookupColumnName != null ? fkTableInfo.getColumn(lookupColumnName) : null;
-
-                            // Don't attempt type conversion if the lookup target isn't the PK column
-                            if (lookupColumn != null && lookupColumn.isKeyField())
-                            {
-                                // Do type conversion in case there's a mismatch in the lookup source and target columns
-                                Class<?> keyColumnType = lookupColumn.getJavaClass();
-                                if (newValue != null && !keyColumnType.isAssignableFrom(newValue.getClass()))
-                                {
-                                    newValue = ConvertUtils.convert(newValue.toString(), keyColumnType);
-                                }
-                                if (oldValue != null && !keyColumnType.isAssignableFrom(oldValue.getClass()))
-                                {
-                                    oldValue = ConvertUtils.convert(oldValue.toString(), keyColumnType);
-                                }
-                                Map<String, Object> oldLookupTarget = new TableSelector(fkTableInfo).getMap(oldValue);
-                                if (oldLookupTarget != null)
-                                {
-                                    oldValue = oldLookupTarget.get(fkTableInfo.getTitleColumn());
-                                }
-                                Map<String, Object> newLookupTarget = new TableSelector(fkTableInfo).getMap(newValue);
-                                if (newLookupTarget != null)
-                                {
-                                    newValue = newLookupTarget.get(fkTableInfo.getTitleColumn());
-                                }
-                            }
-                            appendPropertyIfChanged(sb, propertyDescriptor.getNonBlankCaption(), oldValue, newValue);
-                        }
+                        String newName = value == null ? null : (String)ConvertUtils.convert(value.toString(), String.class);
+                        appendPropertyIfChanged(auditComment, Column.Name.toString(), run.getName(), newName);
+                        run.setName(newName);
                     }
-                    run.save(user);
-                    String auditUserComment = configParameters == null ? null : (String) configParameters.get(DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment);
-                    ExperimentServiceImpl.get().auditRunEvent(user, run.getProtocol(), run, null, sb.toString(), auditUserComment);
+                    else if (Column.Comments.toString().equalsIgnoreCase(columnName))
+                    {
+                        String newComment = value == null ? null : (String)ConvertUtils.convert(value.toString(), String.class);
+                        appendPropertyIfChanged(auditComment, Column.Comments.toString(), run.getComments(), newComment);
+                        run.setComments(newComment);
+                    }
+                    else if (Column.Flag.toString().equalsIgnoreCase(columnName))
+                    {
+                        String newFlag = value == null ? null : (String)ConvertUtils.convert(value.toString(), String.class);
+                        appendPropertyIfChanged(auditComment, Column.Flag.toString(), run.getComment(), newFlag);
+                        run.setComment(user, newFlag);
+                    }
+                    else if (Column.WorkflowTask.toString().equalsIgnoreCase(columnName))
+                    {
+                        Integer newWorkflowTaskId = value == null ? null : (Integer)ConvertUtils.convert(value.toString(), Integer.class);
+                        Integer oldWorkflowTaskID = null;
+                        if (run.getWorkflowTask() != null)
+                            oldWorkflowTaskID = run.getWorkflowTask().getRowId();
+
+                        appendPropertyIfChanged(auditComment, Column.WorkflowTask.toString(), oldWorkflowTaskID, newWorkflowTaskId);
+                        run.setWorkflowTaskId(newWorkflowTaskId);
+                    }
+
+                    // Also check for properties
+                    if (getQueryTable().getColumn(columnName) instanceof PropertyColumn col)
+                    {
+                        PropertyDescriptor propertyDescriptor = col.getPropertyDescriptor();
+                        Object oldValue = run.getProperty(propertyDescriptor);
+                        if (propertyDescriptor.getPropertyType() == PropertyType.FILE_LINK && (value instanceof MultipartFile || value instanceof SpringAttachmentFile))
+                        {
+                            value = saveFile(user, container, col.getName(), value, AssayFileWriter.DIR_NAME);
+                        }
+
+                        ForeignKey fk = col.getFk();
+                        if (fk != null && fk.allowImportByAlternateKey() && value != null)
+                        {
+                            try
+                            {
+                                value = ConvertUtils.convert(String.valueOf(value), col.getJavaClass());
+                            }
+                            catch (ConversionException e)
+                            {
+                                Container remapContainer = fk.getLookupContainer() != null ? fk.getLookupContainer() : container;
+                                Object remappedValue = _cache.remap(SchemaKey.fromParts(fk.getLookupSchemaName()), fk.getLookupTableName(), user, remapContainer, ContainerFilter.Type.CurrentPlusProjectAndShared, String.valueOf(value));
+                                if (remappedValue != null)
+                                    value = remappedValue;
+                            }
+                        }
+                        run.setProperty(user, propertyDescriptor, value);
+
+                        Object newValue = value;
+                        TableInfo fkTableInfo = fk != null ? fk.getLookupTableInfo() : null;
+                        String lookupColumnName = fk != null ? fk.getLookupColumnName() : null;
+                        ColumnInfo lookupColumn = fkTableInfo != null && lookupColumnName != null ? fkTableInfo.getColumn(lookupColumnName) : null;
+
+                        // Don't attempt type conversion if the lookup target isn't the PK column
+                        if (lookupColumn != null && lookupColumn.isKeyField())
+                        {
+                            // Do type conversion in case there's a mismatch in the lookup source and target columns
+                            Class<?> keyColumnType = lookupColumn.getJavaClass();
+                            if (newValue != null && !keyColumnType.isAssignableFrom(newValue.getClass()))
+                            {
+                                newValue = ConvertUtils.convert(newValue.toString(), keyColumnType);
+                            }
+                            if (oldValue != null && !keyColumnType.isAssignableFrom(oldValue.getClass()))
+                            {
+                                oldValue = ConvertUtils.convert(oldValue.toString(), keyColumnType);
+                            }
+                            Map<String, Object> oldLookupTarget = new TableSelector(fkTableInfo).getMap(oldValue);
+                            if (oldLookupTarget != null)
+                            {
+                                oldValue = oldLookupTarget.get(fkTableInfo.getTitleColumn());
+                            }
+                            Map<String, Object> newLookupTarget = new TableSelector(fkTableInfo).getMap(newValue);
+                            if (newLookupTarget != null)
+                            {
+                                newValue = newLookupTarget.get(fkTableInfo.getTitleColumn());
+                            }
+                        }
+                        appendPropertyIfChanged(auditComment, propertyDescriptor.getNonBlankCaption(), oldValue, newValue);
+                    }
                 }
-                catch (ConversionException e)
-                {
-                    throw new QueryUpdateServiceException("Unable to convert value " + e.getMessage());
-                }
-                catch (BatchValidationException e)
-                {
-                    throw new QueryUpdateServiceException(e);
-                }
+
+                AssayProvider assayProvider = AssayService.get().getProvider(run);
+                if (assayProvider != null)
+                    assayProvider.updatePropertyLineage(container, user, getQueryTable(), run, row, true, _cache, getMaterialsCache());
+
+                run.save(user);
+
+                String auditUserComment = configParameters == null ? null : (String) configParameters.get(DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment);
+                ExperimentServiceImpl.get().auditRunEvent(user, run.getProtocol(), run, null, auditComment.toString(), auditUserComment);
             }
+            catch (ConversionException e)
+            {
+                throw new QueryUpdateServiceException("Unable to convert value " + e.getMessage());
+            }
+            catch (BatchValidationException e)
+            {
+                throw new QueryUpdateServiceException(e);
+            }
+
             return getRow(user, container, oldRow);
         }
 
@@ -1058,7 +1073,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             }
         }
 
-        private ExpRunImpl getRun(Map<String, Object> row)
+        private @Nullable ExpRunImpl getRun(Map<String, Object> row)
         {
             Object rowIdRaw = row.get(Column.RowId.toString());
             if (rowIdRaw != null)
@@ -1182,6 +1197,13 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
 
             ExperimentServiceImpl.get().deleteExperimentRunsByRowIds(c, user, runIds);
             return runIds.length;
+        }
+
+        private Map<Integer, ExpMaterial> getMaterialsCache()
+        {
+            if (_materialsCache == null)
+                _materialsCache = new LRUMap<>(1_000);
+            return _materialsCache;
         }
     }
 }

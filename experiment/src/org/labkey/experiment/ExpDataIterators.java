@@ -1767,7 +1767,7 @@ public class ExpDataIterators
             if (sampleType == null)
                 throw new ValidationException("Invalid sample type: " + dataType);
 
-            aliquotParent = ExperimentService.get().findExpMaterial(c, user, sampleType, dataType, aliquotedFrom, cache, materialMap);
+            aliquotParent = ExperimentService.get().findExpMaterial(c, user, aliquotedFrom, sampleType, cache, materialMap);
 
             if (aliquotParent == null)
             {
@@ -1802,7 +1802,7 @@ public class ExpDataIterators
                     if (skipExistingAliquotParents)
                         continue;
 
-                    ExpMaterial sample = ExperimentService.get().findExpMaterial(c, user, null, null, entityName, cache, materialMap);
+                    ExpMaterial sample = ExperimentService.get().findExpMaterial(c, user, entityName, null, cache, materialMap);
                     if (sample != null)
                         parentMaterials.put(sample, sampleRole(sample));
                     else
@@ -1840,7 +1840,7 @@ public class ExpDataIterators
                         if (sampleType == null)
                             throw new ValidationException(String.format("Invalid import alias: parent SampleType [%1$s] does not exist or may have been deleted", namePart));
 
-                        ExpMaterial sample = ExperimentService.get().findExpMaterial(c, user, sampleType, namePart, entityName, cache, materialMap);
+                        ExpMaterial sample = ExperimentService.get().findExpMaterial(c, user, entityName, sampleType, cache, materialMap);
                         if (sample != null)
                             parentMaterials.put(sample, sampleRole(sample));
                         else
@@ -1856,7 +1856,7 @@ public class ExpDataIterators
 
                     if (!isEmptyEntity)
                     {
-                        ExpMaterial sample = ExperimentService.get().findExpMaterial(c, user, sampleType, namePart, entityName, cache, materialMap);
+                        ExpMaterial sample = ExperimentService.get().findExpMaterial(c, user, entityName, sampleType, cache, materialMap);
                         if (sample != null)
                         {
                             if (StringUtils.isEmpty(sample.getAliquotedFromLSID()))

@@ -83,10 +83,6 @@ import static org.labkey.api.data.Table.CREATED_COLUMN_NAME;
 import static org.labkey.api.data.Table.MODIFIED_BY_COLUMN_NAME;
 import static org.labkey.api.data.Table.MODIFIED_COLUMN_NAME;
 
-/**
- * User: jeckels
- * Date: Dec 14, 2010
- */
 public class AssayResultTable extends FilteredTable<AssayProtocolSchema> implements UpdateableTableInfo
 {
     protected final ExpProtocol _protocol;
@@ -131,7 +127,8 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
             }
             else if (baseColumn.isMvIndicatorColumn())
             {
-                col = null;     // skip and instead add AliasedColumn below
+                // skip and instead add AliasedColumn below
+                col = null;
             }
             else
             {
@@ -161,8 +158,8 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
                         FieldKey pkFieldKey = new FieldKey(null, AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME);
                         PropertyColumn.copyAttributes(_userSchema.getUser(), col, pd, schema.getContainer(), _userSchema.getSchemaPath(), getPublicName(), pkFieldKey, null, cf);
 
-                        ExpSampleType st = DefaultAssayRunCreator.getLookupSampleType(domainProperty, getContainer(), getUserSchema().getUser());
-                        if (st != null || DefaultAssayRunCreator.isLookupToMaterials(domainProperty))
+                        ExpSampleType st = ExperimentService.get().getLookupSampleType(domainProperty, getContainer(), getUserSchema().getUser());
+                        if (st != null || ExperimentService.get().isLookupToMaterials(domainProperty))
                             col.setFk(new ExpSchema(_userSchema.getUser(), _userSchema.getContainer()).getMaterialIdForeignKey(st, domainProperty, getLookupContainerFilter()));
                     }
                     addColumn(col);

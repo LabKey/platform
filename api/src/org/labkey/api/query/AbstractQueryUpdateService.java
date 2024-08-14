@@ -997,9 +997,11 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                 // If the path is too long to store, bail out without creating an exp.data row
                 data.save(user);
             }
+
             return data;
         }
-        return  existingData;
+
+        return existingData;
     }
 
     // For security reasons, make sure the user hasn't tried to reference a file that's not under
@@ -1045,7 +1047,6 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     /**
      * QUS instances that allow import of attachments through the AttachmentDataIterator should furnish a factory
      * implementation in order to resolve the attachment parent on incoming attachment files.
-     * @return
      */
     @Nullable
     protected AttachmentParentFactory getAttachmentParentFactory()
@@ -1085,7 +1086,6 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         }
         return result;
     }
-
 
     @TestWhen(TestWhen.When.BVT)
     public static class TestCase extends Assert
