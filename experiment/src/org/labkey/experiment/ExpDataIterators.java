@@ -884,6 +884,7 @@ public class ExpDataIterators
         final Container _container;
         final User _user;
         final boolean _isSample;
+        final TSVWriter _tsvWriter;
 
         protected DerivationDataIteratorBase(DataIterator di, DataIteratorContext context, Container container, User user, ExpObject currentDataType, boolean isSample)
         {
@@ -918,6 +919,15 @@ public class ExpDataIterators
                 }
             }
 
+            _tsvWriter = new TSVWriter() // Used to quote values with newline/tabs/quotes
+            {
+                @Override
+                protected int write()
+                {
+                    throw new UnsupportedOperationException();
+                }
+            };
+
         }
 
         private BatchValidationException getErrors()
@@ -944,10 +954,13 @@ public class ExpDataIterators
                         {
                             // Issue 44841: The names of the parents may include commas, so we parse the set of parent names
                             // using TabLoader instead of just splitting on the comma.
-                            try (TabLoader tabLoader = new TabLoader((String) o))
+                            String quotedStr = ((String) o).contains(",") ? (String) o : _tsvWriter.quoteValue((String) o); // if value contains comma, no need to quote again
+                            try (TabLoader tabLoader = new TabLoader(quotedStr))
                             {
                                 tabLoader.setDelimiterCharacter(',');
                                 tabLoader.setUnescapeBackslashes(false);
+                                // Issue 50924: LKSM: Importing samples using naming expression referencing parent inputs with # result in error
+                                tabLoader.setIncludeComments(true);
                                 try
                                 {
                                     String[][] values = tabLoader.getFirstNLines(1);

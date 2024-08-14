@@ -37,6 +37,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.Compress;
+import org.labkey.api.util.DebugInfoDumper;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MemoryUsageLogger;
@@ -157,7 +158,10 @@ public class ViewServlet extends HttpServlet
         try
         {
             previousSummary = _pendingRequests.put(t, new RequestSummary(request.getRequestURI() + "?" + trimToEmpty(request.getQueryString()), request.getUserPrincipal()));
-            _service(request, response);
+            try (var tdc = DebugInfoDumper.pushThreadDumpContext(request.getRequestURI()))
+            {
+                _service(request, response);
+            }
         }
         finally
         {
