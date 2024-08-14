@@ -592,6 +592,8 @@ public class QueryController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
+            // Site Admin or Troubleshooter? Troubleshooters can see all the information but can't test data sources.
+            boolean hasAdminOpsPerms = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
             List<ExternalSchemaDef> allDefs = QueryManager.get().getExternalSchemaDefs(null);
 
             MultiValuedMap<String, ExternalSchemaDef> byDataSourceName = new ArrayListValuedHashMap<>();
@@ -606,7 +608,7 @@ public class QueryController extends SpringActionController
                 BR(),
                 TABLE(cl("labkey-data-region"),
                     TR(cl("labkey-show-borders"),
-                        TD(cl("labkey-column-header"), "Test"),
+                        hasAdminOpsPerms ? TD(cl("labkey-column-header"), "Test") : null,
                         TD(cl("labkey-column-header"), "Data Source"),
                         TD(cl("labkey-column-header"), "Current Status"),
                         TD(cl("labkey-column-header"), "URL"),
@@ -636,7 +638,7 @@ public class QueryController extends SpringActionController
                             return Stream.of(
                                 TR(
                                     cl(rowStyle),
-                                    TD(connected ? new ButtonBuilder("Test").href(new ActionURL(TestDataSourceConfirmAction.class, getContainer()).addParameter("dataSource", scope.getDataSourceName())) : ""),
+                                    hasAdminOpsPerms ? TD(connected ? new ButtonBuilder("Test").href(new ActionURL(TestDataSourceConfirmAction.class, getContainer()).addParameter("dataSource", scope.getDataSourceName())) : "") : null,
                                     TD(scope.getDisplayName()),
                                     TD(status),
                                     TD(scope.getDatabaseUrl()),
@@ -687,23 +689,24 @@ public class QueryController extends SpringActionController
             if (null == c)
                 return TD();
 
+            boolean hasRead = c.hasPermission(getUser(), ReadPermission.class);
             QueryUrlsImpl urls = new QueryUrlsImpl();
 
             return
                 TD(TABLE(
                     TR(TD(
                         at(DOM.Attribute.colspan, 3),
-                        new LinkBuilder(path).href(urls.urlExternalSchemaAdmin(c)).clearClasses()
+                        hasRead ? new LinkBuilder(path).href(urls.urlExternalSchemaAdmin(c)).clearClasses() : path
                     )),
                     TR(TD(TABLE(
                         defs.stream()
                             .map(def -> TR(TD(
                                 at(DOM.Attribute.style, "padding-left:20px"),
-                                new LinkBuilder(def.getUserSchemaName() +
+                                hasRead ? new LinkBuilder(def.getUserSchemaName() +
                                     (!StringUtils.equals(def.getSourceSchemaName(), def.getUserSchemaName()) ? " (" + def.getSourceSchemaName() + ")" : ""))
                                     .href(urls.urlUpdateExternalSchema(c, def))
-                                    .clearClasses())
-                            ))
+                                    .clearClasses() : def.getUserSchemaName()
+                            )))
                     )))
                 ));
         }
@@ -759,7 +762,7 @@ public class QueryController extends SpringActionController
         }
     }
 
-    @AdminConsoleAction(AdminOperationsPermission.class)
+    @RequiresPermission(AdminOperationsPermission.class)
     public static class TestDataSourceConfirmAction extends FormViewAction<TestDataSourceConfirmForm>
     {
         private DbScope _scope;
@@ -801,7 +804,7 @@ public class QueryController extends SpringActionController
         }
     }
 
-    @AdminConsoleAction(AdminOperationsPermission.class)
+    @RequiresPermission(AdminOperationsPermission.class)
     public static class TestDataSourceAction extends SimpleViewAction<TestDataSourceForm>
     {
         private DbScope _scope;
@@ -825,7 +828,7 @@ public class QueryController extends SpringActionController
         }
     }
 
-    @AdminConsoleAction(AdminOperationsPermission.class)
+    @RequiresPermission(AdminOperationsPermission.class)
     public static class ResetDataSourcePropertiesAction extends FormHandlerAction<TestDataSourceForm>
     {
         @Override
