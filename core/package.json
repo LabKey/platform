@@ -54,7 +54,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "4.7.0-fb-eg-no-qm.5",
+    "@labkey/components": "4.7.1-fb-eg-no-qm.0",
     "@labkey/themes": "1.3.3"
   },
   "devDependencies": {
