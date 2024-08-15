@@ -11477,7 +11477,7 @@ public class AdminController extends SpringActionController
         }
     }
 
-    @RequiresPermission(AdminPermission.class)
+    @RequiresPermission(TroubleshooterPermission.class)
     public class ViewUsageStatistics extends SimpleViewAction<Object>
     {
         @Override
