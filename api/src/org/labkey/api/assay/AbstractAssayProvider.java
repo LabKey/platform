@@ -2136,7 +2136,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         {
             ColumnInfo column = table.getColumn(entry.getKey());
 
-            if (!isRunProperties || column instanceof PropertyColumn)
+            if (column != null && (!isRunProperties || column instanceof PropertyColumn))
             {
                 DomainProperty dp = domain.getPropertyByURI(column.getPropertyURI());
                 if (dp == null)
