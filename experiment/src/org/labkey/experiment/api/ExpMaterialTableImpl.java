@@ -1558,7 +1558,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         set.addAll(ExpDataIterators.NOT_FOR_UPDATE);
         // We don't want the inventory columns to show up in the sample timeline audit record;
         // they are captured in their own audit record.
-        set.addAll(InventoryService.INVENTORY_STATUS_COLUMN_NAMES);
+        set.addAll(InventoryService.InventoryStatusColumn.names());
         excludeFromDetailedAuditField = Collections.unmodifiableSet(set);
     }
 
