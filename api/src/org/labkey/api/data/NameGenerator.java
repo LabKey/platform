@@ -1152,7 +1152,7 @@ public class NameGenerator
                         }
                         else
                         {
-                            String errorMsg = "Only one level of lookup is supported for parent input: " + fieldKeyDisplay + ".";
+                            String errorMsg = "Only one level of lookup is supported for lineage input: " + fieldKeyDisplay + ".";
                             if (_validateSyntax)
                                 _syntaxErrors.add(errorMsg);
                             else
@@ -3163,9 +3163,9 @@ public class NameGenerator
         {
             validateNameResult("One-${A/B/C}", withErrors("Only one level of lookup is supported: A/B/C."));
 
-            validateNameResult("S-${parentAlias/a/b}", withErrors("Only one level of lookup is supported for parent input: parentAlias/a/b."), Collections.singletonMap("parentAlias", "MaterialInputs/SampleTypeA"));
+            validateNameResult("S-${parentAlias/a/b}", withErrors("Only one level of lookup is supported for lineage input: parentAlias/a/b."), Collections.singletonMap("parentAlias", "MaterialInputs/SampleTypeA"));
 
-            validateNameResult("S-${Inputs/a/b/d}", withErrors("Only one level of lookup is supported for parent input: Inputs/a/b/d."));
+            validateNameResult("S-${Inputs/a/b/d}", withErrors("Only one level of lookup is supported for lineage input: Inputs/a/b/d."));
 
             validateNameResult("S-${Inputs/SampleTypeNotExist}", withErrors("Lineage lookup field does not exist: Inputs/SampleTypeNotExist"));
 
