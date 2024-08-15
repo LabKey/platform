@@ -42,6 +42,7 @@ as
 asc
 ascii
 asensitive
+asof
 assertion
 assignment
 asymmetric
@@ -83,6 +84,7 @@ btree
 bulk
 by
 byte
+byteint
 c
 cache
 call
@@ -213,6 +215,7 @@ databases
 datafile
 datalink
 date
+date_part
 datetime
 datetime_interval_code
 datetime_interval_precision
@@ -401,6 +404,8 @@ group
 group_replication
 grouping
 groups
+gscluster
+gspackage
 handler
 hash
 having
@@ -420,6 +425,7 @@ hour_minute
 hour_second
 id
 identified
+identifier
 identity
 identity_insert
 identitycol
@@ -479,6 +485,7 @@ ipc
 is
 isnull
 isolation
+issue
 issuer
 iterate
 join
@@ -580,6 +587,7 @@ master_ssl_verify_server_cert
 master_tls_version
 master_user
 match
+match_condition
 matched
 materialized
 max
@@ -723,6 +731,7 @@ or
 order
 ordering
 ordinality
+organization
 others
 out
 outer
@@ -811,6 +820,7 @@ proxy
 public
 publication
 purge
+qualify
 quarter
 query
 quick
@@ -838,6 +848,7 @@ redo_buffer_size
 redofile
 redundant
 ref
+reference
 references
 referencing
 refresh
@@ -922,6 +933,7 @@ rownum
 rows
 rtree
 rule
+sample
 save
 savepoint
 scalar
@@ -1088,8 +1100,14 @@ then
 ties
 time
 timestamp
+timestamp_ltz
+timestamp_ntz
+timestamp_tz
 timestampadd
 timestampdiff
+timestampltz
+timestampntz
+timestamptz
 timezone_hour
 timezone_minute
 tinyblob
@@ -1107,6 +1125,7 @@ transactions_committed
 transactions_rolled_back
 transform
 transforms
+transit
 translate
 translate_regex
 translation
@@ -1121,6 +1140,7 @@ trim_array
 true
 truncate
 trusted
+try_cast
 try_convert
 tsequal
 type
@@ -1188,7 +1208,9 @@ varcharacter
 variable
 variables
 variadic
+variant
 varying
+vector
 verbose
 version
 view

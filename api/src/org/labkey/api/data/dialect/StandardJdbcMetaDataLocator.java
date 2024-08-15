@@ -22,11 +22,6 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 
-/**
- * User: adam
- * Date: 2/8/2015
- * Time: 7:47 AM
- */
 public class StandardJdbcMetaDataLocator implements JdbcMetaDataLocator
 {
     private final DbScope _scope;
@@ -121,11 +116,5 @@ public class StandardJdbcMetaDataLocator implements JdbcMetaDataLocator
     public ImportedKey getImportedKey(String fkName, String pkSchemaName, String pkTableName, String pkColumnName, String colName)
     {
         return new ImportedKey(fkName, pkSchemaName, pkTableName, pkColumnName, colName);
-    }
-
-    @Override
-    public boolean supportsSchemas()
-    {
-        return true;
     }
 }

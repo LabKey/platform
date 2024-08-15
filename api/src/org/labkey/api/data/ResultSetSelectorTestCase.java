@@ -79,7 +79,7 @@ public class ResultSetSelectorTestCase extends AbstractSelectorTestCase<ResultSe
                 assertEquals("Non-scrollable ResultSet can't be used with ScrollToTop", e.getMessage());
             }
 
-            rs = CachedResultSets.create(rs, true, Table.ALL_ROWS);
+            rs = CachedResultSets.create(rs, true, Table.ALL_ROWS, null, QueryLogging.emptyQueryLogging());
         }
 
         ResultSetSelector selector = new ResultSetSelector(scope, rs);
