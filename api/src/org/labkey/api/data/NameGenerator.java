@@ -50,7 +50,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
@@ -254,7 +253,7 @@ public class NameGenerator
     private final Map<String, ExpDataClass> _dataClasses = new HashMap<>();
     private final Map<Integer, ExpMaterial> materialCache = new HashMap<>();
     private final Map<Integer, ExpData> dataCache = new HashMap<>();
-    private RemapCache renameCache;
+    private final RemapCache renameCache;
     private final Map<String, Map<String, Object>> objectPropertiesCache = new HashMap<>();
 
     private final Container _container;
@@ -656,12 +655,24 @@ public class NameGenerator
             if (StringUtils.isEmpty((valueStr).trim()))
                 return Stream.empty();
 
+            TSVWriter tsvWriter = new TSVWriter() // Used to quote values with newline/tabs/quotes
+            {
+                @Override
+                protected int write()
+                {
+                    throw new UnsupportedOperationException();
+                }
+            };
+
             // Issue 44841: The names of the parents may include commas, so we parse the set of parent names
             // using TabLoader instead of just splitting on the comma.
-            try (TabLoader tabLoader = new TabLoader(valueStr))
+            String quotedStr = (valueStr).contains(",") ? valueStr : tsvWriter.quoteValue(valueStr); // if value contains comma, no need to quote again
+            try (TabLoader tabLoader = new TabLoader(quotedStr))
             {
                 tabLoader.setDelimiterCharacter(',');
                 tabLoader.setUnescapeBackslashes(false);
+                // Issue 50924: LKSM: Importing samples using naming expression referencing parent inputs with # result in error
+                tabLoader.setIncludeComments(true);
                 try
                 {
                     String[][] parsedValues = tabLoader.getFirstNLines(1);
@@ -832,13 +843,13 @@ public class NameGenerator
         for (ExpObject dataType : dataTypes)
         {
             Domain domain = null;
-            if (dataType instanceof ExpSampleType)
+            if (dataType instanceof ExpSampleType sampleType)
             {
-                domain = ((ExpSampleType)dataType).getDomain();
+                domain = sampleType.getDomain();
             }
-            else if (dataType instanceof ExpDataClass)
+            else if (dataType instanceof ExpDataClass dataClass)
             {
-                domain = ((ExpDataClass)dataType).getDomain();
+                domain = dataClass.getDomain();
             }
             if (domain != null)
             {
@@ -1878,7 +1889,7 @@ public class NameGenerator
             try
             {
                 ExpRunItem parentObject = isMaterialParent ?
-                        ExperimentService.get().findExpMaterial(_container, _user, (ExpSampleType) parentObjectType, parentTypeName, parentName, renameCache, materialCache)
+                        ExperimentService.get().findExpMaterial(_container, _user, parentName, (ExpSampleType) parentObjectType, renameCache, materialCache)
                         : ExperimentService.get().findExpData(_container, _user, (ExpDataClass) parentObjectType, parentTypeName, parentName, renameCache, dataCache);
 
                 if (parentObject == null)

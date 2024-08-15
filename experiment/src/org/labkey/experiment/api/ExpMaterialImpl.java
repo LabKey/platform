@@ -97,7 +97,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
 
     static public List<ExpMaterialImpl> fromMaterials(Collection<Material> materials)
     {
-        return materials.stream().map(ExpMaterialImpl::new).collect(Collectors.toList());
+        return materials.stream().map(ExpMaterialImpl::new).toList();
     }
 
     // For serialization

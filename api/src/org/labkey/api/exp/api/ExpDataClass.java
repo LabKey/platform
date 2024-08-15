@@ -32,9 +32,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 /**
- * Category of {@link ExpData}, extended by a Domain with custom properties. Data version of an {@link ExpSampleType}
- * User: kevink
- * Date: 9/15/15
+ * Category of {@link ExpData}, extended by a Domain with custom properties. Data version of an {@link ExpSampleType}.
  */
 public interface ExpDataClass extends ExpObject
 {

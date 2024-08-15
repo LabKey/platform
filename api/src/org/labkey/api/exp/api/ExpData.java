@@ -31,7 +31,7 @@ import java.nio.file.Path;
 import java.sql.SQLException;
 
 /**
- * Represents a virtual experiment object. Typically a file on disk, but could be something pointed at by any URI including S3 objects.
+ * Represents a virtual experiment object. Typically, a file on disk, but could be something pointed at by any URI including S3 objects.
  */
 public interface ExpData extends ExpRunItem
 {

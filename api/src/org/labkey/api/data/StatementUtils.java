@@ -277,7 +277,10 @@ public class StatementUtils
         int getScale()
         {
             var type = Objects.requireNonNull(p.getType());
-            if (type.isText() && type!= JdbcType.GUID && (null != _columnInfo && _columnInfo.getScale() > 0))
+            if (null == _columnInfo || _columnInfo.getScale() <= 0)
+                return -1;
+            // GUID.isText()==true
+            if (JdbcType.GUID != type && (type.isText() || type.isDecimal()))
                 return _columnInfo.getScale();
             return -1;
         }

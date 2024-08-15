@@ -30,6 +30,7 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.search.SearchService;
@@ -244,6 +245,9 @@ public interface AssayService
      */
     @NotNull Collection<Map<String, Object>> checkResults(Container container, User user, ExpProtocol protocol, ResultsCheckHelper checker);
     @NotNull <E> Collection<E> checkResults(Container container, User user, ExpProtocol protocol, ResultsCheckHelper checker, Class<E> clazz);
+
+    /** Returns the lineage "role" for an assay run/result property. */
+    @NotNull String getPropertyInputLineageRole(@NotNull DomainProperty dp);
 
     interface ResultsCheckHelper
     {

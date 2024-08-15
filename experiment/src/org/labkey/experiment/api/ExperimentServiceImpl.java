@@ -151,6 +151,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainUtil;
+import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.DataClassUserSchema;
 import org.labkey.api.exp.query.ExpDataClassDataTable;
@@ -637,9 +638,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public @Nullable ExpDataImpl getExpData(int rowid)
+    public @Nullable ExpDataImpl getExpData(int rowId)
     {
-        return getExpData(new SimpleFilter(FieldKey.fromParts("RowId"), rowid));
+        return getExpData(new SimpleFilter(FieldKey.fromParts("RowId"), rowId));
     }
 
     @Override
@@ -849,8 +850,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    @Nullable
-    public ExpMaterialImpl getExpMaterial(Container c, User u, int rowId, @Nullable ExpSampleType sampleType)
+    public @Nullable ExpMaterialImpl getExpMaterial(Container c, User u, int rowId, @Nullable ExpSampleType sampleType)
     {
         List<ExpMaterialImpl> materials = getExpMaterials(c, u, List.of(rowId), sampleType);
         if (materials == null || materials.isEmpty())
@@ -1262,7 +1262,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public ExpExperimentImpl createExpExperiment(Container container, String name)
+    public @NotNull ExpExperimentImpl createExpExperiment(Container container, String name)
     {
         Experiment exp = new Experiment();
         exp.setContainer(container);
@@ -1705,7 +1705,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public ExpDataClass getEffectiveDataClass(@NotNull Container definitionContainer, @NotNull User user, @NotNull String dataClassName, @NotNull Date effectiveDate, @Nullable ContainerFilter cf)
+    public @Nullable ExpDataClass getEffectiveDataClass(
+        @NotNull Container definitionContainer,
+        @NotNull User user,
+        @NotNull String dataClassName,
+        @NotNull Date effectiveDate,
+        @Nullable ContainerFilter cf
+    )
     {
         Integer legacyObjectId = getObjectIdWithLegacyName(dataClassName, ExperimentServiceImpl.getNamespacePrefix(ExpDataClass.class), effectiveDate, definitionContainer, cf);
         if (legacyObjectId != null)
@@ -1776,7 +1782,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     // Prefer using one of the getDataClass methods that accept a Container and User for permission checking.
     @Override
-    public ExpDataClassImpl getDataClass(@NotNull String lsid)
+    public @Nullable ExpDataClassImpl getDataClass(@NotNull String lsid)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("lsid"), lsid);
         DataClass dataClass = new TableSelector(getTinfoDataClass(), filter, null).getObject(DataClass.class);
@@ -1934,16 +1940,32 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     @Override
     public @Nullable ExpMaterial findExpMaterial(
-        Container c,
+        Container container,
         User user,
-        ExpSampleType sampleType,
-        String sampleTypeName,
-        String sampleName,
-        RemapCache cache,
-        Map<Integer, ExpMaterial> materialCache
+        Object sampleIdentifier,
+        @Nullable ExpSampleType sampleType,
+        @NotNull RemapCache cache,
+        @NotNull Map<Integer, ExpMaterial> materialCache
     ) throws ValidationException
     {
+        if (sampleIdentifier == null)
+            return null;
+
+        if (sampleIdentifier instanceof Integer rowId)
+            return materialCache.computeIfAbsent(rowId, id -> getExpMaterial(container, user, id, sampleType));
+
+        if (sampleIdentifier instanceof ExpMaterial m)
+        {
+            materialCache.put(m.getRowId(), m);
+            return m;
+        }
+
+        if (!(sampleIdentifier instanceof String sampleName))
+            throw new ValidationException(String.format("Failed to resolve a %s into a sample.", sampleIdentifier.getClass().getName()));
+
         StringBuilder errors = new StringBuilder();
+        String sampleTypeName = sampleType == null ? null : sampleType.getName();
+
         // Issue 44568, Issue 40302: Unable to use samples or data class with integer like names as material or data input
         // First attempt to resolve by name.
         try
@@ -1951,11 +1973,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             // TODO, rowId is not found for samples newly created in the same import.
             // This is causing name patterns containing lineage lookup to fail to generate the correct names if the child samples and their parents are created from the same import file
             Integer rowId = (sampleTypeName == null) ?
-                    cache.remap(ExpSchema.SCHEMA_EXP, ExpSchema.TableType.Materials.name(), user, c, getContainerFilterTypeForFind(c), sampleName) :
-                    cache.remap(SamplesSchema.SCHEMA_SAMPLES, sampleTypeName, user, c, getContainerFilterTypeForFind(c), sampleName);
+                    cache.remap(ExpSchema.SCHEMA_EXP, ExpSchema.TableType.Materials.name(), user, container, getContainerFilterTypeForFind(container), sampleName) :
+                    cache.remap(SamplesSchema.SCHEMA_SAMPLES, sampleTypeName, user, container, getContainerFilterTypeForFind(container), sampleName);
 
             if (rowId != null)
-                return materialCache.computeIfAbsent(rowId, (x) -> getExpMaterial(c, user, rowId, sampleType));
+                return materialCache.computeIfAbsent(rowId, id -> getExpMaterial(container, user, id, sampleType));
         }
         catch (ConversionException e2)
         {
@@ -1974,7 +1996,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             Integer rowId = ConvertHelper.convert(sampleName, Integer.class);
 
             if (rowId != null)
-                return materialCache.computeIfAbsent(rowId, (x) -> getExpMaterial(c, user, rowId, sampleType));
+                return materialCache.computeIfAbsent(rowId, id -> getExpMaterial(container, user, id, sampleType));
         }
         catch (ConversionException e1)
         {
@@ -6483,7 +6505,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return protApp;
     }
 
-
     public List<ProtocolActionPredecessor> getProtocolActionPredecessors(String parentProtocolLSID, String childProtocolLSID)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ChildProtocolLSID"), childProtocolLSID);
@@ -6839,12 +6860,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         @Nullable Set<Pair<String, String>> finalOutputLsids
     ) throws ExperimentException
     {
-        ExpRunImpl run = (ExpRunImpl)baseRun;
+        ExpRunImpl run = (ExpRunImpl) baseRun;
 
         if (run.getFilePathRootPath() == null)
-        {
             throw new IllegalArgumentException("You must set the file path root on the experiment run");
-        }
 
         List<ExpData> insertedDatas;
         User user = info.getUser();
@@ -6853,15 +6872,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         try (DbScope.Transaction transaction = getExpSchema().getScope().ensureTransaction(XAR_IMPORT_LOCK))
         {
             if (run.getContainer() == null)
-            {
                 run.setContainer(info.getContainer());
-            }
+
             run.save(user);
             insertedDatas = ensureSimpleExperimentRunParameters(inputMaterials.keySet(), inputDatas.keySet(), outputMaterials.keySet(), outputDatas.keySet(), transformedDatas.keySet(), user);
 
-            // add any transformed data to the outputDatas collection
-            for (Map.Entry<ExpData, String> entry : transformedDatas.entrySet())
-                outputDatas.put(entry.getKey(), entry.getValue());
+            HashMap<ExpData, String> allOutputDatas = new HashMap<>();
+            allOutputDatas.putAll(outputDatas);
+            allOutputDatas.putAll(transformedDatas);
 
             ExpProtocolImpl parentProtocol = run.getProtocol();
 
@@ -6953,7 +6971,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 Table.update(user, getTinfoMaterial(), ((ExpMaterialImpl)outputMaterial)._object, outputMaterial.getRowId());
             }
 
-            for (ExpData outputData : outputDatas.keySet())
+            for (ExpData outputData : allOutputDatas.keySet())
             {
                 ExpRun existingRun = outputData.getRun();
                 if (existingRun != null && !existingRun.equals(run))
@@ -6978,7 +6996,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 protApp3.addProvenanceMapping(finalOutputLsids);
             }
 
-            addDataInputs(outputDatas, protApp3._object, user);
+            addDataInputs(allOutputDatas, protApp3._object, user);
             addMaterialInputs(outputMaterials, protApp3._object, user);
 
             transaction.commit();
@@ -7003,7 +7021,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return run;
     }
 
-    private ExpProtocolApplication initializeProtocolApplication(ExpProtocolApplication protApp, Date activityDate, ExpProtocolActionImpl action, ExpRun run, ExpProtocol parentProtocol, XarContext context ) throws XarFormatException
+    private void initializeProtocolApplication(
+        ExpProtocolApplication protApp,
+        Date activityDate,
+        ExpProtocolActionImpl action,
+        ExpRun run,
+        ExpProtocol parentProtocol,
+        XarContext context
+    ) throws XarFormatException
     {
         protApp.setActivityDate(activityDate);
         protApp.setActionSequence(action.getActionSequence());
@@ -7016,8 +7041,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         assert parentNameTemplateParam != null : "Parent Name Template was null";
         protApp.setLSID(LsidUtils.resolveLsidFromTemplate(parentLSIDTemplateParam.getStringValue(), context, "ProtocolApplication"));
         protApp.setName(parentNameTemplateParam.getStringValue());
-
-        return protApp;
     }
 
     @Override
@@ -7907,40 +7930,15 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     @Override
     public ExpDataClassImpl createDataClass(
-            @NotNull Container c, @NotNull User u, @NotNull String name, String description,
-            List<GWTPropertyDescriptor> properties,
-            List<GWTIndex> indices, Integer sampleTypeId, String nameExpression,
-            @Nullable TemplateInfo templateInfo, @Nullable String category)
-        throws ExperimentException
-    {
-        DataClassDomainKindProperties options = new DataClassDomainKindProperties();
-        options.setDescription(description);
-        options.setNameExpression(StringUtilsLabKey.replaceBadCharacters(nameExpression));
-        options.setSampleType(sampleTypeId);
-        options.setCategory(category);
-        return createDataClass(c, u, name, options, properties, indices, templateInfo);
-    }
-
-    @Override
-    public ExpDataClassImpl createDataClass(@NotNull Container c, @NotNull User u, @NotNull String name, @Nullable DataClassDomainKindProperties options,
-                                            List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, @Nullable TemplateInfo templateInfo)
-            throws ExperimentException
-    {
-        return createDataClass(c, u, name, options, properties, indices, templateInfo, null);
-    }
-
-    @Override
-    public ExpDataClassImpl createDataClass(@NotNull Container c, @NotNull User u, @NotNull String name, @Nullable DataClassDomainKindProperties options,
-                                            List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, @Nullable TemplateInfo templateInfo, @Nullable List<String> disabledSystemField)
-            throws ExperimentException
-    {
-        return createDataClass(c, u, name, options, properties, indices, templateInfo, disabledSystemField, null);
-    }
-
-    @Override
-    public ExpDataClassImpl createDataClass(@NotNull Container c, @NotNull User u, @NotNull String name, @Nullable DataClassDomainKindProperties options,
-                                        List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, @Nullable TemplateInfo templateInfo, @Nullable List<String> disabledSystemField, @Nullable Map<String, String> importAliases)
-            throws ExperimentException
+        @NotNull Container c,
+        @NotNull User u,
+        @NotNull String name,
+        @Nullable DataClassDomainKindProperties options,
+        List<GWTPropertyDescriptor> properties,
+        List<GWTIndex> indices,
+        @Nullable TemplateInfo templateInfo,
+        @Nullable List<String> disabledSystemField
+    ) throws ExperimentException
     {
         name = StringUtils.trimToNull(name);
         validateDataClassName(c, u, name);
@@ -7948,13 +7946,19 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         Lsid lsid = getDataClassLsid(c);
         Domain domain = PropertyService.get().createDomain(c, lsid.toString(), name, templateInfo);
-        DomainKind kind = domain.getDomainKind();
+        DomainKind<?> kind = domain.getDomainKind();
+        Set<String> lowerReservedNames;
 
         if (kind != null)
+        {
             domain.setDisabledSystemFields(kind.getDisabledSystemFields(disabledSystemField));
-
-        Set<String> reservedNames = kind.getReservedPropertyNames(domain, u);
-        Set<String> lowerReservedNames = reservedNames.stream().map(String::toLowerCase).collect(toSet());
+            lowerReservedNames = kind.getReservedPropertyNames(domain, u)
+                    .stream()
+                    .map(String::toLowerCase)
+                    .collect(toSet());
+        }
+        else
+            lowerReservedNames = emptySet();
 
         Map<DomainProperty, Object> defaultValues = new HashMap<>();
         Set<String> propertyUris = new HashSet<>();
@@ -7971,7 +7975,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             String propertyName = pd.getName().toLowerCase();
             if (lowerReservedNames.contains(propertyName))
             {
-                if (options.isStrictFieldValidation())
+                if (options != null && options.isStrictFieldValidation())
                     throw new IllegalArgumentException("Property name '" + propertyName + "' is a reserved name.");
             }
             else if (domain.getPropertyByName(propertyName) != null) // issue 25275
@@ -7982,7 +7986,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         domain.setPropertyIndices(indices, lowerReservedNames);
 
-        String importAliasJson = ExperimentJSONConverter.getAliasJson(importAliases, name);
+        String importAliasJson = ExperimentJSONConverter.getAliasJson(options == null ? null : options.getImportAliases(), name);
 
         DataClass bean = new DataClass();
         bean.setContainer(c);
@@ -8015,7 +8019,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             OntologyManager.ensureObject(c, lsid.toString());
 
-            domain.setPropertyForeignKeys(kind.getPropertyForeignKeys(c));
+            if (kind != null)
+                domain.setPropertyForeignKeys(kind.getPropertyForeignKeys(c));
             domain.save(u);
             impl.save(u);
 
@@ -9715,6 +9720,42 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             return !AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_ALLOW_GAP_COUNTER);
         }
+    }
+
+    @Override
+    public @Nullable ExpSampleType getLookupSampleType(@NotNull DomainProperty dp, @NotNull Container container, @NotNull User user)
+    {
+        Lookup lookup = dp.getLookup();
+        if (lookup == null)
+            return null;
+
+        // TODO: Use concept URI instead of the lookup target schema to determine if the column is a sample.
+        if (!(SamplesSchema.SCHEMA_SAMPLES.equals(lookup.getSchemaKey()) || SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, ExpSchema.TableType.Materials.name()).equals(lookup.getSchemaKey())))
+            return null;
+
+        JdbcType type = dp.getPropertyType().getJdbcType();
+        if (!(type.isText() || type.isInteger()))
+            return null;
+
+        Container c = lookup.getContainer() != null ? lookup.getContainer() : container;
+        return SampleTypeService.get().getSampleType(c, user, lookup.getQueryName());
+    }
+
+    @Override
+    public boolean isLookupToMaterials(DomainProperty dp)
+    {
+        if (dp == null)
+            return false;
+
+        Lookup lookup = dp.getLookup();
+        if (lookup == null)
+            return false;
+
+        if (!(ExpSchema.SCHEMA_EXP.equals(lookup.getSchemaKey()) && ExpSchema.TableType.Materials.name().equalsIgnoreCase(lookup.getQueryName())))
+            return false;
+
+        JdbcType type = dp.getPropertyType().getJdbcType();
+        return type.isText() || type.isInteger();
     }
 
     public Map<String, Map<String, MissingFilesCheckInfo>> doMissingFilesCheck(User user, Container container, boolean trackMissingFiles) throws SQLException
