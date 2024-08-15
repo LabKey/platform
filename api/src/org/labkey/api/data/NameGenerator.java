@@ -1956,12 +1956,9 @@ public class NameGenerator
                         {
                             if (candidateAncestor instanceof ExpRunItem candidate)
                             {
-                                if (candidate.getCpasType().equals(ancestorOptions.ancestorSearchType().second))
-                                {
-                                    Object lookupValue = getParentFieldValue(candidate, fieldName);
-                                    if (lookupValue != null)
-                                        ancestorLookupValues.add(lookupValue);
-                                }
+                                Object lookupValue = getParentFieldValue(candidate, fieldName);
+                                if (lookupValue != null)
+                                    ancestorLookupValues.add(lookupValue);
                             }
                         }
                         _ancestorSearchCache.put(ancestorFieldKey + "-" + parentObject.getObjectId(), ancestorLookupValues);
