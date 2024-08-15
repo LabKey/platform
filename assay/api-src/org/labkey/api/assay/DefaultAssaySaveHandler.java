@@ -25,7 +25,6 @@ import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.data.MvUtil;
-import org.labkey.api.dataiterator.AbstractMapDataIterator;
 import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.MvColumn;
@@ -182,13 +181,21 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
     }
 
     @Override
-    protected ExpExperiment saveExperimentRun(ViewContext context, ExpProtocol protocol, ExpExperiment batch, ExpRun run,
-                                              JSONObject runJson, JSONArray dataArray, Map<ExpData, String> inputData,
-                                              Map<ExpData, String> outputData, Map<ExpMaterial, String> inputMaterial,
-                                              Map<ExpMaterial, String> outputMaterial) throws ExperimentException, ValidationException
+    protected ExpExperiment saveExperimentRun(
+        ViewContext context,
+        ExpProtocol protocol,
+        ExpExperiment batch,
+        ExpRun run,
+        JSONObject runJson,
+        JSONArray dataArray,
+        Map<ExpData, String> inputData,
+        Map<ExpData, String> outputData,
+        Map<ExpMaterial, String> inputMaterial,
+        Map<ExpMaterial, String> outputMaterial
+    ) throws ExperimentException, ValidationException
     {
         List<Map<String, Object>> dataRows = convertRunData(dataArray, run.getContainer(), protocol);
-        ExpData tsvData = DefaultAssayRunCreator.generateResultData(context.getUser(), run.getContainer(), getProvider(), dataRows, (Map)outputData, null);
+        ExpData tsvData = DefaultAssayRunCreator.generateResultData(context.getUser(), run.getContainer(), getProvider(), dataRows, (Map) outputData, null);
 
         // CONSIDER: Is this block still needed?
         // Try to find a data object to attach our data rows to
@@ -267,9 +274,16 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
     }
 
     @Nullable
-    protected AssayRunUploadContext<?> createRunUploadContext(ViewContext context, ExpProtocol protocol, JSONObject runJsonObject, List<Map<String, Object>> dataRows,
-                                                           Map<ExpData, String> inputData, Map<ExpData, String> outputData,
-                                                           Map<ExpMaterial, String> inputMaterial, Map<ExpMaterial, String> outputMaterial)
+    protected AssayRunUploadContext<?> createRunUploadContext(
+        ViewContext context,
+        ExpProtocol protocol,
+        JSONObject runJsonObject,
+        List<Map<String, Object>> dataRows,
+        Map<ExpData, String> inputData,
+        Map<ExpData, String> outputData,
+        Map<ExpMaterial, String> inputMaterial,
+        Map<ExpMaterial, String> outputMaterial
+    )
     {
         if (dataRows != null)
         {

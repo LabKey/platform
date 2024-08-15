@@ -269,7 +269,7 @@ public class NameGenerator
     private final Map<String, ExpDataClass> _dataClasses = new HashMap<>();
     private final Map<Integer, ExpMaterial> materialCache = new HashMap<>();
     private final Map<Integer, ExpData> dataCache = new HashMap<>();
-    private RemapCache renameCache;
+    private final RemapCache renameCache;
     private final Map<String, Map<String, Object>> objectPropertiesCache = new HashMap<>();
 
     private final Container _container;
@@ -907,13 +907,13 @@ public class NameGenerator
         for (ExpObject dataType : dataTypes)
         {
             Domain domain = null;
-            if (dataType instanceof ExpSampleType)
+            if (dataType instanceof ExpSampleType sampleType)
             {
-                domain = ((ExpSampleType)dataType).getDomain();
+                domain = sampleType.getDomain();
             }
-            else if (dataType instanceof ExpDataClass)
+            else if (dataType instanceof ExpDataClass dataClass)
             {
-                domain = ((ExpDataClass)dataType).getDomain();
+                domain = dataClass.getDomain();
             }
             if (domain != null)
             {
@@ -2040,7 +2040,7 @@ public class NameGenerator
             try
             {
                 ExpRunItem parentObject = isMaterialParent ?
-                        ExperimentService.get().findExpMaterial(_container, _user, (ExpSampleType) parentObjectType, parentTypeName, parentName, renameCache, materialCache)
+                        ExperimentService.get().findExpMaterial(_container, _user, parentName, (ExpSampleType) parentObjectType, renameCache, materialCache)
                         : ExperimentService.get().findExpData(_container, _user, (ExpDataClass) parentObjectType, parentTypeName, parentName, renameCache, dataCache);
 
                 if (parentObject == null)

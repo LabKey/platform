@@ -469,13 +469,12 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     }
 
     @Override
-    public ExpProtocolApplication getInputProtocolApplication()
+    public @Nullable ExpProtocolApplication getInputProtocolApplication()
     {
         return findProtocolApplication(ExpProtocol.ApplicationType.ExperimentRun);
     }
 
-    @Nullable
-    private ExpProtocolApplication findProtocolApplication(ExpProtocol.ApplicationType type)
+    private @Nullable ExpProtocolApplication findProtocolApplication(ExpProtocol.ApplicationType type)
     {
         for (ExpProtocolApplicationImpl expProtocolApplication : getProtocolApplications())
         {
@@ -488,7 +487,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     }
 
     @Override
-    public ExpProtocolApplication getOutputProtocolApplication()
+    public @Nullable ExpProtocolApplication getOutputProtocolApplication()
     {
         return findProtocolApplication(ExpProtocol.ApplicationType.ExperimentRunOutput);
     }

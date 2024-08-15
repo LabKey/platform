@@ -51,7 +51,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<ProtocolApplication> implements ExpProtocolApplication
@@ -60,7 +59,6 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
     private List<ExpDataImpl> _inputDatas;
     private List<ExpMaterialImpl> _outputMaterials;
     private List<ExpDataImpl> _outputDatas;
-    private Map<String, String> _lsidMap;
 
     // For serialization
     protected ExpProtocolApplicationImpl() {}

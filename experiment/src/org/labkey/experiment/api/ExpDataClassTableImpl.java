@@ -31,6 +31,7 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.api.DataClassDomainKindProperties;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.ExpDataClassTable;
@@ -280,9 +281,13 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
 
             try
             {
-                ExpDataClass dc = ExperimentService.get().createDataClass(c, user, name, description,
-                        Collections.emptyList(), Collections.emptyList(),
-                        materialSourceId, nameExpression, null, category);
+                DataClassDomainKindProperties options = new DataClassDomainKindProperties();
+                options.setDescription(description);
+                options.setNameExpression(nameExpression);
+                options.setSampleType(materialSourceId);
+                options.setCategory(category);
+
+                ExpDataClass dc = ExperimentService.get().createDataClass(c, user, name, options, Collections.emptyList(), Collections.emptyList(), null, null);
                 return new CaseInsensitiveHashMap(BeanUtils.describe(dc));
             }
             catch (ExperimentException | ReflectiveOperationException e)
