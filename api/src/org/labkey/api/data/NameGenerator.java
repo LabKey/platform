@@ -682,7 +682,8 @@ public class NameGenerator
 
             // Issue 44841: The names of the parents may include commas, so we parse the set of parent names
             // using TabLoader instead of just splitting on the comma.
-            try (TabLoader tabLoader = new TabLoader(tsvWriter.quoteValue(valueStr)))
+            String quotedStr = (valueStr).contains(",") ? valueStr : tsvWriter.quoteValue(valueStr); // if value contains comma, no need to quote again
+            try (TabLoader tabLoader = new TabLoader(quotedStr))
             {
                 tabLoader.setDelimiterCharacter(',');
                 tabLoader.setUnescapeBackslashes(false);
@@ -898,7 +899,7 @@ public class NameGenerator
         {
             if (!isCurrentDataType)
             {
-                _syntaxErrors.add("Invalid parent lookup: " + fieldKeyDisplay + ".");
+                _syntaxErrors.add("Invalid lineage lookup: " + fieldKeyDisplay + ".");
                 return null;
             }
         }
@@ -947,13 +948,13 @@ public class NameGenerator
                     return getNamePartPreviewValue(pt, lookupField);
                 else
                 {
-                    _syntaxErrors.add("Invalid parent lookup: " + fieldKeyDisplay + ".");
+                    _syntaxErrors.add("Invalid lineage lookup: " + fieldKeyDisplay + ".");
                     return null;
                 }
             }
         }
 
-        _syntaxErrors.add("Parent lookup field does not exist: " + fieldKeyDisplay);
+        _syntaxErrors.add("Lineage lookup field does not exist: " + fieldKeyDisplay);
         return null;
     }
 
@@ -1070,7 +1071,7 @@ public class NameGenerator
                         {
                             String fieldName = fieldParts.get(0);
                             if (isParentInputToken(fieldName, null, true))
-                                _syntaxErrors.add("Invalid substitution token, ancestor " + (fieldName.toLowerCase().contains("material") ? "sample type" : "dataclass") + " must be specified in lineage search syntax: ${" + fieldName + "}.");
+                                _syntaxErrors.add("Invalid substitution token. Ancestor " + (fieldName.toLowerCase().contains("material") ? "sample type" : "dataclass") + " must be specified in lineage search syntax: ${" + fieldName + "}.");
                             else if (!substitutionValues.contains(fieldName) && !isParentPart)
                             {
                                 boolean isColPresent = false;
@@ -1193,7 +1194,7 @@ public class NameGenerator
                     {
                         if (_parentTable == null && domainFields.isEmpty())
                         {
-                            String errorMsg = "Parent table is required for name expressions with lookups: " + fieldKeyDisplay + ".";
+                            String errorMsg = "Parent table is required for naming patterns with lookups: " + fieldKeyDisplay + ".";
                             if (_validateSyntax)
                                 _syntaxErrors.add(errorMsg);
                             else
@@ -1380,7 +1381,7 @@ public class NameGenerator
             }
             else
             {
-                _syntaxErrors.add("Invalid substitution token, ancestor " + (isMaterialAncestor ? "sample type" : "dataclass") + " must be specified in lineage search syntax: ${" + fkTokDisplay + "}.");
+                _syntaxErrors.add("Invalid substitution token. Ancestor " + (isMaterialAncestor ? "sample type" : "dataclass") + " must be specified in lineage search syntax: ${" + fkTokDisplay + "}.");
             }
 
             return fieldParts;
@@ -1402,13 +1403,13 @@ public class NameGenerator
                     if (partInd == 0)
                     {
                         // Syntax should be ${MaterialInput/..[MaterialInputs]/name} where the first input is the direct parent, instead of ${..[MaterialInputs]/name}.
-                        _syntaxErrors.add("Invalid substitution token, parent input must be specified for ancestor lookup: ${" + fkTokDisplay + "}.");
+                        _syntaxErrors.add("Invalid substitution token. Parent input must be specified for ancestor lookup: ${" + fkTokDisplay + "}.");
                         return fieldParts;
                     }
 
                     if (ancestorLevel > 9) // 1 generation of direct parent + 9 extra generations of ancestors
                     {
-                        _syntaxErrors.add("Invalid substitution token, a max of 10 generations of ancestor lookup is supported: ${" + fkTokDisplay + "}.");
+                        _syntaxErrors.add("Invalid substitution token. A max of 10 generations of ancestor lookup is supported: ${" + fkTokDisplay + "}.");
                         return fieldParts;
                     }
 
@@ -1950,7 +1951,7 @@ public class NameGenerator
                     if (ancestorOptions.ancestorSearchType() != null)
                     {
                         List<Identifiable> candidateAncestors = lineage.findAncestorByType(parentObject, ancestorOptions.ancestorSearchType(), _user);
-                        candidateAncestors.sort(Comparator.comparing(a -> a.getName()));
+                        candidateAncestors.sort(Comparator.comparing(Identifiable::getName));
                         for (Identifiable candidateAncestor : candidateAncestors)
                         {
                             if (candidateAncestor instanceof ExpRunItem candidate)
@@ -3172,7 +3173,7 @@ public class NameGenerator
 
             validateNameResult("S-${Inputs/a/b/d}", withErrors("Only one level of lookup is supported for parent input: Inputs/a/b/d."));
 
-            validateNameResult("S-${Inputs/SampleTypeNotExist}", withErrors("Parent lookup field does not exist: Inputs/SampleTypeNotExist"));
+            validateNameResult("S-${Inputs/SampleTypeNotExist}", withErrors("Lineage lookup field does not exist: Inputs/SampleTypeNotExist"));
 
             validateNameResult("S-${~MaterialInputs/a/b/c}", withErrors("Only one level of lookup is supported: ~MaterialInputs/a/b/c."));
 
@@ -3254,16 +3255,16 @@ public class NameGenerator
         @Test
         public void testNameExpressionAncestorLookupFieldErrors()
         {
-            validateNameResult("S-${~MaterialInputs}", withErrors("Invalid substitution token, ancestor sample type must be specified in lineage search syntax: ${~MaterialInputs}."));
-            validateNameResult("S-${~DataInputs}", withErrors("Invalid substitution token, ancestor dataclass must be specified in lineage search syntax: ${~DataInputs}."));
+            validateNameResult("S-${~MaterialInputs}", withErrors("Invalid substitution token. Ancestor sample type must be specified in lineage search syntax: ${~MaterialInputs}."));
+            validateNameResult("S-${~DataInputs}", withErrors("Invalid substitution token. Ancestor dataclass must be specified in lineage search syntax: ${~DataInputs}."));
 
-            validateNameResult("S-${..[MaterialInputs]/name}", withErrors("Invalid substitution token, parent input must be specified for ancestor lookup: ${..[MaterialInputs]/name}."));
+            validateNameResult("S-${..[MaterialInputs]/name}", withErrors("Invalid substitution token. Parent input must be specified for ancestor lookup: ${..[MaterialInputs]/name}."));
             validateNameResult("S-${MaterialInputs/CurrentType/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[MaterialInputs]/..[MaterialInputs]/name}",
-                    withErrors("Invalid substitution token, a max of 10 generations of ancestor lookup is supported: ${MaterialInputs/CurrentType/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[MaterialInputs]/..[MaterialInputs]/name}."));
+                    withErrors("Invalid substitution token. A max of 10 generations of ancestor lookup is supported: ${MaterialInputs/CurrentType/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[MaterialInputs]/..[MaterialInputs]/name}."));
             validateNameResult("S-${parentAlias/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[MaterialInputs]/..[MaterialInputs]/name}",
-                    withErrors("Invalid substitution token, a max of 10 generations of ancestor lookup is supported: ${parentAlias/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[MaterialInputs]/..[MaterialInputs]/name}."));
+                    withErrors("Invalid substitution token. A max of 10 generations of ancestor lookup is supported: ${parentAlias/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[MaterialInputs]/..[MaterialInputs]/name}."));
             validateNameResult("S-${parentAlias/..[MaterialInputs/G1]/..[DataInputs/G2]/..[MaterialInputs/G3]/..[MaterialInputs/G4]/..[MaterialInputs/G5]/..[MaterialInputs/G6]/..[DataInputs/G7]/..[MaterialInputs/G8]/..[MaterialInputs/G9]/..[MaterialInputs/G10]/name}",
-                    withErrors("Invalid substitution token, a max of 10 generations of ancestor lookup is supported: ${parentAlias/..[MaterialInputs/G1]/..[DataInputs/G2]/..[MaterialInputs/G3]/..[MaterialInputs/G4]/..[MaterialInputs/G5]/..[MaterialInputs/G6]/..[DataInputs/G7]/..[MaterialInputs/G8]/..[MaterialInputs/G9]/..[MaterialInputs/G10]/name}."));
+                    withErrors("Invalid substitution token. A max of 10 generations of ancestor lookup is supported: ${parentAlias/..[MaterialInputs/G1]/..[DataInputs/G2]/..[MaterialInputs/G3]/..[MaterialInputs/G4]/..[MaterialInputs/G5]/..[MaterialInputs/G6]/..[DataInputs/G7]/..[MaterialInputs/G8]/..[MaterialInputs/G9]/..[MaterialInputs/G10]/name}."));
             validateNameResult("S-${MaterialInputs/CurrentType/..[MaterialInputs]}", withErrors("Invalid substitution token, lookup column name not specified: ${MaterialInputs/CurrentType/..[MaterialInputs]}."));
             validateNameResult("S-${MaterialInputs/CurrentType/..[MaterialInputs]/}", withErrors("Invalid substitution token, lookup column name not specified: ${MaterialInputs/CurrentType/..[MaterialInputs]/}."));
 
