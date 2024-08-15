@@ -50,7 +50,7 @@ public interface InventoryService
         Row,
         SampleTypeUnits,
         StorageCol,
-        StorageComment, // TODO: For reviewer. Seems like this column may have been removed/renamed? It was only listed in the labels and not the names.
+        StorageComment,
         StorageLocation,
         StorageRow,
         StorageStatus,
@@ -94,7 +94,10 @@ public interface InventoryService
         ServiceRegistry.get().registerService(InventoryService.class, impl);
     }
 
-    static InventoryService get() { return ServiceRegistry.get().getService(InventoryService.class); }
+    static InventoryService get()
+    {
+        return ServiceRegistry.get().getService(InventoryService.class);
+    }
 
     void addAuditEvent(User user, Container c, TableInfo table, AuditBehaviorType auditBehaviorType, @Nullable String userComment, QueryService.AuditAction action, @Nullable List<Map<String, Object>> rows, @Nullable List<Map<String, Object>> existingRows, boolean useTransactionAuditCache);
 
