@@ -1950,16 +1950,13 @@ public class NameGenerator
 
                     if (ancestorOptions.ancestorSearchType() != null)
                     {
-                        List<Identifiable> candidateAncestors = lineage.findAncestorByType(parentObject, ancestorOptions.ancestorSearchType(), _user);
+                        List<ExpRunItem> candidateAncestors = lineage.findAncestorByType(parentObject, ancestorOptions.ancestorSearchType(), _user);
                         candidateAncestors.sort(Comparator.comparing(Identifiable::getName));
-                        for (Identifiable candidateAncestor : candidateAncestors)
+                        for (ExpRunItem candidate : candidateAncestors)
                         {
-                            if (candidateAncestor instanceof ExpRunItem candidate)
-                            {
-                                Object lookupValue = getParentFieldValue(candidate, fieldName);
-                                if (lookupValue != null)
-                                    ancestorLookupValues.add(lookupValue);
-                            }
+                            Object lookupValue = getParentFieldValue(candidate, fieldName);
+                            if (lookupValue != null)
+                                ancestorLookupValues.add(lookupValue);
                         }
                         _ancestorSearchCache.put(ancestorFieldKey + "-" + parentObject.getObjectId(), ancestorLookupValues);
                     }

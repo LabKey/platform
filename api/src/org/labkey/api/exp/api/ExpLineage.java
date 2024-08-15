@@ -204,7 +204,7 @@ public class ExpLineage
         return ExpLineageTree.getNodes(ancestorTree, ancestorPaths, user);
     }
 
-    public List<Identifiable> findAncestorByType(ExpRunItem seed, @NotNull Pair<ExpLineageOptions.LineageExpType, String> ancestorType, User user)
+    public List<ExpRunItem> findAncestorByType(ExpRunItem seed, @NotNull Pair<ExpLineageOptions.LineageExpType, String> ancestorType, User user)
     {
         if (!_seeds.contains(seed))
             throw new UnsupportedOperationException();
@@ -635,14 +635,14 @@ public class ExpLineage
             return targetNodes;
         }
 
-        public static List<Identifiable> getNodes(ExpLineageTree tree, @NotNull Pair<ExpLineageOptions.LineageExpType, String> ancestorType, User user)
+        public static List<ExpRunItem> getNodes(ExpLineageTree tree, @NotNull Pair<ExpLineageOptions.LineageExpType, String> ancestorType, User user)
         {
             ExpLineageOptions.LineageExpType expType = ancestorType.first;
             String cpas = ancestorType.second;
 
-            List<Identifiable> targetNodes = new ArrayList<>();
+            List<ExpRunItem> targetNodes = new ArrayList<>();
             if (isValidNode(tree.getExpObject(), expType, cpas, user))
-                targetNodes.add(tree.getExpObject());
+                targetNodes.add((ExpRunItem) tree.getExpObject());
 
             for (ExpLineageTree child : tree.getChildren())
                 targetNodes.addAll(getNodes(child, ancestorType, user));
