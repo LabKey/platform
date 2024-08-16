@@ -1355,6 +1355,11 @@ public class DbScope
         return _dialect;
     }
 
+    public ResultSet getSchemas(DatabaseMetaData dbmd) throws SQLException
+    {
+        return getSqlDialect().getSchemas(dbmd, getDatabaseName());
+    }
+
     @NotNull
     // Load metadata from database and overlay schema.xml, if DbSchemaType requires it
     protected DbSchema loadSchema(String schemaName, DbSchemaType type) throws SQLException
