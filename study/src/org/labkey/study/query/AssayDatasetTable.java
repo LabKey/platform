@@ -303,6 +303,7 @@ public class AssayDatasetTable extends LinkedDatasetTable
             AssayProtocolSchema schema = provider.createProtocolSchema(_userSchema.getUser(), protocol.getContainer(), protocol, getContainer());
             schema.addContextualRole(RoleManager.getRole(ReaderRole.class));
             _assayResultTable = schema.createDataTable(ContainerFilter.EVERYTHING, false);
+            schema.overlayMetadata(_assayResultTable, AssayProtocolSchema.DATA_TABLE_NAME);
         }
         return _assayResultTable;
     }

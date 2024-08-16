@@ -326,7 +326,7 @@ public abstract class AssayProtocolSchema extends AssaySchema implements UserSch
     // NOTE: This should be transitioned to partly happen in the TableInfo.overlayMetadata() for the various tables
     // associated with the assay design. They should call into here with the unprefixed name to be added
     // from the assay provider's metadata files.
-    protected void overlayMetadata(TableInfo table, String name)
+    public void overlayMetadata(TableInfo table, String name)
     {
         fixupRenderers(table);
 
