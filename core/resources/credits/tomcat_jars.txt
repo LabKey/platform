@@ -1,5 +1,0 @@
-{table}
-Filename|Component|Version|Source|License|LabKey Dev|Purpose
-javax.activation.jar|Jakarta Activation™|1.2.2|{link:Eclipse|https://projects.eclipse.org/projects/ee4j.jaf}|{link:Eclipse Public License 2.0|https://www.eclipse.org/legal/epl-2.0/}|adam|Jakarta Mail and JAXB dependency
-mail.jar|Jakarta Mail™|1.6.7|{link:Eclipse|https://projects.eclipse.org/projects/ee4j.mail}|{link:Eclipse Public License 2.0|https://www.eclipse.org/legal/epl-2.0/}|adam|Send email from LabKey Server
-{table}
