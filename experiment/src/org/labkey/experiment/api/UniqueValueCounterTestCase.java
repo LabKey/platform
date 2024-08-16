@@ -22,6 +22,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.api.DataClassDomainKindProperties;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.SampleTypeService;
@@ -242,9 +243,10 @@ public class UniqueValueCounterTestCase
         props.add(new GWTPropertyDescriptor("two", "int"));
         props.add(new GWTPropertyDescriptor("three", "int"));
 
-        final String nameExpression = "DC-${one}.${two}.${three}";
+        DataClassDomainKindProperties options = new DataClassDomainKindProperties();
+        options.setNameExpression("DC-${one}.${two}.${three}");
 
-        final ExpDataClass dc = ExperimentServiceImpl.get().createDataClass(c, user, dataClassName, null, props, emptyList(), null, nameExpression, null, null);
+        final ExpDataClass dc = ExperimentServiceImpl.get().createDataClass(c, user, dataClassName, options, props, emptyList(), null, null);
         assertNotNull(dc);
 
         UserSchema schema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("exp", "data"));

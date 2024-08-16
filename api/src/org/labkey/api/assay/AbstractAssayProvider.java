@@ -36,6 +36,7 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DetailsColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.ImportAliasable;
+import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -51,6 +52,7 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.XarContext;
@@ -1941,7 +1943,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
         for (ExpRun run : runs)
         {
-            for (DomainProperty fileProp : fileDomainProps )
+            for (DomainProperty fileProp : fileDomainProps)
             {
                 String sourceFileName;
                 File sourceFile;
@@ -2105,6 +2107,80 @@ public abstract class AbstractAssayProvider implements AssayProvider
                             .append(" WHERE rowId = ").appendValue(resultRowId);
                     new SqlExecutor(assayResultTable.getSchema()).execute(updateSql);
                 }
+            }
+        }
+    }
+
+    @Override
+    public void updatePropertyLineage(
+        Container container,
+        User user,
+        TableInfo table,
+        ExpRun run,
+        Map<String, Object> row,
+        boolean isRunProperties,
+        @NotNull RemapCache cache,
+        @NotNull Map<Integer, ExpMaterial> materialsCache
+    ) throws ValidationException
+    {
+        Domain domain = table.getDomain();
+        if (domain == null)
+            return;
+
+        Set<Integer> removedMaterialInputs = new HashSet<>();
+        Map<ExpMaterial, String> addedMaterialInputs = new HashMap<>();
+
+        // There can be multiple columns within a row that are lineage-backed material lookups.
+        // Coalesce these material input updates across columns.
+        for (var entry : row.entrySet())
+        {
+            ColumnInfo column = table.getColumn(entry.getKey());
+
+            if (column != null && (!isRunProperties || column instanceof PropertyColumn))
+            {
+                DomainProperty dp = domain.getPropertyByURI(column.getPropertyURI());
+                if (dp == null)
+                    continue;
+
+                ExpSampleType sampleType = ExperimentService.get().getLookupSampleType(dp, container, user);
+                if (sampleType != null || ExperimentService.get().isLookupToMaterials(dp))
+                {
+                    String inputRole = AssayService.get().getPropertyInputLineageRole(dp);
+
+                    // Remove all material inputs with the same role
+                    for (var materialEntry : run.getMaterialInputs().entrySet())
+                    {
+                        if (inputRole.equalsIgnoreCase(materialEntry.getValue()))
+                            removedMaterialInputs.add(materialEntry.getKey().getRowId());
+                    }
+
+                    ExpMaterial newInputMaterial = ExperimentService.get().findExpMaterial(container, user, entry.getValue(), sampleType, cache, materialsCache);
+                    if (newInputMaterial != null)
+                    {
+                        // Prevent direct cycles
+                        if (run.getMaterialOutputs().contains(newInputMaterial))
+                            throw new ValidationException(String.format("Material \"%s\" is already marked as an output of this run and cannot be used as an input.", newInputMaterial.getName()));
+
+                        addedMaterialInputs.put(newInputMaterial, inputRole);
+                    }
+                }
+            }
+        }
+
+        if (!removedMaterialInputs.isEmpty())
+        {
+            var pa = run.getInputProtocolApplication();
+            if (pa != null)
+                pa.removeMaterialInputs(user, removedMaterialInputs);
+        }
+
+        if (!addedMaterialInputs.isEmpty())
+        {
+            var pa = run.getInputProtocolApplication();
+            if (pa != null)
+            {
+                for (var entry : addedMaterialInputs.entrySet())
+                    pa.addMaterialInput(user, entry.getKey(), entry.getValue());
             }
         }
     }
