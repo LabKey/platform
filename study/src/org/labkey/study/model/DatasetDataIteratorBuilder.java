@@ -35,6 +35,7 @@ import org.labkey.api.dataiterator.ScrollableDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.BatchValidationException;
@@ -51,6 +52,7 @@ import org.labkey.study.query.DatasetTableImpl;
 import org.labkey.study.query.DatasetUpdateService;
 import org.labkey.study.writer.DefaultStudyDesignWriter;
 
+import java.io.File;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -63,10 +65,13 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 
+import static org.labkey.api.dataiterator.SimpleTranslator.getContainerFileRootPath;
+
 public class DatasetDataIteratorBuilder implements DataIteratorBuilder
 {
     final private DatasetDefinition _datasetDefinition;
     final User user;
+    final Container container;
     boolean needsQC;
     DataState defaultQC;
     List<String> lsids = null;
@@ -79,19 +84,21 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
 
     ValidationException setupError = null;
 
-    public DatasetDataIteratorBuilder(DatasetDefinition datasetDefinition, User user, boolean qc, DataState defaultQC, StudyImportContext studyImportContext)
+    public DatasetDataIteratorBuilder(DatasetDefinition datasetDefinition, User user, Container container, boolean qc, DataState defaultQC, StudyImportContext studyImportContext)
     {
         _datasetDefinition = datasetDefinition;
         this.user = user;
+        this.container = container;
         this.needsQC = qc;
         this.defaultQC = defaultQC;
         this._tableIdMapMap = null == studyImportContext ? Map.of() : studyImportContext.getTableIdMapMap();
     }
 
-    public DatasetDataIteratorBuilder(DatasetDefinition datasetDefinition, User user)
+    public DatasetDataIteratorBuilder(DatasetDefinition datasetDefinition, User user, Container container)
     {
         _datasetDefinition = datasetDefinition;
         this.user = user;
+        this.container = container;
 
         TableInfo table = datasetDefinition.getTableInfo(user);
         needsQC = table.getColumn(DatasetTableImpl.QCSTATE_ID_COLNAME) != null;
@@ -167,6 +174,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
         if (matchError.hasErrors())
             setupError(matchError.getMessage());
 
+        String fileRootPath = getContainerFileRootPath(container);
         // select all columns except those we explicitly calculate (e.g. lsid)
         for (int in = 1; in <= input.getColumnCount(); in++)
         {
@@ -236,7 +244,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
                 }
                 else if (match.getPropertyType() == PropertyType.FILE_LINK)
                 {
-                    out = it.addFileColumn(match.getName(), in);
+                    out = it.addFileColumn(match.getName(), in, fileRootPath);
                 }
                 else
                 {
@@ -583,10 +591,10 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
             return addColumn(qcCol, qcCall);
         }
 
-        int addFileColumn(String name, int index)
+        int addFileColumn(String name, int index, String fileRootPath)
         {
             var col = new BaseColumnInfo(name, JdbcType.VARCHAR);
-            return addColumn(col, new FileColumn(user, _datasetDefinition.getContainer(), name, index, "datasetdata"));
+            return addColumn(col, new FileColumn(user, _datasetDefinition.getContainer(), name, index, "datasetdata", fileRootPath));
         }
 
     //        int addSequenceNumFromDateColumn()

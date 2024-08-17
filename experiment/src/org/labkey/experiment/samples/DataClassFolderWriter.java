@@ -101,7 +101,7 @@ public abstract class DataClassFolderWriter extends AbstractExpFolderWriter
         // create the XAR which contains the sample type and data class definitions
         if (exportTypes)
         {
-            XarExporter exporter = new XarExporter(_relativizedLSIDs, typesSelection, ctx.getUser(), XAR_TYPES_XML_NAME, ctx.getLogger());
+            XarExporter exporter = new XarExporter(_relativizedLSIDs, typesSelection, ctx.getUser(), XAR_TYPES_XML_NAME, ctx.getLogger(), ctx.getContainer());
             try (OutputStream fOut = xarDir.getOutputStream(XAR_TYPES_NAME))
             {
                 exporter.writeAsArchive(fOut);
@@ -111,7 +111,7 @@ public abstract class DataClassFolderWriter extends AbstractExpFolderWriter
         // create the XAR which contains any derivation protocol runs
         if (exportRuns)
         {
-            XarExporter exporter = new XarExporter(_relativizedLSIDs, runsSelection, ctx.getUser(), XAR_RUNS_XML_NAME, ctx.getLogger());
+            XarExporter exporter = new XarExporter(_relativizedLSIDs, runsSelection, ctx.getUser(), XAR_RUNS_XML_NAME, ctx.getLogger(), ctx.getContainer());
             try (OutputStream fOut = xarDir.getOutputStream(XAR_RUNS_NAME))
             {
                 exporter.writeAsArchive(fOut);

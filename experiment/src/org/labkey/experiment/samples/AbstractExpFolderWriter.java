@@ -3,6 +3,7 @@ package org.labkey.experiment.samples;
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.LoggerGetter;
+import org.labkey.api.assay.TsvDataHandler;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -198,9 +199,13 @@ public abstract class AbstractExpFolderWriter extends BaseFolderWriter implement
             {
                 wrappedCol.setDisplayColumnFactory(colInfo -> new ExportLsidDataColumn(colInfo, _relativizedLSIDs));
             }
+            else if (PropertyType.FILE_LINK == col.getPropertyType())
+            {
+                wrappedCol.setDisplayColumnFactory(colInfo -> new TsvDataHandler.ExportFileLinkColumn(colInfo, ctx.getFileRootPath()));
+            }
             else
             {
-                wrappedCol.setDisplayColumnFactory(ExportDataColumn::new);
+                wrappedCol.setDisplayColumnFactory(TsvDataHandler.ExportDataColumn::new);
             }
             columns = new ArrayList<>();
             columns.add(wrappedCol);
@@ -347,7 +352,7 @@ public abstract class AbstractExpFolderWriter extends BaseFolderWriter implement
         abstract Collection<String> getAliases(String lsid);
     }
 
-    protected static class NameFromLsidDataColumn extends ExportDataColumn
+    protected static class NameFromLsidDataColumn extends TsvDataHandler.ExportDataColumn
     {
         protected NameFromLsidDataColumn(ColumnInfo col) { super(col); }
 
@@ -366,22 +371,8 @@ public abstract class AbstractExpFolderWriter extends BaseFolderWriter implement
         }
     }
 
-    protected static class ExportDataColumn extends DataColumn
-    {
-        protected ExportDataColumn(ColumnInfo col)
-        {
-            super(col);
-        }
-
-        @Override
-        public Object getDisplayValue(RenderContext ctx)
-        {
-            return getValue(ctx);
-        }
-    }
-
     // similar to XarExporter.relativizeLSIDPropertyValue but for columns
-    private static class ExportLsidDataColumn extends ExportDataColumn
+    private static class ExportLsidDataColumn extends TsvDataHandler.ExportDataColumn
     {
         private final LSIDRelativizer.RelativizedLSIDs relativizedLSIDs;
 

@@ -23,6 +23,7 @@ import org.json.JSONObject;
 import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.column.ColumnInfoTransformer;
 import org.labkey.api.data.*;
 import org.labkey.api.data.ColumnHeaderType;
@@ -329,7 +330,8 @@ public interface QueryService
     {
         USER(JdbcType.OTHER),
         CONTAINER(JdbcType.OTHER),
-        ACTION(JdbcType.OTHER);
+        ACTION(JdbcType.OTHER),
+        FILEROOTPATH(JdbcType.VARCHAR);
 
         public final JdbcType type;
 
@@ -340,6 +342,7 @@ public interface QueryService
     }
 
     void setEnvironment(Environment e, Object value);
+    void setEnvironment(PipelineJob job);
     void clearEnvironment();
     Object cloneEnvironment();
     void copyEnvironment(Object o);

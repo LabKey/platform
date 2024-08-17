@@ -18,10 +18,13 @@ package org.labkey.api.assay;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TSVGridWriter;
@@ -29,6 +32,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -48,6 +52,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+
+import static org.labkey.api.exp.api.ColumnExporter.FILE_ROOT_SUBSTITUTION;
 
 public class TsvDataHandler extends AbstractAssayTsvDataHandler implements TransformDataHandler
 {
@@ -124,7 +130,7 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
     }
 
     @Override
-    public void exportFile(ExpData data, Path dataFile, User user, OutputStream out) throws ExperimentException
+    public void exportFile(ExpData data, Path dataFile, String rootFilePath, User user, OutputStream out) throws ExperimentException
     {
         if (data.isFinalRunOutput())
         {
@@ -157,7 +163,10 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
                             {
                                 if (!ignored.contains(column.getFieldKey()))
                                 {
-                                    displayColumns.add(column.getRenderer());
+                                    if (PropertyType.FILE_LINK == column.getPropertyType() && !StringUtils.isEmpty(rootFilePath))
+                                        displayColumns.add(new TsvDataHandler.ExportFileLinkColumn(column, rootFilePath));
+                                    else
+                                        displayColumns.add(column.getRenderer());
                                 }
                             }
 
@@ -184,4 +193,47 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
             }
         }
     }
+
+    public static class ExportDataColumn extends DataColumn
+    {
+        public ExportDataColumn(ColumnInfo col)
+        {
+            super(col);
+        }
+
+        @Override
+        public Object getDisplayValue(RenderContext ctx)
+        {
+            return getValue(ctx);
+        }
+    }
+
+    public static class ExportFileLinkColumn extends ExportDataColumn
+    {
+        private final String _fileRoot;
+
+        public ExportFileLinkColumn(ColumnInfo col, String fileRoot)
+        {
+            super(col);
+            _fileRoot = fileRoot;
+        }
+
+        @Override
+        public Object getValue(RenderContext ctx)
+        {
+            Object o = super.getValue(ctx);
+            if (StringUtils.isEmpty(_fileRoot))
+                return o;
+            if (o instanceof String filePath)
+            {
+                if (!filePath.startsWith(_fileRoot))
+                    return filePath;
+
+                return filePath.replace(_fileRoot, FILE_ROOT_SUBSTITUTION);
+            }
+
+            return o;
+        }
+    }
+
 }

@@ -48,11 +48,11 @@ public abstract class AbstractExperimentDataHandler implements ExperimentDataHan
     @Override
     public void exportFile(ExpData data, File dataFile, User user, OutputStream out) throws ExperimentException
     {
-        exportFile(data, dataFile.toPath(), user, out);
+        exportFile(data, dataFile.toPath(), null, user, out);
     }
 
     @Override
-    public void exportFile(ExpData data, Path dataFile, User user, OutputStream out) throws ExperimentException
+    public void exportFile(ExpData data, Path dataFile, String rootFilePath, User user, OutputStream out) throws ExperimentException
     {
         if (dataFile != null)
         {

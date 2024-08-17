@@ -311,7 +311,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             snapshot = StudyManager.getInstance().getStudySnapshot(optionsId);
 
         PHI snapshotPhiLevel = (snapshot != null) ? snapshot.getSnapshotSettings().getPhiLevel() : PHI.NotPHI;
-        Collection<ColumnInfo> columns = DatasetDataWriter.getColumnsToExport(tinfo, def, false, snapshotPhiLevel);
+        Collection<ColumnInfo> columns = DatasetDataWriter.getColumnsToExport(tinfo, def, false, snapshotPhiLevel, null);
 
         if (snapshot != null && snapshot.getSnapshotSettings().isShiftDates())
         {
