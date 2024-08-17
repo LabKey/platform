@@ -1073,10 +1073,6 @@ public class AdminController extends SpringActionController
             modules.sort(Comparator.comparing(Module::getName, String.CASE_INSENSITIVE_ORDER));
 
             addCreditsViews(views, modules, "jars.txt", "JAR", null);
-
-            Module core = ModuleLoader.getInstance().getCoreModule();
-            addCreditsViews(views, Collections.singletonList(core), "tomcat_jars.txt", "Tomcat JAR", "JAR Files Installed in the <tomcat>/lib Directory"      /* No staging dir in production mode so skip error checking */);
-
             addCreditsViews(views, modules, "scripts.txt", "Script, Icon and Font");
             addCreditsViews(views, modules, "source.txt", "Java Source Code");
             addCreditsViews(views, modules, "executables.txt", "Executable");
