@@ -1946,19 +1946,24 @@ public class NameGenerator
                     ExpLineageOptions options = ancestorOptions.options();
                     String fieldName = ancestorOptions.lookupColumn();
                     Identifiable seed = LsidManager.get().getObject(parentLsid);
-                    ExpLineage lineage = ExperimentService.get().getLineage(_container, _user, seed, options);
 
                     if (ancestorOptions.ancestorSearchType() != null)
                     {
-                        List<ExpRunItem> candidateAncestors = lineage.findAncestorByType(parentObject, ancestorOptions.ancestorSearchType(), _user);
-                        candidateAncestors.sort(Comparator.comparing(Identifiable::getName));
-                        for (ExpRunItem candidate : candidateAncestors)
+                        if (_ancestorSearchCache.containsKey(ancestorKey))
+                            ancestorLookupValues = _ancestorCache.get(ancestorKey);
+                        else
                         {
-                            Object lookupValue = getParentFieldValue(candidate, fieldName);
-                            if (lookupValue != null)
-                                ancestorLookupValues.add(lookupValue);
+                            ExpLineage lineage = ExperimentService.get().getLineage(_container, _user, seed, options);
+                            List<ExpRunItem> candidateAncestors = lineage.findAncestorByType(parentObject, ancestorOptions.ancestorSearchType(), _user);
+                            candidateAncestors.sort(Comparator.comparing(Identifiable::getName));
+                            for (ExpRunItem candidate : candidateAncestors)
+                            {
+                                Object lookupValue = getParentFieldValue(candidate, fieldName);
+                                if (lookupValue != null)
+                                    ancestorLookupValues.add(lookupValue);
+                            }
+                            _ancestorSearchCache.put(ancestorKey, ancestorLookupValues);
                         }
-                        _ancestorSearchCache.put(ancestorFieldKey + "-" + parentObject.getObjectId(), ancestorLookupValues);
                     }
                     else
                     {
@@ -1966,8 +1971,8 @@ public class NameGenerator
                             ancestorLookupValues = _ancestorCache.get(ancestorKey);
                         else
                         {
+                            ExpLineage lineage = ExperimentService.get().getLineage(_container, _user, seed, options);
                             List<Pair<ExpLineageOptions.LineageExpType, String>> ancestorPaths = ancestorOptions.ancestorPaths();
-
                             Set<Identifiable> ancestorObjects = lineage.findAncestorObjects(parentObject, ancestorPaths, _user);
 
                             for (Identifiable ancestorObject : ancestorObjects)
@@ -1980,7 +1985,7 @@ public class NameGenerator
                                 }
                             }
 
-                            _ancestorCache.put(ancestorFieldKey + "-" + parentObject.getObjectId(), ancestorLookupValues);
+                            _ancestorCache.put(ancestorKey, ancestorLookupValues);
                         }
                     }
 
