@@ -54,6 +54,8 @@ public interface InventoryService
         StorageLocation,
         StorageRow,
         StorageStatus,
+        StorageUnit,
+        StorageUnitLabel,
         Stored("Entered Storage");
 
         private final String label;
