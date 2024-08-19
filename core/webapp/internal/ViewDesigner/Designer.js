@@ -471,6 +471,12 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
 
         this.fieldsTree.on('checkchange', this.onCheckChange, this);
         this.getInnerTabPanel().on('tabchange', this.onTabChange, this);
+
+        this.eventMap = {};
+        this.fieldsTree.on('itemclick', function(cmp, rec, item, idx, evt){
+            // we need to track item clicks so we have the event object which isn't available on the checkchange event
+            this.eventMap[rec.internalId] = evt;
+        }, this);
     },
 
     onBeforeCache : function(response) {
@@ -1062,8 +1068,52 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
             this.addRecord(node.get('fieldKey'));
         }
         else {
-            //console.log('remove:', '\'' + node.get('fieldKey') + '\'');
             this.removeRecord(node.get('fieldKey'));
+        }
+
+        var event = this.eventMap[node.internalId] || {};
+        if (event)
+            delete this.eventMap[node.internalId];
+        // issue 48429 : select all child nodes (and expand if necessary)
+        if (event.shiftKey)
+            this.toggleChildNodeSelection(node, checked);
+    },
+
+    toggleChildNodeSelection(node, checked) {
+
+        // callback function to select/unselect nodes
+        const updateNode = function (node, check, scope) {
+            if (node.data.hidden || node.data.disabled)
+                return;
+
+            // nothing to do
+            if (node.get('checked') === check)
+                return;
+
+            node.set('checked', check);
+            if (check)
+                scope.addRecord(node.get('fieldKey'));
+            else
+                scope.removeRecord(node.get('fieldKey'));
+        };
+
+        if (node && !node.isLeaf()) {
+            if (checked) {
+                if (!node.isExpanded()) {
+                    node.expand(false, function (children) {
+                        Ext4.each(children, function (child) {updateNode(child, checked, this);}, this);
+                    }, this);
+                }
+                else {
+                    Ext4.each(node.childNodes, function (child) {updateNode(child, checked, this);}, this);
+                }
+            }
+            else {
+                // unselect all child nodes if the parent node is expanded
+                if (node.isExpanded() && node.childNodes) {
+                    Ext4.each(node.childNodes, function(child){updateNode(child, checked, this);}, this);
+                }
+            }
         }
     },
 
