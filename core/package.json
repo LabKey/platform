@@ -54,7 +54,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "4.9.0-fb-calcFieldsValidation.0",
+    "@labkey/components": "4.10.0",
     "@labkey/themes": "1.3.3"
   },
   "devDependencies": {
