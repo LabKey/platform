@@ -29,21 +29,21 @@ import java.util.Map;
 
 /**
  * Factory methods that create CachedResultSets, plus a couple helpers
- * User: adam
- * Date: 11/22/13
  */
 public class CachedResultSets
 {
     public static CachedResultSet create(ResultSet rs, boolean cacheMetaData, int maxRows) throws SQLException
     {
-        return create(rs, cacheMetaData, maxRows, null, QueryLogging.emptyQueryLogging());      // TODO: Should be only for MetaData??
+        return create(rs, cacheMetaData, maxRows, null, QueryLogging.emptyQueryLogging());
     }
-
 
     public static CachedResultSet create(ResultSet rsIn, boolean cacheMetaData, int maxRows, @Nullable StackTraceElement[] stackTrace, QueryLogging queryLogging) throws SQLException
     {
         try (ResultSet rs = new LoggingResultSetWrapper(rsIn, queryLogging))         // TODO: avoid is we're passed a read-only and empty one??
         {
+            // Snowflake auto-closes metadata after reading the last row, so cache that metadata first
+            ResultSetMetaData md = cacheMetaData ? new CachedResultSetMetaData(rs.getMetaData()) : rs.getMetaData();
+
             ArrayList<RowMap<Object>> list = new ArrayList<>();
 
             if (maxRows == Table.ALL_ROWS)
@@ -58,16 +58,14 @@ public class CachedResultSets
             // If we have another row, then we're not complete
             boolean isComplete = !rs.next();
 
-            return new CachedResultSet(rs.getMetaData(), cacheMetaData, list, isComplete, stackTrace);
+            return new CachedResultSet(md, list, isComplete, stackTrace);
         }
     }
 
-
-    public static CachedResultSet create(ResultSetMetaData md, boolean cacheMetaData, List<Map<String, Object>> maps, boolean isComplete)
+    public static CachedResultSet create(ResultSetMetaData md, List<Map<String, Object>> maps, boolean isComplete)
     {
-        return new CachedResultSet(md, cacheMetaData, convertToRowMaps(md, maps), isComplete, null);
+        return new CachedResultSet(md, convertToRowMaps(md, maps), isComplete, null);
     }
-
 
     public static CachedResultSet create(List<Map<String, Object>> maps)
     {
@@ -75,28 +73,26 @@ public class CachedResultSets
     }
 
     /**
-     * Create CachedResultSet from a list of maps and collection of column names. For the most flexibility, the maps may need
-     * to be case insensitive. How do you tell? If the maps have data and the keys match the columnNames, but the ResultSet rowMap
-     * values are all null.
-     * @param maps List of row data, possibly case insensitive maps
+     * Create CachedResultSet from a list of maps and collection of column names. For the most flexibility, the maps
+     * may need to be case-insensitive. How do you tell? If the maps have data and the keys match the columnNames, but
+     * the ResultSet rowMap values are all null.
+     * @param maps List of row data, possibly case-insensitive maps
      * @param columnNames Collection of column names
      *
-     * TODO: A case insensitive overload of this method, but there may be performance impact for very large result sets if the implementation
-     *                    were simply to wrap each incoming map with CaseInsensitiveHashMap. For now, onus is on the caller to provide
-     *                    case insensitive maps when necessary.
+     * TODO: A case insensitive overload of this method, but there may be performance impact for very large result sets
+     * if the implementation were simply to wrap each incoming map with CaseInsensitiveHashMap. For now, onus is on the
+     * caller to provide case insensitive maps when necessary.
      */
     public static CachedResultSet create(List<Map<String, Object>> maps, Collection<String> columnNames)
     {
         ResultSetMetaData md = createMetaData(columnNames);
 
-        CachedResultSet crs = new CachedResultSet(md, false, convertToRowMaps(md, maps), true, null);
-
         // Avoid error message from CachedResultSet.finalize() about unclosed CachedResultSet.
-        crs.close();
-
-        return crs;
+        try (CachedResultSet crs = new CachedResultSet(md, convertToRowMaps(md, maps), true, null))
+        {
+            return crs;
+        }
     }
-
 
     private static ResultSetMetaData createMetaData(Collection<String> columnNames)
     {
@@ -111,7 +107,6 @@ public class CachedResultSets
 
         return md;
     }
-
 
     private static ArrayList<RowMap<Object>> convertToRowMaps(ResultSetMetaData md, List<Map<String, Object>> maps)
     {

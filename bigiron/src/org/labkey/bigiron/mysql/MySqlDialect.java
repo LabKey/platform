@@ -41,6 +41,7 @@ import org.labkey.api.data.dialect.TableResolver;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
@@ -138,12 +139,6 @@ public class MySqlDialect extends SimpleSqlDialect
                 public String getCatalogName()
                 {
                     return super.getSchemaName();
-                }
-
-                @Override
-                public boolean supportsSchemas()
-                {
-                    return false;
                 }
             };
         }
@@ -262,7 +257,6 @@ public class MySqlDialect extends SimpleSqlDialect
         return "";
     }
 
-    // Haven't tested this
     @Override
     public boolean allowSortOnSubqueryWithoutLimit()
     {
@@ -315,5 +309,35 @@ public class MySqlDialect extends SimpleSqlDialect
     public @Nullable String getApplicationNameParameter()
     {
         return "ApplicationName";
+    }
+
+    @Override
+    public ResultSet getSchemas(DatabaseMetaData dbmd, String databaseName) throws SQLException
+    {
+        return dbmd.getCatalogs();
+    }
+
+    @Override
+    public String getStdDevFunction()
+    {
+        return "stddev";
+    }
+
+    @Override
+    public String getStdDevPopFunction()
+    {
+        return "stddev_pop";
+    }
+
+    @Override
+    public String getVarianceFunction()
+    {
+        return "variance";
+    }
+
+    @Override
+    public String getVarPopFunction()
+    {
+        return "var_pop";
     }
 }

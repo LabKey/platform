@@ -1957,14 +1957,17 @@ boxPlot.render();
                     if (config.properties.valueConversion === LABKEY.vis.PlotProperties.ValueConversion.PercentDeviation) {
                         row.upperBound = convertToPercentDeviation(row.upperBound, row[meanProp]);
                         row.lowerBound = convertToPercentDeviation(row.lowerBound, row[meanProp]);
-                        if (config.legendData && config.legendData.length > 0) {
-                            for (let i = 0; i < config.legendData.length; i++) {
-                                let legendRow = config.legendData[i];
-                                if (legendRow.text.indexOf("% of Mean") === -1) {
-                                    if (legendRow.text.indexOf("Upper") > -1) {
-                                        legendRow.text += " (" + row.upperBound + "% of Mean)";
-                                    } else if (legendRow.text.indexOf("Lower") > -1) {
-                                        legendRow.text += " (" + row.lowerBound + "% of Mean)";
+                        let isAbsolute = config.properties.boundType === LABKEY.vis.PlotProperties.BoundType.Absolute;
+                        if (isAbsolute && !config.properties.combined) {
+                            if (config.legendData && config.legendData.length > 0) {
+                                for (let i = 0; i < config.legendData.length; i++) {
+                                    let legendRow = config.legendData[i];
+                                    if (legendRow.text.indexOf("% of Mean") === -1) {
+                                        if (legendRow.text.indexOf("Upper") > -1) {
+                                            legendRow.text += " (" + row.upperBound + "% of Mean)";
+                                        } else if (legendRow.text.indexOf("Lower") > -1) {
+                                            legendRow.text += " (" + row.lowerBound + "% of Mean)";
+                                        }
                                     }
                                 }
                             }
