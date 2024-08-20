@@ -659,7 +659,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                             {
                                 xtype: 'box',
                                 cls: 'labkey-customview-title',
-                                html: 'Available Fields'
+                                html: 'Available Fields <i class="fa fa-info-circle" data-qtip="Hold the SHIFT key when clicking to select all child fields for a lookup"></i>'
                             },
                             this.fieldsTree
                         ]
@@ -1109,8 +1109,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                 }
             }
             else {
-                // unselect all child nodes if the parent node is expanded
-                if (node.isExpanded() && node.childNodes) {
+                if (node.childNodes) {
                     Ext4.each(node.childNodes, function(child){updateNode(child, checked, this);}, this);
                 }
             }
