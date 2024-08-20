@@ -28,6 +28,7 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TSVGridWriter;
+import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ExperimentException;
@@ -211,11 +212,20 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
     public static class ExportFileLinkColumn extends ExportDataColumn
     {
         private final String _fileRoot;
+        private final TSVWriter _tsvWriter;
 
         public ExportFileLinkColumn(ColumnInfo col, String fileRoot)
         {
             super(col);
             _fileRoot = fileRoot;
+            _tsvWriter = new TSVWriter() // Used to quote values with newline/tabs/quotes
+            {
+                @Override
+                protected int write()
+                {
+                    throw new UnsupportedOperationException();
+                }
+            };
         }
 
         @Override
@@ -229,7 +239,10 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
                 if (!filePath.startsWith(_fileRoot))
                     return filePath;
 
-                return filePath.replace(_fileRoot, FILE_ROOT_SUBSTITUTION);
+                String formatted =  filePath.replace(_fileRoot, FILE_ROOT_SUBSTITUTION);
+                if (formatted.contains("\\"))
+                    return _tsvWriter.quoteValue(formatted);
+                return formatted;
             }
 
             return o;
