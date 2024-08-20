@@ -1023,7 +1023,9 @@ public class QueryManager
                 "namedViews", new SqlSelector(CoreSchema.getInstance().getSchema(),
                         "SELECT COUNT(*) FROM query.customview C WHERE " + schemaClause + " AND C.flags < 2 AND C.name IS NOT NULL").getObject(Long.class), // possibly inheritable, no hidden, not snapshot
                 "shared", new SqlSelector(CoreSchema.getInstance().getSchema(),
-                        "SELECT COUNT(*) FROM query.customview C WHERE " + schemaClause + " AND C.customviewowner IS NULL").getObject(Long.class)
+                        "SELECT COUNT(*) FROM query.customview C WHERE " + schemaClause + " AND C.customviewowner IS NULL").getObject(Long.class),
+                "identifyingFieldsViews", new SqlSelector(CoreSchema.getInstance().getSchema(),
+                        "SELECT COUNT(*) FROM query.customview C WHERE " + schemaClause + " AND C.name = '~~identifyingfields~~'").getObject(Long.class)
         );
     }
 

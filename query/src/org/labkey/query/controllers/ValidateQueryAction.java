@@ -16,10 +16,12 @@
 
 package org.labkey.query.controllers;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.action.Action;
 import org.labkey.api.action.ActionType;
 import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiResponseWriter;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SpringActionController;
@@ -33,6 +35,7 @@ import org.labkey.query.persist.QueryManager;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -48,6 +51,14 @@ public class ValidateQueryAction extends ReadOnlyApiAction<ValidateQueryAction.V
 {
     UserSchema schema;
     TableInfo table;
+
+    protected ApiResponseWriter createResponseWriter() throws IOException
+    {
+        ApiResponseWriter result = super.createResponseWriter();
+        // Return 200 instead of 400 for status code when there's a problem with a query
+        result.setErrorResponseStatus(HttpServletResponse.SC_OK);
+        return result;
+    }
 
     @Override
     public void validateForm(ValidateQueryForm form, Errors errors)
@@ -72,7 +83,6 @@ public class ValidateQueryAction extends ReadOnlyApiAction<ValidateQueryAction.V
         if (null == table)
         {
             errors.reject(SpringActionController.ERROR_MSG, "Query not found: " + form.getQueryName());
-            return;
         }
     }
 
