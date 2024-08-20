@@ -404,7 +404,7 @@ public class PageConfig
     }
 
 
-    String[] ignoreParameters = new String[] {"_dc", "_template", "_print", "_debug", "_docid", DataRegion.LAST_FILTER_PARAM};
+    String[] ignoreParameters = new String[] {"_dc", "_template", "_print", "_debug", "_docid", "_test", DataRegion.LAST_FILTER_PARAM};
 
     @Nullable
     private String getCanonicalLink(URLHelper current)
