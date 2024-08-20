@@ -16,6 +16,8 @@
 
 package org.labkey.api.util;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import org.apache.commons.collections4.map.AbstractReferenceMap.ReferenceStrength;
 import org.apache.commons.collections4.map.ReferenceIdentityMap;
 import org.jetbrains.annotations.NotNull;
@@ -30,8 +32,6 @@ import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -42,7 +42,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.stream.Collectors;
 
 /**
  * Tracks objects that may be expensive, commonly allocated so that we know that they're not being held and creating
@@ -65,9 +64,7 @@ public class MemTracker
 
     public synchronized List<RequestInfo> getNewRequests(long requestId)
     {
-        List<RequestInfo> result = new ArrayList<>(_recentRequests.size());
-        result.addAll(_recentRequests.stream().filter(recentRequest -> recentRequest.getId() > requestId).collect(Collectors.toList()));
-        return Collections.unmodifiableList(result);
+        return _recentRequests.stream().filter(recentRequest -> recentRequest.getId() > requestId).toList();
     }
 
     static class AllocationInfo
@@ -186,7 +183,8 @@ public class MemTracker
     public RequestInfo startProfiler(HttpServletRequest request, @Nullable String name)
     {
         String url = request.getRequestURI() + (request.getQueryString() == null ? "" : "?" + request.getQueryString());
-        return startProfiler(url, request.getUserPrincipal(), name);
+        HttpSession session = request.getSession(false);
+        return startProfiler(url, request.getUserPrincipal(), name, session != null ? session.getId() : null);
     }
 
     /**
@@ -197,16 +195,16 @@ public class MemTracker
     @NotNull
     public RequestInfo startProfiler(@Nullable String name)
     {
-        return startProfiler(null, null, name);
+        return startProfiler(null, null, name, null);
     }
 
     /**
      * Create new RequestInfo for the current thread and request.
      */
     @NotNull
-    public synchronized RequestInfo startProfiler(String url, Principal user, @Nullable String name)
+    public synchronized RequestInfo startProfiler(String url, Principal user, @Nullable String name, @Nullable String sessionId)
     {
-        RequestInfo req = new RequestInfo(url, user, name);
+        RequestInfo req = new RequestInfo(url, user, name, sessionId);
         if ((user instanceof User) && ((User) user).isSearchUser())
             req.setIgnored(true);
         _requestTracker.set(req);
