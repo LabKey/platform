@@ -3117,7 +3117,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         for (WellData wellData : wellDataList)
         {
-            boolean isSampleWell = WellGroup.Type.SAMPLE.equals(wellData.getType());
+            boolean isSampleWell = WellGroup.Type.SAMPLE.equals(wellData.getType()) || WellGroup.Type.REPLICATE.equals(wellData.getType());
             String group = wellData.getWellGroup();
 
             if (counter >= sampleIds.size())
@@ -3198,19 +3198,17 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
     private List<FieldKey> getPlateExportFieldKeys(Plate plate, boolean isMapView)
     {
-        List<FieldKey> fieldKeys = new ArrayList<>(List.of(
-                FieldKey.fromParts("SampleId", "Name")
-        ));
+        List<FieldKey> fieldKeys = new ArrayList<>(List.of(FieldKey.fromParts("SampleId", "Name")));
 
         if (isMapView)
         {
-            fieldKeys.add(FieldKey.fromParts("Row"));
-            fieldKeys.add(FieldKey.fromParts("Col"));
+            fieldKeys.add(WellTable.Column.Row.fieldKey());
+            fieldKeys.add(WellTable.Column.Col.fieldKey());
         }
         else
         {
-            // For non-map export view we always want the position FieldKey first
-            fieldKeys.add(0, FieldKey.fromParts("Position"));
+            // For non-map export view we always want "position" first
+            fieldKeys.add(0, WellTable.Column.Position.fieldKey());
         }
         for (PlateCustomField customField : plate.getCustomFields())
         {
@@ -3231,7 +3229,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         settings.setContainerFilterName(cf.getType().name());
         settings.setSchemaName(userSchema.getSchemaName());
         settings.setQueryName(WellTable.NAME);
-        settings.getBaseFilter().addCondition(FieldKey.fromParts("PlateId"), plate.getRowId());
+        settings.getBaseFilter().addCondition(WellTable.Column.PlateId.fieldKey(), plate.getRowId());
         return new QueryView(userSchema, settings, null);
     }
 
