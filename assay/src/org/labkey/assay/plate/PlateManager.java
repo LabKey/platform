@@ -3453,9 +3453,10 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         }
     }
 
-    public void validateWellGroups(Container container, Collection<Integer> plateRowIds) throws ValidationException
+    public void validateWellGroups(Container container, User user, Collection<Integer> plateRowIds) throws ValidationException
     {
         clearCache(plateRowIds);
+        Set<Integer> plateSetsWithReplicates = new HashSet<>();
 
         for (var plateRowId : plateRowIds)
         {
@@ -3467,6 +3468,14 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             {
                 switch (wellGroup.getType())
                 {
+                    case REPLICATE -> {
+                        if (wellGroup.isZone())
+                            throw new ValidationException(String.format("Replicates must specify a \"%s\".", WellTable.Column.WellGroup.name()));
+
+                        var plateSet = plate.getPlateSet();
+                        if (plateSet != null)
+                            plateSetsWithReplicates.add(plateSet.getRowId());
+                    }
                     case CONTROL, NEGATIVE_CONTROL, POSITIVE_CONTROL, SAMPLE -> validateWellGroup(plate, wellGroup);
                     default -> throw new ValidationException(
                         String.format(
@@ -3479,6 +3488,12 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             }
 
             validateWells(plate);
+        }
+
+        if (!plateSetsWithReplicates.isEmpty())
+        {
+            for (var plateSetId : plateSetsWithReplicates.stream().sorted().toList())
+                validatePlateSetReplicates(container, user, plateSetId);
         }
     }
 
@@ -3510,6 +3525,92 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 ));
             }
         }
+    }
+
+    private long getReplicateGroupCount(@NotNull UserSchema plateSchema, @NotNull Integer plateSetRowId)
+    {
+        var sql = new SQLFragment("SELECT DISTINCT Type, WellGroup FROM plate.Well WHERE PlateId.PlateSet.RowId = ? AND Type = ?")
+                .add(plateSetRowId)
+                .add(WellGroup.Type.REPLICATE.name());
+
+        return QueryService.get().getSelectBuilder(plateSchema, sql.toDebugString()).buildSqlSelector(null).getRowCount();
+    }
+
+    private SQLFragment getReplicateGroupSQL(@NotNull UserSchema plateSchema, @NotNull Integer plateSetRowId)
+    {
+        var wellTable = plateSchema.getTableOrThrow(WellTable.NAME);
+        var columnNames = new CaseInsensitiveHashSet(wellTable.getColumnNameSet());
+        var excludedColumns = CaseInsensitiveHashSet.of(
+            WellTable.Column.Col.name(),
+            WellTable.Column.Container.name(),
+            WellTable.Column.Lsid.name(),
+            WellTable.Column.PlateId.name(),
+            WellTable.Column.Position.name(),
+            WellTable.Column.Row.name(),
+            WellTable.Column.RowId.name()
+        );
+
+        columnNames.removeAll(excludedColumns);
+
+        var sql = new SQLFragment("SELECT\n");
+        var separator = "";
+        for (String columnName : columnNames)
+        {
+            sql.append(separator).append(columnName).append("\n");
+            separator = ", ";
+        }
+
+        sql.append("FROM plate.Well\n");
+        sql.append("WHERE PlateId.PlateSet.RowId = ? AND Type = ?\n")
+                .add(plateSetRowId)
+                .add(WellGroup.Type.REPLICATE.name());
+        sql.append("GROUP BY\n");
+
+        separator = "";
+        for (String columnName : columnNames)
+        {
+            sql.append(separator).append(columnName).append("\n");
+            separator = ", ";
+        }
+
+        return sql;
+    }
+
+    private void validatePlateSetReplicates(Container container, User user, @NotNull Integer plateSetRowId) throws ValidationException
+    {
+        var plateSchema = QueryService.get().getUserSchema(user, container, PlateSchema.SCHEMA_NAME);
+        var replicateWellGroupCount = getReplicateGroupCount(plateSchema, plateSetRowId);
+
+        if (replicateWellGroupCount == 0)
+            return;
+
+        var sql = getReplicateGroupSQL(plateSchema, plateSetRowId);
+        try (var results = QueryService.get().getSelectBuilder(plateSchema, sql.toDebugString()).select())
+        {
+            if (replicateWellGroupCount == results.getSize())
+                return;
+
+            // Now we know that there are mismatched replicate rows within a group. Find the first mismatched group.
+            Set<String> groups = new HashSet<>();
+            while (results.next())
+            {
+                String groupName = StringUtils.trimToNull(results.getString(WellTable.Column.WellGroup.name()));
+                if (groupName == null)
+                    continue;
+
+                if (groups.contains(groupName))
+                    throw new ValidationException(String.format("Replicate group \"%s\" contains mismatched well data. Ensure all data aligns for the replicates declared in these wells.", groupName));
+
+                groups.add(groupName);
+            }
+        }
+        catch (SQLException e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
+
+        // Fallback to more generic message if we did not resolve a specific mismatch
+        throw new ValidationException(String.format("Plate set (%d) contains mismatched replicate well data.", plateSetRowId));
     }
 
     private void validateWellGroup(Plate plate, WellGroup wellGroup) throws ValidationException
@@ -3747,7 +3848,10 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 if (well == null)
                     continue;
 
-                List<WellData> sourceWellDatas = sourceWellDataMap.computeIfAbsent(well.sourcePlateId(), (plateRowId) -> getWellData(container, user, plateRowId, true, true));
+                List<WellData> sourceWellDatas = sourceWellDataMap.computeIfAbsent(
+                    well.sourcePlateId(),
+                    (plateRowId) -> getWellData(container, user, plateRowId, true, true)
+                );
 
                 for (WellData wellData : sourceWellDatas)
                 {

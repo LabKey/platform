@@ -70,6 +70,8 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
 
     public enum Column
     {
+        Amount,
+        Concentration,
         Col,
         Container,
         Dilution,
@@ -82,8 +84,6 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         Type,
         Value,
         WellGroup,
-        Concentration,
-        Amount
     }
 
     private static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
