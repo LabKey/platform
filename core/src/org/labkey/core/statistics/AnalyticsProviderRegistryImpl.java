@@ -60,9 +60,8 @@ public class AnalyticsProviderRegistryImpl implements AnalyticsProviderRegistry
         List<ColumnAnalyticsProvider> providers = new ArrayList<>();
         for (AnalyticsProvider registeredProvider : REGISTERED_PROVIDERS)
         {
-            if (registeredProvider instanceof ColumnAnalyticsProvider)
+            if (registeredProvider instanceof ColumnAnalyticsProvider colProvider)
             {
-                ColumnAnalyticsProvider colProvider = (ColumnAnalyticsProvider) registeredProvider;
                 if (columnInfo == null || colProvider.isApplicable(columnInfo))
                 {
                     providers.add(colProvider);
@@ -84,9 +83,8 @@ public class AnalyticsProviderRegistryImpl implements AnalyticsProviderRegistry
         List<QueryAnalyticsProvider> providers = new ArrayList<>();
         for (AnalyticsProvider registeredProvider : REGISTERED_PROVIDERS)
         {
-            if (registeredProvider instanceof QueryAnalyticsProvider)
+            if (registeredProvider instanceof QueryAnalyticsProvider queryProvider)
             {
-                QueryAnalyticsProvider queryProvider = (QueryAnalyticsProvider) registeredProvider;
                 if (settings == null || queryProvider.isApplicable(settings))
                 {
                     providers.add(queryProvider);
