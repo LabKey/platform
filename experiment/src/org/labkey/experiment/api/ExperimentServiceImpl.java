@@ -72,6 +72,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbSequence;
 import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.ParameterMapStatement;
@@ -215,6 +216,7 @@ import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ReentrantLockWithName;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.SubstitutionFormat;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.logging.LogHelper;
@@ -283,6 +285,8 @@ import static java.util.stream.Collectors.toSet;
 import static org.labkey.api.data.CompareType.IN;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTROLLBACK;
+import static org.labkey.api.data.NameGenerator.ANCESTOR_INPUT_PREFIX_DATA;
+import static org.labkey.api.data.NameGenerator.ANCESTOR_INPUT_PREFIX_MATERIAL;
 import static org.labkey.api.data.NameGenerator.EXPERIMENTAL_ALLOW_GAP_COUNTER;
 import static org.labkey.api.data.NameGenerator.EXPERIMENTAL_WITH_COUNTER;
 import static org.labkey.api.exp.OntologyManager.getTinfoObject;
@@ -331,6 +335,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     private final List<QueryViewProvider<ExpRun>> _runInputsQueryViews = new CopyOnWriteArrayList<>();
     private final List<QueryViewProvider<ExpRun>> _runOutputsQueryViews = new CopyOnWriteArrayList<>();
+
+    private final List<NameExpressionType> _nameExpressionTypes = new CopyOnWriteArrayList<>();
 
     private Cache<String, SortedSet<DataClass>> getDataClassCache()
     {
@@ -9156,6 +9162,90 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return count;
     }
 
+    @Override
+    public void registerNameExpressionType(String dataType, TableInfo tableInfo, String nameExpressionCol)
+    {
+        _nameExpressionTypes.add(new NameExpressionType(dataType, tableInfo, nameExpressionCol));
+    }
+
+    @Override
+    public Map<String, Object> getNameExpressionMetrics()
+    {
+        Map<String, Object> metrics = new HashMap<>();
+
+        for (NameExpressionType nameExpressionType : _nameExpressionTypes)
+        {
+            TableInfo tableInfo = nameExpressionType.tableInfo;
+            Map<String, Object> typeMetrics = new HashMap<>();
+            DbSchema schema = tableInfo.getSchema();
+            SQLFragment sql = new SQLFragment("SELECT ")
+                    .append(nameExpressionType.nameExpressionCol)
+                    .append(" FROM ")
+                    .append(tableInfo)
+                    .append(" WHERE ")
+                    .append(nameExpressionType.nameExpressionCol)
+                    .append(" IS NOT NULL");
+            List<String> nameExpressionStrs = new SqlSelector(schema, sql).getArrayList(String.class);
+
+            Map<String, Long> substitutionMetrics = new HashMap<>();
+            for (NameGenerator.SubstitutionValue substitutionValue : NameGenerator.SubstitutionValue.values())
+            {
+                String substitution = substitutionValue.getKey();
+                long count = 0L;
+
+                for (String nameExpressionStr : nameExpressionStrs)
+                {
+                    if (nameExpressionStr.contains("${" + substitution))
+                        count++;
+                }
+
+                if (count > 0)
+                    substitutionMetrics.put(substitution, count);
+            }
+            if (!substitutionMetrics.isEmpty())
+                typeMetrics.put("substitutions", substitutionMetrics);
+
+            Map<String, Long> formatMetrics = new HashMap<>();
+            for (SubstitutionFormat substitutionFormat : SubstitutionFormat.getSubstitutionFormats().values())
+            {
+                String format = substitutionFormat.name();
+                long count = 0L;
+
+                for (String nameExpressionStr : nameExpressionStrs)
+                {
+                    if (nameExpressionStr.contains(":" + format))
+                        count++;
+                }
+
+                if (count > 0)
+                    formatMetrics.put(format, count);
+            }
+            if (!formatMetrics.isEmpty())
+                typeMetrics.put("formats", formatMetrics);
+
+
+            long grandParentMatch = 0L;
+            long withCounterMatch = 0L;
+            for (String nameExpressionStr : nameExpressionStrs)
+            {
+                if (nameExpressionStr.contains(ANCESTOR_INPUT_PREFIX_MATERIAL) || nameExpressionStr.contains(ANCESTOR_INPUT_PREFIX_DATA))
+                    grandParentMatch++;
+
+                if (nameExpressionStr.contains(":withCounter}") || nameExpressionStr.contains(":withCounter("))
+                    withCounterMatch++;
+            }
+
+            if (grandParentMatch > 0)
+                typeMetrics.put("grandParent", grandParentMatch);
+            if (withCounterMatch > 0)
+                typeMetrics.put("withCounter", withCounterMatch);
+
+            metrics.put(nameExpressionType.dataType, typeMetrics);
+        }
+
+        return metrics;
+    }
+
     private static @Nullable TableInfo getTableInfo(String schemaName)
     {
         // 'samples' | 'exp.data' | 'assay'
@@ -10251,5 +10341,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             return _tableName;
         }
+    }
+
+    private record NameExpressionType(String dataType, TableInfo tableInfo, String nameExpressionCol)
+    {
     }
 }

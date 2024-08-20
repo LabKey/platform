@@ -863,11 +863,13 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         public void run()
         {
             LOG.debug("processing deferred dependencies");
+            QueryService.get().setEnvironment(QueryService.Environment.USER, _user);
             Map<Container, List<QuerySnapshotDefinition>> snapshotMap = new HashMap<>();
             for (SnapshotDependency.SourceDataType sourceData : _sourceDataTypes)
             {
                 for (QuerySnapshotDefinition snapshotDef : getDependencies(sourceData))
                 {
+                    QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, snapshotDef.getContainer());
                     List<QuerySnapshotDefinition> deferredQuerySnapshots = snapshotMap.computeIfAbsent(snapshotDef.getContainer(), k -> new LinkedList<>());
                     deferredQuerySnapshots.add(snapshotDef);
                 }
