@@ -1950,7 +1950,7 @@ public class NameGenerator
                     if (ancestorOptions.ancestorSearchType() != null)
                     {
                         if (_ancestorSearchCache.containsKey(ancestorKey))
-                            ancestorLookupValues = _ancestorCache.get(ancestorKey);
+                            ancestorLookupValues = _ancestorSearchCache.get(ancestorKey);
                         else
                         {
                             ExpLineage lineage = ExperimentService.get().getLineage(_container, _user, seed, options);
