@@ -522,7 +522,7 @@ LABKEY.internal.MiniProfiler = new function () {
             var idx = _fetching.push(id) - 1;
 
             LABKEY.Ajax.request({
-                url: LABKEY.contextPath + '/mini-profiler/report.api',
+                url: LABKEY.ActionURL.buildURL('mini-profiler', 'report.api'),
                 method: 'POST',
                 jsonData: {
                     id: id

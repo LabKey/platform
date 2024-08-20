@@ -1754,7 +1754,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
         {
             if (_limit == null && !_forceAllowOrderBy && !getSqlDialect().allowSortOnSubqueryWithoutLimit())
             {
-                reportWarning("The underlying database does not supported nested ORDER BY unless LIMIT is also specified. Ignoring ORDER BY.", _orderBy);
+                reportWarning("The underlying database does not support nested ORDER BY unless LIMIT is also specified. Ignoring ORDER BY.", _orderBy);
             }
             else
             {
@@ -1786,9 +1786,6 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
             getSqlDialect().limitRows(sql, _limit.getLimit());
         }
         if (!getParseErrors().isEmpty())
-            return null;
-
-        if (getParseErrors().size() != 0)
             return null;
 
         if (asFromSql)

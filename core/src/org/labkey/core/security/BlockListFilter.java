@@ -25,6 +25,7 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.HttpUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
@@ -50,7 +51,8 @@ public class BlockListFilter
 
     private static String getBrowserKey(HttpServletRequest req)
     {
-        return req.getRemoteHost() + '|' + req.getHeader("User-Agent");
+        var addr = HttpUtil.getRemoteAddr(req);
+        return addr + '|' + req.getHeader("User-Agent");
     }
 
 

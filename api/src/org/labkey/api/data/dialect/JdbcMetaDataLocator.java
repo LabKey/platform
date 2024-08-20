@@ -21,10 +21,6 @@ import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 
 /**
- * User: adam
- * Date: 2/8/2015
- * Time: 7:45 AM
- *
  * JDBC metadata methods are inconsistent with their parameters. The schema and table parameters are sometimes patterns
  * and sometimes simple strings. Callers must be very careful to review the metadata method JavaDocs and use the
  * appropriate parameter-providing methods: *NamePattern() methods for the pattern parameters and *Name() methods for
@@ -43,5 +39,4 @@ public interface JdbcMetaDataLocator extends AutoCloseable, ForeignKeyResolver
     String getTableName();
     String getTableNamePattern();
     String[] getTableTypes();
-    boolean supportsSchemas();
 }
