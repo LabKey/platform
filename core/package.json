@@ -54,7 +54,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "3.0.0-fb-react18.1",
+    "@labkey/components": "5.0.0-fb-react18.2",
     "@labkey/themes": "1.3.3"
   },
   "devDependencies": {
