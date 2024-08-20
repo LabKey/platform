@@ -282,4 +282,20 @@ public class HttpUtil
     {
         return request.getHeader("User-Agent");
     }
+
+    public static @Nullable String getRemoteAddr(HttpServletRequest request)
+    {
+        String xff = request.getHeader("X-Forwarded-For");
+        if (!StringUtils.isBlank(xff))
+        {
+            var arr = xff.split(",");
+            if (arr.length > 0)
+            {
+                var ret = StringUtils.trimToNull(arr[arr.length - 1]);
+                if (null != ret)
+                    return ret;
+            }
+        }
+        return request.getRemoteAddr();
+    }
 }

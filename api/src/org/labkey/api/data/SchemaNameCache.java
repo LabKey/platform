@@ -24,11 +24,6 @@ import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Map;
 
-/**
- * User: adam
- * Date: 7/7/2014
- * Time: 3:12 PM
- */
 public class SchemaNameCache
 {
     private static final SchemaNameCache INSTANCE = new SchemaNameCache();
@@ -75,10 +70,7 @@ public class SchemaNameCache
 
         try (JdbcMetaDataLocator locator = scope.getSqlDialect().getTableResolver().getAllSchemasLocator(scope))
         {
-            JdbcMetaDataSelector selector = new JdbcMetaDataSelector(locator, (dbmd, locator1) -> {
-                // Most dialects support schemas, but MySQL treats them as catalogs
-                return locator1.supportsSchemas() ? dbmd.getSchemas() : dbmd.getCatalogs();
-            });
+            JdbcMetaDataSelector selector = new JdbcMetaDataSelector(locator, (dbmd, locator1) -> scope.getSchemas(dbmd));
 
             selector.forEach(rs -> {
                 String name = rs.getString(1).trim();
