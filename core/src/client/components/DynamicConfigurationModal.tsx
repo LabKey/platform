@@ -91,6 +91,7 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Part
     };
 
     areRequiredFieldsEmpty = (): boolean => {
+        // Issue 50964: Save incomplete disabled authentication configurations
         if (!this.state.fieldValues.enabled) {
             return false;
         }
