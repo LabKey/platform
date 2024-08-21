@@ -24,8 +24,6 @@ import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.fhcrc.cpas.exp.xml.DefaultType;
 import org.fhcrc.cpas.exp.xml.DomainDescriptorType;
 import org.fhcrc.cpas.exp.xml.PropertyDescriptorType;
@@ -107,7 +105,6 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
     {
         return (PropertyServiceImpl) PropertyService.get();
     }
-    private static final Logger LOG = LogManager.getLogger(PropertyServiceImpl.class);
 
     @Override
     public IPropertyType getType(Container container, String typeURI)
