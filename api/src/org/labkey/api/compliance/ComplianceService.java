@@ -34,10 +34,7 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 
 /**
- * Created by davebradlee on 7/27/17.
- *
  * ComplianceService: ALL METHODS MUST CHECK IF ComplianceModule is enabled in container (if appropriate); callers don't check
- *
  */
 public interface ComplianceService
 {

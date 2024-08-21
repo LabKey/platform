@@ -702,7 +702,7 @@ public class ModuleLoader implements MemTrackerListener
         if (!modulesRequiringUpgrade.isEmpty() || !additionalSchemasRequiringUpgrade.isEmpty())
             setUpgradeState(UpgradeState.UpgradeRequired);
 
-        startNonCoreUpgradeAndStartup(execution, coreRequiredUpgrade, lockFile);
+        startNonCoreUpgradeAndStartup(execution, lockFile);
 
         _log.info("LabKey Server startup is complete; " + execution.getLogMessage());
     }
@@ -1802,7 +1802,7 @@ public class ModuleLoader implements MemTrackerListener
         return new SchemaActions(deleteList, skipList);
     }
 
-    private void startNonCoreUpgradeAndStartup(Execution execution, boolean coreRequiredUpgrade, File lockFile)
+    private void startNonCoreUpgradeAndStartup(Execution execution, File lockFile)
     {
         synchronized(UPGRADE_LOCK)
         {
@@ -1813,27 +1813,22 @@ public class ModuleLoader implements MemTrackerListener
                 setUpgradeState(UpgradeState.UpgradeInProgress);
 
                 ModuleUpgrader upgrader = new ModuleUpgrader(modules);
-                upgrader.upgrade(() -> afterUpgrade(true, lockFile), execution);
+                upgrader.upgrade(() -> afterUpgrade(lockFile), execution);
             }
             else
             {
-                execution.run(() -> afterUpgrade(coreRequiredUpgrade, lockFile));
+                execution.run(() -> afterUpgrade(lockFile));
             }
         }
     }
 
     // Final step in upgrade process: set the upgrade state to complete, perform post-upgrade tasks, and start up the modules.
-    // performedUpgrade is true if any module required upgrading
-    private void afterUpgrade(boolean performedUpgrade, File lockFile)
+    private void afterUpgrade(File lockFile)
     {
         setUpgradeState(UpgradeState.UpgradeComplete);
 
-        if (performedUpgrade)
-        {
-            handleUnknownModules();
-            updateModuleProperties();
-        }
-
+        handleUnknownModules();
+        updateModuleProperties();
         initiateModuleStartup();
 
         // We're out of the critical section (regular and deferred upgrades are complete) so remove the lock file
@@ -1851,13 +1846,12 @@ public class ModuleLoader implements MemTrackerListener
         if (null != requiredModules)
         {
             List<String> missedModules = Arrays.stream(requiredModules.split(","))
-                    .filter(name -> !_moduleMap.containsKey(name)).toList();
+                .filter(name -> !_moduleMap.containsKey(name)).toList();
 
             if (!missedModules.isEmpty())
                 setStartupFailure(new ConfigurationException("Required module" + (missedModules.size() > 1 ? "s" : "") + " not present: " + missedModules));
         }
     }
-
 
     // Remove all unknown modules that are marked as AutoUninstall
     public void handleUnknownModules()
@@ -1869,18 +1863,28 @@ public class ModuleLoader implements MemTrackerListener
             .forEach(this::removeModule);
     }
 
-
     private void updateModuleProperties()
     {
         for (Module module : getModules())
         {
+            ModuleContext context = getModuleContext(module);
             try
             {
                 Map<String, Object> map = new HashMap<>();
-                map.put("ClassName", module.getClass().getName());
-                map.put("AutoUninstall", module.isAutoUninstall());
-                map.put("Schemas", StringUtils.join(module.getSchemaNames(), ','));
-                Table.update(null, getTableInfoModules(), map, module.getName());
+                if (!Objects.equals(module.getClass().getName(), context.getClassName()))
+                    map.put("ClassName", module.getClass().getName());
+                if (module.isAutoUninstall() != context.isAutoUninstall())
+                    map.put("AutoUninstall", module.isAutoUninstall());
+                // Sort schema names to ensure consistency
+                String schemaNames = StringUtils.trimToNull(
+                    module.getSchemaNames().stream()
+                        .sorted()
+                        .collect(Collectors.joining(","))
+                );
+                if (!Objects.equals(schemaNames, context.getSchemas()))
+                    map.put("Schemas", schemaNames);
+                if (!map.isEmpty())
+                    Table.update(null, getTableInfoModules(), map, module.getName());
             }
             catch (RuntimeSQLException e)
             {
@@ -1891,7 +1895,7 @@ public class ModuleLoader implements MemTrackerListener
         }
     }
 
-    public void setUpgradeState(UpgradeState state)
+    private void setUpgradeState(UpgradeState state)
     {
         synchronized(UPGRADE_LOCK)
         {
