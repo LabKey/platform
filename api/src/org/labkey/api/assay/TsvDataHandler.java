@@ -212,20 +212,11 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
     public static class ExportFileLinkColumn extends ExportDataColumn
     {
         private final String _fileRoot;
-        private final TSVWriter _tsvWriter;
 
         public ExportFileLinkColumn(ColumnInfo col, String fileRoot)
         {
             super(col);
             _fileRoot = fileRoot;
-            _tsvWriter = new TSVWriter() // Used to quote values with newline/tabs/quotes
-            {
-                @Override
-                protected int write()
-                {
-                    throw new UnsupportedOperationException();
-                }
-            };
         }
 
         @Override
@@ -241,7 +232,7 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
 
                 String formatted =  filePath.replace(_fileRoot, FILE_ROOT_SUBSTITUTION);
                 if (formatted.contains("\\"))
-                    return _tsvWriter.quoteValue(formatted);
+                    return "\"" + formatted + "\"";
                 return formatted;
             }
 
