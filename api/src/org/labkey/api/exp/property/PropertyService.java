@@ -76,8 +76,6 @@ public interface PropertyService
 
     Stream<? extends Domain> getDomainsStream(Container container, User user, Set<String> domainKinds, @Nullable Set<String> domainNames, boolean includeProjectAndShared);
 
-    void ensureDomains(Container container, User user);
-
     /** Creates an in-memory Domain. It is not automatically saved to the database */
     @NotNull
     Domain createDomain(Container container, String typeURI, String name);

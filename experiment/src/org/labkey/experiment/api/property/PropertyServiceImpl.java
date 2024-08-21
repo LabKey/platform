@@ -266,12 +266,6 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
         return Collections.unmodifiableList(result);
     }
 
-    public void ensureDomains(Container container, User user)
-    {
-        LOG.info("Initializing domain caches for folder: " + container.getPath());
-        getDomains(container, user, true);
-    }
-
     @Override
     public List<? extends Domain> getDomains(Container container, User user, @Nullable Set<String> domainKinds, @Nullable Set<String> domainNames, boolean includeProjectAndShared)
     {
