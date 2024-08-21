@@ -1746,6 +1746,8 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     {
         if (!StringUtils.isEmpty(fileRootPath) && filePath != null)
         {
+            if (filePath.startsWith("\"") && filePath.endsWith("\"") && filePath.contains("\\")) // fix windows exported path
+                filePath = filePath.substring(1, filePath.length() - 1);
             if (filePath.startsWith(FILE_ROOT_SUBSTITUTION))
             {
                 String relative = filePath.replace(FILE_ROOT_SUBSTITUTION, "");
