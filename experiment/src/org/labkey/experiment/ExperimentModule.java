@@ -920,9 +920,9 @@ public class ExperimentModule extends SpringModule
 
     @Override
     @NotNull
-    public Set<String> getSchemaNames()
+    public Collection<String> getSchemaNames()
     {
-        return Set.of(
+        return List.of(
             ExpSchema.SCHEMA_NAME,
             DataClassDomainKind.PROVISIONED_SCHEMA_NAME,
             SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME

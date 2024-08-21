@@ -20,9 +20,6 @@ import org.labkey.api.collections.CsvSet;
 
 import java.util.Set;
 
-/**
- * Created by adam on 7/9/2016.
- */
 public class MySql57Dialect extends MySql56Dialect
 {
     @NotNull

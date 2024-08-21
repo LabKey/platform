@@ -20,8 +20,8 @@ import org.labkey.api.util.ConfigurationException;
 
 public class SqlDialectNotSupportedException extends ConfigurationException
 {
-    SqlDialectNotSupportedException(String advice)
+    SqlDialectNotSupportedException(String message)
     {
-        super("JDBC database driver is not supported.", advice);
+        super(message);
     }
 }
