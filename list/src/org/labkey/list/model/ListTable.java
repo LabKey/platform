@@ -51,6 +51,7 @@ import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainUtil;
+import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.lists.permissions.ManagePicklistsPermission;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DetailsURL;
@@ -85,6 +86,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import static org.labkey.api.inventory.InventoryService.InventoryStatusColumn;
+
 public class ListTable extends FilteredTable<ListQuerySchema> implements UpdateableTableInfo
 {
     private final ListDefinition _list;
@@ -107,14 +110,14 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
         defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "SampleState"));
         defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "StoredAmount"));
         defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "Units"));
-        defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "freezeThawCount"));
-        defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "StorageStatus"));
-        defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "checkedOutBy"));
+        defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, InventoryStatusColumn.FreezeThawCount.name()));
+        defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, InventoryStatusColumn.StorageStatus.name()));
+        defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, InventoryStatusColumn.CheckedOutBy.name()));
         defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "Created"));
         defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "CreatedBy"));
-        defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "StorageLocation"));
-        defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "StorageRow"));
-        defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "StorageCol"));
+        defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, InventoryStatusColumn.StorageLocation.name()));
+        defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, InventoryStatusColumn.StorageRow.name()));
+        defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, InventoryStatusColumn.StorageCol.name()));
         defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "isAliquot"));
     }
 
