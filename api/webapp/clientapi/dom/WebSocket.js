@@ -94,12 +94,6 @@ LABKEY.WebSocket = new function ()
                 // 1001 sent when server is shutdown normally (AND on page reload in FireFox, but that one doesn't have a reason)
                 setTimeout(showDisconnectedMessage, 1000);
             }
-            else if (evt.code === CloseEventCode.ABNORMAL_CLOSURE) {
-                // 1006 abnormal close (e.g, server process died)
-                setTimeout(function() {
-                    showDisconnectedMessage(true);
-                }, 1000);
-            }
             else if (evt.code === CloseEventCode.POLICY_VIOLATION) {
                 // Tomcat closes the websocket with "1008 Policy Violation" code when the session has expired.
                 // evt.reason === "This connection was established under an authenticated HTTP session that has ended."
@@ -122,6 +116,7 @@ LABKEY.WebSocket = new function ()
                 if (LABKEY.user.id !== response.id && !LABKEY.user.isGuest) {
                     displayModal("Session Expired", 'Your session has expired.', true);
                 } else {
+                    openWebsocket(); // re-establish the websocket connection, if not already open
                     hideModal();
                 }
             }),
@@ -164,8 +159,6 @@ LABKEY.WebSocket = new function ()
     }
 
     function hideModal() {
-        openWebsocket(); // re-establish the websocket connection for the new user session
-
         toggleBackgroundBlurred(false);
 
         var modal = $('#lk-utils-modal');
