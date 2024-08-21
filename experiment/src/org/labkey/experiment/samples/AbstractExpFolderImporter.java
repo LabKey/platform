@@ -400,7 +400,7 @@ public abstract class AbstractExpFolderImporter implements FolderImporter
         public Object get(int i)
         {
             if (i==_lsidColumnIndex)
-                return _lsidTemplateSupplier.get();
+                return _lsidResolvedSupplier.get();
 
             Object value = _delegate.get(i);
             if (_fileColumnIndexes.contains(i))
