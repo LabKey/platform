@@ -867,7 +867,6 @@ public abstract class SqlDialect
     // If necessary, quote identifier
     public String makeLegalIdentifier(String id)
     {
-        id = makeLegalIdentifierName(id);
         if (shouldQuoteIdentifier(id))
             return quoteIdentifier(id);
         else
