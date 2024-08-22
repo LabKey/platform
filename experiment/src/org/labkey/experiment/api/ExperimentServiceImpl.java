@@ -9162,9 +9162,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public void registerNameExpressionType(String dataType, TableInfo tableInfo, String nameExpressionCol)
+    public void registerNameExpressionType(String dataType, String schemaName, String queryName, String nameExpressionCol)
     {
-        _nameExpressionTypes.add(new NameExpressionType(dataType, tableInfo, nameExpressionCol));
+        _nameExpressionTypes.add(new NameExpressionType(dataType, schemaName, queryName, nameExpressionCol));
     }
 
     @Override
@@ -9174,17 +9174,17 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         for (NameExpressionType nameExpressionType : _nameExpressionTypes)
         {
-            TableInfo tableInfo = nameExpressionType.tableInfo;
             Map<String, Object> typeMetrics = new HashMap<>();
-            DbSchema schema = tableInfo.getSchema();
             SQLFragment sql = new SQLFragment("SELECT ")
                     .append(nameExpressionType.nameExpressionCol)
                     .append(" FROM ")
-                    .append(tableInfo)
+                    .append(nameExpressionType.schemaName)
+                    .append(".")
+                    .append(nameExpressionType.queryName)
                     .append(" WHERE ")
                     .append(nameExpressionType.nameExpressionCol)
                     .append(" IS NOT NULL");
-            List<String> nameExpressionStrs = new SqlSelector(schema, sql).getArrayList(String.class);
+            List<String> nameExpressionStrs = new SqlSelector(ExperimentService.get().getSchema(), sql).getArrayList(String.class);
 
             Map<String, Long> substitutionMetrics = new HashMap<>();
             for (NameGenerator.SubstitutionValue substitutionValue : NameGenerator.SubstitutionValue.values())
@@ -10342,7 +10342,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
     }
 
-    private record NameExpressionType(String dataType, TableInfo tableInfo, String nameExpressionCol)
+    private record NameExpressionType(String dataType, String schemaName, String queryName, String nameExpressionCol)
     {
     }
 }
