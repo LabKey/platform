@@ -602,6 +602,9 @@ public class SubstitutionFormat
                 // check for ancestor lookup
                 if (nameExpression.startsWith("..[", start-3))
                     return messages;
+                // check for ancestor search
+                if (nameExpression.startsWith("${~", start-3))
+                    return messages;
             }
             messages.add(String.format("The '%s' %s starting at position %d should be preceded by the string '${'.", formatName, noun, start));
         }
@@ -614,6 +617,11 @@ public class SubstitutionFormat
     }
 
     private final static Map<String, SubstitutionFormat> _map = new CaseInsensitiveHashMap<>();
+
+    public static Map<String, SubstitutionFormat> getSubstitutionFormats()
+    {
+        return _map;
+    }
 
     private static void register(SubstitutionFormat fmt)
     {

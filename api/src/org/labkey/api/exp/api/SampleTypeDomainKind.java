@@ -84,12 +84,10 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     public static final String NAME = "SampleSet";
     public static final String PROVISIONED_SCHEMA_NAME = "expsampleset";
 
-
     private static final Set<PropertyStorageSpec> BASE_PROPERTIES;
     private static final Set<PropertyStorageSpec.Index> INDEXES;
     private static final Set<String> RESERVED_NAMES;
     private static final Set<PropertyStorageSpec.ForeignKey> FOREIGN_KEYS;
-
     private static final Set<String> FORCE_ENABLED_SYSTEM_FIELDS;
 
     static
@@ -128,8 +126,8 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         RESERVED_NAMES.add("Status");
         RESERVED_NAMES.add("Amount");
         RESERVED_NAMES.add("RunId"); // Issue 50461
-        RESERVED_NAMES.addAll(InventoryService.INVENTORY_STATUS_COLUMN_NAMES);
-        RESERVED_NAMES.addAll(InventoryService.INVENTORY_STATUS_COLUMN_LABELS);
+        RESERVED_NAMES.addAll(InventoryService.InventoryStatusColumn.names());
+        RESERVED_NAMES.addAll(InventoryService.InventoryStatusColumn.labels());
         RESERVED_NAMES.add("Project"); // Label for "Folder", remove when "Project" is renamed back to "Folder"
 
         FOREIGN_KEYS = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(

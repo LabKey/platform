@@ -22,10 +22,6 @@ import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.util.Collection;
 
-/*
-* User: adam
-* Date: Nov 26, 2010
-*/
 public interface SqlDialectFactory
 {
     @Nullable SqlDialect createFromDriverClassName(String driverClassName);

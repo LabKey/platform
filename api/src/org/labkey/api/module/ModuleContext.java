@@ -33,11 +33,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-/**
- * User: migra
- * Date: Jul 19, 2005
- * Time: 1:16:28 PM
- */
 public class ModuleContext implements Cloneable
 {
     // ModuleContext fields are written by the main upgrade thread and read by request threads to show current

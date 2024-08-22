@@ -198,9 +198,9 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
 
     @Override
     @NotNull
-    public Set<String> getSchemaNames()
+    public List<String> getSchemaNames()
     {
-        return Set.of(
+        return List.of(
             IssuesSchema.getInstance().getSchemaName(),
             ISSUE_DEF_SCHEMA_NAME
         );

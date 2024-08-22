@@ -20,11 +20,6 @@ import org.labkey.api.collections.CsvSet;
 
 import java.util.Set;
 
-/**
- * User: adam
- * Date: 3/19/2014
- * Time: 7:49 AM
- */
 public class MySql56Dialect extends MySqlDialect
 {
     @NotNull

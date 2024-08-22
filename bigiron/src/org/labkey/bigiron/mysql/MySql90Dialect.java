@@ -15,7 +15,7 @@ public class MySql90Dialect extends MySql80Dialect
         Set<String> words = super.getReservedWords();
 
         words.removeAll(new CsvSet("master_bind, master_ssl_verify_server_cert"));
-        words.addAll(new CsvSet("intersect, parallel, tablesample"));
+        words.addAll(new CsvSet("parallel, qualify, tablesample"));
 
         return words;
     }

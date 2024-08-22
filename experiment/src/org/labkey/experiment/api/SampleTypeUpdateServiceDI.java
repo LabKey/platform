@@ -1604,7 +1604,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             if (sampleNameExpressionSummary != null)
             {
                 NameGenerator.ExpressionSummary expressionSummary = nameGen.getExpressionSummary();
-                nameGen.setExpressionSummary(new NameGenerator.ExpressionSummary(sampleNameExpressionSummary, expressionSummary.hasDateBasedSampleCounter(), expressionSummary.hasLineageInputs(), expressionSummary.hasLineageLookup()));
+                nameGen.setExpressionSummary(new NameGenerator.ExpressionSummary(sampleNameExpressionSummary, expressionSummary.hasDateBasedSampleCounter(), expressionSummary.hasParentInputs(), expressionSummary.hasParentLookup(), expressionSummary.hasAncestorSearch()));
             }
             nameState = nameGen != null ? nameGen.createState(true) : null;
             lsidBuilder = sampleType.generateSampleLSID();

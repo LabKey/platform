@@ -1124,6 +1124,10 @@ public interface ExperimentService extends ExperimentRunTypeSource
     /** Returns true if the property has a lookup to exp.Materials and is an int or string. */
     boolean isLookupToMaterials(DomainProperty dp);
 
+    void registerNameExpressionType(String dataType, TableInfo tableInfo, String nameExpressionCol);
+
+    Map<String, Object> getNameExpressionMetrics();
+
     class XarExportOptions
     {
         String _lsidRelativizer = LSID_OPTION_FOLDER_RELATIVE;

@@ -1591,7 +1591,7 @@ public class DbScope
                 }
                 catch (NamingException e)
                 {
-                    LOG.error("DataSources are not properly configured in " + AppProps.getInstance().getWebappConfigurationFilename() + ".", e);
+                    LOG.error("DataSources are not properly configured in {}.", AppProps.getInstance().getWebappConfigurationFilename(), e);
                 }
             }
 
