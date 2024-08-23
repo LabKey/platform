@@ -3073,6 +3073,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         int sampleIdsCounter = 0;
         List<PlateData> platesData = new ArrayList<>();
         Map<Integer, PlateType> plateTypes = new HashMap<>();
+        Map<Pair<WellGroup.Type, String>, Integer> groupSampleMap = new HashMap<>();
 
         for (PlateData plate : plates)
         {
@@ -3087,7 +3088,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 List<WellData> wellData = getWellData(container, user, plate.templateId, false, true);
 
                 // Plate the samples into the well data
-                sampleIdsCounter = plateSamples(wellData, selectedSampleIds, sampleIdsCounter);
+                sampleIdsCounter = plateSamples(wellData, selectedSampleIds, groupSampleMap, sampleIdsCounter);
 
                 // Hydrate a CreatePlateSetPlate and add it to plate data
                 List<Map<String, Object>> data = wellData.stream().map(WellData::getData).toList();
@@ -3109,40 +3110,51 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return platesData;
     }
 
-    private int plateSamples(List<WellData> wellDataList, List<Integer> sampleIds, int counter)
+    private int plateSamples(
+        List<WellData> wellDataList,
+        List<Integer> sampleIds,
+        Map<Pair<WellGroup.Type, String>, Integer> groupSampleMap,
+        int counter
+    )
     {
         if (counter >= sampleIds.size())
             return counter;
 
-        Map<String, Integer> groupSampleMap = new HashMap<>();
-
         for (WellData wellData : wellDataList)
         {
-            boolean isSampleWell = WellGroup.Type.SAMPLE.equals(wellData.getType()) || WellGroup.Type.REPLICATE.equals(wellData.getType());
-            String group = wellData.getWellGroup();
+            boolean isSampleWell = WellGroup.Type.SAMPLE.equals(wellData.getType());
+            boolean isReplicateWell = WellGroup.Type.REPLICATE.equals(wellData.getType());
+            boolean isSampleOrReplicate = isSampleWell || isReplicateWell;
+
+            Pair<WellGroup.Type, String> groupKey = null;
+            if (isSampleOrReplicate && wellData.getWellGroup() != null)
+            {
+                WellGroup.Type type = isSampleWell ? WellGroup.Type.SAMPLE : WellGroup.Type.REPLICATE;
+                groupKey = Pair.of(type, wellData.getWellGroup());
+            }
 
             if (counter >= sampleIds.size())
             {
                 // Fill remaining group wells
-                if (isSampleWell && group != null && groupSampleMap.containsKey(group))
+                if (isSampleOrReplicate && groupKey != null && groupSampleMap.containsKey(groupKey))
                 {
-                    wellData.setSampleId(groupSampleMap.get(group));
+                    wellData.setSampleId(groupSampleMap.get(groupKey));
                 }
             }
-            else if (isSampleWell)
+            else if (isSampleOrReplicate)
             {
                 Integer sampleId = sampleIds.get(counter);
 
-                if (group != null)
+                if (groupKey != null)
                 {
-                    if (groupSampleMap.containsKey(group))
+                    if (groupSampleMap.containsKey(groupKey))
                     {
                         // Do not increment counter as this reuses the same sample within a group
-                        sampleId = groupSampleMap.get(group);
+                        sampleId = groupSampleMap.get(groupKey);
                     }
                     else
                     {
-                        groupSampleMap.put(group, sampleId);
+                        groupSampleMap.put(groupKey, sampleId);
                         counter++;
                     }
                 }
