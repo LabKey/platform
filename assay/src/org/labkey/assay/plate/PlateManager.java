@@ -3527,14 +3527,14 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
     private long getReplicateGroupCount(@NotNull UserSchema plateSchema, @NotNull Integer plateSetRowId)
     {
-        var sql = new SQLFragment("SELECT DISTINCT Type, WellGroup FROM plate.Well WHERE PlateId.PlateSet.RowId = ? AND Type = ?")
-                .add(plateSetRowId)
-                .add(WellGroup.Type.REPLICATE.name());
+        String labkeySql = "SELECT DISTINCT Type, WellGroup FROM plate.Well WHERE" +
+                " PlateId.PlateSet.RowId = " + plateSetRowId +
+                " AND Type = '" + WellGroup.Type.REPLICATE.name() + "'";
 
-        return QueryService.get().getSelectBuilder(plateSchema, sql.toDebugString()).buildSqlSelector(null).getRowCount();
+        return QueryService.get().getSelectBuilder(plateSchema, labkeySql).buildSqlSelector(null).getRowCount();
     }
 
-    private SQLFragment getReplicateGroupSQL(@NotNull UserSchema plateSchema, @NotNull Integer plateSetRowId)
+    private String getReplicateGroupLabKeySql(@NotNull UserSchema plateSchema, @NotNull Integer plateSetRowId)
     {
         var wellTable = plateSchema.getTableOrThrow(WellTable.NAME);
         var columnNames = new CaseInsensitiveHashSet(wellTable.getColumnNameSet());
@@ -3550,28 +3550,20 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         columnNames.removeAll(excludedColumns);
 
-        var sql = new SQLFragment("SELECT\n");
-        var separator = "";
-        for (String columnName : columnNames)
+        StringBuilder columnsSql = new StringBuilder();
         {
-            sql.append(separator).append(columnName).append("\n");
-            separator = ", ";
+            var separator = "";
+            for (String columnName : columnNames)
+            {
+                columnsSql.append(separator).append(columnName).append("\n");
+                separator = ", ";
+            }
         }
 
-        sql.append("FROM plate.Well\n");
-        sql.append("WHERE PlateId.PlateSet.RowId = ? AND Type = ?\n")
-                .add(plateSetRowId)
-                .add(WellGroup.Type.REPLICATE.name());
-        sql.append("GROUP BY\n");
-
-        separator = "";
-        for (String columnName : columnNames)
-        {
-            sql.append(separator).append(columnName).append("\n");
-            separator = ", ";
-        }
-
-        return sql;
+        return "SELECT\n " + columnsSql + "FROM plate.Well\n WHERE"
+                + " PlateId.PlateSet.RowId = " + plateSetRowId
+                + " AND Type = '" + WellGroup.Type.REPLICATE.name() + "'\n"
+                + " GROUP BY\n" + columnsSql;
     }
 
     private void validatePlateSetReplicates(Container container, User user, @NotNull Integer plateSetRowId) throws ValidationException
@@ -3582,8 +3574,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         if (replicateWellGroupCount == 0)
             return;
 
-        var sql = getReplicateGroupSQL(plateSchema, plateSetRowId);
-        try (var results = QueryService.get().getSelectBuilder(plateSchema, sql.toDebugString()).select())
+        var sql = getReplicateGroupLabKeySql(plateSchema, plateSetRowId);
+        try (var results = QueryService.get().getSelectBuilder(plateSchema, sql).select())
         {
             if (replicateWellGroupCount == results.getSize())
                 return;
