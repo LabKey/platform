@@ -3117,9 +3117,6 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         int counter
     )
     {
-        if (counter >= sampleIds.size())
-            return counter;
-
         for (WellData wellData : wellDataList)
         {
             boolean isSampleWell = WellGroup.Type.SAMPLE.equals(wellData.getType());
