@@ -927,7 +927,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return new Lsid(nameSpace, "Folder-" + container.getRowId(), GUID.makeGUID());
     }
 
-    private DbScope.Transaction ensureTransaction(Lock... locks)
+    /* package private */ DbScope.Transaction ensureTransaction(Lock... locks)
     {
         return AssayDbSchema.getInstance().getSchema().getScope().ensureTransaction(locks);
     }
