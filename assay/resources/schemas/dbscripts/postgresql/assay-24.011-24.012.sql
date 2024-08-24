@@ -1,0 +1,24 @@
+CREATE TABLE assay.PlateSetProperty
+(
+    RowId SERIAL,
+    PlateSetId INT NOT NULL,
+    PropertyId INT NOT NULL,
+    PropertyURI VARCHAR(300) NOT NULL,
+
+    CONSTRAINT PK_PlateSetProperty PRIMARY KEY (RowId),
+    CONSTRAINT UQ_PlateSetProperty_PlateSetId_PropertyId UNIQUE (PlateSetId, PropertyId),
+    CONSTRAINT FK_PlateSetProperty_PlateSetId FOREIGN KEY (PlateSetId) REFERENCES assay.PlateSet(RowId),
+    CONSTRAINT FK_PlateSetProperty_PropertyId FOREIGN KEY (PropertyId) REFERENCES exp.PropertyDescriptor(PropertyId)
+);
+
+INSERT INTO assay.PlateSetProperty (PlateSetId, PropertyId, PropertyURI)
+SELECT
+    PL.PlateSet AS PlateSetId,
+    PP.PropertyId,
+    PP.PropertyURI
+FROM assay.PlateProperty AS PP
+INNER JOIN assay.Plate AS PL ON PP.PlateId = PL.RowId
+GROUP BY PlateSetId, PropertyId, PropertyURI
+ORDER BY PlateSetId, PropertyId;
+
+-- DROP TABLE assay.PlateProperty;

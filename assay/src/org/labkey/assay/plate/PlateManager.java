@@ -686,6 +686,15 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         );
     }
 
+    private @NotNull PlateSet requirePlateSet(@NotNull Plate plate, @Nullable String errorPrefix) throws ValidationException
+    {
+        return (PlateSet) require(
+            plate.getPlateSet(),
+            String.format("Plate \"%s\" in %s is not in a plate set.", plate.getName(), plate.getContainer().getPath()),
+            errorPrefix
+        );
+    }
+
     private @NotNull PlateType requirePlateType(int plateTypeRowId, @Nullable String errorPrefix) throws ValidationException
     {
         return (PlateType) require(
@@ -884,18 +893,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         if (domain != null)
         {
             plate.setMetadataDomainId(domain.getTypeId());
-            SQLFragment sqlPlateProps = new SQLFragment("SELECT PropertyURI FROM ").append(AssayDbSchema.getInstance().getTableInfoPlateProperty(), "PP")
-                    .append(" WHERE PlateId = ?").add(plate.getRowId());
-
-            List<DomainProperty> fields = new ArrayList<>();
-            for (String uri : new SqlSelector(AssayDbSchema.getInstance().getSchema(), sqlPlateProps).getArrayList(String.class))
-            {
-                DomainProperty dp = domain.getPropertyByURI(uri);
-                if (dp == null)
-                    throw new IllegalArgumentException("Failed to get plate custom field. \"" + uri + "\" does not exist on domain.");
-
-                fields.add(dp);
-            }
+            List<DomainProperty> fields = getPlateMetadataDomainProperties(domain, plate.getRowId());
 
             if (!fields.isEmpty())
             {
@@ -1279,15 +1277,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         OntologyManager.deleteOntologyObjects(container, lsids.toArray(new String[lsids.size()]));
         deleteWellGroupPositions(plate);
 
-        // delete PlateProperty mappings
-        AssayDbSchema schema = AssayDbSchema.getInstance();
-        SQLFragment sql = new SQLFragment("DELETE FROM ")
-                .append(schema.getTableInfoPlateProperty(), "")
-                .append(" WHERE PlateId = ?")
-                .add(plateId);
-        new SqlExecutor(schema.getSchema()).execute(sql);
-
         // delete any plate metadata values from the provisioned table
+        AssayDbSchema schema = AssayDbSchema.getInstance();
         TableInfo provisionedTable = getPlateMetadataTable(container, User.getAdminServiceUser());
         if (provisionedTable != null)
         {
@@ -1318,19 +1309,36 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         final AssayDbSchema schema = AssayDbSchema.getInstance();
         final SqlDialect sqlDialect = schema.getSchema().getSqlDialect();
 
-        SQLFragment edgeSql = new SQLFragment("DELETE FROM ").append(schema.getTableInfoPlateSetEdge())
-                .append(" WHERE FromPlateSetId ").appendInClause(plateSetIds, sqlDialect)
-                .append(" OR ToPlateSetId ").appendInClause(plateSetIds, sqlDialect)
-                .append(" OR RootPlateSetId ").appendInClause(plateSetIds, sqlDialect);
-        new SqlExecutor(schema.getSchema()).execute(edgeSql);
+        // delete PlateSetEdge relationships
+        {
+            SQLFragment sql = new SQLFragment("DELETE FROM ").append(schema.getTableInfoPlateSetEdge())
+                    .append(" WHERE FromPlateSetId ").appendInClause(plateSetIds, sqlDialect)
+                    .append(" OR ToPlateSetId ").appendInClause(plateSetIds, sqlDialect)
+                    .append(" OR RootPlateSetId ").appendInClause(plateSetIds, sqlDialect);
+            new SqlExecutor(schema.getSchema()).execute(sql);
+        }
 
-        SQLFragment primaryPlateSetSql = new SQLFragment("UPDATE ").append(schema.getTableInfoPlateSet())
-                .append(" SET PrimaryPlateSetId = NULL WHERE PrimaryPlateSetId ").appendInClause(plateSetIds, sqlDialect);
-        new SqlExecutor(schema.getSchema()).execute(primaryPlateSetSql);
+        // delete PlateSetProperty mappings
+        {
+            SQLFragment sql = new SQLFragment("DELETE FROM ")
+                    .append(schema.getTableInfoPlateSetProperty(), "")
+                    .append(" WHERE PlateSetId ").appendInClause(plateSetIds, sqlDialect);
+            new SqlExecutor(schema.getSchema()).execute(sql);
+        }
 
-        SQLFragment rootPlateSetSql = new SQLFragment("UPDATE ").append(schema.getTableInfoPlateSet())
-                .append(" SET RootPlateSetId = NULL WHERE RootPlateSetId ").appendInClause(plateSetIds, sqlDialect);
-        new SqlExecutor(schema.getSchema()).execute(rootPlateSetSql);
+        // unmark as a primary plate set
+        {
+            SQLFragment sql = new SQLFragment("UPDATE ").append(schema.getTableInfoPlateSet())
+                    .append(" SET PrimaryPlateSetId = NULL WHERE PrimaryPlateSetId ").appendInClause(plateSetIds, sqlDialect);
+            new SqlExecutor(schema.getSchema()).execute(sql);
+        }
+
+        // unmark as a root plate set
+        {
+            SQLFragment sql = new SQLFragment("UPDATE ").append(schema.getTableInfoPlateSet())
+                    .append(" SET RootPlateSetId = NULL WHERE RootPlateSetId ").appendInClause(plateSetIds, sqlDialect);
+            new SqlExecutor(schema.getSchema()).execute(sql);
+        }
     }
 
     private void deleteWellGroups(Container container, User user, List<Integer> wellGroupRowIds) throws Exception
@@ -1392,11 +1400,11 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 new SqlExecutor(schema.getSchema()).execute(sql);
             }
 
-            // delete PlateProperty mappings
+            // delete PlateSetProperty mappings
             {
                 SQLFragment sql = new SQLFragment("DELETE FROM ")
-                        .append(schema.getTableInfoPlateProperty(), "")
-                        .append(" WHERE PlateId IN (SELECT RowId FROM ").append(schema.getTableInfoPlate())
+                        .append(schema.getTableInfoPlateSetProperty(), "")
+                        .append(" WHERE PlateSetId IN (SELECT RowId FROM ").append(schema.getTableInfoPlateSet())
                         .append(" WHERE Container = ?)").add(container);
                 new SqlExecutor(schema.getSchema()).execute(sql);
             }
@@ -2139,11 +2147,11 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             }
 
             // validate in use fields
-            SQLFragment sql = new SQLFragment("SELECT COUNT(DISTINCT PlateId) FROM ").append(AssayDbSchema.getInstance().getTableInfoPlateProperty(), "PP")
+            SQLFragment sql = new SQLFragment("SELECT COUNT(DISTINCT PlateSetId) FROM ").append(AssayDbSchema.getInstance().getTableInfoPlateSetProperty(), "PP")
                     .append(" WHERE PropertyURI ").appendInClause(propertyURIs, AssayDbSchema.getInstance().getSchema().getSqlDialect());
-            int inUsePlates = new SqlSelector(AssayDbSchema.getInstance().getSchema(), sql).getObject(Integer.class);
-            if (inUsePlates > 0)
-                throw new IllegalArgumentException(String.format("Unable to remove fields from domain, there are %d plates that are referencing these fields. Fields need to be removed from the plates first.", inUsePlates));
+            int inUsePlateSets = new SqlSelector(AssayDbSchema.getInstance().getSchema(), sql).getObject(Integer.class);
+            if (inUsePlateSets > 0)
+                throw new IllegalArgumentException(String.format("Unable to remove fields from domain, there are %d plate sets that are referencing these fields. Fields need to be removed from the plate sets first.", inUsePlateSets));
 
             try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
             {
@@ -2190,6 +2198,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             throw new IllegalArgumentException("Failed to add plate custom fields. No fields specified.");
 
         Plate plate = requirePlate(container, plateId, "Failed to add plate custom fields.");
+        PlateSet plateSet = requirePlateSet(plate, "Failed to add plate custom fields.");
 
         Domain domain = getPlateMetadataDomain(container, user);
         if (domain == null)
@@ -2212,6 +2221,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 Set<String> existingProps = plate.getCustomFields().stream().map(PlateCustomField::getPropertyURI).collect(Collectors.toSet());
                 for (DomainProperty dp : fieldsToAdd)
                 {
+                    // TODO: No longer want to throw an error. Want to just skip processing if there are no new fields.
                     if (existingProps.contains(dp.getPropertyURI()))
                         throw new IllegalArgumentException(String.format("Failed to add plate custom fields. Custom field \"%s\" already is associated with this plate.", dp.getName()));
                 }
@@ -2219,16 +2229,14 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 List<List<?>> insertedValues = new LinkedList<>();
                 for (DomainProperty dp : fieldsToAdd)
                 {
-                    insertedValues.add(List.of(plateId,
-                            dp.getPropertyId(),
-                            dp.getPropertyURI()));
+                    insertedValues.add(List.of(plateSet.getRowId(), dp.getPropertyId(), dp.getPropertyURI()));
                 }
-                String insertSql = "INSERT INTO " + AssayDbSchema.getInstance().getTableInfoPlateProperty() +
-                        " (plateId, propertyId, propertyURI)" +
+                String insertSql = "INSERT INTO " + AssayDbSchema.getInstance().getTableInfoPlateSetProperty() +
+                        " (plateSetId, propertyId, propertyURI)" +
                         " VALUES (?, ?, ?)";
                 Table.batchExecute(AssayDbSchema.getInstance().getSchema(), insertSql, insertedValues);
 
-                transaction.addCommitTask(() -> clearCache(container, plate), DbScope.CommitTaskOption.POSTCOMMIT);
+                transaction.addCommitTask(() -> PlateCache.uncache(container, plateSet), DbScope.CommitTaskOption.POSTCOMMIT);
                 transaction.commit();
             }
         }
@@ -2244,19 +2252,17 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     /**
      * Returns the list of custom properties associated with a plate
      */
-    private List<DomainProperty> _getFields(Container container, User user, Integer plateId)
+    private List<DomainProperty> getPlateMetadataDomainProperties(@NotNull Domain plateMetadataDomain, Integer plateId)
     {
-        Domain domain = getPlateMetadataDomain(container, user);
-        if (domain == null)
-            return Collections.emptyList();
-
-        SQLFragment sql = new SQLFragment("SELECT PropertyURI FROM ").append(AssayDbSchema.getInstance().getTableInfoPlateProperty(), "PP")
-                .append(" WHERE PlateId = ?").add(plateId);
+        AssayDbSchema schema = AssayDbSchema.getInstance();
+        SQLFragment sql = new SQLFragment("SELECT PropertyURI FROM ").append(schema.getTableInfoPlateSetProperty(), "PP")
+                .append(" INNER JOIN ").append(schema.getTableInfoPlate(), "PL").append(" ON PL.PlateSet = PP.PlateSetId")
+                .append(" WHERE PL.RowId = ?").add(plateId);
 
         List<DomainProperty> fields = new ArrayList<>();
-        for (String uri : new SqlSelector(AssayDbSchema.getInstance().getSchema(), sql).getArrayList(String.class))
+        for (String uri : new SqlSelector(schema.getSchema(), sql).getArrayList(String.class))
         {
-            DomainProperty dp = domain.getPropertyByURI(uri);
+            DomainProperty dp = plateMetadataDomain.getPropertyByURI(uri);
             if (dp == null)
                 throw new IllegalArgumentException("Failed to get plate custom field. \"" + uri + "\" does not exist on domain.");
 
@@ -2271,7 +2277,12 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         if (well == null)
             throw new IllegalArgumentException("Failed to get well custom fields. Well id \"" + wellId   + "\" not found.");
 
-        List<WellCustomField> fields = _getFields(plate.getContainer(), user, plate.getRowId()).stream().map(WellCustomField::new).toList();
+        // TODO: Seems like this could just ask the plate for its custom fields.
+        Domain domain = getPlateMetadataDomain(plate.getContainer(), user);
+        if (domain == null)
+            return Collections.emptyList();
+
+        List<WellCustomField> fields = getPlateMetadataDomainProperties(domain, plate.getRowId()).stream().map(WellCustomField::new).toList();
         if (fields.isEmpty())
             return Collections.emptyList();
 
@@ -2305,6 +2316,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     public List<PlateCustomField> removeFields(Container container, User user, Integer plateId, List<PlateCustomField> fields) throws ValidationException
     {
         Plate plate = requirePlate(container, plateId, "Failed to remove plate custom fields.");
+        PlateSet plateSet = requirePlateSet(plate, "Failed to remove plate custom fields.");
 
         Domain domain = getPlateMetadataDomain(container, user);
         if (domain == null)
@@ -2333,13 +2345,13 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                         throw new IllegalArgumentException(String.format("Failed to remove plate custom fields. Custom field \"%s\" is not currently associated with this plate.", dp.getName()));
                 }
 
-                SQLFragment sql = new SQLFragment("DELETE FROM ").append(AssayDbSchema.getInstance().getTableInfoPlateProperty(), "")
-                        .append(" WHERE PlateId = ? ").add(plateId)
+                SQLFragment sql = new SQLFragment("DELETE FROM ").append(AssayDbSchema.getInstance().getTableInfoPlateSetProperty(), "")
+                        .append(" WHERE PlateSetId = ? ").add(plateSet.getRowId())
                         .append(" AND PropertyURI ").appendInClause(propertyURIs, AssayDbSchema.getInstance().getSchema().getSqlDialect());
 
                 new SqlExecutor(AssayDbSchema.getInstance().getSchema()).execute(sql);
 
-                transaction.addCommitTask(() -> clearCache(container, plate), DbScope.CommitTaskOption.POSTCOMMIT);
+                transaction.addCommitTask(() -> PlateCache.uncache(container, plateSet), DbScope.CommitTaskOption.POSTCOMMIT);
                 transaction.commit();
             }
         }
