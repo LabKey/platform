@@ -2162,7 +2162,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                         throw new IllegalStateException(String.format("Unable to remove field: %s on domain: %s. The field does not exist.", field.getName(), metadataDomain.getTypeURI()));
 
                     DomainProperty dp = metadataDomain.getPropertyByURI(field.getPropertyURI());
-                    dp.delete();
+                    if (dp != null)
+                        dp.delete();
                 }
                 metadataDomain.save(user);
                 tx.commit();
@@ -2205,32 +2206,26 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             throw new IllegalArgumentException("Failed to add plate custom fields. Custom fields domain does not exist. Try creating fields first.");
 
         List<DomainProperty> fieldsToAdd = new ArrayList<>();
+        Set<String> existingProps = plate.getCustomFields().stream().map(PlateCustomField::getPropertyURI).collect(Collectors.toSet());
+
         // validate fields
         for (PlateCustomField field : fields)
         {
             DomainProperty dp = domain.getPropertyByURI(field.getPropertyURI());
             if (dp == null)
                 throw new IllegalArgumentException("Failed to add plate custom field. \"" + field.getPropertyURI() + "\" does not exist on domain.");
-            fieldsToAdd.add(dp);
+            if (!existingProps.contains(dp.getPropertyURI()))
+                fieldsToAdd.add(dp);
         }
 
         if (!fieldsToAdd.isEmpty())
         {
             try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
             {
-                Set<String> existingProps = plate.getCustomFields().stream().map(PlateCustomField::getPropertyURI).collect(Collectors.toSet());
-                for (DomainProperty dp : fieldsToAdd)
-                {
-                    // TODO: No longer want to throw an error. Want to just skip processing if there are no new fields.
-                    if (existingProps.contains(dp.getPropertyURI()))
-                        throw new IllegalArgumentException(String.format("Failed to add plate custom fields. Custom field \"%s\" already is associated with this plate.", dp.getName()));
-                }
-
                 List<List<?>> insertedValues = new LinkedList<>();
                 for (DomainProperty dp : fieldsToAdd)
-                {
                     insertedValues.add(List.of(plateSet.getRowId(), dp.getPropertyId(), dp.getPropertyURI()));
-                }
+
                 String insertSql = "INSERT INTO " + AssayDbSchema.getInstance().getTableInfoPlateSetProperty() +
                         " (plateSetId, propertyId, propertyURI)" +
                         " VALUES (?, ?, ?)";
@@ -2277,7 +2272,6 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         if (well == null)
             throw new IllegalArgumentException("Failed to get well custom fields. Well id \"" + wellId   + "\" not found.");
 
-        // TODO: Seems like this could just ask the plate for its custom fields.
         Domain domain = getPlateMetadataDomain(plate.getContainer(), user);
         if (domain == null)
             return Collections.emptyList();

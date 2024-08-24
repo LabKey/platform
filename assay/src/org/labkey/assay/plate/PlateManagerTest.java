@@ -405,17 +405,6 @@ public final class PlateManagerTest
         // assign custom fields to the plate
         assertEquals("Expected custom fields to be added to the plate", 7, PlateManager.get().addFields(container, user, plateId, fields).size());
 
-        // verification when adding custom fields to the plate
-        try
-        {
-            PlateManager.get().addFields(container, user, plateId, fields);
-            fail("Expected a validation error when adding existing fields");
-        }
-        catch (IllegalArgumentException e)
-        {
-            assertEquals("Expected validation exception", "Failed to add plate custom fields. Custom field \"Amount\" already is associated with this plate.", e.getMessage());
-        }
-
         // remove amount and amountUnits metadata fields
         fields = PlateManager.get().removeFields(container, user, plateId, List.of(fields.get(0), fields.get(1)));
         assertEquals("Expected 5 plate custom fields", 5, fields.size());
