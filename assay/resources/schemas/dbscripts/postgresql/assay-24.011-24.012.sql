@@ -7,8 +7,8 @@ CREATE TABLE assay.PlateSetProperty
 
     CONSTRAINT PK_PlateSetProperty PRIMARY KEY (RowId),
     CONSTRAINT UQ_PlateSetProperty_PlateSetId_PropertyId UNIQUE (PlateSetId, PropertyId),
-    CONSTRAINT FK_PlateSetProperty_PlateSetId FOREIGN KEY (PlateSetId) REFERENCES assay.PlateSet(RowId),
-    CONSTRAINT FK_PlateSetProperty_PropertyId FOREIGN KEY (PropertyId) REFERENCES exp.PropertyDescriptor(PropertyId)
+    CONSTRAINT FK_PlateSetProperty_PlateSetId FOREIGN KEY (PlateSetId) REFERENCES assay.PlateSet(RowId) ON DELETE CASCADE,
+    CONSTRAINT FK_PlateSetProperty_PropertyId FOREIGN KEY (PropertyId) REFERENCES exp.PropertyDescriptor(PropertyId) ON DELETE CASCADE
 );
 
 INSERT INTO assay.PlateSetProperty (PlateSetId, PropertyId, PropertyURI)

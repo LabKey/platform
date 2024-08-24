@@ -1309,20 +1309,14 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         final AssayDbSchema schema = AssayDbSchema.getInstance();
         final SqlDialect sqlDialect = schema.getSchema().getSqlDialect();
 
+        // assay.PlateSetProperty rows are deleted via ON DELETE CASCADE when the plate set is deleted.
+
         // delete PlateSetEdge relationships
         {
             SQLFragment sql = new SQLFragment("DELETE FROM ").append(schema.getTableInfoPlateSetEdge())
                     .append(" WHERE FromPlateSetId ").appendInClause(plateSetIds, sqlDialect)
                     .append(" OR ToPlateSetId ").appendInClause(plateSetIds, sqlDialect)
                     .append(" OR RootPlateSetId ").appendInClause(plateSetIds, sqlDialect);
-            new SqlExecutor(schema.getSchema()).execute(sql);
-        }
-
-        // delete PlateSetProperty mappings
-        {
-            SQLFragment sql = new SQLFragment("DELETE FROM ")
-                    .append(schema.getTableInfoPlateSetProperty(), "")
-                    .append(" WHERE PlateSetId ").appendInClause(plateSetIds, sqlDialect);
             new SqlExecutor(schema.getSchema()).execute(sql);
         }
 
