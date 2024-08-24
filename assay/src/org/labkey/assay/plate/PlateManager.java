@@ -1309,8 +1309,6 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         final AssayDbSchema schema = AssayDbSchema.getInstance();
         final SqlDialect sqlDialect = schema.getSchema().getSqlDialect();
 
-        // assay.PlateSetProperty rows are deleted via ON DELETE CASCADE when the plate set is deleted.
-
         // delete PlateSetEdge relationships
         {
             SQLFragment sql = new SQLFragment("DELETE FROM ").append(schema.getTableInfoPlateSetEdge())
@@ -1333,6 +1331,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                     .append(" SET RootPlateSetId = NULL WHERE RootPlateSetId ").appendInClause(plateSetIds, sqlDialect);
             new SqlExecutor(schema.getSchema()).execute(sql);
         }
+
+        // The following tables are cleaned up via ON DELETE CASCADE when a plate set is deleted:
+        // - assay.PlateSetProperty
     }
 
     private void deleteWellGroups(Container container, User user, List<Integer> wellGroupRowIds) throws Exception

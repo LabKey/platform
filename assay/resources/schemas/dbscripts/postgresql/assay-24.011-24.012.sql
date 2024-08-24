@@ -1,3 +1,4 @@
+-- Specify plate metadata columns on the plate set rather than the individual plates
 CREATE TABLE assay.PlateSetProperty
 (
     RowId SERIAL,
