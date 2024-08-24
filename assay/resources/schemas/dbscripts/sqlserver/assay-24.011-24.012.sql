@@ -1,9 +1,9 @@
 CREATE TABLE assay.PlateSetProperty
 (
-    RowId SERIAL,
+    RowId INT IDENTITY(1,1),
     PlateSetId INT NOT NULL,
     PropertyId INT NOT NULL,
-    PropertyURI VARCHAR(300) NOT NULL,
+    PropertyURI NVARCHAR(300) NOT NULL,
 
     CONSTRAINT PK_PlateSetProperty PRIMARY KEY (RowId),
     CONSTRAINT UQ_PlateSetProperty_PlateSetId_PropertyId UNIQUE (PlateSetId, PropertyId),
@@ -18,7 +18,8 @@ SELECT
     PP.PropertyURI
 FROM assay.PlateProperty AS PP
 INNER JOIN assay.Plate AS PL ON PP.PlateId = PL.RowId
-GROUP BY PlateSetId, PropertyId, PropertyURI
+GROUP BY PL.PlateSet, PP.PropertyId, PP.PropertyURI
 ORDER BY PlateSetId, PropertyId;
 
 DROP TABLE assay.PlateProperty;
+GO
