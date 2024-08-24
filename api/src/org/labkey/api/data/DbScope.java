@@ -44,7 +44,6 @@ import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DeadlockPreventingException;
 import org.labkey.api.util.DebugInfoDumper;
-import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.LoggerWriter;
 import org.labkey.api.util.MemTracker;
@@ -65,7 +64,6 @@ import javax.naming.InitialContext;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
-import java.io.File;
 import java.io.IOException;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
@@ -98,13 +96,11 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -1528,46 +1524,9 @@ public class DbScope
         }
     }
 
-    private static final List<Predicate<String>> TOMCAT_LIB_PREDICATES = new CopyOnWriteArrayList<>();
-
-    /**
-     * Register a {@code Predicate<String>} that identifies filenames that aren't allowed in the {@code <tomcat>/lib}
-     * directory. This is used to warn administrators about old, conflicting JDBC drivers that need to be removed from
-     * Tomcat.
-     * @param predicate a {@code Predicate<String>} whose {@code test(String filename)} method returns true if filename
-     *        is not allowed in the {@code <tomcat>/lib} directory
-     */
-    public static void registerForbiddenTomcatFilenamePredicate(Predicate<String> predicate)
-    {
-        TOMCAT_LIB_PREDICATES.add(predicate);
-    }
-
-    // Verify that old JDBC drivers are not present in <tomcat>/lib -- they are now provided by the modules that manage them
-    private static void verifyTomcatLibJars()
-    {
-        File lib = ModuleLoader.getTomcatLib();
-
-        if (null != lib)
-        {
-            Predicate<String> aggregatePredicate = TOMCAT_LIB_PREDICATES.stream().reduce(x->false, Predicate::or);
-            String[] existing = lib.list((dir, name) ->
-                    aggregatePredicate.test(name)
-            );
-
-            // Don't fail if we can't get a listing for the directory
-            if (existing != null && existing.length > 0)
-            {
-                String path = FileUtil.getAbsoluteCaseSensitiveFile(lib).getAbsolutePath();
-                throw new ConfigurationException("You must delete the following files from " + path + ": " + Arrays.toString(existing));
-            }
-        }
-    }
-
     // Enumerate each jdbc DataSource and initialize them
     public static void initializeDataSources()
     {
-        verifyTomcatLibJars();
-
         LOG.debug("Ensuring that all databases specified by data sources in webapp configuration xml are present");
 
         Map<String, LabKeyDataSource> dataSources = new TreeMap<>(String::compareTo);
