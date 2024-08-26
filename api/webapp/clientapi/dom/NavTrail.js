@@ -45,14 +45,11 @@ LABKEY.NavTrail.setTrail("People View", [{url: ancestorURL, title: "API Example"
         {
             var elem = document.querySelector('.lk-body-title');
             var folderLinkElem = document.querySelector('.lk-body-title-folder-outer');
-            if (elem)
-            {
+            if (elem) {
                 var newTrail = '';
                 var newTitle = '<h3 style="display: inline-block;">' + (encode !== false ? LABKEY.Utils.encodeHtml(currentPageTitle) : currentPageTitle) + '</h3>';
 
-                var trailEl = elem.querySelector('.breadcrumb');
-                if (trailEl && ancestors)
-                {
+                if (ancestors) {
                     newTrail = '<ol class="breadcrumb">';
                     for (var i=0; i < ancestors.length; i++)
                     {
@@ -71,8 +68,9 @@ LABKEY.NavTrail.setTrail("People View", [{url: ancestorURL, title: "API Example"
 
                 elem.innerHTML = newTrail + newTitle;
             }
-            if (!removeFolderLink && folderLinkElem)
+            if (!removeFolderLink && folderLinkElem) {
                 elem.appendChild(folderLinkElem);
+            }
 
             //set document title:
             //<currentPageTitle>: <container path>
