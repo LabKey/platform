@@ -173,7 +173,6 @@ public class SavePaths implements DavCrawler.SavePaths
         String valuePath = toPathString(path);
         String valueName = path.equals(Path.rootPath) ? "/" : path.getName();   // "" is treated like NULL
         Date valueNextCrawl = new Date();
-        Date valueLastCrawled = nullDate;
 
         DbSchema db = getSearchSchema();
         TableInfo coll = getSearchSchema().getTable("CrawlCollections");
@@ -190,7 +189,7 @@ public class SavePaths implements DavCrawler.SavePaths
             insert.add(valueName);
             insert.add(valuePath);
             insert.add(valueNextCrawl);
-            insert.add(valueLastCrawled);
+            insert.add(nullDate);
             // where
             insert.add(valueParent);
             insert.add(valueName);
