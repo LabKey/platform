@@ -4599,7 +4599,7 @@ public class ExperimentController extends SpringActionController
         switch (exportType)
         {
             case BROWSER_DOWNLOAD:
-                XarExporter exporter = new XarExporter(lsidRelativizer, selection, getUser(), xarXmlFileName, null);
+                XarExporter exporter = new XarExporter(lsidRelativizer, selection, getUser(), xarXmlFileName, null, getContainer());
 
                 getViewContext().getResponse().setContentType("application/zip");
                 ResponseHelper.setContentDisposition(getViewContext().getResponse(), ResponseHelper.ContentDispositionType.attachment, fileName);

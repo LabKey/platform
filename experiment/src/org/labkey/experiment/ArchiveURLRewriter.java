@@ -47,7 +47,7 @@ public class ArchiveURLRewriter extends URLRewriter
     }
 
     @Override
-    public String rewriteURL(Path path, ExpData data, String roleName, ExpRun run, User user) throws ExperimentException
+    public String rewriteURL(Path path, ExpData data, String roleName, ExpRun run, User user, String rootFilePath) throws ExperimentException
     {
         if (path != null && (_roles == null || _roles.contains(roleName)))
         {
@@ -61,7 +61,7 @@ public class ArchiveURLRewriter extends URLRewriter
             {
                 rootDir = run.getFilePathRootPath();
             }
-            return addFile(ExperimentService.get().getExpData(data.getRowId()), path, getDirectoryName(run), rootDir, data.findDataHandler(), user);
+            return addFile(ExperimentService.get().getExpData(data.getRowId()), path, getDirectoryName(run), rootDir, data.findDataHandler(), user, rootFilePath);
         }
         return null;
     }
@@ -79,7 +79,7 @@ public class ArchiveURLRewriter extends URLRewriter
         return "Run" + run.getRowId();
     }
 
-    public String addFile(ExpData data, Path path, String directoryName, Path rootDir, ExperimentDataHandler dataHandler, User user)
+    public String addFile(ExpData data, Path path, String directoryName, Path rootDir, ExperimentDataHandler dataHandler, User user, String fileRootPath)
             throws ExperimentException
     {
         String name;
@@ -115,7 +115,7 @@ public class ArchiveURLRewriter extends URLRewriter
                 }
                 if (Files.exists(path) || (data.isFinalRunOutput()))
                 {
-                    _files.put(path, new FileInfo(data, path, name, dataHandler, user));
+                    _files.put(path, new FileInfo(data, path, name, dataHandler, user, fileRootPath));
                 }
             }
         }
