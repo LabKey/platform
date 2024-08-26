@@ -24,6 +24,7 @@ import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.bigiron.mssql.GroupConcatInstallationManager;
+import org.labkey.bigiron.mssql.MicrosoftSqlServer2016Dialect;
 import org.labkey.bigiron.mssql.MicrosoftSqlServerDialectFactory;
 import org.labkey.bigiron.mssql.MicrosoftSqlServerVersion;
 import org.labkey.bigiron.mssql.synonym.SynonymTestCase;
@@ -87,6 +88,7 @@ public class BigIronModule extends CodeOnlyModule
     {
         return Set.of(
             GroupConcatInstallationManager.TestCase.class,
+            MicrosoftSqlServer2016Dialect.TestCase.class,
             MicrosoftSqlServerVersion.TestCase.class,
             OracleVersion.TestCase.class,
             SynonymTestCase.class
