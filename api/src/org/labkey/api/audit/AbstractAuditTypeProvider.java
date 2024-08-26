@@ -107,8 +107,8 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
         this.domainKind = domainKind;
 
         // Issue 20310: initialize AuditTypeProvider when registered during startup
-        User auditUser = new LimitedUser(UserManager.getGuestUser(), ReaderRole.class);
-        initializeProvider(auditUser);
+        //User auditUser = new LimitedUser(UserManager.getGuestUser(), ReaderRole.class);
+        //initializeProvider(auditUser);
     }
 
     protected AbstractAuditDomainKind getDomainKind()
@@ -193,8 +193,12 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
 
 
     // NOTE: Changing the name of an existing PropertyDescriptor will lose data!
-    public final void ensureProperties(User user, Domain domain)
+    public final void ensureProperties()
     {
+        User user = User.getAdminServiceUser();
+        initializeProvider(user);
+        Domain domain = getDomain();
+
         if (domain != null && domainKind != null)
         {
             // Create a map of desired properties

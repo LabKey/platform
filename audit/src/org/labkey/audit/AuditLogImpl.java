@@ -110,9 +110,9 @@ public class AuditLogImpl implements AuditLogService, StartupListener
             {
                 if (provider instanceof AbstractAuditTypeProvider auditTypeProvider)
                 {
-                    // Domain domain = auditTypeProvider.getDomain();
+                    //      Domain domain = auditTypeProvider.getDomain();
                     // fixup any domain changes between the provisioned table and the domain kind
-                    // auditTypeProvider.ensureProperties(User.getAdminServiceUser(), domain);
+                    auditTypeProvider.ensureProperties();
                 }
             }
             _logToDatabase.set(true);
