@@ -59,7 +59,14 @@ public class MicrosoftSqlServer2016Dialect extends MicrosoftSqlServer2014Dialect
         // This seems to be the only string format acceptable for sending Timestamps, but unfortunately it's ambiguous;
         // SQL Server interprets the "MM-dd" portion based on the database's regional settings. So we must query the
         // current date format and switch the formatter pattern based on what we find. See Issue 51129.
-        _timestampFormatter = DateTimeFormatter.ofPattern("yyyy-" + ("mdy".equals(_dateFormat) ? "MM-dd" : "dd-MM") + " HH:mm:ss.SSS");
+        String mdFormat = switch (_dateFormat)
+        {
+            case "mdy" -> "MM-dd";
+            case "dmy" -> "dd-MM";
+            default -> throw new IllegalStateException("Unsupported date format: " + _dateFormat);
+        };
+
+        _timestampFormatter = DateTimeFormatter.ofPattern("yyyy-" + mdFormat + " HH:mm:ss.SSS");
 
         LOG.info("\n    Language:                 {}\n    DateFormat:               {}", _language, _dateFormat);
     }
