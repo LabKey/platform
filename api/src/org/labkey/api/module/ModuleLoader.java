@@ -1280,35 +1280,6 @@ public class ModuleLoader implements MemTrackerListener
         return _tomcatVersion;
     }
 
-    public static @Nullable File getTomcatLib()
-    {
-        String classPath = System.getProperty("java.class.path", ".");
-
-        for (String path : StringUtils.split(classPath, File.pathSeparatorChar))
-        {
-            if (path.endsWith("/bin/bootstrap.jar"))
-            {
-                path = path.substring(0, path.length() - "/bin/bootstrap.jar".length());
-                if (new File(path, "lib").isDirectory())
-                    return new File(path, "lib");
-            }
-        }
-
-        String tomcat = System.getenv("CATALINA_HOME");
-
-        if (null == tomcat)
-            tomcat = System.getenv("TOMCAT_HOME");
-
-        if (null == tomcat)
-        {
-            _log.debug("Could not find CATALINA_HOME environment variable");
-            return null;
-        }
-
-        return new File(tomcat, "lib");
-    }
-
-
     /**
      * Initialize and update the Core module first. We want to change the core tables before we display pages, request
      * login, check permissions, or initialize any of the other modules.

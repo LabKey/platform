@@ -2,21 +2,16 @@ package org.labkey.core.admin.logger;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.test.TestWhen;
 
-import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.security.CodeSource;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @TestWhen(TestWhen.When.BVT)
 public class LoggingTestCase extends Assert
@@ -31,7 +26,7 @@ public class LoggingTestCase extends Assert
         String substring2 = "labkeywebapp/WEB-INF/classes/log4j2.xml"; // From an embedded distribution
 
         List<URL> list = Collections.list(getClass().getClassLoader().getResources(filename));
-        assertFalse("Didn't find expected file: " + filename, list.isEmpty());
+        assertFalse("Did not find expected file: " + filename, list.isEmpty());
         String first = list.get(0).toString();
         assertTrue("Did not find substring \"" + substring + "\" in file path of the first " + filename + " file on the class path. Here's what was found: "
             + list.stream().map(URL::toString).collect(Collectors.joining(", ")), first.contains(substring) || first.contains(substring2));
@@ -79,37 +74,19 @@ public class LoggingTestCase extends Assert
     }
 
     @Test
-    public void testNoJxlLogFile() throws IOException
+    public void testNoLog4j()
     {
-        File tomcatLib = ModuleLoader.getTomcatLib();
-
-        if (null != tomcatLib)
+        // Ensure no dependency has pulled in log4j 1.2 implementation
+        try
         {
-            File tomcat = tomcatLib.getParentFile();
-            try (Stream<Path> found = Files.find(tomcat.toPath(), 3, (path, basicFileAttributes) -> path.endsWith("jxl.log")))
-            {
-                String allFound = found.map(p ->
-                {
-                    StringBuilder result = new StringBuilder(p.toString());
-                    try
-                    {
-                        result.append(", modified ").append(Files.getLastModifiedTime(p)).append(", size ").append(Files.size(p)).append(", content:");
-                        try (BufferedReader r = new BufferedReader(Files.newBufferedReader(p)))
-                        {
-                            int lineNum = 1;
-                            String line;
-                            while ((line = r.readLine()) != null && lineNum <= 4)
-                            {
-                                lineNum++;
-                                result.append("\n").append(line);
-                            }
-                        }
-                    }
-                    catch (IOException ignored) {}
-                    return result.toString();
-                }).collect(Collectors.joining(", "));
-                assertTrue("Found jxl.log file(s) in Tomcat folder; this likely means that log4j 1.2 is present! Files found: " + allFound, allFound.isEmpty());
-            }
+            // This class is present in log4j 1.2 but not the 1.2-to-2.0 mapper
+            Class<?> clazz = Class.forName("org.apache.log4j.AsyncAppender");
+            CodeSource source = clazz.getProtectionDomain().getCodeSource();
+            fail(clazz + " was found which means log4j 1.2 is present!" + (null != source ? " (" + source.getLocation() + ")" : ""));
+        }
+        catch (ClassNotFoundException ignored)
+        {
+            // Expected
         }
     }
 }
