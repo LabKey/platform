@@ -1073,7 +1073,7 @@ public class LoginController extends SpringActionController
         else if (isAdminOnlyMode())
         {
             WikiRenderingService wikiService = WikiRenderingService.get();
-            HtmlString content = wikiService.getFormattedHtml(WikiRendererType.RADEOX, ModuleLoader.getInstance().getAdminOnlyMessage());
+            HtmlString content = wikiService.getFormattedHtml(WikiRendererType.RADEOX, ModuleLoader.getInstance().getAdminOnlyMessage(), "Admin only message");
             HtmlView adminMessageView = new HtmlView("The site is currently undergoing maintenance", content);
             vBox.addView(adminMessageView);
         }

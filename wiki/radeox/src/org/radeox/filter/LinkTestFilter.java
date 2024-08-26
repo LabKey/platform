@@ -135,7 +135,7 @@ public class LinkTestFilter extends LocaleRegexTokenFilter {
                 interWiki.expand(writer, extSpace, name, view);
               }
             } catch (IOException e) {
-              log.debug("InterWiki " + extSpace + " not found.");
+              log.debug("InterWiki " + extSpace + " not found in " + context.getRenderContext());
             }
           } else {
             buffer.append("&#91;<span class=\"error\">");
