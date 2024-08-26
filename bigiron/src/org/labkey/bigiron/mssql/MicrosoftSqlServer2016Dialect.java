@@ -21,6 +21,7 @@ import org.junit.Test;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.StatementWrapper;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.logging.LogHelper;
@@ -213,37 +214,43 @@ public class MicrosoftSqlServer2016Dialect extends MicrosoftSqlServer2014Dialect
         @Test
         public void testTimestamps()
         {
-            try (Connection conn = DbScope.getLabKeyScope().getConnection())
+            DbScope scope = DbScope.getLabKeyScope();
+            SqlDialect dialect = scope.getSqlDialect();
+
+            if (dialect.isSqlServer() && dialect instanceof MicrosoftSqlServer2016Dialect)
             {
-                Timestamp ts = new Timestamp(new Date().getTime());
-                Calendar cal = Calendar.getInstance();
-
-                try (PreparedStatement statement = conn.prepareStatement("SELECT ?"))
+                try (Connection conn = DbScope.getLabKeyScope().getConnection())
                 {
-                    Assert.assertTrue(statement instanceof TimestampStatementWrapper);
-                    statement.setTimestamp(1, ts);
-                    statement.setTimestamp(1, ts, cal);
-                    statement.setObject(1, ts, Types.TIMESTAMP, 0);
-                    statement.setObject(1, ts, Types.TIMESTAMP);
-                    statement.setObject(1, ts);
-                }
+                    Timestamp ts = new Timestamp(new Date().getTime());
+                    Calendar cal = Calendar.getInstance();
 
-                if (ModuleLoader.getInstance().hasModule("DataIntegration"))
-                {
-                    try (CallableStatement statement = conn.prepareCall("{call etltest.etlTest(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)}"))
+                    try (PreparedStatement statement = conn.prepareStatement("SELECT ?"))
                     {
                         Assert.assertTrue(statement instanceof TimestampStatementWrapper);
-                        statement.setTimestamp("filterStartTimeStamp", ts);
-                        statement.setTimestamp("filterStartTimeStamp", ts, cal);
-                        statement.setObject("filterStartTimeStamp", ts, Types.TIMESTAMP, 0);
-                        statement.setObject("filterStartTimeStamp", ts, Types.TIMESTAMP);
-                        statement.setObject("filterStartTimeStamp", ts);
+                        statement.setTimestamp(1, ts);
+                        statement.setTimestamp(1, ts, cal);
+                        statement.setObject(1, ts, Types.TIMESTAMP, 0);
+                        statement.setObject(1, ts, Types.TIMESTAMP);
+                        statement.setObject(1, ts);
+                    }
+
+                    if (ModuleLoader.getInstance().hasModule("DataIntegration"))
+                    {
+                        try (CallableStatement statement = conn.prepareCall("{call etltest.etlTest(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)}"))
+                        {
+                            Assert.assertTrue(statement instanceof TimestampStatementWrapper);
+                            statement.setTimestamp("filterStartTimeStamp", ts);
+                            statement.setTimestamp("filterStartTimeStamp", ts, cal);
+                            statement.setObject("filterStartTimeStamp", ts, Types.TIMESTAMP, 0);
+                            statement.setObject("filterStartTimeStamp", ts, Types.TIMESTAMP);
+                            statement.setObject("filterStartTimeStamp", ts);
+                        }
                     }
                 }
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeException(e);
+                catch (SQLException e)
+                {
+                    throw new RuntimeException(e);
+                }
             }
         }
     }
