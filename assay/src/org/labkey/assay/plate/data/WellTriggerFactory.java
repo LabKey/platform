@@ -204,7 +204,7 @@ public class WellTriggerFactory implements TriggerFactory
             try
             {
                 PlateManager.get().computeWellGroups(c, user, wellGroupChanges);
-                PlateManager.get().validateWellGroups(c, modifiedPlates);
+                PlateManager.get().validateWellGroups(c, user, modifiedPlates);
             }
             catch (ValidationException e)
             {

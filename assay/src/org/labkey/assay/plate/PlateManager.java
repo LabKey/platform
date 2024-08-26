@@ -3452,9 +3452,25 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         }
     }
 
-    public void validateWellGroups(Container container, Collection<Integer> plateRowIds) throws ValidationException
+    private Set<Integer> getValidControlSampleIds(Container container, User user, Integer plateRowId) throws ValidationException
+    {
+        UserSchema userSchema = QueryService.get().getUserSchema(user, container, PlateSchema.SCHEMA_NAME);
+        TableInfo controlSamplesTInfo = userSchema.getTable("ControlSamples");
+        TableSelector selector = new TableSelector(controlSamplesTInfo, Collections.singleton("RowId"));
+
+        // Feed plate set id into ControlSamples' query parameter
+        Plate p = getPlate(container, plateRowId);
+        if (p == null || p.getPlateSet() == null)
+            throw new ValidationException("Unable to resolve Plate or Plate Set.");
+
+        selector.setNamedParameters(Collections.singletonMap("PlateSetRowId", p.getPlateSet().getRowId()));
+        return new HashSet<>(selector.getCollection(Integer.class));
+    }
+
+    public void validateWellGroups(Container container, User user, Collection<Integer> plateRowIds) throws ValidationException
     {
         clearCache(plateRowIds);
+        Set<Integer> validControls = null;
 
         for (var plateRowId : plateRowIds)
         {
@@ -3466,7 +3482,13 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             {
                 switch (wellGroup.getType())
                 {
-                    case CONTROL, NEGATIVE_CONTROL, POSITIVE_CONTROL, SAMPLE -> validateWellGroup(plate, wellGroup);
+                    case CONTROL, NEGATIVE_CONTROL, POSITIVE_CONTROL ->
+                    {
+                        if (validControls == null)
+                            validControls = getValidControlSampleIds(container, user, plateRowIds.iterator().next());
+                        validateControlWellGroup(plate, wellGroup, validControls);
+                    }
+                    case SAMPLE -> validateWellGroup(plate, wellGroup);
                     default -> throw new ValidationException(
                         String.format(
                             "Well Group Type \"%s\" is not supported for assay type \"%s\" plates.",
@@ -3509,6 +3531,28 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 ));
             }
         }
+    }
+
+    private void validateControlWellGroup(Plate plate, WellGroup wellGroup, Set<Integer> validControls) throws ValidationException
+    {
+        for (var position : wellGroup.getPositions())
+        {
+            var well = plate.getWell(position.getRow(), position.getColumn());
+            if (well.getSampleId() != null)
+            {
+                if (!validControls.contains(well.getSampleId()))
+                {
+                    throw new ValidationException(
+                            String.format(
+                                    "The sample of row id %s is not a valid control.",
+                                    well.getSampleId()
+                            )
+                    );
+                }
+            }
+        }
+
+        validateWellGroup(plate, wellGroup);
     }
 
     private void validateWellGroup(Plate plate, WellGroup wellGroup) throws ValidationException
