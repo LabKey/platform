@@ -1833,9 +1833,10 @@ public class ModuleLoader implements MemTrackerListener
     {
         setUpgradeState(UpgradeState.UpgradeComplete);
 
+        handleUnknownModules();
+
         if (performedUpgrade)
         {
-            handleUnknownModules();
             updateModuleProperties();
         }
 
