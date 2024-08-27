@@ -25,8 +25,8 @@ public class WikiRenderingServiceImpl implements WikiRenderingService
     @Override
     public HtmlString getFormattedHtml(WikiRendererType rendererType,
                                        String source,
-                                       String attachPrefix,
                                        @Nullable String sourceDescription,
+                                       String attachPrefix,
                                        Collection<? extends Attachment> attachments)
     {
         return HtmlStringBuilder.of(WIKI_PREFIX)
