@@ -1346,7 +1346,8 @@ public class DomainUtil
 
             if (field.getValueExpression() != null && field.getValueExpression().trim().length() > 4000)
             {
-                exception.addFieldError(name, getDomainErrorMessage(updates,"The value expression for '" + name + "' is too long. Please limit to 4000 characters."));
+                exception.addFieldError(name, getDomainErrorMessage(updates,"The value expression for '" + name
+                        + "' is too long (" + field.getValueExpression().trim().length() + " characters). Please limit to 4000 characters."));
             }
         }
 
