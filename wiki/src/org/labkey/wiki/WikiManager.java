@@ -521,7 +521,7 @@ public class WikiManager implements WikiService
         //get formatter specified for this version
         WikiRenderer w = wikiversion.getRenderer(hrefPrefix, attachPrefix, nameTitleMap, wiki.getAttachments());
 
-        return w.format(wikiversion.getBody(), "Wiki " + wiki.getEntityId() + " version " + wikiversion.getRowId() + " in " + wiki.getContainerPath());
+        return w.format(wikiversion.getBody(), "Wiki '" + wiki.getName() + "' version " + wikiversion.getVersion() + " in " + wiki.getContainerPath());
     }
 
 
