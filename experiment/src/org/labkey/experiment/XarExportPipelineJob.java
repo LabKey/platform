@@ -97,7 +97,7 @@ public class XarExportPipelineJob extends PipelineJob
         try
         {
             getLogger().info("Starting to write XAR to " + _exportFile.getPath());
-            XarExporter exporter = new XarExporter(_lsidRelativizer, _selection, getUser(), _xarXmlFileName, getLogger());
+            XarExporter exporter = new XarExporter(_lsidRelativizer, _selection, getUser(), _xarXmlFileName, getLogger(), getContainer());
             FileUtil.mkdirs(_exportFile.getParentFile());
             try (FileOutputStream fOut = new FileOutputStream(_exportFile);
                  ViewContext.StackResetter ignored = ViewContext.pushMockViewContext(getUser(), getContainer(), getInfo().getURL()))

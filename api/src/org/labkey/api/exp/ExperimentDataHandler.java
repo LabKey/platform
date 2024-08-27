@@ -79,7 +79,7 @@ public interface ExperimentDataHandler extends Handler<ExpData>
      * create something based exclusively on what's in the database.
      */
     void exportFile(ExpData data, File dataFile, User user, OutputStream out) throws ExperimentException;
-    default void exportFile(ExpData data, Path dataFile, User user, OutputStream out) throws ExperimentException
+    default void exportFile(ExpData data, Path dataFile, String rootFilePath, User user, OutputStream out) throws ExperimentException
     {
     }
 

@@ -42,22 +42,25 @@ public class StudyExportContext extends SimpleStudyExportContext
     private final List<DatasetDefinition> _datasets = new LinkedList<>();
     private final Set<Integer> _datasetIds = new HashSet<>();
 
+    private final String _fileRootPath;
+
     private Consumer<StudyDocument.Study> _studyXmlModifier = study -> {};  // By default, make no changes to exported study XML
 
     public StudyExportContext(StudyImpl study, User user, Container c, Set<String> dataTypes, LoggerGetter logger)
     {
-        this(study, user, c, dataTypes, PHI.NotPHI, new ParticipantMapper(study, false, false), false, logger);
+        this(study, user, c, dataTypes, PHI.NotPHI, new ParticipantMapper(study, false, false), false, logger, null);
     }
 
     public StudyExportContext(StudyImpl study, User user, Container c, Set<String> dataTypes, List<DatasetDefinition> initDatasets, LoggerGetter logger)
     {
-        this(study, user, c, dataTypes, PHI.NotPHI, new ParticipantMapper(study, false, false), false, logger);
+        this(study, user, c, dataTypes, PHI.NotPHI, new ParticipantMapper(study, false, false), false, logger, null);
         setDatasets(initDatasets);
     }
 
-    public StudyExportContext(StudyImpl study, User user, Container c, Set<String> dataTypes, PHI phiLevel, ParticipantMapper participantMapper, boolean maskClinic, LoggerGetter logger)
+    public StudyExportContext(StudyImpl study, User user, Container c, Set<String> dataTypes, PHI phiLevel, ParticipantMapper participantMapper, boolean maskClinic, LoggerGetter logger, String fileRootPath)
     {
         super(user, c, getStudyDocument(), dataTypes, phiLevel, participantMapper, maskClinic, logger, null);
+        _fileRootPath = fileRootPath;
 
         if (_datasets.size() == 0)
             initializeDatasets(study);
@@ -65,7 +68,7 @@ public class StudyExportContext extends SimpleStudyExportContext
 
     public StudyExportContext(StudyImpl study, User user, Container c, Set<String> dataTypes, PHI phiLevel, ParticipantMapper participantMapper, boolean maskClinic, List<DatasetDefinition> initDatasets, LoggerGetter logger)
     {
-        this(study, user, c, dataTypes, phiLevel, participantMapper, maskClinic, logger);
+        this(study, user, c, dataTypes, phiLevel, participantMapper, maskClinic, logger, null);
         setDatasets(initDatasets);
     }
 
@@ -132,5 +135,10 @@ public class StudyExportContext extends SimpleStudyExportContext
     public void setStudyXmlModifier(Consumer<StudyDocument.Study> studyXmlModifier)
     {
         _studyXmlModifier = studyXmlModifier;
+    }
+
+    public String getFileRootPath()
+    {
+        return _fileRootPath;
     }
 }

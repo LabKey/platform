@@ -110,6 +110,10 @@ import java.util.TreeMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import static org.labkey.api.dataiterator.SimpleTranslator.getContainerFileRootPath;
+import static org.labkey.api.exp.api.ColumnExporter.FILE_ROOT_SUBSTITUTION;
+
+
 /**
  * User: jeckels
  * Date: Nov 21, 2005
@@ -118,6 +122,7 @@ public class XarExporter
 {
     private final URLRewriter _urlRewriter;
     private final User _user;
+    private final String _fileRootPath;
     private final ExperimentArchiveDocument _document;
     private final ExperimentArchiveType _archive;
 
@@ -160,30 +165,31 @@ public class XarExporter
     AssayProvider.XarCallbacks assayCallbacks = null;
 
 
-    public XarExporter(LSIDRelativizer.RelativizedLSIDs relativizedLSIDs, URLRewriter urlRewriter, User user)
+    public XarExporter(LSIDRelativizer.RelativizedLSIDs relativizedLSIDs, URLRewriter urlRewriter, User user, Container container)
     {
         // UNDONE: Is it ok to share the relativizedLSIDs across XarExporters and tsv writers?
         _relativizedLSIDs = relativizedLSIDs;
         _urlRewriter = urlRewriter;
         _user = user;
+        _fileRootPath = getContainerFileRootPath(container);
 
         _document = ExperimentArchiveDocument.Factory.newInstance();
         _archive = _document.addNewExperimentArchive();
     }
 
-    public XarExporter(LSIDRelativizer lsidRelativizer, URLRewriter urlRewriter, User user)
+    public XarExporter(LSIDRelativizer lsidRelativizer, URLRewriter urlRewriter, User user, Container container)
     {
-        this(new LSIDRelativizer.RelativizedLSIDs(lsidRelativizer), urlRewriter, user);
+        this(new LSIDRelativizer.RelativizedLSIDs(lsidRelativizer), urlRewriter, user, container);
     }
 
-    public XarExporter(LSIDRelativizer lsidRelativizer, XarExportSelection selection, User user, String xarXmlFileName, Logger log) throws ExperimentException
+    public XarExporter(LSIDRelativizer lsidRelativizer, XarExportSelection selection, User user, String xarXmlFileName, Logger log, Container container) throws ExperimentException
     {
-        this(new LSIDRelativizer.RelativizedLSIDs(lsidRelativizer), selection, user, xarXmlFileName, log);
+        this(new LSIDRelativizer.RelativizedLSIDs(lsidRelativizer), selection, user, xarXmlFileName, log, container);
     }
 
-    public XarExporter(LSIDRelativizer.RelativizedLSIDs relativizedLSIDs, XarExportSelection selection, User user, String xarXmlFileName, Logger log) throws ExperimentException
+    public XarExporter(LSIDRelativizer.RelativizedLSIDs relativizedLSIDs, XarExportSelection selection, User user, String xarXmlFileName, Logger log, Container container) throws ExperimentException
     {
-        this(relativizedLSIDs, selection.createURLRewriter(), user);
+        this(relativizedLSIDs, selection.createURLRewriter(), user, container);
         _log = log;
 
         selection.addContent(this);
@@ -225,7 +231,7 @@ public class XarExporter
         ArchiveURLRewriter u = (ArchiveURLRewriter)_urlRewriter;
 
         Path rootPath = FileUtil.getAbsoluteCaseSensitivePath(data.getContainer(), data.getFilePath().getParent().toUri());
-        u.addFile(data, data.getFilePath(), "", rootPath, data.findDataHandler(), _user);
+        u.addFile(data, data.getFilePath(), "", rootPath, data.findDataHandler(), _user, _fileRootPath);
     }
 
     public void addExperimentRun(ExpRun run) throws ExperimentException
@@ -427,7 +433,7 @@ public class XarExporter
             }
 
             ExpDataImpl expData = new ExpDataImpl(data);
-            String url = _urlRewriter.rewriteURL(expData.getFilePath(), expData, roleName, run, _user);
+            String url = _urlRewriter.rewriteURL(expData.getFilePath(), expData, roleName, run, _user, _fileRootPath);
             if (AutoFileLSIDReplacer.AUTO_FILE_LSID_SUBSTITUTION.equals(dataLSID.getStringValue()))
             {
                 if (url != null && !"".equals(url))
@@ -967,7 +973,7 @@ public class XarExporter
         Path path = data.getFilePath();
         if (path != null)
         {
-            String url = _urlRewriter.rewriteURL(path, data, role, run, _user);
+            String url = _urlRewriter.rewriteURL(path, data, role, run, _user, _fileRootPath);
             if (url != null)
                 xData.setDataFileUrl(url);
         }
@@ -1343,7 +1349,10 @@ public class XarExporter
                         break;
                     case FILE_LINK:
                         simpleValue.setValueType(SimpleTypeNames.FILE_LINK);
-                        simpleValue.setStringValue(value.getStringValue());
+                        String fileValue = value.getStringValue();
+                        if (!StringUtils.isEmpty(_fileRootPath) && fileValue.startsWith(_fileRootPath))
+                            fileValue = fileValue.replace(_fileRootPath, FILE_ROOT_SUBSTITUTION);
+                        simpleValue.setStringValue(fileValue);
                         break;
                     case INTEGER:
                         simpleValue.setValueType(SimpleTypeNames.INTEGER);
@@ -1368,7 +1377,7 @@ public class XarExporter
                                     Path path = FileUtil.getPath(parentContainer, uri);
                                     if (Files.exists(path))
                                     {
-                                        link = _urlRewriter.rewriteURL(path, null, null, null, _user);
+                                        link = _urlRewriter.rewriteURL(path, null, null, null, _user, _fileRootPath);
                                     }
                                 }
                             }

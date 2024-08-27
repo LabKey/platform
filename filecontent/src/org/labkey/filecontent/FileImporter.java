@@ -37,8 +37,6 @@ import java.nio.file.StandardCopyOption;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.labkey.filecontent.FileWriter.DIR_NAME;
-
 /**
  * Imports into the webdav file root for the folder.
  */
@@ -62,11 +60,25 @@ public class FileImporter implements FolderImporter
     @Override
     public void process(@Nullable PipelineJob job, FolderImportContext ctx, VirtualFile root) throws Exception
     {
-        VirtualFile filesVF = root.getDir(DIR_NAME);
+        boolean hasFiles = processRoot(ctx, root, FileContentService.ContentType.files);
+        boolean hasAssayFiles = processRoot(ctx, root, FileContentService.ContentType.assayfiles);
+
+        if (hasFiles || hasAssayFiles)
+        {
+            ctx.getLogger().info("Ensuring exp.data rows exist for imported files");
+            // Ensure that we have an exp.data row for each file
+            ExpDataTable table = ExperimentService.get().createDataTable("data", new ExpSchema(ctx.getUser(), ctx.getContainer()), null);
+            FileContentService.get().ensureFileData(table);
+        }
+    }
+
+    private boolean processRoot(FolderImportContext ctx, VirtualFile root, FileContentService.ContentType fileType) throws IOException
+    {
+        VirtualFile filesVF = root.getDir(fileType.name());
         if (filesVF != null)
         {
             FileContentService service = FileContentService.get();
-            Path rootFile = service.getFileRootPath(ctx.getContainer(), FileContentService.ContentType.files);
+            Path rootFile = service.getFileRootPath(ctx.getContainer(), fileType);
             if (null == rootFile)
             {
                 ctx.getLogger().warn("Files were not imported due to a problem with the file root configuration in the target folder");
@@ -77,19 +89,17 @@ public class FileImporter implements FolderImporter
                     FileUtil.createDirectories(rootFile);
                 if (Files.isDirectory(rootFile))
                 {
-                    ctx.getLogger().info("Starting to copy files");
+                    ctx.getLogger().info("Starting to copy files to @" + fileType.name());
                     AtomicInteger count = new AtomicInteger();
                     copy(filesVF, rootFile, ctx.getLogger(), System.currentTimeMillis() + LOG_INTERVAL, count);
 
-                    ctx.getLogger().info("Copied " + count.get() + " files");
+                    ctx.getLogger().info("Copied " + count.get() + " files to @" + fileType.name());
 
-                    ctx.getLogger().info("Ensuring exp.data rows exist for imported files");
-                    // Ensure that we have an exp.data row for each file
-                    ExpDataTable table = ExperimentService.get().createDataTable("data", new ExpSchema(ctx.getUser(), ctx.getContainer()), null);
-                    service.ensureFileData(table);
+                    return true;
                 }
             }
         }
+        return false;
     }
 
     private void copy(VirtualFile virtualFile, Path realPath, Logger log, long nextLogTime, AtomicInteger count) throws IOException

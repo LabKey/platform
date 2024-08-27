@@ -32,6 +32,7 @@ import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.api.writer.VirtualFile;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
@@ -43,8 +44,6 @@ import java.util.List;
  */
 public class FileWriter extends BaseFolderWriter
 {
-    public static final String DIR_NAME = "files";
-
     public static class Factory implements FolderWriterFactory
     {
         @Override
@@ -73,28 +72,39 @@ public class FileWriter extends BaseFolderWriter
         WebdavResource resource = getFilesDirectory(container);
         if (resource != null)
         {
-            VirtualFile virtualRoot = vf.getDir(DIR_NAME);
+            VirtualFile virtualRoot = vf.getDir(FileContentService.ContentType.files.name());
+            writeRoot(ctx, resource, virtualRoot);
+        }
 
-            // In-line first level of recursion to be able to exclude the "./export" directory, as we may be writing into it right now
-            // also exclude the "./cache" and "./unzip" directories as those are LabKey created as well
-            List<String> dirsToExclude = Arrays.asList(PipelineService.EXPORT_DIR, PipelineService.UNZIP_DIR, PipelineService.CACHE_DIR);
+        WebdavResource assayFilesResource = getAssayFilesDirectory(container);
+        if (assayFilesResource != null)
+        {
+            VirtualFile virtualRoot = vf.getDir(FileContentService.ContentType.assayfiles.name());
+            writeRoot(ctx, assayFilesResource, virtualRoot);
+        }
+    }
 
-            for (WebdavResource child : resource.list())
+    private void writeRoot(FolderExportContext ctx, WebdavResource resource, VirtualFile virtualRoot) throws IOException
+    {
+        // In-line first level of recursion to be able to exclude the "./export" directory, as we may be writing into it right now
+        // also exclude the "./cache" and "./unzip" directories as those are LabKey created as well
+        List<String> dirsToExclude = Arrays.asList(PipelineService.EXPORT_DIR, PipelineService.UNZIP_DIR, PipelineService.CACHE_DIR);
+
+        for (WebdavResource child : resource.list())
+        {
+            if (child.isCollection())
             {
-                if (child.isCollection())
+                if (dirsToExclude.stream().noneMatch(child.getName()::equalsIgnoreCase))
                 {
-                    if (dirsToExclude.stream().noneMatch(child.getName()::equalsIgnoreCase))
-                    {
-                        virtualRoot.getDir(child.getName()).saveWebdavTree(child, ctx.getUser());
-                    }
+                    virtualRoot.getDir(child.getName()).saveWebdavTree(child, ctx.getUser());
                 }
-                else
+            }
+            else
+            {
+                try (InputStream inputStream = child.getInputStream(ctx.getUser()); OutputStream outputStream = virtualRoot.getOutputStream(child.getName()))
                 {
-                    try (InputStream inputStream = child.getInputStream(ctx.getUser()); OutputStream outputStream = virtualRoot.getOutputStream(child.getName()))
-                    {
-                        if (inputStream != null)
-                            FileUtil.copyData(inputStream, outputStream);
-                    }
+                    if (inputStream != null)
+                        FileUtil.copyData(inputStream, outputStream);
                 }
             }
         }
@@ -104,7 +114,7 @@ public class FileWriter extends BaseFolderWriter
     {
         WebdavService webdavService = WebdavService.get();
         FileContentService fileContentService = FileContentService.get();
-        if (null == webdavService || null == fileContentService || !(fileContentService instanceof FileContentServiceImpl))
+        if (null == webdavService || !(fileContentService instanceof FileContentServiceImpl))
             return null;
 
         String resourcePath;
@@ -126,6 +136,23 @@ public class FileWriter extends BaseFolderWriter
         else
         {
             resourcePath = new Path(WebdavService.getServletPath()).append(container.getParsedPath()).append(FileContentService.FILES_LINK).toString();
+        }
+        return webdavService.lookup(resourcePath);
+    }
+
+    private WebdavResource getAssayFilesDirectory(Container container)
+    {
+        WebdavService webdavService = WebdavService.get();
+        FileContentService fileContentService = FileContentService.get();
+        if (null == webdavService || !(fileContentService instanceof FileContentServiceImpl))
+            return null;
+
+        String resourcePath;
+        if (fileContentService.isCloudRoot(container))
+            return null;
+        else
+        {
+            resourcePath = new Path(WebdavService.getServletPath()).append(container.getParsedPath()).append("@" + FileContentService.ContentType.assayfiles.name()).toString();
         }
         return webdavService.lookup(resourcePath);
     }
