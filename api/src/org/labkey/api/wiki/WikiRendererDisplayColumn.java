@@ -27,6 +27,7 @@ import org.labkey.api.util.logging.LogHelper;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 /**
  * Renders the contents of a database column in one of the supported {@link WikiRendererType} formats, as specified
@@ -38,13 +39,18 @@ public class WikiRendererDisplayColumn extends DataColumn
 {
     @NotNull
     private final String _renderTypeColumnName;
+    private final Function<RenderContext, String> _sourceDescriptionGenerator;
     private WikiRendererType _defaultRenderer = WikiRendererType.TEXT_WITH_LINKS;
     private static final Logger _log = LogHelper.getLogger(WikiRendererDisplayColumn.class, "Renders wiki content for grid and detail views");
 
-    public WikiRendererDisplayColumn(ColumnInfo contentColumn, @NotNull String renderTypeColumnName, WikiRendererType defaultRenderer)
+    public WikiRendererDisplayColumn(ColumnInfo contentColumn,
+                                     @NotNull String renderTypeColumnName,
+                                     WikiRendererType defaultRenderer,
+                                     @NotNull Function<RenderContext, String> sourceDescriptionGenerator)
     {
         super(contentColumn);
         _renderTypeColumnName = renderTypeColumnName;
+        _sourceDescriptionGenerator = sourceDescriptionGenerator;
         if (null != defaultRenderer)
             _defaultRenderer = defaultRenderer;
     }
@@ -82,7 +88,7 @@ public class WikiRendererDisplayColumn extends DataColumn
                 }
             }
 
-            rendered = wikiService.getFormattedHtml(rendererType, content);
+            rendered = wikiService.getFormattedHtml(rendererType, content, _sourceDescriptionGenerator.apply(ctx));
 
             Map<String, Object> newRow = new CaseInsensitiveHashMap<>(ctx.getRow());
             newRow.put(renderedFK.encode(), rendered);

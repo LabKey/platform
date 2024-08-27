@@ -128,7 +128,7 @@ public class MacroFilter extends RegexTokenFilter {
         } catch (IllegalArgumentException e) {
           buffer.append("<div class=\"error\">" + command + ": " + e.getMessage() + "</div>");
         } catch (Throwable e) {
-          log.warn("MacroFilter: unable to format macro: " + result.group(1), e);
+          log.warn("MacroFilter: unable to format macro: " + result.group(1) + " in " + context.getRenderContext(), e);
           buffer.append("<div class=\"error\">" + command + ": " + e.getMessage() + "</div>");
           return;
         }

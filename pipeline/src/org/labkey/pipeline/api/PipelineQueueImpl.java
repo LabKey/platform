@@ -99,8 +99,7 @@ public class PipelineQueueImpl extends AbstractPipelineQueue
 
         // Set centrally to avoid needing to set in each job. See PipelineJobRunner for equivalent functionality
         // when running through Enterprise Pipeline
-        QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, job.getContainer());
-        QueryService.get().setEnvironment(QueryService.Environment.USER, job.getUser());
+        QueryService.get().setEnvironment(job);
     }
 
 

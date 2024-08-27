@@ -46,9 +46,14 @@ public class BaseRenderContext implements RenderContext {
   private RenderEngine engine;
   private Map params;
   private Map values;
+  private final String sourceDescription;
 
   public BaseRenderContext() {
+    this(null);
+  }
+  public BaseRenderContext(String sourceDescription) {
     values = new HashMap();
+    this.sourceDescription = sourceDescription;
   }
 
   public Object get(String key) {
@@ -86,5 +91,10 @@ public class BaseRenderContext implements RenderContext {
 
   public boolean isCacheable() {
     return cacheable;
+  }
+
+  public String toString()
+  {
+    return super.toString() + sourceDescription == null ? "" : (" " + sourceDescription);
   }
 }

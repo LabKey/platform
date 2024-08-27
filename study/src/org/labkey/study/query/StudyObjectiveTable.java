@@ -63,7 +63,7 @@ public class StudyObjectiveTable extends BaseStudyTable
         }
 
         descriptionRendererTypeColumn.setHidden(true);
-        descriptionColumn.setDisplayColumnFactory(colInfo -> new WikiRendererDisplayColumn(colInfo, descriptionRendererTypeColumn.getName(), WikiRendererType.TEXT_WITH_LINKS));
+        descriptionColumn.setDisplayColumnFactory(colInfo -> new WikiRendererDisplayColumn(colInfo, descriptionRendererTypeColumn.getName(), WikiRendererType.TEXT_WITH_LINKS, ctx -> "StudyObjective"));
 
         // setup lookups for the standard fields
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Container")));

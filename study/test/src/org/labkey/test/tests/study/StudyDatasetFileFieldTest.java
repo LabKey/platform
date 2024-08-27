@@ -8,8 +8,10 @@ import org.junit.experimental.categories.Category;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
+import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.components.domain.DomainFormPanel;
+import org.labkey.test.components.ext4.Checkbox;
 import org.labkey.test.pages.DatasetInsertPage;
 import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.params.FieldDefinition;
@@ -30,6 +32,8 @@ https://www.labkey.org/home/Developer/issues/Secure/issues-details.view?issueId=
 @BaseWebDriverTest.ClassTimeout(minutes = 10)
 public class StudyDatasetFileFieldTest extends BaseWebDriverTest
 {
+    private final String IMPORT_PROJECT = "StudyDatasetFileFieldFolderImportProject";
+
     @BeforeClass
     public static void doSetup()
     {
@@ -62,6 +66,13 @@ public class StudyDatasetFileFieldTest extends BaseWebDriverTest
         clickButton("Create Study");
     }
 
+    @Override
+    protected void doCleanup(boolean afterTest) throws TestTimeoutException
+    {
+        _containerHelper.deleteProject(getProjectName(), afterTest);
+        _containerHelper.deleteProject(IMPORT_PROJECT, afterTest);
+    }
+
     @Test
     public void testFileField() throws IOException
     {
@@ -92,6 +103,28 @@ public class StudyDatasetFileFieldTest extends BaseWebDriverTest
         log("Verify file field is not deleted after edit");
         File downloadedFile = doAndWaitForDownload(() -> waitAndClick(WAIT_FOR_JAVASCRIPT, Locator.tagWithAttribute("a", "title", "Download attached file"), 0));
         checker().verifyTrue("Incorrect file name ", FileUtils.contentEquals(downloadedFile, inputFile));
+
+        goToFolderManagement().goToExportTab();
+        new Checkbox(Locator.tagWithText("label", "Files").precedingSibling("input").findElement(getDriver())).check();
+        File exportedFolderFile = doAndWaitForDownload(()->findButton("Export").click());
+
+        log("Create a simple project as the import target.");
+        _containerHelper.createProject(IMPORT_PROJECT, null);
+        goToProjectHome(IMPORT_PROJECT);
+        log("Import the folder.");
+        importFolderFromZip(exportedFolderFile);
+
+        log("Validate that the dataset has been imported as expected.");
+        goToProjectHome(IMPORT_PROJECT);
+
+        _studyHelper.goToManageDatasets()
+                .selectDatasetByName(datasetName)
+                .clickViewData();
+
+        assertElementPresent("Did not find the expected sample.txt from the imported dataset.", Locator.tagWithText("a", " datasetdata/sample.txt"), 1);
+        downloadedFile = doAndWaitForDownload(() -> waitAndClick(WAIT_FOR_JAVASCRIPT, Locator.tagWithAttribute("a", "title", "Download attached file"), 0));
+        checker().verifyTrue("Incorrect file content ", FileUtils.contentEquals(downloadedFile, inputFile));
+
     }
 
     protected void createDataset(String name)

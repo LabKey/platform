@@ -1,3 +1,7 @@
+1.0.6 2024-08-26
+
+- Improve error logging
+
 1.0.5 2022-08-30
 
 - Expunge example and test files
