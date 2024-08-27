@@ -204,6 +204,7 @@ public class PlateCache
     public static void uncache(Container c, PlateSet plateSet)
     {
         // TODO: Feels like this could end up caching a bunch of a plates that were not cached just to uncache them.
+        // Consider introducing plate set caching and moving custom field modeling to plate sets
         getPlatesForPlateSet(c, plateSet.getRowId()).forEach(plate -> uncache(c, plate));
     }
 
