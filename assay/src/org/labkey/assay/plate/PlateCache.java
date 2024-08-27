@@ -6,6 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.assay.plate.Plate;
+import org.labkey.api.assay.plate.PlateSet;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
@@ -198,6 +199,13 @@ public class PlateCache
 
         if (_loader._containerPlateMap.containsKey(c))
             _loader._containerPlateMap.get(c).remove(plate);
+    }
+
+    public static void uncache(Container c, PlateSet plateSet)
+    {
+        // TODO: Feels like this could end up caching a bunch of a plates that were not cached just to uncache them.
+        // Consider introducing plate set caching and moving custom field modeling to plate sets
+        getPlatesForPlateSet(c, plateSet.getRowId()).forEach(plate -> uncache(c, plate));
     }
 
     public static void clearCache()

@@ -54,9 +54,9 @@ public class AssayDbSchema
         return getSchema().getTable("WellGroupPositions");
     }
 
-    public TableInfo getTableInfoPlateProperty()
+    public TableInfo getTableInfoPlateSetProperty()
     {
-        return getSchema().getTable("PlateProperty");
+        return getSchema().getTable("PlateSetProperty");
     }
 
     public TableInfo getTableInfoPlateSet()

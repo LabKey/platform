@@ -111,10 +111,10 @@
       </column>
     </columns>
   </table>
-  <table tableName="PlateProperty" tableDbType="TABLE">
+  <table tableName="PlateSetProperty" tableDbType="TABLE">
     <columns>
       <column columnName="RowId"/>
-      <column columnName="PlateId"/>
+      <column columnName="PlateSetId"/>
       <column columnName="PropertyURI"/>
       <column columnName="PropertyId"/>
     </columns>
