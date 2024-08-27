@@ -16,6 +16,7 @@
 
 package org.labkey.devtools;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.FormArrayList;
@@ -57,6 +58,7 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -83,12 +85,7 @@ import static org.labkey.api.util.HttpUtil.Method.PUT;
 import static org.labkey.api.util.PageFlowUtil.filter;
 
 /**
- * User: matthewb
- * Date: Sep 6, 2007
- * Time: 8:55:54 AM
- *
- * This controller is for testing the controller framework including
- *
+ * This controller is for testing the controller framework including:
  *  actions
  *  jsp
  *  tags
@@ -99,6 +96,7 @@ import static org.labkey.api.util.PageFlowUtil.filter;
 public class TestController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(TestController.class);
+
     public static final String NAME = "test";
 
     public TestController()
@@ -1113,8 +1111,8 @@ public class TestController extends SpringActionController
         }
     }
 
-
-    /* This action is broken at the moment.  However, pivot.jsp and resources/olap/specimen.xml
+    /*
+     * This action is broken at the moment. However, pivot.jsp and resources/olap/specimen.xml
      * show how the olap APIs should work on the client side.
      */
     @RequiresSiteAdmin
@@ -1132,4 +1130,25 @@ public class TestController extends SpringActionController
         }
     }
 
+    /**
+     * We expect {@code response.sendError()} to send the message in the response, but this wasn't happening by default
+     * on embedded Tomcat distributions. This simple action provides a straightforward test. See Issue 51110 and
+     * {@code SendErrorTest}.
+     */
+    @RequiresSiteAdmin
+    public static class SendErrorAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws IOException
+        {
+            HttpServletResponse response = getViewContext().getResponse();
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "This is a very bad request!");
+            return null;
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+        }
+    }
 }
