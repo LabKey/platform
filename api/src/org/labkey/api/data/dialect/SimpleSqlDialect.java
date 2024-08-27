@@ -441,6 +441,13 @@ public abstract class SimpleSqlDialect extends SqlDialect
     {
         return false;
     }
+
+    @Override
+    public boolean supportsNativeGreatestAndLeast()
+    {
+        return false;
+    }
+
     // The following methods should never be called on a simple dialect.
 
     @Override
@@ -545,11 +552,5 @@ public abstract class SimpleSqlDialect extends SqlDialect
     public String translateParameterName(String name, boolean dialectSpecific)
     {
         throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean supportsNativeGreatestAndLeast()
-    {
-        return false;
     }
 }

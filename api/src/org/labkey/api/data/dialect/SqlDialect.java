@@ -873,6 +873,10 @@ public abstract class SqlDialect
             return id;
     }
 
+    public String makeLegalIdentifierName(String id)
+    {
+        return id;
+    }
 
     // Escape quotes and quote the identifier  // TODO: Move to DialectStringHandler?
     public String quoteIdentifier(String id)
