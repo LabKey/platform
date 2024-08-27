@@ -684,7 +684,7 @@ public class StudyImpl extends ExtensibleStudyEntity<String, StudyImpl> implemen
     {
         String description = getDescription();
 
-        if (description == null || description.length() == 0)
+        if (description == null || description.isEmpty())
         {
             long count = StudyManager.getInstance().getParticipantCount(this);
             String subjectNoun = (count == 1 ? this.getSubjectNounSingular() : this.getSubjectNounPlural());
@@ -701,7 +701,7 @@ public class StudyImpl extends ExtensibleStudyEntity<String, StudyImpl> implemen
         else
         {
             WikiRenderingService wrs = WikiRenderingService.get();
-            return wrs.getFormattedHtml(getDescriptionWikiRendererType(), description);
+            return wrs.getFormattedHtml(getDescriptionWikiRendererType(), description, "Study description in " + getContainer().getPath());
         }
     }
 

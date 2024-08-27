@@ -103,7 +103,7 @@ public class StudyPropertiesTable extends BaseStudyTable
             });
         }
 
-        descriptionColumn.setDisplayColumnFactory(colInfo -> new WikiRendererDisplayColumn(colInfo, descriptionRendererTypeColumn.getName(), WikiRendererType.TEXT_WITH_LINKS));
+        descriptionColumn.setDisplayColumnFactory(colInfo -> new WikiRendererDisplayColumn(colInfo, descriptionRendererTypeColumn.getName(), WikiRendererType.TEXT_WITH_LINKS, ctx -> "StudyProperties"));
 
         String bTRUE = getSchema().getSqlDialect().getBooleanTRUE();
         String bFALSE = getSchema().getSqlDialect().getBooleanFALSE();

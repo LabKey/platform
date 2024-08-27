@@ -23,5 +23,9 @@ package org.labkey.api.wiki;
  */
 public interface WikiRenderer
 {
-    FormattedHtml format(String text);
+    /**
+     * @param text the original text that should be rendered into HTML
+     * @param sourceDescription info on where the text came from for debugging purposes. For example: Announcement 6654 in /MyContainer
+     */
+    FormattedHtml format(String text, String sourceDescription);
 }

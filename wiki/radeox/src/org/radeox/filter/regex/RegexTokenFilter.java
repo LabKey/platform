@@ -94,9 +94,9 @@ public abstract class RegexTokenFilter extends RegexFilter {
 
         // result = Util.substitute(matcher, p, new ActionSubstitution(s, this, context), result, limit);
       } catch (Exception e) {
-        log.warn("<span class=\"error\">Exception</span>: " + this, e);
+        log.warn("Exception: " + this + " in " + context.getRenderContext(), e);
       } catch (Error err) {
-        log.warn("<span class=\"error\">Error</span>: " + this + ": " + err);
+        log.warn("Error: " + this + " in " + context.getRenderContext(), err);
       }
       input = result;
     }

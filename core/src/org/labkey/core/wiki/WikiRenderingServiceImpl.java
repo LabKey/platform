@@ -1,5 +1,6 @@
 package org.labkey.core.wiki;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
@@ -22,17 +23,21 @@ public class WikiRenderingServiceImpl implements WikiRenderingService
     }
 
     @Override
-    public HtmlString getFormattedHtml(WikiRendererType rendererType, String source, String attachPrefix, Collection<? extends Attachment> attachments)
+    public HtmlString getFormattedHtml(WikiRendererType rendererType,
+                                       String source,
+                                       @Nullable String sourceDescription,
+                                       String attachPrefix,
+                                       Collection<? extends Attachment> attachments)
     {
         return HtmlStringBuilder.of(WIKI_PREFIX)
-            .append(getRenderer(rendererType, null, attachPrefix, null, attachments).format(source).getHtml())
+            .append(getRenderer(rendererType, null, attachPrefix, null, attachments).format(source, sourceDescription).getHtml())
             .append(WIKI_SUFFIX).getHtmlString();
     }
 
     @Override
-    public HtmlString getFormattedHtml(WikiRendererType rendererType, String source)
+    public HtmlString getFormattedHtml(WikiRendererType rendererType, String source, @Nullable String sourceDescription)
     {
-        return getFormattedHtml(rendererType, source, null, null);
+        return getFormattedHtml(rendererType, source, sourceDescription, null, null);
     }
 
     @Override

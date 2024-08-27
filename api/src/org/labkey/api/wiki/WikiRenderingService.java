@@ -1,6 +1,7 @@
 package org.labkey.api.wiki;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.HtmlString;
@@ -31,8 +32,15 @@ public interface WikiRenderingService
      */
     void registerMacroProvider(String name, MacroProvider provider);
 
-    HtmlString getFormattedHtml(WikiRendererType rendererType, String source);
-    HtmlString getFormattedHtml(WikiRendererType rendererType, String source, String attachPrefix, Collection<? extends Attachment> attachments);
+    /**
+     * @param sourceDescription info on where the text came from for debugging purposes. For example: Announcement 6654 in /MyContainer
+     */
+    HtmlString getFormattedHtml(WikiRendererType rendererType, String source, @Nullable String sourceDescription);
+    /**
+     * @param sourceDescription info on where the text came from for debugging purposes. For example: Announcement 6654 in /MyContainer
+     */
+    HtmlString getFormattedHtml(WikiRendererType rendererType, String source, @Nullable String sourceDescription,
+                                String attachPrefix, Collection<? extends Attachment> attachments);
 
     WikiRenderer getRenderer(WikiRendererType rendererType, String hrefPrefix,
                              String attachPrefix, Map<String, String> nameTitleMap,

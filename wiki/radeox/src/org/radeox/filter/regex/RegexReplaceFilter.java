@@ -59,7 +59,7 @@ public class RegexReplaceFilter extends RegexFilter {
 
   public String filter(String input, FilterContext context) {
     String result = input;
-    int size = pattern.size();
+    int size = Math.min(pattern.size(), substitute.size());
     Pattern p;
     String s;
     for (int i = 0; i < size; i++) {
@@ -72,10 +72,10 @@ public class RegexReplaceFilter extends RegexFilter {
         // Util.substitute(matcher, p, new Perl5Substitution(s, interps), result, limit);
       } catch (Exception e) {
         //log.warn("<span class=\"error\">Exception</span>: " + this + ": " + e);
-        log.warn("Exception for: " + this+" "+e);
+        log.warn("Exception for: " + this + " in " + context.getRenderContext(), e);
      } catch (Error err) {
         //log.warn("<span class=\"error\">Error</span>: " + this + ": " + err);
-        log.warn("Error for: " + this + " " + err);
+        log.warn("Error for: " + this + " in " + context.getRenderContext(), err);
       }
     }
     return result;
