@@ -883,7 +883,7 @@ public class AdminController extends SpringActionController
             else if (maintenanceMode)
             {
                 WikiRenderingService wikiService = WikiRenderingService.get();
-                content = wikiService.getFormattedHtml(WikiRendererType.RADEOX, ModuleLoader.getInstance().getAdminOnlyMessage());
+                content = wikiService.getFormattedHtml(WikiRendererType.RADEOX, ModuleLoader.getInstance().getAdminOnlyMessage(), "Admin only message");
             }
 
             if (content == null)
@@ -1121,7 +1121,7 @@ public class AdminController extends SpringActionController
             if (StringUtils.isNotEmpty(wikiSource))
             {
                 WikiRenderingService wikiService = WikiRenderingService.get();
-                HtmlString html = wikiService.getFormattedHtml(WikiRendererType.RADEOX, wikiSource);
+                HtmlString html = wikiService.getFormattedHtml(WikiRendererType.RADEOX, wikiSource, "Credits page");
                 _html = HtmlStringBuilder.of(HtmlString.unsafe("<style type=\"text/css\">\ntr.table-odd td { background-color: #EEEEEE; }</style>\n")).append(html).getHtmlString();
             }
         }

@@ -177,7 +177,7 @@ public class FilterPipe {
         }
         renderContext.commitCache();
       } catch (Exception e) {
-        log.warn("Filtering exception: " + f, e);
+        log.warn("Filtering exception: " + f + " in " + context.getRenderContext(), e);
       }
     }
     return output;

@@ -1370,7 +1370,7 @@ public class AnnouncementManager
             if (settings.isSecureWithEmailOn() || settings.isSecureOff())
             {
                 WikiRenderingService renderingService = WikiRenderingService.get();
-                this.body = renderingService.getFormattedHtml(currentRendererType, a.getBody());
+                this.body = renderingService.getFormattedHtml(currentRendererType, a.getBody(), "Announcement " + a.getRowId() + " in " + a.getContainerPath());
             }
             else
             {

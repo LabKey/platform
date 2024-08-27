@@ -103,7 +103,8 @@ public class AnnouncementTable extends FilteredTable<AnnouncementSchema>
         bodyColumn.setShownInDetailsView(false);
 
         var formattedBodyColumn = wrapColumn("FormattedBody", getRealTable().getColumn("Body"));
-        formattedBodyColumn.setDisplayColumnFactory(colInfo -> new WikiRendererDisplayColumn(colInfo, renderTypeColumn.getName(), WikiRendererType.TEXT_WITH_LINKS));
+        formattedBodyColumn.setDisplayColumnFactory(colInfo -> new WikiRendererDisplayColumn(colInfo, renderTypeColumn.getName(), WikiRendererType.TEXT_WITH_LINKS,
+                ctx -> "Announcement " + getColumn("RowId").getValue(ctx)));
         addColumn(formattedBodyColumn);
         formattedBodyColumn.setReadOnly(true);
         formattedBodyColumn.setUserEditable(false);
