@@ -153,7 +153,7 @@ public class IndexInspector
                         if (titles.length != 1 || urls.length != 1 || uniqueIds.length != 1 || containerIds.length != 1)
                         {
                             // Skip the special "serverGuid" doc
-                            if (doc.get("serverGuid") == null)
+                            if (doc.get(LuceneSearchServiceImpl.SERVER_GUID_NAME) != null)
                                 continue;
 
                             throw new IOException("Incorrect number of term values found for document " + i);

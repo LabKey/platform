@@ -406,7 +406,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
         initializeIndex();
     }
 
-    private static final String SERVER_GUID_NAME = "ServerGuid";
+    public static final String SERVER_GUID_NAME = "ServerGuid";
 
     // The full-text search index is stored in the file system and the lastIndexed timestamp for most documents is
     // stored in the database. If the index and database get out-of-sync for any reason then documents will fail to
