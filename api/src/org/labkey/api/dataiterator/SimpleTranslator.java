@@ -53,6 +53,7 @@ import org.labkey.api.data.TestSchema;
 import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
@@ -74,6 +75,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -89,6 +91,7 @@ import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 
 import static org.labkey.api.data.ColumnRenderPropertiesImpl.STORAGE_UNIQUE_ID_SEQUENCE_PREFIX;
+import static org.labkey.api.exp.api.ColumnExporter.FILE_ROOT_SUBSTITUTION;
 
 /**
  * SimpleTranslator starts with no output columns (except row number), you must call add() method to add columns.
@@ -1739,6 +1742,42 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         }
     }
 
+    public static String getFileRootSubstitutedFilePath(@Nullable String filePath, @Nullable String fileRootPath)
+    {
+        if (!StringUtils.isEmpty(fileRootPath) && filePath != null)
+        {
+            if (filePath.startsWith("\"") && filePath.endsWith("\"") && filePath.contains("\\")) // fix windows exported path
+                filePath = filePath.substring(1, filePath.length() - 1);
+            if (filePath.startsWith(FILE_ROOT_SUBSTITUTION))
+            {
+                String relative = filePath.replace(FILE_ROOT_SUBSTITUTION, "");
+                if (relative.startsWith(File.separator))
+                    relative = relative.substring(File.separator.length());
+                return fileRootPath + (fileRootPath.endsWith(File.separator) ? "" : File.separator) +  relative;
+            }
+        }
+
+        return filePath;
+    }
+
+    public static String getContainerFileRootPath(@Nullable Container container)
+    {
+        if (container == null)
+            return null;
+
+        FileContentService fileContentService = FileContentService.get();
+        String fileRootPath = null;
+        if (fileContentService != null)
+        {
+            Path root = fileContentService.getFileRootPath(container);
+            if (root != null)
+                fileRootPath = root.toAbsolutePath().toString();
+            if (fileRootPath != null && !fileRootPath.endsWith(File.separator))
+                fileRootPath = fileRootPath + File.separator;
+        }
+        return fileRootPath;
+    }
+
     protected class FileColumn implements Supplier<Object>
     {
         private final User _user;
@@ -1746,15 +1785,17 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         private final String _name;
         private final int _index;
         private final String _dirName;
+        private final String _fileRootPath;
         private Map<Object, String> _savedFiles = new HashMap<>();
 
-        public FileColumn(User user, Container c, String name, int idx, String dirName)
+        public FileColumn(User user, Container c, String name, int idx, String dirName, String fileRootPath)
         {
             _user = user;
             _container = c;
             _name = name;
             _dirName = dirName;
             _index = idx;
+            _fileRootPath = fileRootPath;
         }
 
         @Override
@@ -1783,6 +1824,8 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                     value = null;
                 }
             }
+            else if (value instanceof String filePath)
+                return getFileRootSubstitutedFilePath(filePath, _fileRootPath);
             return value;
         }
     }

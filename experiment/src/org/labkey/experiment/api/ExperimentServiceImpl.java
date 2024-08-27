@@ -2144,7 +2144,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     selection,
                     user,
                     options.getXarXmlFileName(),
-                    options.getLog()
+                    options.getLog(),
+                    null
             );
             if (options.getExportFile().isDirectory())
             {

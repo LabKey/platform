@@ -126,7 +126,7 @@ public class SchemaXmlWriter implements Writer<List<DatasetDefinition>, StudyExp
 
         private DatasetTableInfoWriter(TableInfo ti, DatasetDefinition def, PHI exportPhiLevel)
         {
-            super(def.getContainer(), ti, DatasetDataWriter.getColumnsToExport(ti, def, true, exportPhiLevel));
+            super(def.getContainer(), ti, DatasetDataWriter.getColumnsToExport(ti, def, true, exportPhiLevel, null));
             _def = def;
             _indices = DatasetDataWriter.getIndicesToExport(ti);
         }

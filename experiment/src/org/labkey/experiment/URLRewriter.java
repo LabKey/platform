@@ -53,7 +53,7 @@ public abstract class URLRewriter
         _includeXarXml = includeXarXml;
     }
 
-    public abstract String rewriteURL(Path path, ExpData data, String role, ExpRun experimentRun, User user) throws ExperimentException;
+    public abstract String rewriteURL(Path path, ExpData data, String role, ExpRun experimentRun, User user, String rootFilePath) throws ExperimentException;
 
     public Collection<FileInfo> getFileInfos()
     {
@@ -72,14 +72,16 @@ public abstract class URLRewriter
         private final ExperimentDataHandler _handler;
         private final ExpData _data;
         private final User _user;
+        private final String _fileRootPath;
 
-        public FileInfo(ExpData data, Path path, String name, ExperimentDataHandler handler, User user)
+        public FileInfo(ExpData data, Path path, String name, ExperimentDataHandler handler, User user, String fileRootPath)
         {
             _path = path;
             _name = name;
             _handler = handler;
             _data = data;
             _user = user;
+            _fileRootPath = fileRootPath;
         }
 
         public String getName()
@@ -91,7 +93,7 @@ public abstract class URLRewriter
         {
             if (_handler != null)
             {
-                _handler.exportFile(_data, _path, _user, new OutputStream()
+                _handler.exportFile(_data, _path, _fileRootPath, _user, new OutputStream()
                 {
                     private boolean _closed = false;
 

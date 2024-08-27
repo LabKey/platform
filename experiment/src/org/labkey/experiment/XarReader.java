@@ -75,6 +75,7 @@ import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.exp.xar.XarReaderRegistry;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
@@ -123,10 +124,13 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.dataiterator.SimpleTranslator.getContainerFileRootPath;
+import static org.labkey.api.dataiterator.SimpleTranslator.getFileRootSubstitutedFilePath;
 import static org.labkey.api.exp.api.ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_LSID;
 import static org.labkey.api.exp.api.ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID;
 import static org.labkey.api.study.publish.StudyPublishService.STUDY_PUBLISH_PROTOCOL_LSID;
 import static org.labkey.experiment.XarExporter.GPAT_ASSAY_PROTOCOL_LSID_SUB;
+import static org.labkey.api.exp.api.ColumnExporter.FILE_ROOT_SUBSTITUTION;
 
 public class XarReader extends AbstractXarImporter
 {
@@ -143,6 +147,8 @@ public class XarReader extends AbstractXarImporter
     private boolean _reloadExistingRuns = false;
     private boolean _useOriginalFileUrl = false;
     private boolean _strictValidateExistingSampleType = true;
+
+    private final String _fileRootPath;
 
     private final List<ExpRun> _loadedRuns = new ArrayList<>();
     private final List<ExpSampleType> _loadedSampleTypes = new ArrayList<>();
@@ -164,6 +170,7 @@ public class XarReader extends AbstractXarImporter
     public XarReader(XarSource source, PipelineJob job)
     {
         super(source, job);
+        _fileRootPath = getContainerFileRootPath(job.getContainer());
     }
 
     public void setReloadExistingRuns(boolean reloadExistingRuns)
@@ -1952,6 +1959,10 @@ public class XarReader extends AbstractXarImporter
             if (value != null && value.startsWith("urn:lsid:"))
             {
                 value = LsidUtils.resolveLsidFromTemplate(value, getRootContext());
+            }
+            else if (propType == PropertyType.FILE_LINK && !StringUtils.isEmpty(value) && value.startsWith(FILE_ROOT_SUBSTITUTION) && _fileRootPath != null)
+            {
+                value = getFileRootSubstitutedFilePath(value, _fileRootPath);
             }
 
             if (StudyPublishService.AUTO_LINK_TARGET_PROPERTY_URI.equals(simpleProp.getOntologyEntryURI()) && value != null)

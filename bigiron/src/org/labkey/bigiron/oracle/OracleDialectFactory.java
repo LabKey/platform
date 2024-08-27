@@ -16,12 +16,10 @@
 
 package org.labkey.bigiron.oracle;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.data.DbScope;
 import org.labkey.api.data.dialect.AbstractDialectRetrievalTestCase;
 import org.labkey.api.data.dialect.DatabaseNotSupportedException;
 import org.labkey.api.data.dialect.JdbcHelperTest;
@@ -37,17 +35,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-/**
- * User: trent
- * Date: 6/10/11
- * Time: 3:40 PM
- */
 public class OracleDialectFactory implements SqlDialectFactory
 {
     public OracleDialectFactory()
     {
-        // Oracle JDBC driver should not be present in <tomcat>/lib
-        DbScope.registerForbiddenTomcatFilenamePredicate(filename-> StringUtils.startsWithIgnoreCase(filename, "ojdbc"));
     }
 
     private String getProductName()

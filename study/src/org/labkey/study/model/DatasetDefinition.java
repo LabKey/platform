@@ -2329,10 +2329,10 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
      * Iterator is running.  This is asserted in the code, but it would be nice to move the
      * locking into the iterator itself.
      */
-    public DataIteratorBuilder getInsertDataIterator(User user, DataIteratorBuilder in, DataIteratorContext context)
+    public DataIteratorBuilder getInsertDataIterator(User user, Container container, DataIteratorBuilder in, DataIteratorContext context)
     {
         TableInfo table = getDatasetSchemaTableInfo(user);
-        DatasetDataIteratorBuilder b = new DatasetDataIteratorBuilder(this, user);
+        DatasetDataIteratorBuilder b = new DatasetDataIteratorBuilder(this, user, container);
         b.setInput(in);
 
         boolean allowImportManagedKey = context.getConfigParameterBoolean(DatasetUpdateService.Config.AllowImportManagedKey);

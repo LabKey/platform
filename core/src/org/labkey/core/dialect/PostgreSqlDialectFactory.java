@@ -22,7 +22,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.data.DbScope;
 import org.labkey.api.data.dialect.AbstractDialectRetrievalTestCase;
 import org.labkey.api.data.dialect.DatabaseNotSupportedException;
 import org.labkey.api.data.dialect.JdbcHelperTest;
@@ -52,8 +51,6 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
 
     public PostgreSqlDialectFactory()
     {
-        // PostgreSQL JDBC driver should not be present in <tomcat>/lib
-        DbScope.registerForbiddenTomcatFilenamePredicate(filename->filename.equalsIgnoreCase("postgresql.jar"));
     }
 
     @Override

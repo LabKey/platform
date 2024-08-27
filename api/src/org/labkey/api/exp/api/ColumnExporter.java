@@ -9,6 +9,8 @@ import java.util.Collection;
 
 public interface ColumnExporter
 {
+    String FILE_ROOT_SUBSTITUTION = "${FileRoot}";
+
     boolean shouldExcludeColumn(TableInfo tableInfo, ColumnInfo col, FolderExportContext context);
 
     @Nullable Collection<ColumnInfo> getExportColumns(TableInfo tinfo, ColumnInfo col, FolderExportContext ctx);
