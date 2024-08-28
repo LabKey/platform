@@ -16,7 +16,6 @@
 
 package org.labkey.api.util;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.logging.log4j.Logger;
@@ -136,7 +135,7 @@ public enum UsageReportingLevel implements SafeToRenderEnum
     private static UsageTimerTask _task;
     private static HtmlString _upgradeMessage;
     private static HtmlString _marketingUpdate;
-    private static String _marketingMessageDefault = "Do more with LabKey Server. <a href='https://www.labkey.com/products-services/labkey-server/'>Click here</a> to learn about our Premium Editions.";
+    private static final String MARKETING_MESSAGE_DEFAULT = "Do more with LabKey Server. <a href='https://www.labkey.com/products-services/labkey-server/'>Click here</a> to learn about our Premium Editions.";
 
     public static void shutdown()
     {
@@ -218,6 +217,13 @@ public enum UsageReportingLevel implements SafeToRenderEnum
                 return;
             }
             _running = true;
+
+            // Issue 50959: Intermittent problems with container-based deployments getting a different context class
+            // loader for the timer thread. Since it's just this thread having problems (right now, at least),
+            // force it to the webapp class loader. This ensures that we end up using the BeanUtilsBean with
+            // all of our converters as registered in ConvertHelper
+            Thread.currentThread().setContextClassLoader(UsageTimerTask.class.getClassLoader());
+
             try
             {
                 UsageReportingLevel level;
@@ -234,7 +240,7 @@ public enum UsageReportingLevel implements SafeToRenderEnum
                     level = AppProps.getInstance().getUsageReportingLevel();
                 }
 
-                LOG.debug("Checking whether to report metrics. Level: " + level);
+                LOG.debug("Checking whether to report metrics. Level: {}", level);
                 MothershipReport report = generateReport(level, target);
                 if (report != null)
                 {
@@ -252,7 +258,7 @@ public enum UsageReportingLevel implements SafeToRenderEnum
                         if (!StringUtils.isEmpty(report.getMarketingUpdate()))
                             _marketingUpdate = HtmlString.unsafe(report.getMarketingUpdate());
                         else
-                            _marketingUpdate = HtmlString.unsafe(_marketingMessageDefault);
+                            _marketingUpdate = HtmlString.unsafe(MARKETING_MESSAGE_DEFAULT);
                     }
                 }
                 else

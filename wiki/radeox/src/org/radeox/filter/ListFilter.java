@@ -101,7 +101,7 @@ public class ListFilter extends LocaleRegexTokenFilter implements CacheFilter {
       BufferedReader reader = new BufferedReader(new StringReader(result.group(0)));
       addList(buffer, reader);
     } catch (Exception e) {
-      log.warn("ListFilter: unable get list content", e);
+      log.warn("ListFilter: unable get list content in " + context.getRenderContext(), e);
     }
   }
 

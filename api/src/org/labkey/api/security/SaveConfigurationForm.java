@@ -8,6 +8,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ConfigurationException;
 
 import java.util.Map;
+import java.util.Objects;
 
 public abstract class SaveConfigurationForm
 {
@@ -78,7 +79,7 @@ public abstract class SaveConfigurationForm
     public final @Nullable String getProperties()
     {
         Map<String, Object> map = getPropertyMap();
-        assert map.containsKey("domain") ? map.get("domain").equals(getDomain()) : (map.containsKey("Domain") ? map.get("Domain").equals(getDomain()) : null == getDomain()) : "Inconsistency between getDomain() and map.get(\"domain\")";
+        assert Objects.equals(map.get("domain"), getDomain());
         return map.isEmpty() ? null : new JSONObject(map).toString();
     }
 

@@ -2750,7 +2750,7 @@ public class CoreController extends SpringActionController
             if (StringUtils.equals(WikiRendererType.HTML.name(), form.getToFormat()))
             {
                 WikiRendererType fromType = WikiRendererType.valueOf(form.getFromFormat());
-                newBody = WikiRenderingService.get().getFormattedHtml(fromType, newBody).toString();
+                newBody = WikiRenderingService.get().getFormattedHtml(fromType, newBody, null).toString();
             }
 
             response.put("toFormat", form.getToFormat());

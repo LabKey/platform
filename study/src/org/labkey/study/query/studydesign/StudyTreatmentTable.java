@@ -16,7 +16,6 @@
 package org.labkey.study.query.studydesign;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.TableInfo;
@@ -24,7 +23,6 @@ import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
-import org.labkey.api.query.UserSchema;
 import org.labkey.api.wiki.WikiRendererDisplayColumn;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
@@ -73,7 +71,7 @@ public class StudyTreatmentTable extends DefaultStudyDesignTable
     {
         if ("Description".equalsIgnoreCase(col.getName()))
         {
-            col.setDisplayColumnFactory(colInfo -> new WikiRendererDisplayColumn(colInfo, "DescriptionRendererType", WikiRendererType.TEXT_WITH_LINKS));
+            col.setDisplayColumnFactory(colInfo -> new WikiRendererDisplayColumn(colInfo, "DescriptionRendererType", WikiRendererType.TEXT_WITH_LINKS, ctx -> "StudyTreatment"));
         }
         else if ("DescriptionRendererType".equalsIgnoreCase(col.getName()))
         {

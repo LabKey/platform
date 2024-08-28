@@ -175,7 +175,9 @@ public class AliasManager
             ret = ret + "_";
         int length = ret.length();
         if (0 == length)
-            return "X_";
+            ret = "X_";
+        if (dialect != null)
+            ret = dialect.makeLegalIdentifierName(ret);
         // we use 28 here because Oracle has a limit or 30 characters, and that is likely the shortest restriction
         int maxLength = useLegacyMaxLength ? 40 : (dialect == null ? 28 : dialect.getIdentifierMaxLength());
         if (reserveCount > 0)
