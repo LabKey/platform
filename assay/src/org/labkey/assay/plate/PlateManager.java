@@ -3492,7 +3492,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                         if (ps.isStandalone() || plateRowId.equals(ps.getRootPlateSetId()))
                             validateWellGroup(plate, wellGroup);
                         else
-                            validateControlWellGroup(plateSchema, plate, wellGroup, ps.getRowId());
+                            validateControlWellGroup(plateSchema, plate, wellGroup, ps.getRootPlateSetId());
                     }
                     case SAMPLE -> validateWellGroup(plate, wellGroup);
                     default -> throw new ValidationException(
@@ -3539,18 +3539,13 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         }
     }
 
-    private void validateControlWellGroup(UserSchema schema, Plate plate, WellGroup wellGroup, Integer plateSetRowId) throws ValidationException
+    private boolean isValidControl(UserSchema schema, Integer sampleId, Integer plateSetRowId)
     {
-        for (var position : wellGroup.getPositions())
-        {
-            var well = plate.getWell(position.getRow(), position.getColumn());
-            if (well.getSampleId() != null)
-            {
-                Integer sampleId = well.getSampleId();
-                String sql =
-                        String.format("""
+        boolean isValid = false;
+        String sql =
+                String.format("""
                         SELECT
-                            COUNT(*) > 0
+                            COUNT(*) = 1 AS IsValid
                         FROM
                             exp.Materials AS M
                                 LEFT JOIN
@@ -3567,26 +3562,38 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                         WHERE
                             T.RowId IS NULL AND M.RowId = %s;""", plateSetRowId, sampleId);
 
-                try (Results rs = QueryService.get().getSelectBuilder(schema, sql).select())
-                {
-                    if (rs.getSize() != 1 || !rs.next())
-                        throw new ValidationException(
-                                String.format("An error has occurred while processing the sample of row id \"%s\"", sampleId.toString())
-                        );
+        try (Results rs = QueryService.get().getSelectBuilder(schema, sql).select())
+        {
+            if (rs.next())
+            {
+                isValid = rs.getBoolean(FieldKey.fromParts("IsValid"));
+            }
+        }
+        catch (SQLException e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
 
-                    boolean isInvalidControl = rs.getBoolean(FieldKey.fromParts("expression1"));
-                    if (!isInvalidControl)
-                        throw new ValidationException(
-                                String.format(
-                                        "The sample of row id \"%s\" is not a valid control.",
-                                        sampleId
-                                )
-                        );
-                }
-                catch (SQLException e)
-                {
-                    throw UnexpectedException.wrap(e);
-                }
+        return isValid;
+    }
+
+    private void validateControlWellGroup(UserSchema schema, Plate plate, WellGroup wellGroup, Integer plateSetRowId) throws ValidationException
+    {
+        for (var position : wellGroup.getPositions())
+        {
+            var well = plate.getWell(position.getRow(), position.getColumn());
+            if (well.getSampleId() != null)
+            {
+                Integer sampleId = well.getSampleId();
+                boolean isValidControl = isValidControl(schema, sampleId, plateSetRowId);
+
+                if (!isValidControl)
+                    throw new ValidationException(
+                            String.format(
+                                    "The sample of row id \"%s\" is not a valid control.",
+                                    sampleId
+                            )
+                    );
             }
         }
 
