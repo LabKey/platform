@@ -3470,7 +3470,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         // Feed plate set id into ControlSamples' query parameter
         Plate p = getPlate(container, plateRowId);
         if (p == null || p.getPlateSet() == null)
-            throw new ValidationException("Unable to resolve Plate or Plate Set.");
+            throw new ValidationException("Unable to resolve Plate or Plate Set of plate with Row Id \"%s\".", plateRowId.toString());
 
         selector.setNamedParameters(Collections.singletonMap("PlateSetRowId", p.getPlateSet().getRowId()));
         return new HashSet<>(selector.getCollection(Integer.class));
