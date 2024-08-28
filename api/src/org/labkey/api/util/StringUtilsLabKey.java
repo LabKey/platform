@@ -178,6 +178,16 @@ public class StringUtilsLabKey
         return false;
     }
 
+    // Does the string have ANY lower-case letters?
+    public static boolean containsLowerCase(String s)
+    {
+        for (char ch : s.toCharArray())
+            if (Character.isLowerCase(ch))
+                return true;
+
+        return false;
+    }
+
 
     public static boolean isText(String s)
     {

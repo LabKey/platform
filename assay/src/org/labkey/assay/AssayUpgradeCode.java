@@ -382,7 +382,7 @@ public class AssayUpgradeCode implements UpgradeCode
         try (DbScope.Transaction tx = scope.ensureTransaction())
         {
             // just truncate the plate to custom property mappings
-            Table.truncate(AssayDbSchema.getInstance().getTableInfoPlateProperty());
+            Table.truncate(AssayDbSchema.getInstance().getSchema().getTable("PlateProperty"));
             List<Container> biologicsFolders = new ArrayList<>();
 
             for (Container container : ContainerManager.getAllChildren(ContainerManager.getRoot()))
