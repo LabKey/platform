@@ -32,4 +32,6 @@ public interface PlateSet
     List<Plate> getPlates();
 
     PlateSetType getType();
+
+    Integer getRootPlateSetId();
 }

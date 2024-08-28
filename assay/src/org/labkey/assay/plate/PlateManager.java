@@ -3452,7 +3452,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         }
     }
 
-    private Set<Integer> getValidControlSampleIds(Container container, User user, Integer plateRowId) throws ValidationException
+    private Set<Integer> getValidControlSampleIds(Container container, User user, Integer plateRowId) throws ValidationException // flag for deletion
     {
         UserSchema userSchema = QueryService.get().getUserSchema(user, container, PlateSchema.SCHEMA_NAME);
         TableInfo controlSamplesTInfo = userSchema.getTable("ControlSamples");
@@ -3470,7 +3470,12 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     public void validateWellGroups(Container container, User user, Collection<Integer> plateRowIds) throws ValidationException
     {
         clearCache(plateRowIds);
-        Set<Integer> validControls = null;
+        Integer plateId = plateRowIds.iterator().next();
+        PlateSet ps = requirePlate(container, plateId, null).getPlateSet();
+        if (ps == null)
+            throw new ValidationException("Unable to resolve Plate or Plate Set with plate of id \"%s\".", plateId.toString());
+
+        UserSchema plateSchema = QueryService.get().getUserSchema(user, container, PlateSchema.SCHEMA_NAME);
 
         for (var plateRowId : plateRowIds)
         {
@@ -3484,9 +3489,10 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 {
                     case CONTROL, NEGATIVE_CONTROL, POSITIVE_CONTROL ->
                     {
-                        if (validControls == null)
-                            validControls = getValidControlSampleIds(container, user, plateRowIds.iterator().next());
-                        validateControlWellGroup(plate, wellGroup, validControls);
+                        if (ps.isStandalone() || plateRowId.equals(ps.getRootPlateSetId()))
+                            validateWellGroup(plate, wellGroup);
+                        else
+                            validateControlWellGroup(plateSchema, plate, wellGroup, ps.getRowId());
                     }
                     case SAMPLE -> validateWellGroup(plate, wellGroup);
                     default -> throw new ValidationException(
@@ -3533,21 +3539,53 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         }
     }
 
-    private void validateControlWellGroup(Plate plate, WellGroup wellGroup, Set<Integer> validControls) throws ValidationException
+    private void validateControlWellGroup(UserSchema schema, Plate plate, WellGroup wellGroup, Integer plateSetRowId) throws ValidationException
     {
         for (var position : wellGroup.getPositions())
         {
             var well = plate.getWell(position.getRow(), position.getColumn());
             if (well.getSampleId() != null)
             {
-                if (!validControls.contains(well.getSampleId()))
+                Integer sampleId = well.getSampleId();
+                String sql =
+                        String.format("""
+                        SELECT
+                            COUNT(*) > 0
+                        FROM
+                            exp.Materials AS M
+                                LEFT JOIN
+                            (
+                                SELECT
+                                    SIPS.RowId,
+                                    SIPS.Name
+                                FROM
+                                    plate.SamplesInPlateSets AS SIPS
+                                WHERE
+                                    SIPS.PlateSetRowId = %s
+                            ) T
+                            ON T.RowId = M.RowId
+                        WHERE
+                            T.RowId IS NULL AND M.RowId = %s;""", plateSetRowId, sampleId);
+
+                try (Results rs = QueryService.get().getSelectBuilder(schema, sql).select())
                 {
-                    throw new ValidationException(
-                            String.format(
-                                    "The sample of row id %s is not a valid control.",
-                                    well.getSampleId()
-                            )
-                    );
+                    if (rs.getSize() != 1 || !rs.next())
+                        throw new ValidationException(
+                                String.format("An error has occurred while processing the sample of row id \"%s\"", sampleId.toString())
+                        );
+
+                    boolean isInvalidControl = rs.getBoolean(FieldKey.fromParts("expression1"));
+                    if (!isInvalidControl)
+                        throw new ValidationException(
+                                String.format(
+                                        "The sample of row id \"%s\" is not a valid control.",
+                                        sampleId
+                                )
+                        );
+                }
+                catch (SQLException e)
+                {
+                    throw UnexpectedException.wrap(e);
                 }
             }
         }
