@@ -4846,7 +4846,7 @@ public class AdminController extends SpringActionController
 
     public enum ExportOption
     {
-        PipelineRootAsFiles("pipeline root as files")
+        PipelineRootAsFiles("file root as multiple files")
                 {
                     @Override
                     public ActionURL initiateExport(Container container, BindException errors, FolderWriterImpl writer, FolderExportContext ctx, HttpServletResponse response) throws Exception
@@ -4877,7 +4877,7 @@ public class AdminController extends SpringActionController
                     }
                 },
 
-        PipelineRootAsZip("pipeline root as a zip file")
+        PipelineRootAsZip("file root as a single zip file")
         {
             @Override
             public ActionURL initiateExport(Container container, BindException errors, FolderWriterImpl writer, FolderExportContext ctx, HttpServletResponse response) throws Exception
