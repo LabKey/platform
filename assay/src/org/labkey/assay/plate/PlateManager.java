@@ -3539,34 +3539,24 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         }
     }
 
-    private boolean isValidControl(UserSchema schema, Integer sampleId, Integer plateSetRowId)
+    private @Nullable String isValidControl(UserSchema schema, List<Integer> sampleIds, Integer plateSetRowId)
     {
-        boolean isValid = false;
+        String invalidSampleName = null;
         String sql =
                 String.format("""
                         SELECT
-                            COUNT(*) = 1 AS IsValid
+                            SIPS.Name
                         FROM
-                            exp.Materials AS M
-                                LEFT JOIN
-                            (
-                                SELECT
-                                    SIPS.RowId,
-                                    SIPS.Name
-                                FROM
-                                    plate.SamplesInPlateSets AS SIPS
-                                WHERE
-                                    SIPS.PlateSetRowId = %s
-                            ) T
-                            ON T.RowId = M.RowId
+                            plate.SamplesInPlateSets AS SIPS
                         WHERE
-                            T.RowId IS NULL AND M.RowId = %s;""", plateSetRowId, sampleId);
+                            SIPS.PlateSetRowId = %s AND SIPS.RowId IN (%s)
+                        LIMIT 1""", plateSetRowId, StringUtils.join(sampleIds, ", "));
 
         try (Results rs = QueryService.get().getSelectBuilder(schema, sql).select())
         {
             if (rs.next())
             {
-                isValid = rs.getBoolean(FieldKey.fromParts("IsValid"));
+                invalidSampleName = rs.getString(FieldKey.fromParts("name"));
             }
         }
         catch (SQLException e)
@@ -3574,28 +3564,26 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             throw UnexpectedException.wrap(e);
         }
 
-        return isValid;
+        return invalidSampleName;
     }
 
     private void validateControlWellGroup(UserSchema schema, Plate plate, WellGroup wellGroup, Integer plateSetRowId) throws ValidationException
     {
+        List<Integer> sampleIds = new ArrayList<>();
         for (var position : wellGroup.getPositions())
         {
             var well = plate.getWell(position.getRow(), position.getColumn());
             if (well.getSampleId() != null)
-            {
-                Integer sampleId = well.getSampleId();
-                boolean isValidControl = isValidControl(schema, sampleId, plateSetRowId);
-
-                if (!isValidControl)
-                    throw new ValidationException(
-                            String.format(
-                                    "The sample of row id \"%s\" is not a valid control.",
-                                    sampleId
-                            )
-                    );
-            }
+                sampleIds.add(well.getSampleId());
         }
+        String isValidControl = isValidControl(schema, sampleIds, plateSetRowId);
+        if (isValidControl != null)
+            throw new ValidationException(
+                    String.format(
+                            "The sample \"%s\" is not a valid control.",
+                            isValidControl
+                    )
+            );
 
         validateWellGroup(plate, wellGroup);
     }
