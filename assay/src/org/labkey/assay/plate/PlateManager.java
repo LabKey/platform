@@ -110,6 +110,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.sql.LabKeySql;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -927,7 +928,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return new Lsid(nameSpace, "Folder-" + container.getRowId(), GUID.makeGUID());
     }
 
-    private DbScope.Transaction ensureTransaction(Lock... locks)
+    /* package private */ DbScope.Transaction ensureTransaction(Lock... locks)
     {
         return AssayDbSchema.getInstance().getSchema().getScope().ensureTransaction(locks);
     }
@@ -3072,6 +3073,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         int sampleIdsCounter = 0;
         List<PlateData> platesData = new ArrayList<>();
         Map<Integer, PlateType> plateTypes = new HashMap<>();
+        Map<Pair<WellGroup.Type, String>, Integer> groupSampleMap = new HashMap<>();
 
         for (PlateData plate : plates)
         {
@@ -3086,7 +3088,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 List<WellData> wellData = getWellData(container, user, plate.templateId, false, true);
 
                 // Plate the samples into the well data
-                sampleIdsCounter = plateSamples(wellData, selectedSampleIds, sampleIdsCounter);
+                sampleIdsCounter = plateSamples(wellData, selectedSampleIds, groupSampleMap, sampleIdsCounter);
 
                 // Hydrate a CreatePlateSetPlate and add it to plate data
                 List<Map<String, Object>> data = wellData.stream().map(WellData::getData).toList();
@@ -3108,40 +3110,48 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return platesData;
     }
 
-    private int plateSamples(List<WellData> wellDataList, List<Integer> sampleIds, int counter)
+    private int plateSamples(
+        List<WellData> wellDataList,
+        List<Integer> sampleIds,
+        Map<Pair<WellGroup.Type, String>, Integer> groupSampleMap,
+        int counter
+    )
     {
-        if (counter >= sampleIds.size())
-            return counter;
-
-        Map<String, Integer> groupSampleMap = new HashMap<>();
-
         for (WellData wellData : wellDataList)
         {
             boolean isSampleWell = WellGroup.Type.SAMPLE.equals(wellData.getType());
-            String group = wellData.getWellGroup();
+            boolean isReplicateWell = WellGroup.Type.REPLICATE.equals(wellData.getType());
+            boolean isSampleOrReplicate = isSampleWell || isReplicateWell;
+
+            Pair<WellGroup.Type, String> groupKey = null;
+            if (isSampleOrReplicate && wellData.getWellGroup() != null)
+            {
+                WellGroup.Type type = isSampleWell ? WellGroup.Type.SAMPLE : WellGroup.Type.REPLICATE;
+                groupKey = Pair.of(type, wellData.getWellGroup());
+            }
 
             if (counter >= sampleIds.size())
             {
                 // Fill remaining group wells
-                if (isSampleWell && group != null && groupSampleMap.containsKey(group))
+                if (isSampleOrReplicate && groupKey != null && groupSampleMap.containsKey(groupKey))
                 {
-                    wellData.setSampleId(groupSampleMap.get(group));
+                    wellData.setSampleId(groupSampleMap.get(groupKey));
                 }
             }
-            else if (isSampleWell)
+            else if (isSampleOrReplicate)
             {
                 Integer sampleId = sampleIds.get(counter);
 
-                if (group != null)
+                if (groupKey != null)
                 {
-                    if (groupSampleMap.containsKey(group))
+                    if (groupSampleMap.containsKey(groupKey))
                     {
                         // Do not increment counter as this reuses the same sample within a group
-                        sampleId = groupSampleMap.get(group);
+                        sampleId = groupSampleMap.get(groupKey);
                     }
                     else
                     {
-                        groupSampleMap.put(group, sampleId);
+                        groupSampleMap.put(groupKey, sampleId);
                         counter++;
                     }
                 }
@@ -3198,19 +3208,17 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
     private List<FieldKey> getPlateExportFieldKeys(Plate plate, boolean isMapView)
     {
-        List<FieldKey> fieldKeys = new ArrayList<>(List.of(
-                FieldKey.fromParts("SampleId", "Name")
-        ));
+        List<FieldKey> fieldKeys = new ArrayList<>(List.of(FieldKey.fromParts("SampleId", "Name")));
 
         if (isMapView)
         {
-            fieldKeys.add(FieldKey.fromParts("Row"));
-            fieldKeys.add(FieldKey.fromParts("Col"));
+            fieldKeys.add(WellTable.Column.Row.fieldKey());
+            fieldKeys.add(WellTable.Column.Col.fieldKey());
         }
         else
         {
-            // For non-map export view we always want the position FieldKey first
-            fieldKeys.add(0, FieldKey.fromParts("Position"));
+            // For non-map export view we always want "position" first
+            fieldKeys.add(0, WellTable.Column.Position.fieldKey());
         }
         for (PlateCustomField customField : plate.getCustomFields())
         {
@@ -3231,7 +3239,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         settings.setContainerFilterName(cf.getType().name());
         settings.setSchemaName(userSchema.getSchemaName());
         settings.setQueryName(WellTable.NAME);
-        settings.getBaseFilter().addCondition(FieldKey.fromParts("PlateId"), plate.getRowId());
+        settings.getBaseFilter().addCondition(WellTable.Column.PlateId.fieldKey(), plate.getRowId());
         return new QueryView(userSchema, settings, null);
     }
 
@@ -3453,9 +3461,10 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         }
     }
 
-    public void validateWellGroups(Container container, Collection<Integer> plateRowIds) throws ValidationException
+    public void validateWellGroups(Container container, User user, Collection<Integer> plateRowIds) throws ValidationException
     {
         clearCache(plateRowIds);
+        Set<Integer> plateSetsWithReplicates = new HashSet<>();
 
         for (var plateRowId : plateRowIds)
         {
@@ -3467,6 +3476,14 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             {
                 switch (wellGroup.getType())
                 {
+                    case REPLICATE -> {
+                        if (wellGroup.isZone())
+                            throw new ValidationException(String.format("Replicates must specify a \"%s\".", WellTable.Column.WellGroup.name()));
+
+                        var plateSet = plate.getPlateSet();
+                        if (plateSet != null)
+                            plateSetsWithReplicates.add(plateSet.getRowId());
+                    }
                     case CONTROL, NEGATIVE_CONTROL, POSITIVE_CONTROL, SAMPLE -> validateWellGroup(plate, wellGroup);
                     default -> throw new ValidationException(
                         String.format(
@@ -3479,6 +3496,12 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             }
 
             validateWells(plate);
+        }
+
+        if (!plateSetsWithReplicates.isEmpty())
+        {
+            for (var plateSetId : plateSetsWithReplicates.stream().sorted().toList())
+                validatePlateSetReplicates(container, user, plateSetId);
         }
     }
 
@@ -3510,6 +3533,84 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 ));
             }
         }
+    }
+
+    private long getReplicateGroupCount(@NotNull UserSchema plateSchema, @NotNull Integer plateSetRowId)
+    {
+        String labkeySql = "SELECT DISTINCT Type, WellGroup FROM plate.Well WHERE" +
+                " PlateId.PlateSet.RowId = " + plateSetRowId +
+                " AND Type = " + LabKeySql.quoteString(WellGroup.Type.REPLICATE.name());
+
+        return QueryService.get().getSelectBuilder(plateSchema, labkeySql).buildSqlSelector(null).getRowCount();
+    }
+
+    private String getReplicateGroupLabKeySql(@NotNull UserSchema plateSchema, @NotNull Integer plateSetRowId)
+    {
+        var wellTable = plateSchema.getTableOrThrow(WellTable.NAME);
+        var columnNames = new CaseInsensitiveHashSet(wellTable.getColumnNameSet());
+        var excludedColumns = CaseInsensitiveHashSet.of(
+            WellTable.Column.Col.name(),
+            WellTable.Column.Container.name(),
+            WellTable.Column.Lsid.name(),
+            WellTable.Column.PlateId.name(),
+            WellTable.Column.Position.name(),
+            WellTable.Column.Row.name(),
+            WellTable.Column.RowId.name()
+        );
+
+        columnNames.removeAll(excludedColumns);
+
+        StringBuilder columnsSql = new StringBuilder();
+        {
+            var separator = "";
+            for (String columnName : columnNames)
+            {
+                columnsSql.append(separator).append(LabKeySql.quoteIdentifier(columnName)).append("\n");
+                separator = ", ";
+            }
+        }
+
+        return "SELECT\n " + columnsSql + "FROM plate.Well\n WHERE"
+                + " PlateId.PlateSet.RowId = " + plateSetRowId
+                + " AND Type = " + LabKeySql.quoteString(WellGroup.Type.REPLICATE.name()) + "\n"
+                + " GROUP BY\n" + columnsSql;
+    }
+
+    private void validatePlateSetReplicates(Container container, User user, @NotNull Integer plateSetRowId) throws ValidationException
+    {
+        var plateSchema = QueryService.get().getUserSchema(user, container, PlateSchema.SCHEMA_NAME);
+        var replicateWellGroupCount = getReplicateGroupCount(plateSchema, plateSetRowId);
+
+        if (replicateWellGroupCount == 0)
+            return;
+
+        var sql = getReplicateGroupLabKeySql(plateSchema, plateSetRowId);
+        try (var results = QueryService.get().getSelectBuilder(plateSchema, sql).select())
+        {
+            if (replicateWellGroupCount == results.getSize())
+                return;
+
+            // Now we know that there are mismatched replicate rows within a group. Find the first mismatched group.
+            Set<String> groups = new HashSet<>();
+            while (results.next())
+            {
+                String groupName = StringUtils.trimToNull(results.getString(WellTable.Column.WellGroup.name()));
+                if (groupName == null)
+                    continue;
+
+                if (groups.contains(groupName))
+                    throw new ValidationException(String.format("Replicate group \"%s\" contains mismatched well data. Ensure all data aligns for the replicates declared in these wells.", groupName));
+
+                groups.add(groupName);
+            }
+        }
+        catch (SQLException e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
+
+        // Fallback to more generic message if we did not resolve a specific mismatch
+        throw new ValidationException(String.format("Plate set (%d) contains mismatched replicate well data.", plateSetRowId));
     }
 
     private void validateWellGroup(Plate plate, WellGroup wellGroup) throws ValidationException
@@ -3747,7 +3848,10 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 if (well == null)
                     continue;
 
-                List<WellData> sourceWellDatas = sourceWellDataMap.computeIfAbsent(well.sourcePlateId(), (plateRowId) -> getWellData(container, user, plateRowId, true, true));
+                List<WellData> sourceWellDatas = sourceWellDataMap.computeIfAbsent(
+                    well.sourcePlateId(),
+                    (plateRowId) -> getWellData(container, user, plateRowId, true, true)
+                );
 
                 for (WellData wellData : sourceWellDatas)
                 {
