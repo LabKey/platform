@@ -12,10 +12,10 @@
     "clean": "rimraf resources/web/assay/gen && rimraf resources/views/gen && rimraf resources/web/gen"
   },
   "dependencies": {
-    "@labkey/components": "4.11.1-fb-seize-the-moment.2"
+    "@labkey/components": "4.12.0"
   },
   "devDependencies": {
-    "@labkey/build": "7.5.1-fb-seize-the-moment.2",
+    "@labkey/build": "7.6.0",
     "@types/jest": "29.5.12",
     "@types/react": "16.14.60",
     "@types/react-dom": "16.9.24"
