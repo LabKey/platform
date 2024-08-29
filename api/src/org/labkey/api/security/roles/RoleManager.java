@@ -20,6 +20,8 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
+import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cache.Throttle;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
@@ -45,6 +47,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -138,17 +141,36 @@ public class RoleManager
 
     public static @Nullable Role getRole(String name)
     {
-        Role role = _nameToRoleMap.get(name);
-        if (null == role)
-            LOG.warn("Could not resolve the role " + name + "! The role may no longer exist, or may not yet be registered.");
-        return role;
+        return warnIfNull(_nameToRoleMap.get(name),
+            () -> "Could not resolve the role " + name + "! The role no longer exists or has not been registered.");
     }
 
     public static Role getRole(Class<? extends Role> clazz)
     {
-        Role role = _classToRoleMap.get(clazz);
+        return warnIfNull(_classToRoleMap.get(clazz),
+            () -> "Could not resolve the role " + clazz.getName() + "! The role has not been registered.");
+    }
+
+    public static Permission getPermission(Class<? extends Permission> clazz)
+    {
+        return warnIfNull((Permission)_classToRoleMap.get(clazz),
+            () -> "Could not resolve the permission " + clazz.getName() + "! If this is not part of a role, you must register it separately with RoleManager.register().");
+    }
+
+    public static Permission getPermission(String uniqueName)
+    {
+        return warnIfNull( (Permission) _nameToRoleMap.get(uniqueName),
+            () -> "Could not resolve the permission " + uniqueName + "! The permission no longer exists or has not been registered.");
+    }
+
+    // Limit logging of each unique role or permission warning to once-per-day
+    private static final Throttle<String> WARNING_THROTTLE = new Throttle<>("RoleManagerWarningThrottle", 500, CacheManager.DAY, LOG::warn);
+
+    private static <T extends Role> T warnIfNull(@Nullable T role, Supplier<String> warningSupplier)
+    {
         if (null == role)
-            LOG.warn("Could not resolve the role " + clazz.getName() + "! Did you forget to register the role with RoleManager.register()?");
+            WARNING_THROTTLE.execute(warningSupplier.get());
+
         return role;
     }
 
@@ -156,22 +178,6 @@ public class RoleManager
     public static boolean isPermissionRegistered(Class<? extends Permission> clazz)
     {
         return _classToRoleMap.containsKey(clazz);
-    }
-
-    public static Permission getPermission(Class<? extends Permission> clazz)
-    {
-        Permission perm = (Permission) _classToRoleMap.get(clazz);
-        if (null == perm)
-            LOG.warn("Could not resolve the permission " + clazz.getName() + "! If this is not part of a role, you must register it separately with RoleManager.register().");
-        return perm;
-    }
-
-    public static Permission getPermission(String uniqueName)
-    {
-        Permission perm = (Permission) _nameToRoleMap.get(uniqueName);
-        if (null == perm)
-            LOG.warn("Could not resolve the permission " + uniqueName + "! The permission may no longer exist, or may not yet be registered.");
-        return perm;
     }
 
     public static List<Role> getAllRoles()
@@ -218,7 +224,7 @@ public class RoleManager
             }
             catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e)
             {
-                LOG.error("Exception while instantiating permission " + permClass, e);
+                LOG.error("Exception while instantiating permission {}", permClass, e);
             }
         }
 
