@@ -17,6 +17,7 @@ package org.labkey.api.assay;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.exp.ExpQCFlag;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -73,7 +74,7 @@ public interface AssayFlagHandler
             return null;
     }
 
-    MutableColumnInfo createFlagColumn(ExpProtocol protocol, ExpRunTable runTable, String schemaName, boolean editable);
+    MutableColumnInfo createFlagColumn(ExpProtocol protocol, ExpRunTable runTable, String schemaName, boolean editable, @Nullable ContainerFilter cf);
 
     MutableColumnInfo createQCEnabledColumn(ExpProtocol protocol, ExpRunTable runTable, String schemaName);
 

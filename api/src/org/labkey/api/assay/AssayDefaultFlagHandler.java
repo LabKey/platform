@@ -15,7 +15,9 @@
  */
 package org.labkey.api.assay;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.ObjectFactory;
@@ -45,7 +47,7 @@ import java.util.stream.Collectors;
 public class AssayDefaultFlagHandler implements AssayFlagHandler
 {
     @Override
-    public MutableColumnInfo createFlagColumn(ExpProtocol protocol, ExpRunTable runTable, String schemaName, boolean editable)
+    public MutableColumnInfo createFlagColumn(ExpProtocol protocol, ExpRunTable runTable, String schemaName, boolean editable, @Nullable ContainerFilter cf)
     {
         return new AssayQCFlagColumn(runTable, schemaName, editable);
     }
