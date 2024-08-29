@@ -3494,7 +3494,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                         if (ps == null)
                             throw new ValidationException("Failed to resolve plate set for plate \"%s\".", plate.getName());
 
-                        if (!ps.isStandalone() && !ps.getRowId().equals(ps.getRootPlateSetId()))
+                        if (!ps.isStandalone() && !ps.getRowId().equals(ps.getRootPlateSetId()) && !ps.isTemplate())
                         {
                             if (ps.getRootPlateSetId() != null)
                                 plateSetsWithControls.add(Pair.of(ps.getRowId(), ps.getRootPlateSetId()));

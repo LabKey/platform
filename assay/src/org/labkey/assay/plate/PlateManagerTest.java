@@ -46,6 +46,7 @@ import org.labkey.assay.plate.query.WellTable;
 import org.labkey.assay.query.AssayDbSchema;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -1237,6 +1238,40 @@ public final class PlateManagerTest
 
         // Assert (expect no errors)
         createPlateSet(plateSetImpl, plateData, null);
+    }
+
+    @Test
+    public void testControlValidation() throws Exception
+    {
+        // Arrange
+        List<ExpMaterial> samples = createSamples(4);
+        List<Integer> sampleRowIds = samples.stream().map(ExpObject::getRowId).sorted().toList();
+        List<String> sampleNames = samples.stream().map(ExpObject::getName).sorted().toList();
+
+        PlateSetImpl plateSetImpl = new PlateSetImpl();
+        plateSetImpl.setType(PlateSetType.primary);
+        PlateType plateType = PLATE_TYPE_12_WELLS;
+
+        List<Map<String, Object>> PS1Data = new ArrayList<>();
+        PS1Data.add(createWellRow("A1", "SAMPLE", null, sampleRowIds.get(0)));
+        PS1Data.add(createWellRow("A2", "SAMPLE", null, sampleRowIds.get(1)));
+        PS1Data.add(createWellRow("A3", "SAMPLE", null, sampleRowIds.get(2)));
+
+        var plateData1 = List.of(new PlateManager.PlateData("PS1", plateType.getRowId(), null, null, PS1Data));
+        PlateSet plateSet1 = createPlateSet(plateSetImpl, plateData1, null);
+
+        List<Map<String, Object>> dataPS2 = Arrays.asList(createWellRow("A1", "POSITIVE_CONTROL", null, sampleRowIds.get(0)));
+        var plateData2 = List.of(new PlateManager.PlateData("PS2", plateType.getRowId(), null, null, dataPS2));
+
+        // Act / Assert
+        // Since the sample of index 0 is on PS1's plate, it is not a valid control for PS2's plate
+        String errorMsg = String.format("The sample \"%s\" is not a valid control.", sampleNames.get(0));
+        assertCreatePlateSetThrows(errorMsg, plateSetImpl, plateData2, plateSet1.getRowId());
+
+        // Assert (expect no errors)
+        List<Map<String, Object>> newDataPS2 = Arrays.asList(createWellRow("A1", "POSITIVE_CONTROL", null, sampleRowIds.get(3)));
+        plateData2 = List.of(new PlateManager.PlateData("PS2", plateType.getRowId(), null, null, newDataPS2));
+        createPlateSet(plateSetImpl, plateData2, plateSet1.getRowId());
     }
 
     private Plate createPlate(@NotNull PlateType plateType) throws Exception
