@@ -7974,7 +7974,7 @@ public class AdminController extends SpringActionController
                         throw new UnauthorizedException("Cannot delete folder: " + target.getName() + ". " + perm.getName() + " permission required");
                     }
 
-                    if (!ContainerManager.hasTreePermission(target, getUser(), AdminPermission.class))
+                    if (target.hasChildren() && !ContainerManager.hasTreePermission(target, getUser(), AdminPermission.class))
                     {
                         throw new UnauthorizedException("Deleting the " + target.getContainerNoun() + " " + target.getName() + " requires admin permissions on that folder and all children. You do not have admin permission on all subfolders.");
                     }
