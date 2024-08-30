@@ -58,8 +58,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
@@ -102,15 +100,13 @@ public final class PlateManagerTest
         container = JunitUtil.getTestContainer();
         user = TestContext.get().getUser();
 
-        ModuleLoader moduleLoader = ModuleLoader.getInstance();
-        Module assayModule = moduleLoader.getModule(AssayModule.NAME);
+        Module assayModule = ModuleLoader.getInstance().getModule(AssayModule.NAME);
         Set<Module> activeModules = container.getActiveModules();
-        LOG.info("rosalineCurrentActiveModules: " + activeModules.stream().map(Module::getName).collect(Collectors.joining(", ")));
 
         if (!activeModules.contains(assayModule))
         {
-            Set<Module> assayModuleSet = new HashSet<>(Arrays.asList(assayModule));
-            Set<Module> newActiveModules = Stream.concat(assayModuleSet.stream(), activeModules.stream()).collect(Collectors.toSet());
+            Set<Module> newActiveModules = new HashSet<>(activeModules);
+            newActiveModules.add(assayModule);
             container.setActiveModules(newActiveModules);
         }
 
