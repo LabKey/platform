@@ -111,7 +111,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
 
     /**
      * Returns the table info for this query. The table does not apply any external metadata except module
-     * scoped metadata (Issue : 50362).
+     * scoped metadata.
      *
      * @throws MetadataUnavailableException
      */
@@ -121,29 +121,24 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
         if (null == tableInfo)
             throw new MetadataUnavailableException("No such table: " + tableName);
 
-        List<QueryDef> queryDefs = QueryServiceImpl.get().findMetadataOverrideImpl(schema, tableName, false, false, null);
-        if (queryDefs != null && !queryDefs.isEmpty())
+        QueryDef moduleQueryDef = QueryServiceImpl.get().findMetadataOverrideInModules(schema, tableName, false, null);
+        if (moduleQueryDef != null)
         {
-            // Issue 50362 : module query metadata not considered during the save. Inspect the returned query definitions looking
-            // for a non-database sourced definition. This would represent a module scoped (.qview.xml) query definition.
-            QueryDef moduleQDef = queryDefs.get(0);
-            if (moduleQDef.getQueryDefId() == 0)
-            {
-                ArrayList<QueryException> errors = new ArrayList<>();
-                TablesDocument doc = moduleQDef.getParsedMetadata().getTablesDocument(errors);
-                if (!errors.isEmpty())
-                    throw UnexpectedException.wrap(errors.get(0));
+            // Issue 50362 : module query metadata not applied during the save.
+            ArrayList<QueryException> errors = new ArrayList<>();
+            TablesDocument doc = moduleQueryDef.getParsedMetadata().getTablesDocument(errors);
+            if (!errors.isEmpty())
+                throw UnexpectedException.wrap(errors.get(0));
 
-                if (doc != null)
+            if (doc != null)
+            {
+                TablesType tables = doc.getTables();
+                if (tables != null && tables.sizeOfTableArray() > 0)
                 {
-                    TablesType tables = doc.getTables();
-                    if (tables != null && tables.sizeOfTableArray() > 0)
-                    {
-                        List<TableType> tableTypes = Collections.singletonList(tables.getTableArray(0));
-                        tableInfo.overlayMetadata(tableTypes, schema, errors);
-                        if (!errors.isEmpty())
-                            throw UnexpectedException.wrap(errors.get(0));
-                    }
+                    List<TableType> tableTypes = Collections.singletonList(tables.getTableArray(0));
+                    tableInfo.overlayMetadata(tableTypes, schema, errors);
+                    if (!errors.isEmpty())
+                        throw UnexpectedException.wrap(errors.get(0));
                 }
             }
         }
