@@ -185,6 +185,28 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.filters.ContentSecurityPolicyFilter;
+import org.radeox.test.BaseRenderEngineTest;
+import org.radeox.test.filter.BasicRegexTest;
+import org.radeox.test.filter.BoldFilterTest;
+import org.radeox.test.filter.EscapeFilterTest;
+import org.radeox.test.filter.FilterPipeTest;
+import org.radeox.test.filter.HeadingFilterTest;
+import org.radeox.test.filter.HtmlRemoveFilterTest;
+import org.radeox.test.filter.ItalicFilterTest;
+import org.radeox.test.filter.KeyFilterTest;
+import org.radeox.test.filter.LineFilterTest;
+import org.radeox.test.filter.LinkTestFilterTest;
+import org.radeox.test.filter.ListFilterTest;
+import org.radeox.test.filter.NewlineFilterTest;
+import org.radeox.test.filter.ParamFilterTest;
+import org.radeox.test.filter.SmileyFilterTest;
+import org.radeox.test.filter.StrikeThroughFilterTest;
+import org.radeox.test.filter.TypographyFilterTest;
+import org.radeox.test.filter.UrlFilterTest;
+import org.radeox.test.filter.WikiLinkFilterTest;
+import org.radeox.test.macro.list.AtoZListFormatterTest;
+import org.radeox.test.macro.list.ExampleListFormatterTest;
+import org.radeox.test.macro.list.SimpleListTest;
 
 import javax.management.StandardMBean;
 import java.util.ArrayList;
@@ -429,7 +451,32 @@ public class ApiModule extends CodeOnlyModule
             ValidEmail.TestCase.class,
             URIUtil.TestCase.class,
             AssayFileWriter.TestCase.class,
-            AssayResultsFileWriter.TestCase.class
+            AssayResultsFileWriter.TestCase.class,
+
+            // Radeox tests
+            SimpleListTest.class,
+            ExampleListFormatterTest.class,
+            AtoZListFormatterTest.class,
+            BaseRenderEngineTest.class,
+            BasicRegexTest.class,
+            ItalicFilterTest.class,
+            BoldFilterTest.class,
+            KeyFilterTest.class,
+            NewlineFilterTest.class,
+            LineFilterTest.class,
+            TypographyFilterTest.class,
+            HtmlRemoveFilterTest.class,
+            StrikeThroughFilterTest.class,
+            UrlFilterTest.class,
+            ParamFilterTest.class,
+            FilterPipeTest.class,
+            EscapeFilterTest.class,
+            LinkTestFilterTest.class,
+            WikiLinkFilterTest.class,
+            SmileyFilterTest.class,
+            ListFilterTest.class,
+            HeadingFilterTest.class
+
         );
     }
 

@@ -97,7 +97,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
 
     public RadeoxRenderer()
     {
-        super(new MyInitialRenderContext());
+        super(new BaseInitialRenderContext());
         MemTracker.getInstance().put(this);
     }
 
@@ -131,16 +131,6 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
         HtmlString html = HtmlString.unsafe(render(text, context));
 
         return new FormattedHtml(html, false, dependencies, anchors);  // TODO: Are there wiki pages we don't want to cache?
-    }
-
-    public static class MyInitialRenderContext
-            extends BaseInitialRenderContext
-    {
-        public MyInitialRenderContext()
-        {
-            set(RenderContext.INPUT_BUNDLE_NAME, "org.labkey.api.wiki.wiki_markup");
-            set(RenderContext.OUTPUT_BUNDLE_NAME, "org.labkey.api.wiki.wiki_markup");
-        }
     }
 
     private static class NewTabLinkMacro extends LinkMacro
