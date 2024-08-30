@@ -49,10 +49,7 @@ import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
-import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -105,10 +102,6 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
     public AbstractAuditTypeProvider(AbstractAuditDomainKind domainKind)
     {
         this.domainKind = domainKind;
-
-        // Issue 20310: initialize AuditTypeProvider when registered during startup
-        //User auditUser = new LimitedUser(UserManager.getGuestUser(), ReaderRole.class);
-        //initializeProvider(auditUser);
     }
 
     protected AbstractAuditDomainKind getDomainKind()
@@ -123,7 +116,6 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
         // Register the DomainKind
         AbstractAuditDomainKind domainKind = getDomainKind();
         PropertyService.get().registerDomainKind(domainKind);
-
         Domain domain = getDomain();
 
         // if the domain doesn't exist, create it
@@ -138,12 +130,16 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
                     domain.addPropertyOfPropertyDescriptor(pd);
                 }
                 domain.save(user);
+                domain = getDomain();
             }
             catch (ChangePropertyDescriptorException e)
             {
                 throw new RuntimeException(e);
             }
         }
+
+        // adjust potential domain kind changes
+        ensureProperties(user, domain);
     }
 
     private void updateIndices(Domain domain, AbstractAuditDomainKind domainKind)
@@ -193,12 +189,8 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
 
 
     // NOTE: Changing the name of an existing PropertyDescriptor will lose data!
-    public final void ensureProperties()
+    private void ensureProperties(User user, Domain domain)
     {
-        User user = User.getAdminServiceUser();
-        initializeProvider(user);
-        Domain domain = getDomain();
-
         if (domain != null && domainKind != null)
         {
             // Create a map of desired properties

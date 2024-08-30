@@ -16,6 +16,7 @@
 
 package org.labkey.audit;
 
+import jakarta.servlet.ServletContext;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
@@ -35,7 +36,6 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
@@ -50,7 +50,6 @@ import org.labkey.api.view.HttpView;
 import org.labkey.audit.model.LogManager;
 import org.labkey.audit.query.AuditQuerySchema;
 
-import jakarta.servlet.ServletContext;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -105,15 +104,10 @@ public class AuditLogImpl implements AuditLogService, StartupListener
     {
         synchronized (STARTUP_LOCK)
         {
-            // perform final domain initialization
+            // perform audit provider initialization
             for (AuditTypeProvider provider : AuditLogService.get().getAuditProviders())
             {
-                if (provider instanceof AbstractAuditTypeProvider auditTypeProvider)
-                {
-                    //      Domain domain = auditTypeProvider.getDomain();
-                    // fixup any domain changes between the provisioned table and the domain kind
-                    auditTypeProvider.ensureProperties();
-                }
+                provider.initializeProvider(User.getAdminServiceUser());
             }
             _logToDatabase.set(true);
 
