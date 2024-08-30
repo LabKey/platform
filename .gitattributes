@@ -3215,10 +3215,10 @@ wiki/module.properties -text
 api/src/org/labkey/api/wiki/radeox_messages.properties -text
 core/src/org/radeox/license.txt -text
 core/src/META-INF/services/org.radeox.filter.Filter -text
-core/src/META-INF/services/org.radeox.code.macro.radeox.SourceCodeFormatter -text
-core/src/META-INF/services/org.radeox.list.macro.radeox.ListFormatter -text
-core/src/META-INF/services/org.radeox.macro.radeox.Macro -text
-core/src/META-INF/services/org.radeox.table.macro.radeox.Function -text
+core/src/META-INF/services/org.radeox.code.macro.SourceCodeFormatter -text
+core/src/META-INF/services/org.radeox.list.macro.ListFormatter -text
+core/src/META-INF/services/org.radeox.macro.Macro -text
+core/src/META-INF/services/org.radeox.table.macro.Function -text
 core/src/org/radeox/api/engine/context/InitialRenderContext.java -text
 core/src/org/radeox/api/engine/context/InitialRenderContext.java -text
 core/src/org/radeox/api/engine/context/RenderContext.java -text
