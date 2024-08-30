@@ -120,8 +120,12 @@ LABKEY.WebSocket = new function ()
                     hideModal();
                 }
             }),
-            failure: function () {
-                setTimeout(showDisconnectedMessage, 1000);
+            failure: function (reason) {
+                setTimeout(function() {
+                    // Issue 51021: check for null _websocket before showing unavailable message as this can be triggered
+                    // in FF by having the API call aborted because of a page navigation
+                    if (_websocket === null) showDisconnectedMessage();
+                }, 1000);
             }
         });
     }
