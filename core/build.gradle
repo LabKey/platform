@@ -59,3 +59,13 @@ dependencies {
 }
 
 BuildUtils.addLabKeyDependency(project: project, config: "implementation", depProjectPath: BuildUtils.getBootstrapProjectPath(gradle))
+
+sourceSets {
+    main {
+        resources {
+            srcDirs = ['src'] // Pull in some Radeox config files
+            exclude '**/*.java'
+            exclude '**/*.jsp'
+        }
+    }
+}

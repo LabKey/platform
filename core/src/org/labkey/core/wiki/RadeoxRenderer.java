@@ -548,7 +548,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
     {
         super.init();
 
-        fp.removeFilter("org.radeox.filter.StrikeThroughFilter");
+        fp.removeFilter("org.radeox.filter.radeox.StrikeThroughFilter");
         fp.addFilter(new UnderlineFilter());
         fp.addFilter(new IndentFilter());
         fp.addFilter(new LinkTestFilter());
@@ -697,7 +697,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
     }
 
     /**
-     * replace org.radeox.filter.LinkTestFilter, which does not handle
+     * replace org.radeox.filter.radeox.LinkTestFilter, which does not handle
      * [name|http://url/] syntax
      */
     public static class LinkTestFilter extends LocaleRegexTokenFilter
@@ -729,7 +729,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
         @Override
         public String[] replaces()
         {
-            return new String[]{"org.radeox.filter.LinkTestFilter"};
+            return new String[]{"org.radeox.filter.radeox.LinkTestFilter"};
         }
 
 
