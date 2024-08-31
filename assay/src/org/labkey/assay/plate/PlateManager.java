@@ -162,6 +162,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.Collections.emptyList;
 import static org.labkey.api.assay.plate.PlateSet.MAX_PLATES;
@@ -3465,6 +3466,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     {
         clearCache(plateRowIds);
         Set<Integer> plateSetsWithReplicates = new HashSet<>();
+        Set<Pair<Integer, Integer>> plateSetsWithControls = new HashSet<>();
 
         for (var plateRowId : plateRowIds)
         {
@@ -3484,7 +3486,21 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                         if (plateSet != null)
                             plateSetsWithReplicates.add(plateSet.getRowId());
                     }
-                    case CONTROL, NEGATIVE_CONTROL, POSITIVE_CONTROL, SAMPLE -> validateWellGroup(plate, wellGroup);
+                    case CONTROL, NEGATIVE_CONTROL, POSITIVE_CONTROL ->
+                    {
+                        validateWellGroup(plate, wellGroup);
+
+                        var ps = plate.getPlateSet();
+                        if (ps == null)
+                            throw new ValidationException("Failed to resolve plate set for plate \"%s\".", plate.getName());
+
+                        if (!ps.isStandalone() && !ps.getRowId().equals(ps.getRootPlateSetId()) && !ps.isTemplate())
+                        {
+                            if (ps.getRootPlateSetId() != null)
+                                plateSetsWithControls.add(Pair.of(ps.getRowId(), ps.getRootPlateSetId()));
+                        }
+                    }
+                    case SAMPLE -> validateWellGroup(plate, wellGroup);
                     default -> throw new ValidationException(
                         String.format(
                             "Well Group Type \"%s\" is not supported for assay type \"%s\" plates.",
@@ -3502,6 +3518,12 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         {
             for (var plateSetId : plateSetsWithReplicates.stream().sorted().toList())
                 validatePlateSetReplicates(container, user, plateSetId);
+        }
+
+        if (!plateSetsWithControls.isEmpty())
+        {
+            for (var plateSetIds : plateSetsWithControls)
+                validatePlateSetControls(container, user, plateSetIds);
         }
     }
 
@@ -3535,11 +3557,54 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         }
     }
 
+    private String getControlGroupLabKeySql(Pair<Integer, Integer> plateSetRowIds)
+    {
+        String controlTypes = StringUtils.join(
+                Stream.of(WellGroup.Type.CONTROL, WellGroup.Type.NEGATIVE_CONTROL, WellGroup.Type.POSITIVE_CONTROL)
+                        .map(type -> LabKeySql.quoteString(type.name())).toList(), ", "
+        );
+
+        return String.format("""
+            SELECT
+                SIPS.Name
+            FROM
+                plate.SamplesInPlateSets AS SIPS
+            WHERE
+                SIPS.PlateSetRowId = %s AND
+                SIPS.RowId IN (
+                    SELECT DISTINCT SampleId FROM plate.Well
+                    WHERE PlateId.PlateSet = %s AND Type IN (%s)
+                )
+            LIMIT 1
+        """, plateSetRowIds.second, plateSetRowIds.first, controlTypes);
+    }
+
+    private void validatePlateSetControls(Container container, User user, Pair<Integer, Integer> plateSetRowIds) throws ValidationException
+    {
+        String invalidSampleName = null;
+        UserSchema schema = QueryService.get().getUserSchema(user, container, PlateSchema.SCHEMA_NAME);
+        String sql = getControlGroupLabKeySql(plateSetRowIds);
+
+        try (Results rs = QueryService.get().getSelectBuilder(schema, sql).select())
+        {
+            if (rs.next())
+                invalidSampleName = rs.getString(FieldKey.fromParts("name"));
+        }
+        catch (SQLException e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
+
+        if (invalidSampleName != null)
+            throw new ValidationException(String.format("The sample \"%s\" is not a valid control.", invalidSampleName));
+    }
+
     private long getReplicateGroupCount(@NotNull UserSchema plateSchema, @NotNull Integer plateSetRowId)
     {
-        String labkeySql = "SELECT DISTINCT Type, WellGroup FROM plate.Well WHERE" +
-                " PlateId.PlateSet.RowId = " + plateSetRowId +
-                " AND Type = " + LabKeySql.quoteString(WellGroup.Type.REPLICATE.name());
+        String labkeySql = String.format("""
+            SELECT DISTINCT Type, WellGroup
+            FROM plate.Well WHERE PlateId.PlateSet.RowId = %s AND Type = %s
+        """, plateSetRowId, LabKeySql.quoteString(WellGroup.Type.REPLICATE.name()));
 
         return QueryService.get().getSelectBuilder(plateSchema, labkeySql).buildSqlSelector(null).getRowCount();
     }
@@ -3570,10 +3635,14 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             }
         }
 
-        return "SELECT\n " + columnsSql + "FROM plate.Well\n WHERE"
-                + " PlateId.PlateSet.RowId = " + plateSetRowId
-                + " AND Type = " + LabKeySql.quoteString(WellGroup.Type.REPLICATE.name()) + "\n"
-                + " GROUP BY\n" + columnsSql;
+        return String.format("""
+            SELECT
+            %s
+            FROM plate.Well
+            WHERE PlateId.PlateSet.RowId = %s AND Type = %s
+            GROUP BY
+            %s
+        """, columnsSql, plateSetRowId, LabKeySql.quoteString(WellGroup.Type.REPLICATE.name()), columnsSql);
     }
 
     private void validatePlateSetReplicates(Container container, User user, @NotNull Integer plateSetRowId) throws ValidationException

@@ -1,5 +1,6 @@
 package org.labkey.assay.plate;
 
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.AfterClass;
@@ -31,6 +32,8 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -39,6 +42,8 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.logging.LogHelper;
+import org.labkey.assay.AssayModule;
 import org.labkey.assay.plate.model.ReformatOptions;
 import org.labkey.assay.plate.model.WellBean;
 import org.labkey.assay.plate.query.PlateSchema;
@@ -46,10 +51,13 @@ import org.labkey.assay.plate.query.WellTable;
 import org.labkey.assay.query.AssayDbSchema;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
@@ -63,6 +71,8 @@ import static org.labkey.api.util.JunitUtil.deleteTestContainer;
 
 public final class PlateManagerTest
 {
+    private static final Logger LOG = LogHelper.getLogger(PlateManagerTest.class, "jUnit tests for Plates");
+
     private static Integer ARCHIVED_PLATE_SET_ID;
     private static Integer EMPTY_PLATE_SET_ID;
     private static Integer FULL_PLATE_SET_ID;
@@ -89,6 +99,16 @@ public final class PlateManagerTest
 
         container = JunitUtil.getTestContainer();
         user = TestContext.get().getUser();
+
+        Module assayModule = ModuleLoader.getInstance().getModule(AssayModule.NAME);
+        Set<Module> activeModules = container.getActiveModules();
+
+        if (!activeModules.contains(assayModule))
+        {
+            Set<Module> newActiveModules = new HashSet<>(activeModules);
+            newActiveModules.add(assayModule);
+            container.setActiveModules(newActiveModules);
+        }
 
         Domain domain = PlateManager.get().getPlateMetadataDomain(container, user);
         if (domain != null)
@@ -1237,6 +1257,40 @@ public final class PlateManagerTest
 
         // Assert (expect no errors)
         createPlateSet(plateSetImpl, plateData, null);
+    }
+
+    @Test
+    public void testControlValidation() throws Exception
+    {
+        // Arrange
+        List<ExpMaterial> samples = createSamples(4);
+        List<Integer> sampleRowIds = samples.stream().map(ExpObject::getRowId).sorted().toList();
+        List<String> sampleNames = samples.stream().map(ExpObject::getName).sorted().toList();
+
+        PlateSetImpl plateSetImpl = new PlateSetImpl();
+        plateSetImpl.setType(PlateSetType.primary);
+        PlateType plateType = PLATE_TYPE_12_WELLS;
+
+        List<Map<String, Object>> PS1Data = new ArrayList<>();
+        PS1Data.add(createWellRow("A1", "SAMPLE", null, sampleRowIds.get(0)));
+        PS1Data.add(createWellRow("A2", "SAMPLE", null, sampleRowIds.get(1)));
+        PS1Data.add(createWellRow("A3", "SAMPLE", null, sampleRowIds.get(2)));
+
+        var plateData1 = List.of(new PlateManager.PlateData("PS1", plateType.getRowId(), null, null, PS1Data));
+        PlateSet plateSet1 = createPlateSet(plateSetImpl, plateData1, null);
+
+        List<Map<String, Object>> dataPS2 = Arrays.asList(createWellRow("A1", "POSITIVE_CONTROL", null, sampleRowIds.get(0)));
+        var plateData2 = List.of(new PlateManager.PlateData("PS2", plateType.getRowId(), null, null, dataPS2));
+
+        // Act / Assert
+        // Since the sample of index 0 is on PS1's plate, it is not a valid control for PS2's plate
+        String errorMsg = String.format("The sample \"%s\" is not a valid control.", sampleNames.get(0));
+        assertCreatePlateSetThrows(errorMsg, plateSetImpl, plateData2, plateSet1.getRowId());
+
+        // Assert (expect no errors)
+        List<Map<String, Object>> newDataPS2 = Arrays.asList(createWellRow("A1", "POSITIVE_CONTROL", null, sampleRowIds.get(3)));
+        plateData2 = List.of(new PlateManager.PlateData("PS2", plateType.getRowId(), null, null, newDataPS2));
+        createPlateSet(plateSetImpl, plateData2, plateSet1.getRowId());
     }
 
     private Plate createPlate(@NotNull PlateType plateType) throws Exception
