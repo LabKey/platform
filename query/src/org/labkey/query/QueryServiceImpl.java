@@ -2363,7 +2363,7 @@ public class QueryServiceImpl implements QueryService
         }
     }
 
-    private QueryDef findMetadataOverrideInDatabase(UserSchema schema, String tableName, boolean customQuery)
+    public QueryDef findMetadataOverrideInDatabase(UserSchema schema, String tableName, boolean customQuery)
     {
         String schemaName = schema.getSchemaPath().toString();
         Container container = schema.getContainer();
@@ -2406,7 +2406,7 @@ public class QueryServiceImpl implements QueryService
     }
 
     // Look for file-based definitions in modules
-    private @Nullable QueryDef findMetadataOverrideInModules(@NotNull UserSchema schema, @NotNull String tableName, boolean allModules, @Nullable Path dir)
+    public @Nullable QueryDef findMetadataOverrideInModules(@NotNull UserSchema schema, @NotNull String tableName, boolean allModules, @Nullable Path dir)
     {
         if (dir == null)
         {

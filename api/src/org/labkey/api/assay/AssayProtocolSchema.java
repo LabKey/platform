@@ -409,7 +409,7 @@ public abstract class AssayProtocolSchema extends AssaySchema implements UserSch
         runTable.getMutableColumn(ExpRunTable.Column.ReplacesRun).setFk(assayRunFK);
         runTable.getMutableColumn(ExpRunTable.Column.RowId).setURL(new DetailsURL(new ActionURL(AssayDetailRedirectAction.class, getContainer()), Collections.singletonMap("runId", "rowId")));
 
-        addQCFlagColumn(runTable);
+        addQCFlagColumn(runTable, cf);
 
         var dataLinkColumn = runTable.getMutableColumn(ExpRunTable.Column.Name);
         dataLinkColumn.setLabel("Assay ID");
@@ -477,12 +477,12 @@ public abstract class AssayProtocolSchema extends AssaySchema implements UserSch
         return runTable;
     }
 
-    protected void addQCFlagColumn(ExpRunTable runTable)
+    protected void addQCFlagColumn(ExpRunTable runTable, @Nullable ContainerFilter cf)
     {
         AssayFlagHandler handler = AssayFlagHandler.getHandler(getProvider());
         if (handler != null)
         {
-            var flagCol = handler.createFlagColumn(getProtocol(), runTable, getSchemaName(), true);
+            var flagCol = handler.createFlagColumn(getProtocol(), runTable, getSchemaName(), true, cf);
             var enabledCol = handler.createQCEnabledColumn(getProtocol(), runTable, getSchemaName());
 
             if (flagCol != null)

@@ -188,6 +188,7 @@ public class PlateSetImpl extends Entity implements PlateSet
         _primaryPlateSetId = primaryPlateSetId;
     }
 
+    @Override
     public Integer getRootPlateSetId()
     {
         return _rootPlateSetId;

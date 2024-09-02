@@ -16,30 +16,15 @@
 package org.labkey.api.security.roles;
 
 import org.apache.commons.beanutils.Converter;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
-/*
-* User: Dave
-* Date: Apr 23, 2009
-* Time: 4:28:20 PM
-*/
 public class RoleConverter implements Converter
 {
-    private static final Logger _log = LogManager.getLogger(RoleConverter.class);
-
     @Override
     public Object convert(Class type, Object value)
     {
-        if(null == value || !type.equals(Role.class) || !(value instanceof String))
+        if (null == value || !type.equals(Role.class) || !(value instanceof String))
             return null;
         else
-        {
-            Role role = RoleManager.getRole((String) value);
-            if(null == role)
-                _log.warn("Unable to resolve role name '" + value + "'! This role may no longer exist, or has not been registered with RoleManger.register().");
-            
-            return role;
-        }
+            return RoleManager.getRole((String) value); // Note: getRole() logs a warning for unknown roles, so no need to do so here
     }
 }
