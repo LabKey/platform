@@ -89,4 +89,10 @@ public class MacroListMacro extends BaseLocaleMacro {
     return writer;
   }
 
+
+  @Override
+  public String[] getParamDescription()
+  {
+    return new String[] { "none" };
+  }
 }

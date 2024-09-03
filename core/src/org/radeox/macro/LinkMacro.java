@@ -27,6 +27,7 @@
  */
 package org.radeox.macro;
 
+import org.labkey.api.util.PageFlowUtil;
 import org.radeox.api.engine.ImageRenderEngine;
 import org.radeox.api.engine.RenderEngine;
 import org.radeox.api.engine.context.RenderContext;
@@ -73,19 +74,29 @@ public class LinkMacro extends BaseLocaleMacro {
         if (url != null && text != null) {
             writer.write("<span class=\"nobr\"");
             if(style != null)
-                writer.write(" style=\"" + style + "\"");
+                writer.write(" style=\"" + PageFlowUtil.filter(style) + "\"");
             writer.write(">");
             if (!"none".equals(img) && engine instanceof ImageRenderEngine) {
                 writer.write(((ImageRenderEngine) engine).getExternalImageLink());
             }
             writer.write("<a href=\"");
-            writer.write(url);
+            writer.write(PageFlowUtil.filter(url));
             writer.write("\">");
-            writer.write(text);
+            writer.write(PageFlowUtil.filter(text));
             writer.write("</a></span>");
         } else {
             throw new IllegalArgumentException("link needs a name and a url as argument");
         }
-        return;
+    }
+
+    @Override
+    public String[] getParamDescription()
+    {
+        return new String [] {
+                "1: Text of link, or URL if using a single parameter",
+                "2: URL (optional)",
+                "3: Image URL (unsupported)",
+                "4: CSS style for the span wrapping the anchor (optional)"
+        };
     }
 }

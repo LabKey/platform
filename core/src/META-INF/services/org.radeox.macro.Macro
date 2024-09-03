@@ -5,5 +5,4 @@ org.radeox.macro.LinkMacro
 org.radeox.macro.MailToMacro
 org.radeox.macro.MacroListMacro
 org.radeox.macro.QuoteMacro
-org.radeox.macro.RfcMacro
 org.radeox.macro.TableMacro

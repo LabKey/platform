@@ -43,7 +43,7 @@ public abstract class BaseMacro implements Macro {
   protected InitialRenderContext initialContext;
 
   protected String description = " ";
-  protected String[] paramDescription = {"unexplained, lazy programmer, probably [funzel]"};
+  protected String[] paramDescription = {"no description"};
 
   /**
    * Get the name of the macro. This is used to map a macro
@@ -67,8 +67,8 @@ public abstract class BaseMacro implements Macro {
   }
 
   /**
-   * Get a description of the paramters of the macro. The method
-   * returns an array with an String entry for every parameter.
+   * Get a description of the parameters of the macro. The method
+   * returns an array with a String entry for every parameter.
    * The format is {"1: description", ...} where 1 is the position
    * of the parameter.
    *
@@ -88,7 +88,7 @@ public abstract class BaseMacro implements Macro {
    * Execute the macro. This method is called by MacroFilter to
    * handle macros.
    *
-   * @param writer A write where the macro should write its output to
+   * @param writer A writer where the macro should write its output to
    * @param params Macro parameters with the parameters the macro is called with
    */
   @Override
