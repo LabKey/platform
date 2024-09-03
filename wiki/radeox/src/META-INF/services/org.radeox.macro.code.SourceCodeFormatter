@@ -1,5 +1,0 @@
-org.radeox.macro.code.SqlCodeFilter
-org.radeox.macro.code.JavaCodeFilter
-org.radeox.macro.code.XmlCodeFilter
-org.radeox.macro.code.NullCodeFilter
-#org.snipsnap.render.macro.code.Java2HtmlCodeFilter

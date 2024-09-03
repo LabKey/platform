@@ -34,19 +34,6 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            'radeox:radeox:1.0.6',
-            "Radeox",
-            "Radeox",
-            "http://www.radeox.org/",
-            ExternalDependency.LGPL_LICENSE_NAME,
-            ExternalDependency.LGPL_LICENSE_URL,
-            "Wiki renderer"
-        )
-    )
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
             "org.graalvm.polyglot:js-community:${graalVersion}",
             "GraalJS",
             "GraalJS",
@@ -72,3 +59,13 @@ dependencies {
 }
 
 BuildUtils.addLabKeyDependency(project: project, config: "implementation", depProjectPath: BuildUtils.getBootstrapProjectPath(gradle))
+
+sourceSets {
+    main {
+        resources {
+            srcDirs = ['src'] // Pull in some Radeox config files
+            exclude '**/*.java'
+            exclude '**/*.jsp'
+        }
+    }
+}

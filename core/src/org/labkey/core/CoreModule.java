@@ -302,6 +302,9 @@ import org.labkey.filters.ContentSecurityPolicyFilter;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.impl.StdSchedulerFactory;
+import org.radeox.test.BaseRenderEngineTest;
+import org.radeox.test.macro.list.*;
+import org.radeox.test.filter.*;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -1399,7 +1402,33 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             OutOfRangeDisplayColumn.TestCase.class,
             PostgreSqlVersion.TestCase.class,
             ScriptEngineManagerImpl.TestCase.class,
-            StatsServiceImpl.TestCase.class
+            StatsServiceImpl.TestCase.class,
+
+
+            // Radeox tests
+            SimpleListTest.class,
+            ExampleListFormatterTest.class,
+            AtoZListFormatterTest.class,
+            BaseRenderEngineTest.class,
+            BasicRegexTest.class,
+            ItalicFilterTest.class,
+            BoldFilterTest.class,
+            KeyFilterTest.class,
+            NewlineFilterTest.class,
+            LineFilterTest.class,
+            TypographyFilterTest.class,
+            HtmlRemoveFilterTest.class,
+            StrikeThroughFilterTest.class,
+            UrlFilterTest.class,
+            ParamFilterTest.class,
+            FilterPipeTest.class,
+            EscapeFilterTest.class,
+            LinkTestFilterTest.class,
+            WikiLinkFilterTest.class,
+            SmileyFilterTest.class,
+            ListFilterTest.class,
+            HeadingFilterTest.class
+
         );
     }
 
