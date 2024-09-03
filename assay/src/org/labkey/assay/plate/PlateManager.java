@@ -1431,6 +1431,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 if (!emptyPlateSetIds.isEmpty())
                 {
                     beforePlateSetsDelete(emptyPlateSetIds);
+                    tx.addCommitTask(() -> clearPlateSetCache(container, emptyPlateSetIds), DbScope.CommitTaskOption.POSTCOMMIT);
 
                     SQLFragment sql = new SQLFragment("DELETE FROM ").append(schema.getTableInfoPlateSet())
                             .append(" WHERE RowId ").appendInClause(emptyPlateSetIds, schema.getSchema().getSqlDialect());
@@ -1831,7 +1832,6 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     private void clearCache(Container c)
     {
         PlateCache.uncache(c);
-        PlateSetCache.uncache(c);
     }
 
     /**
