@@ -133,7 +133,7 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
     @Override
     public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
     {
-        return getContainer().hasPermission(user, AdminPermission.class);
+        return getContainer().hasPermission(user, getContainer().getPermissionNeededToDelete());
     }
 
     @Override
