@@ -428,15 +428,13 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     @Override
     public @Nullable PlateSet getPlateSet(Container container, int plateSetId)
     {
-        return new TableSelector(AssayDbSchema.getInstance().getTableInfoPlateSet()).getObject(container, plateSetId, PlateSetImpl.class);
+        return PlateSetCache.getPlateSet(container, plateSetId);
     }
 
     @Override
     public @Nullable PlateSet getPlateSet(ContainerFilter cf, int plateSetId)
     {
-        SimpleFilter filterPlateSet = new SimpleFilter(FieldKey.fromParts("RowId"), plateSetId);
-        Container c = getContainerWithPlateSetIdentifier(cf, filterPlateSet);
-        return getPlateSet(c, plateSetId);
+        return PlateSetCache.getPlateSet(cf, plateSetId);
     }
 
     @Override
@@ -1833,6 +1831,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     private void clearCache(Container c)
     {
         PlateCache.uncache(c);
+        PlateSetCache.uncache(c);
     }
 
     /**
@@ -1865,6 +1864,16 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             Plate plate = PlateCache.getPlate(c, rowId);
             if (plate != null)
                 PlateCache.uncache(c, plate);
+        }
+    }
+
+    private void clearPlateSetCache(Container container, Collection<Integer> plateSetRowIds)
+    {
+        for (Integer plateSetId : plateSetRowIds)
+        {
+            PlateSet plateSet = PlateSetCache.getPlateSet(container, plateSetId);
+            if (plateSet != null)
+                PlateSetCache.uncache(container, plateSet);
         }
     }
 
@@ -2587,7 +2596,10 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             }
 
             if (archivingPlateSets)
+            {
                 archive(container, user, AssayDbSchema.getInstance().getTableInfoPlateSet(), "plate sets", plateSetIds, archive);
+                tx.addCommitTask(() -> clearPlateSetCache(container, plateSetIds), DbScope.CommitTaskOption.POSTCOMMIT);
+            }
 
             tx.commit();
         }
