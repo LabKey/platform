@@ -226,7 +226,7 @@ public interface QueryService
 
     TableType parseMetadata(String metadataXML, Collection<QueryException> errors);
 
-    void saveCalculatedFieldsMetadata(String schemaName, String queryName, List<? extends GWTPropertyDescriptor> fields, boolean isUserDefinedQuery, User user, Container container) throws MetadataUnavailableException;
+    void saveCalculatedFieldsMetadata(String schemaName, String queryName, String updatedQueryName, List<? extends GWTPropertyDescriptor> fields, boolean isUserDefinedQuery, User user, Container container) throws MetadataUnavailableException;
 
     /**
      * Create a TableSelector for a LabKey sql query string.

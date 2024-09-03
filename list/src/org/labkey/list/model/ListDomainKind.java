@@ -450,7 +450,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
             list.save(user);
             updateListProperties(container, user, list.getListId(), listProperties);
 
-            QueryService.get().saveCalculatedFieldsMetadata(ListQuerySchema.NAME, name, domain.getCalculatedFields(), false, user, container);
+            QueryService.get().saveCalculatedFieldsMetadata(ListQuerySchema.NAME, name, null, domain.getCalculatedFields(), false, user, container);
 
             DefaultValueService.get().setDefaultValues(container, defaultValues);
 
@@ -505,7 +505,8 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
             }
 
             //handle name change
-            if (!original.getName().equals(update.getName()))
+            boolean hasNameChange = !original.getName().equals(update.getName());
+            if (hasNameChange)
             {
                 if (update.getName().length() > MAX_NAME_LENGTH)
                 {
@@ -585,7 +586,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
                 //update domain properties
                 exception.addErrors(DomainUtil.updateDomainDescriptor(original, update, container, user));
 
-                QueryService.get().saveCalculatedFieldsMetadata(ListQuerySchema.NAME, update.getQueryName(), update.getCalculatedFields(), false, user, container);
+                QueryService.get().saveCalculatedFieldsMetadata(ListQuerySchema.NAME, update.getQueryName(), hasNameChange ? update.getName() : null, update.getCalculatedFields(), false, user, container);
             }
             catch (RuntimeSQLException x)
             {

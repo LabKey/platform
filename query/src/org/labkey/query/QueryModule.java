@@ -186,6 +186,7 @@ public class QueryModule extends DefaultModule
 
         QueryService.get().addQueryListener(new CustomViewQueryChangeListener());
         QueryService.get().addQueryListener(new QuerySnapshotQueryChangeListener());
+        QueryService.get().addQueryListener(new QueryDefQueryChangeListener());
 
         ReportService.registerProvider(ReportServiceImpl.getInstance());
         ReportService.get().addUIProvider(new ReportUIProvider());

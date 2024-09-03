@@ -115,9 +115,11 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
      *
      * @throws MetadataUnavailableException
      */
-    private static TableInfo getRawTableInfo(UserSchema schema, String tableName) throws MetadataUnavailableException
+    private static TableInfo getRawTableInfo(UserSchema schema, String tableName, String updatedTableName) throws MetadataUnavailableException
     {
         TableInfo tableInfo = schema.getTable(tableName, null, false, true);
+        if (null == tableInfo)
+            tableInfo = schema.getTable(updatedTableName, null, false, true);
         if (null == tableInfo)
             throw new MetadataUnavailableException("No such table: " + tableName);
 
@@ -146,11 +148,15 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
         return tableInfo;
     }
 
-    public static void saveMetadata(String schemaName, String queryName, List<MetadataColumnJSON> fields, boolean isUserDefinedQuery, boolean calculatedFieldsOnly, User user, Container container) throws MetadataUnavailableException
+    public static void saveMetadata(String schemaName, String queryName, String updatedQueryName, List<MetadataColumnJSON> fields, boolean isUserDefinedQuery, boolean calculatedFieldsOnly, User user, Container container) throws MetadataUnavailableException
     {
         UserSchema schema = QueryService.get().getUserSchema(user, container, schemaName);
-        QueryDef queryDef = QueryManager.get().getQueryDef(schema.getContainer(), schema.getSchemaName(), queryName, isUserDefinedQuery);
-        TableInfo rawTableInfo = getRawTableInfo(schema, queryName);
+        QueryDef queryDef = null;
+        if (updatedQueryName != null)
+            queryDef= QueryManager.get().getQueryDef(schema.getContainer(), schema.getSchemaName(), updatedQueryName, isUserDefinedQuery);
+        if (queryDef == null)
+            queryDef = QueryManager.get().getQueryDef(schema.getContainer(), schema.getSchemaName(), queryName, isUserDefinedQuery);
+        TableInfo rawTableInfo = getRawTableInfo(schema, queryName, updatedQueryName);
         TablesDocument doc = null;
         TableType xmlTable = null;
 
@@ -170,6 +176,10 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             if (xmlTable == null)
             {
                 doc = null;
+            }
+            else if (updatedQueryName != null)
+            {
+                xmlTable.setTableName(updatedQueryName);
             }
         }
         else
