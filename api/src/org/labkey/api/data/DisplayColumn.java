@@ -495,7 +495,17 @@ public abstract class DisplayColumn extends RenderColumn
 
         Format format = getFormat();
         if (null != format)
-            return format.format(value);
+        {
+            try
+            {
+                return format.format(value);
+            }
+            catch (IllegalArgumentException e)
+            {
+                LOG.warn("Unable to apply format to {} value \"{}\" for column \"{}\", likely a SQL type mismatch between XML metadata and actual ResultSet", value.getClass().getName(), value, getName());
+                return value.toString();
+            }
+        }
 
         return null;
     }

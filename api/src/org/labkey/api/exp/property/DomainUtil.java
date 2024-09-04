@@ -1343,6 +1343,12 @@ public class DomainUtil
             {
                 namePropertyIdMap.put(name, field.getPropertyId());
             }
+
+            if (field.getValueExpression() != null && field.getValueExpression().trim().length() > 4000)
+            {
+                exception.addFieldError(name, getDomainErrorMessage(updates,"The value expression for '" + name
+                        + "' is too long (" + field.getValueExpression().trim().length() + " characters). Please limit to 4000 characters."));
+            }
         }
 
         return exception;
