@@ -3,12 +3,8 @@
 <%@ page extends="org.labkey.api.jsp.JspTest.DRT" %>
 
 <%!
-    record MiniUser(String first, String last)
-    {
-    }
-
     @Test
-    public void test1() throws InvocationTargetException, InstantiationException, IllegalAccessException
+    public void test1()
     {
         assertTrue(1==1);
     }
