@@ -115,10 +115,10 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
      *
      * @throws MetadataUnavailableException
      */
-    private static TableInfo getRawTableInfo(UserSchema schema, String tableName, String updatedTableName) throws MetadataUnavailableException
+    private static TableInfo getRawTableInfo(UserSchema schema, String tableName, @Nullable String updatedTableName) throws MetadataUnavailableException
     {
         TableInfo tableInfo = schema.getTable(tableName, null, false, true);
-        if (null == tableInfo)
+        if (null == tableInfo && null != updatedTableName)
             tableInfo = schema.getTable(updatedTableName, null, false, true);
         if (null == tableInfo)
             throw new MetadataUnavailableException("No such table: " + tableName);
@@ -148,7 +148,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
         return tableInfo;
     }
 
-    public static void saveMetadata(String schemaName, String queryName, String updatedQueryName, List<MetadataColumnJSON> fields, boolean isUserDefinedQuery, boolean calculatedFieldsOnly, User user, Container container) throws MetadataUnavailableException
+    public static void saveMetadata(String schemaName, String queryName, @Nullable String updatedQueryName, List<MetadataColumnJSON> fields, boolean isUserDefinedQuery, boolean calculatedFieldsOnly, User user, Container container) throws MetadataUnavailableException
     {
         UserSchema schema = QueryService.get().getUserSchema(user, container, schemaName);
         QueryDef queryDef = null;

@@ -2253,7 +2253,7 @@ public class QueryServiceImpl implements QueryService
     }
 
     @Override
-    public void saveCalculatedFieldsMetadata(String schemaName, String queryName, String updatedQueryName, List<? extends GWTPropertyDescriptor> fields, boolean isUserDefinedQuery, User user, Container container) throws MetadataUnavailableException
+    public void saveCalculatedFieldsMetadata(String schemaName, String queryName, @Nullable String updatedQueryName, List<? extends GWTPropertyDescriptor> fields, boolean isUserDefinedQuery, User user, Container container) throws MetadataUnavailableException
     {
         List<MetadataColumnJSON> calcFields = new ArrayList<>();
         for (GWTPropertyDescriptor field : fields)
