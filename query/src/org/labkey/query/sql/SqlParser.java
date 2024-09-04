@@ -98,6 +98,7 @@ public class SqlParser
 
     private static final Logger _log = LogHelper.getLogger(SqlParser.class, "LabKey SQL parser");
 
+    boolean failOnUnrecognizedMethodName = false;
     ArrayList<Exception> _parseErrors;
     List<QueryParseException> _parseWarnings;
     QNode _root;
@@ -172,6 +173,12 @@ public class SqlParser
     {
         _dialect = d;
         _container = c;
+    }
+
+    SqlParser setFailOnUnrecognizedMethodName(boolean b)
+    {
+        failOnUnrecognizedMethodName = b;
+        return this;
     }
 
     /** see also _SqlParser.close() for AutoCloseable behavior */
@@ -936,6 +943,8 @@ public class SqlParser
                 }
                 catch (IllegalArgumentException x)
                 {
+                    if (failOnUnrecognizedMethodName)
+                        _parseErrors.add(new QueryParseException("Unknown method " + name, null, id.getLine(), id.getColumn()));
                 }
                 
                 break;
