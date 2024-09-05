@@ -37,7 +37,8 @@ public class RecordFactory<K> implements ObjectFactory<K>
 
     public RecordFactory(Class<K> clazz)
     {
-        assert clazz.isRecord() : clazz + " is not a record!";
+        if (!clazz.isRecord())
+            throw new IllegalStateException(clazz + " is not a record!");
         //noinspection unchecked
         _constructor = (Constructor<K>) clazz.getDeclaredConstructors()[0];
         _constructor.setAccessible(true);

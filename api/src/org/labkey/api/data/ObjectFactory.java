@@ -58,10 +58,8 @@ public interface ObjectFactory<K>
             {
                 try
                 {
-                    // Make sure the class is loaded in case it statically registers a custom factory. Skip this for
-                    // records, since forName() throws with them.
-                    if (!clss.isRecord())
-                        Class.forName(clss.getName());
+                    // Make sure the class is loaded in case it statically registers a custom factory
+                    Class.forName(clss.getName());
                     f = (ObjectFactory<K>) _registry.get(clss);
 
                     if (f == null)
