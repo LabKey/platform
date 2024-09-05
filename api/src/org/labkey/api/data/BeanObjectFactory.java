@@ -27,14 +27,12 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.labkey.api.collections.CaseInsensitiveCollection;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.RowMap;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.springframework.beans.factory.InitializingBean;
 
 import java.beans.PropertyDescriptor;
-import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.ResultSet;
@@ -175,7 +173,7 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
                 }
                 catch (IllegalArgumentException | ConversionException x)
                 {
-                    _log.warn("Bean [" + bean.getClass().getName() + "] could not set property: " + prop + "=" + value + ": " + x.getMessage());
+                    _log.warn("Bean [{}] could not set property: {}={}: {}", bean.getClass().getName(), prop, value, x.getMessage());
                 }
             }
         }
@@ -307,15 +305,6 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
         }
 
         return list;
-    }
-
-
-    @Override
-    public K[] handleArray(ResultSet rs) throws SQLException
-    {
-        ArrayList<K> list = handleArrayList(rs);
-        @SuppressWarnings("unchecked") K[] array = (K[]) Array.newInstance(_class, list.size());
-        return list.toArray(array);
     }
 
 

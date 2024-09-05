@@ -29,11 +29,6 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
-/**
-* User: adam
-* Date: May 4, 2009
-* Time: 1:11:17 PM
-*/
 public class ResultSetRowMapFactory extends RowMapFactory<Object> implements Serializable
 {
     private boolean _convertBigDecimalToDouble = false;
@@ -77,7 +72,7 @@ public class ResultSetRowMapFactory extends RowMapFactory<Object> implements Ser
         {
             String propName = md.getColumnLabel(i);
 
-            if (propName.length() > 0 && Character.isUpperCase(propName.charAt(0)))
+            if (!propName.isEmpty() && Character.isUpperCase(propName.charAt(0)))
                 propName = Introspector.decapitalize(propName);
 
             findMap.put(propName, i);
@@ -101,7 +96,7 @@ public class ResultSetRowMapFactory extends RowMapFactory<Object> implements Ser
         int currentRow = rs.getRow();
         List<Object> _list = map.getRow();
 
-        if (0 == _list.size())
+        if (_list.isEmpty())
             _list.add(currentRow);
         else
             _list.set(0, currentRow);
