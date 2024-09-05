@@ -68,7 +68,7 @@ class QueryMetadataEditor extends PureComponent<any, Partial<IAppState>> {
             schemaName,
             queryName: _queryName,
             returnUrl,
-            messages: List<IBannerMessage>(),
+            messages: List<IBannerMessage>(), // TODO: This should be IBannerMessage[]
             showAlias: false,
             showSave: true,
             showEditSourceConfirmationModal: false,
@@ -386,7 +386,7 @@ class QueryMetadataEditor extends PureComponent<any, Partial<IAppState>> {
                         <Alert key={idx} bsStyle={bannerMessage.messageType} onDismiss={() => this.dismissAlert(idx)}>
                             {bannerMessage.message}
                         </Alert>
-                    ))}
+                    )).toArray()}
 
                 {domain && this.renderButtons()}
 
