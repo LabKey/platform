@@ -35,8 +35,14 @@ public interface ObjectFactory<K>
 
     Map<String, Object> toMap(K bean, @Nullable Map<String, Object> m);
 
+    /**
+     * Transforms the current row. Callers are expected to close() the ResultSet.
+     */
     K handle(ResultSet rs) throws SQLException;
 
+    /**
+     * Method consumes the ResultSet, but callers are expected to close() it.
+     */
     ArrayList<K> handleArrayList(ResultSet rs) throws SQLException;
 
 
