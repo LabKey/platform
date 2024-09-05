@@ -16,6 +16,9 @@
 
 package org.labkey.issue;
 
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -148,9 +151,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -1823,8 +1823,8 @@ public class IssuesController extends SpringActionController
 
             try (Results results = r.getResults(new RenderContext(getViewContext())))
             {
-                ObjectFactory f = ObjectFactory.Registry.getFactory(IssueObject.class);
-                IssueObject[] issues = (IssueObject[]) f.handleArray(results);
+                ObjectFactory<IssueObject> f = ObjectFactory.Registry.getFactory(IssueObject.class);
+                List<IssueObject> issues = f.handleArrayList(results);
 
                 ActionURL url = getDetailsURL(getContainer(), 1, isPrint());
                 String filteredURLString = PageFlowUtil.filter(url);
@@ -1855,10 +1855,10 @@ public class IssuesController extends SpringActionController
 
     public static class RssBean
     {
-        public IssueObject[] issues;
+        public List<IssueObject> issues;
         public String filteredURLString;
 
-        private RssBean(IssueObject[] issues, String filteredURLString)
+        private RssBean(List<IssueObject> issues, String filteredURLString)
         {
             this.issues = issues;
             this.filteredURLString = filteredURLString;

@@ -37,7 +37,6 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.Map;
 
 public class MicrosoftSqlServer2016Dialect extends MicrosoftSqlServer2014Dialect
 {
@@ -52,9 +51,9 @@ public class MicrosoftSqlServer2016Dialect extends MicrosoftSqlServer2014Dialect
     {
         super.prepare(scope);
 
-        Map<String, Object> map = new SqlSelector(scope, "SELECT language, date_format FROM sys.dm_exec_sessions WHERE session_id = @@spid").getMap();
-        _language = (String) map.get("language");
-        _dateFormat = (String) map.get("date_format");
+        Settings settings = new SqlSelector(scope, "SELECT language, date_format AS dateFormat FROM sys.dm_exec_sessions WHERE session_id = @@spid").getObject(Settings.class);
+        _language = settings.language;
+        _dateFormat = settings.dateFormat;
 
         // This seems to be the only string format acceptable for sending Timestamps, but unfortunately it's ambiguous;
         // SQL Server interprets the "MM-dd" portion based on the database's regional settings. So we must query the
@@ -70,6 +69,8 @@ public class MicrosoftSqlServer2016Dialect extends MicrosoftSqlServer2014Dialect
 
         LOG.info("\n    Language:                 {}\n    DateFormat:               {}", _language, _dateFormat);
     }
+
+    private record Settings(String language, String dateFormat) {}
 
     @Override
     public StatementWrapper getStatementWrapper(ConnectionWrapper conn, Statement stmt)
