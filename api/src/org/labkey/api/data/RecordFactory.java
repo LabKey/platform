@@ -147,14 +147,15 @@ public class RecordFactory<K> implements ObjectFactory<K>
                 Assert.assertEquals(users.get(0), factory.handle(rs));
             }
             MiniUser randomUser = users.get((int)(Math.random() * users.size()));
-            MiniUser selectedUser = new TableSelector(CoreSchema.getInstance().getTableInfoUsers(), new SimpleFilter(FieldKey.fromString("UserId"), randomUser.userId), null).getObject(MiniUser.class);
+            MiniUser selectedUser = new TableSelector(CoreSchema.getInstance().getTableInfoUsers(), new SimpleFilter(FieldKey.fromString("UserId"), randomUser.userid), null).getObject(MiniUser.class);
             Assert.assertEquals(randomUser, selectedUser);
 
             // Test fromMap() variant (should ignore selectedUser)
             assertEquals(adHocUser, factory.fromMap(selectedUser, adHocMap));
         }
 
-        public record MiniUser(String firstName, String lastName, Date LastLogin, int userId)
+        // Simple test record. Weird casing is intentional to test case-insensitivity.
+        private record MiniUser(String FIRSTname, String LASTNAME, Date LastLogin, int userid)
         {
         }
     }
