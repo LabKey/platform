@@ -80,6 +80,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
@@ -906,7 +907,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     public int truncateRows(User user, Container container, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext)
             throws BatchValidationException, QueryUpdateServiceException, SQLException
     {
-        if (!container.hasPermission(user, container.getPermissionNeededToDelete()) && !hasPermission(user, DeletePermission.class))
+        if (!container.hasPermission(user, AdminPermission.class) && !hasPermission(user, DeletePermission.class))
             throw new UnauthorizedException("You do not have permission to truncate this table.");
 
         BatchValidationException errors = new BatchValidationException();

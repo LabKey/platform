@@ -16,8 +16,6 @@
 package org.labkey.pipeline.api;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.cache.BlockingCache;
-import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerDisplayColumn;
@@ -37,7 +35,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QuerySchema;
-import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
@@ -46,7 +43,6 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.pipeline.query.TriggerConfigurationsTable;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -119,15 +115,15 @@ public class PipelineQuerySchema extends UserSchema
             MutableColumnInfo positionCol = table.addWrapColumn("QueuePosition", table.getRealTable().getColumn("Job"));
             positionCol.setDisplayColumnFactory(QueuePositionDisplayColumn::new);
 
-            table.getMutableColumn("RowId").setURL(DetailsURL.fromString(urlExp));
-            table.getMutableColumn("Status").setDisplayColumnFactory(colInfo ->
+            table.getMutableColumnOrThrow("RowId").setURL(DetailsURL.fromString(urlExp));
+            table.getMutableColumnOrThrow("Status").setDisplayColumnFactory(colInfo ->
             {
                 DataColumn result = new DataColumn(colInfo);
                 result.setNoWrap(true);
                 return result;
             });
 
-            table.getMutableColumn("Description").setDisplayColumnFactory(new DisplayColumnFactory()
+            table.getMutableColumnOrThrow("Description").setDisplayColumnFactory(new DisplayColumnFactory()
             {
                 @Override
                 public DisplayColumn createRenderer(ColumnInfo colInfo)
@@ -154,9 +150,9 @@ public class PipelineQuerySchema extends UserSchema
                     };
                 }
             });
-            UserIdQueryForeignKey.initColumn(this, table.getMutableColumn("CreatedBy"), true);
-            UserIdQueryForeignKey.initColumn(this, table.getMutableColumn("ModifiedBy"), true);
-            table.getMutableColumn("JobParent").setFk(new LookupForeignKey(cf,"Job", "Description")
+            UserIdQueryForeignKey.initColumn(this, table.getMutableColumnOrThrow("CreatedBy"), true);
+            UserIdQueryForeignKey.initColumn(this, table.getMutableColumnOrThrow("ModifiedBy"), true);
+            table.getMutableColumnOrThrow("JobParent").setFk(new LookupForeignKey(cf,"Job", "Description")
             {
                 @Override
                 public TableInfo getLookupTableInfo()
@@ -191,9 +187,11 @@ public class PipelineQuerySchema extends UserSchema
     }
 
     // for pipeline internal use only; other uses should go through createTable() above for proper permissions check
-    protected SimpleUserSchema.SimpleTable<PipelineQuerySchema> createTriggerConfigurationsTable(ContainerFilter cf)
+    protected TriggerConfigurationsTable createTriggerConfigurationsTable(ContainerFilter cf)
     {
-        return new TriggerConfigurationsTable(this, cf).init();
+        TriggerConfigurationsTable result = new TriggerConfigurationsTable(this, cf);
+        result.init();
+        return result;
     }
 
     @Override
