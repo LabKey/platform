@@ -2,9 +2,12 @@ package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveCollection;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.RowMap;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.ResultSetUtil;
 
 import java.lang.reflect.Constructor;
@@ -15,14 +18,16 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 /**
- * An ObjectFactory that handles records. It doesn't care about the record's visibility (e.g., it can be private). All
- * maps are read in a case-insensitive manner.
+ * An ObjectFactory that handles records. It doesn't care about the record's visibility (e.g., it can be private). Maps
+ * are always read in a case-insensitive manner.
  */
 public class RecordFactory<K> implements ObjectFactory<K>
 {
@@ -110,5 +115,46 @@ public class RecordFactory<K> implements ObjectFactory<K>
         return StreamSupport.stream(iterable.spliterator(), false)
             .map(rowMap -> fromCaseInsensitiveMap((RowMap<Object>)rowMap))
             .collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void test() throws SQLException
+        {
+            Map<String, Object> adHocMap = new CaseInsensitiveHashMap<>();
+            adHocMap.put("FirstName", "Keyser");
+            adHocMap.put("LastName", "Söze");
+            adHocMap.put("lastlogin", "2024-09-01");
+            adHocMap.put("USERID", 2000);
+
+            // Round-trip map -> record -> map -> record. Exercises fromMap() and toMap()
+            RecordFactory<MiniUser> factory = new RecordFactory<>(MiniUser.class);
+            MiniUser adHocUser = factory.fromMap(adHocMap);
+            assertEquals(adHocUser, factory.fromMap(factory.toMap(adHocUser, null)));
+
+            // Use TableSelector to exercise handleArrayList() and handle()
+            TableSelector selector = new TableSelector(CoreSchema.getInstance().getTableInfoUsers()).setMaxRows(10);
+            List<MiniUser> users = selector.getArrayList(MiniUser.class);
+            try (Stream<MiniUser> stream = selector.uncachedStream(MiniUser.class))
+            {
+                Assert.assertEquals(users, stream.collect(Collectors.toCollection(ArrayList::new)));
+            }
+            try (ResultSet rs = selector.getResultSet())
+            {
+                rs.next();
+                Assert.assertEquals(users.get(0), factory.handle(rs));
+            }
+            MiniUser randomUser = users.get((int)(Math.random() * users.size()));
+            MiniUser selectedUser = new TableSelector(CoreSchema.getInstance().getTableInfoUsers(), new SimpleFilter(FieldKey.fromString("UserId"), randomUser.userId), null).getObject(MiniUser.class);
+            Assert.assertEquals(randomUser, selectedUser);
+
+            // Test fromMap() variant (should ignore selectedUser)
+            assertEquals(adHocUser, factory.fromMap(selectedUser, adHocMap));
+        }
+
+        public record MiniUser(String firstName, String lastName, Date LastLogin, int userId)
+        {
+        }
     }
 }
