@@ -54,11 +54,11 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "5.0.0",
+    "@labkey/components": "5.0.1-fb-react18-dnd.1",
     "@labkey/themes": "1.3.3"
   },
   "devDependencies": {
-    "@labkey/build": "7.6.0",
+    "@labkey/build": "7.6.1-fb-react18-dnd.0",
     "@labkey/eslint-config-react": "0.0.15",
     "@types/enzyme-adapter-react-16": "1.0.9",
     "@types/jest": "29.5.12",
