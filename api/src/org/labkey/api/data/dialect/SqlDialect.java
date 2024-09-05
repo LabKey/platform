@@ -873,6 +873,10 @@ public abstract class SqlDialect
             return id;
     }
 
+    public String makeLegalIdentifierName(String id)
+    {
+        return id;
+    }
 
     // Escape quotes and quote the identifier  // TODO: Move to DialectStringHandler?
     public String quoteIdentifier(String id)
@@ -1056,6 +1060,12 @@ public abstract class SqlDialect
         return null;
     }
 
+    public ResultSet getSchemas(DatabaseMetaData dbmd, String databaseName) throws SQLException
+    {
+        // TODO: On develop, consider calling getSchemas(databaseName, null) by default and eliminating Snowflake override
+        return dbmd.getSchemas();
+    }
+
     protected static class SQLSyntaxException extends SQLException
     {
         private final Collection<String> _errors;
@@ -1073,8 +1083,7 @@ public abstract class SqlDialect
     }
 
     /**
-     * Transform the JDBC error message into something the user is more likely
-     * to understand.
+     * Transform the JDBC error message into something the user is more likely to understand.
      */
     public abstract String sanitizeException(SQLException ex);
 
@@ -1195,6 +1204,14 @@ public abstract class SqlDialect
      */
     abstract public SQLFragment sqlLocate(SQLFragment littleString, SQLFragment bigString, SQLFragment startIndex);
 
+    /**
+     * Most databases are fine with queries like:
+     * <p>
+     * {@code SELECT * FROM (SELECT * FROM core.Modules ORDER BY Name) x}
+     * </p>
+     * SQL Server is not, unless you append {@code OFFSET 0 ROWS} to the end of that {@code ORDER BY} clause
+     * @return true unless you have a weird database server like SQL Server
+     */
     abstract public boolean allowSortOnSubqueryWithoutLimit();
 
     public void appendSortOnSubqueryWithoutLimitQualifier(SQLFragment builder)

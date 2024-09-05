@@ -6,6 +6,7 @@ import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
+import org.labkey.api.assay.TsvDataHandler;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.MutableColumnInfo;
@@ -128,7 +129,7 @@ public abstract class SampleTypeFolderWriter extends AbstractExpFolderWriter
         // create the XAR which contains the sample type and data class definitions
         if (exportTypes)
         {
-            XarExporter exporter = new XarExporter(_relativizedLSIDs, typesSelection, ctx.getUser(), XAR_TYPES_XML_NAME, ctx.getLogger());
+            XarExporter exporter = new XarExporter(_relativizedLSIDs, typesSelection, ctx.getUser(), XAR_TYPES_XML_NAME, ctx.getLogger(), ctx.getContainer());
             try (OutputStream fOut = xarDir.getOutputStream(XAR_TYPES_NAME))
             {
                 exporter.writeAsArchive(fOut);
@@ -138,7 +139,7 @@ public abstract class SampleTypeFolderWriter extends AbstractExpFolderWriter
         // create the XAR which contains any derivation protocol runs
         if (exportRuns)
         {
-            XarExporter exporter = new XarExporter(_relativizedLSIDs, runsSelection, ctx.getUser(), XAR_RUNS_XML_NAME, ctx.getLogger());
+            XarExporter exporter = new XarExporter(_relativizedLSIDs, runsSelection, ctx.getUser(), XAR_RUNS_XML_NAME, ctx.getLogger(), ctx.getContainer());
             try (OutputStream fOut = xarDir.getOutputStream(XAR_RUNS_NAME))
             {
                 exporter.writeAsArchive(fOut);
@@ -209,7 +210,7 @@ public abstract class SampleTypeFolderWriter extends AbstractExpFolderWriter
         FieldKey nameFieldKey = FieldKey.fromParts(ExpMaterialTable.Column.Name.name());
         ColumnInfo col = tinfo.getColumn(nameFieldKey);
         MutableColumnInfo wrappedCol = WrappedColumnInfo.wrap(col);
-        wrappedCol.setDisplayColumnFactory(ExportDataColumn::new);
+        wrappedCol.setDisplayColumnFactory(TsvDataHandler.ExportDataColumn::new);
         columns.add(wrappedCol);
 
         // SampleState

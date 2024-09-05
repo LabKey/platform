@@ -23,6 +23,8 @@ import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.assay.pipeline.AssayRunAsyncContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.RemapCache;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.Lsid;
@@ -30,6 +32,7 @@ import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpExperiment;
+import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.IAssayDomainType;
@@ -64,13 +67,10 @@ import java.util.Set;
 
 /**
  * An AssayProvider is the main implementation point for participating in the overall assay framework. It provides
- * UI, data parsing, configuration, etc for distinct types of assay data. A full, custom AssayProvider implementation
+ * UI, data parsing, configuration, etc. for distinct types of assay data. A full, custom AssayProvider implementation
  * will rely on a variety of other implementation classes, but the AssayProvider is the coordinating point that
  * knows what those other classes are. A typical implementation approach is mix and match with custom and standard
  * implementations to hook in assay-specific customizations.
- *
- * User: brittp
- * Date: Jul 11, 2007
  */
 public interface AssayProvider extends Handler<ExpProtocol>
 {
@@ -105,7 +105,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     AssayRunCreator getRunCreator();
 
-    /** @return all of the legal data collectors that the user can choose from for the current import attempt */
+    /** @return all the legal data collectors that the user can choose from for the current import attempt */
     List<AssayDataCollector> getDataCollectors(Map<String, File> uploadedFiles, AssayRunUploadForm context);
 
     /**
@@ -114,7 +114,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
      */
     String getName();
 
-    /** A user-facing short name for the assay provider. Typically matches the official name, but handy for renames */
+    /** A user-facing short name for the assay provider. Typically, matches the official name, but handy for renames */
     default String getLabel()
     {
         return getName();
@@ -364,7 +364,10 @@ public interface AssayProvider extends Handler<ExpProtocol>
      * @return the number of result rows loaded for the given designs, or null if not implemented
      * @param protocols all protocols for this assay provider
      */
-    default Long getResultRowCount(List<? extends ExpProtocol> protocols) { return null; }
+    default Long getResultRowCount(List<? extends ExpProtocol> protocols)
+    {
+        return null;
+    }
 
     void moveRuns(List<ExpRun> runs, Container targetContainer, User user, AbstractAssayProvider.AssayMoveData assayMoveData);
 
@@ -377,5 +380,21 @@ public interface AssayProvider extends Handler<ExpProtocol>
         return false;
     }
 
-
+    /**
+     * Some assay implementations support experiment lineage representation of run/result property values.
+     * This can be called during the update of a run/result to ensure the associated lineage is updated when
+     * associated run/result property values change.
+     */
+    default void updatePropertyLineage(
+        Container container,
+        User user,
+        TableInfo table,
+        ExpRun run,
+        Map<String, Object> row,
+        boolean isRunProperties,
+        @NotNull RemapCache cache,
+        @NotNull Map<Integer, ExpMaterial> materialsCache
+    ) throws ValidationException
+    {
+    }
 }

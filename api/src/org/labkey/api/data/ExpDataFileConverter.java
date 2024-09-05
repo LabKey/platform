@@ -19,6 +19,7 @@ import org.apache.commons.beanutils.Converter;
 import org.apache.commons.beanutils.converters.FileConverter;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.assay.AssayDataType;
@@ -47,6 +48,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.Collections;
+
+import static org.labkey.api.dataiterator.SimpleTranslator.getFileRootSubstitutedFilePath;
 
 /**
  * User: jeckels
@@ -213,11 +216,13 @@ public class ExpDataFileConverter implements Converter
 
         Container container = (Container) QueryService.get().getEnvironment(QueryService.Environment.CONTAINER);
         User user = (User) QueryService.get().getEnvironment(QueryService.Environment.USER);
+        Object fileRootPathObj = QueryService.get().getEnvironment(QueryService.Environment.FILEROOTPATH);
+        String fileRootPath = fileRootPathObj == null ? null : (String) fileRootPathObj;
 
         // Don't bother resolving if we don't know the container, or we don't know the user has permission to the container
         if (type.isAssignableFrom(File.class) && container != null && user != null && container.hasPermission(user, ReadPermission.class))
         {
-            File f = convertToFile(value, container, user);
+            File f = convertToFile(value, container, user, fileRootPath);
 
             // If we have a file path, make sure it's supposed to be visible in the current container
             if (f != null)
@@ -255,7 +260,7 @@ public class ExpDataFileConverter implements Converter
         return null;
     }
 
-    private File convertToFile(Object value, @NotNull Container container, @NotNull User user)
+    private File convertToFile(Object value, @NotNull Container container, @NotNull User user, @Nullable String fileRootPath)
     {
         if (value instanceof File f)
         {
@@ -296,6 +301,7 @@ public class ExpDataFileConverter implements Converter
         String webdav = value.toString();
         if (null != StringUtils.trimToNull(webdav))
         {
+            webdav = getFileRootSubstitutedFilePath(webdav, fileRootPath);
             Path path = Path.decode(webdav.replace(AppProps.getInstance().getBaseServerUrl() + AppProps.getInstance().getContextPath(), ""));
             WebdavResource resource = WebdavService.get().getResolver().lookup(path);
             if (resource != null && resource.isFile())
@@ -336,6 +342,6 @@ public class ExpDataFileConverter implements Converter
             }
         }
         // Otherwise, treat it as a plain path
-        return FILE_CONVERTER.convert(File.class, value);
+        return FILE_CONVERTER.convert(File.class, webdav);
     }
 }

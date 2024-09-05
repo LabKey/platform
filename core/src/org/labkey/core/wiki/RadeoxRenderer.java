@@ -69,6 +69,7 @@ import java.io.Writer;
 import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -96,7 +97,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
 
     public RadeoxRenderer()
     {
-        super(new MyInitialRenderContext());
+        super(new BaseInitialRenderContext());
         MemTracker.getInstance().put(this);
     }
 
@@ -115,13 +116,14 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
     }
 
     @Override
-    public FormattedHtml format(String text)
+    public FormattedHtml format(String text, String sourceDescription)
     {
         if (text == null)
             text = "";
 
-        RenderContext context = new BaseRenderContext();
+        RenderContext context = new BaseRenderContext(sourceDescription);
         context.setRenderEngine(this);
+        context.setParameters(new HashMap<>());
         Set<String> dependencies = new HashSet<>();
         context.set(WIKI_DEPENDENCIES_KEY, dependencies);
         Set<String> anchors = new HashSet<>();
@@ -129,16 +131,6 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
         HtmlString html = HtmlString.unsafe(render(text, context));
 
         return new FormattedHtml(html, false, dependencies, anchors);  // TODO: Are there wiki pages we don't want to cache?
-    }
-
-    public static class MyInitialRenderContext
-            extends BaseInitialRenderContext
-    {
-        public MyInitialRenderContext()
-        {
-            set(RenderContext.INPUT_BUNDLE_NAME, "org.labkey.api.wiki.wiki_markup");
-            set(RenderContext.OUTPUT_BUNDLE_NAME, "org.labkey.api.wiki.wiki_markup");
-        }
     }
 
     private static class NewTabLinkMacro extends LinkMacro
@@ -948,14 +940,14 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
         // Service should wrap rendered HTML in a <div> but renderer shouldn't. 
         private void test(String wiki, String html)
         {
-            assertEquals(html, HtmlString.toString(_r.format(wiki).getHtml()));
-            assertEquals(HtmlStringBuilder.of(WikiRenderingService.WIKI_PREFIX).unsafeAppend(html).append(WikiRenderingService.WIKI_SUFFIX).getHtmlString(), _wrs.getFormattedHtml(WikiRendererType.RADEOX, wiki));
+            assertEquals(html, HtmlString.toString(_r.format(wiki, null).getHtml()));
+            assertEquals(HtmlStringBuilder.of(WikiRenderingService.WIKI_PREFIX).unsafeAppend(html).append(WikiRenderingService.WIKI_SUFFIX).getHtmlString(), _wrs.getFormattedHtml(WikiRendererType.RADEOX, wiki, null));
         }
 
         @Test
         public void testWikiDependencies()
         {
-            FormattedHtml html = _r.format("[this] [that] [some text|tother] [some other text|this] nolink anothernolink");
+            FormattedHtml html = _r.format("[this] [that] [some text|tother] [some other text|this] nolink anothernolink", null);
             Set<String> dependencies = html.getWikiDependencies();
             assertNotNull(dependencies);
             assertEquals(3, dependencies.size());

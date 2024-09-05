@@ -1004,10 +1004,24 @@ public class QueryManager
                                 "Assays", getSchemaCustomViewCounts("assay"),
                                 "Inventory", getSchemaCustomViewCounts("inventory")
                         ),
-                        "customViewWithLineageColumn", getLineageCustomViewMetrics()
+                        "customViewWithLineageColumn", getLineageCustomViewMetrics(),
+                        "queryDefWithCalculatedFieldsCounts", getCalculatedFieldsCountsMetric()
                 );
             });
         }
+    }
+
+    private static Map<String, Object> getCalculatedFieldsCountsMetric()
+    {
+        DbSchema dbSchema = CoreSchema.getInstance().getSchema();
+        return new SqlSelector(dbSchema,
+                new SQLFragment("SELECT \"schema\", COUNT(*) AS count FROM (\n" +
+                        "    SELECT CASE WHEN \"schema\" LIKE 'assay.%' THEN 'assay' ELSE \"schema\" END AS \"schema\" FROM query.querydef WHERE metadata LIKE '%<valueExpression%'\n" +
+                        ") AS subquery GROUP BY \"schema\"")
+        ).getMapCollection().stream().reduce(new HashMap<>(), (x, m) -> {
+            x.put(m.get("schema").toString(), m.get("count"));
+            return x;
+        });
     }
 
     private static Map<String, Object> getSchemaCustomViewCounts(String schema)
@@ -1016,14 +1030,16 @@ public class QueryManager
         String schemaField = dbSchema.getSqlDialect().getColumnSelectName("schema");
         String schemaClause = schema.equalsIgnoreCase("assay") ? "C." + schemaField + " LIKE 'assay.%'" : "C." + schemaField + " = '" + schema + "'";
         return Map.of(
-                "defaultOverrides", new SqlSelector(CoreSchema.getInstance().getSchema(),
+                "defaultOverrides", new SqlSelector(dbSchema,
                         "SELECT COUNT(*) FROM query.customview C WHERE " + schemaClause + " AND C.flags < 2 AND C.name IS NULL").getObject(Long.class), // possibly inheritable, no hidden, not snapshot
-                "inheritable", new SqlSelector(CoreSchema.getInstance().getSchema(),
+                "inheritable", new SqlSelector(dbSchema,
                         "SELECT COUNT(*) FROM query.customview C WHERE " + schemaClause + " AND C.flags = 1").getObject(Long.class), // inheritable, not hidden, not snapshot
-                "namedViews", new SqlSelector(CoreSchema.getInstance().getSchema(),
+                "namedViews", new SqlSelector(dbSchema,
                         "SELECT COUNT(*) FROM query.customview C WHERE " + schemaClause + " AND C.flags < 2 AND C.name IS NOT NULL").getObject(Long.class), // possibly inheritable, no hidden, not snapshot
-                "shared", new SqlSelector(CoreSchema.getInstance().getSchema(),
-                        "SELECT COUNT(*) FROM query.customview C WHERE " + schemaClause + " AND C.customviewowner IS NULL").getObject(Long.class)
+                "shared", new SqlSelector(dbSchema,
+                        "SELECT COUNT(*) FROM query.customview C WHERE " + schemaClause + " AND C.customviewowner IS NULL").getObject(Long.class),
+                "identifyingFieldsViews", new SqlSelector(dbSchema,
+                        "SELECT COUNT(*) FROM query.customview C WHERE " + schemaClause + " AND C.name = '~~identifyingfields~~'").getObject(Long.class)
         );
     }
 

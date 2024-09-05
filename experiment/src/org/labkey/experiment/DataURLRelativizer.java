@@ -43,7 +43,7 @@ public enum DataURLRelativizer
             return new URLRewriter()
             {
                 @Override
-                public String rewriteURL(Path path, ExpData data, String roleName, ExpRun experimentRun, User user)
+                public String rewriteURL(Path path, ExpData data, String roleName, ExpRun experimentRun, User user, String rootFilePath)
                 {
                     if (path == null)
                         return null;
@@ -73,7 +73,7 @@ public enum DataURLRelativizer
             return new URLRewriter()
             {
                 @Override
-                public String rewriteURL(Path path, ExpData data, String roleName, ExpRun expRun, User user) throws ExperimentException
+                public String rewriteURL(Path path, ExpData data, String roleName, ExpRun expRun, User user, String rootFilePath) throws ExperimentException
                 {
                     try
                     {
@@ -103,7 +103,7 @@ public enum DataURLRelativizer
             return new URLRewriter()
             {
                 @Override
-                public String rewriteURL(Path f, ExpData data, String roleName, ExpRun experimentRun, User user)
+                public String rewriteURL(Path f, ExpData data, String roleName, ExpRun experimentRun, User user, String rootFilePath)
                 {
                     if (data == null)
                         return null;

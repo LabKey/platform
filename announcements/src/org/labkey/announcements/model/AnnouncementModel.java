@@ -245,10 +245,11 @@ public class AnnouncementModel extends Entity implements Serializable
         if (_rendererType == null)
             _rendererType = DEFAULT_MESSAGE_RENDERER_TYPE;
 
+        String sourceDescription = "Announcement " + getRowId() + " in " + getContainerPath();
         if (null == attachPrefix)
-            return renderingService.getFormattedHtml(_rendererType, _body);
+            return renderingService.getFormattedHtml(_rendererType, _body, sourceDescription);
         else
-            return renderingService.getFormattedHtml(_rendererType, _body, attachPrefix, getAttachments());
+            return renderingService.getFormattedHtml(_rendererType, _body, sourceDescription, attachPrefix, getAttachments());
     }
 
     public String getStatus()

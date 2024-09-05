@@ -60,7 +60,7 @@ public class JunitRunner
 
     static RunnerResult run(Class clazz)
     {
-        assert !TestCase.class.isAssignableFrom(clazz);
+        assert !TestCase.class.isAssignableFrom(clazz) : clazz + " is not a TestCase";
         Request request = Request.classes(clazz);
         return run(request);
     }

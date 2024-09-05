@@ -180,7 +180,7 @@ public class FolderXarWriterFactory implements FolderWriterFactory
             ctx.getXml().addNewXar().setDir(XAR_DIRECTORY);
             VirtualFile xarDir = vf.getDir(XAR_DIRECTORY);
 
-            XarExporter exporter = new XarExporter(ctx.getRelativizedLSIDs(), selection, ctx.getUser(), XAR_XML_FILE_NAME, ctx.getLogger());
+            XarExporter exporter = new XarExporter(ctx.getRelativizedLSIDs(), selection, ctx.getUser(), XAR_XML_FILE_NAME, ctx.getLogger(), ctx.getContainer());
 
             try (OutputStream fOut = xarDir.getOutputStream(XAR_FILE_NAME))
             {

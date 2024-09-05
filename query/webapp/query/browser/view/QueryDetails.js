@@ -446,6 +446,40 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
         };
     },
 
+    formatWarnings: function (queryDetails) {
+        // If no warnings are present, don't render anything
+        if (!queryDetails.warnings || !this.hasProperties(queryDetails.warnings))
+            return;
+
+        var tpl = new Ext4.XTemplate(
+            '<table class="lk-qd-coltable" style="margin-top: 1em;">',
+                '<thead>',
+                    '<tr><td colspan="3" class="lk-qd-collist-title">Warnings</td></tr>',
+                    '<tr>',
+                        '<td class="lk-qd-colheader">Field</td>',
+                        '<td class="lk-qd-colheader">Type</td>',
+                        '<td class="lk-qd-colheader">Message</td>',
+                    '</tr>',
+                '</thead>',
+                '<tbody>',
+                '<tpl foreach="warnings">',
+                    '<tr>',
+                        '<td>{[Ext4.htmlEncode(values.field)]}</td>',
+                        '<td>{[Ext4.htmlEncode(values.type)]}</td>',
+                        '<td>{[Ext4.htmlEncode(values.msg)]}</td>',
+                    '</tr>',
+                '</tpl>',
+                '</tbody>',
+            '</table>'
+        );
+
+        return {
+            tag: 'div',
+            cls: 'lk-qd-warnings',
+            html: tpl.apply(queryDetails)
+        };
+    },
+
     formatDependencies : function () {
 
         const dependencies = this.queriesCache.getDependencies(LABKEY.container.id, this.schemaName, this.queryName);
@@ -614,6 +648,10 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
             const triggers = this.formatTriggers(queryDetails);
             if (triggers)
                 children.push(triggers);
+
+            const warnings = this.formatWarnings(queryDetails);
+            if (warnings)
+                children.push(warnings);
         }
 
         return Ext4.create('Ext.Component', {

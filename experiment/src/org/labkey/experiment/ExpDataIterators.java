@@ -884,6 +884,7 @@ public class ExpDataIterators
         final Container _container;
         final User _user;
         final boolean _isSample;
+        final TSVWriter _tsvWriter;
 
         protected DerivationDataIteratorBase(DataIterator di, DataIteratorContext context, Container container, User user, ExpObject currentDataType, boolean isSample)
         {
@@ -918,6 +919,15 @@ public class ExpDataIterators
                 }
             }
 
+            _tsvWriter = new TSVWriter() // Used to quote values with newline/tabs/quotes
+            {
+                @Override
+                protected int write()
+                {
+                    throw new UnsupportedOperationException();
+                }
+            };
+
         }
 
         private BatchValidationException getErrors()
@@ -944,10 +954,13 @@ public class ExpDataIterators
                         {
                             // Issue 44841: The names of the parents may include commas, so we parse the set of parent names
                             // using TabLoader instead of just splitting on the comma.
-                            try (TabLoader tabLoader = new TabLoader((String) o))
+                            String quotedStr = ((String) o).contains(",") ? (String) o : _tsvWriter.quoteValue((String) o); // if value contains comma, no need to quote again
+                            try (TabLoader tabLoader = new TabLoader(quotedStr))
                             {
                                 tabLoader.setDelimiterCharacter(',');
                                 tabLoader.setUnescapeBackslashes(false);
+                                // Issue 50924: LKSM: Importing samples using naming expression referencing parent inputs with # result in error
+                                tabLoader.setIncludeComments(true);
                                 try
                                 {
                                     String[][] values = tabLoader.getFirstNLines(1);
@@ -1754,7 +1767,7 @@ public class ExpDataIterators
             if (sampleType == null)
                 throw new ValidationException("Invalid sample type: " + dataType);
 
-            aliquotParent = ExperimentService.get().findExpMaterial(c, user, sampleType, dataType, aliquotedFrom, cache, materialMap);
+            aliquotParent = ExperimentService.get().findExpMaterial(c, user, aliquotedFrom, sampleType, cache, materialMap);
 
             if (aliquotParent == null)
             {
@@ -1789,7 +1802,7 @@ public class ExpDataIterators
                     if (skipExistingAliquotParents)
                         continue;
 
-                    ExpMaterial sample = ExperimentService.get().findExpMaterial(c, user, null, null, entityName, cache, materialMap);
+                    ExpMaterial sample = ExperimentService.get().findExpMaterial(c, user, entityName, null, cache, materialMap);
                     if (sample != null)
                         parentMaterials.put(sample, sampleRole(sample));
                     else
@@ -1827,7 +1840,7 @@ public class ExpDataIterators
                         if (sampleType == null)
                             throw new ValidationException(String.format("Invalid import alias: parent SampleType [%1$s] does not exist or may have been deleted", namePart));
 
-                        ExpMaterial sample = ExperimentService.get().findExpMaterial(c, user, sampleType, namePart, entityName, cache, materialMap);
+                        ExpMaterial sample = ExperimentService.get().findExpMaterial(c, user, entityName, sampleType, cache, materialMap);
                         if (sample != null)
                             parentMaterials.put(sample, sampleRole(sample));
                         else
@@ -1843,7 +1856,7 @@ public class ExpDataIterators
 
                     if (!isEmptyEntity)
                     {
-                        ExpMaterial sample = ExperimentService.get().findExpMaterial(c, user, sampleType, namePart, entityName, cache, materialMap);
+                        ExpMaterial sample = ExperimentService.get().findExpMaterial(c, user, entityName, sampleType, cache, materialMap);
                         if (sample != null)
                         {
                             if (StringUtils.isEmpty(sample.getAliquotedFromLSID()))

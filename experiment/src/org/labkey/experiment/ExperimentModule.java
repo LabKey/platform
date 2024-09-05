@@ -225,6 +225,9 @@ public class ExperimentModule extends SpringModule
 
         ExperimentService.get().registerExperimentDataHandler(new DefaultExperimentDataHandler());
         ExperimentService.get().registerProtocolInputCriteria(new FilterProtocolInputCriteria.Factory());
+        ExperimentService.get().registerNameExpressionType("sampletype", "exp", "MaterialSource", "nameexpression");
+        ExperimentService.get().registerNameExpressionType("aliquots", "exp", "MaterialSource", "aliquotnameexpression");
+        ExperimentService.get().registerNameExpressionType("dataclass", "exp", "DataClass", "nameexpression");
 
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS, "Resolve property URIs as columns on experiment tables",
                 "If a column is not found on an experiment table, attempt to resolve the column name as a Property URI and add it as a property column", false);
@@ -752,6 +755,8 @@ public class ExperimentModule extends SpringModule
                 results.put("maxObjectObjectId", new SqlSelector(ExperimentService.get().getSchema(), "SELECT MAX(ObjectId) FROM exp.Object").getObject(Long.class));
                 results.put("maxMaterialRowId", new SqlSelector(ExperimentService.get().getSchema(), "SELECT MAX(RowId) FROM exp.Material").getObject(Long.class));
 
+                results.put("nameexpression", ExperimentService.get().getNameExpressionMetrics());
+
                 return results;
             });
         }
@@ -915,9 +920,9 @@ public class ExperimentModule extends SpringModule
 
     @Override
     @NotNull
-    public Set<String> getSchemaNames()
+    public Collection<String> getSchemaNames()
     {
-        return Set.of(
+        return List.of(
             ExpSchema.SCHEMA_NAME,
             DataClassDomainKind.PROVISIONED_SCHEMA_NAME,
             SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME

@@ -17,7 +17,7 @@ package org.labkey.api.inventory;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
@@ -31,47 +31,75 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * User: kevink
- * Date: 3/26/17
- */
 public interface InventoryService
 {
     String PRODUCT_ID = "FreezerManager";
 
-    Set<String> INVENTORY_STATUS_COLUMN_NAMES = new CaseInsensitiveHashSet(
-            "FreezeThawCount",
-            "CheckedOutBy",
-            "CheckedOut",
-            "StorageRow",
-            "StorageCol",
-            "StorageLocation",
-            "EnteredStorage",
-            "StorageStatus",
-            "StorageComment"
-    );
-    Set<String> INVENTORY_STATUS_COLUMN_LABELS = new CaseInsensitiveHashSet(
-            "Freeze/Thaw Count",
-            "Checked Out By",
-            "Checked Out",
-            "Storage Row",
-            "Storage Col",
-            "Storage Location",
-            "Entered Storage",
-            "Storage Status"
-    );
+    enum InventoryStatusColumn
+    {
+        CheckedOut,
+        CheckedOutBy,
+        FreezeThawCount("Freeze/Thaw Count"),
+        SampleTypeUnits,
+        StorageCol,
+        StorageColSort,
+        StorageComment,
+        StorageLocation,
+        StorageRow,
+        StorageRowSort,
+        StorageStatus,
+        StorageUnit,
+        StorageUnitLabel,
+        Stored("Entered Storage");
+
+        private final String label;
+
+        InventoryStatusColumn()
+        {
+            this.label = ColumnInfo.labelFromName(name());
+        }
+
+        InventoryStatusColumn(String label)
+        {
+            this.label = label;
+        }
+
+        public String label()
+        {
+            return this.label;
+        }
+
+        public FieldKey fieldKey()
+        {
+            return FieldKey.fromParts(name());
+        }
+
+        public static List<String> names()
+        {
+            return Arrays.stream(InventoryStatusColumn.values()).map(InventoryStatusColumn::name).toList();
+        }
+
+        public static List<String> labels()
+        {
+            return Arrays.stream(InventoryStatusColumn.values()).map(InventoryStatusColumn::label).toList();
+        }
+    }
 
     static void setInstance(InventoryService impl)
     {
         ServiceRegistry.get().registerService(InventoryService.class, impl);
     }
 
-    static InventoryService get() { return ServiceRegistry.get().getService(InventoryService.class); }
+    static InventoryService get()
+    {
+        return ServiceRegistry.get().getService(InventoryService.class);
+    }
 
     void addAuditEvent(User user, Container c, TableInfo table, AuditBehaviorType auditBehaviorType, @Nullable String userComment, QueryService.AuditAction action, @Nullable List<Map<String, Object>> rows, @Nullable List<Map<String, Object>> existingRows, boolean useTransactionAuditCache);
 
@@ -92,5 +120,4 @@ public interface InventoryService
         Set<Module> moduleSet = c.getActiveModules();
         return moduleSet.contains(ModuleLoader.getInstance().getModule("Inventory"));
     }
-
 }

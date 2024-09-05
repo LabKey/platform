@@ -203,7 +203,7 @@ public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>
         ) throws QueryUpdateServiceException, SQLException, InvalidKeyException
         {
             // ensure the plate set is empty
-            Integer plateSetId = (Integer)oldRowMap.get("RowId");
+            Integer plateSetId = (Integer) oldRowMap.get("RowId");
             PlateSet plateSet = PlateManager.get().getPlateSet(container, plateSetId);
             if (plateSet == null)
                 throw new QueryUpdateServiceException(String.format("Plate set could not be found for ID : %d", plateSetId));

@@ -3,12 +3,16 @@ package org.labkey.assay.plate.data;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.triggers.Trigger;
 import org.labkey.api.data.triggers.TriggerFactory;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SimpleValidationError;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.assay.plate.PlateManager;
@@ -97,8 +101,11 @@ public class WellTriggerFactory implements TriggerFactory
     {
         private final Map<Integer, Map<Integer, PlateManager.WellGroupChange>> wellGroupChanges = new HashMap<>();
         private final Set<Integer> modifiedPlates = new HashSet<>();
+        private final Map<Integer, Map<Integer, String>> wellTypeMap = new HashMap<>();
 
         private void checkForChanges(
+            Container container,
+            User user,
             @Nullable Map<String, Object> newRow,
             @Nullable Map<String, Object> oldRow,
             ValidationException errors,
@@ -106,7 +113,7 @@ public class WellTriggerFactory implements TriggerFactory
         )
         {
             // Skip computing well groups when this is a plate copy operation
-            if (isCopyOperation(extraContext))
+            if (isCopyOperation(extraContext) || newRow == null)
                 return;
 
             var hasSampleChange = hasSampleChange(newRow);
@@ -116,9 +123,6 @@ public class WellTriggerFactory implements TriggerFactory
             // then verify further to ignore when type and group are present but are set to null.
             if (hasTypeGroupChange && oldRow == null)
                 hasTypeGroupChange = newRow.get(WellTable.Column.Type.name()) != null || newRow.get(WellTable.Column.WellGroup.name()) != null;
-
-            if (!hasSampleChange && !hasTypeGroupChange)
-                return;
 
             var wellRowId = (Integer) newRow.get(WellTable.Column.RowId.name());
             if (wellRowId == null)
@@ -139,6 +143,11 @@ public class WellTriggerFactory implements TriggerFactory
                     return;
                 }
             }
+
+            // If the sample, type, or any data on a replicate well has been updated,
+            // then mark the plate as modified and subsequently validate the well groups.
+            if (!hasSampleChange && !hasTypeGroupChange && !hasReplicateChange(container, user, plateRowId, wellRowId))
+                return;
 
             modifiedPlates.add(plateRowId);
 
@@ -166,6 +175,22 @@ public class WellTriggerFactory implements TriggerFactory
 
                 wellGroupChanges.computeIfAbsent(plateRowId, HashMap::new).put(wellRowId, change);
             }
+        }
+
+        private boolean hasReplicateChange(Container container, User user, @NotNull Integer plateRowId, @NotNull Integer wellRowId)
+        {
+            var wellMap = wellTypeMap.computeIfAbsent(plateRowId, (pid) -> {
+                var map = new HashMap<Integer, String>();
+                UserSchema schema = QueryService.get().getUserSchema(user, container, "plate");
+                SQLFragment sql = new SQLFragment("SELECT RowId, Type FROM plate.Well WHERE PlateId = ?").add(pid);
+                QueryService.get().getSelectBuilder(schema, sql.toDebugString())
+                        .buildSqlSelector(null)
+                        .forEach(r -> map.put(r.getInt("RowId"), r.getString("Type")));
+
+                return map;
+            });
+
+            return WellGroup.Type.REPLICATE.name().equals(wellMap.get(wellRowId));
         }
 
         private boolean hasSampleChange(@Nullable Map<String, Object> row)
@@ -204,7 +229,7 @@ public class WellTriggerFactory implements TriggerFactory
             try
             {
                 PlateManager.get().computeWellGroups(c, user, wellGroupChanges);
-                PlateManager.get().validateWellGroups(c, modifiedPlates);
+                PlateManager.get().validateWellGroups(c, user, modifiedPlates);
             }
             catch (ValidationException e)
             {
@@ -225,7 +250,7 @@ public class WellTriggerFactory implements TriggerFactory
             if (errors.hasErrors())
                 return;
 
-            checkForChanges(newRow, null, errors, extraContext);
+            checkForChanges(c, user, newRow, null, errors, extraContext);
         }
 
         @Override
@@ -242,7 +267,7 @@ public class WellTriggerFactory implements TriggerFactory
             if (errors.hasErrors())
                 return;
 
-            checkForChanges(newRow, oldRow, errors, extraContext);
+            checkForChanges(c, user, newRow, oldRow, errors, extraContext);
         }
     }
 }

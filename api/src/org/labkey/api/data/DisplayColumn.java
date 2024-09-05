@@ -18,7 +18,6 @@ package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -496,7 +495,17 @@ public abstract class DisplayColumn extends RenderColumn
 
         Format format = getFormat();
         if (null != format)
-            return format.format(value);
+        {
+            try
+            {
+                return format.format(value);
+            }
+            catch (IllegalArgumentException e)
+            {
+                LOG.warn("Unable to apply format to {} value \"{}\" for column \"{}\", likely a SQL type mismatch between XML metadata and actual ResultSet", value.getClass().getName(), value, getName());
+                return value.toString();
+            }
+        }
 
         return null;
     }
@@ -524,7 +533,7 @@ public abstract class DisplayColumn extends RenderColumn
             }
             catch (IllegalArgumentException e)
             {
-                LOG.warn("Unable to apply format to " + value.getClass().getName() + " value, likely a SQL type mismatch between XML metadata and actual ResultSet");
+                LOG.warn("Unable to apply format to {} value \"{}\" for column \"{}\", likely a SQL type mismatch between XML metadata and actual ResultSet", value.getClass().getName(), value, getName());
                 return ConvertUtils.convert(value);
             }
         }

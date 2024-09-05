@@ -27,14 +27,12 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveCollection;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.RowMap;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.UnexpectedException;
 
 import java.beans.Introspector;
-import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -311,15 +309,6 @@ public class BuilderObjectFactory<K> implements ObjectFactory<K>
         }
 
         return list;
-    }
-
-
-    @Override
-    public K[] handleArray(ResultSet rs) throws SQLException
-    {
-        ArrayList<K> list = handleArrayList(rs);
-        K[] array = (K[]) Array.newInstance(_class, list.size());
-        return list.toArray(array);
     }
 
 

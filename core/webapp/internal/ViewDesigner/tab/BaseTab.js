@@ -291,7 +291,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.BaseTab', {
             index = fieldKeyOrIndex;
         }
         else {
-            index = list.store.find('fieldKey', fieldKeyOrIndex, 0, false, false);
+            index = list.store.find('fieldKey', fieldKeyOrIndex, 0, false, false, true);
         }
         return index;
     },

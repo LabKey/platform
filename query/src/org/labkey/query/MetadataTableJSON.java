@@ -39,6 +39,7 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.MetadataColumnJSON;
 import org.labkey.api.query.MetadataUnavailableException;
+import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
@@ -46,6 +47,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.DefaultScaleType;
@@ -60,6 +62,7 @@ import org.w3c.dom.Text;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -106,15 +109,48 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
         _definitionFolder = definitionFolder;
     }
 
+    /**
+     * Returns the table info for this query. The table does not apply any external metadata except module
+     * scoped metadata.
+     *
+     * @throws MetadataUnavailableException
+     */
+    private static TableInfo getRawTableInfo(UserSchema schema, String tableName) throws MetadataUnavailableException
+    {
+        TableInfo tableInfo = schema.getTable(tableName, null, false, true);
+        if (null == tableInfo)
+            throw new MetadataUnavailableException("No such table: " + tableName);
+
+        QueryDef moduleQueryDef = QueryServiceImpl.get().findMetadataOverrideInModules(schema, tableName, false, null);
+        if (moduleQueryDef != null)
+        {
+            // Issue 50362 : module query metadata not applied during the save.
+            ArrayList<QueryException> errors = new ArrayList<>();
+            TablesDocument doc = moduleQueryDef.getParsedMetadata().getTablesDocument(errors);
+            if (!errors.isEmpty())
+                throw UnexpectedException.wrap(errors.get(0));
+
+            if (doc != null)
+            {
+                TablesType tables = doc.getTables();
+                if (tables != null && tables.sizeOfTableArray() > 0)
+                {
+                    List<TableType> tableTypes = Collections.singletonList(tables.getTableArray(0));
+                    tableInfo.overlayMetadata(tableTypes, schema, errors);
+                    if (!errors.isEmpty())
+                        throw UnexpectedException.wrap(errors.get(0));
+                }
+            }
+        }
+        tableInfo.setLocked(true);
+        return tableInfo;
+    }
+
     public static void saveMetadata(String schemaName, String queryName, List<MetadataColumnJSON> fields, boolean isUserDefinedQuery, boolean calculatedFieldsOnly, User user, Container container) throws MetadataUnavailableException
     {
         UserSchema schema = QueryService.get().getUserSchema(user, container, schemaName);
         QueryDef queryDef = QueryManager.get().getQueryDef(schema.getContainer(), schema.getSchemaName(), queryName, isUserDefinedQuery);
-        TableInfo rawTableInfo = schema.getTable(queryName, false);
-
-        if (null == rawTableInfo)
-            throw new MetadataUnavailableException("No such table: " + queryName);
-
+        TableInfo rawTableInfo = getRawTableInfo(schema, queryName);
         TablesDocument doc = null;
         TableType xmlTable = null;
 
@@ -726,7 +762,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                         if (metadataColumnJSON == null)
                         {
                             // Omit columns that are in the XML but are no longer in the underlying table/query
-                            break;
+                            continue;
                         }
                         if (column.isSetImportAliases())
                         {

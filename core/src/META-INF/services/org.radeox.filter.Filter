@@ -1,0 +1,19 @@
+org.radeox.filter.ParamFilter
+# Intentionally doubled to let one macro process to the output of another
+org.radeox.filter.MacroFilter
+org.radeox.filter.MacroFilter
+org.radeox.filter.HeadingFilter
+org.radeox.filter.LineFilter
+org.radeox.filter.ListFilter
+org.radeox.filter.StrikeThroughFilter
+org.radeox.filter.NewlineFilter
+org.radeox.filter.ParagraphFilter
+org.radeox.filter.BoldFilter
+org.radeox.filter.ItalicFilter
+org.radeox.filter.UrlFilter
+org.radeox.filter.MarkFilter
+org.radeox.filter.KeyFilter
+org.radeox.filter.TypographyFilter
+org.radeox.filter.LinkTestFilter
+#Should be called first, done with before()
+org.radeox.filter.EscapeFilter

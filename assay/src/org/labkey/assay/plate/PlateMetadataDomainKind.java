@@ -44,7 +44,7 @@ public class PlateMetadataDomainKind extends BaseAbstractDomainKind
     private static final Set<String> MANDATORY_PROPS;
     private static final Set<PropertyStorageSpec.Index> INDEXES;
     private static final List<PropertyStorageSpec> REQUIRED_PROPS;
-    private static final String PROVISIONED_SCHEMA_NAME = "assaywell";
+    public static final String PROVISIONED_SCHEMA_NAME = "assaywell";
 
     public enum Column
     {

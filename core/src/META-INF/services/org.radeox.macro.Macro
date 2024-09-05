@@ -1,0 +1,8 @@
+# all default macros
+org.radeox.macro.CodeMacro
+org.radeox.macro.FilePathMacro
+org.radeox.macro.LinkMacro
+org.radeox.macro.MailToMacro
+org.radeox.macro.MacroListMacro
+org.radeox.macro.QuoteMacro
+org.radeox.macro.TableMacro

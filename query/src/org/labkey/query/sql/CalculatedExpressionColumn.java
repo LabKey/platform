@@ -167,7 +167,8 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
             UserSchema schema = parentTable.getUserSchema();
             List<QueryParseException> errors = new ArrayList<>();
 
-            SqlParser parser = new SqlParser(getSqlDialect(), null==schema ? null : schema.getContainer());
+            SqlParser parser = new SqlParser(getSqlDialect(), null==schema ? null : schema.getContainer())
+                    .setFailOnUnrecognizedMethodName(true);
             QExpr expr = parser.parseExpr(_labKeySql, errors);
             if (!errors.isEmpty())
                 throw errors.get(0);

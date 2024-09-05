@@ -1,0 +1,9 @@
+<tables xmlns="http://labkey.org/data/xml">
+    <table tableName="SamplesInPlateSets" tableDbType="NOT_IN_DB" hidden="true">
+        <columns>
+            <column columnName="RowId">
+                <isKeyField>true</isKeyField>
+            </column>
+        </columns>
+    </table>
+</tables>

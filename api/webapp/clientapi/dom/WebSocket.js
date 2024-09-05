@@ -35,6 +35,7 @@ LABKEY.WebSocket = new function ()
     var _websocket = null;
     var _callbacks = {};
     var _modalShowing = false;
+    var _shouldAddFocusListener = true;
 
     function openWebsocket() {
         if (_websocket !== null || !('WebSocket' in window)) return;
@@ -42,6 +43,15 @@ LABKEY.WebSocket = new function ()
         _websocket.onmessage = websocketOnMessage;
         _websocket.onclose = websocketOnClose;
         _websocket.onerror = websocketConnectionFailure;
+
+        // Issue 51021: Add a focus listener to check for session expiration when the user returns to the tab,
+        // this was done in the apps for issue 47024, but it should be done here for usages of WebSocket.js.
+        if (_shouldAddFocusListener) {
+            window.addEventListener('focus', function() {
+                checkForExpiredSession();
+            });
+            _shouldAddFocusListener = false;
+        }
     }
 
     function websocketConnectionFailure() {
@@ -64,7 +74,7 @@ LABKEY.WebSocket = new function ()
 
     function websocketOnClose(evt) {
         _websocket = null;
-        if (evt.wasClean) {
+        if (evt) {
             // first chance at handling the event goes to any registered callback listeners
             if (_callbacks[evt.code]) {
                 _callbacks[evt.code].forEach(function(cb){cb(evt)});
@@ -82,10 +92,6 @@ LABKEY.WebSocket = new function ()
             }
             else if (evt.code === CloseEventCode.GOING_AWAY && evt.reason && evt.reason !== "") {
                 // 1001 sent when server is shutdown normally (AND on page reload in FireFox, but that one doesn't have a reason)
-                setTimeout(showDisconnectedMessage, 1000);
-            }
-            else if (evt.code === CloseEventCode.ABNORMAL_CLOSURE) {
-                // 1006 abnormal close (e.g, server process died)
                 setTimeout(showDisconnectedMessage, 1000);
             }
             else if (evt.code === CloseEventCode.POLICY_VIOLATION) {
@@ -110,17 +116,22 @@ LABKEY.WebSocket = new function ()
                 if (LABKEY.user.id !== response.id && !LABKEY.user.isGuest) {
                     displayModal("Session Expired", 'Your session has expired.', true);
                 } else {
+                    openWebsocket(); // re-establish the websocket connection, if not already open
                     hideModal();
                 }
             }),
-            failure: function () {
-                setTimeout(showDisconnectedMessage, 1000);
+            failure: function (reason) {
+                setTimeout(function() {
+                    // Issue 51021: check for null _websocket before showing unavailable message as this can be triggered
+                    // in FF by having the API call aborted because of a page navigation
+                    if (_websocket === null) showDisconnectedMessage();
+                }, 1000);
             }
         });
     }
 
-    function showDisconnectedMessage() {
-        displayModal("Server Unavailable", "The server is currently unavailable. Please try reloading the page to continue.", false);
+    function showDisconnectedMessage(skipReopen) {
+        displayModal("Server Unavailable", "The server is currently unavailable. Please try reloading the page to continue.", false, skipReopen);
         // CONSIDER: Periodically attempt to reestablish connection until the server comes back up.
     }
 
@@ -152,8 +163,6 @@ LABKEY.WebSocket = new function ()
     }
 
     function hideModal() {
-        openWebsocket(); // re-establish the websocket connection for the new user session
-
         toggleBackgroundBlurred(false);
 
         var modal = $('#lk-utils-modal');
@@ -167,8 +176,10 @@ LABKEY.WebSocket = new function ()
         _modalShowing = false;
     }
 
-    function displayModal(title, message, showReloadMessage) {
-        openWebsocket(); // re-establish the websocket connection for the new guest user session
+    function displayModal(title, message, showReloadMessage, skipReopen) {
+        if (!skipReopen) {
+            openWebsocket(); // re-establish the websocket connection for the new guest user session
+        }
 
         if (_modalShowing) return;
         _modalShowing = true;

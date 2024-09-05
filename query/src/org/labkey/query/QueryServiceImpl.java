@@ -44,6 +44,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.query.ExpTable;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.module.Module;
@@ -53,6 +54,7 @@ import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.module.ModuleResourceCacheListener;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.ResourceRootProvider;
+import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.*;
 import org.labkey.api.query.QueryChangeListener.QueryPropertyChange;
 import org.labkey.api.query.column.BuiltInColumnTypes;
@@ -106,6 +108,8 @@ import org.springframework.web.servlet.mvc.Controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
@@ -140,6 +144,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.labkey.api.dataiterator.SimpleTranslator.getContainerFileRootPath;
 import static org.labkey.query.audit.QueryUpdateAuditProvider.QUERY_UPDATE_AUDIT_EVENT;
 
 
@@ -2358,7 +2363,7 @@ public class QueryServiceImpl implements QueryService
         }
     }
 
-    private QueryDef findMetadataOverrideInDatabase(UserSchema schema, String tableName, boolean customQuery)
+    public QueryDef findMetadataOverrideInDatabase(UserSchema schema, String tableName, boolean customQuery)
     {
         String schemaName = schema.getSchemaPath().toString();
         Container container = schema.getContainer();
@@ -2401,7 +2406,7 @@ public class QueryServiceImpl implements QueryService
     }
 
     // Look for file-based definitions in modules
-    private @Nullable QueryDef findMetadataOverrideInModules(@NotNull UserSchema schema, @NotNull String tableName, boolean allModules, @Nullable Path dir)
+    public @Nullable QueryDef findMetadataOverrideInModules(@NotNull UserSchema schema, @NotNull String tableName, boolean allModules, @Nullable Path dir)
     {
         if (dir == null)
         {
@@ -2966,6 +2971,19 @@ public class QueryServiceImpl implements QueryService
     {
         HashMap<Environment, Object> env = environments.get();
         env.put(e, e.type.convert(value));
+    }
+
+    @Override
+    public void setEnvironment(PipelineJob job)
+    {
+        // Set centrally to avoid needing to set in each job. See PipelineJobRunner for equivalent functionality
+        // when running through Enterprise Pipeline
+        QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, job.getContainer());
+        QueryService.get().setEnvironment(QueryService.Environment.USER, job.getUser());
+
+        String fileRootPath = getContainerFileRootPath(job.getContainer());
+        if (fileRootPath != null)
+            QueryService.get().setEnvironment(QueryService.Environment.FILEROOTPATH, fileRootPath);
     }
 
     @Override

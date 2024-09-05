@@ -376,19 +376,24 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     }
 
     @Override
-    public Domain createDomain(GWTDomain domain, DataClassDomainKindProperties options, Container container, User user, @Nullable TemplateInfo templateInfo)
+    public Domain createDomain(GWTDomain<GWTPropertyDescriptor> domain, DataClassDomainKindProperties options, Container container, User user, @Nullable TemplateInfo templateInfo)
     {
-        String name = domain.getName();
-        List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields(true);
-        List<GWTIndex> indices = (List<GWTIndex>)domain.getIndices();
-
         // Issue 45042: Allow for the dataClass description to be set via the create domain API calls
         if (options.getDescription() == null && domain.getDescription() != null)
             options.setDescription(domain.getDescription());
 
         try
         {
-            ExpDataClass dataClass = ExperimentService.get().createDataClass(container, user, name, options, properties, indices, templateInfo, domain.getDisabledSystemFields(), options.getImportAliases());
+            ExpDataClass dataClass = ExperimentService.get().createDataClass(
+                container,
+                user,
+                domain.getName(),
+                options,
+                domain.getFields(true),
+                domain.getIndices(),
+                templateInfo,
+                domain.getDisabledSystemFields()
+            );
             return dataClass.getDomain();
         }
         catch (ExperimentException e)
@@ -398,10 +403,18 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     }
 
     @Override
-    public @NotNull ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
-                                                     @Nullable DataClassDomainKindProperties options, Container container, User user, boolean includeWarnings)
+    public @NotNull ValidationException updateDomain(
+        GWTDomain<? extends GWTPropertyDescriptor> original,
+        GWTDomain<? extends GWTPropertyDescriptor> update,
+        @Nullable DataClassDomainKindProperties options,
+        Container container,
+        User user,
+        boolean includeWarnings
+    )
     {
         ExpDataClass dc = ExperimentService.get().getDataClass(original.getDomainURI());
+        if (dc == null)
+            return new ValidationException(String.format("Could not resolve data class from LSID \"%s\".", original.getDomainURI()));
         return ExperimentService.get().updateDataClass(container, user, dc, options, original, update);
     }
 
@@ -439,7 +452,6 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     {
         return template instanceof DataClassTemplateType;
     }
-
 
     @Override
     public String getObjectUriColumnName()

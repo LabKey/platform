@@ -49,7 +49,6 @@ import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.audit.provider.GroupAuditProvider;
 import org.labkey.api.audit.provider.ModulePropertiesAuditProvider;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -68,14 +67,12 @@ import org.labkey.api.data.OutOfRangeDisplayColumn;
 import org.labkey.api.data.PropertySchema;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfoFactory;
-import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.TabContainerType;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.TempTableTracker;
 import org.labkey.api.data.TestSchema;
 import org.labkey.api.data.WorkbookContainerType;
@@ -107,7 +104,6 @@ import org.labkey.api.premium.AntiVirusProviderRegistry;
 import org.labkey.api.products.ProductRegistry;
 import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.query.DefaultSchema;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
@@ -132,7 +128,6 @@ import org.labkey.api.security.DummyAntiVirusService;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.LimitActiveUsersService;
-import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPointcutService;
@@ -142,7 +137,6 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.WikiTermsOfUseProvider;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
-import org.labkey.api.security.roles.CanSeeAuditLogRole;
 import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.security.roles.ReaderRole;
@@ -308,6 +302,9 @@ import org.labkey.filters.ContentSecurityPolicyFilter;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.impl.StdSchedulerFactory;
+import org.radeox.test.BaseRenderEngineTest;
+import org.radeox.test.macro.list.*;
+import org.radeox.test.filter.*;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -344,7 +341,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 {
     private static final Logger LOG = LogHelper.getLogger(CoreModule.class, "Errors during server startup and shut down");
     public static final String PROJECTS_WEB_PART_NAME = "Projects";
-    private static final String EXPERIMENTAL_CALCULATED_FIELDS = "experimental-calculated-fields";
 
     static Runnable _afterUpdateRunnable = null;
 
@@ -487,8 +483,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 "SQLFragment now has very strict usage validation, these checks may cause errors in code that has not been updated. Turn on this feature to disable checks.", false);
         AdminConsole.addExperimentalFeatureFlag(LoginController.FEATUREFLAG_DISABLE_LOGIN_XFRAME, "Disable Login X-FRAME-OPTIONS=DENY",
                 "By default LabKey disables all framing of login related actions. Disabling this feature will revert to using the standard site settings.", false);
-        AdminConsole.addExperimentalFeatureFlag(EXPERIMENTAL_CALCULATED_FIELDS, "Calculated Fields",
-                "Allow defining calculated fields in the Field Editor for supported data types: Sample Type, Data Class, List, Study Dataset, Assay Design", false);
 
         SiteValidationService svc = SiteValidationService.get();
         if (null != svc)
@@ -1331,7 +1325,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     {
         JSONObject json = new JSONObject(getDefaultPageContextJson(context.getContainer()));
         json.put("productFeatures", ProductRegistry.getProductFeatureSet());
-        json.put(EXPERIMENTAL_CALCULATED_FIELDS, OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_CALCULATED_FIELDS));
         return json;
     }
 
@@ -1356,7 +1349,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     {
         return TabDisplayMode.DISPLAY_USER_PREFERENCE_DEFAULT;
     }
-
 
     @Override
     @NotNull
@@ -1410,7 +1402,33 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             OutOfRangeDisplayColumn.TestCase.class,
             PostgreSqlVersion.TestCase.class,
             ScriptEngineManagerImpl.TestCase.class,
-            StatsServiceImpl.TestCase.class
+            StatsServiceImpl.TestCase.class,
+
+
+            // Radeox tests
+            SimpleListTest.class,
+            ExampleListFormatterTest.class,
+            AtoZListFormatterTest.class,
+            BaseRenderEngineTest.class,
+            BasicRegexTest.class,
+            ItalicFilterTest.class,
+            BoldFilterTest.class,
+            KeyFilterTest.class,
+            NewlineFilterTest.class,
+            LineFilterTest.class,
+            TypographyFilterTest.class,
+            HtmlRemoveFilterTest.class,
+            StrikeThroughFilterTest.class,
+            UrlFilterTest.class,
+            ParamFilterTest.class,
+            FilterPipeTest.class,
+            EscapeFilterTest.class,
+            LinkTestFilterTest.class,
+            WikiLinkFilterTest.class,
+            SmileyFilterTest.class,
+            ListFilterTest.class,
+            HeadingFilterTest.class
+
         );
     }
 

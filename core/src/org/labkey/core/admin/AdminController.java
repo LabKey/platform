@@ -87,7 +87,9 @@ import org.labkey.api.cache.CacheStats;
 import org.labkey.api.cache.TrackingCache;
 import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.compliance.ComplianceFolderSettings;
 import org.labkey.api.compliance.ComplianceService;
+import org.labkey.api.compliance.PhiColumnBehavior;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ConnectionWrapper;
@@ -881,7 +883,7 @@ public class AdminController extends SpringActionController
             else if (maintenanceMode)
             {
                 WikiRenderingService wikiService = WikiRenderingService.get();
-                content = wikiService.getFormattedHtml(WikiRendererType.RADEOX, ModuleLoader.getInstance().getAdminOnlyMessage());
+                content = wikiService.getFormattedHtml(WikiRendererType.RADEOX, ModuleLoader.getInstance().getAdminOnlyMessage(), "Admin only message");
             }
 
             if (content == null)
@@ -1071,10 +1073,6 @@ public class AdminController extends SpringActionController
             modules.sort(Comparator.comparing(Module::getName, String.CASE_INSENSITIVE_ORDER));
 
             addCreditsViews(views, modules, "jars.txt", "JAR", null);
-
-            Module core = ModuleLoader.getInstance().getCoreModule();
-            addCreditsViews(views, Collections.singletonList(core), "tomcat_jars.txt", "Tomcat JAR", "JAR Files Installed in the <tomcat>/lib Directory"      /* No staging dir in production mode so skip error checking */);
-
             addCreditsViews(views, modules, "scripts.txt", "Script, Icon and Font");
             addCreditsViews(views, modules, "source.txt", "Java Source Code");
             addCreditsViews(views, modules, "executables.txt", "Executable");
@@ -1123,7 +1121,7 @@ public class AdminController extends SpringActionController
             if (StringUtils.isNotEmpty(wikiSource))
             {
                 WikiRenderingService wikiService = WikiRenderingService.get();
-                HtmlString html = wikiService.getFormattedHtml(WikiRendererType.RADEOX, wikiSource);
+                HtmlString html = wikiService.getFormattedHtml(WikiRendererType.RADEOX, wikiSource, "Credits page");
                 _html = HtmlStringBuilder.of(HtmlString.unsafe("<style type=\"text/css\">\ntr.table-odd td { background-color: #EEEEEE; }</style>\n")).append(html).getHtmlString();
             }
         }
@@ -1631,8 +1629,10 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getView(ViewValidationResultsForm form, BindException errors) throws Exception
         {
+            if (StringUtils.isBlank(form.getFileName()))
+                throw new NotFoundException();
             PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
-            File results = new File(root.getLogDirectory(), form.getFileName());
+            File results = FileUtil.appendName(root.getLogDirectory(), form.getFileName());
             if (!results.isFile())
                 throw new NotFoundException("File not found: " + form.getFileName());
 
@@ -4846,7 +4846,7 @@ public class AdminController extends SpringActionController
 
     public enum ExportOption
     {
-        PipelineRootAsFiles("pipeline root as files")
+        PipelineRootAsFiles("file root as multiple files")
                 {
                     @Override
                     public ActionURL initiateExport(Container container, BindException errors, FolderWriterImpl writer, FolderExportContext ctx, HttpServletResponse response) throws Exception
@@ -4877,7 +4877,7 @@ public class AdminController extends SpringActionController
                     }
                 },
 
-        PipelineRootAsZip("pipeline root as a zip file")
+        PipelineRootAsZip("file root as a single zip file")
         {
             @Override
             public ActionURL initiateExport(Container container, BindException errors, FolderWriterImpl writer, FolderExportContext ctx, HttpServletResponse response) throws Exception
@@ -4972,7 +4972,11 @@ public class AdminController extends SpringActionController
         {
             form.setExportType(PageFlowUtil.filter(getViewContext().getActionURL().getParameter("exportType")));
 
-            form.setExportPhiLevel(ComplianceService.get().getMaxAllowedPhi(getContainer(), getUser()));
+            ComplianceFolderSettings settings = ComplianceService.get().getFolderSettings(getContainer(), User.getAdminServiceUser());
+            PhiColumnBehavior columnBehavior = null==settings ? PhiColumnBehavior.show : settings.getPhiColumnBehavior();
+            PHI maxAllowedPhiForExport = PhiColumnBehavior.show == columnBehavior ? PHI.Restricted : ComplianceService.get().getMaxAllowedPhi(getContainer(), getUser());
+            form.setExportPhiLevel(maxAllowedPhiForExport);
+
             return new JspView<>("/org/labkey/core/admin/exportFolder.jsp", form, errors);
         }
 
@@ -11469,7 +11473,7 @@ public class AdminController extends SpringActionController
         }
     }
 
-    @RequiresPermission(AdminPermission.class)
+    @RequiresPermission(TroubleshooterPermission.class)
     public class ViewUsageStatistics extends SimpleViewAction<Object>
     {
         @Override

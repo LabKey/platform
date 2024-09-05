@@ -311,7 +311,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             snapshot = StudyManager.getInstance().getStudySnapshot(optionsId);
 
         PHI snapshotPhiLevel = (snapshot != null) ? snapshot.getSnapshotSettings().getPhiLevel() : PHI.NotPHI;
-        Collection<ColumnInfo> columns = DatasetDataWriter.getColumnsToExport(tinfo, def, false, snapshotPhiLevel);
+        Collection<ColumnInfo> columns = DatasetDataWriter.getColumnsToExport(tinfo, def, false, snapshotPhiLevel, null);
 
         if (snapshot != null && snapshot.getSnapshotSettings().isShiftDates())
         {
@@ -863,39 +863,49 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         public void run()
         {
             LOG.debug("processing deferred dependencies");
-            Map<Container, List<QuerySnapshotDefinition>> snapshotMap = new HashMap<>();
-            for (SnapshotDependency.SourceDataType sourceData : _sourceDataTypes)
+            try
             {
-                for (QuerySnapshotDefinition snapshotDef : getDependencies(sourceData))
+                QueryService.get().setEnvironment(QueryService.Environment.USER, _user);
+                Map<Container, List<QuerySnapshotDefinition>> snapshotMap = new HashMap<>();
+                for (SnapshotDependency.SourceDataType sourceData : _sourceDataTypes)
                 {
-                    List<QuerySnapshotDefinition> deferredQuerySnapshots = snapshotMap.computeIfAbsent(snapshotDef.getContainer(), k -> new LinkedList<>());
-                    deferredQuerySnapshots.add(snapshotDef);
+                    for (QuerySnapshotDefinition snapshotDef : getDependencies(sourceData))
+                    {
+                        QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, snapshotDef.getContainer());
+                        List<QuerySnapshotDefinition> deferredQuerySnapshots = snapshotMap.computeIfAbsent(snapshotDef.getContainer(), k -> new LinkedList<>());
+                        deferredQuerySnapshots.add(snapshotDef);
+                    }
+                }
+
+                LOG.debug("processing deferred snapshot updates");
+                // update each study container than contains relevant snapshots
+                for (Map.Entry<Container, List<QuerySnapshotDefinition>> snapshotEntry : snapshotMap.entrySet())
+                {
+                    Container snapshotContainer = snapshotEntry.getKey();
+                    QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, snapshotContainer);
+                    StudyImpl study = StudyManager.getInstance().getStudy(snapshotContainer);
+                    List<QuerySnapshotDefinition> snapshotDefs = snapshotEntry.getValue();
+                    Set<DatasetDefinition> deferredDatasets = new HashSet<>(snapshotDefs.size());
+                    for (QuerySnapshotDefinition def : snapshotDefs)
+                    {
+                        DatasetDefinition deferredDataset = StudyManager.getInstance().getDatasetDefinitionByName(study, def.getName());
+                        if (deferredDataset == null)
+                        {
+                            LOG.warn("Unable to find dataset " + def.getName() + " to update for query snapshot " + def.getName() + " in study in " + snapshotContainer.getPath() + ", skipping");
+                        }
+                        else
+                        {
+                            deferredDatasets.add(deferredDataset);
+                            TimerTask task = new SnapshotUpdateTask(def, true);
+                            task.run();
+                        }
+                    }
+                    StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(_user, deferredDatasets);
                 }
             }
-
-            LOG.debug("processing deferred snapshot updates");
-            // update each study container than contains relevant snapshots
-            for (Map.Entry<Container, List<QuerySnapshotDefinition>> snapshotEntry : snapshotMap.entrySet())
+            finally
             {
-                Container snapshotContainer = snapshotEntry.getKey();
-                StudyImpl study = StudyManager.getInstance().getStudy(snapshotContainer);
-                List<QuerySnapshotDefinition> snapshotDefs = snapshotEntry.getValue();
-                Set<DatasetDefinition> deferredDatasets = new HashSet<>(snapshotDefs.size());
-                for (QuerySnapshotDefinition def : snapshotDefs)
-                {
-                    DatasetDefinition deferredDataset = StudyManager.getInstance().getDatasetDefinitionByName(study, def.getName());
-                    if (deferredDataset == null)
-                    {
-                        LOG.warn("Unable to find dataset " + def.getName() + " to update for query snapshot " + def.getName() + " in study in " + snapshotContainer.getPath() + ", skipping");
-                    }
-                    else
-                    {
-                        deferredDatasets.add(deferredDataset);
-                        TimerTask task = new SnapshotUpdateTask(def, true);
-                        task.run();
-                    }
-                }
-                StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(_user, deferredDatasets);
+                QueryService.get().clearEnvironment();
             }
         }
     }

@@ -49,9 +49,6 @@ import java.util.Iterator;
 import java.util.Map;
 
 /**
- * User: kevink
- * Date: 3/5/14
- *
  * Adapts a DataIterator to the Results interface.
  */
 public class DataIteratorResultsImpl implements Results, TableResultSet
@@ -59,7 +56,6 @@ public class DataIteratorResultsImpl implements Results, TableResultSet
     private final DataIterator _di;
     private final Map<FieldKey, ColumnInfo> _fieldKeyMap;
     private final Map<FieldKey, Integer> _fieldKeyIndexMap;
-    private final Map<String, Integer> _nameIndexMap;
 
     // JDBC-style 1-based row id index, 0 means before first row.
     private int _rowId = 0;
@@ -70,7 +66,6 @@ public class DataIteratorResultsImpl implements Results, TableResultSet
         _di = di;
         _fieldKeyMap = Collections.unmodifiableMap(DataIteratorUtil.createFieldKeyMap(di));
         _fieldKeyIndexMap = Collections.unmodifiableMap(DataIteratorUtil.createFieldIndexMap(di));
-        _nameIndexMap = Collections.unmodifiableMap(DataIteratorUtil.createColumnAndPropertyMap(di));
     }
 
     @Override
@@ -627,15 +622,9 @@ public class DataIteratorResultsImpl implements Results, TableResultSet
     }
 
     @Override
-    public int findColumn(String s)
-            throws SQLException
+    public int findColumn(String s) throws SQLException
     {
-        Integer i = findColumn(FieldKey.fromString(s));
-        if (null == i)
-            i = _nameIndexMap.get(s);
-        if (null == i)
-            throw new SQLException(s + " not found.");
-        return i;
+        return findColumn(FieldKey.fromString(s));
     }
 
     @Override

@@ -1,9 +1,11 @@
 package org.labkey.experiment.samples;
 
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporter;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
@@ -13,6 +15,7 @@ import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.WrapperDataIterator;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.FileXarSource;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.XarSource;
@@ -47,11 +50,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 
 import static org.labkey.api.admin.FolderImportContext.IS_NEW_FOLDER_IMPORT_KEY;
+import static org.labkey.api.dataiterator.SimpleTranslator.getContainerFileRootPath;
+import static org.labkey.api.dataiterator.SimpleTranslator.getFileRootSubstitutedFilePath;
 import static org.labkey.api.exp.XarContext.XAR_JOB_ID_NAME;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.insert;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.update;
@@ -296,7 +303,7 @@ public abstract class AbstractExpFolderImporter implements FolderImporter
                                         extraContext.put(IS_NEW_FOLDER_IMPORT_KEY, true);
                                     }
 
-                                    DataIterator data = new ResolveLsidDataIterator(loader.getDataIterator(context), xarContext, expObject instanceof ExpDataClass ? "DataClass" : "Material");
+                                    DataIterator data = new ResolveLsidAndFileLinkDataIterator(loader.getDataIterator(context), xarContext, expObject instanceof ExpDataClass ? "DataClass" : "Material", tinfo);
                                     int count = qus.loadRows(ctx.getUser(), ctx.getContainer(), data, context, extraContext);
                                     log.info("Imported a total of " + count + " rows into : " + tableName);
 
@@ -328,15 +335,17 @@ public abstract class AbstractExpFolderImporter implements FolderImporter
         }
     }
 
-    private class ResolveLsidDataIterator extends WrapperDataIterator
+    private class ResolveLsidAndFileLinkDataIterator extends WrapperDataIterator
     {
         final XarContext _xarContext;
         final String _baseType;
         int _lsidColumnIndex = -1;
         Supplier<Object> _lsidTemplateSupplier = null;
         Supplier<Object> _lsidResolvedSupplier = null;
+        final String _fileRootPath;
+        Set<Integer> _fileColumnIndexes = new HashSet<>();
 
-        ResolveLsidDataIterator(DataIterator delegate, XarContext xarContext, String baseType)
+        ResolveLsidAndFileLinkDataIterator(DataIterator delegate, XarContext xarContext, String baseType, @NotNull TableInfo tinfo)
         {
             super(delegate);
             _xarContext = xarContext;
@@ -358,21 +367,48 @@ public abstract class AbstractExpFolderImporter implements FolderImporter
                             throw UnexpectedException.wrap(xfe);
                         }
                     };
-                    break;
+                }
+                else
+                {
+                    ColumnInfo column = tinfo.getColumn(delegate.getColumnInfo(i).getFieldKey());
+                    if (column != null && PropertyType.FILE_LINK == column.getPropertyType())
+                        _fileColumnIndexes.add(i);
                 }
             }
+
+
+            String fileRootPath = null;
+            if (!_fileColumnIndexes.isEmpty())
+                fileRootPath = getContainerFileRootPath(xarContext.getContainer());
+            _fileRootPath = fileRootPath;
+
         }
 
         @Override
         public Supplier<Object> getSupplier(int i)
         {
-            return i==_lsidColumnIndex ? _lsidResolvedSupplier : _delegate.getSupplier(i);
+            if (i==_lsidColumnIndex)
+                return _lsidResolvedSupplier;
+
+            if (_fileColumnIndexes.contains(i))
+                return () -> get(i);
+
+            return _delegate.getSupplier(i);
         }
 
         @Override
         public Object get(int i)
         {
-            return i==_lsidColumnIndex ? _lsidResolvedSupplier.get() : _delegate.get(i);
+            if (i==_lsidColumnIndex)
+                return _lsidResolvedSupplier.get();
+
+            Object value = _delegate.get(i);
+            if (_fileColumnIndexes.contains(i))
+            {
+                if (value instanceof String filePath)
+                    return getFileRootSubstitutedFilePath(filePath, _fileRootPath);
+            }
+            return value;
         }
     }
 }

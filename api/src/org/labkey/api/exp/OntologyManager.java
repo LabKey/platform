@@ -2761,7 +2761,7 @@ public class OntologyManager
      * Insert or update an object property value.
      *
      * @param user The user inserting the property - currently only used for validating lookup values.
-     * @param container Insert the property value into the this container.
+     * @param container Insert the property value into this container.
      * @param pd The property descriptor.
      * @param lsid The object on which to attach the properties.
      * @param value The value to insert.

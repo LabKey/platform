@@ -618,7 +618,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         // this needs to return the LSID for the dataset, OR the separate PK parts (ParticipantId,SequenceNum,extra)
         // easiest thing to do is just use DataSetDataIterator
         StudyImportContext sic = new StudyImportContext(getUserSchema().getUser(), getUserSchema().getContainer(), Set.of(StudyArchiveDataTypes.DATASET_DATA), () -> LOG);
-        DatasetDataIteratorBuilder builder = new DatasetDataIteratorBuilder((DatasetDefinition) getDataset(), getUserSchema().getUser(), false, null, sic);
+        DatasetDataIteratorBuilder builder = new DatasetDataIteratorBuilder((DatasetDefinition) getDataset(), getUserSchema().getUser(), getUserSchema().getContainer(), false, null, sic);
         // why isn't this part of the constructor?
         builder.setInput(dit);
         return builder.getDataIterator(context);

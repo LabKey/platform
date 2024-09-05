@@ -243,7 +243,7 @@ public class ChangeSummary
         formattedComment.append(sbHTMLChanges);
         //render issues as plain text with links
         WikiRenderingService renderingService = WikiRenderingService.get();
-        HtmlString html = renderingService.getFormattedHtml(WikiRendererType.TEXT_WITH_LINKS, comment);
+        HtmlString html = renderingService.getFormattedHtml(WikiRendererType.TEXT_WITH_LINKS, comment, "Issue change summary for issue " + issue.getIssueId() + " in " + issue.getContainerPath());
         formattedComment.append(html);
         formattedComment.append("</div>");
 

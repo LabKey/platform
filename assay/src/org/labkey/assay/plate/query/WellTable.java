@@ -70,6 +70,8 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
 
     public enum Column
     {
+        Amount,
+        Concentration,
         Col,
         Container,
         Dilution,
@@ -81,9 +83,12 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         SampleId,
         Type,
         Value,
-        WellGroup,
-        Concentration,
-        Amount
+        WellGroup;
+
+        public FieldKey fieldKey()
+        {
+            return FieldKey.fromParts(name());
+        }
     }
 
     private static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
@@ -92,12 +97,12 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
 
     static
     {
-        defaultVisibleColumns.add(FieldKey.fromParts(Column.PlateId.name()));
-        defaultVisibleColumns.add(FieldKey.fromParts(Column.Row.name()));
-        defaultVisibleColumns.add(FieldKey.fromParts(Column.Col.name()));
-        defaultVisibleColumns.add(FieldKey.fromParts(Column.Position.name()));
-        defaultVisibleColumns.add(FieldKey.fromParts(Column.Concentration.name()));
-        defaultVisibleColumns.add(FieldKey.fromParts(Column.Amount.name()));
+        defaultVisibleColumns.add(Column.PlateId.fieldKey());
+        defaultVisibleColumns.add(Column.Row.fieldKey());
+        defaultVisibleColumns.add(Column.Col.fieldKey());
+        defaultVisibleColumns.add(Column.Position.fieldKey());
+        defaultVisibleColumns.add(Column.Concentration.fieldKey());
+        defaultVisibleColumns.add(Column.Amount.fieldKey());
 
         // for now don't surface value and dilution, we may choose to drop these fields from the
         // db schema at some point
@@ -139,7 +144,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         // we do not support having multiple values. Here we limit the query to return a single result.
         groupSql = new SQLFragment("(").append(getSqlDialect().limitRows(groupSql, 1)).append(")");
 
-        var column = new ExprColumn(this, FieldKey.fromParts(Column.WellGroup.name()), groupSql, JdbcType.VARCHAR);
+        var column = new ExprColumn(this, Column.WellGroup.fieldKey(), groupSql, JdbcType.VARCHAR);
         column.setLabel("Group");
         column.setUserEditable(true);
         column.setShownInInsertView(true);
@@ -160,8 +165,8 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
                     .add(PositionImpl.ALPHABET[i]);
         }
         positionSql.append(" END)");
-        var positionCol = new ExprColumn(this, Column.Position.name(), positionSql, JdbcType.VARCHAR);
-        positionCol.setSortFieldKeys(List.of(FieldKey.fromParts(Column.RowId.name())));
+        var positionCol = new ExprColumn(this, Column.Position.fieldKey(), positionSql, JdbcType.VARCHAR);
+        positionCol.setSortFieldKeys(List.of(Column.RowId.fieldKey()));
         positionCol.setUserEditable(false);
         positionCol.setDescription("Indicates the position of the well in the plate.");
         addColumn(positionCol);
@@ -184,7 +189,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         // we do not support having multiple values. Here we limit the query to return a single result.
         wellTypeSql = new SQLFragment("(").append(getSqlDialect().limitRows(wellTypeSql, 1)).append(")");
 
-        var column = new ExprColumn(this, FieldKey.fromParts(Column.Type.name()), wellTypeSql, JdbcType.VARCHAR);
+        var column = new ExprColumn(this, Column.Type.fieldKey(), wellTypeSql, JdbcType.VARCHAR);
         column.setFk(new QueryForeignKey(getUserSchema().getTable(WellGroupTypeTable.NAME), null, null));
         column.setUserEditable(true);
         column.setShownInInsertView(true);

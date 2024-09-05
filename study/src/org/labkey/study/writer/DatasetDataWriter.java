@@ -21,6 +21,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
+import org.labkey.api.assay.TsvDataHandler;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
@@ -29,6 +30,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.IndexInfo;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.ResultsFactory;
@@ -38,6 +40,8 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.WrappedColumnInfo;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.query.ExpMaterialTable;
@@ -113,7 +117,7 @@ public class DatasetDataWriter implements InternalStudyWriter
                 continue;
 
             TableInfo ti = schema.getTable(def.getName());
-            Collection<ColumnInfo> columns = getColumnsToExport(ti, def, false, ctx.getPhiLevel());
+            Collection<ColumnInfo> columns = getColumnsToExport(ti, def, false, ctx.getPhiLevel(), ctx.getFileRootPath());
             // Sort the data rows by PTID & sequence, #11261
             Sort sort = new Sort(StudyService.get().getSubjectColumnName(ctx.getContainer()) + ", SequenceNum");
 
@@ -244,7 +248,7 @@ public class DatasetDataWriter implements InternalStudyWriter
                 !(column.getFk() instanceof ContainerForeignKey) && (column.getPHI().isExportLevelAllowed(exportPhiLevel) || isKeyProperty);
     }
 
-    public static Collection<ColumnInfo> getColumnsToExport(TableInfo tinfo, DatasetDefinition def, boolean metaData, PHI exportPhiLevel)
+    public static Collection<ColumnInfo> getColumnsToExport(TableInfo tinfo, DatasetDefinition def, boolean metaData, PHI exportPhiLevel, String fileRootPath)
     {
         // tinfo can be null if the dataset is a Placeholder
         if (tinfo == null)
@@ -337,7 +341,15 @@ public class DatasetDataWriter implements InternalStudyWriter
                 }
                 else
                 {
-                    outColumns.add(in);
+                    if (PropertyType.FILE_LINK == in.getPropertyType())
+                    {
+                        MutableColumnInfo wrappedCol = WrappedColumnInfo.wrap(in);
+                        wrappedCol.setDisplayColumnFactory(colInfo -> new TsvDataHandler.ExportFileLinkColumn(colInfo, fileRootPath));
+                        outColumns.add(wrappedCol);
+                    }
+                    else
+                        outColumns.add(in);
+
                     ColumnInfo displayField = in.getDisplayField();
                     // For assay datasets only, include both the display value and raw value for FKs if they differ
                     // Don't do this for the Participant and SequenceNum columns, since we know that their lookup targets
