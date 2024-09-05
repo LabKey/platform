@@ -22,14 +22,13 @@ public class LoggingTestCase extends Assert
         // BioJava jars add log4j2.xml files to the class path. Tolerate them, but verify that LabKey's standard
         // log4j2.xml file is found first.
         String filename = "log4j2.xml";
-        String substring = "labkeyWebapp/WEB-INF/classes/log4j2.xml"; // Our standard log4j2.xml file
-        String substring2 = "labkeywebapp/WEB-INF/classes/log4j2.xml"; // From an embedded distribution
+        String substring = "embedded/resources/main/log4j2.xml"; // Our standard log4j2.xml file
 
         List<URL> list = Collections.list(getClass().getClassLoader().getResources(filename));
         assertFalse("Did not find expected file: " + filename, list.isEmpty());
         String first = list.get(0).toString();
         assertTrue("Did not find substring \"" + substring + "\" in file path of the first " + filename + " file on the class path. Here's what was found: "
-            + list.stream().map(URL::toString).collect(Collectors.joining(", ")), first.contains(substring) || first.contains(substring2));
+            + list.stream().map(URL::toString).collect(Collectors.joining(", ")), first.contains(substring));
     }
 
     @Test
