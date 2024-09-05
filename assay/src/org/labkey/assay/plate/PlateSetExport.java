@@ -16,7 +16,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -104,7 +103,7 @@ public class PlateSetExport
     // Create sampleIdToRow of the following form:
     // {<sample id>: [{dataRow1}, {dataRow2}, ... ], ... }
     // Where the data rows contain the key's sample
-    private Map<String, List<Object[]>> processPlateSet(TableInfo wellTable, List<FieldKey> includedMetadataCols, int plateSetId, String plateSetExport) {
+    private Map<String, List<Object[]>> getSampleIdToRows(TableInfo wellTable, List<FieldKey> includedMetadataCols, int plateSetId, String plateSetExport) {
         Map<String, List<Object[]>> sampleIdToRow = new LinkedHashMap<>();
         try (Results rs = QueryService.get().select(wellTable, getWellColumns(wellTable, includedMetadataCols), new SimpleFilter(FKMap.get(PLATE_SET_ID_COL), plateSetId), new Sort(ROW_ID_COL)))
         {
@@ -135,8 +134,8 @@ public class PlateSetExport
     )
     {
         List<Object[]> plateDataRows = new ArrayList<>();
-        Map<String, List<Object[]>> sampleIdToDestinationRow = processPlateSet(wellTable, destinationIncludedMetadataCols, destinationPlateSetId, PlateSetExport.DESTINATION);
-        Map<String, List<Object[]>> sampleIdToSourceRow = processPlateSet(wellTable, sourceIncludedMetadataCols, sourcePlateSetId, PlateSetExport.SOURCE);
+        Map<String, List<Object[]>> sampleIdToDestinationRow = getSampleIdToRows(wellTable, destinationIncludedMetadataCols, destinationPlateSetId, PlateSetExport.DESTINATION);
+        Map<String, List<Object[]>> sampleIdToSourceRow = getSampleIdToRows(wellTable, sourceIncludedMetadataCols, sourcePlateSetId, PlateSetExport.SOURCE);
 
         for (Map.Entry<String, List<Object[]>> entry : sampleIdToSourceRow.entrySet()) {
             String sampleId = entry.getKey();
