@@ -382,7 +382,9 @@ public class DomainUtil
         if (metadata == null)
             return Collections.emptyList();
 
-        TableType xmlTable = metadata.stream().findFirst().orElse(null);
+        // use the last metadata in the collection since module based metadata is added first and DB based metadata is added last
+        TableType xmlTable = metadata.stream().reduce((first, second) -> second).orElse(null);
+
         if (xmlTable != null && xmlTable.isSetColumns())
         {
             List<GWTPropertyDescriptor> calculatedFields = new ArrayList<>();
