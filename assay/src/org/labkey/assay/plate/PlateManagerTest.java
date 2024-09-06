@@ -631,6 +631,21 @@ public final class PlateManagerTest
             assertEquals(row2[i].toString(), valuesRow2[i]);
     }
 
+    private void assertWorklistThrows(String message, Integer sourceRowId, Integer destinationRowId, List<FieldKey> sourceIncludedMetadataCols, List<FieldKey> destinationIncludedMetadataCols) throws Exception
+    {
+        try
+        {
+            PlateManager.get().getWorklist(sourceRowId, destinationRowId, sourceIncludedMetadataCols, destinationIncludedMetadataCols, container, user);
+        }
+        catch (Throwable t)
+        {
+            assertEquals("Worklist generation did not throw the expected error.", message, t.getMessage());
+            return;
+        }
+
+        fail(String.format("Worklist generation failed to throw. Expected \"%s\".", message));
+    }
+
     @Test
     public void testGetWorklist() throws Exception
     {
@@ -700,27 +715,67 @@ public final class PlateManagerTest
             assertEquals(row3[i].toString(), valuesRow3[i]);
     }
 
-    private void assertWorklistThrows(String message, Integer sourceRowId, Integer destinationRowId, List<FieldKey> sourceIncludedMetadataCols, List<FieldKey> destinationIncludedMetadataCols) throws Exception
+    @Test
+    public void testGetWorklistWithEmptyDestinations() throws Exception
     {
-        try
-        {
-            PlateManager.get().getWorklist(sourceRowId, destinationRowId, sourceIncludedMetadataCols, destinationIncludedMetadataCols, container, user);
-        }
-        catch (Throwable t)
-        {
-            assertEquals("Worklist generation did not throw the expected error.", message, t.getMessage());
-            return;
-        }
+        // Arrange
+        ContainerFilter cf = ContainerFilter.Type.CurrentAndSubfolders.create(container, user);
 
-        fail(String.format("Worklist generation failed to throw. Expected \"%s\".", message));
+        List<ExpMaterial> samples = createSamples(2);
+        ExpMaterial sample1 = samples.get(0);
+        ExpMaterial sample2 = samples.get(1);
+
+        List<Map<String, Object>> rows1 = List.of(
+                CaseInsensitiveHashMap.of(
+                        "wellLocation", "A1",
+                        "sampleId", sample1.getRowId(),
+                        "type", "SAMPLE",
+                        "concentration", 2.25,
+                        PlateMetadataFields.barcode.name(), "B1234"
+                ),
+                CaseInsensitiveHashMap.of(
+                        "wellLocation", "A2",
+                        "sampleId", sample2.getRowId(),
+                        "type", "SAMPLE",
+                        "concentration", 1.25,
+                        PlateMetadataFields.barcode.name(), "B5678"
+                )
+        );
+        Plate plateSource = createPlate(PLATE_TYPE_96_WELLS, "myPlate1", null, rows1);
+
+        List<Map<String, Object>> rows2 = List.of(
+                CaseInsensitiveHashMap.of(
+                        "wellLocation", "A1",
+                        "type", "SAMPLE",
+                        "sampleId", sample2.getRowId()
+                )
+        );
+        Plate plateDestination = createPlate(PLATE_TYPE_96_WELLS, "myPlate2", null, rows2);
+
+        // Act
+        List<FieldKey> sourceIncludedMetadataCols = PlateManager.get().getMetadataColumns(plateSource.getPlateSet(), container, user, cf);
+        List<FieldKey> destinationIncludedMetadataCols = PlateManager.get().getMetadataColumns(plateDestination.getPlateSet(), container, user, cf);
+        List<Object[]> plateDataRows = PlateManager.get().getWorklist(plateSource.getPlateSet().getRowId(), plateDestination.getPlateSet().getRowId(), sourceIncludedMetadataCols, destinationIncludedMetadataCols, container, user);
+
+        // Assert
+        Object[] row1 = plateDataRows.get(0);
+        String[] valuesRow1 = new String[]{"myPlate1", plateSource.getBarcode(), "A1", "96", sample1.getName(), "B1234", "2.25", null, null, null, null};
+        for (int i = 0; i < row1.length; i++)
+            assertEquals(row1[i] == null ? null : row1[i].toString(), valuesRow1[i]);
+
+        Object[] row2 = plateDataRows.get(1);
+        String[] valuesRow2 = new String[]{"myPlate1", plateSource.getBarcode(),"A2", "96", sample2.getName(), "B5678", "1.25", "myPlate2", plateDestination.getBarcode(), "A1", "96"};
+        for (int i = 0; i < row2.length; i++)
+            assertEquals(row2[i].toString(), valuesRow2[i]);
     }
 
     @Test
     public void testGetWorklistSingleSampleManyToMany() throws Exception
     {
+        // Arrange
         ContainerFilter cf = ContainerFilter.Type.CurrentAndSubfolders.create(container, user);
-
         ExpMaterial sample = createSamples(1).get(0);
+
         List<Map<String, Object>> rows1 = List.of(
                 CaseInsensitiveHashMap.of(
                         "wellLocation", "A1",
@@ -760,15 +815,18 @@ public final class PlateManagerTest
         );
         Plate plateDestination = createPlate(PLATE_TYPE_96_WELLS, "myPlate2", null, rows2);
 
+        // Act
         List<FieldKey> sourceIncludedMetadataCols = PlateManager.get().getMetadataColumns(plateSource.getPlateSet(), container, user, cf);
         List<FieldKey> destinationIncludedMetadataCols = PlateManager.get().getMetadataColumns(plateDestination.getPlateSet(), container, user, cf);
 
+        // Assert
         assertWorklistThrows("Many-to-many single-sample operation detected. See sample(s): " + sample.getName(), plateSource.getPlateSet().getRowId(), plateDestination.getPlateSet().getRowId(), sourceIncludedMetadataCols, destinationIncludedMetadataCols);
     }
 
     @Test
     public void testGetWorklistSingleSampleOneToOne() throws Exception
     {
+        // Arrange
         ContainerFilter cf = ContainerFilter.Type.CurrentAndSubfolders.create(container, user);
         ExpMaterial sample = createSamples(3).get(0);
 
@@ -816,6 +874,7 @@ public final class PlateManagerTest
         );
         Plate plateDestination = createPlate(PLATE_TYPE_96_WELLS, "myPlate2", null, rows2);
 
+        // Act
         List<FieldKey> sourceIncludedMetadataCols = PlateManager.get().getMetadataColumns(plateSource.getPlateSet(), container, user, cf);
         List<FieldKey> destinationIncludedMetadataCols = PlateManager.get().getMetadataColumns(plateDestination.getPlateSet(), container, user, cf);
         List<Object[]> plateDataRows = PlateManager.get().getWorklist(plateSource.getPlateSet().getRowId(), plateDestination.getPlateSet().getRowId(), sourceIncludedMetadataCols, destinationIncludedMetadataCols, container, user);
@@ -840,6 +899,7 @@ public final class PlateManagerTest
     @Test
     public void testGetWorklistSingleSampleOneToMany() throws Exception
     {
+        // Arrange
         ContainerFilter cf = ContainerFilter.Type.CurrentAndSubfolders.create(container, user);
         ExpMaterial sample = createSamples(3).get(0);
 
@@ -873,6 +933,7 @@ public final class PlateManagerTest
         );
         Plate plateDestination = createPlate(PLATE_TYPE_96_WELLS, "myPlate2", null, rows2);
 
+        // Act
         List<FieldKey> sourceIncludedMetadataCols = PlateManager.get().getMetadataColumns(plateSource.getPlateSet(), container, user, cf);
         List<FieldKey> destinationIncludedMetadataCols = PlateManager.get().getMetadataColumns(plateDestination.getPlateSet(), container, user, cf);
         List<Object[]> plateDataRows = PlateManager.get().getWorklist(plateSource.getPlateSet().getRowId(), plateDestination.getPlateSet().getRowId(), sourceIncludedMetadataCols, destinationIncludedMetadataCols, container, user);
