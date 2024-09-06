@@ -677,7 +677,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return (Plate) require(getPlate(container, plateRowId), "Plate id \"" + plateRowId + "\" not found.", errorPrefix);
     }
 
-    private @NotNull PlateSet requirePlateSet(Container container, int plateSetRowId, @Nullable String errorPrefix) throws ValidationException
+    public @NotNull PlateSet requirePlateSet(Container container, int plateSetRowId, @Nullable String errorPrefix) throws ValidationException
     {
         return (PlateSet) require(
             getPlateSet(container, plateSetRowId),

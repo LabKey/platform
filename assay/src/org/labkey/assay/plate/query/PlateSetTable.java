@@ -42,7 +42,6 @@ import org.labkey.assay.query.AssayDbSchema;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -231,9 +230,7 @@ public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>
         protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, @Nullable Map<Enum, Object> configParameters) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
             Integer plateSetId = (Integer) oldRow.get("rowId");
-            PlateSet plateSet = PlateManager.get().getPlateSet(container, plateSetId);
-            if (plateSet == null)
-                return Collections.emptyMap();
+            PlateSet plateSet = PlateManager.get().requirePlateSet(container, plateSetId, "Failed to update plate set.");
 
             try (DbScope.Transaction transaction = AssayDbSchema.getInstance().getScope().ensureTransaction())
             {

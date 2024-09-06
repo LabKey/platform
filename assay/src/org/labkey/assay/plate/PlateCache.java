@@ -133,7 +133,7 @@ public class PlateCache
         return plate != null ? plate.copy() : null;
     }
 
-    private static @NotNull List<Plate> getPlates(Container c, @Nullable SimpleFilter filter)
+    private static @NotNull List<Integer> getPlateIDs(Container c, @Nullable SimpleFilter filter)
     {
         SimpleFilter plateFilter = SimpleFilter.createContainerFilter(c);
         if (filter != null)
@@ -142,13 +142,17 @@ public class PlateCache
                 plateFilter.addClause(clause);
         }
 
-        List<Integer> ids = new TableSelector(
-            AssayDbSchema.getInstance().getTableInfoPlate(),
-            Collections.singleton(PlateTable.Column.RowId.name()),
-            plateFilter,
-            new Sort(PlateTable.Column.RowId.name())
+        return new TableSelector(
+                AssayDbSchema.getInstance().getTableInfoPlate(),
+                Collections.singleton(PlateTable.Column.RowId.name()),
+                plateFilter,
+                new Sort(PlateTable.Column.RowId.name())
         ).getArrayList(Integer.class);
+    }
 
+    private static @NotNull List<Plate> getPlates(Container c, @Nullable SimpleFilter filter)
+    {
+        List<Integer> ids = getPlateIDs(c, filter);
         return ids.stream().map(id -> PLATE_CACHE.get(PlateCacheKey.getCacheKey(c, id))).toList();
     }
 
@@ -217,9 +221,8 @@ public class PlateCache
 
     public static void uncache(Container c, PlateSet plateSet)
     {
-        // TODO: Feels like this could end up caching a bunch of a plates that were not cached just to uncache them.
-        // Consider introducing plate set caching and moving custom field modeling to plate sets
-        getPlatesForPlateSet(c, plateSet.getRowId()).forEach(plate -> uncache(c, plate));
+        getPlateIDs(c, new SimpleFilter(FieldKey.fromParts(PlateTable.Column.PlateSet.name()), plateSet.getRowId()))
+                .forEach(plateId -> uncache(c, plateId));
     }
 
     public static void clearCache()
