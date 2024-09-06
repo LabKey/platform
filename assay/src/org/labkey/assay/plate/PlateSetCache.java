@@ -17,10 +17,11 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.assay.query.AssayDbSchema;
 
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class PlateSetCache
 {
@@ -30,7 +31,7 @@ public class PlateSetCache
 
     private static class Loader implements CacheLoader<String, PlateSet>
     {
-        private final Map<Container, List<PlateSet>> _containerPlateSet = new HashMap<>();            // internal collection to help un-cache all plate sets for a container
+        private final Map<Container, Set<Integer>> _containerPlateSet = new HashMap<>();            // internal collection to help un-cache all plate sets for a container
 
         @Override
         public PlateSet load(@NotNull String key, @Nullable Object argument)
@@ -69,7 +70,7 @@ public class PlateSetCache
                 if (cacheKey._type != PlateSetCacheKey.Type.plateSetId)
                     PLATE_SET_CACHE.put(PlateSetCacheKey.getCacheKey(plateSet.getContainer(), plateSet.getPlateSetId()), plateSet);
 
-                _containerPlateSet.computeIfAbsent(cacheKey._container, k -> new ArrayList<>()).add(plateSet);
+                _containerPlateSet.computeIfAbsent(cacheKey._container, k -> new HashSet<>()).add(plateSet.getRowId());
             }
         }
     }
@@ -99,10 +100,25 @@ public class PlateSetCache
         // uncache all plate sets for this container
         if (_loader._containerPlateSet.containsKey(c))
         {
-            List<PlateSet> plateSets = new ArrayList<>(_loader._containerPlateSet.get(c));
-            for (PlateSet plateSet : plateSets)
-                uncache(c, plateSet);
-            _loader._containerPlateSet.remove(c);
+            Set<Integer> rowIds = new HashSet<>(_loader._containerPlateSet.get(c));
+            for (Integer rowId : rowIds)
+            {
+                uncache(c, rowId);
+            }
+        }
+    }
+
+    public static void uncache(Container c, int rowId)
+    {
+        // noop if the plate doesn't exist in the cache
+        String key = PlateSetCacheKey.getCacheKey(c, rowId);
+        if (PLATE_SET_CACHE.getKeys().contains(key))
+        {
+            PlateSet plateSet = getPlateSet(c, rowId);
+            if (plateSet != null)
+                uncache(c, getPlateSet(c, rowId));
+            else
+                throw new IllegalStateException(String.format("Expected plate set with rowId : \"%d\" to be in the cache.", rowId));
         }
     }
 
@@ -118,7 +134,7 @@ public class PlateSetCache
         PLATE_SET_CACHE.remove(PlateSetCacheKey.getCacheKey(c, plateSet.getRowId()));
 
         if (_loader._containerPlateSet.containsKey(plateSet.getContainer()))
-            _loader._containerPlateSet.get(plateSet.getContainer()).remove(plateSet);
+            _loader._containerPlateSet.get(plateSet.getContainer()).remove(plateSet.getRowId());
     }
 
     public static void clearCache()

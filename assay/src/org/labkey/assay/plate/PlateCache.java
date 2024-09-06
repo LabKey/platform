@@ -22,11 +22,12 @@ import org.labkey.assay.plate.model.PlateBean;
 import org.labkey.assay.plate.query.PlateTable;
 import org.labkey.assay.query.AssayDbSchema;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class PlateCache
 {
@@ -36,7 +37,7 @@ public class PlateCache
 
     private static class PlateLoader implements CacheLoader<String, Plate>
     {
-        private final Map<Container, List<Plate>> _containerPlateMap = new HashMap<>();            // internal collection to help un-cache all plates for a container
+        private final Map<Container, Set<Integer>> _containerPlateMap = new HashMap<>();            // internal collection to help un-cache all plates for a container
 
         @Override
         public Plate load(@NotNull String key, @Nullable Object argument)
@@ -83,7 +84,7 @@ public class PlateCache
                 if (cacheKey._type != PlateCacheKey.Type.plateId)
                     PLATE_CACHE.put(PlateCacheKey.getCacheKey(plate.getContainer(), plate.getPlateId()), plate);
 
-                _containerPlateMap.computeIfAbsent(cacheKey._container, k -> new ArrayList<>()).add(plate);
+                _containerPlateMap.computeIfAbsent(cacheKey._container, k -> new HashSet<>()).add(plate.getRowId());
             }
         }
     }
@@ -173,12 +174,25 @@ public class PlateCache
         // uncache all plates for this container
         if (_loader._containerPlateMap.containsKey(c))
         {
-            List<Plate> plates = new ArrayList<>(_loader._containerPlateMap.get(c));
-            for (Plate plate : plates)
+            Set<Integer> rowIds = new HashSet<>(_loader._containerPlateMap.get(c));
+            for (Integer rowId : rowIds)
             {
-                uncache(c, plate);
+                uncache(c, rowId);
             }
-            _loader._containerPlateMap.remove(c);
+        }
+    }
+
+    public static void uncache(Container c, int rowId)
+    {
+        // noop if the plate doesn't exist in the cache
+        String key = PlateCacheKey.getCacheKey(c, rowId);
+        if (PLATE_CACHE.getKeys().contains(key))
+        {
+            Plate plate = getPlate(c, rowId);
+            if (plate != null)
+                uncache(c, plate);
+            else
+                throw new IllegalStateException(String.format("Expected plate with rowId : \"%d\" to be in the cache.", rowId));
         }
     }
 
@@ -198,7 +212,7 @@ public class PlateCache
         PLATE_CACHE.remove(PlateCacheKey.getCacheKey(c, Lsid.parse(plate.getLSID())));
 
         if (_loader._containerPlateMap.containsKey(c))
-            _loader._containerPlateMap.get(c).remove(plate);
+            _loader._containerPlateMap.get(c).remove(plate.getRowId());
     }
 
     public static void uncache(Container c, PlateSet plateSet)

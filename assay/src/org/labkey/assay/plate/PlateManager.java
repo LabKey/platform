@@ -1860,21 +1860,14 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 LOG.warn(String.format("clearCache: failed to resolve container for plate with rowId %d with containerId %s.", rowId, containerId));
                 continue;
             }
-
-            Plate plate = PlateCache.getPlate(c, rowId);
-            if (plate != null)
-                PlateCache.uncache(c, plate);
+            PlateCache.uncache(c, rowId);
         }
     }
 
     private void clearPlateSetCache(Container container, Collection<Integer> plateSetRowIds)
     {
         for (Integer plateSetId : plateSetRowIds)
-        {
-            PlateSet plateSet = PlateSetCache.getPlateSet(container, plateSetId);
-            if (plateSet != null)
-                PlateSetCache.uncache(container, plateSet);
-        }
+            PlateSetCache.uncache(container, plateSetId);
     }
 
     @Override
