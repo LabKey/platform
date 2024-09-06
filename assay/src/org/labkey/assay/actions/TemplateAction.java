@@ -68,7 +68,7 @@ public class TemplateAction extends BaseAssayAction<ProtocolIdForm>
         ctx.setBaseFilter(filter);
 
         ExcelWriter xl = new ExcelWriter(()->dr.getResults(ctx), dr.getDisplayColumns(), ExcelWriter.ExcelDocumentType.xlsx);
-        xl.setFilenamePrefix(protocol.getName());
+        xl.setFilenamePrefix(protocol.getName() + "_Template"); // Issue 48028
         xl.renderWorkbook(getViewContext().getResponse());
         return null;
     }
