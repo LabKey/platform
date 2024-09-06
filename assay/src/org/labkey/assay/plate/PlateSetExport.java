@@ -137,7 +137,8 @@ public class PlateSetExport
         Map<String, List<Object[]>> sampleIdToDestinationRow = getSampleIdToRows(wellTable, destinationIncludedMetadataCols, destinationPlateSetId, PlateSetExport.DESTINATION);
         Map<String, List<Object[]>> sampleIdToSourceRow = getSampleIdToRows(wellTable, sourceIncludedMetadataCols, sourcePlateSetId, PlateSetExport.SOURCE);
 
-        for (Map.Entry<String, List<Object[]>> entry : sampleIdToSourceRow.entrySet()) {
+        for (Map.Entry<String, List<Object[]>> entry : sampleIdToSourceRow.entrySet())
+        {
             String sampleId = entry.getKey();
             List<Object[]> sourceRows = entry.getValue();
 
@@ -158,7 +159,7 @@ public class PlateSetExport
             // Catch many-to-many operations
             else if (sourceRows.size() != destinationRows.size())
             {
-                Set<String> samplesSet = sourceRows.stream().map(row -> (String) row[0]).collect(Collectors.toSet());
+                Set<String> samplesSet = sourceRows.stream().map(row -> (String) row[4]).collect(Collectors.toSet());
                 throw new UnsupportedOperationException("Many-to-many single-sample operation detected. See sample(s): " + String.join(", ", samplesSet));
             }
             // Support 1:1 scenarios
