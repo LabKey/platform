@@ -1586,10 +1586,10 @@ public class PlateController extends SpringActionController
         public void validateForm(PlateExportForm form, Errors errors)
         {
             if (form.getPlateIds() == null)
-                errors.reject(ERROR_REQUIRED, "\"plateIDs\" is required");
+                errors.reject(ERROR_REQUIRED, "\"plateIds\" is required");
 
             if (form.getPlateIds().size() >= PlateSet.MAX_PLATES)
-                errors.reject(ERROR_GENERIC, "Too many \"plateIDs\", maximum of " + PlateSet.MAX_PLATES + " can be exported at a time");
+                errors.reject(ERROR_GENERIC, "Too many \"plateIds\", maximum of " + PlateSet.MAX_PLATES + " can be exported at a time");
 
             if (form.getExportType() == null)
                 errors.reject(ERROR_REQUIRED, "\"exportType\" is required");
