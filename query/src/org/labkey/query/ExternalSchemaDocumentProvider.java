@@ -49,7 +49,7 @@ public class ExternalSchemaDocumentProvider implements SearchService.DocumentPro
     private static final Logger LOG = LogManager.getLogger(ExternalSchemaDocumentProvider.class);
     private static final SearchService.DocumentProvider _instance = new ExternalSchemaDocumentProvider();
 
-    public static final SearchService.SearchCategory externalTableCategory = new SearchService.SearchCategory("externalTable", "External Table");
+    public static final SearchService.SearchCategory externalTableCategory = new SearchService.SearchCategory("externalTable", "External Schema Tables", false);
 
     private ExternalSchemaDocumentProvider()
     {
