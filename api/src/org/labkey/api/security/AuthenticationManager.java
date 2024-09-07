@@ -893,9 +893,11 @@ public class AuthenticationManager
         }
     }
 
+    // Used to throttle audit events and API key LastUsed updates
+    public static long AUTH_LOGGING_THROTTLE_TTL = TimeUnit.MINUTES.toMillis(10);
 
-    /** avoid spamming the audit log **/
-    private static final Cache<String, String> AUTH_MESSAGES = CacheManager.getCache(1000, TimeUnit.MINUTES.toMillis(10), "Authentication messages");
+    /** avoid spamming the audit log and APIKeys.LastUsed **/
+    private static final Cache<String, String> AUTH_MESSAGES = CacheManager.getCache(1000, AUTH_LOGGING_THROTTLE_TTL, "Authentication messages");
 
     public static void addAuditEvent(@NotNull User user, HttpServletRequest request, String msg)
     {
@@ -910,7 +912,9 @@ public class AuthenticationManager
             AuditLogService.get().addEvent(user, event);
         }
         else
+        {
             UserManager.addAuditEvent(user, ContainerManager.getRoot(), user, msg);
+        }
     }
 
 
