@@ -1,10 +1,10 @@
-import React from 'react'
-import ReactDOM from 'react-dom'
+import React from 'react';
+import { createRoot } from 'react-dom/client';
 
-import { App } from './AssayTypeSelect'
+import { App } from './AssayTypeSelect';
 
 const render = () => {
-    ReactDOM.render(<App/>, document.getElementById('app'))
+    createRoot(document.getElementById('app')).render(<App />);
 };
 
 render();
