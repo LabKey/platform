@@ -210,6 +210,7 @@ import org.labkey.core.admin.AdminConsoleServiceImpl;
 import org.labkey.core.admin.AdminController;
 import org.labkey.core.admin.CopyFileRootPipelineJob;
 import org.labkey.core.admin.CustomizeMenuForm;
+import org.labkey.core.admin.DisplayFormatValidationProviderFactory;
 import org.labkey.core.admin.FilesSiteSettingsAction;
 import org.labkey.core.admin.MenuViewFactory;
 import org.labkey.core.admin.importer.FolderTypeImporterFactory;
@@ -274,7 +275,7 @@ import org.labkey.core.security.ApiKeyViewProvider;
 import org.labkey.core.security.SecurityApiActions;
 import org.labkey.core.security.SecurityController;
 import org.labkey.core.security.SecurityPointcutServiceImpl;
-import org.labkey.core.security.validators.PermissionsValidator;
+import org.labkey.core.security.validators.PermissionsValidatorFactory;
 import org.labkey.core.statistics.AnalyticsProviderRegistryImpl;
 import org.labkey.core.statistics.StatsServiceImpl;
 import org.labkey.core.statistics.SummaryStatisticRegistryImpl;
@@ -303,8 +304,27 @@ import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.impl.StdSchedulerFactory;
 import org.radeox.test.BaseRenderEngineTest;
-import org.radeox.test.macro.list.*;
-import org.radeox.test.filter.*;
+import org.radeox.test.filter.BasicRegexTest;
+import org.radeox.test.filter.BoldFilterTest;
+import org.radeox.test.filter.EscapeFilterTest;
+import org.radeox.test.filter.FilterPipeTest;
+import org.radeox.test.filter.HeadingFilterTest;
+import org.radeox.test.filter.HtmlRemoveFilterTest;
+import org.radeox.test.filter.ItalicFilterTest;
+import org.radeox.test.filter.KeyFilterTest;
+import org.radeox.test.filter.LineFilterTest;
+import org.radeox.test.filter.LinkTestFilterTest;
+import org.radeox.test.filter.ListFilterTest;
+import org.radeox.test.filter.NewlineFilterTest;
+import org.radeox.test.filter.ParamFilterTest;
+import org.radeox.test.filter.SmileyFilterTest;
+import org.radeox.test.filter.StrikeThroughFilterTest;
+import org.radeox.test.filter.TypographyFilterTest;
+import org.radeox.test.filter.UrlFilterTest;
+import org.radeox.test.filter.WikiLinkFilterTest;
+import org.radeox.test.macro.list.AtoZListFormatterTest;
+import org.radeox.test.macro.list.ExampleListFormatterTest;
+import org.radeox.test.macro.list.SimpleListTest;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -487,7 +507,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         SiteValidationService svc = SiteValidationService.get();
         if (null != svc)
         {
-            svc.registerProvider("core", new PermissionsValidator());
+            svc.registerProviderFactory(getName(), new PermissionsValidatorFactory());
+            svc.registerProviderFactory(getName(), new DisplayFormatValidationProviderFactory());
         }
 
         registerHealthChecks();
@@ -1228,17 +1249,17 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     private void checkForMissingDbViews()
     {
         ModuleLoader.getInstance().getModules().stream()
-                .map(FileSqlScriptProvider::new)
-                .flatMap(p -> p.getSchemas().stream()
-                        .filter(schema-> SchemaUpdateType.Before.getScript(p, schema) != null || SchemaUpdateType.After.getScript(p, schema) != null)
-                )
-                .filter(schema -> TableXmlUtils.compareXmlToMetaData(schema, false, false, true).hasViewProblem())
-                .findAny()
-                .ifPresent(schema ->
-                {
-                    LOG.warn("At least one database view was not as expected in the {} schema. Attempting to recreate views automatically", schema.getName());
-                    ModuleLoader.getInstance().recreateViews();
-                });
+            .map(FileSqlScriptProvider::new)
+            .flatMap(p -> p.getSchemas().stream()
+                    .filter(schema-> SchemaUpdateType.Before.getScript(p, schema) != null || SchemaUpdateType.After.getScript(p, schema) != null)
+            )
+            .filter(schema -> TableXmlUtils.compareXmlToMetaData(schema, false, false, true).hasViewProblem())
+            .findAny()
+            .ifPresent(schema ->
+            {
+                LOG.warn("At least one database view was not as expected in the {} schema. Attempting to recreate views automatically", schema.getName());
+                ModuleLoader.getInstance().recreateViews();
+            });
     }
 
     @Override

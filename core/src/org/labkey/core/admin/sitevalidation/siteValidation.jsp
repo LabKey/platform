@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.api.admin.sitevalidation.SiteValidationService" %>
 <%@ page import="org.labkey.api.admin.sitevalidation.SiteValidatorDescriptor" %>
 <%@ page import="org.labkey.core.admin.AdminController.SiteValidationForm" %>
+<%@ page import="java.lang.String" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -50,7 +51,7 @@
 %>
             <strong>Site Level Validation Results</strong>
 <%
-            if (validationService.getSiteProviders().isEmpty())
+            if (validationService.getSiteFactories().isEmpty())
             {
                 info(form, "No site-wide validators are registered");
 %>
@@ -60,7 +61,7 @@
             else
             {
                 info(form, "Running selected site-wide validators");
-                Map<String,Map<SiteValidatorDescriptor, SiteValidationResultList>> siteResults = validationService.runSiteScopeValidators(form.getProviders(), getUser());
+                Map<String, Map<SiteValidatorDescriptor, SiteValidationResultList>> siteResults = validationService.runSiteScopeValidators(form.getProviders(), getUser());
                 if (siteResults.isEmpty())
                 {
                     info(form, "No site-wide validators were selected");

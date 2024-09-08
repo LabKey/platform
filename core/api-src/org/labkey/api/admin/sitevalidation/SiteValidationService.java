@@ -41,10 +41,10 @@ public interface SiteValidationService
         ServiceRegistry.get().registerService(SiteValidationService.class, impl);
     }
 
-    void registerProvider(String module, SiteValidationProvider provider);
+    void registerProviderFactory(String module, SiteValidationProviderFactory factory);
 
-    Map<String, Set<SiteValidationProvider>> getSiteProviders();
-    Map<String, Set<SiteValidationProvider>> getContainerProviders();
+    Map<String, Set<SiteValidationProviderFactory>> getSiteFactories();
+    Map<String, Set<SiteValidationProviderFactory>> getContainerFactories();
 
     /**
      * Returns a map of module name -> map of ValidatorDescriptor -> result list for all validators registered by that module

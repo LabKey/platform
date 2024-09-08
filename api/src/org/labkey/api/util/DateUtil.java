@@ -53,6 +53,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
@@ -81,6 +82,32 @@ public class DateUtil
     private static final String ISO_LONG_TIME_FORMAT_STRING = "HH:mm:ss.SSS";
     private static final String[] SIMPLE_TIME_FORMATS_WITH_AMPM = {"hh:mm:ss.SSS a", "hh:mm:ss a", "hh:mm a"};
     private static final String[] SIMPLE_TIME_FORMATS_NO_AMPM = {"HH:mm:ss.SSS", "HH:mm:ss", "HH:mm"};
+
+    public static final Set<String> STANDARD_DATE_DISPLAY_FORMATS = PageFlowUtil.set(
+        "yyyy-MM-dd",
+        "yyyy-MMM-dd",
+        "dd-MMM-yyyy",
+        "dd-MMM-yy",
+        "ddMMMyyyy",
+        "ddMMMyy"
+    );
+
+    public static final Set<String> STANDARD_TIME_DISPLAY_FORMATS = PageFlowUtil.set(
+        "HH:mm:ss",
+        "HH:mm",
+        "HH:mm:ss.SSS",
+        "hh:mm a"
+    );
+
+    public static boolean isStandardDateDisplayFormat(String dateFormat)
+    {
+        return STANDARD_DATE_DISPLAY_FORMATS.contains(dateFormat);
+    }
+
+    public static boolean isStandardTimeDisplayFormat(String timeFormat)
+    {
+        return STANDARD_TIME_DISPLAY_FORMATS.contains(timeFormat);
+    }
 
     /**
      * GregorianCalendar is expensive because it calls computeTime() in setTimeInMillis()
