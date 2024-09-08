@@ -1728,12 +1728,12 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     }
 
     @Override
-    public void prepare(DbScope scope)
+    public String prepare(DbScope scope)
     {
         _groupConcatInstalled = GroupConcatInstallationManager.get().isInstalled(scope);
         _edition = getEdition(scope);
 
-        super.prepare(scope);
+        return super.prepare(scope);
     }
 
     @Override

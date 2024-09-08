@@ -3079,13 +3079,6 @@ public class ContainerManager
             }
             return list;
         }
-
-        @Override
-        public Container[] handleArray(ResultSet rs) throws SQLException
-        {
-            ArrayList<Container> list = handleArrayList(rs);
-            return list.toArray(new Container[0]);
-        }
     }
 
     public static Container createFakeContainer(@Nullable String name, @Nullable Container parent)

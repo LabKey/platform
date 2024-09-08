@@ -27,12 +27,6 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-
-/**
- * User: mbellew
- * Date: Apr 1, 2004
- * Time: 10:27:13 AM
- */
 public interface ObjectFactory<K>
 {
     K fromMap(Map<String, ?> m);
@@ -41,17 +35,21 @@ public interface ObjectFactory<K>
 
     Map<String, Object> toMap(K bean, @Nullable Map<String, Object> m);
 
+    /**
+     * Transforms the current row. Callers are expected to close() the ResultSet.
+     */
     K handle(ResultSet rs) throws SQLException;
 
+    /**
+     * Method consumes the ResultSet, but callers are expected to close() it.
+     */
     ArrayList<K> handleArrayList(ResultSet rs) throws SQLException;
-
-    K[] handleArray(ResultSet rs) throws SQLException;
 
 
     class Registry
     {
         private static final Logger _log = LogManager.getLogger(Registry.class);
-        private static final Map<Class, ObjectFactory> _registry = new ConcurrentHashMap<>(64);
+        private static final Map<Class<?>, ObjectFactory<?>> _registry = new ConcurrentHashMap<>(64);
 
         public static <K> void register(Class<K> clss, ObjectFactory<K> f)
         {
@@ -66,13 +64,13 @@ public interface ObjectFactory<K>
             {
                 try
                 {
-                    // Make sure the class is loaded in case it statically registers a custom factory 
+                    // Make sure the class is loaded in case it statically registers a custom factory
                     Class.forName(clss.getName());
                     f = (ObjectFactory<K>) _registry.get(clss);
 
                     if (f == null)
                     {
-                        f = new BeanObjectFactory<>(clss);
+                        f = clss.isRecord() ? new RecordFactory<>(clss) : new BeanObjectFactory<>(clss);
                         _registry.put(clss, f);
                     }
                 }

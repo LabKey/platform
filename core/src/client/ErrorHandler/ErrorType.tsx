@@ -263,6 +263,8 @@ type ErrorTypeInfo = {
     subHeading: (errorMessage?: string) => ReactNode;
 };
 
+// FIXME: we should not be using a constant with hard coded functions to render contents. We should be using actual
+//  components so that we can use hooks like useServerContext instead of getServerContext.
 const ERROR_TYPE_INFO: { [key in ErrorType]: ErrorTypeInfo } = {
     configuration: {
         details: CONFIGURATION_DETAILS,

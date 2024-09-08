@@ -534,11 +534,20 @@ public class DbScope
         {
             DatabaseMetaData dbmd = conn.getMetaData();
             _databaseProductVersion = dbmd.getDatabaseProductVersion();
+            _databaseProductName = dbmd.getDatabaseProductName();
+            _driverName = dbmd.getDriverName();
+            _driverVersion = dbmd.getDriverVersion();
+            String additionalLogging = null;
 
             try
             {
                 _dialect = SqlDialectManager.getFromMetaData(dbmd, true, dataSource.isPrimary());
                 MemTracker.getInstance().remove(_dialect);
+
+                if (_dialect != null)
+                {
+                    additionalLogging = _dialect.prepare(this);
+                }
             }
             finally
             {
@@ -546,21 +555,21 @@ public class DbScope
                 _databaseName = (null != _dialect ? _dialect.getDatabaseName(getDataSourceProperties()) : null);
 
                 // Always log the attempt, even if DatabaseNotSupportedException, etc. occurs, to help with diagnosis
-                LOG.info("Initializing DbScope with the following configuration:" +
-                        "\n    DataSource Name:          " + getDbScopeLoader().getDsName() +
-                        "\n    Server URL:               " + dbmd.getURL() +
-                        "\n    Database Name:            " + _databaseName +
-                        "\n    Database Product Name:    " + dbmd.getDatabaseProductName() +
-                        "\n    Database Product Version: " + (null != _dialect ? _dialect.getProductVersion(_databaseProductVersion) : _databaseProductVersion) +
-                        "\n    JDBC Driver Name:         " + dbmd.getDriverName() +
-                        "\n    JDBC Driver Version:      " + dbmd.getDriverVersion() +
-    (null != _dialect ? "\n    SQL Dialect:              " + _dialect.getClass().getSimpleName() : "") +
-    (null != maxTotal ? "\n    Connection Pool Size:     " + maxTotal : ""));
+                LOG.info(
+                    "Initializing DbScope with the following configuration:" +
+                    "\n    DataSource Name:          " + getDbScopeLoader().getDsName() +
+                    "\n    Server URL:               " + dbmd.getURL() +
+                    "\n    Database Name:            " + _databaseName +
+                    "\n    Database Product Name:    " + _databaseProductName +
+                    "\n    Database Product Version: " + (null != _dialect ? _dialect.getProductVersion(_databaseProductVersion) : _databaseProductVersion) +
+                    "\n    JDBC Driver Name:         " + _driverName  +
+                    "\n    JDBC Driver Version:      " + _driverVersion +
+(null != _dialect ? "\n    SQL Dialect:              " + _dialect.getClass().getSimpleName() : "") +
+(null != maxTotal ? "\n    Connection Pool Size:     " + maxTotal : "") +
+(null != additionalLogging ? additionalLogging : "")
+                );
             }
 
-            _databaseProductName = dbmd.getDatabaseProductName();
-            _driverName = dbmd.getDriverName();
-            _driverVersion = dbmd.getDriverVersion();
             _driverLocation = determineDriverLocation(dataSource.getDriverClass());
             _schemaCache = new DbSchemaCache(this);
             _nonProvisionedTableCache = new SchemaTableInfoCache(this, false);
@@ -1169,7 +1178,7 @@ public class DbScope
         }
     }
 
-    static Class classDelegatingConnection = null;
+    static Class<?> classDelegatingConnection = null;
     static Method methodGetInnermostDelegate = null;
     static boolean isDelegating = false;
     static boolean isDelegationInitialized;

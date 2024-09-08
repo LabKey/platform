@@ -452,7 +452,7 @@ public class Table
 
     private static final Map<Class<?>, Getter> _getterMap = new HashMap<>(20);
 
-    enum Getter
+    public enum Getter
     {
         STRING(String.class) {
             @Override

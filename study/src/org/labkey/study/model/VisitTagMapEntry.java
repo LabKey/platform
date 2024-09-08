@@ -96,12 +96,6 @@ public class VisitTagMapEntry
         }
 
         @Override
-        public VisitTagMapEntry[] handleArray(ResultSet rs)
-        {
-            throw new java.lang.UnsupportedOperationException();
-        }
-
-        @Override
         public VisitTagMapEntry handle(ResultSet rs)
         {
             throw new java.lang.UnsupportedOperationException();

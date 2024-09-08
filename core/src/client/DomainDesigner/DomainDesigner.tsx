@@ -172,7 +172,7 @@ class DomainDesigner extends React.PureComponent<any, Partial<IAppState>> {
         const question = <p> There are issues with the following fields that you may wish to resolve: </p>;
         const warnings = errors.map(error => {
             return <li> {error.message} </li>;
-        });
+        }).toArray();
 
         // TODO this doc link is specimen specific, we should find a way to pass this in via the domain kind or something like that
         const rollupURI = getServerContext().helpLinkPrefix + 'specimenCustomProperties';

@@ -17,12 +17,6 @@ package org.labkey.api.collections;
 
 import java.util.List;
 
-/**
- * User: adam
- * Date: Apr 30, 2009
- * Time: 11:48:46 PM
- */
-
 public class RowMap<V> extends ArrayListMap<String, V> implements CaseInsensitiveCollection
 {
     protected RowMap()
