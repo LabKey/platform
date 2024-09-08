@@ -9,6 +9,7 @@ import org.labkey.api.admin.sitevalidation.SiteValidationResultList;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.DateUtil;
 
 import java.util.Collection;
@@ -41,19 +42,21 @@ public class DisplayFormatValidationProviderFactory implements SiteValidationPro
                 try (Stream<Container> stream = PropertyManager.getNormalStore().streamMatchingContainers(SITE_CONFIG_USER, LOOK_AND_FEEL_SET_NAME))
                 {
                     stream.forEach(c -> {
-                        String dateFormat = DateUtil.getDateFormatString(c);
-                        if (!DateUtil.isStandardDateDisplayFormat(dateFormat))
+                        // Must get the stored values from LookAndFeelProperties; FolderSettingsCache holds inherited values
+                        LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
+                        String dateFormat = laf.getDefaultDateFormatStored();
+                        if (dateFormat != null && !DateUtil.isStandardDateDisplayFormat(dateFormat))
                             _map.put(c, dateFormat);
-                        String dateTimeFormat = DateUtil.getDateTimeFormatString(c);
-                        if (!DateUtil.isStandardDateTimeDisplayFormat(dateTimeFormat))
+                        String dateTimeFormat = laf.getDefaultDateTimeFormatStored();
+                        if (dateTimeFormat != null && !DateUtil.isStandardDateTimeDisplayFormat(dateTimeFormat))
                             _map.put(c, dateTimeFormat);
-                        String timeFormat = DateUtil.getTimeFormatString(c);
-                        if (!DateUtil.isStandardTimeDisplayFormat(timeFormat))
+                        String timeFormat = laf.getDefaultTimeFormatStored();
+                        if (timeFormat != null && !DateUtil.isStandardTimeDisplayFormat(timeFormat))
                             _map.put(c, timeFormat);
                     });
                 }
 
-                // TODO: Check folder settings
+                // TODO: Add links and context to warnings
                 // TODO: Check query XML
                 // TODO: Check property descriptors
             }

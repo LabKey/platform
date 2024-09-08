@@ -106,7 +106,7 @@ public class DateUtil
 
     public static boolean isStandardDateTimeDisplayFormat(String dateTimeFormat)
     {
-        // Tolerate any whitespace between the parts
+        // Tolerate any amount of whitespace between the parts
         String[] parts = dateTimeFormat.split("\\s+");
 
         // If one part, must be standard date format

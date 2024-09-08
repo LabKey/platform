@@ -81,7 +81,7 @@ Clicking the "Validate" button will run the selected validators in the designate
             out.println(
                 DOM.createHtmlFragment(
                     input().name("includeSubfolders").type("radio").value("true").checked(true),
-                    "All projects and folders in this site",
+                    "The root plus all projects and folders in this site",
                     DOM.BR(),
                     input().name("includeSubfolders").type("radio").value("false").checked(false),
                     "Just the projects",

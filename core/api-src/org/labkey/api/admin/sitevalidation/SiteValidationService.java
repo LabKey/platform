@@ -57,14 +57,10 @@ public interface SiteValidationService
     /**
      * Returns a map of module names -> map ValidatorProviders -> map of projects names ->
      * map of container names within the project -> result list of all validators appropriate for each container
-     * If run from the site level, maps of project names will be all projects on the site.
+     * If run from the site level, maps of project names will be root plus all projects on the site.
      * If run from folder level, there will be one entry in the project name maps, the project for that folder
-     *
      * If no validators are appropriate for any container in a project, that project will not be in the project map.
      * If no validation errors are found for a container, that container's SiteValidationResultList will be empty.
-     *
-     * TODO: Not validating root folder, should we? Or would anything for it be covered by site-wide validators?
-     *
      */
     @NotNull
     Map<String, Map<SiteValidatorDescriptor, Map<String, Map<String, SiteValidationResultList>>>> runContainerScopeValidators(Container topLevel, boolean includeSubFolders, List<String> providers, User u);

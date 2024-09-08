@@ -229,21 +229,24 @@
                     {
                         for (Map.Entry<String, Map<String, SiteValidationResultList>> projectResult : validatorResults.getValue().entrySet())
                         {
+                            String projectKey = projectResult.getKey();
 %>
-                            <li><%=h("Project: " + projectResult.getKey())%>
+                            <li><%=h(!projectKey.isEmpty() ? "Project: " + projectKey : "Root: /")%>
                                 <ul>
 <%
                             for (Map.Entry<String, SiteValidationResultList> subtreeResult : projectResult.getValue().entrySet())
                             {
+                                String subtreeKey = subtreeResult.getKey();
+                                SiteValidationResultList resultList = subtreeResult.getValue();
 %>
-                                    <li><%=h(!projectResult.getKey().equals(subtreeResult.getKey()) ? "Folder: " + subtreeResult.getKey() : "")%>
+                                    <li><%=h(!projectKey.equals(subtreeKey) ? "Folder: " + subtreeKey : "")%>
                                         <ul>
 <%
-                                if (subtreeResult.getValue() != null)
+                                if (resultList != null)
                                 {
-                                    containerInfos = subtreeResult.getValue().getResults(Level.INFO);
-                                    containerErrors = subtreeResult.getValue().getResults(Level.ERROR);
-                                    containerWarnings = subtreeResult.getValue().getResults(Level.WARN);
+                                    containerInfos = resultList.getResults(Level.INFO);
+                                    containerErrors = resultList.getResults(Level.ERROR);
+                                    containerWarnings = resultList.getResults(Level.WARN);
                                     for (SiteValidationResult result : containerInfos)
                                     {
 %>

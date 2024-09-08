@@ -122,6 +122,8 @@ public class SiteValidationServiceImpl implements SiteValidationService
             if (topLevel.isRoot())
             {
                 parentList = ContainerManager.getProjects();
+                if (includeSubFolders)
+                    parentList.add(0, topLevel); // Validate the root as well
             }
             else
             {
@@ -146,7 +148,7 @@ public class SiteValidationServiceImpl implements SiteValidationService
 
                     for (Container parent : parentList)
                     {
-                        List<Container> allChildren = includeSubFolders ? ContainerManager.getAllChildren(parent, u) : List.of(parent);
+                        List<Container> allChildren = includeSubFolders && !parent.isRoot() ? ContainerManager.getAllChildren(parent, u) : List.of(parent);
                         for (Container c : allChildren)
                         {
                             validatorsToRun.forEach(validator -> {
