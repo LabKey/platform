@@ -236,7 +236,7 @@
                             for (Map.Entry<String, SiteValidationResultList> subtreeResult : projectResult.getValue().entrySet())
                             {
 %>
-                                    <li><%=h("Folder: " + subtreeResult.getKey())%>
+                                    <li><%=h(!projectResult.getKey().equals(subtreeResult.getKey()) ? "Folder: " + subtreeResult.getKey() : "")%>
                                         <ul>
 <%
                                 if (subtreeResult.getValue() != null)

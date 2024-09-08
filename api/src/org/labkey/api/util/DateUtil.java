@@ -104,6 +104,22 @@ public class DateUtil
         return STANDARD_DATE_DISPLAY_FORMATS.contains(dateFormat);
     }
 
+    public static boolean isStandardDateTimeDisplayFormat(String dateTimeFormat)
+    {
+        // Tolerate any whitespace between the parts
+        String[] parts = dateTimeFormat.split("\\s+");
+
+        // If one part, must be standard date format
+        // If two parts, must be standard date format followed by standard time format
+        // Otherwise, it's non-standard
+        return switch (parts.length)
+        {
+            case 1 -> isStandardDateDisplayFormat(parts[0]);
+            case 2 -> isStandardDateDisplayFormat(parts[0]) && isStandardTimeDisplayFormat(parts[1]);
+            default -> false;
+        };
+    }
+
     public static boolean isStandardTimeDisplayFormat(String timeFormat)
     {
         return STANDARD_TIME_DISPLAY_FORMATS.contains(timeFormat);
