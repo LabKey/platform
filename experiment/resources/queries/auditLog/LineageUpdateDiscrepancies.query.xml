@@ -10,13 +10,13 @@
                 <isKeyField>true</isKeyField>
                 <isHidden>true</isHidden>
             </column>
-            <column columnName="oldRecordMap">
+            <column columnName="lineageEventOldData">
                 <description>Old record values for the last audited lineage update</description>
                 <displayColumnFactory>
                     <className>org.labkey.api.audit.data.DataMapColumn$Factory</className>
                 </displayColumnFactory>
             </column>
-            <column columnName="newRecordMap">
+            <column columnName="lineageEventNewData">
                 <description>New record values for the last audited lineage update</description>
                 <displayColumnFactory>
                     <className>org.labkey.api.audit.data.DataMapColumn$Factory</className>
@@ -48,6 +48,21 @@
             </column>
             <column columnName="latestLineageEventDate">
                 <description>Created date of the last event where lineage was changed for the sample.</description>
+            </column>
+            <column columnName="problemTransaction">
+                <description>Transaction ID for the suspect transaction this sample was involved in.</description>
+            </column>
+            <column columnName="problemOldRecordMap">
+                <description>Old record values for the event associated with problemTransaction</description>
+                <displayColumnFactory>
+                    <className>org.labkey.api.audit.data.DataMapColumn$Factory</className>
+                </displayColumnFactory>
+            </column>
+            <column columnName="problemNewRecordMap">
+                <description>New record values for the event associated with problemTransaction</description>
+                <displayColumnFactory>
+                    <className>org.labkey.api.audit.data.DataMapColumn$Factory</className>
+                </displayColumnFactory>
             </column>
         </columns>
     </table>
