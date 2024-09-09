@@ -15,6 +15,7 @@
  */
 package org.labkey.api.audit;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.audit.data.DataMapColumn;
 import org.labkey.api.audit.data.DataMapDiffColumn;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
@@ -99,7 +100,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
         this(null);
     }
 
-    public AbstractAuditTypeProvider(AbstractAuditDomainKind domainKind)
+    public AbstractAuditTypeProvider(@NotNull AbstractAuditDomainKind domainKind)
     {
         // TODO : consolidate domain kind initialization to either this constructor or to override
         // getDomainKind.
@@ -110,7 +111,9 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
 
     protected AbstractAuditDomainKind getDomainKind()
     {
-        assert null != _domainKind;
+        if (_domainKind == null)
+            throw new IllegalStateException(String.format("The audit type : \"%s\" has a null domain kind", getLabel()));
+
         return _domainKind;
     }
 
