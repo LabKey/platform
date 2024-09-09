@@ -47,7 +47,7 @@ public class MicrosoftSqlServer2016Dialect extends MicrosoftSqlServer2014Dialect
     private volatile DateTimeFormatter _timestampFormatter = null;
 
     @Override
-    public void prepare(DbScope scope)
+    public String prepare(DbScope scope)
     {
         super.prepare(scope);
 
@@ -67,7 +67,7 @@ public class MicrosoftSqlServer2016Dialect extends MicrosoftSqlServer2014Dialect
 
         _timestampFormatter = DateTimeFormatter.ofPattern("yyyy-" + mdFormat + " HH:mm:ss.SSS");
 
-        LOG.info("\n    Language:                 {}\n    DateFormat:               {}", _language, _dateFormat);
+        return "\n    Language:                 " + _language + "\n    DateFormat:               " + _dateFormat;
     }
 
     private record Settings(String language, String dateFormat) {}

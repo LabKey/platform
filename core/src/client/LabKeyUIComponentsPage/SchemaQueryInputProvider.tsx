@@ -1,4 +1,4 @@
-import React, { ChangeEvent } from 'react';
+import React, { ChangeEvent, PropsWithChildren } from 'react';
 import { Alert, QueryConfig, SchemaQuery } from '@labkey/components';
 
 const Context = React.createContext<SchemaQueryInputContext>(undefined);
@@ -15,7 +15,7 @@ interface State {
 
 export type SchemaQueryInputContext = State;
 
-export const SchemaQueryInputProvider = (Component: React.ComponentType) => {
+export const SchemaQueryInputProvider = (Component: React.ComponentType<any>) => {
     return class SchemaQueryInputProviderImpl extends React.Component<Props, State> {
         readonly state: State = {
             queryName: undefined,

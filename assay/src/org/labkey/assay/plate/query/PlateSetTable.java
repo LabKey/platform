@@ -31,11 +31,13 @@ import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.assay.plate.PlateManager;
+import org.labkey.assay.plate.PlateSetCache;
 import org.labkey.assay.query.AssayDbSchema;
 
 import java.sql.SQLException;
@@ -218,8 +220,24 @@ public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>
 
                 Map<String, Object> returnMap = super.deleteRow(user, container, oldRowMap);
 
+                transaction.addCommitTask(() -> PlateSetCache.uncache(container, plateSet), DbScope.CommitTaskOption.POSTCOMMIT);
                 transaction.commit();
                 return returnMap;
+            }
+        }
+
+        @Override
+        protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, @Nullable Map<Enum, Object> configParameters) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+        {
+            Integer plateSetId = (Integer) oldRow.get("rowId");
+            PlateSet plateSet = PlateManager.get().requirePlateSet(container, plateSetId, "Failed to update plate set.");
+
+            try (DbScope.Transaction transaction = AssayDbSchema.getInstance().getScope().ensureTransaction())
+            {
+                Map<String, Object> newRow = super.updateRow(user, container, row, oldRow, configParameters);
+                transaction.addCommitTask(() -> PlateSetCache.uncache(container, plateSet), DbScope.CommitTaskOption.POSTCOMMIT);
+                transaction.commit();
+                return newRow;
             }
         }
     }
