@@ -696,7 +696,7 @@ public class ExperimentModule extends SpringModule
                         "                                 (SELECT DISTINCT transactionId\n" +
                         "                                  FROM " + table.getRealTable().getFromSQL("").getSQL() +"\n" +
                         "                                  WHERE islineageupdate = " + schema.getSqlDialect().getBooleanTRUE() + "\n" +
-                        "                                    AND comment = 'Sample was updated.' and created < '2024-10-01'\n" + // audit events before Issue 51210 was fixed
+                        "                                    AND comment = 'Sample was updated.'\n" +
                         "                                 ) a1\n" +
                         "                                     JOIN\n" +
                         "                                     -- but have associated entries that are not lineage updates\n" +

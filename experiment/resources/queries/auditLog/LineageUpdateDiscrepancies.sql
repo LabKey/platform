@@ -5,8 +5,7 @@ WITH MixedTransactions AS
                  (
                      SELECT DISTINCT transactionId
                      FROM auditlog.SampleTimelineEvent
-                     -- created before the Issue 51210 fix was introduced
-                     WHERE islineageupdate = true AND comment = 'Sample was updated.' and created < '2024-10-01'
+                     WHERE islineageupdate = true AND comment = 'Sample was updated.'
                  ) a1
                      JOIN
                  -- but have associated entries that are not lineage updates
