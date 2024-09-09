@@ -545,7 +545,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
                     break;
                 }
             }
-            if (null == _titleColumn && getColumns().size() > 0)
+            if (null == _titleColumn && !getColumns().isEmpty())
                 _titleColumn = getColumns().get(0).getName();
         }
 
@@ -1585,17 +1585,24 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         }
     }
 
-    private static void addAndLogError(Collection<QueryException> errors, String message, Exception e)
+    private static void addAndLogError(Collection<QueryException> errors, String message, @Nullable Exception e)
     {
-        QueryException ex;
-        if (e instanceof QueryException)
-            ex = (QueryException)e;
-        else if (e.getCause() instanceof QueryException)
-            ex = (QueryException)e.getCause();
+        if (e != null)
+        {
+            QueryException ex;
+            if (e instanceof QueryException qe)
+                ex = qe;
+            else if (e.getCause() instanceof QueryException qe)
+                ex = qe;
+            else
+                ex = new QueryException(message, e);
+            errors.add(ex);
+            LOG.warn("{}{}", message, e.getMessage() == null ? "" : " " + e.getMessage());
+        }
         else
-            ex = new QueryException(message, e);
-        errors.add(ex);
-        LOG.warn(message + (e.getMessage() == null ? "" : e.getMessage()));
+        {
+            LOG.warn(message);
+        }
     }
 
     private void setAggregateRowConfig(TableType xmlTable)
@@ -1988,7 +1995,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             }
         }
 
-        if (templates.size() == 0)
+        if (templates.isEmpty())
         {
             ActionURL url = Objects.requireNonNull(PageFlowUtil.urlProvider(QueryUrls.class)).urlCreateExcelTemplate(ctx.getContainer(), getPublicSchemaName(), getName());
             url.addParameter("headerType", ColumnHeaderType.DisplayFieldKey.name());

@@ -46,33 +46,47 @@ public interface Selector
     /** @return whether there is at least one row that matches the selection criteria */
     boolean exists();
 
+    /**
+     * @return an array of simple classes, java beans, or java records of the given {@code Class}
+     */
     @NotNull <T> T[] getArray(Class<T> clazz);
 
     /** Convenience method that avoids "unchecked assignment" warnings */
     @NotNull Map<String, Object>[] getMapArray();
 
+    /**
+     * @return a {@code Collection} of simple classes, java beans, or java records of the given {@code Class}
+     */
     @NotNull <E> Collection<E> getCollection(Class<E> clazz);
 
     /** Convenience method that avoids "unchecked assignment" warnings */
     @NotNull Collection<Map<String, Object>> getMapCollection();
 
+    /**
+     * @return an {@code ArrayList} of simple classes, java beans, or java records of the given {@code Class}
+     */
     @NotNull <E> ArrayList<E> getArrayList(Class<E> clazz);
 
+
+    /**
+     * @return a single simple class, java bean, or java record of the given {@code Class}
+     * @throws IllegalStateException if the {@code Selector} received more than one row
+     */
     <T> T getObject(Class<T> clazz);
 
     /**
-     * Returns a sequential Stream of objects representing rows from the database. Converts each result row into an object
-     * of the specified class. The Stream is backed by a cached data structure (ResultSet and Connection are closed before
-     * returning the stream), so no need to close or fully exhaust this stream. Cached streams are more convenient to use
-     * than uncached streams and should perform well in nearly all situations.
+     * Returns a sequential Stream of objects or records representing rows from the database. Converts each result row
+     * into an object the specified {@code Class}. The Stream is backed by a cached data structure (ResultSet and
+     * Connection are closed before returning the stream), so no need to close or fully exhaust this stream. Cached
+     * streams are more convenient to use than uncached streams and should perform well in low-volume situations.
      */
     <T> Stream<T> stream(Class<T> clazz);
 
     /**
-     * Returns an uncached sequential Stream of objects representing rows from the database. Converts each result row into
-     * an object of the specified class. The Stream is backed by a live ResultSet with an open Connection, so <b>it must be
-     * closed</b>, typically using try-with-resources. This is less convenient than a cached Stream, but useful when large
-     * results are expected. An example showing proper closing:
+     * Returns an uncached sequential Stream of objects or records representing rows from the database. Converts each
+     * result row into an object of the specified {@code Class}. The Stream is backed by a live ResultSet with an open
+     * Connection, so <b>it must be closed</b>, typically using try-with-resources. This is less convenient than a
+     * cached Stream, but important when large results are possible. An example showing proper closing:
      *
      * <pre>{@code
      *
@@ -90,7 +104,7 @@ public interface Selector
      * Returns a sequential Stream of maps representing rows from the database. Converts each result row into a {@code
      * Map<String, Object>}. The Stream is backed by a cached data structure (ResultSet and Connection are closed before
      * returning the stream), so no need to close or fully exhaust this stream. Cached streams are more convenient to use
-     * than uncached streams and should perform well in nearly all situations.
+     * than uncached streams and should perform well in low-volume situations.
      */
     Stream<Map<String, Object>> mapStream();
 
@@ -98,21 +112,21 @@ public interface Selector
      * Returns an uncached sequential Stream of maps representing rows from the database. Converts each result row into a
      * {@code Map<String, Object>}. The Stream is backed by a live ResultSet with an open Connection, so it <b>must be
      * closed</b>, typically using try-with-resources. This is less convenient than a cached Stream, but useful when
-     * large results are expected.
+     * large results are possible.
      */
     Stream<Map<String, Object>> uncachedMapStream();
 
     /**
      * Returns a sequential Stream that iterates a ResultSet. The Stream is backed by a cached data structure (ResultSet
      * and Connection are closed before returning the stream), so no need to close or fully exhaust this stream. Cached
-     * streams are more convenient to use than uncached streams and should perform well in nearly all situations.
+     * streams are more convenient to use than uncached streams and should perform well in low-volume situations.
      */
     Stream<ResultSet> resultSetStream();
 
     /**
      * Returns an uncached sequential Stream that iterates a ResultSet. The Stream is backed by a live ResultSet with an
      * open Connection, so <b>it must be closed</b>, typically using try-with-resources. This is less convenient than a
-     * cached Stream, but useful when large results are expected.
+     * cached Stream, but useful when large results are possible.
      */
     Stream<ResultSet> uncachedResultSetStream();
 
@@ -121,52 +135,57 @@ public interface Selector
 
     void forEach(ForEachBlock<ResultSet> block);
 
-    /** Streams maps from the database. Converts each result row into a {@code Map<String, Object>} and invokes {@code block.exec()} on it. */
+    /**
+     * Streams maps from the database. Converts each result row into a {@code Map<String, Object>} and invokes
+     * {@code block.exec()} on it.
+     **/
     void forEachMap(ForEachBlock<Map<String, Object>> block);
 
     /**
-     *  Stream maps from the database in batches. Convert rows to maps and pass them to batchBlock.exec() in batches no
+     *  Streams maps from the database in batches. Convert rows to maps and pass them to batchBlock.exec() in batches no
      *  larger than batchSize. This is convenient for cases where streaming is desired, but processing in batches is more
      *  efficient than one-by-one. All batches are of size batchSize, except the last batch which is typically smaller.
      */
     void forEachMapBatch(int batchSize, ForEachBatchBlock<Map<String, Object>> batchBlock);
 
     /**
-     * Stream objects from the database.
-     * Convert each result row into an object specified by clazz and invoke block.exec() on it.
+     * Streams objects or records from the database.
+     * Converts each result row into an object specified by clazz and invoke block.exec() on it.
      * @return the number of rows processed
      */
     <T> int forEach(Class<T> clazz, ForEachBlock<T> block);
 
     /**
-     *  Stream objects from the database in batches. Convert rows to objects and pass them to batchBlock.exec() in batches
-     *  no larger than batchSize. This is convenient for cases where streaming is desired, but processing in batches is more
-     *  efficient than one-by-one. All batches are of size batchSize, except the last batch which is typically smaller.
+     *  Streams objects or records from the database in batches. Converts rows to objects and passes them to
+     *  {@code batchBlock.exec()} in batches no larger than batchSize. This is convenient for cases where streaming is
+     *  desired, but processing in batches is more efficient than one-by-one. All batches are of size batchSize, except
+     *  the last batch which is typically smaller.
      *  @return the number of rows processed
      */
     <T> int forEachBatch(Class<T> clazz, int batchSize, ForEachBatchBlock<T> batchBlock);
 
     /**
-     * Return a new value map. If the query selects a single column, return an identity map. If the query selects
+     * Returns a new value map. If the query selects a single column, return an identity map. If the query selects
      * multiple columns, the first column is the key, the second column is the value. Subsequent columns are ignored.
      */
     @NotNull <K, V> Map<K, V> getValueMap();
 
     /**
-     * Populate an existing map. If the query selects a single column, populate as an identity map. If the query selects
-     * multiple columns, the first column is the key, the second column is the value. Subsequent columns are ignored.
+     * Populates an existing map. If the query selects a single column, populates as an identity map. If the query
+     * selects multiple columns, the first column is the key, the second column is the value. Subsequent columns are
+     * ignored.
      */
     @NotNull <K, V> Map<K, V> fillValueMap(@NotNull Map<K, V> map);
 
     /**
-     * Return a new MultiValuedMap. If the query selects a single column, return an identity map. If the query selects
+     * Returns a new MultiValuedMap. If the query selects a single column, returns an identity map. If the query selects
      * multiple columns, the first column is the key, the second column is the value, of which there may be more than
      * one for each key. Subsequent columns are ignored.
      */
     @NotNull <K, V> MultiValuedMap<K, V> getMultiValuedMap();
 
     /**
-     * Populate an existing MultiValuedMap. If the query selects a single column, return an identity map. If the query
+     * Populates an existing MultiValuedMap. If the query selects a single column, return an identity map. If the query
      * selects multiple columns, the first column is the key, the second column is the value, of which there may be more
      * than one for each key. Subsequent columns are ignored.
      */
@@ -175,7 +194,7 @@ public interface Selector
     @SuppressWarnings("UnusedReturnValue")
     @NotNull <K> Set<K> fillSet(@NotNull final Set<K> fillSet);
 
-    /** Callback interface for dealing with objects streamed from the database one-by-one */
+    /** Callback interface for dealing with objects or records streamed from the database one-by-one */
     interface ForEachBlock<T>
     {
         /** Invoked once for each row returned by the selector */
@@ -187,7 +206,7 @@ public interface Selector
         }
     }
 
-    /** Callback interface for dealing with objects streamed from the database in batches */
+    /** Callback interface for dealing with objects or records streamed from the database in batches */
     interface ForEachBatchBlock<T>
     {
         /**

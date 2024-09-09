@@ -1,9 +1,9 @@
 import React from 'react';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import { App } from '@labkey/api';
 
-import {AppContext, ProductNavigation} from './ProductNavigation';
+import { AppContext, ProductNavigation } from './ProductNavigation';
 
 App.registerApp<AppContext>('productNavigation', (target, ctx) => {
-    ReactDOM.render(<ProductNavigation context={ctx}/>, document.getElementById(target));
+    createRoot(document.getElementById(target)).render(<ProductNavigation context={ctx} />);
 });

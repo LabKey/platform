@@ -24,11 +24,6 @@ import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.Map;
 
-/**
-* User: adam
-* Date: 12/7/13
-* Time: 7:52 PM
-*/
 public interface TableResultSet extends ResultSet, Iterable<Map<String, Object>>
 {
     boolean isComplete();

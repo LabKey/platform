@@ -639,7 +639,7 @@ public class QueryController extends SpringActionController
                                 TR(
                                     cl(rowStyle),
                                     hasAdminOpsPerms ? TD(connected ? new ButtonBuilder("Test").href(new ActionURL(TestDataSourceConfirmAction.class, getContainer()).addParameter("dataSource", scope.getDataSourceName())) : "") : null,
-                                    TD(scope.getDisplayName()),
+                                    TD(HtmlString.NBSP, scope.getDisplayName()),
                                     TD(status),
                                     TD(scope.getDatabaseUrl()),
                                     TD(scope.getDatabaseName()),
