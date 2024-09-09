@@ -1,9 +1,9 @@
 import React from 'react';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import { App } from '@labkey/api';
 
 import { AppContext, QuerySelectInput } from './QuerySelectInput';
 
 App.registerApp<AppContext>('querySelectInput', (target, ctx) => {
-    ReactDOM.render(<QuerySelectInput context={ctx} />, document.getElementById(target));
+    createRoot(document.getElementById(target)).render(<QuerySelectInput context={ctx} />);
 });
