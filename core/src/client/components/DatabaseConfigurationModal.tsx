@@ -157,7 +157,6 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
                             <select
                                 className="form-control"
                                 name="expiration"
-                                placeholder="select"
                                 onChange={this.handleChange}
                                 value={expiration}
                             >

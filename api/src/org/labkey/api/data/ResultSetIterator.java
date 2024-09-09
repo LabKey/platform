@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.labkey.api.collections.ResultSetRowMapFactory;
+import org.labkey.api.collections.RowMap;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -60,7 +61,7 @@ public class ResultSetIterator implements Iterator<Map<String, Object>>
     }
 
     @Override
-    public Map<String, Object> next()
+    public RowMap<Object> next()
     {
         try
         {

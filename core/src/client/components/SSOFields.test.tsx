@@ -1,7 +1,6 @@
 import React from 'react';
-
-import renderer from 'react-test-renderer';
-import { mount } from 'enzyme';
+import { render } from '@testing-library/react';
+import { userEvent } from '@testing-library/user-event';
 
 import { SSOFields, ImageAndFileAttachmentForm } from './SSOFields';
 
@@ -9,7 +8,7 @@ const testImageUrl = 'https://en.wikipedia.org/wiki/Moose#/media/File:Moose_supe
 
 describe('<SSOFields/>', () => {
     test('No images attached', () => {
-        const wrapper = mount(
+        render(
             <SSOFields
                 canEdit={true}
                 headerLogoUrl={null}
@@ -19,13 +18,13 @@ describe('<SSOFields/>', () => {
             />
         );
 
-        expect(wrapper.find('.sso-fields__null-image').exists()).toEqual(true);
-        expect(wrapper.find('.sso-fields__image').exists()).toEqual(false);
-        expect(wrapper.find('.sso-fields__delete-img-icon').exists()).toEqual(false);
+        expect(document.querySelectorAll('.sso-fields__null-image')).toHaveLength(2);
+        expect(document.querySelectorAll('.sso-fields__image')).toHaveLength(0);
+        expect(document.querySelectorAll('.sso-fields__delete-img-icon')).toHaveLength(0);
     });
 
     test('With images attached', () => {
-        const wrapper = mount(
+        render(
             <SSOFields
                 canEdit={true}
                 headerLogoUrl="imgURLHeader"
@@ -35,13 +34,13 @@ describe('<SSOFields/>', () => {
             />
         );
 
-        expect(wrapper.find('.sso-fields__null-image').exists()).toEqual(false);
-        expect(wrapper.find('.sso-fields__image').exists()).toEqual(true);
-        expect(wrapper.find('.sso-fields__delete-img-icon').exists()).toEqual(true);
+        expect(document.querySelectorAll('.sso-fields__null-image')).toHaveLength(0);
+        expect(document.querySelectorAll('.sso-fields__image')).toHaveLength(2);
+        expect(document.querySelectorAll('.sso-fields__delete-img-icon')).toHaveLength(2);
     });
 
     test('Editable mode', () => {
-        const wrapper = mount(
+        render(
             <SSOFields
                 canEdit={true}
                 headerLogoUrl={null}
@@ -50,13 +49,13 @@ describe('<SSOFields/>', () => {
                 handleDeleteLogo={jest.fn()}
             />
         );
-        expect(wrapper.find('.sso-fields__image-holder').exists()).toEqual(true);
-        expect(wrapper.find('.sso-fields__file-attachment').exists()).toEqual(true);
-        expect(wrapper.find('.sso-fields__image-holder--view-only').exists()).toEqual(false);
+        expect(document.querySelectorAll('.sso-fields__image-holder')).toHaveLength(2);
+        expect(document.querySelectorAll('.sso-fields__file-attachment')).toHaveLength(2);
+        expect(document.querySelectorAll('.sso-fields__image-holder--view-only')).toHaveLength(0);
     });
 
     test('View-only mode', () => {
-        const wrapper = mount(
+        render(
             <SSOFields
                 canEdit={false}
                 headerLogoUrl={null}
@@ -65,14 +64,14 @@ describe('<SSOFields/>', () => {
                 handleDeleteLogo={jest.fn()}
             />
         );
-        expect(wrapper.find('.sso-fields__image-holder').exists()).toEqual(false);
-        expect(wrapper.find('.sso-fields__image-holder--view-only').exists()).toEqual(true);
+        expect(document.querySelectorAll('.sso-fields__image-holder')).toHaveLength(0);
+        expect(document.querySelectorAll('.sso-fields__image-holder--view-only')).toHaveLength(2);
     });
 });
 
 describe('<ImageAndFileAttachmentForm/>', () => {
-    test('Click remove-image button', () => {
-        const component = (
+    test('Click remove-image button', async () => {
+        render(
             <ImageAndFileAttachmentForm
                 text="Page Header Logo"
                 imageUrl={testImageUrl}
@@ -83,9 +82,9 @@ describe('<ImageAndFileAttachmentForm/>', () => {
                 index={1}
             />
         );
-        const wrapper = mount(component);
-        expect(wrapper.find('.sso-fields__null-image').exists()).toEqual(false);
-        wrapper.find('.sso-fields__delete-img-icon').simulate('click');
-        expect(wrapper.find('.sso-fields__null-image').exists()).toEqual(true);
+        expect(document.querySelectorAll('.sso-fields__null-image')).toHaveLength(0);
+
+        await userEvent.click(document.querySelector('.sso-fields__delete-img-icon'));
+        expect(document.querySelectorAll('.sso-fields__null-image')).toHaveLength(1);
     });
 });

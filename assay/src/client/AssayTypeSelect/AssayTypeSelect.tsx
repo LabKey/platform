@@ -1,6 +1,15 @@
-import React, { FC, memo, useCallback, useEffect, useMemo, useState } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { ActionURL, Ajax, getServerContext, Utils } from '@labkey/api';
-import { AssayPicker, AssayPickerSelectionModel, AssayPickerTabs, GENERAL_ASSAY_PROVIDER_NAME, App as LabKeyApp } from '@labkey/components';
+import {
+    App as LabKeyApp,
+    AssayPicker,
+    AssayPickerSelectionModel,
+    AssayPickerTabs,
+    GENERAL_ASSAY_PROVIDER_NAME,
+    ServerContextProvider,
+    useServerContext,
+    withAppUser,
+} from '@labkey/components';
 
 import './AssayTypeSelect.scss';
 
@@ -31,28 +40,29 @@ function uploadXarFile(
     });
 }
 
-export const App: FC<any> = memo(props => {
+const AssayTypeSelect = memo(() => {
     const [ returnUrl, setReturnUrl ] = useState<string>();
     const [ assayPickerSelection, setAssayPickerSelection ] = useState<AssayPickerSelectionModel>({
         provider: undefined,
         container: "",
         file: undefined,
         tab: undefined
-    })
+    });
+    const { moduleContext } = useServerContext();
 
     useEffect(() => {
         setReturnUrl(ActionURL.getParameter('returnUrl'));
-    }, [])
+    }, []);
 
-    const tab = useMemo(() => ActionURL.getParameter('tab'), [])
+    const tab = useMemo(() => ActionURL.getParameter('tab'), []);
 
     const onCancel = useCallback(() => {
         window.location.href = returnUrl || ActionURL.buildURL('project', 'begin', getServerContext().container.path);
-    }, [returnUrl])
+    }, [returnUrl]);
 
     const onChange = useCallback((model: AssayPickerSelectionModel) => {
         setAssayPickerSelection(model);
-    }, [])
+    }, []);
 
     const onSubmit = useCallback(() => {
         const container = assayPickerSelection.container ?? getServerContext().container.path;
@@ -61,14 +71,13 @@ export const App: FC<any> = memo(props => {
             uploadXarFile(assayPickerSelection.file, assayPickerSelection.container).then(() => {
                 window.location.href = ActionURL.buildURL('pipeline', 'status-showList', container);
             })
-        }
-        else {
+        } else {
             window.location.href = ActionURL.buildURL('assay', 'designer', container, {
                 'providerName': assayPickerSelection.provider.name,
                 'returnUrl': returnUrl
             });
         }
-    }, [assayPickerSelection, returnUrl])
+    }, [assayPickerSelection, returnUrl]);
 
     const label = (!assayPickerSelection.provider || assayPickerSelection.provider.name === GENERAL_ASSAY_PROVIDER_NAME) ? "Standard" : assayPickerSelection.provider.name
 
@@ -83,14 +92,14 @@ export const App: FC<any> = memo(props => {
                 <div className="panel-body">
                     <AssayPicker
                         defaultTab={tab}
-                        hasPremium={LabKeyApp.hasPremiumModule()}
+                        hasPremium={LabKeyApp.hasPremiumModule(moduleContext)}
                         onChange={onChange}
                         showContainerSelect
                         showImport
                     />
                 </div>
             </div>
-            <div className={'assay-type-select-panel assay-type-select-btns'}>
+            <div className="assay-type-select-panel assay-type-select-btns">
                 <button className="btn btn-default" onClick={onCancel}>Cancel</button>
                 <button
                     className="btn btn-primary pull-right"
@@ -102,6 +111,15 @@ export const App: FC<any> = memo(props => {
                 </button>
             </div>
         </>
-    )
-
+    );
 });
+
+AssayTypeSelect.displayName = 'AssayTypeSelect';
+
+export const App = memo(() => (
+    <ServerContextProvider initialContext={withAppUser(getServerContext())}>
+        <AssayTypeSelect />
+    </ServerContextProvider>
+));
+
+App.displayName = 'App';

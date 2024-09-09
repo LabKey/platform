@@ -30,8 +30,6 @@ import java.util.Random;
 /**
  * {@link Map} implementation that uses case-insensitive {@link String}s for keys. Unlike many other implementations,
  * retains the original case of the String for use when iterating and such.
- * User: arauch
- * Date: Dec 25, 2004
  */
 public class CaseInsensitiveHashMap<V> extends CaseInsensitiveMapWrapper<V> implements Serializable, CaseInsensitiveCollection
 {
@@ -48,18 +46,14 @@ public class CaseInsensitiveHashMap<V> extends CaseInsensitiveMapWrapper<V> impl
     public CaseInsensitiveHashMap(Map<String, V> map)
     {
         this(map.size());
-
-        for (Map.Entry<String, V> entry : map.entrySet())
-            put(entry.getKey(), entry.getValue());
+        this.putAll(map);
     }
 
     /** Share the canonical key casing with the caseMapping instance */
     public CaseInsensitiveHashMap(Map<String, V> map, CaseInsensitiveMapWrapper<V> caseMapping)
     {
         this(map.size(), caseMapping);
-
-        for (Map.Entry<String, V> entry : map.entrySet())
-            put(entry.getKey(), entry.getValue());
+        this.putAll(map);
     }
 
     /** Share the canonical key casing with the caseMapping instance */
@@ -116,6 +110,15 @@ public class CaseInsensitiveHashMap<V> extends CaseInsensitiveMapWrapper<V> impl
         map.put(k4, v4);
         map.put(k5, v5);
         return map;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <MAP extends Map<String, ?> & CaseInsensitiveCollection> MAP ensure(Map<String, ?> map)
+    {
+        if (map instanceof CaseInsensitiveCollection)
+            return (MAP)map;
+        else
+            return (MAP)new CaseInsensitiveHashMap<>(map);
     }
 
     public static class TestCase extends Assert
