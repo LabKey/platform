@@ -86,8 +86,8 @@ import static org.labkey.api.util.StringUtilsLabKey.append;
 
 public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements ExpMaterial
 {
-    public static final SearchService.SearchCategory searchCategory = new SearchService.SearchCategory("material", "Material/Sample");
-    public static final SearchService.SearchCategory mediaSearchCategory = new SearchService.SearchCategory("media", "Media samples"){
+    public static final SearchService.SearchCategory searchCategory = new SearchService.SearchCategory("material", "Materials/Samples", false);
+    public static final SearchService.SearchCategory mediaSearchCategory = new SearchService.SearchCategory("media", "Media Samples", false){
         @Override
         public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
         {

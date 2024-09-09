@@ -16,7 +16,6 @@
 package org.labkey.experiment.api;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -80,14 +79,14 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
     public static final String NAMESPACE_PREFIX = "DataClass";
     private static final String SEARCH_CATEGORY_NAME = "dataClass";
     private static final String MEDIA_SEARCH_CATEGORY_NAME = "media";
-    public static final SearchService.SearchCategory SEARCH_CATEGORY = new SearchService.SearchCategory(SEARCH_CATEGORY_NAME, "Collection of data objects") {
+    public static final SearchService.SearchCategory SEARCH_CATEGORY = new SearchService.SearchCategory(SEARCH_CATEGORY_NAME, "Collections of data objects", false) {
         @Override
         public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
         {
             return getPermittedContainerIds(user, containers, DataClassReadPermission.class);
         }
     };
-    public static final SearchService.SearchCategory MEDIA_SEARCH_CATEGORY = new SearchService.SearchCategory(MEDIA_SEARCH_CATEGORY_NAME, "Collections of media data and samples") {
+    public static final SearchService.SearchCategory MEDIA_SEARCH_CATEGORY = new SearchService.SearchCategory(MEDIA_SEARCH_CATEGORY_NAME, "Collections of media data and samples", false) {
         @Override
         public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
         {
