@@ -672,7 +672,7 @@ public final class PlateManagerTest
                     PlateMetadataFields.barcode.name(), "B5678"
             )
         );
-        Plate plateSource = createPlate(PLATE_TYPE_96_WELLS, "myPlate1", null, rows1);
+        Plate plateSource = createPlate(PLATE_TYPE_96_WELLS, "myPlate1-1", null, rows1);
 
         List<Map<String, Object>> rows2 = List.of(
             CaseInsensitiveHashMap.of(
@@ -691,7 +691,7 @@ public final class PlateManagerTest
                 "sampleId", sample2.getRowId()
             )
         );
-        Plate plateDestination = createPlate(PLATE_TYPE_96_WELLS, "myPlate2", null, rows2);
+        Plate plateDestination = createPlate(PLATE_TYPE_96_WELLS, "myPlate2-1", null, rows2);
 
         // Act
         List<FieldKey> sourceIncludedMetadataCols = PlateManager.get().getMetadataColumns(plateSource.getPlateSet(), container, user, cf);
@@ -700,17 +700,17 @@ public final class PlateManagerTest
 
         // Assert
         Object[] row1 = plateDataRows.get(0);
-        String[] valuesRow1 = new String[]{"myPlate1", plateSource.getBarcode(), "A1", "96", sample1.getName(), "B1234", "2.25", "myPlate2", plateDestination.getBarcode(), "A2", "96"};
+        String[] valuesRow1 = new String[]{"myPlate1-1", plateSource.getBarcode(), "A1", "96", sample1.getName(), "B1234", "2.25", "myPlate2-1", plateDestination.getBarcode(), "A2", "96"};
         for (int i = 0; i < row1.length; i++)
             assertEquals(row1[i].toString(), valuesRow1[i]);
 
         Object[] row2 = plateDataRows.get(1);
-        String[] valuesRow2 = new String[]{"myPlate1", plateSource.getBarcode(),"A2", "96", sample2.getName(), "B5678", "1.25", "myPlate2", plateDestination.getBarcode(), "A1", "96"};
+        String[] valuesRow2 = new String[]{"myPlate1-1", plateSource.getBarcode(),"A2", "96", sample2.getName(), "B5678", "1.25", "myPlate2-1", plateDestination.getBarcode(), "A1", "96"};
         for (int i = 0; i < row2.length; i++)
             assertEquals(row2[i].toString(), valuesRow2[i]);
 
         Object[] row3 = plateDataRows.get(2);
-        String[] valuesRow3 = new String[]{"myPlate1", plateSource.getBarcode(),"A2", "96", sample2.getName(), "B5678", "1.25", "myPlate2", plateDestination.getBarcode(), "A3", "96"};
+        String[] valuesRow3 = new String[]{"myPlate1-1", plateSource.getBarcode(),"A2", "96", sample2.getName(), "B5678", "1.25", "myPlate2-1", plateDestination.getBarcode(), "A3", "96"};
         for (int i = 0; i < row3.length; i++)
             assertEquals(row3[i].toString(), valuesRow3[i]);
     }
@@ -741,7 +741,7 @@ public final class PlateManagerTest
                         PlateMetadataFields.barcode.name(), "B5678"
                 )
         );
-        Plate plateSource = createPlate(PLATE_TYPE_96_WELLS, "myPlate1", null, rows1);
+        Plate plateSource = createPlate(PLATE_TYPE_96_WELLS, "myPlate1-2", null, rows1);
 
         List<Map<String, Object>> rows2 = List.of(
                 CaseInsensitiveHashMap.of(
@@ -750,7 +750,7 @@ public final class PlateManagerTest
                         "sampleId", sample2.getRowId()
                 )
         );
-        Plate plateDestination = createPlate(PLATE_TYPE_96_WELLS, "myPlate2", null, rows2);
+        Plate plateDestination = createPlate(PLATE_TYPE_96_WELLS, "myPlate2-2", null, rows2);
 
         // Act
         List<FieldKey> sourceIncludedMetadataCols = PlateManager.get().getMetadataColumns(plateSource.getPlateSet(), container, user, cf);
@@ -759,12 +759,12 @@ public final class PlateManagerTest
 
         // Assert
         Object[] row1 = plateDataRows.get(0);
-        String[] valuesRow1 = new String[]{"myPlate1", plateSource.getBarcode(), "A1", "96", sample1.getName(), "B1234", "2.25", null, null, null, null};
+        String[] valuesRow1 = new String[]{"myPlate1-2", plateSource.getBarcode(), "A1", "96", sample1.getName(), "B1234", "2.25", null, null, null, null};
         for (int i = 0; i < row1.length; i++)
             assertEquals(row1[i] == null ? null : row1[i].toString(), valuesRow1[i]);
 
         Object[] row2 = plateDataRows.get(1);
-        String[] valuesRow2 = new String[]{"myPlate1", plateSource.getBarcode(),"A2", "96", sample2.getName(), "B5678", "1.25", "myPlate2", plateDestination.getBarcode(), "A1", "96"};
+        String[] valuesRow2 = new String[]{"myPlate1-2", plateSource.getBarcode(),"A2", "96", sample2.getName(), "B5678", "1.25", "myPlate2-2", plateDestination.getBarcode(), "A1", "96"};
         for (int i = 0; i < row2.length; i++)
             assertEquals(row2[i].toString(), valuesRow2[i]);
     }
@@ -799,7 +799,7 @@ public final class PlateManagerTest
                         PlateMetadataFields.barcode.name(), "B910"
                 )
         );
-        Plate plateSource = createPlate(PLATE_TYPE_96_WELLS, "myPlate1", null, rows1);
+        Plate plateSource = createPlate(PLATE_TYPE_96_WELLS, "myPlate1-3", null, rows1);
 
         List<Map<String, Object>> rows2 = List.of(
                 CaseInsensitiveHashMap.of(
@@ -813,7 +813,7 @@ public final class PlateManagerTest
                         "sampleId", sample.getRowId()
                 )
         );
-        Plate plateDestination = createPlate(PLATE_TYPE_96_WELLS, "myPlate2", null, rows2);
+        Plate plateDestination = createPlate(PLATE_TYPE_96_WELLS, "myPlate2-3", null, rows2);
 
         // Act
         List<FieldKey> sourceIncludedMetadataCols = PlateManager.get().getMetadataColumns(plateSource.getPlateSet(), container, user, cf);
@@ -853,7 +853,7 @@ public final class PlateManagerTest
                         PlateMetadataFields.barcode.name(), "B910"
                 )
         );
-        Plate plateSource = createPlate(PLATE_TYPE_96_WELLS, "myPlate1", null, rows1);
+        Plate plateSource = createPlate(PLATE_TYPE_96_WELLS, "myPlate1-4", null, rows1);
 
         List<Map<String, Object>> rows2 = List.of(
                 CaseInsensitiveHashMap.of(
@@ -872,7 +872,7 @@ public final class PlateManagerTest
                         "sampleId", sample.getRowId()
                 )
         );
-        Plate plateDestination = createPlate(PLATE_TYPE_96_WELLS, "myPlate2", null, rows2);
+        Plate plateDestination = createPlate(PLATE_TYPE_96_WELLS, "myPlate2-4", null, rows2);
 
         // Act
         List<FieldKey> sourceIncludedMetadataCols = PlateManager.get().getMetadataColumns(plateSource.getPlateSet(), container, user, cf);
@@ -881,17 +881,17 @@ public final class PlateManagerTest
 
         // Assert
         Object[] row1 = plateDataRows.get(0);
-        String[] valuesRow1 = new String[]{"myPlate1", plateSource.getBarcode(), "A1", "96", sample.getName(), "B1234", "2.25", "myPlate2", plateDestination.getBarcode(), "A2", "96"};
+        String[] valuesRow1 = new String[]{"myPlate1-4", plateSource.getBarcode(), "A1", "96", sample.getName(), "B1234", "2.25", "myPlate2-4", plateDestination.getBarcode(), "A2", "96"};
         for (int i = 0; i < row1.length; i++)
             assertEquals(row1[i].toString(), valuesRow1[i]);
 
         Object[] row2 = plateDataRows.get(1);
-        String[] valuesRow2 = new String[]{"myPlate1", plateSource.getBarcode(),"A2", "96", sample.getName(), "B5678", "1.25", "myPlate2", plateDestination.getBarcode(), "A3", "96"};
+        String[] valuesRow2 = new String[]{"myPlate1-4", plateSource.getBarcode(),"A2", "96", sample.getName(), "B5678", "1.25", "myPlate2-4", plateDestination.getBarcode(), "A3", "96"};
         for (int i = 0; i < row2.length; i++)
             assertEquals(row2[i].toString(), valuesRow2[i]);
 
         Object[] row3 = plateDataRows.get(2);
-        String[] valuesRow3 = new String[]{"myPlate1", plateSource.getBarcode(),"A3", "96", sample.getName(), "B910", "1.0", "myPlate2", plateDestination.getBarcode(), "A4", "96"};
+        String[] valuesRow3 = new String[]{"myPlate1-4", plateSource.getBarcode(),"A3", "96", sample.getName(), "B910", "1.0", "myPlate2-4", plateDestination.getBarcode(), "A4", "96"};
         for (int i = 0; i < row3.length; i++)
             assertEquals(row3[i].toString(), valuesRow3[i]);
     }
@@ -912,7 +912,7 @@ public final class PlateManagerTest
                         PlateMetadataFields.barcode.name(), "B1234"
                 )
         );
-        Plate plateSource = createPlate(PLATE_TYPE_96_WELLS, "myPlate1", null, rows1);
+        Plate plateSource = createPlate(PLATE_TYPE_96_WELLS, "myPlate1-5", null, rows1);
 
         List<Map<String, Object>> rows2 = List.of(
                 CaseInsensitiveHashMap.of(
@@ -931,7 +931,7 @@ public final class PlateManagerTest
                         "sampleId", sample.getRowId()
                 )
         );
-        Plate plateDestination = createPlate(PLATE_TYPE_96_WELLS, "myPlate2", null, rows2);
+        Plate plateDestination = createPlate(PLATE_TYPE_96_WELLS, "myPlate2-5", null, rows2);
 
         // Act
         List<FieldKey> sourceIncludedMetadataCols = PlateManager.get().getMetadataColumns(plateSource.getPlateSet(), container, user, cf);
@@ -940,17 +940,17 @@ public final class PlateManagerTest
 
         // Assert
         Object[] row1 = plateDataRows.get(0);
-        String[] valuesRow1 = new String[]{"myPlate1", plateSource.getBarcode(), "A1", "96", sample.getName(), "B1234", "2.25", "myPlate2", plateDestination.getBarcode(), "A2", "96"};
+        String[] valuesRow1 = new String[]{"myPlate1-5", plateSource.getBarcode(), "A1", "96", sample.getName(), "B1234", "2.25", "myPlate2-5", plateDestination.getBarcode(), "A2", "96"};
         for (int i = 0; i < row1.length; i++)
             assertEquals(row1[i].toString(), valuesRow1[i]);
 
         Object[] row2 = plateDataRows.get(1);
-        String[] valuesRow2 = new String[]{"myPlate1", plateSource.getBarcode(),"A1", "96", sample.getName(), "B1234", "2.25", "myPlate2", plateDestination.getBarcode(), "A3", "96"};
+        String[] valuesRow2 = new String[]{"myPlate1-5", plateSource.getBarcode(),"A1", "96", sample.getName(), "B1234", "2.25", "myPlate2-5", plateDestination.getBarcode(), "A3", "96"};
         for (int i = 0; i < row2.length; i++)
             assertEquals(row2[i].toString(), valuesRow2[i]);
 
         Object[] row3 = plateDataRows.get(2);
-        String[] valuesRow3 = new String[]{"myPlate1", plateSource.getBarcode(),"A1", "96", sample.getName(), "B1234", "2.25", "myPlate2", plateDestination.getBarcode(), "A4", "96"};
+        String[] valuesRow3 = new String[]{"myPlate1-5", plateSource.getBarcode(),"A1", "96", sample.getName(), "B1234", "2.25", "myPlate2-5", plateDestination.getBarcode(), "A4", "96"};
         for (int i = 0; i < row3.length; i++)
             assertEquals(row3[i].toString(), valuesRow3[i]);
     }
