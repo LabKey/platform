@@ -91,7 +91,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
     public static final String COLUMN_NAME_TRANSACTION_ID = "TransactionID";
     public static final String COLUMN_NAME_DATA_CHANGES = "DataChanges";
 
-    final AbstractAuditDomainKind domainKind;
+    final AbstractAuditDomainKind _domainKind;
 
 
     public AbstractAuditTypeProvider()
@@ -101,21 +101,23 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
 
     public AbstractAuditTypeProvider(AbstractAuditDomainKind domainKind)
     {
-        this.domainKind = domainKind;
+        // TODO : consolidate domain kind initialization to either this constructor or to override
+        // getDomainKind.
+        _domainKind = domainKind;
+        // Register the DomainKind
+        PropertyService.get().registerDomainKind(getDomainKind());
     }
 
     protected AbstractAuditDomainKind getDomainKind()
     {
-        assert null != domainKind;
-        return domainKind;
+        assert null != _domainKind;
+        return _domainKind;
     }
 
     @Override
     public void initializeProvider(User user)
     {
-        // Register the DomainKind
         AbstractAuditDomainKind domainKind = getDomainKind();
-        PropertyService.get().registerDomainKind(domainKind);
         Domain domain = getDomain();
 
         // if the domain doesn't exist, create it
@@ -191,6 +193,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
     // NOTE: Changing the name of an existing PropertyDescriptor will lose data!
     private void ensureProperties(User user, Domain domain)
     {
+        AbstractAuditDomainKind domainKind = getDomainKind();
         if (domain != null && domainKind != null)
         {
             // Create a map of desired properties
