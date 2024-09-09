@@ -683,7 +683,9 @@ public class ExperimentModule extends SpringModule
                                         (SELECT cpastype, COUNT(*) AS numberNameCount FROM exp.material m WHERE m.name SIMILAR TO '[0-9.]*' GROUP BY cpastype) ns
                                     ON t.cpastype = ns.cpastype""").getMapCollection();
                     results.put("sampleSetWithNumberNamesCount", numSampleCounts.size());
-                    results.put("sampleSetWithOnlyNumberNamesCount", numSampleCounts.stream().filter(map -> map.get("totalCount") == map.get("numberNameCount")).count());
+                    results.put("sampleSetWithOnlyNumberNamesCount", numSampleCounts.stream().filter(
+                            map -> (Integer) map.get("totalCount") > 0 && map.get("totalCount") == map.get("numberNameCount")
+                    ).count());
                 }
                 UserSchema userSchema = AuditLogService.getAuditLogSchema(User.getSearchUser(), ContainerManager.getRoot());
                 FilteredTable table = (FilteredTable) userSchema.getTable(SampleTimelineAuditEvent.EVENT_TYPE);
