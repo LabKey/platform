@@ -1742,6 +1742,9 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         }
     }
 
+    // Issue 50917: imported folder archives do not correct file paths for file fields
+    // On folder export, filelink values were substituted with '${FileRoot}' prefix, if the filepath value is current source folder's file root. See ExportFileLinkColumn
+    // This utility is used to substitute FileLink field value's ${FileRoot} prefix with the target folder's file root during folder import
     public static String getFileRootSubstitutedFilePath(@Nullable String filePath, @Nullable String fileRootPath)
     {
         if (!StringUtils.isEmpty(fileRootPath) && filePath != null)
@@ -2205,6 +2208,36 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
         }
 
+        @Test
+        public void getFileRootSubstitutedFilePathTest()
+        {
+            if (File.separator.equals("/"))
+            {
+                assertEquals("/Folder1/sub2/img.png", getFileRootSubstitutedFilePath("${FileRoot}/img.png", "/Folder1/sub2/"));
+                assertEquals("/Folder1/sub2/img.png", getFileRootSubstitutedFilePath("${FileRoot}/img.png", "/Folder1/sub2"));
+                assertEquals("/Folder1/sub2/img.png", getFileRootSubstitutedFilePath("${FileRoot}img.png", "/Folder1/sub2/"));
+                assertEquals("/Folder1/sub2/img.png", getFileRootSubstitutedFilePath("${FileRoot}img.png", "/Folder1/sub2"));
+                assertEquals("/Folder1/sub2/sub1/img.png", getFileRootSubstitutedFilePath("${FileRoot}/sub1/img.png", "/Folder1/sub2"));
+                assertEquals("/Folder0/sub02/img.png", getFileRootSubstitutedFilePath("/Folder0/sub02/img.png", "/Folder1/sub2/"));
+                assertEquals("${FileRoot}/img.png", getFileRootSubstitutedFilePath("${FileRoot}/img.png", null));
+                assertEquals("/img.png", getFileRootSubstitutedFilePath("${FileRoot}/img.png", ""));
+                assertEquals("\"${FileRoot}/img.png\"", getFileRootSubstitutedFilePath("\"${FileRoot}/img.png\"", "/Folder1/sub2/"));
+                assertEquals("/Folder1/sub2/img.png", getFileRootSubstitutedFilePath("\"${FileRoot}\\img.png\"", "/Folder1/sub2/"));
+                assertEquals("/Folder1/sub2/sub1\\img.png", getFileRootSubstitutedFilePath("\"${FileRoot}\\sub1\\img.png\"", "/Folder1/sub2"));
+            }
+            else if (File.separator.equals("\\"))
+            {
+                assertEquals("\\Folder1\\sub2\\img.png", getFileRootSubstitutedFilePath("\"${FileRoot}\\img.png\"", "\\Folder1\\sub2\\"));
+                assertEquals("\\Folder1\\sub2\\img.png", getFileRootSubstitutedFilePath("\"${FileRoot}\\img.png\"", "\\Folder1\\sub2"));
+                assertEquals("\\Folder1\\sub2\\img.png", getFileRootSubstitutedFilePath("\"${FileRoot}img.png\"", "\\Folder1\\sub2\\"));
+                assertEquals("\\Folder1\\sub2\\img.png", getFileRootSubstitutedFilePath("\"${FileRoot}img.png\"", "\\Folder1\\sub2"));
+                assertEquals("\\Folder1\\sub2\\\\sub1\\img.png", getFileRootSubstitutedFilePath("\"${FileRoot}\\sub1\\img.png\"", "\\Folder1\\sub2"));
+                assertEquals("\\Folder0\\sub02\\img.png", getFileRootSubstitutedFilePath("\\Folder0\\sub02\\img.png", "\\Folder1\\sub2"));
+                assertEquals("\\Folder1\\sub2\\img.png", getFileRootSubstitutedFilePath("\"${FileRoot}\\img.png\"", null));
+                assertEquals("\\img.png", getFileRootSubstitutedFilePath("\"${FileRoot}\\img.png\"", ""));
+            }
+
+        }
 
         @Test
         public void missingTest()
