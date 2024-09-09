@@ -3277,7 +3277,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 List<DisplayColumn> displayColumns = getPlateDisplayColumns(plateQueryView);
                 PlateFileBytes plateFileBytes = new PlateFileBytes(plate.getName(), new ByteArrayOutputStream());
 
-                try (TSVGridWriter writer = new TSVGridWriter(plateQueryView::getResults, displayColumns, Collections.singletonMap("SampleId/Name", "Sample Id")))
+                try (TSVGridWriter writer = new TSVGridWriter(plateQueryView::getResults, displayColumns, Collections.singletonMap("SampleId/Name", "Sample ID")))
                 {
                     writer.setDelimiterCharacter(delim);
                     writer.setColumnHeaderType(ColumnHeaderType.FieldKey);
