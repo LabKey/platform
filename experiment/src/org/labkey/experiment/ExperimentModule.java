@@ -684,7 +684,7 @@ public class ExperimentModule extends SpringModule
                                     ON t.cpastype = ns.cpastype""").getMapCollection();
                     results.put("sampleSetWithNumberNamesCount", numSampleCounts.size());
                     results.put("sampleSetWithOnlyNumberNamesCount", numSampleCounts.stream().filter(
-                            map -> (Integer) map.get("totalCount") > 0 && map.get("totalCount") == map.get("numberNameCount")
+                            map -> (Long) map.get("totalCount") > 0 && map.get("totalCount") == map.get("numberNameCount")
                     ).count());
                 }
                 UserSchema userSchema = AuditLogService.getAuditLogSchema(User.getSearchUser(), ContainerManager.getRoot());
@@ -724,7 +724,8 @@ public class ExperimentModule extends SpringModule
                                         (SELECT cpastype, COUNT(*) AS numberNameCount FROM exp.data m WHERE m.name SIMILAR TO '[0-9.]*' GROUP BY cpastype) ns
                                     ON t.cpastype = ns.cpastype""").getMapCollection();
                     results.put("dataClassWithNumberNamesCount", numDataClassObjectsCounts.size());
-                    results.put("dataClassWithOnlyNumberNamesCount", numDataClassObjectsCounts.stream().filter(map -> map.get("totalCount") == map.get("numberNameCount")).count());
+                    results.put("dataClassWithOnlyNumberNamesCount", numDataClassObjectsCounts.stream().filter(map ->
+                            (Long) map.get("totalCount") > 0 && map.get("totalCount") == map.get("numberNameCount")).count());
                 }
 
                 results.put("ontologyPrincipalConceptCodeCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.propertydescriptor WHERE principalconceptcode IS NOT NULL").getObject(Long.class));
