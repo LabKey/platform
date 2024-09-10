@@ -162,7 +162,6 @@ public class StudyPublishTest extends StudyPHIExportTest
     private static final String PUBLISH_FOLDER_ADMIN = "publish_admin@study.test";
     private static final String PUBLISH_SUB_FOLDER_ADMIN = "publishsub_admin@study.test";
 
-
     // enum to help determine the study publish location
     public enum PublishLocation
     {
@@ -203,10 +202,10 @@ public class StudyPublishTest extends StudyPHIExportTest
         _studyHelper.createCustomParticipantGroup(getProjectName(), getFolderName(), GROUP3_NAME, "Mouse", true, GROUP3_PTIDS);
         _studyHelper.createCustomParticipantGroup(getProjectName(), getFolderName(), GROUP0_NAME, "Mouse", false, GROUP0_PTIDS);
 
-        //Create Wiki
+        // Create Wiki
         createWiki("Test Wiki", "Test Wiki Title");
 
-        //Add a module to find later
+        // Add a module to find later
         _containerHelper.enableModule("List");
 
         // Create some views and reports
@@ -274,7 +273,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         setupForStudySnapshotTable();
         verifyStudySnapshotTable();
 
-        //verify study republish
+        // Verify study republish
         rePublishStudy(PUB1_NAME, PUB1_REPUBLISH_NAME);
     }
 
@@ -312,7 +311,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         // Verify alternate IDs (or lack thereof)
         SearchResultsPage searchResultsPage = new SiteNavBar(getDriver())
                 .search(String.join(" ", ptids));
-        searchResultsPage.setSearchCategories("Subject");
+        searchResultsPage.setSearchCategories("subject");
         searchResultsPage.searchForm().searchFor(String.join(" ", ptids));
         List<WebElement> searchResults = searchResultsPage.getResults();
 
@@ -329,7 +328,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         // Go to published study
         navigateToFolder(projectName, name);
 
-        //Assert webparts/wikis are present
+        // Assert webparts/wikis are present
         waitForElement(Locator.xpath("//div[@name='webpart']"));
         List<String> expectedWebParts = new ArrayList<>(Arrays.asList(
                 "Study Overview",
@@ -348,8 +347,8 @@ public class StudyPublishTest extends StudyPHIExportTest
         List<String> webPartTitles = (new PortalHelper(this)).getWebPartTitles();
         Assert.assertEquals("Wrong webparts", expectedWebParts, webPartTitles);
 
-        //assert the added module is present
-       goToModule("List");
+        // Assert the added module is present
+        goToModule("List");
 
         // Verify published participant count
         clickTab("Mice");
@@ -363,7 +362,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         else
             assertTextPresent(ptids);
 
-        //Verify Cohorts present
+        // Verify Cohorts present
         goToManageStudy();
         waitForText("This study defines 2 cohorts");
 
@@ -935,7 +934,6 @@ public class StudyPublishTest extends StudyPHIExportTest
         waitForElement(Locator.css(".studyWizardPublishOptionsList"));
         waitForElement(Locator.css(".studyWizardPublishOptionsList .x-grid3-col-1")); // Make sure grid is filled in
         verifyPublishWizardSelectedCheckboxes(StudyHelper.Panel.studyWizardPublishOptionsList, "Use Alternate Mouse IDs", "Shift Mouse Dates");
-        //goToProjectHome();
     }
 
     // Starting at an existing data grid
@@ -1001,7 +999,6 @@ public class StudyPublishTest extends StudyPHIExportTest
         for (String[] pair : datasetMeasurePairs)
         {
             _extHelper.setExtFormElementByType(ADD_MEASURE_TITLE, "text", pair[0]);
-//            pressEnter(_extHelper.getExtDialogXPath(this, ADD_MEASURE_TITLE)+"//input[contains(@class, 'x4-form-text') and @type='text']");
             String measureXpath = _extHelper.getExtDialogXPath(ADD_MEASURE_TITLE) + "//table/tbody/tr[not(contains(@class, 'x4-grid-row-selected'))]/td[div[starts-with(text(), '"+ pair[1]+"')]]";
             waitForElement(Locator.xpath(measureXpath), WAIT_FOR_JAVASCRIPT * 2); // Make sure measure has appeared
             waitForElementToDisappear(Locator.xpath("("+measureXpath+")[2]"), WAIT_FOR_JAVASCRIPT * 2); // Wait for filter to remove any duplicates
@@ -1042,7 +1039,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         String filterStr = "";
         for (String val : values)
         {
-            if(!filterStr.equals(""))
+            if (!filterStr.equals(""))
                 filterStr = filterStr + ";";
 
             filterStr = filterStr + val;
@@ -1271,9 +1268,8 @@ public class StudyPublishTest extends StudyPHIExportTest
         stopImpersonating();
     }
 
-      /**
+    /**
      * Helper to assert expected column values are present in a data region
-     * @param columnsToCheck
      */
     private void verifyDataRegion(Map<String, String[]> columnsToCheck)
     {
@@ -1288,7 +1284,7 @@ public class StudyPublishTest extends StudyPHIExportTest
     {
         Locator.CssLocator gridLoc = Locator.css("div." + grid.name());
         WebElement columnHeader = gridLoc.append(Locator.css("tr.x-grid3-hd-row > td")).withText(grid.getLabelColumn()).findElement(getDriver());
-        Integer colIndex = getElementIndex(columnHeader);
+        int colIndex = getElementIndex(columnHeader);
         Locator selectedLabelLoc = gridLoc.append(Locator.css("div.x-grid3-row-selected div.x-grid3-col-" + colIndex));
         List<WebElement> selectedRows = selectedLabelLoc.findElements(getDriver());
         Set<String> selectedLabels = new HashSet<>(getTexts(selectedRows));
