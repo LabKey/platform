@@ -886,7 +886,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 {
                     domain.save(u);
                     st.save(u);
-                    QueryService.get().saveCalculatedFieldsMetadata(SamplesSchema.SCHEMA_NAME, name, calculatedFields, false, u, c);
+                    QueryService.get().saveCalculatedFieldsMetadata(SamplesSchema.SCHEMA_NAME, name, null, calculatedFields, false, u, c);
                     DefaultValueService.get().setDefaultValues(domain.getContainer(), defaultValues);
                     if (excludedContainerIds != null && !excludedContainerIds.isEmpty())
                         ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.SampleType, excludedContainerIds, st.getRowId(), u);
@@ -1058,7 +1058,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
             if (!errors.hasErrors())
             {
-                QueryService.get().saveCalculatedFieldsMetadata(SamplesSchema.SCHEMA_NAME, update.getQueryName(), update.getCalculatedFields(), false, user, container);
+                QueryService.get().saveCalculatedFieldsMetadata(SamplesSchema.SCHEMA_NAME, update.getQueryName(), hasNameChange ? newName : null, update.getCalculatedFields(), false, user, container);
 
                 if (hasNameChange)
                     ExperimentService.get().addObjectLegacyName(st.getObjectId(), ExperimentServiceImpl.getNamespacePrefix(ExpSampleType.class), oldSampleTypeName, user);
