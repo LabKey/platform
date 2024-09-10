@@ -1,10 +1,10 @@
 package org.labkey.api.files.virtual;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.vfs2.Capability;
 import org.apache.commons.vfs2.FileContent;
 import org.apache.commons.vfs2.FileListener;
 import org.apache.commons.vfs2.FileName;
+import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSelector;
 import org.apache.commons.vfs2.FileSystem;
 import org.apache.commons.vfs2.FileSystemException;
@@ -19,7 +19,6 @@ import org.apache.commons.vfs2.provider.AbstractFileName;
 import org.apache.commons.vfs2.provider.AbstractFileObject;
 import org.apache.commons.vfs2.provider.AbstractFileSystem;
 import org.jetbrains.annotations.NotNull;
-import org.apache.commons.vfs2.FileObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -53,6 +52,13 @@ public class AuthorizedFileSystem extends AbstractFileSystem
             throw new FileSystemException(f + " is not absolute");
     }
 
+    public AuthorizedFileSystem(Path path, boolean read, boolean write) throws FileSystemException
+    {
+        this(VFS.getManager().resolveFile("file://" + path), read, write);
+        if (!path.isAbsolute())
+            throw new FileSystemException(path + " is not absolute");
+    }
+
     public AuthorizedFileSystem(FileObject wrappedFileObjectRoot, boolean read, boolean write) throws FileSystemException
     {
         super(new VirtualFileName(AuthorizedFileSystem.class.getName() + ":", "/", FileType.FOLDER), null, null);
@@ -62,6 +68,11 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         wrappedFileSystem = wrappedFileObjectRoot.getFileSystem();
         allowRead = read;
         allowWrite = write;
+    }
+
+    public FileObject getWrappedFileObject()
+    {
+        return wrappedRoot;
     }
 
     @Override
@@ -461,13 +472,20 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         @Override
         public FileObject resolveFile(String path) throws FileSystemException
         {
-            return !allowRead ? null : super.resolveFile(path);
+            if (!allowRead)
+                return null;
+            if (path.startsWith("/"))
+                return AuthorizedFileSystem.this.resolveFile(path);
+            else
+                return wrapFileObject(_fo.resolveFile(path));
         }
 
         @Override
         public FileObject resolveFile(String name, NameScope scope) throws FileSystemException
         {
-            return !allowRead ? null : super.resolveFile(name, scope);
+            if (!allowRead)
+                return null;
+            return wrapFileObject(_fo.resolveFile(name, scope));
         }
 
         @Override
@@ -500,22 +518,8 @@ public class AuthorizedFileSystem extends AbstractFileSystem
     }
 
 
-
-
-
     public static class TestCase extends org.junit.Assert
     {
-        Path tempDirectoryPath;
-        FileObject localRoot;
-
-        @Before
-        public void setup() throws IOException
-        {
-            tempDirectoryPath = FileUtil.createTempDirectory("junit");
-            localRoot = VFS.getManager().resolveFile("file://" + tempDirectoryPath);
-            assertNotNull(localRoot);
-        }
-
         @Test
         public void nopermission()
         {
@@ -531,47 +535,47 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         @Test
         public void readwrite() throws Exception
         {
-            AuthorizedFileSystem afs = new AuthorizedFileSystem(localRoot, true, true);
-            FileObject root = afs.resolveFile("/");
-            assertNotNull(root);
-            assertTrue(root.exists());
+            FileObject root = FileUtil.createTempDirectoryFileObject(AuthorizedFileSystem.class.getName());
             try
             {
-                root.delete();
-                fail("Should not be able to delete root of FileSystem");
-            }
-            catch (UnauthorizedException fse)
-            {
-                // expected
-            }
-            FileObject a = afs.resolveFile("a.txt");
-            a.createFile();
-            assertTrue(a.isFile());
-            FileObject x = afs.resolveFile("a.txt");
-            assertEquals(a,x);
-            assertTrue(x.exists());
-            x = afs.resolveFile("/a.txt");
-            assertEquals(a,x);
-            assertTrue(x.exists());
-            assertTrue(a.delete());
-            assertFalse(a.exists());
-            assertFalse(x.exists());
+                assertNotNull(root);
+                assertTrue(root.exists());
+                try
+                {
+                    root.delete();
+                    fail("Should not be able to delete root of FileSystem");
+                }
+                catch (UnauthorizedException fse)
+                {
+                    // expected
+                }
+                FileObject a = root.resolveFile("a.txt");
+                a.createFile();
+                assertTrue(a.isFile());
+                FileObject x = root.resolveFile("a.txt");
+                assertEquals(a, x);
+                assertTrue(x.exists());
+                x = root.resolveFile("/a.txt");
+                assertEquals(a, x);
+                assertTrue(x.exists());
+                assertTrue(a.delete());
+                assertFalse(a.exists());
+                assertFalse(x.exists());
 
-            try
-            {
-                afs.resolveFile("../a.txt");
-                fail("all files outside '/' are unauthorized");
+                try
+                {
+                    root.resolveFile("../a.txt");
+                    fail("all files outside '/' are unauthorized");
+                }
+                catch (UnauthorizedException ue)
+                {
+                    // expected
+                }
             }
-            catch (UnauthorizedException ue)
+            finally
             {
-                // expected
+                FileUtil.deleteTempDirectoryFileObject(root);
             }
-        }
-
-        @After
-        public void cleanup() throws IOException
-        {
-            FileUtil.deleteDir(tempDirectoryPath);
         }
     }
 }
@@ -581,5 +585,6 @@ public class AuthorizedFileSystem extends AbstractFileSystem
 
 [ ] get clear on proper time to use encoded or decoded paths
 [ ] Do we need to support URI methods?
+[ ] use AbstractFileSystem.close()?
 
 */
