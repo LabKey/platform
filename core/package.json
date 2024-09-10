@@ -11,7 +11,7 @@
     "copy-distributions": "npm run clean && node copy-distributions.js",
     "start": "cross-env NODE_ENV=development webpack serve --config node_modules/@labkey/build/webpack/watch.config.js",
     "start-link": "cross-env LINK=true npm run start",
-    "test": "cross-env NODE_ENV=test jest --silent",
+    "test": "cross-env NODE_ENV=test jest",
     "lint": "eslint",
     "lint-fix": "eslint --fix"
   },
@@ -60,7 +60,6 @@
   "devDependencies": {
     "@labkey/build": "7.7.1",
     "@labkey/eslint-config-react": "0.0.15",
-    "@types/enzyme-adapter-react-16": "1.0.9",
     "@types/jest": "29.5.12",
     "@types/react": "18.3.3",
     "@types/react-dom": "18.3.0",
