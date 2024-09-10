@@ -2230,8 +2230,8 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 assertEquals("\\Folder1\\sub2\\img.png", getFileRootSubstitutedFilePath("${FileRoot}\\img.png", "\\Folder1\\sub2\\"));
                 assertEquals("\\Folder1\\sub2\\img.png", getFileRootSubstitutedFilePath("\"${FileRoot}\\img.png\"", "\\Folder1\\sub2\\"));
                 assertEquals("\\Folder1\\sub2\\img.png", getFileRootSubstitutedFilePath("\"${FileRoot}\\img.png\"", "\\Folder1\\sub2"));
-                assertEquals("\\Folder1\\sub2\\img.png", getFileRootSubstitutedFilePath("\"${FileRoot}img.png\"", "\\Folder1\\sub2\\"));
-                assertEquals("\\Folder1\\sub2\\img.png", getFileRootSubstitutedFilePath("\"${FileRoot}img.png\"", "\\Folder1\\sub2"));
+                assertEquals("\\Folder1\\sub2\\sub1\\img.png", getFileRootSubstitutedFilePath("\"${FileRoot}sub1\\img.png\"", "\\Folder1\\sub2\\"));
+                assertEquals("\\Folder1\\sub2\\sub1\\img.png", getFileRootSubstitutedFilePath("\"${FileRoot}sub1\\img.png\"", "\\Folder1\\sub2"));
                 assertEquals("\\Folder1\\sub2\\sub1\\img.png", getFileRootSubstitutedFilePath("\"${FileRoot}\\sub1\\img.png\"", "\\Folder1\\sub2"));
                 assertEquals("\\Folder0\\sub02\\img.png", getFileRootSubstitutedFilePath("\\Folder0\\sub02\\img.png", "\\Folder1\\sub2"));
                 assertEquals("\"${FileRoot}\\img.png\"", getFileRootSubstitutedFilePath("\"${FileRoot}\\img.png\"", null));
