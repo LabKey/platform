@@ -15,6 +15,7 @@
     "lint": "eslint",
     "lint-fix": "eslint --fix"
   },
+  "types": "src/client/typings/main.d.ts",
   "jest": {
     "globals": {
       "LABKEY": {
