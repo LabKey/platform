@@ -72,7 +72,6 @@ class DbScopeLoader
                     try
                     {
                         scope = new DbScope(this);
-                        scope.getSqlDialect().prepare(scope);
                     }
                     catch (Throwable t)
                     {
