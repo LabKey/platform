@@ -469,7 +469,7 @@ public class ListManager implements SearchService.DocumentProvider
         _listDefCache.remove(c.getId());
     }
 
-    public static final SearchService.SearchCategory listCategory = new SearchService.SearchCategory("list", "List");
+    public static final SearchService.SearchCategory listCategory = new SearchService.SearchCategory("list", "Lists");
 
     // Index all lists in this container
     @Override

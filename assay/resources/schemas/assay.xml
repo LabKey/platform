@@ -220,7 +220,7 @@
           <fkColumnName>rowId</fkColumnName>
         </fk>
       </column>
-      <column columnName="SampleId">
+      <column columnName="SampleID">
         <description>The sample associated with this well.</description>
       </column>
       <column columnName="Row">

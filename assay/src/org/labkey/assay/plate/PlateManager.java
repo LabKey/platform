@@ -193,7 +193,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     // when those calls are being made for a plate save operation.
     public static final String PLATE_SAVE_FLAG = ".plateSave";
 
-    public SearchService.SearchCategory PLATE_CATEGORY = new SearchService.SearchCategory("plate", "Plate") {
+    public SearchService.SearchCategory PLATE_CATEGORY = new SearchService.SearchCategory("plate", "Assay Plates", false) {
         @Override
         public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
         {
@@ -428,15 +428,13 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     @Override
     public @Nullable PlateSet getPlateSet(Container container, int plateSetId)
     {
-        return new TableSelector(AssayDbSchema.getInstance().getTableInfoPlateSet()).getObject(container, plateSetId, PlateSetImpl.class);
+        return PlateSetCache.getPlateSet(container, plateSetId);
     }
 
     @Override
     public @Nullable PlateSet getPlateSet(ContainerFilter cf, int plateSetId)
     {
-        SimpleFilter filterPlateSet = new SimpleFilter(FieldKey.fromParts("RowId"), plateSetId);
-        Container c = getContainerWithPlateSetIdentifier(cf, filterPlateSet);
-        return getPlateSet(c, plateSetId);
+        return PlateSetCache.getPlateSet(cf, plateSetId);
     }
 
     @Override
@@ -679,7 +677,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return (Plate) require(getPlate(container, plateRowId), "Plate id \"" + plateRowId + "\" not found.", errorPrefix);
     }
 
-    private @NotNull PlateSet requirePlateSet(Container container, int plateSetRowId, @Nullable String errorPrefix) throws ValidationException
+    public @NotNull PlateSet requirePlateSet(Container container, int plateSetRowId, @Nullable String errorPrefix) throws ValidationException
     {
         return (PlateSet) require(
             getPlateSet(container, plateSetRowId),
@@ -1433,6 +1431,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 if (!emptyPlateSetIds.isEmpty())
                 {
                     beforePlateSetsDelete(emptyPlateSetIds);
+                    tx.addCommitTask(() -> clearPlateSetCache(container, emptyPlateSetIds), DbScope.CommitTaskOption.POSTCOMMIT);
 
                     SQLFragment sql = new SQLFragment("DELETE FROM ").append(schema.getTableInfoPlateSet())
                             .append(" WHERE RowId ").appendInClause(emptyPlateSetIds, schema.getSchema().getSqlDialect());
@@ -1861,11 +1860,14 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 LOG.warn(String.format("clearCache: failed to resolve container for plate with rowId %d with containerId %s.", rowId, containerId));
                 continue;
             }
-
-            Plate plate = PlateCache.getPlate(c, rowId);
-            if (plate != null)
-                PlateCache.uncache(c, plate);
+            PlateCache.uncache(c, rowId);
         }
+    }
+
+    private void clearPlateSetCache(Container container, Collection<Integer> plateSetRowIds)
+    {
+        for (Integer plateSetId : plateSetRowIds)
+            PlateSetCache.uncache(container, plateSetId);
     }
 
     @Override
@@ -2587,7 +2589,10 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             }
 
             if (archivingPlateSets)
+            {
                 archive(container, user, AssayDbSchema.getInstance().getTableInfoPlateSet(), "plate sets", plateSetIds, archive);
+                tx.addCommitTask(() -> clearPlateSetCache(container, plateSetIds), DbScope.CommitTaskOption.POSTCOMMIT);
+            }
 
             tx.commit();
         }
@@ -3272,7 +3277,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 List<DisplayColumn> displayColumns = getPlateDisplayColumns(plateQueryView);
                 PlateFileBytes plateFileBytes = new PlateFileBytes(plate.getName(), new ByteArrayOutputStream());
 
-                try (TSVGridWriter writer = new TSVGridWriter(plateQueryView::getResults, displayColumns, Collections.singletonMap("SampleId/Name", "Sample Id")))
+                try (TSVGridWriter writer = new TSVGridWriter(plateQueryView::getResults, displayColumns, Collections.singletonMap("SampleId/Name", "Sample ID")))
                 {
                     writer.setDelimiterCharacter(delim);
                     writer.setColumnHeaderType(ColumnHeaderType.FieldKey);
