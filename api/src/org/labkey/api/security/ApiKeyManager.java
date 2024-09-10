@@ -15,6 +15,7 @@
  */
 package org.labkey.api.security;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -106,7 +107,7 @@ public class ApiKeyManager
         }
 
         if (description != null)
-            map.put("Description", description);
+            map.put("Description", StringUtils.abbreviate(description.trim(), 256));
 
         try (Transaction t = CoreSchema.getInstance().getScope().beginTransaction(TRANSACTION_KIND))
         {
