@@ -397,7 +397,11 @@ public class DomainUtil
 
                     ColumnInfo colInfo = tableInfo.getColumn(propDesc.getName());
                     if (colInfo != null)
-                        propDesc.setRangeURI(PropertyType.getFromJdbcType(colInfo.getJdbcType()).getTypeUri());
+                    {
+                        PropertyType type = PropertyType.getFromJdbcType(colInfo.getJdbcType(), false);
+                        if (type != null) // Issue 51204
+                            propDesc.setRangeURI(type.getTypeUri());
+                    }
 
                     calculatedFields.add(propDesc);
                 }
