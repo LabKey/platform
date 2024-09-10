@@ -2,6 +2,7 @@ package org.labkey.api.files.virtual;
 
 import org.apache.commons.vfs2.Capability;
 import org.apache.commons.vfs2.FileContent;
+import org.apache.commons.vfs2.FileContentInfo;
 import org.apache.commons.vfs2.FileListener;
 import org.apache.commons.vfs2.FileName;
 import org.apache.commons.vfs2.FileObject;
@@ -12,26 +13,34 @@ import org.apache.commons.vfs2.FileSystemManager;
 import org.apache.commons.vfs2.FileSystemOptions;
 import org.apache.commons.vfs2.FileType;
 import org.apache.commons.vfs2.NameScope;
+import org.apache.commons.vfs2.RandomAccessContent;
 import org.apache.commons.vfs2.VFS;
 import org.apache.commons.vfs2.impl.VirtualFileName;
 import org.apache.commons.vfs2.operations.FileOperations;
 import org.apache.commons.vfs2.provider.AbstractFileName;
 import org.apache.commons.vfs2.provider.AbstractFileObject;
 import org.apache.commons.vfs2.provider.AbstractFileSystem;
+import org.apache.commons.vfs2.util.RandomAccessMode;
 import org.jetbrains.annotations.NotNull;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.UnauthorizedException;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.net.URI;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.nio.file.Path;
+import java.security.cert.Certificate;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Currently AuthorizedFileSystem supports two modes READ_ONLY and READWRITE
@@ -40,39 +49,84 @@ import java.util.List;
  */
 public class AuthorizedFileSystem extends AbstractFileSystem
 {
-    final FileObject wrappedRoot;
-    final FileSystem wrappedFileSystem;
-    final boolean allowRead;
-    final boolean allowWrite;
+    final static String SCHEME = AuthorizedFileSystem.class.getName() + ":";
+    final FileObject _rootInnerFileObject;
+    final FileObject _rootWrapperFileObject;
+    final FileSystem _wrappedFileSystem;
+    final boolean _allowRead;
+    final boolean _allowWrite;
 
-    public AuthorizedFileSystem(File f, boolean read, boolean write) throws FileSystemException
+    public static AuthorizedFileSystem create(File f, boolean read, boolean write)
     {
-        this(VFS.getManager().resolveFile("file://" + f.getPath()), read, write);
         if (!f.isAbsolute())
-            throw new FileSystemException(f + " is not absolute");
+            throw new IllegalArgumentException(f + " is not absolute");
+        try
+        {
+            return new AuthorizedFileSystem(VFS.getManager().resolveFile("file://" + f.getPath()), read, write);
+        }
+        catch (FileSystemException e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
     }
 
-    public AuthorizedFileSystem(Path path, boolean read, boolean write) throws FileSystemException
+
+    public static AuthorizedFileSystem create(Path path, boolean read, boolean write)
     {
-        this(VFS.getManager().resolveFile("file://" + path), read, write);
         if (!path.isAbsolute())
-            throw new FileSystemException(path + " is not absolute");
+            throw new IllegalArgumentException(path + " is not absolute");
+        try
+        {
+            return new AuthorizedFileSystem(VFS.getManager().resolveFile("file://" + path), read, write);
+        }
+        catch (FileSystemException e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
     }
 
-    public AuthorizedFileSystem(FileObject wrappedFileObjectRoot, boolean read, boolean write) throws FileSystemException
+
+    // for testing create a read-only clone
+    public static AuthorizedFileSystem createReadOnly(AuthorizedFileSystem src)
     {
-        super(new VirtualFileName(AuthorizedFileSystem.class.getName() + ":", "/", FileType.FOLDER), null, null);
-        if (!wrappedFileObjectRoot.isFolder())
-            throw new FileSystemException("parentLayer must be a Folder");
-        wrappedRoot = wrappedFileObjectRoot;
-        wrappedFileSystem = wrappedFileObjectRoot.getFileSystem();
-        allowRead = read;
-        allowWrite = write;
+        return new AuthorizedFileSystem(src._rootInnerFileObject, true, false);
     }
 
-    public FileObject getWrappedFileObject()
+
+    private AuthorizedFileSystem(FileObject wrappedFileObjectRoot, boolean read, boolean write)
     {
-        return wrappedRoot;
+        super(new VirtualFileName(SCHEME, "/", FileType.FOLDER), null, null);
+        try
+        {
+            if (!wrappedFileObjectRoot.isFolder())
+                throw new IllegalArgumentException("parentLayer must be a Folder");
+        }
+        catch (FileSystemException e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
+        _rootInnerFileObject = wrappedFileObjectRoot;
+        _rootWrapperFileObject = wrapFileObject(_rootInnerFileObject);
+        _wrappedFileSystem = wrappedFileObjectRoot.getFileSystem();
+        _allowRead = read;
+        _allowWrite = write;
+    }
+
+    public FileObject getInnerFileObject()
+    {
+        return _rootInnerFileObject;
+    }
+
+    void checkWritable()
+    {
+        if (!_allowWrite)
+            throw new UnauthorizedException();
+    }
+
+    void checkReadable()
+    {
+        if (!_allowRead)
+            throw new UnauthorizedException();
     }
 
     @Override
@@ -91,25 +145,25 @@ public class AuthorizedFileSystem extends AbstractFileSystem
     @Override
     public boolean hasCapability(Capability capability)
     {
-        return wrappedFileSystem.hasCapability(capability);
+        return _wrappedFileSystem.hasCapability(capability);
     }
 
     @Override
-    public FileObject getRoot() throws FileSystemException
+    public FileObject getRoot()
     {
-        return super.getRoot();
+        return _rootWrapperFileObject;
     }
 
     @Override
     public FileName getRootName()
     {
-        return super.getRootName();
+        return _rootWrapperFileObject.getName();
     }
 
     @Override
     public String getRootURI()
     {
-        return super.getRootURI();
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -133,8 +187,8 @@ public class AuthorizedFileSystem extends AbstractFileSystem
     @Override
     public FileObject resolveFile(String s) throws FileSystemException
     {
-        String fullPath = wrappedRoot.getName().getPath() + "/" + s;
-        FileObject fo = wrappedFileSystem.resolveFile(fullPath);
+        String fullPath = _rootInnerFileObject.getName().getPath() + "/" + s;
+        FileObject fo = _wrappedFileSystem.resolveFile(fullPath);
         return wrapFileObject(fo);
     }
 
@@ -186,14 +240,238 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         return super.getLastModTimeAccuracy();
     }
 
-    _FileObject wrapFileObject(FileObject fo) throws FileSystemException
+    class _FileContent implements FileContent
     {
-        if (!wrappedRoot.getName().isDescendent(fo.getName(), NameScope.DESCENDENT_OR_SELF))
+        final FileObject _fo;
+        final FileContent _fc;
+
+        _FileContent(FileObject fo) throws FileSystemException
+        {
+            _fo = fo;
+            _fc = fo.getContent();
+        }
+
+        @Override
+        public void close() throws FileSystemException
+        {
+            _fc.close();
+        }
+
+        @Override
+        public Object getAttribute(String attrName) throws FileSystemException
+        {
+            checkReadable();
+            return _fc.getAttribute(attrName);
+        }
+
+        @Override
+        public String[] getAttributeNames() throws FileSystemException
+        {
+            checkReadable();
+            return _fc.getAttributeNames();
+        }
+
+        @Override
+        public Map<String, Object> getAttributes() throws FileSystemException
+        {
+            checkReadable();
+            return _fc.getAttributes();
+        }
+
+        @Override
+        public byte[] getByteArray() throws IOException
+        {
+            checkReadable();
+            return _fc.getByteArray();
+        }
+
+        @Override
+        public Certificate[] getCertificates() throws FileSystemException
+        {
+            checkReadable();
+            return _fc.getCertificates();
+        }
+
+        @Override
+        public FileContentInfo getContentInfo() throws FileSystemException
+        {
+            checkReadable();
+            return _fc.getContentInfo();
+        }
+
+        @Override
+        public FileObject getFile()
+        {
+            return _fc.getFile();
+        }
+
+        @Override
+        public InputStream getInputStream() throws FileSystemException
+        {
+            checkReadable();
+            return _fc.getInputStream();
+        }
+
+        @Override
+        public InputStream getInputStream(int bufferSize) throws FileSystemException
+        {
+            checkReadable();
+            return _fc.getInputStream(bufferSize);
+        }
+
+        @Override
+        public long getLastModifiedTime() throws FileSystemException
+        {
+            checkReadable();
+            return _fc.getLastModifiedTime();
+        }
+
+        @Override
+        public OutputStream getOutputStream() throws FileSystemException
+        {
+            checkWritable();
+            return _fc.getOutputStream();
+        }
+
+        @Override
+        public OutputStream getOutputStream(boolean bAppend) throws FileSystemException
+        {
+            checkWritable();
+            return _fc.getOutputStream(bAppend);
+        }
+
+        @Override
+        public OutputStream getOutputStream(boolean bAppend, int bufferSize) throws FileSystemException
+        {
+            checkWritable();
+            return _fc.getOutputStream(bAppend, bufferSize);
+        }
+
+        @Override
+        public OutputStream getOutputStream(int bufferSize) throws FileSystemException
+        {
+            checkWritable();
+            return _fc.getOutputStream(bufferSize);
+        }
+
+        @Override
+        public RandomAccessContent getRandomAccessContent(RandomAccessMode mode) throws FileSystemException
+        {
+            if (mode.requestRead())
+                checkReadable();
+            if (mode.requestWrite())
+                checkWritable();
+            return _fc.getRandomAccessContent(mode);
+        }
+
+        @Override
+        public long getSize() throws FileSystemException
+        {
+            checkReadable();
+            return _fc.getSize();
+        }
+
+        @Override
+        public String getString(Charset charset) throws IOException
+        {
+            checkReadable();
+            return _fc.getString(charset);
+        }
+
+        @Override
+        public String getString(String charset) throws IOException
+        {
+            checkReadable();
+            return _fc.getString(charset);
+        }
+
+        @Override
+        public boolean hasAttribute(String attrName) throws FileSystemException
+        {
+            return _fc.hasAttribute(attrName);
+        }
+
+        @Override
+        public boolean isEmpty() throws FileSystemException
+        {
+            checkReadable();
+            return _fc.isEmpty();
+        }
+
+        @Override
+        public boolean isOpen()
+        {
+            return _fc.isOpen();
+        }
+
+        @Override
+        public void removeAttribute(String attrName) throws FileSystemException
+        {
+            checkWritable();
+            _fc.removeAttribute(attrName);
+        }
+
+        @Override
+        public void setAttribute(String attrName, Object value) throws FileSystemException
+        {
+            checkWritable();
+            _fc.setAttribute(attrName, value);
+        }
+
+        @Override
+        public void setLastModifiedTime(long modTime) throws FileSystemException
+        {
+            checkWritable();
+            _fc.setLastModifiedTime(modTime);
+        }
+
+        @Override
+        public long write(FileObject file) throws IOException
+        {
+            checkReadable();
+            return _fc.write(file);
+        }
+
+        @Override
+        public long write(FileContent output) throws IOException
+        {
+            checkReadable();
+            return _fc.write(output);
+        }
+
+        @Override
+        public long write(OutputStream output) throws IOException
+        {
+            checkReadable();
+            return _fc.write(output);
+        }
+
+        @Override
+        public long write(OutputStream output, int bufferSize) throws IOException
+        {
+            checkReadable();
+            return _fc.write(output, bufferSize);
+        }
+    }
+
+
+    _FileObject wrapFileObject(FileObject fo)
+    {
+        if (!_rootInnerFileObject.getName().isDescendent(fo.getName(), NameScope.DESCENDENT_OR_SELF))
             throw new UnauthorizedException();
-        var s = wrappedRoot.getName().getRelativeName(fo.getName());
-        if (".".equals(s))
-            s = "/";
-        var name = new VirtualFileName(AuthorizedFileSystem.class.getName() + ":", s, FileType.FILE_OR_FOLDER);
+        String relative;
+        try
+        {
+            // this should not actually throw
+            relative = _rootInnerFileObject.getName().getRelativeName(fo.getName());
+        }
+        catch (FileSystemException e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
+        if (".".equals(relative))
+            relative = "/";
+        var name = new VirtualFileName(SCHEME, relative, FileType.FILE_OR_FOLDER);
         return new _FileObject(name, fo);
     }
 
@@ -201,7 +479,7 @@ public class AuthorizedFileSystem extends AbstractFileSystem
     {
         final FileObject _fo;
 
-        _FileObject(VirtualFileName name, FileObject fo) throws FileSystemException
+        _FileObject(VirtualFileName name, FileObject fo)
         {
             super(name, AuthorizedFileSystem.this);
             _fo = fo;
@@ -236,22 +514,10 @@ public class AuthorizedFileSystem extends AbstractFileSystem
             return names;
         }
 
-        void checkWritable()
-        {
-            if (!allowWrite)
-                throw new UnauthorizedException();
-        }
-
-        void checkReadable()
-        {
-            if (!allowRead)
-                throw new UnauthorizedException();
-        }
-
         @Override
         public boolean canRenameTo(FileObject newfile)
         {
-            return allowWrite && newfile instanceof _FileObject other && _fo.canRenameTo(other._fo);
+            return _allowWrite && newfile instanceof _FileObject other && _fo.canRenameTo(other._fo);
         }
 
         @Override
@@ -307,13 +573,13 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         @Override
         public boolean exists() throws FileSystemException
         {
-            return allowRead && _fo.exists();
+            return _allowRead && _fo.exists();
         }
 
         @Override
         public FileObject[] findFiles(FileSelector selector) throws FileSystemException
         {
-            if (!allowRead)
+            if (!_allowRead)
                 return new FileObject[0];
             return _fo.findFiles(selector);
         }
@@ -321,7 +587,7 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         @Override
         public void findFiles(FileSelector selector, boolean depthwise, List<FileObject> selected) throws FileSystemException
         {
-            if (!allowRead)
+            if (!_allowRead)
                 return;
             _fo.findFiles(selector, depthwise, selected);
         }
@@ -329,7 +595,7 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         @Override
         public FileObject getChild(String name) throws FileSystemException
         {
-            if (!allowRead)
+            if (!_allowRead)
                 return null;
             return _fo.getChild(name);
         }
@@ -337,7 +603,7 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         @Override
         public FileObject[] getChildren() throws FileSystemException
         {
-            if (!allowRead)
+            if (!_allowRead)
                 return new FileObject[0];
             return _fo.getChildren();
         }
@@ -345,8 +611,7 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         @Override
         public FileContent getContent() throws FileSystemException
         {
-            checkReadable();
-            return _fo.getContent();
+            return new _FileContent(_fo);
         }
 
         @Override
@@ -441,7 +706,7 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         @Override
         public boolean isReadable() throws FileSystemException
         {
-            return allowRead && _fo.isReadable();
+            return _allowRead && _fo.isReadable();
         }
 
         @Override
@@ -453,7 +718,7 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         @Override
         public boolean isWriteable() throws FileSystemException
         {
-            return allowWrite && _fo.isWriteable();
+            return _allowWrite && _fo.isWriteable();
         }
 
         @Override
@@ -472,7 +737,7 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         @Override
         public FileObject resolveFile(String path) throws FileSystemException
         {
-            if (!allowRead)
+            if (!_allowRead)
                 return null;
             if (path.startsWith("/"))
                 return AuthorizedFileSystem.this.resolveFile(path);
@@ -483,7 +748,7 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         @Override
         public FileObject resolveFile(String name, NameScope scope) throws FileSystemException
         {
-            if (!allowRead)
+            if (!_allowRead)
                 return null;
             return wrapFileObject(_fo.resolveFile(name, scope));
         }
@@ -533,9 +798,12 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         }
 
         @Test
-        public void readwrite() throws Exception
+        public void create_delete() throws Exception
         {
             FileObject root = FileUtil.createTempDirectoryFileObject(AuthorizedFileSystem.class.getName());
+            assertTrue(root.getFileSystem() instanceof AuthorizedFileSystem);
+            var readOnlyRoot = createReadOnly((AuthorizedFileSystem)root.getFileSystem()).getRoot();
+
             try
             {
                 assertNotNull(root);
@@ -549,7 +817,21 @@ public class AuthorizedFileSystem extends AbstractFileSystem
                 {
                     // expected
                 }
-                FileObject a = root.resolveFile("a.txt");
+
+                FileObject aRO = readOnlyRoot.resolveFile("a.txt");
+                assertFalse(aRO.exists());
+                try
+                {
+                    aRO.createFile();
+                    fail("shouldn't be able to create file in readonly file system");
+                }
+                catch (UnauthorizedException fse)
+                {
+                    // pass
+                }
+
+                var a = root.resolveFile("a.txt");
+                assertFalse(a.exists());
                 a.createFile();
                 assertTrue(a.isFile());
                 FileObject x = root.resolveFile("a.txt");
@@ -558,9 +840,19 @@ public class AuthorizedFileSystem extends AbstractFileSystem
                 x = root.resolveFile("/a.txt");
                 assertEquals(a, x);
                 assertTrue(x.exists());
+                try
+                {
+                    aRO.delete();
+                    fail("shouldn't be able to delete file in readonly file system");
+                }
+                catch (UnauthorizedException ue)
+                {
+                    // pass
+                }
                 assertTrue(a.delete());
                 assertFalse(a.exists());
                 assertFalse(x.exists());
+                assertFalse(aRO.exists());
 
                 try
                 {
@@ -577,6 +869,60 @@ public class AuthorizedFileSystem extends AbstractFileSystem
                 FileUtil.deleteTempDirectoryFileObject(root);
             }
         }
+
+        @Test
+        public void read_write() throws Exception
+        {
+            FileObject root = FileUtil.createTempDirectoryFileObject(AuthorizedFileSystem.class.getName());
+            var readOnlyRoot = createReadOnly((AuthorizedFileSystem)root.getFileSystem()).getRoot();
+            try
+            {
+                assertNotNull(root);
+                assertTrue(root.exists());
+                try
+                {
+                    root.delete();
+                    fail("Should not be able to delete root of FileSystem");
+                }
+                catch (UnauthorizedException fse)
+                {
+                    // expected
+                }
+
+                FileObject a = root.resolveFile("a.txt");
+                a.createFile();
+                assertTrue(a.isFile());
+
+                try (FileContent contentRW = a.getContent();
+                    OutputStream os = contentRW.getOutputStream())
+                {
+                    Writer w = new OutputStreamWriter(os, Charset.defaultCharset());
+                    w.write("Hello World");
+                    w.close();
+                }
+
+                FileObject aRO = readOnlyRoot.resolveFile("a.txt");
+                FileContent contentRO = aRO.getContent();
+                try (var is = contentRO.getInputStream())
+                {
+                    // success, we can read
+                }
+                assertEquals("Hello World", contentRO.getString(Charset.defaultCharset()));
+                try
+                {
+                    var os = contentRO.getOutputStream();
+                    fail("shouldn't be able to write");
+                }
+                catch (UnauthorizedException ue)
+                {
+                    // pass
+                }
+            }
+            finally
+            {
+                FileUtil.deleteTempDirectoryFileObject(root);
+            }
+        }
     }
 }
 
@@ -586,5 +932,9 @@ public class AuthorizedFileSystem extends AbstractFileSystem
 [ ] get clear on proper time to use encoded or decoded paths
 [ ] Do we need to support URI methods?
 [ ] use AbstractFileSystem.close()?
+
+CONSIDER
+
+[ ] fine-grained permissions list/read/insert/update/delete
 
 */

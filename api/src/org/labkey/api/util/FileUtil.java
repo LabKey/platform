@@ -1471,12 +1471,12 @@ quickScan:
     public static FileObject createTempDirectoryFileObject(@Nullable String prefix) throws IOException
     {
         Path path = Files.createTempDirectory(prefix).toAbsolutePath();
-        return new AuthorizedFileSystem(path, true, true).resolveFile("/");
+        return AuthorizedFileSystem.create(path, true, true).getRoot();
     }
 
     public static boolean deleteTempDirectoryFileObject(@NotNull FileObject fileObject) throws IOException
     {
-        var localPath = ((AuthorizedFileSystem)fileObject.getFileSystem()).getWrappedFileObject().getPath();
+        var localPath = ((AuthorizedFileSystem)fileObject.getFileSystem()).getInnerFileObject().getPath();
         return FileUtil.deleteDirectoryContents(localPath.toFile());
     }
 
