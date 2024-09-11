@@ -1,0 +1,69 @@
+<tables xmlns="http://labkey.org/data/xml">
+    <table tableName="LineageUpdateDiscrepancies" tableDbType="NOT_IN_DB" hidden="true">
+        <description>
+            Latest audit update events for samples that had lineage and were involved in a transaction
+            that was intended to update lineage on some but not all samples.  This includes transactions for
+            samples that may have already had their lineage removed before the transaction in question.
+        </description>
+        <columns>
+            <column columnName="rowId">
+                <isKeyField>true</isKeyField>
+                <isHidden>true</isHidden>
+            </column>
+            <column columnName="lineageEventOldData">
+                <description>Old record values for the last audited lineage update</description>
+                <displayColumnFactory>
+                    <className>org.labkey.api.audit.data.DataMapColumn$Factory</className>
+                </displayColumnFactory>
+            </column>
+            <column columnName="lineageEventNewData">
+                <description>New record values for the last audited lineage update</description>
+                <displayColumnFactory>
+                    <className>org.labkey.api.audit.data.DataMapColumn$Factory</className>
+                </displayColumnFactory>
+            </column>
+            <column columnName="sampletype">
+                <isHidden>true</isHidden>
+            </column>
+            <column columnName="sampletypeid">
+                <columnTitle>Sample Type</columnTitle>
+                <fk>
+                    <fkColumnName>rowId</fkColumnName>
+                    <fkDbSchema>exp</fkDbSchema>
+                    <fkTable>SampleSets</fkTable>
+                    <fkDisplayColumnName>Name</fkDisplayColumnName>
+                </fk>
+            </column>
+            <column columnName="samplename">
+                <isHidden>true</isHidden>
+            </column>
+            <column columnName="sampleId">
+                <columnTitle>Sample ID</columnTitle>
+                <fk>
+                    <fkColumnName>rowId</fkColumnName>
+                    <fkDbSchema>exp</fkDbSchema>
+                    <fkTable>materials</fkTable>
+                    <fkDisplayColumnName>Name</fkDisplayColumnName>
+                </fk>
+            </column>
+            <column columnName="latestLineageEventDate">
+                <description>Created date of the last event where lineage was changed for the sample.</description>
+            </column>
+            <column columnName="problemTransaction">
+                <description>Transaction ID for the suspect transaction this sample was involved in.</description>
+            </column>
+            <column columnName="problemOldRecordMap">
+                <description>Old record values for the event associated with problemTransaction</description>
+                <displayColumnFactory>
+                    <className>org.labkey.api.audit.data.DataMapColumn$Factory</className>
+                </displayColumnFactory>
+            </column>
+            <column columnName="problemNewRecordMap">
+                <description>New record values for the event associated with problemTransaction</description>
+                <displayColumnFactory>
+                    <className>org.labkey.api.audit.data.DataMapColumn$Factory</className>
+                </displayColumnFactory>
+            </column>
+        </columns>
+    </table>
+</tables>

@@ -16,12 +16,14 @@
 
 package org.labkey.audit;
 
+import jakarta.servlet.ServletContext;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
+import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
 import org.labkey.api.audit.SampleTimelineAuditEvent;
 import org.labkey.api.cache.Cache;
@@ -48,7 +50,6 @@ import org.labkey.api.view.HttpView;
 import org.labkey.audit.model.LogManager;
 import org.labkey.audit.query.AuditQuerySchema;
 
-import jakarta.servlet.ServletContext;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -103,6 +104,11 @@ public class AuditLogImpl implements AuditLogService, StartupListener
     {
         synchronized (STARTUP_LOCK)
         {
+            // perform audit provider initialization
+            for (AuditTypeProvider provider : AuditLogService.get().getAuditProviders())
+            {
+                provider.initializeProvider(User.getAdminServiceUser());
+            }
             _logToDatabase.set(true);
 
             while (!_eventTypeQueue.isEmpty())
