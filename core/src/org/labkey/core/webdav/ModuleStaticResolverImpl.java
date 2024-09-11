@@ -30,7 +30,6 @@ import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.files.FileSystemWatcher;
 import org.labkey.api.files.SupportsFileSystemWatcher;
-import org.labkey.api.files.virtual.AuthorizedFileSystem;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
@@ -39,7 +38,6 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileStream;
-import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.ModuleChangeListener;
 import org.labkey.api.util.PageFlowUtil;
@@ -516,6 +514,13 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
             ModuleStaticResolverImpl.this._allStaticFiles.clear();
         }
 
+        @Override
+        public FileStream getFileStream(User user) throws IOException
+        {
+            if (!exists())
+                return null;
+            return new FileStream.FileContentFileStream(_files.get(0).getContent());
+        }
 
         @Override
         public File getFile()

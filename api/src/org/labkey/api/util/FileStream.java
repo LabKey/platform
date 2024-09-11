@@ -16,7 +16,9 @@
 package org.labkey.api.util;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.vfs2.FileContent;
 import org.apache.commons.vfs2.FileObject;
+import org.apache.commons.vfs2.FileSystemException;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -259,6 +261,57 @@ public interface FileStream
             if (null != file)
                 if (file.renameTo(dest))
                     return;
+            FileStream.super.transferTo(dest);
+        }
+    }
+
+    // TODO can we merge FileStream and FileContent???
+    class FileContentFileStream implements FileStream
+    {
+        private final FileContent content;
+        InputStream in;
+
+        public FileContentFileStream(FileContent c)
+        {
+            content = c;
+        }
+
+        @Override
+        public long getSize() throws IOException
+        {
+            return content.getSize();
+        }
+
+        @Override
+        public @Nullable Date getLastModified()
+        {
+            try
+            {
+                return new Date(content.getLastModifiedTime());
+            }
+            catch (FileSystemException x)
+            {
+                throw UnexpectedException.wrap(x);
+            }
+        }
+
+        @Override
+        public InputStream openInputStream() throws IOException
+        {
+            in = content.getInputStream();
+            return in;
+        }
+
+        @Override
+        public void closeInputStream() throws IOException
+        {
+            IOUtils.closeQuietly(in);
+            in = null;
+        }
+
+        @Override
+        public void transferTo(File dest) throws IOException
+        {
             FileStream.super.transferTo(dest);
         }
     }

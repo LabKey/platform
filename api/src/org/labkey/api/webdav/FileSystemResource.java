@@ -15,6 +15,9 @@
  */
 package org.labkey.api.webdav;
 
+import org.apache.commons.vfs2.FileObject;
+import org.apache.commons.vfs2.FileSystemException;
+import org.apache.commons.vfs2.NameScope;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -36,6 +39,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.files.virtual.AuthorizedFileSystem;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.search.SearchService;
@@ -63,7 +67,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Proxy;
-import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -116,7 +119,9 @@ public class FileSystemResource extends AbstractWebdavResource
         _folder = folder;
         _name = name.toString();
         setSecurableResource(resource);
-        _files = Collections.singletonList(new FileInfo(FileUtil.getAbsoluteCaseSensitiveFile(file)));
+        // NOTE: we don't have a user yet, so we don't know if the user has write permissions (assuming read)
+        FileObject root = AuthorizedFileSystem.create(FileUtil.getAbsoluteCaseSensitiveFile(file), true, false).getRoot();
+        _files = Collections.singletonList(new FileInfo(root));
     }
 
     public FileSystemResource(FileSystemResource folder, Path.Part name)
@@ -125,17 +130,28 @@ public class FileSystemResource extends AbstractWebdavResource
         _folder = folder;
         setSecurableResource(folder.getSecurableResource());
 
-        _files = new ArrayList<>(folder._files.size());
-        _files.addAll(folder._files.stream()
-            .map(file -> new FileInfo(FileUtil.appendName(file.getFile(), name)))
-            .toList());
+        var list = folder._files.stream()
+            .map(file -> {
+                try
+                {
+                    return new FileInfo(file._file.resolveFile(name.toString(), NameScope.DESCENDENT));
+                }
+                catch (FileSystemException e)
+                {
+                    throw UnexpectedException.wrap(e);
+                }
+            })
+            .toList();
+        _files = new ArrayList<>(list);
     }
 
     public FileSystemResource(Path path, File file, SecurableResource resource)
     {
         this(path);
-        _files = Collections.singletonList(new FileInfo(file));
         setSecurableResource(resource);
+        // NOTE: we don't have a user yet, so we're can't limit to read-only
+        FileObject root = AuthorizedFileSystem.create(FileUtil.getAbsoluteCaseSensitiveFile(file), true, false).getRoot();
+        _files = Collections.singletonList(new FileInfo(root));
     }
 
     @Override
@@ -225,7 +241,7 @@ public class FileSystemResource extends AbstractWebdavResource
         FileInfo f = getFileInfo();
         if (null == f)
             return null;
-        return f.getFile();
+        return f._file.getPath().toFile();
     }
 
     @Override
@@ -235,7 +251,7 @@ public class FileSystemResource extends AbstractWebdavResource
             return null;
         if (null == _files || !exists())
             return null;
-        return new FileStream.FileFileStream(getFile());
+        return new FileStream.FileContentFileStream(getFileInfo().getFileObject().getContent());
     }
 
     @Override
@@ -331,13 +347,20 @@ public class FileSystemResource extends AbstractWebdavResource
         if (_files != null)
         {
             _files.stream()
-                    .filter(file -> file.getType() == FileType.directory)
-                    .forEach(file -> {
-                        File[] children = file.getFile().listFiles();
-                        if (null != children)
+                    .filter(fileInfo -> fileInfo.getType() == FileType.directory)
+                    .forEach(fileInfo -> {
+                        try
                         {
-                            for (File child : children)
-                                result.add(child.getName());
+                            FileObject[] children = fileInfo._file.getChildren();
+                            if (null != children)
+                            {
+                                for (FileObject child : children)
+                                    result.add(child.getName().getBaseName());
+                            }
+                        }
+                        catch (FileSystemException x)
+                        {
+                            throw UnexpectedException.wrap(x);
                         }
                     });
         }
@@ -734,15 +757,15 @@ public class FileSystemResource extends AbstractWebdavResource
 
     protected static class FileInfo
     {
-        private File _file;
+        private FileObject _file;
         BasicFileAttributes _attributes;
 
-        public FileInfo(File file)
+        public FileInfo(FileObject file)
         {
             _file = file;
         }
 
-        public File getFile()
+        public FileObject getFileObject()
         {
             return _file;
         }
@@ -788,7 +811,7 @@ public class FileSystemResource extends AbstractWebdavResource
             {
                 try
                 {
-                    _attributes = Files.readAttributes(_file.toPath(), BasicFileAttributes.class);
+                    _attributes = Files.readAttributes(_file.getPath(), BasicFileAttributes.class);
                 }
                 catch (FileNotFoundException|InvalidPathException|FileSystemException x)
                 {

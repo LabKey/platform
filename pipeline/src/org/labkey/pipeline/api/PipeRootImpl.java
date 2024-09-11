@@ -204,19 +204,6 @@ public class PipeRootImpl implements PipeRoot
     }
 
     @Override
-    public @NotNull FileObject getAuthorizedFileObject(User user)
-    {
-        boolean canRead = false;
-        boolean canWrite = false;
-        Container c = getContainer();
-        if (hasPermission(user, ReadPermission.class))
-            canRead = true;
-        if (hasPermission(user, InsertPermission.class) || hasPermission(user, UpdatePermission.class) || hasPermission(user, DeletePermission.class))
-            canWrite = true;
-        return AuthorizedFileSystem.create(getRootPath(), canRead, canWrite).getRoot();
-    }
-
-    @Override
     @NotNull
     public URI getUri()
     {
@@ -277,6 +264,21 @@ public class PipeRootImpl implements PipeRoot
             }
         }
         return _rootPaths;
+    }
+
+
+    public synchronized List<FileObject> getRootPathFileObjects(boolean forWrite)
+    {
+        if (_rootPaths.size() == 0 && !isCloudRoot())
+        {
+            for (URI uri : _uris)
+            {
+                File file = new File(uri);
+                _rootPaths.add(file);
+                NetworkDrive.ensureDrive(file.getPath());
+            }
+        }
+        return _rootPaths.stream().map(f -> AuthorizedFileSystem.create(f, true, forWrite).getRoot()).toList();
     }
 
     public synchronized List<Path> getRootNioPaths()

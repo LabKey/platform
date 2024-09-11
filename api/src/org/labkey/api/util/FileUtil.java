@@ -21,6 +21,8 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.file.SimplePathVisitor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.vfs2.FileObject;
+import org.apache.commons.vfs2.FileSystemException;
+import org.apache.commons.vfs2.NameScope;
 import org.apache.logging.log4j.Logger;
 import org.apache.tika.io.MappedBufferCleaner;
 import org.jetbrains.annotations.NotNull;
@@ -723,6 +725,25 @@ public class FileUtil
         if (!URIUtil.isDescendant(dir.toURI(), ret.toURI()))
             throw new IllegalArgumentException(name);
         return ret;
+    }
+
+    /* Only returns an immediate child */
+    public static FileObject appendName(FileObject dir, org.labkey.api.util.Path.Part part)
+    {
+        return appendName(dir, part.toString());
+    }
+
+    public static FileObject appendName(FileObject dir, String name)
+    {
+        legalPathPartThrow(name);
+        try
+        {
+            return dir.resolveFile(name, NameScope.DESCENDENT);
+        }
+        catch (FileSystemException fse)
+        {
+            throw UnexpectedException.wrap(fse);
+        }
     }
 
     // narrower check than isLegalName() or isAllowedFileName()

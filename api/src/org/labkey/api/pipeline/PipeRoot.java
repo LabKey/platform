@@ -43,10 +43,6 @@ public interface PipeRoot extends SecurableResource
 {
     Container getContainer();
 
-    // preferred to getRootPath and getRootNioPath()
-    @NotNull
-    FileObject getAuthorizedFileObject(User user);
-
     @NotNull
     URI getUri();
 
@@ -76,12 +72,6 @@ public interface PipeRoot extends SecurableResource
      */
     @Nullable
     File resolvePath(String relativePath);
-
-    default Path resolveRelativePath(String relativePath)
-    {
-        return getRootNioPath().resolve(relativePath);
-    }
-
 
     /**
      * Get a local directory that can be used for importing (Read/Write)
