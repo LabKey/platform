@@ -15,6 +15,7 @@
  */
 package org.labkey.bigiron.mssql;
 
+import org.apache.commons.lang3.time.FastDateFormat;
 import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
@@ -33,8 +34,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.sql.Types;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -44,10 +43,10 @@ public class MicrosoftSqlServer2016Dialect extends MicrosoftSqlServer2014Dialect
 
     private volatile String _language = null;
     private volatile String _dateFormat = null;
-    private volatile DateTimeFormatter _timestampFormatter = null;
+    private volatile FastDateFormat _timestampFormatter = null;
 
     @Override
-    public void prepare(DbScope scope)
+    public String prepare(DbScope scope)
     {
         super.prepare(scope);
 
@@ -65,9 +64,9 @@ public class MicrosoftSqlServer2016Dialect extends MicrosoftSqlServer2014Dialect
             default -> throw new IllegalStateException("Unsupported date format: " + _dateFormat);
         };
 
-        _timestampFormatter = DateTimeFormatter.ofPattern("yyyy-" + mdFormat + " HH:mm:ss.SSS");
+        _timestampFormatter = FastDateFormat.getInstance("yyyy-" + mdFormat + " HH:mm:ss.SSS");
 
-        LOG.info("\n    Language:                 {}\n    DateFormat:               {}", _language, _dateFormat);
+        return "\n    Language:                 " + _language + "\n    DateFormat:               " + _dateFormat;
     }
 
     private record Settings(String language, String dateFormat) {}
@@ -94,7 +93,7 @@ public class MicrosoftSqlServer2016Dialect extends MicrosoftSqlServer2014Dialect
      * so we send Timestamps as Strings. SQL Server is very picky about this format; for example, Timestamp.toString(),
      * which is basically ISO, is actually ambiguous and fails if language is French (e.g.). See Issue 51129.
      */
-    private class TimestampStatementWrapper extends StatementWrapper
+    class TimestampStatementWrapper extends StatementWrapper
     {
         public TimestampStatementWrapper(ConnectionWrapper conn, Statement stmt)
         {
@@ -213,7 +212,7 @@ public class MicrosoftSqlServer2016Dialect extends MicrosoftSqlServer2014Dialect
 
         private String convert(Timestamp ts)
         {
-            return _timestampFormatter.format(ts.toInstant().atZone(ZoneId.systemDefault()));
+            return _timestampFormatter.format(ts);
         }
     }
 
@@ -225,7 +224,7 @@ public class MicrosoftSqlServer2016Dialect extends MicrosoftSqlServer2014Dialect
             DbScope scope = DbScope.getLabKeyScope();
             SqlDialect dialect = scope.getSqlDialect();
 
-            if (dialect.isSqlServer() && dialect instanceof MicrosoftSqlServer2016Dialect)
+            if (dialect.isSqlServer() && dialect instanceof MicrosoftSqlServer2016Dialect ms2016Dialect)
             {
                 try (Connection conn = DbScope.getLabKeyScope().getConnection())
                 {
@@ -254,12 +253,27 @@ public class MicrosoftSqlServer2016Dialect extends MicrosoftSqlServer2014Dialect
                             statement.setObject("filterStartTimeStamp", ts);
                         }
                     }
+
+                    if (conn instanceof ConnectionWrapper cw)
+                    {
+                        // Test a few timestamp conversions. Need to accommodate mdy vs. dmy databases.
+                        TimestampStatementWrapper wrapper = ms2016Dialect.new TimestampStatementWrapper(cw, null);
+                        test(wrapper, "mdy".equals(ms2016Dialect._dateFormat) ? "1800-05-10 10:32:00.000" : "1800-10-05 10:32:00.000", "1800-05-10 10:32:00");
+                        test(wrapper, "mdy".equals(ms2016Dialect._dateFormat) ? "1800-05-10 10:32:00.647" : "1800-10-05 10:32:00.647", "1800-05-10 10:32:00.647");
+                        test(wrapper, "2024-09-09 20:26:14.841", "2024-09-09 20:26:14.841");
+                    }
                 }
                 catch (SQLException e)
                 {
                     throw new RuntimeException(e);
                 }
             }
+        }
+
+        private void test(TimestampStatementWrapper wrapper, String expected, String test)
+        {
+            Timestamp ts = Timestamp.valueOf(test);
+            Assert.assertEquals(expected, wrapper.convert(ts));
         }
     }
 }

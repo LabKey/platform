@@ -19,11 +19,6 @@ import org.labkey.api.view.JspView;
 import org.labkey.search.SearchController;
 import org.labkey.search.SearchController.SearchForm;
 
-/**
- * User: adam
- * Date: Jan 19, 2010
- * Time: 1:59:42 PM
- */
 public class SearchWebPart extends JspView<SearchController.SearchForm>
 {
     public SearchWebPart(boolean includeSubfolders, int textBoxWidth, boolean includeHelpLink, boolean isWebPart)

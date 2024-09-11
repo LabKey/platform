@@ -19,6 +19,7 @@
 <%@ page import="org.jetbrains.annotations.NotNull" %>
 <%@ page import="org.json.JSONArray" %>
 <%@ page import="org.json.JSONObject" %>
+<%@ page import="org.labkey.api.collections.CaseInsensitiveHashSet" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.files.FileContentService" %>
@@ -27,6 +28,7 @@
 <%@ page import="org.labkey.api.search.SearchResultTemplate" %>
 <%@ page import="org.labkey.api.search.SearchScope" %>
 <%@ page import="org.labkey.api.search.SearchService" %>
+<%@ page import="org.labkey.api.search.SearchService.SearchCategory" %>
 <%@ page import="org.labkey.api.search.SearchService.SearchResult" %>
 <%@ page import="org.labkey.api.search.SearchUtils" %>
 <%@ page import="org.labkey.api.search.SearchUtils.HtmlParseException" %>
@@ -47,7 +49,10 @@
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.Collection" %>
+<%@ page import="java.util.Collections" %>
+<%@ page import="java.util.Comparator" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.util.Set" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -224,7 +229,7 @@
     SearchResultTemplate template = form.getSearchResultTemplate();
     SearchScope scope = (null == template.getSearchScope() ? form.getSearchScope() : template.getSearchScope());
     String categories = (null == template.getCategories() ? form.getCategory() : template.getCategories());
-    String safeCategories = categories == null ? "" : categories.toLowerCase();
+    Set<String> selectedCategories = categories == null ? Collections.emptySet() : new CaseInsensitiveHashSet(categories.split("\\+"));
     String queryString = form.getQueryString();
     String sortField = form.getSortField();
     boolean invertSort = form.isInvertSort();
@@ -279,6 +284,11 @@
             searchExceptionMessage = e.getMessage();
         }
     }
+
+    List<SearchCategory> allCategories = ss.getSearchCategories().stream()
+        .filter(SearchCategory::isShowInAdvancedSearch)
+        .sorted(Comparator.comparing(SearchCategory::getDescription))
+        .toList();
 %>
 <div<%=unsafe(form.isWebPart() ? "" : " class=\"col-md-12\"")%>>
     <div style="position:relative;">
@@ -327,22 +337,22 @@
                         <div style="padding-top: 1px;">
                             <div class="radio">
                                 <label>
-                                    <input type="radio" name="scope" value="<%=h(SearchScope.All.name())%>" <%=checked(scope == null || SearchScope.All.equals(scope))%>> Site
+                                    <input type="radio" name="scope" value="<%=h(SearchScope.All.name())%>"<%=checked(scope == null || SearchScope.All.equals(scope))%>> Site
                                 </label>
                             </div>
                             <div class="radio">
                                 <label>
-                                    <input type="radio" name="scope" value="<%=h(SearchScope.Project.name())%>" <%=disabled(c.equals(ContainerManager.getRoot()))%> <%=checked(SearchScope.Project.equals(scope))%>> Project
+                                    <input type="radio" name="scope" value="<%=h(SearchScope.Project.name())%>"<%=disabled(c.equals(ContainerManager.getRoot()))%><%=checked(SearchScope.Project.equals(scope))%>> Project
                                 </label>
                             </div>
                             <div class="radio">
                                 <label>
-                                    <input type="radio" name="scope" value="<%=h(SearchScope.Folder.name())%>" <%=checked(SearchScope.Folder.equals(scope))%>> Current Folder
+                                    <input type="radio" name="scope" value="<%=h(SearchScope.Folder.name())%>"<%=checked(SearchScope.Folder.equals(scope))%>> Current Folder
                                 </label>
                             </div>
                             <div class="radio">
                                 <label>
-                                    <input type="radio" name="scope" value="<%=h(SearchScope.FolderAndSubfolders.name())%>" <%=checked(SearchScope.FolderAndSubfolders.equals(scope))%>> Current Folder & Subfolders
+                                    <input type="radio" name="scope" value="<%=h(SearchScope.FolderAndSubfolders.name())%>"<%=checked(SearchScope.FolderAndSubfolders.equals(scope))%>> Current Folder & Subfolders
                                 </label>
                             </div>
                         </div>
@@ -352,52 +362,37 @@
                     <div class="col-sm-4">
                         <h5>
                             Categories
-                            <%= helpPopup("Categories", "Choosing one or more categories will refine your search to only those data types. For example, if you select 'Files' you will see only files and attachments in your " + h(template.getResultNameSingular()) + ".")%>
+                            <%= helpPopup("Categories", "Choosing one or more categories will refine your search to only those data types. For example, if you select 'Files and Attachments' you will see only files and attachments in your " + h(template.getResultNameSingular()) + ".")%>
                         </h5>
                         <div style="padding-top: 1px;">
                             <div class="col-xs-6 col-sm-6" style="padding-left: 0;">
+                                <%
+                                    int half = (allCategories.size() + 1) / 2;
+                                    for (SearchCategory cat : allCategories.subList(0, half))
+                                     {
+                                %>
                                 <div class="checkbox">
                                     <label>
-                                        <input type="checkbox" name="category" value="Assay" <%=checked(safeCategories.contains("assay"))%>> Assays
+                                        <input type="checkbox" name="category" value="<%=h(cat.getName())%>"<%=checked(selectedCategories.contains(cat.getName()))%>> <%=h(cat.getDescription())%>
                                     </label>
                                 </div>
-                                <div class="checkbox">
-                                    <label>
-                                        <input type="checkbox" name="category" value="Dataset" <%=checked(safeCategories.contains("dataset"))%>> Datasets
-                                    </label>
-                                </div>
-                                <div class="checkbox">
-                                    <label>
-                                        <input type="checkbox" name="category" value="File" <%=checked(safeCategories.contains("file"))%>> Files
-                                    </label>
-                                </div>
-                                <div class="checkbox">
-                                    <label>
-                                        <input type="checkbox" name="category" value="Issue" <%=checked(safeCategories.contains("issue"))%>> Issues
-                                    </label>
-                                </div>
+                                <%
+                                    };
+                                %>
                             </div>
                             <div class="col-xs-6 col-sm-6" style="padding-left: 0;">
+                                <%
+                                    for (SearchCategory cat : allCategories.subList(half, allCategories.size()))
+                                    {
+                                %>
                                 <div class="checkbox">
                                     <label>
-                                        <input type="checkbox" name="category" value="List" <%=checked(safeCategories.contains("list"))%>> Lists
+                                        <input type="checkbox" name="category" value="<%=h(cat.getName())%>"<%=checked(selectedCategories.contains(cat.getName()))%>> <%=h(cat.getDescription())%>
                                     </label>
                                 </div>
-                                <div class="checkbox">
-                                    <label>
-                                        <input type="checkbox" name="category" value="Message" <%=checked(safeCategories.contains("message"))%>> Messages
-                                    </label>
-                                </div>
-                                <div class="checkbox">
-                                    <label>
-                                        <input type="checkbox" name="category" value="Subject" <%=checked(safeCategories.contains("subject"))%>> Subjects
-                                    </label>
-                                </div>
-                                <div class="checkbox">
-                                    <label>
-                                        <input type="checkbox" name="category" value="Wiki" <%=checked(safeCategories.contains("wiki"))%>> Wikis
-                                    </label>
-                                </div>
+                                <%
+                                    };
+                                %>
                             </div>
                         </div>
                     </div>
@@ -410,27 +405,27 @@
                         <div style="padding-top: 1px;">
                             <div class="radio">
                                 <label>
-                                    <input type="radio" name="sortField" value="<%=unsafe("score")%>" <%=checked(sortField == null || "score".equals(sortField))%>> Relevance
+                                    <input type="radio" name="sortField" value="<%=unsafe("score")%>"<%=checked(sortField == null || "score".equals(sortField))%>> Relevance
                                 </label>
                             </div>
                             <div class="radio">
                                 <label>
-                                    <input type="radio" name="sortField" value="<%=unsafe("created")%>" <%=checked("created".equals(sortField))%>> Created
+                                    <input type="radio" name="sortField" value="<%=unsafe("created")%>"<%=checked("created".equals(sortField))%>> Created
                                 </label>
                             </div>
                             <div class="radio">
                                 <label>
-                                    <input type="radio" name="sortField" value="<%=unsafe("modified")%>" <%=checked("modified".equals(sortField))%>> Modified
+                                    <input type="radio" name="sortField" value="<%=unsafe("modified")%>"<%=checked("modified".equals(sortField))%>> Modified
                                 </label>
                             </div>
                             <div class="radio">
                                 <label>
-                                    <input type="radio" name="sortField" value="<%=unsafe("container")%>" <%=checked("container".equals(sortField))%>> Folder Path
+                                    <input type="radio" name="sortField" value="<%=unsafe("container")%>"<%=checked("container".equals(sortField))%>> Folder Path
                                 </label>
                             </div>
                             <div class="checkbox">
                                 <label>
-                                    <input type="checkbox" name="invertSort" value="true" <%=checked(invertSort)%>> Reverse Sort Results
+                                    <input type="checkbox" name="invertSort" value="true"<%=checked(invertSort)%>> Reverse Sort Results
                                 </label>
                             </div>
                         </div>

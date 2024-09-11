@@ -15,8 +15,10 @@
  */
 package org.labkey.core.login;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.cache.Throttle;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.module.ModuleLoader;
@@ -42,13 +44,13 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.core.login.DbLoginManager.Key;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.util.Collection;
 import java.util.EmptyStackException;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.labkey.api.security.AuthenticationManager.AUTH_LOGGING_THROTTLE_TTL;
 import static org.labkey.api.security.SecurityManager.API_KEY;
 import static org.labkey.core.login.DbLoginManager.DATABASE_AUTHENTICATION_CATEGORY_KEY;
 
@@ -94,6 +96,9 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
         return true;
     }
 
+    private static final Throttle<String> API_KEY_LAST_USED_THROTTLE = new Throttle<>("API key LastUsed update throttle",
+    1000, AUTH_LOGGING_THROTTLE_TTL, apiKey -> ApiKeyManager.get().updateLastUsed(apiKey));
+
     @Override
     // id and password will not be blank (not null, not empty, not whitespace only)
     public @NotNull AuthenticationResponse authenticate(DbLoginConfiguration configuration, @NotNull String id, @NotNull String password, URLHelper returnURL) throws InvalidEmailException
@@ -102,11 +107,21 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
         if (API_KEY.equals(id))
         {
             User user = ApiKeyManager.get().authenticateFromApiKey(password);
+            final AuthenticationResponse ret;
 
-            // API keys are exempt from secondary authentication, Issue 48764
-            return user != null ?
-                AuthenticationResponse.createSuccessResponse(configuration, new ValidEmail(user.getEmail()), null, Map.of(), UserManager.UserAuditEvent.API_KEY, false) :
-                AuthenticationResponse.createFailureResponse(configuration, FailureReason.badApiKey);
+            if (user != null)
+            {
+                // API keys are exempt from secondary authentication, Issue 48764
+                ret = AuthenticationResponse.createSuccessResponse(configuration, new ValidEmail(user.getEmail()), null, Map.of(), UserManager.UserAuditEvent.API_KEY, false);
+                // Update core.ApiKeys.LastUsed (throttled)
+                API_KEY_LAST_USED_THROTTLE.execute(password);
+            }
+            else
+            {
+                ret = AuthenticationResponse.createFailureResponse(configuration, FailureReason.badApiKey);
+            }
+
+            return ret;
         }
         else
         {

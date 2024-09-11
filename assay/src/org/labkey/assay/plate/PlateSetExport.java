@@ -16,10 +16,11 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class PlateSetExport
 {
@@ -99,6 +100,31 @@ public class PlateSetExport
         return baseColumns.toArray(new ColumnDescriptor[0]);
     }
 
+    // Create sampleIdToRow of the following form:
+    // {<sample id>: [{dataRow1}, {dataRow2}, ... ], ... }
+    // Where the data rows contain the key's sample
+    private Map<String, List<Object[]>> getSampleIdToRows(TableInfo wellTable, List<FieldKey> includedMetadataCols, int plateSetId, String plateSetExport) {
+        Map<String, List<Object[]>> sampleIdToRow = new LinkedHashMap<>();
+        try (Results rs = QueryService.get().select(wellTable, getWellColumns(wellTable, includedMetadataCols), new SimpleFilter(FKMap.get(PLATE_SET_ID_COL), plateSetId), new Sort(ROW_ID_COL)))
+        {
+            while (rs.next())
+            {
+                String sampleId = rs.getString(FKMap.get(SAMPLE_ID_COL));
+                if (sampleId == null)
+                    continue;
+
+                sampleIdToRow.computeIfAbsent(sampleId, key -> new ArrayList<>())
+                        .add(getDataRow(plateSetExport, rs, includedMetadataCols));
+            }
+        }
+        catch (SQLException e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
+
+        return sampleIdToRow;
+    }
+
     public List<Object[]> getWorklist(
         TableInfo wellTable,
         int sourcePlateSetId,
@@ -108,54 +134,43 @@ public class PlateSetExport
     )
     {
         List<Object[]> plateDataRows = new ArrayList<>();
-        Map<String, List<Object[]>> sampleIdToDestinationRow = new LinkedHashMap<>();
+        Map<String, List<Object[]>> sampleIdToDestinationRow = getSampleIdToRows(wellTable, destinationIncludedMetadataCols, destinationPlateSetId, PlateSetExport.DESTINATION);
+        Map<String, List<Object[]>> sampleIdToSourceRow = getSampleIdToRows(wellTable, sourceIncludedMetadataCols, sourcePlateSetId, PlateSetExport.SOURCE);
 
-        // Create sampleIdToDestinationRow of the following form:
-        // {<sample id>: [{dataRow1}, {dataRow2}, ... ], ... }
-        // Where the data rows contain the key's sample
-        try (Results rs = QueryService.get().select(wellTable, getWellColumns(wellTable, destinationIncludedMetadataCols), new SimpleFilter(FKMap.get(PLATE_SET_ID_COL), destinationPlateSetId), new Sort(ROW_ID_COL)))
+        for (Map.Entry<String, List<Object[]>> entry : sampleIdToSourceRow.entrySet())
         {
-            while (rs.next())
+            String sampleId = entry.getKey();
+            List<Object[]> sourceRows = entry.getValue();
+
+            List<Object[]> destinationRows = sampleIdToDestinationRow.get(sampleId);
+
+            // Support scenario where source samples have no destination sample to match against
+            if (destinationRows == null)
             {
-                String sampleId = rs.getString(FKMap.get(SAMPLE_ID_COL));
-                if (sampleId == null)
-                    continue;
-
-                sampleIdToDestinationRow.computeIfAbsent(sampleId, key -> new ArrayList<>())
-                        .add(getDataRow(PlateSetExport.DESTINATION, rs, destinationIncludedMetadataCols));
+                for (Object[] sourceRow : sourceRows)
+                    plateDataRows.add(Arrays.copyOf(sourceRow, sourceRow.length + destinationIncludedMetadataCols.size() + 4));
             }
-        }
-        catch (SQLException e)
-        {
-            throw UnexpectedException.wrap(e);
-        }
-
-        // 1. Retrieve origin row
-        // 2. Use sampleIdToDestinationRow to look up destination rows that share the same sample id
-        // 3. Iterate and concatenate all destination rows to origin row, and add result to final data rows list
-        // This ensures that in the case a sample has been aliquoted and exists in multiple destination wells, but only
-        // one source well, the Excel will still be formed as intended
-        try (Results rs = QueryService.get().select(wellTable, getWellColumns(wellTable, sourceIncludedMetadataCols), new SimpleFilter(FKMap.get(PLATE_SET_ID_COL), sourcePlateSetId), new Sort(ROW_ID_COL)))
-        {
-            while (rs.next())
+            // Support aliquot scenario where a single sample is split into many in destination
+            else if (sourceRows.size() == 1)
             {
-                String sampleId = rs.getString(FKMap.get(SAMPLE_ID_COL));
-                if (sampleId == null)
-                    continue;
-
-                Object[] sourceDataRow = getDataRow(PlateSetExport.SOURCE, rs, sourceIncludedMetadataCols);
-
-                List<Object[]> destinationDataRows = sampleIdToDestinationRow.get(sampleId);
-                if (destinationDataRows == null)
-                     destinationDataRows = Collections.singletonList(new Object[destinationIncludedMetadataCols.size() + 4]); // 4 is the number of base (non-metadata) columns
-
-                for (Object[] dataRow : destinationDataRows)
-                    plateDataRows.add(ArrayUtils.addAll(sourceDataRow, dataRow));
+                for (Object[] destinationRow : destinationRows)
+                    plateDataRows.add(ArrayUtils.addAll(sourceRows.get(0), destinationRow));
             }
-        }
-        catch (Exception e)
-        {
-            throw UnexpectedException.wrap(e);
+            // Catch many-to-many operations
+            else if (sourceRows.size() != destinationRows.size())
+            {
+                Set<String> samplesSet = sourceRows.stream().map(row -> (String) row[4]).collect(Collectors.toSet());
+                throw new UnsupportedOperationException("Many-to-many single-sample operation detected. See sample(s): " + String.join(", ", samplesSet));
+            }
+            // Support 1:1 scenarios
+            else
+            {
+                for (int i = 0; i < sourceRows.size(); i++)
+                {
+                    Object[] destinationRow = (i >= destinationRows.size()) ? new Object[destinationIncludedMetadataCols.size() + 4] : destinationRows.get(i);
+                    plateDataRows.add(ArrayUtils.addAll(sourceRows.get(i), destinationRow));
+                }
+            }
         }
 
         return plateDataRows;

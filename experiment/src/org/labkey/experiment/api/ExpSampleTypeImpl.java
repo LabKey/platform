@@ -91,8 +91,8 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
 {
     private static final String categoryName = "materialSource";
     private static final String mediaCategoryName = "mediaMaterialSource";
-    public static final SearchService.SearchCategory searchCategory = new SearchService.SearchCategory(categoryName, "Set of Samples");
-    public static final SearchService.SearchCategory mediaSearchCategory = new SearchService.SearchCategory(mediaCategoryName, "Set of Media Samples") {
+    public static final SearchService.SearchCategory searchCategory = new SearchService.SearchCategory(categoryName, "Sample Types", false);
+    public static final SearchService.SearchCategory mediaSearchCategory = new SearchService.SearchCategory(mediaCategoryName, "Media Sample Types", false) {
         @Override
         public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
         {

@@ -525,6 +525,7 @@ public class SecurityController extends SpringActionController
             return exportActive;
         }
 
+        @SuppressWarnings("unused")
         public void setExportActive(boolean exportActive)
         {
             this.exportActive = exportActive;
@@ -2403,20 +2404,33 @@ public class SecurityController extends SpringActionController
     public static class CreateApiKeyForm
     {
         private String _type;
+        private String _description;
 
         public String getType()
         {
             return _type;
         }
 
+        @SuppressWarnings("unused")
         public void setType(String type)
         {
             _type = type;
         }
+
+        public String getDescription()
+        {
+            return _description;
+        }
+
+        @SuppressWarnings("unused")
+        public void setDescription(String description)
+        {
+            _description = description;
+        }
     }
 
     @RequiresLogin
-    public class CreateApiKeyAction extends MutatingApiAction<CreateApiKeyForm>
+    public static class CreateApiKeyAction extends MutatingApiAction<CreateApiKeyForm>
     {
         @Override
         public Object execute(CreateApiKeyForm form, BindException errors)
@@ -2429,7 +2443,7 @@ public class SecurityController extends SpringActionController
                     if (!AppProps.getInstance().isAllowApiKeys())
                         throw new NotFoundException("Creation of API keys is disabled");
 
-                    apiKey = ApiKeyManager.get().createKey(getUser());
+                    apiKey = ApiKeyManager.get().createKey(getUser(), form.getDescription());
                     break;
                 case "session":
                     if (!AppProps.getInstance().isAllowSessionKeys())

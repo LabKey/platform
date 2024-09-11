@@ -139,6 +139,28 @@ public class QueryManager
         return def;
     }
 
+    public void renameQuery(User user, Container container, String schema, String oldName, String newName)
+    {
+        QueryDef queryDef = getQueryDef(container, schema, oldName, false);
+        if (queryDef != null)
+        {
+            queryDef.setName(newName);
+            QueryDef def = Table.update(user, getTableInfoQueryDef(), queryDef, queryDef.getQueryDefId());
+            QueryDefCache.uncache(ContainerManager.getForId(def.getContainerId()));
+        }
+    }
+
+    public void renameSchema(User user, Container container, String oldSchema, String newSchema)
+    {
+        List<QueryDef> queryDefs = getQueryDefs(container, oldSchema, false, false, false);
+        for (QueryDef queryDef : queryDefs)
+        {
+            queryDef.setSchema(newSchema);
+            Table.update(user, getTableInfoQueryDef(), queryDef, queryDef.getQueryDefId());
+        }
+        QueryDefCache.uncache(ContainerManager.getForId(container.getId()));
+    }
+
     public void delete(QueryDef queryDef)
     {
         Table.delete(getTableInfoQueryDef(), queryDef.getQueryDefId());

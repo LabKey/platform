@@ -152,7 +152,7 @@ public class IndexInspector
 
                         if (titles.length != 1 || urls.length != 1 || uniqueIds.length != 1 || containerIds.length != 1)
                         {
-                            // Skip the special "serverGuid" doc
+                            // Skip the special "server GUID" doc
                             if (doc.get(LuceneSearchServiceImpl.SERVER_GUID_NAME) != null)
                                 continue;
 

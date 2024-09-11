@@ -794,13 +794,13 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     }
 
     @Override
-    public void prepare(DbScope scope)
+    public String prepare(DbScope scope)
     {
         initializeUserDefinedTypes(scope);
         initializeInClauseGenerator(scope);
         determineSettings(scope);
         determineIfArraySortFunctionExists(scope);
-        super.prepare(scope);
+        return super.prepare(scope);
     }
 
     @Override

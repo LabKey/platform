@@ -639,7 +639,7 @@ public class QueryController extends SpringActionController
                                 TR(
                                     cl(rowStyle),
                                     hasAdminOpsPerms ? TD(connected ? new ButtonBuilder("Test").href(new ActionURL(TestDataSourceConfirmAction.class, getContainer()).addParameter("dataSource", scope.getDataSourceName())) : "") : null,
-                                    TD(scope.getDisplayName()),
+                                    TD(HtmlString.NBSP, scope.getDisplayName()),
                                     TD(status),
                                     TD(scope.getDatabaseUrl()),
                                     TD(scope.getDatabaseName()),
@@ -7957,7 +7957,7 @@ public class QueryController extends SpringActionController
         {
             String schemaName = queryMetadataApiForm.getSchemaName();
             MetadataTableJSON domain = queryMetadataApiForm.getDomain();
-            MetadataTableJSON.saveMetadata(schemaName, domain.getName(), domain.getFields(true), queryMetadataApiForm.isUserDefinedQuery(), false, getUser(), getContainer());
+            MetadataTableJSON.saveMetadata(schemaName, domain.getName(), null, domain.getFields(true), queryMetadataApiForm.isUserDefinedQuery(), false, getUser(), getContainer());
 
             ApiSimpleResponse resp = new ApiSimpleResponse();
             resp.put("success", true);
