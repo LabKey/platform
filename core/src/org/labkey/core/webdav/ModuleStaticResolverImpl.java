@@ -15,6 +15,8 @@
  */
 package org.labkey.core.webdav;
 
+import org.apache.commons.vfs2.FileObject;
+import org.apache.commons.vfs2.FileSystemException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -28,6 +30,7 @@ import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.files.FileSystemWatcher;
 import org.labkey.api.files.SupportsFileSystemWatcher;
+import org.labkey.api.files.virtual.AuthorizedFileSystem;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
@@ -42,7 +45,7 @@ import org.labkey.api.util.ModuleChangeListener;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
-import org.labkey.api.util.URIUtil;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.webdav.AbstractWebdavResolver;
 import org.labkey.api.webdav.AbstractWebdavResource;
@@ -53,7 +56,6 @@ import org.labkey.api.webdav.WebdavResourceReadOnly;
 import org.labkey.api.webdav.WebdavService;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.WatchEvent;
@@ -82,9 +84,6 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
     }
 
     private static final Logger _log = LogManager.getLogger(ModuleStaticResolverImpl.class);
-
-    /** System property name for an extra directory of static content */
-    private static final String EXTRA_WEBAPP_DIR = "extrawebappdir";
 
     private ModuleStaticResolverImpl()
     {
@@ -208,24 +207,22 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
             if (initialized.get())
                 return;
 
-            ArrayList<File> roots = new ArrayList<>();
+            ArrayList<FileObject> roots = new ArrayList<>();
 
             // Support an additional extraWebapp directory with site-specific content. This lets users drop
             // in things like robots.txt without them being deleted at upgrade or when the server restarts.
             // Defaults to extraWebapp as a peer to the labkeyWebapp directory, but can be configured with the
             // -Dextrawebappdir=<PATH> system property.
-            String extraWebappPath = System.getProperty(EXTRA_WEBAPP_DIR);
-            File extraWebappDir;
-            if (extraWebappPath == null)
+            var extraWebappDir = ModuleLoader.getInstance().getExtraWebappDir();
+            try
             {
-                extraWebappDir = new File(ModuleLoader.getInstance().getWebappDir().getParentFile(), "extraWebapp");
+                if (null != extraWebappDir && extraWebappDir.isFolder())
+                    roots.add(extraWebappDir);
             }
-            else
+            catch (FileSystemException fse)
             {
-                extraWebappDir = new File(extraWebappPath);
+                _log.warn("Unexpected exception", fse);
             }
-            if (extraWebappDir.isDirectory())
-                roots.add(extraWebappDir);
 
             // modules
             //  - add in reverse dependency order, allows modules to replace index.html for instance
@@ -234,12 +231,9 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
             Collections.reverse(modules);
             for (Module m : modules)
             {
-                for (File d :  m.getStaticFileDirectories())
+                for (FileObject d :  m.getStaticFileDirectories())
                 {
-                    if (!d.isDirectory())
-                        continue;
-                    d = FileUtil.getAbsoluteCaseSensitiveFile(d);
-                    if (seen.add(d.getPath()))
+                    if (seen.add(d.getPath().toString()))
                         roots.add(d);
                 }
             }
@@ -253,7 +247,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
             WebdavService.get().getRootResolvers().forEach(webdavResolver ->
                 webdavResources.add(new SymbolicLink(webdavResolver.getRootPath(), webdavResolver))
             );
-            _root = new StaticResource(null, Path.emptyPath, roots, webdavResources);
+            _root = new StaticResource(null, Path.emptyPath,  roots, webdavResources);
             initialized.set(true);
         }
     }
@@ -297,7 +291,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
             return;
         }
         if (from.equals(Path.rootPath) || from.startsWith(target))
-            throw new IllegalArgumentException(from.toString() + " --> " + target.toString());
+            throw new IllegalArgumentException(from + " --> " + target);
 
         WebdavResource rParent = lookup(from.getParent());
         if (!rParent.isCollection())
@@ -407,12 +401,12 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
     private class StaticResource extends _PublicResource implements SupportsFileSystemWatcher
     {
         WebdavResource _parent;
-        List<File> _files;
+        List<FileObject> _files;
         List<WebdavResource> _additional; // for _webdav
 
         final Object _lock = new Object();
 
-        StaticResource(WebdavResource parent, Path path, List<File> files, List<WebdavResource> addl)
+        StaticResource(WebdavResource parent, Path path, List<FileObject> files, List<WebdavResource> addl)
         {
             super(path);
             _parent = parent;
@@ -446,56 +440,63 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
 
         Map<String,WebdavResource> getChildren()
         {
-            synchronized (_lock)
+            try
             {
-                Map<String, WebdavResource> children = CHILDREN_CACHE.get(getPath());
-                if (null == children)
+                synchronized (_lock)
                 {
-                    Map<String, ArrayList<File>> map = new CaseInsensitiveTreeMap<>();
-                    for (File dir : _files)
+                    Map<String, WebdavResource> children = CHILDREN_CACHE.get(getPath());
+                    if (null == children)
                     {
-                        if (!dir.isDirectory())
-                            continue;
-                        File[] files = dir.listFiles();
-                        if (files == null)
-                            continue;
-                        for (File f : files)
+                        Map<String, ArrayList<FileObject>> map = new CaseInsensitiveTreeMap<>();
+                        for (FileObject dir : _files)
                         {
-                            String name = f.getName();
-                            if (name.startsWith(".") || name.equals("WEB-INF") || name.equals("META-INF"))
+                            if (!dir.isFolder())
                                 continue;
-                            if (!map.containsKey(name))
-                                map.put(name, new ArrayList<>());
-                            map.get(name).add(f);
+                            FileObject[] files = dir.getChildren();
+                            if (files == null)
+                                continue;
+                            for (FileObject fo : files)
+                            {
+                                String name = fo.getName().getBaseName();
+                                if (name.startsWith(".") || name.equals("WEB-INF") || name.equals("META-INF"))
+                                    continue;
+                                if (!map.containsKey(name))
+                                    map.put(name, new ArrayList<>());
+                                map.get(name).add(fo);
+                            }
                         }
-                    }
-                    children = new CaseInsensitiveTreeMap<>();
-                    for (Map.Entry<String,ArrayList<File>> e : map.entrySet())
-                    {
-                        Path path = getPath().append(e.getKey());
-                        children.put(e.getKey(), new StaticResource(this, path, e.getValue(), null));
-                    }
+                        children = new CaseInsensitiveTreeMap<>();
+                        for (Map.Entry<String, ArrayList<FileObject>> e : map.entrySet())
+                        {
+                            Path path = getPath().append(e.getKey());
+                            children.put(e.getKey(), new StaticResource(this, path, e.getValue(), null));
+                        }
 
-                    if (_additional != null)
-                    {
-                        for (WebdavResource r : _additional)
-                            children.put(r.getName(),r);
+                        if (_additional != null)
+                        {
+                            for (WebdavResource r : _additional)
+                                children.put(r.getName(), r);
+                        }
+
+                        Map<String, Pair<Path, String>> shortcuts = getShortcuts(getPath());
+                        for (Map.Entry<String, Pair<Path, String>> e : shortcuts.entrySet())
+                        {
+                            String name = e.getKey();
+                            Path target = e.getValue().getKey();
+                            String indexPage = e.getValue().getValue();
+
+                            if (!children.containsKey(name))
+                                children.put(name, new SymbolicLink(getPath().append(name), target, true, indexPage));
+                        }
+
+                        CHILDREN_CACHE.put(getPath(), Collections.unmodifiableMap(children));
                     }
-
-                    Map<String,Pair<Path,String>> shortcuts = getShortcuts(getPath());
-                    for (Map.Entry<String,Pair<Path,String>> e : shortcuts.entrySet())
-                    {
-                        String name = e.getKey();
-                        Path target = e.getValue().getKey();
-                        String indexPage = e.getValue().getValue();
-
-                        if (!children.containsKey(name))
-                            children.put(name, new SymbolicLink(getPath().append(name), target, true, indexPage));
-                    }
-
-                    CHILDREN_CACHE.put(getPath(), Collections.unmodifiableMap(children));
+                    return children;
                 }
-                return children;
+            }
+            catch (FileSystemException e)
+            {
+                throw UnexpectedException.wrap(e);
             }
         }
 
@@ -519,7 +520,10 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
         @Override
         public File getFile()
         {
-            return exists() ? _files.get(0) : null;
+            if (!exists())
+                return null;
+            FileObject f = _files.get(0);
+            return f.getPath().toFile();
         }
 
         @Override
@@ -538,7 +542,14 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
         @Override
         public boolean isCollection()
         {
-            return exists() && _files.get(0).isDirectory();
+            try
+            {
+                return exists() && _files.get(0).isFolder();
+            }
+            catch (FileSystemException e)
+            {
+                throw UnexpectedException.wrap(e);
+            }
         }
 
         @Override
@@ -550,7 +561,14 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
         @Override
         public boolean isFile()
         {
-            return exists() && _files.get(0).isFile();
+            try
+            {
+                return exists() && _files.get(0).isFile();
+            }
+            catch (FileSystemException e)
+            {
+                throw UnexpectedException.wrap(e);
+            }
         }
 
         @Override
@@ -562,14 +580,24 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
         @Override
         public long getLastModified()
         {
-            return exists() ? _files.get(0).lastModified() : Long.MIN_VALUE;
+            if (!exists())
+                return Long.MIN_VALUE;
+            FileObject fo = _files.get(0);
+            try
+            {
+                return fo.getContent().getLastModifiedTime();
+            }
+            catch (FileSystemException e)
+            {
+                throw UnexpectedException.wrap(e);
+            }
         }
 
         @Override
         public InputStream getInputStream(User user) throws IOException
         {
             if (isFile())
-                return new FileInputStream(_files.get(0));
+                return _files.get(0).getContent().getInputStream();
             return null;
         }
 
@@ -582,9 +610,16 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
         @Override
         public long getContentLength()
         {
-            if (isFile())
-                return _files.get(0).length();
-            return 0;
+            try
+            {
+                if (isFile())
+                    return _files.get(0).getContent().getSize();
+                return 0;
+            }
+            catch (FileSystemException e)
+            {
+                throw UnexpectedException.wrap(e);
+            }
         }
 
         // check every 5 seconds (always check in devMode)

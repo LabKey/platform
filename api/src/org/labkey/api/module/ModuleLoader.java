@@ -21,6 +21,10 @@ import jakarta.servlet.ServletException;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.vfs2.FileExtensionSelector;
+import org.apache.commons.vfs2.FileObject;
+import org.apache.commons.vfs2.FileSystemException;
+import org.apache.commons.vfs2.NameScope;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -58,6 +62,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.DatabaseNotSupportedException;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.files.virtual.AuthorizedFileSystem;
 import org.labkey.api.module.ModuleUpgrader.Execution;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.SecurityManager;
@@ -139,6 +144,9 @@ import static org.apache.commons.lang3.StringUtils.isEmpty;
  */
 public class ModuleLoader implements MemTrackerListener
 {
+    /** System property name for an extra directory of static content */
+    private static final String EXTRA_WEBAPP_DIR = "extrawebappdir";
+
     private static final ModuleLoader INSTANCE = new ModuleLoader();
     private static final Logger _log = LogHelper.getLogger(ModuleLoader.class, "Initializes and starts up all modules");
     private static final Map<String, Throwable> _moduleFailures = new CopyOnWriteHashMap<>();
@@ -166,7 +174,9 @@ public class ModuleLoader implements MemTrackerListener
                               /                 \s""".indent(2);
 
     private ServletContext _servletContext = null;
-    private File _webappDir;
+    private FileObject _webappDir;
+    private FileObject _extraWebappDir;
+    private FileObject _startupPropertiesDir;
     private UpgradeState _upgradeState;
 
     private final SqlScriptRunner _upgradeScriptRunner = new SqlScriptRunner();
@@ -466,7 +476,25 @@ public class ModuleLoader implements MemTrackerListener
 
         setTomcatVersion();
 
-        _webappDir = FileUtil.getAbsoluteCaseSensitiveFile(new File(_servletContext.getRealPath("")));
+        var webapp = FileUtil.getAbsoluteCaseSensitiveFile(new File(_servletContext.getRealPath("")));
+        _webappDir = AuthorizedFileSystem.create(webapp, true, false).getRoot();
+
+        String extraWebappPath = System.getProperty(EXTRA_WEBAPP_DIR);
+        File extraWebappDir;
+        if (extraWebappPath == null)
+        {
+            extraWebappDir = FileUtil.appendName(webapp.getParentFile(), "extraWebapp");
+        }
+        else
+        {
+            extraWebappDir = new File(extraWebappPath);
+        }
+        if (extraWebappDir.isDirectory())
+            _extraWebappDir = AuthorizedFileSystem.create(webapp, true, false).getRoot();
+
+        var startup = FileUtil.appendName(webapp.getParentFile(), "startup");
+        if (startup.isDirectory())
+            _startupPropertiesDir = AuthorizedFileSystem.create(startup, true, false).getRoot();
 
         // load startup configuration information from properties, side-effect may set _newinstall=true
         // Wiki: https://www.labkey.org/Documentation/wiki-page.view?name=bootstrapProperties#using
@@ -484,7 +512,7 @@ public class ModuleLoader implements MemTrackerListener
         }
 
         // support WAR style deployment (w/o LabKeyBootstrapClassLoader) if modules are found at webapp/WEB-INF/modules
-        File webinfModulesDir = new File(_webappDir, "WEB-INF/modules");
+        File webinfModulesDir = FileUtil.appendPath(webapp, Path.parse("WEB-INF/modules"));
         if (!webinfModulesDir.isDirectory() && null == service)
             throw new ConfigurationException("Could not find required class LabKeyBootstrapClassLoader. You probably need to copy labkeyBootstrap.jar into $CATALINA_HOME/lib and/or edit your " + AppProps.getInstance().getWebappConfigurationFilename() + " to include <Loader loaderClass=\"org.labkey.bootstrap.LabKeyBootstrapClassLoader\" />");
         File[] webInfModules = webinfModulesDir.listFiles(File::isDirectory);
@@ -1206,11 +1234,11 @@ public class ModuleLoader implements MemTrackerListener
 
     public void setWebappDir(File webappDir)
     {
-        if (_webappDir != null && !_webappDir.equals(webappDir))
+        if (_webappDir != null && !_webappDir.getPath().equals(webappDir.toPath()))
         {
             throw new IllegalStateException("WebappDir is already set to " + _webappDir + ", cannot reset it to " + webappDir);
         }
-        _webappDir = webappDir;
+        _webappDir = AuthorizedFileSystem.create(webappDir, true, false).getRoot();
     }
 
     // Attempt to parse "enlistment.id" property from a file named "enlistment.properties" in this directory, if it exists
@@ -1238,9 +1266,14 @@ public class ModuleLoader implements MemTrackerListener
     }
 
 
-    public File getWebappDir()
+    public FileObject getWebappDir()
     {
         return _webappDir;
+    }
+
+    public FileObject getExtraWebappDir()
+    {
+        return _extraWebappDir;
     }
 
     /**
@@ -2372,9 +2405,9 @@ public class ModuleLoader implements MemTrackerListener
             .collect(Collectors.toList());
     }
 
-    public File getStartupPropDirectory()
+    public FileObject getStartupPropDirectory()
     {
-        return new File(_webappDir.getParent(), "startup");
+        return _startupPropertiesDir;
     }
 
     /**
@@ -2383,38 +2416,47 @@ public class ModuleLoader implements MemTrackerListener
      */
     private void loadStartupProps()
     {
-        File propsDir = getStartupPropDirectory();
-        if (propsDir.isDirectory())
+        FileObject propsDir = getStartupPropDirectory();
+        if (null == propsDir)
+            return;
+        try
         {
-            File newinstall = new File(propsDir, "newinstall");
+            if (!propsDir.isFolder())
+                return;
+
+            FileObject newinstall = propsDir.resolveFile("newinstall", NameScope.DESCENDENT);
             if (newinstall.isFile())
             {
-                _log.debug("'newinstall' file detected: " + newinstall.getAbsolutePath());
+                _log.debug("'newinstall' file detected: " + newinstall.getPath());
 
                 _newInstall = true;
-                if (newinstall.canWrite())
-                    newinstall.delete();
+
+                // propsDir is readonly, so we need to get a File
+                var newInstallFile = newinstall.getPath().toFile();
+                if (newInstallFile.canWrite())
+                    newInstallFile.delete();
                 else
-                    throw new ConfigurationException("file 'newinstall' exists, but is not writeable: " + newinstall.getAbsolutePath());
+                    throw new ConfigurationException("file 'newinstall' exists, but is not writeable: " + newinstall.getPath());
             }
             else
             {
                 _log.debug("no 'newinstall' file detected");
             }
 
-            File[] propFiles = propsDir.listFiles((File dir, String name) -> equalsIgnoreCase(FileUtil.getExtension(name), ("properties")));
+//            File[] propFiles = propsDir.listFiles((File dir, String name) -> equalsIgnoreCase(FileUtil.getExtension(name), ("properties")));
+            FileObject[] propFiles = propsDir.findFiles(new FileExtensionSelector("properties"));
 
             if (propFiles != null)
             {
-                List<File> sortedPropFiles = Arrays.stream(propFiles)
-                    .sorted(Comparator.comparing(File::getName).reversed())
+                List<FileObject> sortedPropFiles = Arrays.stream(propFiles)
+                    .sorted(Comparator.comparing(FileObject::getName))
                     .toList();
 
-                for (File propFile : sortedPropFiles)
+                for (FileObject propFile : sortedPropFiles)
                 {
-                    _log.debug("loading propsFile: " + propFile.getAbsolutePath());
+                    _log.debug("loading propsFile: " + propFile.getPath());
 
-                    try (FileInputStream in = new FileInputStream(propFile))
+                    try (InputStream in = propFile.getContent().getInputStream())
                     {
                         Properties props = new Properties();
                         props.load(in);
@@ -2431,7 +2473,7 @@ public class ModuleLoader implements MemTrackerListener
                     }
                     catch (Exception e)
                     {
-                        _log.error("Error parsing startup config properties file '" + propFile.getAbsolutePath() + "'", e);
+                        _log.error("Error parsing startup config properties file '" + propFile.getPath() + "'", e);
                     }
                 }
             }
@@ -2440,9 +2482,9 @@ public class ModuleLoader implements MemTrackerListener
                 _log.debug("no propFiles to load");
             }
         }
-        else
+        catch (FileSystemException fse)
         {
-            _log.debug("propsDir non-existent or not a directory: " + propsDir.getAbsolutePath());
+            _log.error("Error loading startup properties files '" + propsDir.getPath() + "'", fse);
         }
 
         // load any system properties with the labkey prop prefix

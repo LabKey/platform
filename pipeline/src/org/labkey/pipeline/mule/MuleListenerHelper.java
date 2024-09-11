@@ -21,6 +21,7 @@ import org.apache.logging.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.pipeline.api.PipelineServiceImpl;
@@ -76,7 +77,7 @@ public class MuleListenerHelper implements ServletContext
         File configDir = SpringModule.getSpringConfigDir(_parentContext.getInitParameter(SpringModule.INIT_PARAMETER_CONFIG_PATH));
         if (configDir.isDirectory())
         {
-            File muleFile = new File(configDir, "webserverMuleConfig.xml");
+            File muleFile = FileUtil.appendName(configDir, "webserverMuleConfig.xml");
             if (muleFile.isFile())
             {
                 _log.info("Found Mule configuration file override at " + muleFile.getPath());

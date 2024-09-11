@@ -36,7 +36,11 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.URIUtil;
@@ -197,6 +201,19 @@ public class PipeRootImpl implements PipeRoot
     public Container getContainer()
     {
         return ContainerManager.getForId(_containerId);
+    }
+
+    @Override
+    public @NotNull FileObject getAuthorizedFileObject(User user)
+    {
+        boolean canRead = false;
+        boolean canWrite = false;
+        Container c = getContainer();
+        if (hasPermission(user, ReadPermission.class))
+            canRead = true;
+        if (hasPermission(user, InsertPermission.class) || hasPermission(user, UpdatePermission.class) || hasPermission(user, DeletePermission.class))
+            canWrite = true;
+        return AuthorizedFileSystem.create(getRootPath(), canRead, canWrite).getRoot();
     }
 
     @Override
@@ -450,7 +467,7 @@ public class PipeRootImpl implements PipeRoot
         File root = isCloudRoot() ?
             FileUtil.getTempDirectory() :
             getRootPath();
-        return new File(root, PipelineService.UNZIP_DIR);
+        return FileUtil.appendName(root, PipelineService.UNZIP_DIR);
     }
 
     @Override

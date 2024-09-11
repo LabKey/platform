@@ -53,6 +53,7 @@ public class AuthorizedFileSystem extends AbstractFileSystem
     final FileObject _rootInnerFileObject;
     final FileObject _rootWrapperFileObject;
     final FileSystem _wrappedFileSystem;
+    final boolean _allowList = true;
     final boolean _allowRead;
     final boolean _allowWrite;
 
@@ -86,10 +87,19 @@ public class AuthorizedFileSystem extends AbstractFileSystem
     }
 
 
-    // for testing create a read-only clone
     public static AuthorizedFileSystem createReadOnly(AuthorizedFileSystem src)
     {
+        if (src._allowRead && !src._allowWrite)
+            return src;
         return new AuthorizedFileSystem(src._rootInnerFileObject, true, false);
+    }
+
+
+    public static AuthorizedFileSystem createReadWrite(AuthorizedFileSystem src)
+    {
+        if (src._allowRead && src._allowWrite)
+            return src;
+        return new AuthorizedFileSystem(src._rootInnerFileObject, true, true);
     }
 
 
@@ -117,9 +127,9 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         return _rootInnerFileObject;
     }
 
-    void checkWritable()
+    void checkListable()
     {
-        if (!_allowWrite)
+        if (!_allowList)
             throw new UnauthorizedException();
     }
 
@@ -128,6 +138,13 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         if (!_allowRead)
             throw new UnauthorizedException();
     }
+
+    void checkWritable()
+    {
+        if (!_allowWrite)
+            throw new UnauthorizedException();
+    }
+
 
     @Override
     protected FileObject createFile(AbstractFileName name) throws Exception
@@ -207,19 +224,22 @@ public class AuthorizedFileSystem extends AbstractFileSystem
     @Override
     public void addJunction(String s, FileObject fileObject) throws FileSystemException
     {
+        checkWritable();
         throw new UnsupportedOperationException();
     }
 
     @Override
     public void removeJunction(String s) throws FileSystemException
     {
+        checkWritable();
         throw new UnsupportedOperationException();
     }
 
     @Override
     public File replicateFile(FileObject fileObject, FileSelector fileSelector) throws FileSystemException
     {
-        return super.replicateFile(fileObject, fileSelector);
+        checkReadable();
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -260,21 +280,21 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         @Override
         public Object getAttribute(String attrName) throws FileSystemException
         {
-            checkReadable();
+            checkListable();
             return _fc.getAttribute(attrName);
         }
 
         @Override
         public String[] getAttributeNames() throws FileSystemException
         {
-            checkReadable();
+            checkListable();
             return _fc.getAttributeNames();
         }
 
         @Override
         public Map<String, Object> getAttributes() throws FileSystemException
         {
-            checkReadable();
+            checkListable();
             return _fc.getAttributes();
         }
 
@@ -288,14 +308,14 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         @Override
         public Certificate[] getCertificates() throws FileSystemException
         {
-            checkReadable();
+            checkListable();
             return _fc.getCertificates();
         }
 
         @Override
         public FileContentInfo getContentInfo() throws FileSystemException
         {
-            checkReadable();
+            checkListable();
             return _fc.getContentInfo();
         }
 
@@ -322,7 +342,7 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         @Override
         public long getLastModifiedTime() throws FileSystemException
         {
-            checkReadable();
+            checkListable();
             return _fc.getLastModifiedTime();
         }
 
@@ -367,7 +387,7 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         @Override
         public long getSize() throws FileSystemException
         {
-            checkReadable();
+            checkListable();
             return _fc.getSize();
         }
 
@@ -388,13 +408,14 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         @Override
         public boolean hasAttribute(String attrName) throws FileSystemException
         {
+            checkListable();
             return _fc.hasAttribute(attrName);
         }
 
         @Override
         public boolean isEmpty() throws FileSystemException
         {
-            checkReadable();
+            checkListable();
             return _fc.isEmpty();
         }
 
@@ -936,5 +957,5 @@ public class AuthorizedFileSystem extends AbstractFileSystem
 CONSIDER
 
 [ ] fine-grained permissions list/read/insert/update/delete
-
+[ ] handling declared exception FileSystemException is annoying
 */

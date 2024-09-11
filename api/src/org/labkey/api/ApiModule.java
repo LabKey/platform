@@ -95,6 +95,7 @@ import org.labkey.api.dataiterator.StatementDataIterator;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.property.DomainTemplateGroup;
 import org.labkey.api.files.FileSystemWatcherImpl;
+import org.labkey.api.files.virtual.AuthorizedFileSystem;
 import org.labkey.api.iterator.MarkableIterator;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.mbean.LabKeyManagement;
@@ -316,7 +317,7 @@ public class ApiModule extends CodeOnlyModule
 
         ServletRegistration.Dynamic viewServletDynamic = servletCtx.addServlet("ViewServlet", new ViewServlet());
         viewServletDynamic.setLoadOnStartup(1);
-        viewServletDynamic.setMultipartConfig(new MultipartConfigElement(SpringActionController.getTempUploadDir().getPath()));
+        viewServletDynamic.setMultipartConfig(SpringActionController.getMultiPartConfigElement());
         viewServletDynamic.addMapping("*.view");
         viewServletDynamic.addMapping("*.api");
         viewServletDynamic.addMapping("*.post");
@@ -343,7 +344,7 @@ public class ApiModule extends CodeOnlyModule
         {
             ServletRegistration.Dynamic redirectorDynamic = servletCtx.addServlet("RedirectorServlet", new RedirectorServlet(legacyContextPath));
             redirectorDynamic.addMapping(legacyContextPath + "/*");
-            redirectorDynamic.setMultipartConfig(new MultipartConfigElement(SpringActionController.getTempUploadDir().getPath()));
+            redirectorDynamic.setMultipartConfig(SpringActionController.getMultiPartConfigElement());
         }
     }
 
@@ -354,6 +355,7 @@ public class ApiModule extends CodeOnlyModule
             Aggregate.TestCase.class,
             ApiXmlWriter.TestCase.class,
             ArrayListMap.TestCase.class,
+            AuthorizedFileSystem.TestCase.class,
             BooleanFormat.TestCase.class,
             BuilderObjectFactory.TestCase.class,
             CachingDataIterator.ScrollTestCase.class,

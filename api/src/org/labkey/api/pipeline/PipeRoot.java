@@ -43,6 +43,10 @@ public interface PipeRoot extends SecurableResource
 {
     Container getContainer();
 
+    // preferred to getRootPath and getRootNioPath()
+    @NotNull
+    FileObject getAuthorizedFileObject(User user);
+
     @NotNull
     URI getUri();
 

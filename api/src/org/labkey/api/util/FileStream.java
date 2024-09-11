@@ -16,24 +16,20 @@
 package org.labkey.api.util;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.vfs2.FileObject;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.logging.LogHelper;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.channels.Channel;
 import java.nio.channels.Channels;
-import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.util.Date;
 
@@ -184,12 +180,6 @@ public interface FileStream
             MemTracker.getInstance().remove(in);
             in = null;
         }
-
-        @Override
-        protected void finalize()
-        {
-            assert in == null;
-        }
     }
 
 
@@ -221,6 +211,12 @@ public interface FileStream
         public FileFileStream(@NotNull File f, boolean delete) throws IOException
         {
             file = f;
+            deleteOnClose = delete;
+        }
+
+        public FileFileStream(@NotNull FileObject fo, boolean delete) throws IOException
+        {
+            file = fo.getPath().toFile();
             deleteOnClose = delete;
         }
 
@@ -264,12 +260,6 @@ public interface FileStream
                 if (file.renameTo(dest))
                     return;
             FileStream.super.transferTo(dest);
-        }
-
-        @Override
-        protected void finalize()
-        {
-            assert in == null;
         }
     }
 }

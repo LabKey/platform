@@ -1248,7 +1248,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 //        This is because we want /_webdav/* to be resolved BEFORE all other servlet-mappings
 //        and /* to resolve AFTER all other servlet-mappings
         _webdavServletDynamic = servletCtx.addServlet("static", new WebdavServlet(true));
-        _webdavServletDynamic.setMultipartConfig(new MultipartConfigElement(SpringActionController.getTempUploadDir().getPath()));
+        _webdavServletDynamic.setMultipartConfig(SpringActionController.getMultiPartConfigElement());
         _webdavServletDynamic.addMapping("/_webdav/*");
     }
 

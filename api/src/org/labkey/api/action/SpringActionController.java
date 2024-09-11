@@ -16,6 +16,7 @@
 
 package org.labkey.api.action;
 
+import jakarta.servlet.MultipartConfigElement;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -47,6 +48,7 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HttpUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
@@ -551,10 +553,15 @@ public abstract class SpringActionController implements Controller, HasViewConte
     {
         if (TEMP_UPLOAD_DIR == null)
         {
-            TEMP_UPLOAD_DIR = new File(new File(System.getProperty("java.io.tmpdir")), "httpUploads").getAbsoluteFile();
+            TEMP_UPLOAD_DIR = FileUtil.appendName(new File(System.getProperty("java.io.tmpdir")), "httpUploads").getAbsoluteFile();
             TEMP_UPLOAD_DIR.mkdirs();
         }
         return TEMP_UPLOAD_DIR;
+    }
+
+    public static MultipartConfigElement getMultiPartConfigElement()
+    {
+        return new MultipartConfigElement(SpringActionController.getTempUploadDir().getPath().toString());
     }
 
     protected void handleException(Throwable x, ViewContext context, PageConfig pageConfig)

@@ -28,6 +28,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.vfs2.FileObject;
+import org.apache.commons.vfs2.NameScope;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -1637,11 +1639,11 @@ public class AdminController extends SpringActionController
             if (StringUtils.isBlank(form.getFileName()))
                 throw new NotFoundException();
             PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
-            File results = FileUtil.appendName(root.getLogDirectory(), form.getFileName());
-            if (!results.isFile())
+            FileObject fo = root.getLogDirectoryFileObject(false).resolveFile(form.getFileName(), NameScope.DESCENDENT);
+            if (!fo.isFile())
                 throw new NotFoundException("File not found: " + form.getFileName());
 
-            return new HtmlView(HtmlString.unsafe(PageFlowUtil.getFileContentsAsString(results)));
+            return new HtmlView(HtmlString.unsafe(fo.getContent().getString(StringUtilsLabKey.DEFAULT_CHARSET)));
         }
 
         @Override

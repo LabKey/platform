@@ -716,18 +716,25 @@ public class FileUtil
     /* Only returns an immediate child */
     public static File appendName(File dir, String name)
     {
-        if (StringUtils.contains(name, '/'))
-            throw new IllegalArgumentException(name);
-        if (StringUtils.contains(name, File.separatorChar))
-            throw new IllegalArgumentException(name);
-        if (".".equals(name) || "..".equals(name))
-            throw new IllegalArgumentException(name);
+        legalPathPartThrow(name);
         @SuppressWarnings("SSBasedInspection")
         var ret = new File(dir, name);
 
         if (!URIUtil.isDescendant(dir.toURI(), ret.toURI()))
             throw new IllegalArgumentException(name);
         return ret;
+    }
+
+    // narrower check than isLegalName() or isAllowedFileName()
+    // this check that a name is a valid path part (e.g. filename) and is not path like.
+    private static void legalPathPartThrow(String name)
+    {
+        if (StringUtils.contains(name, '/'))
+            throw new IllegalArgumentException(name);
+        if (StringUtils.contains(name, File.separatorChar))
+            throw new IllegalArgumentException(name);
+        if (".".equals(name) || "..".equals(name))
+            throw new IllegalArgumentException(name);
     }
 
 
@@ -1464,6 +1471,8 @@ quickScan:
 
     public static Path createTempDirectory(@Nullable String prefix) throws IOException
     {
+        if (null != prefix)
+            legalPathPartThrow(prefix);
         return Files.createTempDirectory(prefix).toAbsolutePath();
     }
 
@@ -1505,6 +1514,10 @@ quickScan:
     // Use this instead of File.createTempFile() (see Issue #46794)
     public static File createTempFile(@Nullable String prefix, @Nullable String suffix, File directory) throws IOException
     {
+        if (null != prefix)
+            legalPathPartThrow(prefix);
+        if (null != suffix)
+            legalPathPartThrow(suffix);
         return Files.createTempFile(directory.toPath(), prefix, suffix).toFile();
     }
 
@@ -1518,6 +1531,10 @@ quickScan:
 
     public static File createTempFile(@Nullable String prefix, @Nullable String suffix, boolean threadLocal) throws IOException
     {
+        if (null != prefix)
+            legalPathPartThrow(prefix);
+        if (null != suffix)
+            legalPathPartThrow(suffix);
         var path = Files.createTempFile(prefix, suffix).toAbsolutePath();
         if (threadLocal)
             tempPaths.get().add(path);

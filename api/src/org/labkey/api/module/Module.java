@@ -22,6 +22,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.collections4.Factory;
+import org.apache.commons.vfs2.FileObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -376,7 +377,7 @@ public interface Module
      * @return a list of static file locations
      */
     @NotNull
-    List<File> getStaticFileDirectories();
+    List<FileObject> getStaticFileDirectories();
 
     // Should LabKey should automatically uninstall this module (drop its schemas, delete SqlScripts rows, delete Modules rows)
     // if the module no longer exists?  This setting gets saved to the Modules table.

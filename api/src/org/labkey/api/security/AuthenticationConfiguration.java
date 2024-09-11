@@ -2,6 +2,7 @@ package org.labkey.api.security;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.vfs2.FileSystemException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -22,6 +23,7 @@ import org.labkey.api.security.AuthenticationProvider.SecondaryAuthenticationPro
 import org.labkey.api.security.permissions.RequireSecondaryAuthenticationPermission;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
@@ -152,11 +154,13 @@ public interface AuthenticationConfiguration<AP extends AuthenticationProvider> 
                             supplier = () -> {
                                 try
                                 {
-                                    return new FileInputStream(new File(ModuleLoader.getInstance().getStartupPropDirectory(), value));
+                                    var dir = ModuleLoader.getInstance().getStartupPropDirectory();
+                                    var file = dir.resolveFile(value);
+                                    return file.getContent().getInputStream();
                                 }
-                                catch (FileNotFoundException e)
+                                catch (FileSystemException e)
                                 {
-                                    throw new RuntimeException(e);
+                                    throw UnexpectedException.wrap(e);
                                 }
                             };
                         }

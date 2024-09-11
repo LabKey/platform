@@ -23,6 +23,8 @@ import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
+import org.apache.commons.vfs2.FileObject;
+import org.apache.commons.vfs2.NameScope;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -3097,7 +3099,7 @@ public class DavController extends SpringActionController
             }
 
             // otherwise, save to temp directory, scan, return wrapper over saved file
-            File tmp = new File(getTempUploadDir(), GUID.makeGUID());
+            File tmp = FileUtil.appendName(getTempUploadDir(), GUID.makeGUID());
             fis.transferTo(tmp);
 
             ViewBackgroundInfo info = new ViewBackgroundInfo(getContainer(), getUser(), null);

@@ -20,6 +20,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.logging.LogHelper;
 import org.springframework.beans.BeansException;
@@ -181,7 +182,7 @@ public abstract class SpringModule extends DefaultModule
         // Look for post-installation config outside the module
         File dirConfig = getSpringConfigDir(getModuleServletContext().getInitParameter(INIT_PARAMETER_CONFIG_PATH));
 
-        File fileConfig = new File(dirConfig, prefix + "Config.xml");
+        File fileConfig = FileUtil.appendName(dirConfig, prefix + "Config.xml");
         if (fileConfig.isFile())
         {
             result.add(fileConfig.toString());
@@ -201,7 +202,7 @@ public abstract class SpringModule extends DefaultModule
         else
         {
             // Fall back on a directory that's a peer to the webapp directory
-            dirConfig = new File(ModuleLoader.getInstance().getWebappDir().getParent(), "config");
+            dirConfig = FileUtil.appendName(ModuleLoader.getInstance().getWebappDir().getPath().toFile().getParentFile(), "config");
         }
         return dirConfig;
     }
