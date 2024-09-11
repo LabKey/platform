@@ -588,7 +588,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
                 //update domain properties
                 exception.addErrors(DomainUtil.updateDomainDescriptor(original, update, container, user, hasNameChange, auditComment));
 
-                QueryService.get().saveCalculatedFieldsMetadata(ListQuerySchema.NAME, update.getQueryName(), hasNameChange ? update.getName() : null, update.getCalculatedFields(), false, user, container);
+                QueryService.get().saveCalculatedFieldsMetadata(ListQuerySchema.NAME, update.getQueryName(), hasNameChange ? update.getName() : null, update.getCalculatedFields(), !original.getCalculatedFields().isEmpty(), user, container);
             }
             catch (RuntimeSQLException x)
             {

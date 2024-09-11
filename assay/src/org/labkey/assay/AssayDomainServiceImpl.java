@@ -567,6 +567,9 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
 
                 for (GWTDomain<GWTPropertyDescriptor> domain : assay.getDomains())
                 {
+                    GWTDomain<GWTPropertyDescriptor> previous = DomainUtil.getDomainDescriptor(getUser(), domain.getDomainURI(), protocol.getContainer());
+                    boolean hasExistingCalcFields = previous != null && !previous.getCalculatedFields().isEmpty();
+
                     ValidationException domainErrors = updateDomainDescriptor(domain, protocol, provider, hasNameChange);
 
                     // Need to bail out inside of the loop because some errors may have left the DB connection in
@@ -575,7 +578,7 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                         throw domainErrors;
 
                     GWTDomain<GWTPropertyDescriptor> savedDomain = DomainUtil.getDomainDescriptor(getUser(), domain.getDomainURI(), protocol.getContainer());
-                    QueryService.get().saveCalculatedFieldsMetadata(savedDomain.getSchemaName(), savedDomain.getQueryName(), null, domain.getCalculatedFields(), false, getUser(), protocol.getContainer());
+                    QueryService.get().saveCalculatedFieldsMetadata(savedDomain.getSchemaName(), savedDomain.getQueryName(), null, domain.getCalculatedFields(), hasExistingCalcFields, getUser(), protocol.getContainer());
                 }
 
                 if (assay.getExcludedContainerIds() != null && (!isNew || !assay.getExcludedContainerIds().isEmpty()))
