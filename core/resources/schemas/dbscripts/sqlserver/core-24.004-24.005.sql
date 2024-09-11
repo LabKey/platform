@@ -1,0 +1,2 @@
+ALTER TABLE core.APIKeys ADD Description NVARCHAR(256);
+ALTER TABLE core.APIKeys ADD LastUsed DATETIME;

@@ -20,9 +20,6 @@ import org.labkey.api.data.dialect.SqlDialect;
 
 /**
  * Convenience methods to get to tables in the core DbSchema.
- * User: arauch
- * Date: Sep 24, 2005
- * Time: 10:46:35 PM
  */
 public class CoreSchema
 {
@@ -153,13 +150,6 @@ public class CoreSchema
     public TableInfo getTableInfoNotifications()
     {
         return getSchema().getTable("Notifications");
-    }
-
-    // Prefer getTableInfoDataStates
-    @Deprecated (since = "21.10")
-    public TableInfo getTableInfoQCState()
-    {
-        return getTableInfoDataStates();
     }
 
     public TableInfo getTableInfoDataStates()
