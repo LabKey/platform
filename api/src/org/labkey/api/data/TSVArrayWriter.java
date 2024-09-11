@@ -48,6 +48,6 @@ public class TSVArrayWriter extends TSVWriter
     @Override
     protected String getFilename()
     {
-        return FileUtil.makeLegalName(_fileName);
+        return FileUtil.makeLegalName(_fileName + "." + getFilenameExtension());
     }
 }

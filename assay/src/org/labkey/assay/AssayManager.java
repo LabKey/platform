@@ -115,21 +115,21 @@ import java.util.concurrent.TimeUnit;
 
 public class AssayManager implements AssayService
 {
-    SearchService.SearchCategory ASSAY_CATEGORY = new SearchService.SearchCategory("assay", "Study Assay") {
+    SearchService.SearchCategory ASSAY_CATEGORY = new SearchService.SearchCategory("assay", "Assays") {
         @Override
         public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
         {
             return getPermittedContainerIds(user, containers, AssayReadPermission.class);
         }
     };
-    SearchService.SearchCategory ASSAY_BATCH_CATEGORY = new SearchService.SearchCategory("assayBatch", "Assay Batch") {
+    SearchService.SearchCategory ASSAY_BATCH_CATEGORY = new SearchService.SearchCategory("assayBatch", "Assay Batches", false) {
         @Override
         public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
         {
             return getPermittedContainerIds(user, containers, AssayReadPermission.class);
         }
     };
-    SearchService.SearchCategory ASSAY_RUN_CATEGORY = new SearchService.SearchCategory("assayRun", "Assay Run") {
+    SearchService.SearchCategory ASSAY_RUN_CATEGORY = new SearchService.SearchCategory("assayRun", "Assay Runs", false) {
         @Override
         public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
         {

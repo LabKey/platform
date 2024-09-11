@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import React from 'react'
-import ReactDOM from 'react-dom'
-import {App} from './AssayDesigner'
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+
+import { App } from './AssayDesigner';
 
 // Need to wait for container element to be available in labkey wrapper before render
 window.addEventListener('DOMContentLoaded', (event) => {
-    ReactDOM.render(<App/>, document.getElementById('app'));
+    createRoot(document.getElementById('app')).render(<App />);
 });

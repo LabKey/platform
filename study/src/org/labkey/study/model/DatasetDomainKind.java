@@ -532,7 +532,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
                     newDomain.setPropertyIndices(indices, lowerReservedNames);
                     StorageProvisioner.get().addMissingRequiredIndices(newDomain);
 
-                    QueryService.get().saveCalculatedFieldsMetadata("study", name, domain.getCalculatedFields(), false, user, container);
+                    QueryService.get().saveCalculatedFieldsMetadata("study", name, null, domain.getCalculatedFields(), false, user, container);
                 }
                 else
                     throw new IllegalArgumentException("Failed to create domain for dataset : " + name + ".");
@@ -727,12 +727,14 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         assert original.getDomainURI().equals(update.getDomainURI());
         StudyImpl study = StudyManager.getInstance().getStudy(container);
         DatasetDefinition def = null;
+        boolean hasNameChange = false;
 
         if (datasetProperties != null)
         {
             def = study.getDataset(datasetProperties.getDatasetId());
             validateDatasetProperties(datasetProperties, container, user, update, def);
             checkCanUpdate(def, container, user, datasetProperties, original, update);
+            hasNameChange = !def.getName().equals(datasetProperties.getName());
         }
 
         // Acquire lock before we actually start the transaction to avoid deadlocks when it's refreshed during the process
@@ -741,7 +743,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         {
             ValidationException exception = updateDomainDescriptor(original, update, container, user);
 
-            QueryService.get().saveCalculatedFieldsMetadata("study", update.getQueryName(), update.getCalculatedFields(), false, user, container);
+            QueryService.get().saveCalculatedFieldsMetadata("study", update.getQueryName(), hasNameChange ? datasetProperties.getName() : null, update.getCalculatedFields(), false, user, container);
 
             if (!exception.hasErrors() && def != null)
                 exception = updateDataset(datasetProperties, original.getDomainURI(), exception, study, container, user, def);

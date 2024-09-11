@@ -430,7 +430,7 @@ public interface AuthenticationProvider
             return _attributeMap;
         }
 
-        public String getSuccessDetails()
+        public @Nullable String getSuccessDetails()
         {
             return _successDetails;
         }

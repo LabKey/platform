@@ -449,13 +449,15 @@ public abstract class SqlDialect
     // Do dialect-specific initialization work for this scope. This is called after prepare(LabKeyDataSource) and
     // after the "other connections to this database" check. Note: this might be called multiple times, for example,
     // during bootstrap or upgrade.
-    public void prepare(DbScope scope)
+    public @Nullable String prepare(DbScope scope)
     {
         synchronized (this)
         {
             // prepare code may have changed state that requires a new stringHandler
             _stringHandler = null;
         }
+
+        return null;
     }
 
     public abstract void prepareConnection(Connection conn) throws SQLException;

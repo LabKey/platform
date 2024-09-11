@@ -8032,7 +8032,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             impl.save(u);
 
             SchemaKey schemaKey = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, DataClassUserSchema.NAME);
-            QueryService.get().saveCalculatedFieldsMetadata(schemaKey.toString(), name, calculatedFields, false, u, c);
+            QueryService.get().saveCalculatedFieldsMetadata(schemaKey.toString(), name, null, calculatedFields, false, u, c);
 
             //TODO do DataClasses actually support default values? The DataClassDomainKind does not override showDefaultValueSettings to return true so it isn't shown in the UI.
             DefaultValueService.get().setDefaultValues(domain.getContainer(), defaultValues);
@@ -8110,7 +8110,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             errors = DomainUtil.updateDomainDescriptor(original, update, c, u, hasNameChange, auditComment);
 
-            QueryService.get().saveCalculatedFieldsMetadata(schemaKey.toString(), update.getQueryName(), update.getCalculatedFields(), false, u, c);
+            QueryService.get().saveCalculatedFieldsMetadata(schemaKey.toString(), update.getQueryName(), hasNameChange ? newName : null, update.getCalculatedFields(), false, u, c);
 
             if (hasNameChange)
                 addObjectLegacyName(dataClass.getObjectId(), ExperimentServiceImpl.getNamespacePrefix(ExpDataClass.class), oldDataClassName, u);
