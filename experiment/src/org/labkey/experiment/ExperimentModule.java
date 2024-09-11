@@ -24,10 +24,12 @@ import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.SampleTimelineAuditEvent;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.SQLFragment;
@@ -72,6 +74,7 @@ import org.labkey.api.module.SpringModule;
 import org.labkey.api.module.Summary;
 import org.labkey.api.ontology.OntologyService;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
@@ -577,6 +580,8 @@ public class ExperimentModule extends SpringModule
         {
             svc.registerUsageMetrics(getName(), () -> {
                 Map<String, Object> results = new HashMap<>();
+
+                DbSchema schema = ExperimentService.get().getSchema();
                 if (AssayService.get() != null)
                 {
                     Map<String, Object> assayMetrics = new HashMap<>();
@@ -589,13 +594,13 @@ public class ExperimentModule extends SpringModule
                         // Run count across all assay designs of this type
                         SQLFragment runSQL = new SQLFragment(baseRunSQL);
                         runSQL.add(Lsid.namespaceLikeString(assayProvider.getRunLSIDPrefix()));
-                        protocolMetrics.put("runCount", new SqlSelector(ExperimentService.get().getSchema(), runSQL).getObject(Long.class));
+                        protocolMetrics.put("runCount", new SqlSelector(schema, runSQL).getObject(Long.class));
 
                         // Number of assay designs of this type
                         SQLFragment protocolSQL = new SQLFragment(baseProtocolSQL);
                         protocolSQL.add(assayProvider.getProtocolPattern());
                         protocolSQL.add(ExpProtocol.ApplicationType.ExperimentRun.toString());
-                        List<Protocol> protocols = new SqlSelector(ExperimentService.get().getSchema(), protocolSQL).getArrayList(Protocol.class);
+                        List<Protocol> protocols = new SqlSelector(schema, protocolSQL).getArrayList(Protocol.class);
                         protocolMetrics.put("protocolCount", protocols.size());
 
                         List<? extends ExpProtocol> wrappedProtocols = protocols.stream().map(ExpProtocolImpl::new).collect(Collectors.toList());
@@ -607,10 +612,10 @@ public class ExperimentModule extends SpringModule
 
                         assayMetrics.put(assayProvider.getName(), protocolMetrics);
                     }
-                    assayMetrics.put("autoLinkedAssayCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.protocol EP JOIN exp.objectPropertiesView OP ON EP.lsid = OP.objecturi WHERE OP.propertyuri = 'terms.labkey.org#AutoCopyTargetContainer'").getObject(Long.class));
-                    assayMetrics.put("protocolsWithTransformScriptCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.protocol EP JOIN exp.objectPropertiesView OP ON EP.lsid = OP.objecturi WHERE OP.name = 'TransformScript' AND status = 'Active'").getObject(Long.class));
+                    assayMetrics.put("autoLinkedAssayCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.protocol EP JOIN exp.objectPropertiesView OP ON EP.lsid = OP.objecturi WHERE OP.propertyuri = 'terms.labkey.org#AutoCopyTargetContainer'").getObject(Long.class));
+                    assayMetrics.put("protocolsWithTransformScriptCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.protocol EP JOIN exp.objectPropertiesView OP ON EP.lsid = OP.objecturi WHERE OP.name = 'TransformScript' AND status = 'Active'").getObject(Long.class));
 
-                    assayMetrics.put("standardAssayWithPlateSupportCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.protocol EP JOIN exp.objectPropertiesView OP ON EP.lsid = OP.objecturi WHERE OP.name = 'PlateMetadata' AND floatValue = 1").getObject(Long.class));
+                    assayMetrics.put("standardAssayWithPlateSupportCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.protocol EP JOIN exp.objectPropertiesView OP ON EP.lsid = OP.objecturi WHERE OP.name = 'PlateMetadata' AND floatValue = 1").getObject(Long.class));
                     SQLFragment runsWithPlateSQL = new SQLFragment("""
                         SELECT COUNT(*) FROM exp.experimentrun r
                             INNER JOIN exp.object o ON o.objectUri = r.lsid
@@ -618,23 +623,23 @@ public class ExperimentModule extends SpringModule
                         WHERE op.propertyid IN (
                             SELECT propertyid FROM exp.propertydescriptor WHERE name = ? AND lookupquery = ?
                     )""");
-                    assayMetrics.put("standardAssayRunsWithPlateTemplate", new SqlSelector(ExperimentService.get().getSchema(), new SQLFragment(runsWithPlateSQL).add("PlateTemplate").add("PlateTemplate")).getObject(Long.class));
-                    assayMetrics.put("standardAssayRunsWithPlateSet", new SqlSelector(ExperimentService.get().getSchema(), new SQLFragment(runsWithPlateSQL).add("PlateSet").add("PlateSet")).getObject(Long.class));
+                    assayMetrics.put("standardAssayRunsWithPlateTemplate", new SqlSelector(schema, new SQLFragment(runsWithPlateSQL).add("PlateTemplate").add("PlateTemplate")).getObject(Long.class));
+                    assayMetrics.put("standardAssayRunsWithPlateSet", new SqlSelector(schema, new SQLFragment(runsWithPlateSQL).add("PlateSet").add("PlateSet")).getObject(Long.class));
 
                     Map<String, Object> sampleLookupCountMetrics = new HashMap<>();
                     SQLFragment baseAssaySampleLookupSQL = new SQLFragment("SELECT COUNT(*) FROM exp.propertydescriptor WHERE (lookupschema = 'samples' OR (lookupschema = 'exp' AND lookupquery =  'Materials')) AND propertyuri LIKE ?");
 
                     SQLFragment batchAssaySampleLookupSQL = new SQLFragment(baseAssaySampleLookupSQL);
                     batchAssaySampleLookupSQL.add("urn:lsid:%:" + ExpProtocol.AssayDomainTypes.Batch.getPrefix() + ".%");
-                    sampleLookupCountMetrics.put("batchDomain", new SqlSelector(ExperimentService.get().getSchema(), batchAssaySampleLookupSQL).getObject(Long.class));
+                    sampleLookupCountMetrics.put("batchDomain", new SqlSelector(schema, batchAssaySampleLookupSQL).getObject(Long.class));
 
                     SQLFragment runAssaySampleLookupSQL = new SQLFragment(baseAssaySampleLookupSQL);
                     runAssaySampleLookupSQL.add("urn:lsid:%:" + ExpProtocol.AssayDomainTypes.Run.getPrefix() + ".%");
-                    sampleLookupCountMetrics.put("runDomain", new SqlSelector(ExperimentService.get().getSchema(), runAssaySampleLookupSQL).getObject(Long.class));
+                    sampleLookupCountMetrics.put("runDomain", new SqlSelector(schema, runAssaySampleLookupSQL).getObject(Long.class));
 
                     SQLFragment resultAssaySampleLookupSQL = new SQLFragment(baseAssaySampleLookupSQL);
                     resultAssaySampleLookupSQL.add("urn:lsid:%:" + ExpProtocol.AssayDomainTypes.Result.getPrefix() + ".%");
-                    sampleLookupCountMetrics.put("resultDomain", new SqlSelector(ExperimentService.get().getSchema(), resultAssaySampleLookupSQL).getObject(Long.class));
+                    sampleLookupCountMetrics.put("resultDomain", new SqlSelector(schema, resultAssaySampleLookupSQL).getObject(Long.class));
 
                     SQLFragment resultAssayMultipleSampleLookupSQL = new SQLFragment(
                     "SELECT COUNT(*) FROM (\n" +
@@ -647,19 +652,19 @@ public class ExperimentModule extends SpringModule
                         ") X WHERE X.PropCount > 1"
                     );
                     resultAssayMultipleSampleLookupSQL.add("urn:lsid:%:" + ExpProtocol.AssayDomainTypes.Result.getPrefix() + ".%");
-                    sampleLookupCountMetrics.put("resultDomainWithMultiple", new SqlSelector(ExperimentService.get().getSchema(), resultAssayMultipleSampleLookupSQL).getObject(Long.class));
+                    sampleLookupCountMetrics.put("resultDomainWithMultiple", new SqlSelector(schema, resultAssayMultipleSampleLookupSQL).getObject(Long.class));
 
                     assayMetrics.put("sampleLookupCount", sampleLookupCountMetrics);
 
 
                     // Putting these metrics at the same level as the other BooleanColumnCount metrics (e.g., sampleTypeWithBooleanColumnCount)
-                    results.put("assayResultWithBooleanColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT DD.DomainURI) FROM\n" +
+                    results.put("assayResultWithBooleanColumnCount", new SqlSelector(schema, "SELECT COUNT(DISTINCT DD.DomainURI) FROM\n" +
                             "     exp.PropertyDescriptor D \n" +
                             "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
                             "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
                             "WHERE D.propertyURI LIKE ? AND D.rangeURI = ?", "urn:lsid:%:" + ExpProtocol.AssayDomainTypes.Result.getPrefix() + ".%", PropertyType.BOOLEAN.getTypeUri()).getObject(Long.class));
 
-                    results.put("assayRunWithBooleanColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT DD.DomainURI) FROM\n" +
+                    results.put("assayRunWithBooleanColumnCount", new SqlSelector(schema, "SELECT COUNT(DISTINCT DD.DomainURI) FROM\n" +
                             "     exp.PropertyDescriptor D \n" +
                             "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
                             "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
@@ -668,92 +673,139 @@ public class ExperimentModule extends SpringModule
                     results.put("assay", assayMetrics);
                 }
 
-                results.put("autoLinkedSampleSetCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.materialsource WHERE autoLinkTargetContainer IS NOT NULL").getObject(Long.class));
-                results.put("sampleSetCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.materialsource").getObject(Long.class));
-                results.put("sampleCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.material").getObject(Long.class));
-                results.put("aliquotCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.material where aliquotedfromlsid IS NOT NULL").getObject(Long.class));
+                results.put("autoLinkedSampleSetCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.materialsource WHERE autoLinkTargetContainer IS NOT NULL").getObject(Long.class));
+                results.put("sampleSetCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.materialsource").getObject(Long.class));
 
-                results.put("dataClassCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.dataclass").getObject(Long.class));
-                results.put("dataClassRowCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.data WHERE classid IN (SELECT rowid FROM exp.dataclass)").getObject(Long.class));
-                results.put("dataWithDataParentsCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT d.sourceApplicationId) FROM exp.data d\n" +
+                if (schema.getSqlDialect().isPostgreSQL()) // SQLServer does not support regular expression queries
+                {
+                    Collection<Map<String, Object>> numSampleCounts = new SqlSelector(schema, """
+                            SELECT totalCount, numberNameCount FROM
+                                        (SELECT cpastype, COUNT(*) AS totalCount from exp.material GROUP BY cpastype) t
+                                    JOIN
+                                        (SELECT cpastype, COUNT(*) AS numberNameCount FROM exp.material m WHERE m.name SIMILAR TO '[0-9.]*' GROUP BY cpastype) ns
+                                    ON t.cpastype = ns.cpastype""").getMapCollection();
+                    results.put("sampleSetWithNumberNamesCount", numSampleCounts.size());
+                    results.put("sampleSetWithOnlyNumberNamesCount", numSampleCounts.stream().filter(
+                            map -> (Long) map.get("totalCount") > 0 && map.get("totalCount") == map.get("numberNameCount")
+                    ).count());
+                }
+                UserSchema userSchema = AuditLogService.getAuditLogSchema(User.getSearchUser(), ContainerManager.getRoot());
+                FilteredTable table = (FilteredTable) userSchema.getTable(SampleTimelineAuditEvent.EVENT_TYPE);
+
+                SQLFragment sql = new SQLFragment("SELECT COUNT(*)\n" +
+                        "                        FROM (\n" +
+                        "                                 -- updates that are marked as lineage updates\n" +
+                        "                                 (SELECT DISTINCT transactionId\n" +
+                        "                                  FROM " + table.getRealTable().getFromSQL("").getSQL() +"\n" +
+                        "                                  WHERE islineageupdate = " + schema.getSqlDialect().getBooleanTRUE() + "\n" +
+                        "                                    AND comment = 'Sample was updated.'\n" +
+                        "                                 ) a1\n" +
+                        "                                     JOIN\n" +
+                        "                                     -- but have associated entries that are not lineage updates\n" +
+                        "                                     (SELECT DISTINCT transactionid\n" +
+                        "                                      FROM " + table.getRealTable().getFromSQL("").getSQL() + "\n" +
+                        "                                      WHERE islineageupdate = " + schema.getSqlDialect().getBooleanFALSE() + ") a2\n" +
+                        "                                 ON a1.transactionid = a2.transactionid\n" +
+                        "                                 )");
+
+                results.put("sampleLineageAuditDiscrepancyCount", new SqlSelector(schema, sql.getSQL()).getObject(Long.class));
+
+                results.put("sampleCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.material").getObject(Long.class));
+                results.put("aliquotCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.material where aliquotedfromlsid IS NOT NULL").getObject(Long.class));
+
+                results.put("dataClassCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.dataclass").getObject(Long.class));
+                results.put("dataClassRowCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.data WHERE classid IN (SELECT rowid FROM exp.dataclass)").getObject(Long.class));
+                results.put("dataWithDataParentsCount", new SqlSelector(schema, "SELECT COUNT(DISTINCT d.sourceApplicationId) FROM exp.data d\n" +
                         "JOIN exp.datainput di ON di.targetapplicationid = d.sourceapplicationid").getObject(Long.class));
+                if (schema.getSqlDialect().isPostgreSQL())
+                {
+                    Collection<Map<String, Object>> numDataClassObjectsCounts = new SqlSelector(schema, """
+                            SELECT totalCount, numberNameCount FROM
+                                        (SELECT cpastype, COUNT(*) AS totalCount from exp.data GROUP BY cpastype) t
+                                    JOIN
+                                        (SELECT cpastype, COUNT(*) AS numberNameCount FROM exp.data m WHERE m.name SIMILAR TO '[0-9.]*' GROUP BY cpastype) ns
+                                    ON t.cpastype = ns.cpastype""").getMapCollection();
+                    results.put("dataClassWithNumberNamesCount", numDataClassObjectsCounts.size());
+                    results.put("dataClassWithOnlyNumberNamesCount", numDataClassObjectsCounts.stream().filter(map ->
+                            (Long) map.get("totalCount") > 0 && map.get("totalCount") == map.get("numberNameCount")).count());
+                }
 
-                results.put("ontologyPrincipalConceptCodeCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE principalconceptcode IS NOT NULL").getObject(Long.class));
-                results.put("ontologyLookupColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE concepturi = ?", OntologyService.conceptCodeConceptURI).getObject(Long.class));
-                results.put("ontologyConceptSubtreeCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE conceptsubtree IS NOT NULL").getObject(Long.class));
-                results.put("ontologyConceptImportColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE conceptimportcolumn IS NOT NULL").getObject(Long.class));
-                results.put("ontologyConceptLabelColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE conceptlabelcolumn IS NOT NULL").getObject(Long.class));
+                results.put("ontologyPrincipalConceptCodeCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.propertydescriptor WHERE principalconceptcode IS NOT NULL").getObject(Long.class));
+                results.put("ontologyLookupColumnCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.propertydescriptor WHERE concepturi = ?", OntologyService.conceptCodeConceptURI).getObject(Long.class));
+                results.put("ontologyConceptSubtreeCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.propertydescriptor WHERE conceptsubtree IS NOT NULL").getObject(Long.class));
+                results.put("ontologyConceptImportColumnCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.propertydescriptor WHERE conceptimportcolumn IS NOT NULL").getObject(Long.class));
+                results.put("ontologyConceptLabelColumnCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.propertydescriptor WHERE conceptlabelcolumn IS NOT NULL").getObject(Long.class));
 
-                results.put("scannableColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE scannable = ?", true).getObject(Long.class));
-                results.put("uniqueIdColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE concepturi = ?", STORAGE_UNIQUE_ID_CONCEPT_URI).getObject(Long.class));
-                results.put("sampleTypeWithUniqueIdCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT DD.DomainURI) FROM\n" +
+                results.put("scannableColumnCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.propertydescriptor WHERE scannable = ?", true).getObject(Long.class));
+                results.put("uniqueIdColumnCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.propertydescriptor WHERE concepturi = ?", STORAGE_UNIQUE_ID_CONCEPT_URI).getObject(Long.class));
+                results.put("sampleTypeWithUniqueIdCount", new SqlSelector(schema, "SELECT COUNT(DISTINCT DD.DomainURI) FROM\n" +
                         "     exp.PropertyDescriptor D \n" +
                         "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
                         "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
                         "WHERE D.conceptURI = ?", STORAGE_UNIQUE_ID_CONCEPT_URI).getObject(Long.class));
 
-                results.put("fileColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE rangeURI = ?", PropertyType.FILE_LINK.getTypeUri()).getObject(Long.class));
-                results.put("sampleTypeWithFileColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT DD.DomainURI) FROM\n" +
+                results.put("fileColumnCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.propertydescriptor WHERE rangeURI = ?", PropertyType.FILE_LINK.getTypeUri()).getObject(Long.class));
+                results.put("sampleTypeWithFileColumnCount", new SqlSelector(schema, "SELECT COUNT(DISTINCT DD.DomainURI) FROM\n" +
                         "     exp.PropertyDescriptor D \n" +
                         "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
                         "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
                         "WHERE DD.storageSchemaName = ? AND D.rangeURI = ?", SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME, PropertyType.FILE_LINK.getTypeUri()).getObject(Long.class));
-                results.put("sampleTypeWithBooleanColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT DD.DomainURI) FROM\n" +
+                results.put("sampleTypeWithBooleanColumnCount", new SqlSelector(schema, "SELECT COUNT(DISTINCT DD.DomainURI) FROM\n" +
                         "     exp.PropertyDescriptor D \n" +
                         "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
                         "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
                         "WHERE DD.storageSchemaName = ? AND D.rangeURI = ?", SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME, PropertyType.BOOLEAN.getTypeUri()).getObject(Long.class));
 
-                results.put("sampleTypeAliquotSpecificField", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT D.PropertyURI) FROM\n" +
+                results.put("sampleTypeAliquotSpecificField", new SqlSelector(schema, "SELECT COUNT(DISTINCT D.PropertyURI) FROM\n" +
                         "     exp.PropertyDescriptor D \n" +
                         "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
                         "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
                         "WHERE DD.storageSchemaName = ? AND D.derivationDataScope = ?", SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME, ExpSchema.DerivationDataScopeType.ChildOnly.name()).getObject(Long.class));
-                results.put("sampleTypeParentOnlyField", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT D.PropertyURI) FROM\n" +
+                results.put("sampleTypeParentOnlyField", new SqlSelector(schema, "SELECT COUNT(DISTINCT D.PropertyURI) FROM\n" +
                         "     exp.PropertyDescriptor D \n" +
                         "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
                         "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
                         "WHERE DD.storageSchemaName = ? AND (D.derivationDataScope = ? OR D.derivationDataScope IS NULL)", SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME, ExpSchema.DerivationDataScopeType.ParentOnly.name()).getObject(Long.class));
-                results.put("sampleTypeParentAndAliquotField", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT D.PropertyURI) FROM\n" +
+                results.put("sampleTypeParentAndAliquotField", new SqlSelector(schema, "SELECT COUNT(DISTINCT D.PropertyURI) FROM\n" +
                         "     exp.PropertyDescriptor D \n" +
                         "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
                         "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
                         "WHERE DD.storageSchemaName = ? AND D.derivationDataScope = ?", SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME, ExpSchema.DerivationDataScopeType.All.name()).getObject(Long.class));
 
-                results.put("attachmentColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE rangeURI = ?", PropertyType.ATTACHMENT.getTypeUri()).getObject(Long.class));
-                results.put("dataClassWithAttachmentColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT DD.DomainURI) FROM\n" +
+                results.put("attachmentColumnCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.propertydescriptor WHERE rangeURI = ?", PropertyType.ATTACHMENT.getTypeUri()).getObject(Long.class));
+                results.put("dataClassWithAttachmentColumnCount", new SqlSelector(schema, "SELECT COUNT(DISTINCT DD.DomainURI) FROM\n" +
                         "     exp.PropertyDescriptor D \n" +
                         "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
                         "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
                         "WHERE DD.storageSchemaName = ? AND D.rangeURI = ?", DataClassDomainKind.PROVISIONED_SCHEMA_NAME, PropertyType.ATTACHMENT.getTypeUri()).getObject(Long.class));
-                results.put("dataClassWithBooleanColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT DD.DomainURI) FROM\n" +
+                results.put("dataClassWithBooleanColumnCount", new SqlSelector(schema, "SELECT COUNT(DISTINCT DD.DomainURI) FROM\n" +
                         "     exp.PropertyDescriptor D \n" +
                         "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
                         "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
                         "WHERE DD.storageSchemaName = ? AND D.rangeURI = ?", DataClassDomainKind.PROVISIONED_SCHEMA_NAME, PropertyType.BOOLEAN.getTypeUri()).getObject(Long.class));
 
-                results.put("textChoiceColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE concepturi = ?", TEXT_CHOICE_CONCEPT_URI).getObject(Long.class));
+                results.put("textChoiceColumnCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.propertydescriptor WHERE concepturi = ?", TEXT_CHOICE_CONCEPT_URI).getObject(Long.class));
 
-                results.put("domainsWithDateTimeColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT DD.DomainURI) FROM\n" +
+                results.put("domainsWithDateTimeColumnCount", new SqlSelector(schema, "SELECT COUNT(DISTINCT DD.DomainURI) FROM\n" +
                         "     exp.PropertyDescriptor D \n" +
                         "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
                         "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
                         "WHERE D.rangeURI = ?", PropertyType.DATE_TIME.getTypeUri()).getObject(Long.class));
 
-                results.put("domainsWithDateColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT DD.DomainURI) FROM\n" +
+                results.put("domainsWithDateColumnCount", new SqlSelector(schema, "SELECT COUNT(DISTINCT DD.DomainURI) FROM\n" +
                         "     exp.PropertyDescriptor D \n" +
                         "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
                         "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
                         "WHERE D.rangeURI = ?", PropertyType.DATE.getTypeUri()).getObject(Long.class));
 
-                results.put("domainsWithTimeColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT DD.DomainURI) FROM\n" +
+                results.put("domainsWithTimeColumnCount", new SqlSelector(schema, "SELECT COUNT(DISTINCT DD.DomainURI) FROM\n" +
                         "     exp.PropertyDescriptor D \n" +
                         "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
                         "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
                         "WHERE D.rangeURI = ?", PropertyType.TIME.getTypeUri()).getObject(Long.class));
 
-                results.put("maxObjectObjectId", new SqlSelector(ExperimentService.get().getSchema(), "SELECT MAX(ObjectId) FROM exp.Object").getObject(Long.class));
-                results.put("maxMaterialRowId", new SqlSelector(ExperimentService.get().getSchema(), "SELECT MAX(RowId) FROM exp.Material").getObject(Long.class));
+                results.put("maxObjectObjectId", new SqlSelector(schema, "SELECT MAX(ObjectId) FROM exp.Object").getObject(Long.class));
+                results.put("maxMaterialRowId", new SqlSelector(schema, "SELECT MAX(RowId) FROM exp.Material").getObject(Long.class));
 
                 results.put("nameexpression", ExperimentService.get().getNameExpressionMetrics());
 

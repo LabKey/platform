@@ -15,6 +15,7 @@
  */
 package org.labkey.api.audit;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.audit.data.DataMapColumn;
 import org.labkey.api.audit.data.DataMapDiffColumn;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
@@ -31,6 +32,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
@@ -48,10 +50,7 @@ import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
-import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -93,7 +92,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
     public static final String COLUMN_NAME_TRANSACTION_ID = "TransactionID";
     public static final String COLUMN_NAME_DATA_CHANGES = "DataChanges";
 
-    final AbstractAuditDomainKind domainKind;
+    final AbstractAuditDomainKind _domainKind;
 
 
     public AbstractAuditTypeProvider()
@@ -101,28 +100,27 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
         this(null);
     }
 
-    public AbstractAuditTypeProvider(AbstractAuditDomainKind domainKind)
+    public AbstractAuditTypeProvider(@NotNull AbstractAuditDomainKind domainKind)
     {
-        this.domainKind = domainKind;
-
-        // Issue 20310: initialize AuditTypeProvider when registered during startup
-        User auditUser = new LimitedUser(UserManager.getGuestUser(), ReaderRole.class);
-        initializeProvider(auditUser);
+        // TODO : consolidate domain kind initialization to either this constructor or to override
+        // getDomainKind.
+        _domainKind = domainKind;
+        // Register the DomainKind
+        PropertyService.get().registerDomainKind(getDomainKind());
     }
 
     protected AbstractAuditDomainKind getDomainKind()
     {
-        assert null != domainKind;
-        return domainKind;
+        if (_domainKind == null)
+            throw new IllegalStateException(String.format("The audit type : \"%s\" has a null domain kind", getLabel()));
+
+        return _domainKind;
     }
 
     @Override
     public void initializeProvider(User user)
     {
-        // Register the DomainKind
         AbstractAuditDomainKind domainKind = getDomainKind();
-        PropertyService.get().registerDomainKind(domainKind);
-
         Domain domain = getDomain();
 
         // if the domain doesn't exist, create it
@@ -137,7 +135,6 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
                     domain.addPropertyOfPropertyDescriptor(pd);
                 }
                 domain.save(user);
-                // don't keep using domain after domain.save()
                 domain = getDomain();
             }
             catch (ChangePropertyDescriptorException e)
@@ -146,54 +143,60 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
             }
         }
 
-        // ensure the domain fields are in sync with the domain kind specification
-        ensureProperties(user, domain, domainKind);
+        // adjust potential domain kind changes
+        ensureProperties(user, domain);
     }
 
-    protected void updateIndices(Domain domain, AbstractAuditDomainKind domainKind)
+    private void updateIndices(Domain domain, AbstractAuditDomainKind domainKind)
     {
         if (domain.getStorageTableName() == null)
             return;
 
-        Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> existingIndices = getSchema().getTable(domain.getStorageTableName()).getAllIndices();
-        Set<PropertyStorageSpec.Index> newIndices = new HashSet<>(domainKind.getPropertyIndices(domain));
-        Set<PropertyStorageSpec.Index> toRemove = new HashSet<>();
-        for (String name : existingIndices.keySet())
+        // Issue 50059, acquiring the schema table info this way ensures that the domain fields are properly fixed up. See : ProvisionedSchemaOptions.
+        SchemaTableInfo schemaTableInfo = StorageProvisioner.get().getSchemaTableInfo(domain);
+        if (schemaTableInfo != null)
         {
-            if (existingIndices.get(name).first == TableInfo.IndexType.Primary)
-                continue;
-            Pair<TableInfo.IndexType, List<ColumnInfo>> columnIndex = existingIndices.get(name);
-            String[] columnNames = new String[columnIndex.second.size()];
-            for (int i = 0; i < columnIndex.second.size(); i++)
+            Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> existingIndices = schemaTableInfo.getAllIndices();
+            Set<PropertyStorageSpec.Index> newIndices = new HashSet<>(domainKind.getPropertyIndices(domain));
+            Set<PropertyStorageSpec.Index> toRemove = new HashSet<>();
+            for (String name : existingIndices.keySet())
             {
-                columnNames[i] = columnIndex.second.get(i).getColumnName();
-            }
-            PropertyStorageSpec.Index existingIndex = new PropertyStorageSpec.Index(columnIndex.first == TableInfo.IndexType.Unique, columnNames);
-            boolean foundIt = false;
-            for (PropertyStorageSpec.Index propertyIndex : newIndices)
-            {
-                if (PropertyStorageSpec.Index.isSameIndex(propertyIndex, existingIndex))
+                if (existingIndices.get(name).first == TableInfo.IndexType.Primary)
+                    continue;
+                Pair<TableInfo.IndexType, List<ColumnInfo>> columnIndex = existingIndices.get(name);
+                String[] columnNames = new String[columnIndex.second.size()];
+                for (int i = 0; i < columnIndex.second.size(); i++)
                 {
-                    foundIt = true;
-                    newIndices.remove(propertyIndex);
-                    break;
+                    columnNames[i] = columnIndex.second.get(i).getColumnName();
                 }
+                PropertyStorageSpec.Index existingIndex = new PropertyStorageSpec.Index(columnIndex.first == TableInfo.IndexType.Unique, columnNames);
+                boolean foundIt = false;
+                for (PropertyStorageSpec.Index propertyIndex : newIndices)
+                {
+                    if (PropertyStorageSpec.Index.isSameIndex(propertyIndex, existingIndex))
+                    {
+                        foundIt = true;
+                        newIndices.remove(propertyIndex);
+                        break;
+                    }
+                }
+
+                if (!foundIt)
+                    toRemove.add(existingIndex);
             }
 
-            if (!foundIt)
-                toRemove.add(existingIndex);
+            if (!toRemove.isEmpty())
+                StorageProvisioner.get().addOrDropTableIndices(domain, toRemove, false, TableChange.IndexSizeMode.Normal);
+            if (!newIndices.isEmpty())
+                StorageProvisioner.get().addOrDropTableIndices(domain, newIndices, true, TableChange.IndexSizeMode.Normal);
         }
-
-        if (!toRemove.isEmpty())
-            StorageProvisioner.get().addOrDropTableIndices(domain, toRemove, false, TableChange.IndexSizeMode.Normal);
-        if (!newIndices.isEmpty())
-            StorageProvisioner.get().addOrDropTableIndices(domain, newIndices, true, TableChange.IndexSizeMode.Normal);
     }
 
 
     // NOTE: Changing the name of an existing PropertyDescriptor will lose data!
-    protected void ensureProperties(User user, Domain domain, AbstractAuditDomainKind domainKind)
+    private void ensureProperties(User user, Domain domain)
     {
+        AbstractAuditDomainKind domainKind = getDomainKind();
         if (domain != null && domainKind != null)
         {
             // Create a map of desired properties
@@ -254,9 +257,6 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
                 }
 
                 updateIndices(domain, domainKind);
-                // Issue 50059, don't cache the DB schema table queried by updateIndices in order for the provisioned
-                // domain fields to be properly fixed up.
-                transaction.addCommitTask(() -> domainKind.invalidate(domain), DbScope.CommitTaskOption.POSTCOMMIT);
                 transaction.commit();
             }
             catch (ChangePropertyDescriptorException e)

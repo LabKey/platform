@@ -41,7 +41,6 @@ import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QuerySchema;
-import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.query.ValidationException;
@@ -49,6 +48,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.SimpleNamedObject;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
@@ -87,11 +87,11 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
     {
         super.init();
 
-        var type = getMutableColumn("Type");
+        var type = getMutableColumnOrThrow("Type");
         type.setFk(new PipelineTriggerTypeForeignKey(getUserSchema(), getContainerFilter()));
         type.setInputType("select");
 
-        var pipelineId = getMutableColumn("PipelineId");
+        var pipelineId = getMutableColumnOrThrow("PipelineId");
         pipelineId.setFk(new TaskPipelineForeignKey(getUserSchema(), getContainerFilter()));
         pipelineId.setInputType("select");
 
@@ -131,28 +131,28 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
     }
 
     @Override
-    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        return getContainer().hasPermission(user, AdminPermission.class);
+        return getContainer().hasPermission(user, perm == ReadPermission.class ? perm : AdminPermission.class);
     }
 
     @Override
-    public QueryUpdateService getUpdateService()
+    public TriggerConfigurationsUpdateService getUpdateService()
     {
         return new TriggerConfigurationsUpdateService(this);
     }
 
-    private class PipelineTriggerTypeForeignKey extends AbstractSelectListForeignKey
+    private static class PipelineTriggerTypeForeignKey extends AbstractSelectListForeignKey
     {
         PipelineTriggerTypeForeignKey(QuerySchema sourceSchema, ContainerFilter cf)
         {
             super(sourceSchema, cf);
-            for (PipelineTriggerType pipelineTriggerType : PipelineTriggerRegistry.get().getTypes())
+            for (PipelineTriggerType<?> pipelineTriggerType : PipelineTriggerRegistry.get().getTypes())
                addListItem(pipelineTriggerType.getName(), pipelineTriggerType.getName());
         }
     }
 
-    private class PipelineTaskDisplayColumn extends AbstractValueTransformingDisplayColumn<String, String>
+    private static class PipelineTaskDisplayColumn extends AbstractValueTransformingDisplayColumn<String, String>
     {
         public PipelineTaskDisplayColumn(ColumnInfo pipelineIdCol)
         {
@@ -166,7 +166,7 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
             {
                 try
                 {
-                    TaskPipeline taskPipeline = PipelineJobService.get().getTaskPipeline(pipelineIdStr);
+                    TaskPipeline<?> taskPipeline = PipelineJobService.get().getTaskPipeline(pipelineIdStr);
                     return taskPipeline.getDescription();
                 }
                 catch (NotFoundException e)
@@ -179,7 +179,7 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
         }
     }
 
-    private class StatusDisplayColumn extends AbstractValueTransformingDisplayColumn<Integer, String>
+    private static class StatusDisplayColumn extends AbstractValueTransformingDisplayColumn<Integer, String>
     {
         public StatusDisplayColumn(ColumnInfo rowIdCol)
         {
@@ -205,11 +205,10 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
         TaskPipelineForeignKey(QuerySchema sourceSchema, ContainerFilter cf)
         {
             super(sourceSchema, cf);
-            for (TaskPipeline taskPipeline : PipelineJobService.get().getTaskPipelines(getContainer()))
+            for (TaskPipeline<?> taskPipeline : PipelineJobService.get().getTaskPipelines(getContainer()))
             {
-                if (taskPipeline instanceof FileAnalysisTaskPipeline)
+                if (taskPipeline instanceof FileAnalysisTaskPipeline fatp)
                 {
-                    FileAnalysisTaskPipeline fatp = (FileAnalysisTaskPipeline) taskPipeline;
                     if (fatp.isAllowForTriggerConfiguration())
                         addListItem(taskPipeline.getId().toString(), taskPipeline.getDescription());
                 }
@@ -217,7 +216,7 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
         }
     }
 
-    private class TriggerConfigurationsUpdateService extends DefaultQueryUpdateService
+    public class TriggerConfigurationsUpdateService extends DefaultQueryUpdateService
     {
         public TriggerConfigurationsUpdateService(TriggerConfigurationsTable table)
         {
@@ -297,7 +296,7 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
 
         /** Implement to make sure the listener gets unregistered */
         @Override
-        protected int truncateRows(User user, Container container) throws QueryUpdateServiceException, SQLException
+        public int truncateRows(User user, Container container) throws QueryUpdateServiceException, SQLException
         {
             TableSelector ts = new TableSelector(TriggerConfigurationsTable.this);
             Collection<Map<String, Object>> rowsToDelete = ts.getMapCollection();
@@ -379,7 +378,7 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
         return getDetailsURL(columns, container);
     }
 
-    private abstract class AbstractSelectListForeignKey extends AbstractForeignKey
+    private abstract static class AbstractSelectListForeignKey extends AbstractForeignKey
     {
         NamedObjectList _list = new NamedObjectList();
 
@@ -407,7 +406,7 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
         }
 
         @Override
-        public NamedObjectList getSelectList(RenderContext ctx)
+        public @NotNull NamedObjectList getSelectList(RenderContext ctx)
         {
             return _list;
         }
