@@ -16,6 +16,7 @@
 
 package org.labkey.api.pipeline;
 
+import org.apache.commons.vfs2.FileObject;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -53,6 +54,9 @@ public interface PipeRoot extends SecurableResource
 
     @NotNull
     File getLogDirectory();
+
+    @NotNull
+    FileObject getLogDirectoryFileObject(boolean forWrite);
 
     @Nullable
     Path resolveToNioPath(String path);

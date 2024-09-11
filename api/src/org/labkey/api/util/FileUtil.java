@@ -20,6 +20,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.file.SimplePathVisitor;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.vfs2.FileObject;
 import org.apache.logging.log4j.Logger;
 import org.apache.tika.io.MappedBufferCleaner;
 import org.jetbrains.annotations.NotNull;
@@ -29,6 +30,7 @@ import org.junit.Test;
 import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.data.Container;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.files.virtual.AuthorizedFileSystem;
 import org.labkey.api.security.Crypt;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.logging.LogHelper;
@@ -169,13 +171,12 @@ public class FileUtil
     {
         if (dir.isDirectory())
         {
-            String[] children = dir.list();
+            File[] children = dir.listFiles();
             if (null != children)
             {
-                for (String aChildren : children)
+                for (File child : children)
                 {
                     boolean success = true;
-                    File child = new File(dir, aChildren);
                     if (child.isDirectory())
                         success = deleteDir(child);
                     if (!success)
@@ -1466,6 +1467,18 @@ quickScan:
         return Files.createTempDirectory(prefix).toAbsolutePath();
     }
 
+
+    public static FileObject createTempDirectoryFileObject(@Nullable String prefix) throws IOException
+    {
+        Path path = Files.createTempDirectory(prefix).toAbsolutePath();
+        return AuthorizedFileSystem.create(path, true, true).getRoot();
+    }
+
+    public static boolean deleteTempDirectoryFileObject(@NotNull FileObject fileObject) throws IOException
+    {
+        var localPath = ((AuthorizedFileSystem)fileObject.getFileSystem()).getInnerFileObject().getPath();
+        return FileUtil.deleteDirectoryContents(localPath.toFile());
+    }
 
     // Under Catalina, it seems to pick \tomcat\temp
     // On the web server under Tomcat, it seems to pick c:\Documents and Settings\ITOMCAT_EDI\Local Settings\Temp

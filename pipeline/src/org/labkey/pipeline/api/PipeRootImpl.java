@@ -17,6 +17,7 @@
 package org.labkey.pipeline.api;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.vfs2.FileObject;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -25,6 +26,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.view.FilesWebPart;
+import org.labkey.api.files.virtual.AuthorizedFileSystem;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.DirectoryNotDeletedException;
@@ -237,6 +239,13 @@ public class PipeRootImpl implements PipeRoot
             return FileUtil.getTempDirectory();
         else
             return getRootPath();
+    }
+
+    @Override
+    @NotNull
+    public FileObject getLogDirectoryFileObject(boolean forWrite)
+    {
+        return AuthorizedFileSystem.create(getLogDirectory(), true, forWrite).getRoot();
     }
 
     public synchronized List<File> getRootPaths()
