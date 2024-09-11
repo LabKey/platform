@@ -119,6 +119,7 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.WorkbookContainerType;
 import org.labkey.api.data.dialect.SqlDialect.ExecutionPlanType;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.data.queryprofiler.QueryProfiler.QueryStatTsvWriter;
@@ -206,8 +207,10 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.SiteAdminPermission;
 import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.security.permissions.UploadFileBasedModulePermission;
+import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.ProjectAdminRole;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.SharedViewEditorRole;
@@ -309,8 +312,10 @@ import org.labkey.core.security.BlockListFilter;
 import org.labkey.core.security.SecurityController;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.security.xml.GroupEnumType;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
@@ -7972,7 +7977,7 @@ public class AdminController extends SpringActionController
                         throw new UnauthorizedException("Cannot delete folder: " + target.getName() + ". " + perm.getName() + " permission required");
                     }
 
-                    if (!ContainerManager.hasTreePermission(target, getUser(), AdminPermission.class))
+                    if (target.hasChildren() && !ContainerManager.hasTreePermission(target, getUser(), AdminPermission.class))
                     {
                         throw new UnauthorizedException("Deleting the " + target.getContainerNoun() + " " + target.getName() + " requires admin permissions on that folder and all children. You do not have admin permission on all subfolders.");
                     }
@@ -11709,6 +11714,68 @@ public class AdminController extends SpringActionController
                 GroupManager.getGroup(ContainerManager.getRoot(), "Users", GroupEnumType.SITE), null);
             job._impersonationContext2 = factory2.getImpersonationContext();
             testSerialize(job, LOG);
+        }
+    }
+
+    public static class WorkbookDeleteTestCase extends Assert
+    {
+        private static final String FOLDER_NAME = "WorkbookDeleteTestCaseFolder";
+        private static final String TEST_EMAIL = "testDelete@myDomain.com";
+
+        @Test
+        public void testWorkbookDelete() throws Exception
+        {
+            doCleanup();
+
+            Container project = ContainerManager.createContainer(ContainerManager.getRoot(), FOLDER_NAME, TestContext.get().getUser());
+            Container workbook = ContainerManager.createContainer(project, null, "Title1", null, WorkbookContainerType.NAME, TestContext.get().getUser());
+
+            ValidEmail email = new ValidEmail(TEST_EMAIL);
+            SecurityManager.NewUserStatus newUserStatus = SecurityManager.addUser(email, null);
+            User nonAdminUser = newUserStatus.getUser();
+            MutableSecurityPolicy policy = new MutableSecurityPolicy(project.getPolicy());
+            policy.addRoleAssignment(nonAdminUser, ReaderRole.class);
+            SecurityPolicyManager.savePolicy(policy, TestContext.get().getUser());
+
+            // User lacks any permission, throw unauthorized for parent and workbook:
+            HttpServletRequest request = ViewServlet.mockRequest(RequestMethod.POST.name(), new ActionURL(DeleteFolderAction.class, project), nonAdminUser, Map.of("Content-Type", "application/json"), null);
+            MockHttpServletResponse response = ViewServlet.mockDispatch(request, null);
+            Assert.assertEquals("Incorrect response code", HttpServletResponse.SC_FORBIDDEN, response.getStatus());
+
+            request = ViewServlet.mockRequest(RequestMethod.POST.name(), new ActionURL(DeleteFolderAction.class, workbook), nonAdminUser, Map.of("Content-Type", "application/json"), null);
+            response = ViewServlet.mockDispatch(request, null);
+            Assert.assertEquals("Incorrect response code", HttpServletResponse.SC_FORBIDDEN, response.getStatus());
+
+            // Grant permission, should be able to delete the workbook but not parent:
+            policy = new MutableSecurityPolicy(project.getPolicy());
+            policy.addRoleAssignment(nonAdminUser, EditorRole.class);
+            SecurityPolicyManager.savePolicy(policy, TestContext.get().getUser());
+
+            request = ViewServlet.mockRequest(RequestMethod.POST.name(), new ActionURL(DeleteFolderAction.class, project), nonAdminUser, Map.of("Content-Type", "application/json"), null);
+            response = ViewServlet.mockDispatch(request, null);
+            Assert.assertEquals("Incorrect response code", HttpServletResponse.SC_FORBIDDEN, response.getStatus());
+
+            // Hitting delete action results in a redirect:
+            request = ViewServlet.mockRequest(RequestMethod.POST.name(), new ActionURL(DeleteFolderAction.class, workbook), nonAdminUser, Map.of("Content-Type", "application/json"), null);
+            response = ViewServlet.mockDispatch(request, null);
+            Assert.assertEquals("Incorrect response code", HttpServletResponse.SC_FOUND, response.getStatus());
+
+            doCleanup();
+        }
+
+        protected static void doCleanup() throws Exception
+        {
+            Container project = ContainerManager.getForPath(FOLDER_NAME);
+            if (project != null)
+            {
+                ContainerManager.deleteAll(project, TestContext.get().getUser());
+            }
+
+            if (UserManager.userExists(new ValidEmail(TEST_EMAIL)))
+            {
+                User u = UserManager.getUser(new ValidEmail(TEST_EMAIL));
+                UserManager.deleteUser(u.getUserId());
+            }
         }
     }
 }
