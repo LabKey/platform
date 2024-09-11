@@ -79,6 +79,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.api.writer.ZipUtil;
 import org.labkey.folder.xml.FolderDocument;
+import org.labkey.pipeline.query.TriggerConfigurationsTable;
 import org.labkey.pipeline.status.StatusController;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -241,16 +242,16 @@ public class PipelineManager
         try
         {
             PipelineQuerySchema schema = new PipelineQuerySchema(user, container);
-            TableInfo table = schema.createTriggerConfigurationsTable(null);  // bypass security check since this is internal, see issue 36249
-            table.getUpdateService().truncateRows(user, container, null, null);
+            TriggerConfigurationsTable table = schema.createTriggerConfigurationsTable(null);  // bypass security check since this is internal, see issue 36249
+            table.getUpdateService().truncateRows(user, container);
         }
         catch (SQLException e)
         {
             throw new RuntimeSQLException(e);
         }
-        catch (QueryUpdateServiceException | BatchValidationException e)
+        catch (QueryUpdateServiceException e)
         {
-            throw new UnexpectedException(e);
+            throw UnexpectedException.wrap(e);
         }
     }
 

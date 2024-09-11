@@ -751,7 +751,7 @@ public class SecurityManager
         /** Creates database apiKey */
         private DatabaseTransformSession(@NotNull User user)
         {
-            super(ApiKeyManager.get().createKey(user, SECONDS_PER_DAY));
+            super(ApiKeyManager.get().createKey(user, SECONDS_PER_DAY, "Created for database transform session"));
         }
 
         @Override

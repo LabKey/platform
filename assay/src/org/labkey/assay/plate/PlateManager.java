@@ -193,7 +193,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     // when those calls are being made for a plate save operation.
     public static final String PLATE_SAVE_FLAG = ".plateSave";
 
-    public SearchService.SearchCategory PLATE_CATEGORY = new SearchService.SearchCategory("plate", "Plate") {
+    public SearchService.SearchCategory PLATE_CATEGORY = new SearchService.SearchCategory("plate", "Assay Plates", false) {
         @Override
         public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
         {

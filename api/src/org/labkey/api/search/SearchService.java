@@ -92,8 +92,8 @@ public interface SearchService extends SearchMXBean
             throw new RedirectException(url.clone().deleteParameter("_docid"));
     }
 
-    SearchCategory navigationCategory = new SearchCategory("navigation", "internal category", false);
-    SearchCategory fileCategory = new SearchCategory("file", "Files and Attachments", false);
+    SearchCategory navigationCategory = new SearchCategory("navigation", "Projects and Folders");
+    SearchCategory fileCategory = new SearchCategory("file", "Files and Attachments");
 
     // marker value for documents with indexing errors
     Date failDate = new Timestamp(DateUtil.parseISODateTime("1899-12-30"));
@@ -110,7 +110,6 @@ public interface SearchService extends SearchMXBean
 
     /**
      * Delete the index documents for any files in a container then start a new crawler task for just that container
-     * @param c
      */
     void reindexContainerFiles(Container c);
 
@@ -212,11 +211,11 @@ public interface SearchService extends SearchMXBean
         {
             ListUtils.partition(list, batchSize).forEach(sublist ->
             {
-                addRunnable( () ->
+                addRunnable(() ->
                     sublist.stream()
-                            .map(mapper::apply)
-                            .filter(Objects::nonNull)
-                            .forEach(doc -> addResource(doc, PRIORITY.item))
+                        .map(mapper)
+                        .filter(Objects::nonNull)
+                        .forEach(doc -> addResource(doc, PRIORITY.item))
                     , PRIORITY.group);
             });
         }
@@ -233,7 +232,7 @@ public interface SearchService extends SearchMXBean
     interface ResourceResolver
     {
         default WebdavResource resolve(@NotNull String resourceIdentifier) { return null; }
-        default HttpView getCustomSearchResult(User user, @NotNull String resourceIdentifier) { return null; }
+        default HttpView<?> getCustomSearchResult(User user, @NotNull String resourceIdentifier) { return null; }
         default Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier) { return null; }
         default Map<String, Map<String, Object>> getCustomSearchJsonMap(User user, @NotNull Collection<String> resourceIdentifiers)
         {
@@ -251,18 +250,27 @@ public interface SearchService extends SearchMXBean
     {
         private final String _name;
         private final String _description;
-        private final boolean _showInDialog;
+        private final boolean _showInAdvancedSearch;
 
+        /**
+         * @param name Internal name for the category
+         * @param description Description that appears in advanced search
+         */
         public SearchCategory(@NotNull String name, @NotNull String description)
         {
-            this(name,description,true);
+            this(name, description, true);
         }
-        
-        public SearchCategory(@NotNull String name, @NotNull String description, boolean showInDialog)
+
+        /**
+         * @param name Internal name for the category
+         * @param description Description that appears in advanced search if showInAdvancedSearch is true
+         * @param showInAdvancedSearch Determines if this category appears in the advanced search options
+         */
+        public SearchCategory(@NotNull String name, @NotNull String description, boolean showInAdvancedSearch)
         {
             _name = name;
             _description = description;
-            _showInDialog = showInDialog;
+            _showInAdvancedSearch = showInAdvancedSearch;
         }
 
         public String getName()
@@ -294,6 +302,11 @@ public interface SearchService extends SearchMXBean
         public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
         {
             return containers.keySet();
+        }
+
+        public boolean isShowInAdvancedSearch()
+        {
+            return _showInAdvancedSearch;
         }
     }
 
