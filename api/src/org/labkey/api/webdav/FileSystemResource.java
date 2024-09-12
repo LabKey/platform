@@ -69,6 +69,7 @@ import java.io.InputStream;
 import java.lang.reflect.Proxy;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
@@ -813,13 +814,13 @@ public class FileSystemResource extends AbstractWebdavResource
                 {
                     _attributes = Files.readAttributes(_file.getPath(), BasicFileAttributes.class);
                 }
-                catch (FileNotFoundException|InvalidPathException|FileSystemException x)
+                catch (FileNotFoundException | InvalidPathException | FileSystemException | NoSuchFileException x)
                 {
                     _attributes = doesNotExist;
                 }
                 catch (IOException x)
                 {
-                    throw new UnexpectedException(x);
+                    throw UnexpectedException.wrap(x);
                 }
             }
         }

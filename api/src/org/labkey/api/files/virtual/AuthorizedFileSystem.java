@@ -9,8 +9,6 @@ import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSelector;
 import org.apache.commons.vfs2.FileSystem;
 import org.apache.commons.vfs2.FileSystemException;
-import org.apache.commons.vfs2.FileSystemManager;
-import org.apache.commons.vfs2.FileSystemOptions;
 import org.apache.commons.vfs2.FileType;
 import org.apache.commons.vfs2.NameScope;
 import org.apache.commons.vfs2.RandomAccessContent;
@@ -38,6 +36,7 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.security.cert.Certificate;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -162,6 +161,49 @@ public class AuthorizedFileSystem extends AbstractFileSystem
     @Override
     public boolean hasCapability(Capability capability)
     {
+        switch (capability)
+        {
+            case READ_CONTENT:
+            case RANDOM_ACCESS_READ:
+                if (!_allowRead)
+                    return false;
+                break;
+
+            case WRITE_CONTENT:
+            case RANDOM_ACCESS_SET_LENGTH:
+            case RANDOM_ACCESS_WRITE:
+            case APPEND_CONTENT:
+            case SET_LAST_MODIFIED_FILE:
+            case SET_LAST_MODIFIED_FOLDER:
+            case CREATE:
+            case DELETE:
+            case RENAME:
+                if (!_allowWrite)
+                    return false;
+                break;
+
+            case ATTRIBUTES:
+            case LAST_MODIFIED:
+            case GET_LAST_MODIFIED:
+            case GET_TYPE:
+            case LIST_CHILDREN:
+                if (!_allowList)
+                    return false;
+                break;
+
+            case JUNCTIONS:
+                return false;
+
+            case DIRECTORY_READ_CONTENT:
+            case SIGNING:
+            case URI:
+            case FS_ATTRIBUTES:
+            case MANIFEST_ATTRIBUTES:
+            case DISPATCHER:
+            case COMPRESS:
+            case VIRTUAL:
+                break;
+        }
         return _wrappedFileSystem.hasCapability(capability);
     }
 
@@ -224,40 +266,19 @@ public class AuthorizedFileSystem extends AbstractFileSystem
     @Override
     public void addJunction(String s, FileObject fileObject) throws FileSystemException
     {
-        checkWritable();
         throw new UnsupportedOperationException();
     }
 
     @Override
     public void removeJunction(String s) throws FileSystemException
     {
-        checkWritable();
         throw new UnsupportedOperationException();
     }
 
     @Override
     public File replicateFile(FileObject fileObject, FileSelector fileSelector) throws FileSystemException
     {
-        checkReadable();
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public FileSystemOptions getFileSystemOptions()
-    {
-        return super.getFileSystemOptions();
-    }
-
-    @Override
-    public FileSystemManager getFileSystemManager()
-    {
-        return super.getFileSystemManager();
-    }
-
-    @Override
-    public double getLastModTimeAccuracy()
-    {
-        return super.getLastModTimeAccuracy();
+        return super.replicateFile(fileObject, fileSelector);
     }
 
     class _FileContent implements FileContent
@@ -296,13 +317,6 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         {
             checkListable();
             return _fc.getAttributes();
-        }
-
-        @Override
-        public byte[] getByteArray() throws IOException
-        {
-            checkReadable();
-            return _fc.getByteArray();
         }
 
         @Override
@@ -392,31 +406,10 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         }
 
         @Override
-        public String getString(Charset charset) throws IOException
-        {
-            checkReadable();
-            return _fc.getString(charset);
-        }
-
-        @Override
-        public String getString(String charset) throws IOException
-        {
-            checkReadable();
-            return _fc.getString(charset);
-        }
-
-        @Override
         public boolean hasAttribute(String attrName) throws FileSystemException
         {
             checkListable();
             return _fc.hasAttribute(attrName);
-        }
-
-        @Override
-        public boolean isEmpty() throws FileSystemException
-        {
-            checkListable();
-            return _fc.isEmpty();
         }
 
         @Override
@@ -496,6 +489,10 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         return new _FileObject(name, fo);
     }
 
+    /*
+     * AbstractFileObject maybe isn't the right base class, we don't want it to do any caching at all.
+     * e.g. see doGetType()
+     */
     class _FileObject extends AbstractFileObject<AuthorizedFileSystem>
     {
         final FileObject _fo;
@@ -515,24 +512,38 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         @Override
         protected long doGetContentSize() throws Exception
         {
-            return _fo.getContent().getSize();
+            throw new UnsupportedOperationException();
         }
 
         @Override
-        protected FileType doGetType() throws Exception
+        public FileType getType() throws FileSystemException
         {
             return _fo.getType();
         }
 
         @Override
+        protected FileType doGetType() throws Exception
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public FileObject[] getChildren() throws FileSystemException
+        {
+            if (!_allowList)
+                return new FileObject[0];
+            refresh();
+            FileObject[] children = _fo.getChildren();
+            FileObject[] ret = new FileObject[children.length];
+            for (int i=0 ; i < children.length ; i++)
+                ret[i] = wrapFileObject(children[i]);
+            return ret;
+        }
+
+        @Override
         protected String[] doListChildren() throws Exception
         {
-            // TODO check common case where _fo is a local file
-            var children = _fo.getChildren();
-            String[] names = new String[children.length];
-            for (int i = 0; i < children.length; i++)
-                names[i] = children[i].getName().getBaseName();
-            return names;
+            throw new UnsupportedOperationException();
         }
 
         @Override
@@ -559,6 +570,7 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         {
             checkWritable();
             _fo.createFile();
+            refresh();
         }
 
         @Override
@@ -566,6 +578,7 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         {
             checkWritable();
             _fo.createFolder();
+            refresh();
         }
 
         @Override
@@ -574,21 +587,27 @@ public class AuthorizedFileSystem extends AbstractFileSystem
             checkWritable();
             if ("/".equals(getName().getPath()))
                 throw new UnauthorizedException();
-            return _fo.delete();
+            var ret = _fo.delete();
+            refresh();
+            return ret;
         }
 
         @Override
         public int delete(FileSelector selector) throws FileSystemException
         {
             checkWritable();
-            return _fo.delete(selector);
+            var ret = _fo.delete(selector);
+            refresh();
+            return ret;
         }
 
         @Override
         public int deleteAll() throws FileSystemException
         {
             checkWritable();
-            return _fo.deleteAll();
+            var ret = _fo.deleteAll();
+            refresh();
+            return ret;
         }
 
         @Override
@@ -602,7 +621,11 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         {
             if (!_allowRead)
                 return new FileObject[0];
-            return _fo.findFiles(selector);
+            var array = _fo.findFiles(selector);
+            FileObject[] ret = new FileObject[array.length];
+            for (int i=0 ; i < array.length ; i++)
+                ret[i] = wrapFileObject(array[i]);
+            return ret;
         }
 
         @Override
@@ -610,7 +633,9 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         {
             if (!_allowRead)
                 return;
-            _fo.findFiles(selector, depthwise, selected);
+            ArrayList<FileObject> found = new ArrayList<>();
+            _fo.findFiles(selector, depthwise, found);
+            found.forEach(f -> selected.add(wrapFileObject(f)));
         }
 
         @Override
@@ -618,15 +643,7 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         {
             if (!_allowRead)
                 return null;
-            return _fo.getChild(name);
-        }
-
-        @Override
-        public FileObject[] getChildren() throws FileSystemException
-        {
-            if (!_allowRead)
-                return new FileObject[0];
-            return _fo.getChildren();
+            return wrapFileObject(_fo.getChild(name));
         }
 
         @Override
@@ -662,12 +679,6 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         }
 
         @Override
-        public FileType getType() throws FileSystemException
-        {
-            return _fo.getType();
-        }
-
-        @Override
         public URI getURI()
         {
             // TODO
@@ -677,7 +688,7 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         @Override
         public Path getPath()
         {
-            // TODO this is what we want to discourage!
+            // NOTE this is what we want to discourage!
             return _fo.getPath();
         }
 
@@ -752,6 +763,7 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         @Override
         public void refresh() throws FileSystemException
         {
+            super.refresh();
             _fo.refresh();
         }
 
@@ -953,6 +965,7 @@ public class AuthorizedFileSystem extends AbstractFileSystem
 [ ] get clear on proper time to use encoded or decoded paths
 [ ] Do we need to support URI methods?
 [ ] use AbstractFileSystem.close()?
+[ ] There is way too much metadata caching going on.
 
 CONSIDER
 
