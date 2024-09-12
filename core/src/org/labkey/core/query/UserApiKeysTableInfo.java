@@ -23,6 +23,8 @@ public class UserApiKeysTableInfo extends FilteredTable<CoreQuerySchema>
         addWrapColumn(getRealTable().getColumn("CreatedBy")).setHidden(true);
         addWrapColumn(getRealTable().getColumn("Created"));
         addWrapColumn(getRealTable().getColumn("Expiration"));
+        addWrapColumn(getRealTable().getColumn("LastUsed"));
+        addWrapColumn(getRealTable().getColumn("Description"));
         addCondition(new SimpleFilter(FieldKey.fromParts("CreatedBy"), schema.getUser().getUserId(), CompareType.EQUAL));
     }
 

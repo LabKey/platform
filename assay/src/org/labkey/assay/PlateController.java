@@ -1508,7 +1508,7 @@ public class PlateController extends SpringActionController
                 ColumnDescriptor[] xlCols = PlateSetExport.getColumnDescriptors("", includedMetadataCols);
                 List<Object[]> plateDataRows = PlateManager.get().getInstrumentInstructions(form.getPlateSetId(), includedMetadataCols, getContainer(), getUser());
 
-                PlateManager.get().getPlateSetExportFile(plateSet.getName(), xlCols, plateDataRows, form.getFileType(), getViewContext().getResponse());
+                PlateManager.get().getPlateSetExportFile(plateSet.getName() + "-instructions", xlCols, plateDataRows, form.getFileType(), getViewContext().getResponse());
 
                 return null; // Returning anything here will cause error as excel writer will close the response stream
             }
@@ -1605,6 +1605,7 @@ public class PlateController extends SpringActionController
 
             List<PlateManager.PlateFileBytes> fileBytes;
             String fileExtension;
+            String mapSuffix = form.getExportType() == PlateExportType.Map ? "-map" : "";
 
             if (form.getExportType() == PlateExportType.CSV)
             {
@@ -1629,7 +1630,7 @@ public class PlateController extends SpringActionController
             else if (fileBytes.size() == 1)
             {
                 PlateManager.PlateFileBytes plateFileBytes = fileBytes.get(0);
-                String fileName = FileUtil.makeLegalName(plateFileBytes.plateName() + "." + fileExtension);
+                String fileName = FileUtil.makeLegalName(plateFileBytes.plateName() + mapSuffix + "." + fileExtension);
                 PageFlowUtil.streamFileBytes(getViewContext().getResponse(), fileName, plateFileBytes.bytes().toByteArray(), true);
                 return null;
             }
@@ -1639,7 +1640,7 @@ public class PlateController extends SpringActionController
             if (zipFileName == null)
                 zipFileName = "plates.zip";
             else
-                zipFileName = zipFileName + ".zip";
+                zipFileName = zipFileName + mapSuffix + ".zip";
 
             zipFileName = FileUtil.makeLegalName(zipFileName);
 

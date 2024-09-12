@@ -1,6 +1,7 @@
 package org.labkey.api.security;
 
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 import org.labkey.api.settings.AppProps;
@@ -25,7 +26,7 @@ public class ConfigurationSettings
         String encryptedPropertiesJson = (String) settings.get("EncryptedProperties");
         Map<String, Object> encryptedProperties = Collections.emptyMap();
 
-        if (null != encryptedPropertiesJson)
+        if (StringUtils.isNotEmpty(encryptedPropertiesJson))
         {
             if (Encryption.isEncryptionPassPhraseSpecified())
             {

@@ -692,6 +692,8 @@
           <column columnName="Created"/>
           <column columnName="Crypt"/>
           <column columnName="Expiration"/>
+          <column columnName="Description"/>
+          <column columnName="LastUsed"/>
       </columns>
   </table>
 

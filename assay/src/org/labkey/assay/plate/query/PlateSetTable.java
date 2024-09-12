@@ -12,6 +12,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
@@ -98,6 +99,7 @@ public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>
             columnInfo.setHasDbSequence(true);
             columnInfo.setDbSequenceBatchSize(1);
             columnInfo.setIsRootDbSequence(true);
+            columnInfo.setSortDirection(Sort.SortDirection.DESC);
         }
         return columnInfo;
     }
