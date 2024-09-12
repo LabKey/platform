@@ -1360,6 +1360,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             AdminController.SchemaVersionTestCase.class,
             AdminController.SerializationTest.class,
             AdminController.TestCase.class,
+            AdminController.WorkbookDeleteTestCase.class,
             AttachmentServiceImpl.TestCase.class,
             CoreController.TestCase.class,
             DataRegion.TestCase.class,

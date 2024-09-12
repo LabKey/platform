@@ -36,6 +36,8 @@ public class ApiKeysTableInfo extends FilteredTable<CoreQuerySchema>
         addWrapColumn(getRealTable().getColumn("CreatedBy"));
         addWrapColumn(getRealTable().getColumn("Created"));
         addWrapColumn(getRealTable().getColumn("Expiration"));
+        addWrapColumn(getRealTable().getColumn("LastUsed"));
+        addWrapColumn(getRealTable().getColumn("Description"));
     }
 
     @Override

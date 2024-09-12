@@ -15,6 +15,7 @@
  */
 package org.labkey.api.security;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -29,6 +30,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SimpleFilter.FilterClause;
 import org.labkey.api.data.SimpleFilter.NotClause;
 import org.labkey.api.data.SimpleFilter.SQLClause;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.module.ModuleLoader;
@@ -72,9 +74,9 @@ public class ApiKeyManager
      * @param user User to be associated with the new API key.
      * @return An API key that expires after the admin-configured duration
      */
-    public @NotNull String createKey(@NotNull User user)
+    public @NotNull String createKey(@NotNull User user, @Nullable String description)
     {
-        return createKey(user, AppProps.getInstance().getApiKeyExpirationSeconds());
+        return createKey(user, AppProps.getInstance().getApiKeyExpirationSeconds(), description);
     }
 
     /**
@@ -83,12 +85,7 @@ public class ApiKeyManager
      * @param expirationSeconds Number of seconds until expiration. -1 means no expiration.
      * @return An API key that expires after the specified number of seconds
      */
-    public @NotNull String createKey(@NotNull User user, int expirationSeconds)
-    {
-        return createKey(user, expirationSeconds, GUID.makeLongHash());
-    }
-
-    private @NotNull String createKey(@NotNull User user, int expirationSeconds, String apiKey)
+    public @NotNull String createKey(@NotNull User user, int expirationSeconds, @Nullable String description)
     {
         if (user.isGuest())
             throw new IllegalStateException("Can't create an API key for a guest");
@@ -98,6 +95,8 @@ public class ApiKeyManager
             throw new UnauthorizedException("Can't create an API key while impersonating");
 
         Map<String, Object> map = new HashMap<>();
+
+        String apiKey = GUID.makeLongHash();
         map.put("Crypt", crypt(apiKey));
 
         if (-1 != expirationSeconds)
@@ -106,6 +105,9 @@ public class ApiKeyManager
             Instant instant = ldt.atZone(ZoneId.systemDefault()).toInstant();
             map.put("Expiration", Date.from(instant));
         }
+
+        if (description != null)
+            map.put("Description", StringUtils.abbreviate(description.trim(), 256));
 
         try (Transaction t = CoreSchema.getInstance().getScope().beginTransaction(TRANSACTION_KIND))
         {
@@ -123,6 +125,18 @@ public class ApiKeyManager
         try (Transaction t = CoreSchema.getInstance().getScope().beginTransaction(TRANSACTION_KIND))
         {
             Table.delete(CoreSchema.getInstance().getTableAPIKeys(), filter);
+            t.commit();
+        }
+    }
+
+    public void updateLastUsed(String apikey)
+    {
+        DbScope scope = CoreSchema.getInstance().getScope();
+
+        try (Transaction t = scope.beginTransaction(TRANSACTION_KIND))
+        {
+            SQLFragment sql = new SQLFragment("UPDATE " + CoreSchema.getInstance().getTableAPIKeys() + " SET LastUsed = ? WHERE Crypt = ?", new Date(), crypt(apikey));
+            new SqlExecutor(scope).execute(sql);
             t.commit();
         }
     }
@@ -210,8 +224,8 @@ public class ApiKeyManager
         public void testCreateAndExpire() throws InterruptedException
         {
             User user = TestContext.get().getUser();
-            String oneSecondKey = ApiKeyManager.get().createKey(user, 1);
-            String noExpireKey = ApiKeyManager.get().createKey(user, -1);
+            String oneSecondKey = ApiKeyManager.get().createKey(user, 1, "Created by ApiKeyManager.TestCase");
+            String noExpireKey = ApiKeyManager.get().createKey(user, -1, "Created by ApiKeyManager.TestCase");
 
             assertEquals(user, ApiKeyManager.get().authenticateFromApiKey(oneSecondKey));
             Thread.sleep(1100);
@@ -228,7 +242,7 @@ public class ApiKeyManager
         public void testGuest()
         {
             // Should throw
-            ApiKeyManager.get().createKey(User.guest, -1);
+            ApiKeyManager.get().createKey(User.guest, -1, "Created by ApiKeyManager.TestCase");
         }
 
         @Test
@@ -240,7 +254,7 @@ public class ApiKeyManager
 
             try (Transaction ignored = DbScope.getLabKeyScope().beginTransaction())
             {
-                apikey = ApiKeyManager.get().createKey(user, 10);
+                apikey = ApiKeyManager.get().createKey(user, 10, "Created by ApiKeyManager.TestCase");
                 assertEquals(user, ApiKeyManager.get().authenticateFromApiKey(apikey));
             }
 
@@ -250,7 +264,6 @@ public class ApiKeyManager
             assertNull(ApiKeyManager.get().authenticateFromApiKey(apikey));
         }
     }
-
 
     public static class ApiKeyMaintenanceTask implements MaintenanceTask
     {

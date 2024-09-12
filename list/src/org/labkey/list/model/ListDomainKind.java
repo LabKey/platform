@@ -450,7 +450,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
             list.save(user);
             updateListProperties(container, user, list.getListId(), listProperties);
 
-            QueryService.get().saveCalculatedFieldsMetadata(ListQuerySchema.NAME, name, domain.getCalculatedFields(), false, user, container);
+            QueryService.get().saveCalculatedFieldsMetadata(ListQuerySchema.NAME, name, null, domain.getCalculatedFields(), false, user, container);
 
             DefaultValueService.get().setDefaultValues(container, defaultValues);
 
@@ -505,7 +505,9 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
             }
 
             //handle name change
-            if (!original.getName().equals(update.getName()))
+            boolean hasNameChange = !original.getName().equals(update.getName());
+            String auditComment = null;
+            if (hasNameChange)
             {
                 if (update.getName().length() > MAX_NAME_LENGTH)
                 {
@@ -515,6 +517,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
                 {
                     return exception.addGlobalError("The name '" + update.getName() + "' is already in use.");
                 }
+                auditComment = "The name of the list domain '" + original.getName() + "' was changed to '" + update.getName() + "'.";
             }
 
             //return if there are errors before moving forward with the save
@@ -583,9 +586,9 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
                 }
 
                 //update domain properties
-                exception.addErrors(DomainUtil.updateDomainDescriptor(original, update, container, user));
+                exception.addErrors(DomainUtil.updateDomainDescriptor(original, update, container, user, hasNameChange, auditComment));
 
-                QueryService.get().saveCalculatedFieldsMetadata(ListQuerySchema.NAME, update.getQueryName(), update.getCalculatedFields(), false, user, container);
+                QueryService.get().saveCalculatedFieldsMetadata(ListQuerySchema.NAME, update.getQueryName(), hasNameChange ? update.getName() : null, update.getCalculatedFields(), false, user, container);
             }
             catch (RuntimeSQLException x)
             {
