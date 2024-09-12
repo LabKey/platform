@@ -48,12 +48,9 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * User: kevink
- * Date: 12/17/12
- *
  * Wrapped QueryDefinition used in a LinkedSchema.
  * The wrapped query has a container of the LinkedSchema instead of the original query's container.
- * In addition the query URLs are all null to indicate that they are disabled.
+ * In addition, the query URLs are all null to indicate that they are disabled.
  */
 public class LinkedSchemaQueryDefinition extends QueryDefinitionImpl
 {
@@ -124,7 +121,7 @@ public class LinkedSchemaQueryDefinition extends QueryDefinitionImpl
     protected TableInfo applyQueryMetadata(UserSchema schema, List<QueryException> errors, Query query, AbstractTableInfo ret)
     {
         // First, apply original wrapped query-def's metadata from files (using original schema name and container)
-        // Second, super.applyQueryMetadata() will also apply orignal wrapped query-def's metadata stored in the database (using original schema name and container)
+        // Second, super.applyQueryMetadata() will also apply original wrapped query-def's metadata stored in the database (using original schema name and container)
         LinkedSchema linkedSchema = getSchema();
         UserSchema sourceSchema = linkedSchema.getSourceSchema();
         super.applyQueryMetadata(sourceSchema, errors, query, ret);
