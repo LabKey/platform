@@ -34,7 +34,7 @@ public class LoggingTestCase extends Assert
         }
         else
         {
-            LogHelper.getLogger(LoggingTestCase.class, "log4j2.xml file status").info("Found the following \"{}\" files on the class path: {}", filename, list);
+            LogHelper.getLogger(LoggingTestCase.class, "log4j2.xml file status").warn("Found the following \"{}\" files on the class path: {}", filename, list);
             String first = list.get(0).toString();
             assertTrue("Did not find substring \"" + substring + "\" in file path of the first " + filename + " file on the class path. Here's what was found: "
                     + list.stream().map(URL::toString).collect(Collectors.joining(", ")), first.contains(substring));
