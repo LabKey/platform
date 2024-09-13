@@ -35,10 +35,10 @@ public class DisplayFormatValidationProviderFactory implements SiteValidationPro
             }
 
             @Override
-            public @Nullable SiteValidationResultList runValidation(Container c, User u)
+            public @Nullable SiteValidationResultList runValidation(Container container, User u)
             {
                 SiteValidationResultList results = new SiteValidationResultList();
-                _analyzer.handle(c, u, (c1, type, format, contextProvider) -> results.addWarn(contextProvider.get() + ": " + format));
+                _analyzer.handle(container, u, (c, type, format, contextProvider, urlSupplier) -> results.addWarn(contextProvider.get() + ": " + format, null != urlSupplier ? urlSupplier.get() : null));
 
                 return results.nullIfEmpty();
             }

@@ -2,6 +2,7 @@ package org.labkey.core.admin;
 
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.PropertyManager;
@@ -11,9 +12,12 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.usageMetrics.UsageMetricsProvider;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TablesDocument;
 
@@ -34,7 +38,7 @@ public class DisplayFormatAnalyzer
 {
     public interface DisplayFormatHandler
     {
-        void handle(Container c, DateDisplayFormatType type, String format, Supplier<String> contextProvider);
+        void handle(Container c, DateDisplayFormatType type, String format, Supplier<String> contextProvider, Supplier<ActionURL> urlSupplier);
     }
 
     private record NonStandardDefaultFormat(Container container, DateDisplayFormatType type, String format) {}
@@ -67,7 +71,7 @@ public class DisplayFormatAnalyzer
             });
         }
 
-        new SqlSelector(CoreSchema.getInstance().getSchema(), new SQLFragment("SELECT Container, \"schema\" AS SchemaName, Name AS QueryName FROM query.querydef WHERE metadata LIKE '%<formatString>%'"))
+        new SqlSelector(CoreSchema.getInstance().getSchema(), new SQLFragment("SELECT Container, \"schema\" AS SchemaName, Name AS QueryName FROM query.QueryDef WHERE metadata LIKE '%<formatString>%'"))
             .stream(QueryCandidate.class)
             .forEach(candidate -> _queryCandidatesMap.put(candidate.container(), candidate));
 
@@ -76,10 +80,7 @@ public class DisplayFormatAnalyzer
             .addAll(DateDisplayFormatType.getTypeUris());
         new SqlSelector(CoreSchema.getInstance().getSchema(), sql)
             .stream(PropertyCandidate.class)
-            .filter(candidate -> {
-                DateDisplayFormatType type = DateDisplayFormatType.getForRangeUri(candidate.rangeUri());
-                return !type.isStandardFormat(candidate.format());
-            })
+            .filter(candidate -> !candidate.type().isStandardFormat(candidate.format()))
             .forEach(candidate -> _propertyCandidateMap.put(candidate.container(), candidate));
     }
 
@@ -89,15 +90,22 @@ public class DisplayFormatAnalyzer
 
         Collection<NonStandardDefaultFormat> defaultFormats = _defaultFormatsMap.get(c);
         if (defaultFormats != null)
-            defaultFormats.forEach(defaultFormat ->
-                handler.handle(defaultFormat.container(), defaultFormat.type(), defaultFormat.format(), () -> c.getContainerNoun(true) + " default " + defaultFormat.type().name() + " format")
-            );
+        {
+            defaultFormats.forEach(defaultFormat -> {
+                AdminUrls urls = PageFlowUtil.urlProvider(AdminUrls.class);
+                handler.handle(defaultFormat.container(), defaultFormat.type(), defaultFormat.format(),
+                    () -> c.getContainerNoun(true) + " default " + defaultFormat.type().name() + " format",
+                    () -> urls.getLookAndFeelSettingsURL(c)
+                );
+            });
+        }
 
         // First, inspect QueryDefinition to identify columns where XML has explicitly set a display format
         // (as opposed to inheriting a display format from another query or table definition). Then inspect
         // those columns via the TableInfo to determine date-time columns with non-standard formats.
         QueryService qs = QueryService.get();
         List<QueryException> errors = new ArrayList<>();
+        QueryUrls urls = PageFlowUtil.urlProvider(QueryUrls.class);
         _queryCandidatesMap.get(c).stream()
             .map(candidate -> qs.getQueryDef(user, c, candidate.schemaName, candidate.queryName))
             .forEach(definition -> {
@@ -119,7 +127,10 @@ public class DisplayFormatAnalyzer
                                 .forEach(column -> {
                                     DateDisplayFormatType type = DateDisplayFormatType.getForJdbcType(column.getJdbcType());
                                     if (type != null && !type.isStandardFormat(column.getFormat()))
-                                        handler.handle(c, type, column.getFormat(), () -> "Query metadata for " + column.getName() + " " + type.name() + " column");
+                                        handler.handle(c, type, column.getFormat(),
+                                            () -> "Query metadata for \"" + table.getSchema().getDisplayName() + "." + table.getName() + "." + column.getName() + "\" " + type.name() + " column",
+                                            () -> urls.urlMetadataQuery(c, definition.getSchemaName(), definition.getName())
+                                        );
                                 });
                         }
                     }
@@ -127,7 +138,7 @@ public class DisplayFormatAnalyzer
             });
 
         _propertyCandidateMap.get(c)
-            .forEach(candidate -> handler.handle(c, candidate.type(), candidate.format(), () -> "Property " + candidate.columnName()));
+            .forEach(candidate -> handler.handle(c, candidate.type(), candidate.format(), () -> "Property " + candidate.columnName(), null));
     }
 
     public void handleAll(User user, DisplayFormatHandler handler)
@@ -141,17 +152,11 @@ public class DisplayFormatAnalyzer
 
     public static UsageMetricsProvider getMetricsProvider()
     {
+        // Collect the unique set of non-standard date display formats across the entire site
         Set<String> badFormats = new HashSet<>();
         return () -> {
             DisplayFormatAnalyzer analyzer = new DisplayFormatAnalyzer();
-            analyzer.handleAll(User.getAdminServiceUser(), new DisplayFormatHandler()
-            {
-                @Override
-                public void handle(Container c, DateDisplayFormatType type, String format, Supplier<String> contextProvider)
-                {
-                    badFormats.add(format);
-                }
-            });
+            analyzer.handleAll(User.getAdminServiceUser(), (c, type, format, contextProvider, urlSupplier) -> badFormats.add(format));
             return Map.of("nonStandardDateDisplayFormats", badFormats);
         };
     }

@@ -18,6 +18,10 @@ package org.labkey.query.controllers;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import org.antlr.runtime.tree.Tree;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
@@ -191,10 +195,6 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
@@ -565,6 +565,14 @@ public class QueryController extends SpringActionController
             return new ActionURL(ExportExcelTemplateAction.class, c)
                 .addParameter(QueryParam.schemaName, schemaName)
                 .addParameter("query.queryName", queryName);
+        }
+
+        @Override
+        public ActionURL urlMetadataQuery(Container c, String schemaName, String queryName)
+        {
+            return new ActionURL(MetadataQueryAction.class, c)
+                .addParameter(QueryParam.schemaName, schemaName)
+                .addParameter(QueryParam.queryName, queryName);
         }
     }
 
