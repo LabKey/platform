@@ -13,7 +13,7 @@ import java.util.Map;
 
 public enum DateDisplayFormatType
 {
-    DATE(JdbcType.DATE, PropertyType.DATE)
+    Date(JdbcType.DATE, PropertyType.DATE)
     {
         @Override
         boolean isStandardFormat(String formatPattern)
@@ -27,7 +27,7 @@ public enum DateDisplayFormatType
             return laf.getDefaultDateFormatStored();
         }
     },
-    DATETIME(JdbcType.TIMESTAMP, PropertyType.DATE_TIME)
+    DateTime(JdbcType.TIMESTAMP, PropertyType.DATE_TIME)
     {
         @Override
         boolean isStandardFormat(String formatPattern)
@@ -41,7 +41,7 @@ public enum DateDisplayFormatType
             return laf.getDefaultDateTimeFormatStored();
         }
     },
-    TIME(JdbcType.TIME, PropertyType.TIME)
+    Time(JdbcType.TIME, PropertyType.TIME)
     {
         @Override
         boolean isStandardFormat(String formatPattern)

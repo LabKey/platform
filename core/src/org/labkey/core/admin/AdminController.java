@@ -10923,8 +10923,6 @@ public class AdminController extends SpringActionController
         public Object execute(SimpleApiJsonForm form, BindException errors)
         {
             JSONObject json = form.getJsonObject();
-            Container c = getContainer();
-
             boolean saved = saveProjectSettings(json, getUser(), getContainer(), errors);
 
             ApiSimpleResponse response = new ApiSimpleResponse();
