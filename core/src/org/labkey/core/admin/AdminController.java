@@ -1637,11 +1637,12 @@ public class AdminController extends SpringActionController
             if (StringUtils.isBlank(form.getFileName()))
                 throw new NotFoundException();
             PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
-            File results = FileUtil.appendName(root.getLogDirectory(), form.getFileName());
-            if (!results.isFile())
+            File[] files = root.getRootPath().listFiles((dir1, name) -> name.equals(form.getFileName()));
+
+            if (files.length == 0)
                 throw new NotFoundException("File not found: " + form.getFileName());
 
-            return new HtmlView(HtmlString.unsafe(PageFlowUtil.getFileContentsAsString(results)));
+            return new HtmlView(HtmlString.unsafe(PageFlowUtil.getFileContentsAsString(files[0])));
         }
 
         @Override

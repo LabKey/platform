@@ -89,12 +89,10 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
-import java.util.Collection;
 import java.util.Date;
 import java.util.Set;
 import java.util.TreeSet;
 
-import static java.util.Collections.singleton;
 import static org.labkey.pipeline.api.PipelineStatusManager.cancelStatus;
 import static org.labkey.pipeline.api.PipelineStatusManager.completeStatus;
 import static org.labkey.pipeline.api.PipelineStatusManager.deleteStatus;
@@ -531,7 +529,6 @@ public class StatusController extends SpringActionController
             return urlDetails(c, form.getRowId());
         }
     }
-
 
     public static ActionURL urlShowFile(Container c, int rowId, String filename, boolean download)
     {
