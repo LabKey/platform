@@ -38,7 +38,10 @@ public class DisplayFormatValidationProviderFactory implements SiteValidationPro
             public @Nullable SiteValidationResultList runValidation(Container container, User u)
             {
                 SiteValidationResultList results = new SiteValidationResultList();
-                _analyzer.handle(container, u, (c, type, format, contextProvider, urlSupplier) -> results.addWarn(contextProvider.get() + ": " + format, null != urlSupplier ? urlSupplier.get() : null));
+                _analyzer.handle(container, u, (c, type, format, contextProvider) -> {
+                    DisplayFormatAnalyzer.DisplayFormatContext context = contextProvider.get();
+                    results.addWarn(context.message() + ": " + format, context.url());
+                });
 
                 return results.nullIfEmpty();
             }

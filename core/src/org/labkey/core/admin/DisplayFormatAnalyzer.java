@@ -10,6 +10,8 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.property.DomainUtil;
+import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUrls;
@@ -36,14 +38,16 @@ import static org.labkey.api.settings.LookAndFeelFolderProperties.LOOK_AND_FEEL_
 
 public class DisplayFormatAnalyzer
 {
+    public record DisplayFormatContext(String message, ActionURL url){}
+
     public interface DisplayFormatHandler
     {
-        void handle(Container c, DateDisplayFormatType type, String format, Supplier<String> contextProvider, Supplier<ActionURL> urlSupplier);
+        void handle(Container c, DateDisplayFormatType type, String format, Supplier<DisplayFormatContext> contextProvider);
     }
 
     private record NonStandardDefaultFormat(Container container, DateDisplayFormatType type, String format) {}
     private record QueryCandidate(Container container, String schemaName, String queryName) {}
-    private record PropertyCandidate(Container container, String columnName, String rangeUri, String format)
+    private record PropertyCandidate(Container container, String tableName, String columnName, String domainUri, String rangeUri, String format)
     {
         DateDisplayFormatType type()
         {
@@ -75,8 +79,11 @@ public class DisplayFormatAnalyzer
             .stream(QueryCandidate.class)
             .forEach(candidate -> _queryCandidatesMap.put(candidate.container(), candidate));
 
-        // TODO: Join in more context -- e.g., what table?
-        SQLFragment sql = new SQLFragment("SELECT Container, Name AS ColumnName, RangeURI, Format FROM " + OntologyManager.getTinfoPropertyDescriptor() + " WHERE Format IS NOT NULL AND RangeURI IN (?, ?, ?)")
+        SQLFragment sql = new SQLFragment(
+                "SELECT dd.Container, DomainURI, dd.Name AS TableName, pd.Name AS ColumnName, RangeURI, Format FROM " + OntologyManager.getTinfoDomainDescriptor() + " dd\n" +
+                "\tINNER JOIN " + OntologyManager.getTinfoPropertyDomain() + " pdm ON dd.DomainId = pdm.DomainId\n" +
+                "\tINNER JOIN " + OntologyManager.getTinfoPropertyDescriptor() + " pd ON pdm.PropertyId = pd.PropertyId\n" +
+                "\tWHERE Format IS NOT NULL AND RangeURI IN (?, ?, ?)")
             .addAll(DateDisplayFormatType.getTypeUris());
         new SqlSelector(CoreSchema.getInstance().getSchema(), sql)
             .stream(PropertyCandidate.class)
@@ -86,18 +93,16 @@ public class DisplayFormatAnalyzer
 
     public void handle(Container c, User user, DisplayFormatHandler handler)
     {
-        // TODO: Add links and context to warnings
-
         Collection<NonStandardDefaultFormat> defaultFormats = _defaultFormatsMap.get(c);
         if (defaultFormats != null)
         {
-            defaultFormats.forEach(defaultFormat -> {
-                AdminUrls urls = PageFlowUtil.urlProvider(AdminUrls.class);
-                handler.handle(defaultFormat.container(), defaultFormat.type(), defaultFormat.format(),
-                    () -> c.getContainerNoun(true) + " default " + defaultFormat.type().name() + " format",
-                    () -> urls.getLookAndFeelSettingsURL(c)
-                );
-            });
+            AdminUrls urls = PageFlowUtil.urlProvider(AdminUrls.class);
+            defaultFormats.forEach(defaultFormat -> handler.handle(defaultFormat.container(), defaultFormat.type(), defaultFormat.format(),
+                () -> new DisplayFormatContext(
+                    (c.isRoot() ? "Site" : c.getContainerNoun(true)) + " default display format for " + defaultFormat.type().name() + "s",
+                    urls.getLookAndFeelSettingsURL(c)
+                )
+            ));
         }
 
         // First, inspect QueryDefinition to identify columns where XML has explicitly set a display format
@@ -128,8 +133,10 @@ public class DisplayFormatAnalyzer
                                     DateDisplayFormatType type = DateDisplayFormatType.getForJdbcType(column.getJdbcType());
                                     if (type != null && !type.isStandardFormat(column.getFormat()))
                                         handler.handle(c, type, column.getFormat(),
-                                            () -> "Query metadata for \"" + table.getSchema().getDisplayName() + "." + table.getName() + "." + column.getName() + "\" " + type.name() + " column",
-                                            () -> urls.urlMetadataQuery(c, definition.getSchemaName(), definition.getName())
+                                            () -> new DisplayFormatContext(
+                                                "Query metadata for \"" + table.getSchema().getDisplayName() + "." + table.getName() + "." + column.getName() + "\" " + type.name() + " column",
+                                                urls.urlMetadataQuery(c, definition.getSchemaName(), definition.getName())
+                                            )
                                         );
                                 });
                         }
@@ -138,7 +145,16 @@ public class DisplayFormatAnalyzer
             });
 
         _propertyCandidateMap.get(c)
-            .forEach(candidate -> handler.handle(c, candidate.type(), candidate.format(), () -> "Property " + candidate.columnName(), null));
+            .forEach(candidate -> {
+                handler.handle(c, candidate.type(), candidate.format(),
+                    () -> {
+                        GWTDomain<?> domain = DomainUtil.getDomainDescriptor(user, candidate.domainUri(), c);
+                        return new DisplayFormatContext(
+                            candidate.type().name() + " property \"" + domain.getSchemaName() + "." + domain.getQueryName() + "." + candidate.columnName() + "\"",
+                            urls.urlSchemaBrowser(c, domain.getSchemaName(), domain.getQueryName())
+                        );
+                    });
+            });
     }
 
     public void handleAll(User user, DisplayFormatHandler handler)
@@ -156,7 +172,7 @@ public class DisplayFormatAnalyzer
         Set<String> badFormats = new HashSet<>();
         return () -> {
             DisplayFormatAnalyzer analyzer = new DisplayFormatAnalyzer();
-            analyzer.handleAll(User.getAdminServiceUser(), (c, type, format, contextProvider, urlSupplier) -> badFormats.add(format));
+            analyzer.handleAll(User.getAdminServiceUser(), (c, type, format, contextProvider) -> badFormats.add(format));
             return Map.of("nonStandardDateDisplayFormats", badFormats);
         };
     }
