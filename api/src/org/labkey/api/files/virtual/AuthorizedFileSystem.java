@@ -62,7 +62,7 @@ public class AuthorizedFileSystem extends AbstractFileSystem
             throw new IllegalArgumentException(f + " is not absolute");
         try
         {
-            return new AuthorizedFileSystem(VFS.getManager().resolveFile("file://" + f.getPath()), read, write);
+            return new AuthorizedFileSystem(VFS.getManager().resolveFile(f.toURI()), read, write);
         }
         catch (FileSystemException e)
         {
