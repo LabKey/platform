@@ -900,7 +900,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         TableInfo propertiesTable = _dataClassDataTableSupplier.get();
         try
         {
-            PersistDataIteratorBuilder step0 = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, _dataClass, getUserSchema().getContainer(), getUserSchema().getUser(), _dataClass.getImportAliasMap(), null);
+            PersistDataIteratorBuilder step0 = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, _dataClass, getUserSchema().getContainer(), getUserSchema().getUser(), _dataClass.getImportAliases(), null);
             SearchService searchService = SearchService.get();
             if (null != searchService)
             {
@@ -1053,7 +1053,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 Map<String, String> importAliasMap = null;
                 try
                 {
-                    importAliasMap = _dataClass.getImportAliasMap();
+                    importAliasMap = _dataClass.getImportAliases();
                 }
                 catch (IOException e)
                 {

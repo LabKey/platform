@@ -119,19 +119,20 @@ public class ExperimentQueryChangeListener implements QueryChangeListener
 
         for (String removed : queries)
         {
-            String searchStr = "\"" + prefix + removed + "\"";
+            String inputType = prefix + removed;
+            String searchStr = "\"" + inputType + "\"";
 
             for (ExpSampleTypeImpl sampleType : getRenamedSampleTypes(container, searchStr))
             {
                 try
                 {
-                    Map<String, String> originalMap = sampleType.getImportAliasMap();
-                    Map<String, String> updatedMap = new HashMap<>();
+                    Map<String, Map<String, Object>> originalMap = sampleType.getImportAliasMap();
+                    Map<String, Map<String, Object>> updatedMap = new HashMap<>();
                     for (String alias : originalMap.keySet())
                     {
-                        String dataType = originalMap.get(alias);
-                        if (!dataType.equals(searchStr))
-                            updatedMap.put(alias, dataType);
+                        String dataType = (String) originalMap.get(alias).get("inputType");
+                        if (!dataType.equals(inputType))
+                            updatedMap.put(alias, originalMap.get(alias));
                     }
                     sampleType.setImportAliasMap(updatedMap);
                     sampleType.save(sampleType.getModifiedBy());
@@ -146,13 +147,13 @@ public class ExperimentQueryChangeListener implements QueryChangeListener
             {
                 try
                 {
-                    Map<String, String> originalMap = dataClass.getImportAliasMap();
-                    Map<String, String> updatedMap = new HashMap<>();
+                    Map<String, Map<String, Object>> originalMap = dataClass.getImportAliasMap();
+                    Map<String, Map<String, Object>> updatedMap = new HashMap<>();
                     for (String alias : originalMap.keySet())
                     {
-                        String dataType = originalMap.get(alias);
-                        if (!dataType.equals(searchStr))
-                            updatedMap.put(alias, dataType);
+                        String dataType = (String) originalMap.get(alias).get("inputType");
+                        if (!dataType.equals(inputType))
+                            updatedMap.put(alias, originalMap.get(alias));
                     }
                     dataClass.setImportAliasMap(updatedMap);
                     dataClass.save(dataClass.getModifiedBy());

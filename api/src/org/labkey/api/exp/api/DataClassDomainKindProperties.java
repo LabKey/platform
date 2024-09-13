@@ -1,10 +1,15 @@
 package org.labkey.api.exp.api;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -20,8 +25,11 @@ public class DataClassDomainKindProperties
     private Integer sampleType;
     private String category;
     private boolean _strictFieldValidation = true; // Set as false to skip validation check in ExperimentServiceImpl.createDataClass (used in Rlabkey labkey.domain.createAndLoad)
-    private Map<String, String> importAliases;
     private List<String> excludedContainerIds;
+
+    @JsonDeserialize(using = ImportAliasesDeserializer.class)
+    @JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
+    private Map<String, Map<String, Object>> importAliases;
 
     public DataClassDomainKindProperties()
     {}
@@ -159,12 +167,26 @@ public class DataClassDomainKindProperties
         _strictFieldValidation = strictFieldValidation;
     }
 
-    public void setImportAliases(Map<String, String> importAliases)
+    public void setImportAliases(Map<String, Map<String, Object>> importAliases)
     {
         this.importAliases = importAliases;
     }
 
-    public Map<String, String> getImportAliases()
+    @JsonIgnore
+    public Map<String, String> getImportAliasesMap()
+    {
+        if (getImportAliases() == null)
+            return null;
+
+        Map<String, String> aliases = new HashMap<>();
+        for (Map.Entry<String, Map<String, Object>> entry : getImportAliases().entrySet())
+        {
+            aliases.put(entry.getKey(), (String) entry.getValue().get("inputType"));
+        }
+        return Collections.unmodifiableMap(aliases);
+    }
+
+    public Map<String, Map<String, Object>> getImportAliases()
     {
         return this.importAliases;
     }

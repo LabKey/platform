@@ -285,7 +285,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
 
         try
         {
-            Map<String, String> aliases = st.getImportAliasMap();
+            Map<String, String> aliases = st.getImportAliases();
             reserved.addAll(aliases.keySet());
         }
         catch (IOException e)
@@ -394,7 +394,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         List<String> previewNames = new ArrayList<>();
         if (StringUtils.isNotBlank(options.getNameExpression()))
         {
-            NameExpressionValidationResult results = NameGenerator.getValidationMessages(ExperimentService.get().getTinfoMaterial(), domainDesign.getName(), options.getNameExpression(), domainDesign.getFields(), options.getImportAliases(), container);
+            NameExpressionValidationResult results = NameGenerator.getValidationMessages(ExperimentService.get().getTinfoMaterial(), domainDesign.getName(), options.getNameExpression(), domainDesign.getFields(), options.getImportAliasesMap(), container);
             if (results.errors() != null && !results.errors().isEmpty())
                 results.errors().forEach(error -> errors.add("Name Pattern error: " + error));
             if (results.warnings() != null && !results.warnings().isEmpty())
@@ -409,7 +409,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
 
         if (StringUtils.isNotBlank(options.getAliquotNameExpression()))
         {
-            NameExpressionValidationResult results = NameGenerator.getValidationMessages(ExperimentService.get().getTinfoMaterial(), domainDesign.getName(), options.getAliquotNameExpression(), domainDesign.getFields(), options.getImportAliases(), container);
+            NameExpressionValidationResult results = NameGenerator.getValidationMessages(ExperimentService.get().getTinfoMaterial(), domainDesign.getName(), options.getAliquotNameExpression(), domainDesign.getFields(), options.getImportAliasesMap(), container);
             if (results.errors() != null && !results.errors().isEmpty())
                 results.errors().forEach(error -> errors.add("Aliquot Name Pattern error: " + error));
             if (results.warnings() != null && !results.warnings().isEmpty())
@@ -484,7 +484,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         if (StringUtils.isNotBlank(options.getCategory()) && options.getCategory().length() > categoryMax)
             throw new IllegalArgumentException("Value for Category field may not exceed " + categoryMax + " characters.");
 
-        Map<String, String> aliasMap = options.getImportAliases();
+        Map<String, String> aliasMap = options.getImportAliasesMap();
         if (aliasMap != null && !aliasMap.isEmpty())
         {
             SampleTypeService ss = SampleTypeService.get();
@@ -496,7 +496,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
             try
             {
                 if (sampleType != null)
-                    existingAliases = new CaseInsensitiveHashSet(sampleType.getImportAliasMap().keySet());
+                    existingAliases = new CaseInsensitiveHashSet(sampleType.getImportAliases().keySet());
             }
             catch (IOException e)
             {
@@ -550,7 +550,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         Container autoLinkTargetContainer = null;
         String autoLinkCategory = null;
         String category = null;
-        Map<String, String> aliases = null;
+        Map<String, Map<String, Object>> aliases = null;
         List<String> excludedContainerIds = null;
         List<String> excludedDashboardContainerIds = null;
 

@@ -2876,7 +2876,7 @@ public class ExpDataIterators
                     validFields.add(column.getLabel());
                 }
             });
-            Map<String, String> aliasMap = sampleType.getImportAliasMap();
+            Map<String, String> aliasMap = sampleType.getImportAliases();
             validFields.addAll(aliasMap.keySet());
             validFields.add(ALIQUOTED_FROM_INPUT);
             validFields.add("StorageUnit");

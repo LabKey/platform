@@ -1,10 +1,13 @@
 package org.labkey.api.exp.api;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -55,7 +58,7 @@ public class SampleTypeDomainKindProperties implements Cloneable
     private String aliquotNameExpression;
     private String labelColor;
     private String metricUnit;
-    private Map<String, String> importAliases;
+
     private int rowId;
     private int domainId;
     private String lsid;
@@ -70,6 +73,11 @@ public class SampleTypeDomainKindProperties implements Cloneable
     //Ignored on import/save, use Domain.name & Domain.description instead
     private String name;
     private String description;
+
+    @JsonDeserialize(using = ImportAliasesDeserializer.class)
+    @JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
+    private Map<String, Map<String, Object>> importAliases;
+
 
     public void setIdCols(List<Integer> idCols)
     {
@@ -122,12 +130,26 @@ public class SampleTypeDomainKindProperties implements Cloneable
         return this.rowId;
     }
 
-    public void setImportAliases(Map<String, String> importAliases)
+    public void setImportAliases(Map<String, Map<String, Object>> importAliases)
     {
         this.importAliases = importAliases;
     }
 
-    public Map<String, String> getImportAliases()
+    @JsonIgnore
+    public Map<String, String> getImportAliasesMap()
+    {
+        if (getImportAliases() == null)
+            return null;
+
+        Map<String, String> aliases = new HashMap<>();
+        for (Map.Entry<String, Map<String, Object>> entry : getImportAliases().entrySet())
+        {
+            aliases.put(entry.getKey(), (String) entry.getValue().get("inputType"));
+        }
+        return Collections.unmodifiableMap(aliases);
+    }
+
+    public Map<String, Map<String, Object>> getImportAliases()
     {
         return this.importAliases;
     }

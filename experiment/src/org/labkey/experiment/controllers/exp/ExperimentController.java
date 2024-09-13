@@ -693,8 +693,8 @@ public class ExperimentController extends SpringActionController
             {
                 SimpleDisplayColumn importAliasCol = new SimpleDisplayColumn();
                 importAliasCol.setCaption("Parent Import Alias(es):");
-                if (!_sampleType.getImportAliasMap().isEmpty())
-                    importAliasCol.setDisplayHtml(PageFlowUtil.filter(StringUtils.join(_sampleType.getImportAliasMap().keySet(), ", ")));
+                if (!_sampleType.getImportAliases().isEmpty())
+                    importAliasCol.setDisplayHtml(PageFlowUtil.filter(StringUtils.join(_sampleType.getImportAliases().keySet(), ", ")));
                 detailsView.getDataRegion().addDisplayColumn(importAliasCol);
             }
             catch (IOException e)

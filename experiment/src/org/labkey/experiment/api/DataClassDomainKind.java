@@ -42,7 +42,6 @@ import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
-import org.labkey.api.exp.api.SampleTypeDomainKindProperties;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
@@ -50,7 +49,6 @@ import org.labkey.api.exp.query.DataClassUserSchema;
 import org.labkey.api.exp.query.ExpDataClassDataTable;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
-import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.UserSchema;
@@ -327,7 +325,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
             List<String> warnings = new ArrayList<>();
             List<String> previewNames = new ArrayList<>();
 
-            NameExpressionValidationResult results = NameGenerator.getValidationMessages(ExperimentService.get().getTinfoData(), domainDesign.getName(), options.getNameExpression(), domainDesign.getFields(), options.getImportAliases(), container);
+            NameExpressionValidationResult results = NameGenerator.getValidationMessages(ExperimentService.get().getTinfoData(), domainDesign.getName(), options.getNameExpression(), domainDesign.getFields(), options.getImportAliasesMap(), container);
             if (results.errors() != null && !results.errors().isEmpty())
                 results.errors().forEach(error -> errors.add("Name Pattern error: " + error));
             if (results.warnings() != null && !results.warnings().isEmpty())
@@ -346,12 +344,12 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
         super.validateOptions(container, user, options, name, domain, updatedDomainDesign);
         if (StringUtils.isNotBlank(options.getNameExpression()))
         {
-            ValidationException errors = getNamePatternValidationResult(name, options.getNameExpression(), updatedDomainDesign.getFields(), options.getImportAliases(), container);
+            ValidationException errors = getNamePatternValidationResult(name, options.getNameExpression(), updatedDomainDesign.getFields(), options.getImportAliasesMap(), container);
             if (errors.hasErrors())
                 throw new IllegalArgumentException(errors.getMessage());
         }
 
-        Map<String, String> aliasMap = options.getImportAliases();
+        Map<String, String> aliasMap = options.getImportAliasesMap();
         if (aliasMap != null && aliasMap.size() > 0)
         {
             ExpDataClass dataClass = options.getRowId() >= 0 ? ExperimentService.get().getDataClass(options.getRowId()) : null;
@@ -362,7 +360,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
             try
             {
                 if (dataClass != null)
-                    existingAliases = new CaseInsensitiveHashSet(dataClass.getImportAliasMap().keySet());
+                    existingAliases = new CaseInsensitiveHashSet(dataClass.getImportAliases().keySet());
             }
             catch (IOException e)
             {

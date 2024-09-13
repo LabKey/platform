@@ -1524,7 +1524,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         // TODO: subclass PersistDataIteratorBuilder to index Materials! not DataClass!
         try
         {
-            var persist = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, _ss, getUserSchema().getContainer(), getUserSchema().getUser(), _ss.getImportAliasMap(), sampleTypeObjectId)
+            var persist = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, _ss, getUserSchema().getContainer(), getUserSchema().getUser(), _ss.getImportAliases(), sampleTypeObjectId)
                     .setFileLinkDirectory("sampletype");
             SearchService searchService = SearchService.get();
             if (null != searchService)
@@ -1584,9 +1584,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         url.addParameter("headerType", ColumnHeaderType.DisplayFieldKey.name());
         try
         {
-            if (getSampleType() != null && !getSampleType().getImportAliasMap().isEmpty())
+            if (getSampleType() != null && !getSampleType().getImportAliases().isEmpty())
             {
-                for (String aliasKey : getSampleType().getImportAliasMap().keySet())
+                for (String aliasKey : getSampleType().getImportAliases().keySet())
                     url.addParameter("includeColumn", aliasKey);
             }
         }

@@ -110,9 +110,11 @@ public interface ExpDataClass extends ExpObject
 
     void ensureMinGenId(long newSeqValue, Container c) throws ExperimentException;
 
-    @NotNull Map<String, String> getImportAliasMap() throws IOException;
+    @NotNull Map<String, String> getImportAliases() throws IOException;
 
-    void setImportAliasMap(Map<String, String> aliasMap);
+    @NotNull Map<String, Map<String, Object>> getImportAliasMap() throws IOException;
+
+    void setImportAliasMap(Map<String, Map<String, Object>> aliasMap);
 
     boolean hasData();
 }
