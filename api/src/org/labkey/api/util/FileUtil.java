@@ -1105,9 +1105,16 @@ quickScan:
         return list;
     }
 
-
     public static String encodeForURL(String str)
     {
+        return encodeForURL(str, false);
+    }
+
+    public static String encodeForURL(String str, boolean checkEncoded)
+    {
+        if (checkEncoded && isUrlEncoded(str))
+            return str;
+
         // str is unencoded; we need certain special chars encoded for it to become a URL
         // % & # @ ~ {} []
         StringBuilder res = new StringBuilder();
@@ -1128,6 +1135,10 @@ quickScan:
         return res.toString();
     }
 
+    public static boolean isUrlEncoded(String str)
+    {
+        return StringUtils.indexOfAny(str, new String[]{"%25", "%23", "%26", "%40", "%7E", "%7B", "%7D", "%5B", "%5D", "%2B", "%20"}) > -1;
+    }
 
     static boolean startsWith(String s, char ch)
     {
