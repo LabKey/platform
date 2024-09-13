@@ -370,7 +370,6 @@ public abstract class ApiResponseWriter implements AutoCloseable
                 setResponseStatus(status);
                 writeThrowableProperties(e);
                 writeProperty("success", false);
-                endResponse();
             }
         }
         catch (IOException io)
