@@ -2,25 +2,21 @@ package org.labkey.core.admin;
 
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
-import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.sitevalidation.SiteValidationProvider;
 import org.labkey.api.admin.sitevalidation.SiteValidationProviderFactory;
 import org.labkey.api.admin.sitevalidation.SiteValidationResultList;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.LookAndFeelProperties;
-import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.logging.LogHelper;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TablesDocument;
 
@@ -35,8 +31,6 @@ import static org.labkey.api.settings.LookAndFeelFolderProperties.LOOK_AND_FEEL_
 
 public class DisplayFormatValidationProviderFactory implements SiteValidationProviderFactory
 {
-    private static final Logger LOG = LogHelper.getLogger(DisplayFormatValidationProviderFactory.class, "Validator debugging");
-
     @Override
     public String getName()
     {
@@ -46,7 +40,7 @@ public class DisplayFormatValidationProviderFactory implements SiteValidationPro
     @Override
     public String getDescription()
     {
-        return "Report non-standard display formats";
+        return "Report non-standard date and time display formats";
     }
 
     @Override
@@ -56,6 +50,7 @@ public class DisplayFormatValidationProviderFactory implements SiteValidationPro
         {
             private final MultiValuedMap<Container, String> _defaultFormatsMap = new ArrayListValuedHashMap<>();
             private final MultiValuedMap<Container, QueryCandidate> _queryCandidatesMap = new ArrayListValuedHashMap<>();
+            private final MultiValuedMap<Container, PropertyCandidate> _propertyCandidateMap = new ArrayListValuedHashMap<>();
 
             {
                 try (Stream<Container> stream = PropertyManager.getNormalStore().streamMatchingContainers(SITE_CONFIG_USER, LOOK_AND_FEEL_SET_NAME))
@@ -63,23 +58,29 @@ public class DisplayFormatValidationProviderFactory implements SiteValidationPro
                     stream.forEach(c -> {
                         // Must get the stored values from LookAndFeelProperties since FolderSettingsCache holds inherited values
                         LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
-                        String dateFormat = laf.getDefaultDateFormatStored();
-                        if (dateFormat != null && !DateUtil.isStandardDateDisplayFormat(dateFormat))
-                            _defaultFormatsMap.put(c, dateFormat);
-                        String dateTimeFormat = laf.getDefaultDateTimeFormatStored();
-                        if (dateTimeFormat != null && !DateUtil.isStandardDateTimeDisplayFormat(dateTimeFormat))
-                            _defaultFormatsMap.put(c, dateTimeFormat);
-                        String timeFormat = laf.getDefaultTimeFormatStored();
-                        if (timeFormat != null && !DateUtil.isStandardTimeDisplayFormat(timeFormat))
-                            _defaultFormatsMap.put(c, timeFormat);
+                        Arrays.stream(DateDisplayFormatType.values())
+                            .forEach(type -> {
+                                String format = type.getStoredFormat(laf);
+                                if (format != null && !type.isStandardFormat(format))
+                                    _defaultFormatsMap.put(c, c.getContainerNoun(true) + " default " + type.name().toLowerCase() + " format: " + format);
+                        });
                     });
                 }
 
-                new SqlSelector(CoreSchema.getInstance().getSchema(), new SQLFragment("SELECT Container, \"schema\", Name FROM query.querydef WHERE metadata LIKE '%<formatString>%'"))
-                    .mapStream()
-                    .forEach(map -> _queryCandidatesMap.put(ContainerManager.getForId((String)map.get("Container")), new QueryCandidate((String)map.get("Schema"), (String)map.get("Name"))));
+                new SqlSelector(CoreSchema.getInstance().getSchema(), new SQLFragment("SELECT Container, \"schema\" AS SchemaName, Name AS QueryName FROM query.querydef WHERE metadata LIKE '%<formatString>%'"))
+                    .stream(QueryCandidate.class)
+                    .forEach(candidate -> _queryCandidatesMap.put(candidate.container(), candidate));
 
-                // TODO: Query property descriptors
+                // TODO: Join in more context -- e.g., what table?
+                SQLFragment sql = new SQLFragment("SELECT Container, Name AS ColumnName, RangeURI, Format FROM " + OntologyManager.getTinfoPropertyDescriptor() + " WHERE Format IS NOT NULL AND RangeURI IN (?, ?, ?)")
+                    .addAll(DateDisplayFormatType.getTypeUris());
+                new SqlSelector(CoreSchema.getInstance().getSchema(), sql)
+                    .stream(PropertyCandidate.class)
+                    .filter(candidate -> {
+                        DateDisplayFormatType type = DateDisplayFormatType.getForRangeUri(candidate.rangeUri());
+                        return !type.isStandardFormat(candidate.format());
+                    })
+                    .forEach(candidate -> _propertyCandidateMap.put(candidate.container(), candidate));
             }
 
             @Override
@@ -120,21 +121,25 @@ public class DisplayFormatValidationProviderFactory implements SiteValidationPro
                                 TableInfo table = definition.getTable(errors, true);
                                 if (table != null)
                                 {
-                                    table.getColumns(columnsWithDisplayFormats).stream()
-                                        .filter(column ->
-                                            column.getJdbcType() == JdbcType.DATE && !DateUtil.isStandardDateDisplayFormat(column.getFormat()) ||
-                                            column.getJdbcType() == JdbcType.TIMESTAMP && !DateUtil.isStandardDateTimeDisplayFormat(column.getFormat()) ||
-                                            column.getJdbcType() == JdbcType.TIME && !DateUtil.isStandardTimeDisplayFormat(column.getFormat()))
-                                        .forEach(column -> results.addWarn(column.getName() + " " + column.getFormat()));
+                                    table.getColumns(columnsWithDisplayFormats)
+                                        .forEach(column -> {
+                                            DateDisplayFormatType type = DateDisplayFormatType.getForJdbcType(column.getJdbcType());
+                                            if (type != null && !type.isStandardFormat(column.getFormat()))
+                                                results.addWarn("Query metadata for " + column.getName() + " " + type.name().toLowerCase() + " column: " + column.getFormat());
+                                        });
                                 }
                             }
                         }
                     });
+
+                _propertyCandidateMap.get(c)
+                    .forEach(candidate -> results.addWarn("Property " + candidate.columnName() + ": " + candidate.format()));
 
                 return results.nullIfEmpty();
             }
         };
     }
 
-    private record QueryCandidate(String schemaName, String queryName) {}
+    private record QueryCandidate(Container container, String schemaName, String queryName) {}
+    private record PropertyCandidate(Container container, String columnName, String rangeUri, String format) {}
 }
