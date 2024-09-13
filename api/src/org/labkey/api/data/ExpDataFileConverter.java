@@ -302,7 +302,7 @@ public class ExpDataFileConverter implements Converter
         if (null != StringUtils.trimToNull(webdav))
         {
             webdav = getFileRootSubstitutedFilePath(webdav, fileRootPath);
-            Path path = Path.decode(webdav.replace(AppProps.getInstance().getBaseServerUrl() + AppProps.getInstance().getContextPath(), ""));
+            Path path = Path.decode(FileUtil.encodeForURL(webdav, true /*Issue 51207*/).replace(AppProps.getInstance().getBaseServerUrl() + AppProps.getInstance().getContextPath(), ""));
             WebdavResource resource = WebdavService.get().getResolver().lookup(path);
             if (resource != null && resource.isFile())
             {

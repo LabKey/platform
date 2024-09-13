@@ -22,6 +22,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.junit.Test;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateCustomField;
@@ -38,6 +39,8 @@ import org.labkey.api.data.Transient;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.query.SchemaKey;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
@@ -65,14 +68,14 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     private String _assayType = TsvPlateLayoutHandler.TYPE;
     private String _barcode;
     private long _created;
-    private int _createdBy;
+    private User _createdBy;
     private List<PlateCustomField> _customFields = Collections.emptyList();
     private String _dataFileId;
     private List<WellGroupImpl> _deletedGroups;
     private String _description;
     private Map<WellGroup.Type, Map<String, WellGroupImpl>> _groups;
     private long _modified;
-    private int _modifiedBy;
+    private User _modifiedBy;
     private String _name;
     private String _plateId;
     private int _plateNumber = 1;
@@ -155,9 +158,9 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
         Container container = ContainerManager.getForId(bean.getContainerId());
         plate.setContainer(container);
         plate.setCreated(bean.getCreated());
-        plate.setCreatedBy(bean.getCreatedBy());
+        plate.setCreatedBy(UserManager.getUser(bean.getCreatedBy()));
         plate.setModified(bean.getModified());
-        plate.setModifiedBy(bean.getModifiedBy());
+        plate.setModifiedBy(UserManager.getUser(bean.getModifiedBy()));
 
         // plate type and plate set objects
         PlateType plateType = PlateManager.get().getPlateType(bean.getPlateType());
@@ -424,12 +427,15 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
         _created = created.getTime();
     }
 
-    public int getCreatedBy()
+    @JsonProperty("createdBy")
+    public JSONObject getCreatedBy()
     {
-        return _createdBy;
+        if (_createdBy == null)
+            return null;
+        return _createdBy.getUserProps();
     }
 
-    public void setCreatedBy(int createdBy)
+    public void setCreatedBy(User createdBy)
     {
         _createdBy = createdBy;
     }
@@ -444,12 +450,15 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
         _modified = modified.getTime();
     }
 
-    public int getModifiedBy()
+    @JsonProperty("modifiedBy")
+    public JSONObject getModifiedBy()
     {
-        return _modifiedBy;
+        if (_modifiedBy == null)
+            return null;
+        return _modifiedBy.getUserProps();
     }
 
-    public void setModifiedBy(int modifiedBy)
+    public void setModifiedBy(User modifiedBy)
     {
         _modifiedBy = modifiedBy;
     }
