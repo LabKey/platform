@@ -471,9 +471,10 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
                 throw new IllegalArgumentException("ERROR: Limit SQL doesn't start with SELECT: " + sql);
 
             int index = 6;
+            // NOTE: check for the trailing space to ensure we do not accidentally split a field name that begins with distinct
             if (sql.substring(0, 16).equalsIgnoreCase("SELECT DISTINCT "))
-                index = 16;
-            frag.insert(index, " TOP " + (Table.NO_ROWS == maxRows ? 0 : maxRows) + " ");
+                index = 15;
+            frag.insert(index, " TOP " + (Table.NO_ROWS == maxRows ? 0 : maxRows));
         }
         return frag;
     }
