@@ -23,21 +23,30 @@ public class UnknownSchemasTest extends Assert
         SqlDialect dialect = labkeyScope.getSqlDialect();
 
         // Collect all schemas in the LabKey database
-        Set<String> allSchemas = new CaseInsensitiveHashSet(labkeyScope.getSchemaNames());
+        Set<String> allSchemas = new CaseInsensitiveHashSet(labkeyScope.getSchemaNames()) {
+            @Override
+            public boolean remove(Object o)
+            {
+                // Extract simple schema name from any fully-qualified key (e.g., labware.GW_LABKEY -> GW_LABKEY)
+                String schemaName = (String) o;
+                int idx = schemaName.lastIndexOf('.');
+                if (idx != -1)
+                    schemaName = schemaName.substring(idx + 1);
+
+                return super.remove(schemaName);
+            }
+        };
 
         // Remove schemas claimed by existing modules
-        ModuleLoader.getInstance().getModules()
-            .forEach(module -> allSchemas.removeAll(module.getSchemaNames()));
+        ModuleLoader.getInstance().getModules().stream()
+            .flatMap(module -> module.getSchemaNames().stream())
+            .forEach(allSchemas::remove);
 
         // Remove schemas claimed by "unknown" modules... these are expected on development deployments and dealt with
         // via admin warnings on production deployments
-        ModuleLoader.getInstance().getUnknownModuleContexts().values()
-            .forEach(context -> context.getSchemaList().forEach(schemaName -> {
-                // Extract simple schema name for any fully-qualified entry (e.g., labware.GW_LABKEY)
-                if (schemaName.contains("."))
-                    schemaName = schemaName.substring(schemaName.lastIndexOf('.') + 1);
-                allSchemas.remove(schemaName);
-            }));
+        ModuleLoader.getInstance().getUnknownModuleContexts().values().stream()
+            .flatMap(context -> context.getSchemaList().stream())
+            .forEach(allSchemas::remove);
 
         // Remove the database's built-in schemas (public, information_schema, pg_catalog, dbo, etc.)
         allSchemas.removeIf(dialect::isSystemSchema);
