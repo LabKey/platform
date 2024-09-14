@@ -415,7 +415,6 @@ public class AdminController extends SpringActionController
     );
 
     private static final Logger LOG = LogHelper.getLogger(AdminController.class, "Admin-related UI and APIs");
-    @SuppressWarnings("LoggerInitializedWithForeignClass")
     private static final Logger CLIENT_LOG = LogHelper.getLogger(LogAction.class, "Client/browser logging submitted to server");
     private static final String HEAP_MEMORY_KEY = "Total Heap Memory";
 
@@ -851,7 +850,6 @@ public class AdminController extends SpringActionController
      * MaintenanceAction and only admin users will be allowed to log into the server.
      * The maintenance.jsp page checks startup is complete or adminOnly mode is turned off
      * and will redirect to the returnURL or the loginURL.
-     *
      * See Issue 18758 for more information.
      */
     @RequiresNoPermission
@@ -2639,7 +2637,7 @@ public class AdminController extends SpringActionController
 
 
     @AdminConsoleAction(ApplicationAdminPermission.class)
-    public class ResetErrorMarkAction extends ConfirmAction
+    public class ResetErrorMarkAction extends ConfirmAction<Object>
     {
         @Override
         public ModelAndView getConfirmView(Object o, BindException errors)
@@ -2670,7 +2668,7 @@ public class AdminController extends SpringActionController
 
 
     @AdminConsoleAction
-    public class ShowErrorsSinceMarkAction extends ExportAction
+    public class ShowErrorsSinceMarkAction extends ExportAction<Object>
     {
         @Override
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
@@ -2681,7 +2679,7 @@ public class AdminController extends SpringActionController
 
 
     @AdminConsoleAction
-    public class ShowAllErrorsAction extends ExportAction
+    public class ShowAllErrorsAction extends ExportAction<Object>
     {
         @Override
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
@@ -2759,7 +2757,6 @@ public class AdminController extends SpringActionController
         }
     }
 
-
     private static class ActionsTabStrip extends TabStripView
     {
         @Override
@@ -2795,7 +2792,6 @@ public class AdminController extends SpringActionController
             }
         }
     }
-
 
     private static ActionURL getQueriesURL(@Nullable String statName)
     {
@@ -3021,7 +3017,7 @@ public class AdminController extends SpringActionController
 
             if (form.getDebugName() != null)
             {
-                for (TrackingCache cache : caches)
+                for (TrackingCache<?, ?> cache : caches)
                 {
                     if (form.getDebugName().equals(cache.getDebugName()))
                     {
@@ -3036,7 +3032,7 @@ public class AdminController extends SpringActionController
             List<CacheStats> cacheStats = new ArrayList<>();
             List<CacheStats> transactionStats = new ArrayList<>();
 
-            for (TrackingCache cache : caches)
+            for (TrackingCache<?, ?> cache : caches)
             {
                 cacheStats.add(CacheManager.getCacheStats(cache));
                 transactionStats.add(CacheManager.getTransactionCacheStats(cache));
@@ -3243,6 +3239,7 @@ public class AdminController extends SpringActionController
             return _maintenanceTime;
         }
 
+        @SuppressWarnings("unused")
         public void setMaintenanceTime(String maintenanceTime)
         {
             _maintenanceTime = maintenanceTime;
@@ -3253,6 +3250,7 @@ public class AdminController extends SpringActionController
             return _enable;
         }
 
+        @SuppressWarnings("unused")
         public void setEnable(Set<String> enable)
         {
             _enable = enable;
@@ -3263,6 +3261,7 @@ public class AdminController extends SpringActionController
             return _enableSystemMaintenance;
         }
 
+        @SuppressWarnings("unused")
         public void setEnableSystemMaintenance(boolean enableSystemMaintenance)
         {
             _enableSystemMaintenance = enableSystemMaintenance;
@@ -5567,7 +5566,6 @@ public class AdminController extends SpringActionController
         }
     }
 
-
     @RequiresPermission(AdminPermission.class)
     @IgnoresTermsOfUse  // At the moment, compliance configuration is very sensitive to active modules, so allow those adjustments
     public static class FolderTypeAction extends FolderManagementViewPostAction<FolderTypeForm>
@@ -6220,7 +6218,7 @@ public class AdminController extends SpringActionController
         String rootSetParam = ctx.getActionURL().getParameter("rootSet");
         boolean fileRootChanged = null != rootSetParam && !"false".equalsIgnoreCase(rootSetParam);
         String cloudChangedParam = ctx.getActionURL().getParameter("cloudChanged");
-        boolean enabledCloudChanged = null != cloudChangedParam && "true".equalsIgnoreCase(cloudChangedParam);
+        boolean enabledCloudChanged = "true".equalsIgnoreCase(cloudChangedParam);
         setFormAndConfirmMessage(ctx.getContainer(), form, fileRootChanged, enabledCloudChanged, rootSetParam);
     }
 

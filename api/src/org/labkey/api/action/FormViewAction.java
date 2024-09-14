@@ -30,12 +30,7 @@ import org.springframework.web.servlet.ModelAndView;
 import java.util.List;
 
 /**
- * User: matthewb
- * Date: May 17, 2007
- * Time: 12:52:55 PM
- *
  * Is this better than BaseCommandController?  Probably not, but it understands TableViewForm.
- *
  * CONSIDER: make a subclass of BaseCommandController
  */
 public abstract class FormViewAction<FORM> extends BaseViewAction<FORM> implements NavTrailAction

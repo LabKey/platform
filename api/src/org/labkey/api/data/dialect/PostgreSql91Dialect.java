@@ -543,7 +543,11 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     @Override
     public boolean isSystemSchema(String schemaName)
     {
-        return schemaName.equals("information_schema") || schemaName.equals("pg_catalog") || schemaName.startsWith("pg_toast_temp_");
+        return  schemaName.equals("public") ||
+                schemaName.equals("information_schema") ||
+                schemaName.equals("pg_catalog") ||
+                schemaName.startsWith("pg_temp_") ||
+                schemaName.startsWith("pg_toast_temp_");
     }
 
     @Override
