@@ -144,7 +144,7 @@ public class StatusDetailsBean
                     long count = transferTo(sb, path, logOffset);
                     if (psf.isActive())
                     {
-                        // if the job is still running and we aren't on an end-of-lne,
+                        // if the job is still running and we aren't on an end-of-line,
                         // wind back to the most recent newline.
                         while (sb.length() > 1)
                         {

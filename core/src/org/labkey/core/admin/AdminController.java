@@ -151,6 +151,7 @@ import org.labkey.api.pipeline.DirectoryNotDeletedException;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.PipelineValidationException;
@@ -1614,17 +1615,16 @@ public class AdminController extends SpringActionController
 
     public static class ViewValidationResultsForm
     {
-        private String _fileName;
+        private int _rowId;
 
-        public String getFileName()
+        public int getRowId()
         {
-            return _fileName;
+            return _rowId;
         }
 
-        @SuppressWarnings("unused")
-        public void setFileName(String fileName)
+        public void setRowId(int rowId)
         {
-            _fileName = fileName;
+            _rowId = rowId;
         }
     }
 
@@ -1634,15 +1634,20 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getView(ViewValidationResultsForm form, BindException errors) throws Exception
         {
-            if (StringUtils.isBlank(form.getFileName()))
-                throw new NotFoundException();
-            PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
-            File[] files = root.getRootPath().listFiles((dir1, name) -> name.equals(form.getFileName()));
+            PipelineStatusFile statusFile = PipelineService.get().getStatusFile(form.getRowId());
+            if (null == statusFile)
+                throw new NotFoundException("Status file not found");
+            if (!getContainer().equals(statusFile.lookupContainer()))
+                throw new UnauthorizedException("Wrong container");
 
-            if (files.length == 0)
-                throw new NotFoundException("File not found: " + form.getFileName());
+            String logFilePath = statusFile.getFilePath();
+            String htmlFilePath = FileUtil.getBaseName(logFilePath) + ".html";
+            File htmlFile = new File(htmlFilePath);
 
-            return new HtmlView(HtmlString.unsafe(PageFlowUtil.getFileContentsAsString(files[0])));
+            if (!htmlFile.exists())
+                throw new NotFoundException("Results file not found");
+
+            return new HtmlView(HtmlString.unsafe(PageFlowUtil.getFileContentsAsString(htmlFile)));
         }
 
         @Override
