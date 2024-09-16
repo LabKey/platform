@@ -2,6 +2,8 @@ package org.labkey.core.admin;
 
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.action.UrlProvider;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
@@ -25,7 +27,6 @@ import org.labkey.data.xml.TablesDocument;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -58,6 +59,10 @@ public class DisplayFormatAnalyzer
     private final MultiValuedMap<Container, NonStandardDefaultFormat> _defaultFormatsMap = new ArrayListValuedHashMap<>();
     private final MultiValuedMap<Container, QueryCandidate> _queryCandidatesMap = new ArrayListValuedHashMap<>();
     private final MultiValuedMap<Container, PropertyCandidate> _propertyCandidateMap = new ArrayListValuedHashMap<>();
+
+    private final AdminUrls _adminUrls = urlProvider(AdminUrls.class);
+    private final QueryUrls _queryUrls = urlProvider(QueryUrls.class);
+    private final QueryService _queryService = QueryService.get();
 
     public DisplayFormatAnalyzer()
     {
@@ -93,26 +98,20 @@ public class DisplayFormatAnalyzer
 
     public void handle(Container c, User user, DisplayFormatHandler handler)
     {
-        Collection<NonStandardDefaultFormat> defaultFormats = _defaultFormatsMap.get(c);
-        if (defaultFormats != null)
-        {
-            AdminUrls urls = PageFlowUtil.urlProvider(AdminUrls.class);
-            defaultFormats.forEach(defaultFormat -> handler.handle(defaultFormat.container(), defaultFormat.type(), defaultFormat.format(),
+        _defaultFormatsMap.get(c)
+            .forEach(defaultFormat -> handler.handle(defaultFormat.container(), defaultFormat.type(), defaultFormat.format(),
                 () -> new DisplayFormatContext(
                     (c.isRoot() ? "Site" : c.getContainerNoun(true)) + " default display format for " + defaultFormat.type().name() + "s",
-                    urls.getLookAndFeelSettingsURL(c)
+                    _adminUrls.getLookAndFeelSettingsURL(c)
                 )
             ));
-        }
 
         // First, inspect QueryDefinition to identify columns where XML has explicitly set a display format
         // (as opposed to inheriting a display format from another query or table definition). Then inspect
         // those columns via the TableInfo to determine date-time columns with non-standard formats.
-        QueryService qs = QueryService.get();
         List<QueryException> errors = new ArrayList<>();
-        QueryUrls urls = PageFlowUtil.urlProvider(QueryUrls.class);
         _queryCandidatesMap.get(c).stream()
-            .map(candidate -> qs.getQueryDef(user, c, candidate.schemaName, candidate.queryName))
+            .map(candidate -> _queryService.getQueryDef(user, c, candidate.schemaName, candidate.queryName))
             .forEach(definition -> {
                 TablesDocument doc = definition.getMetadataTablesDocument();
                 if (doc != null)
@@ -135,7 +134,7 @@ public class DisplayFormatAnalyzer
                                         handler.handle(c, type, column.getFormat(),
                                             () -> new DisplayFormatContext(
                                                 "Query metadata for \"" + table.getSchema().getDisplayName() + "." + table.getName() + "." + column.getName() + "\" " + type.name() + " column",
-                                                urls.urlMetadataQuery(c, definition.getSchemaName(), definition.getName())
+                                                _queryUrls.urlMetadataQuery(c, definition.getSchemaName(), definition.getName())
                                             )
                                         );
                                 });
@@ -145,16 +144,14 @@ public class DisplayFormatAnalyzer
             });
 
         _propertyCandidateMap.get(c)
-            .forEach(candidate -> {
-                handler.handle(c, candidate.type(), candidate.format(),
-                    () -> {
-                        GWTDomain<?> domain = DomainUtil.getDomainDescriptor(user, candidate.domainUri(), c);
-                        return new DisplayFormatContext(
-                            candidate.type().name() + " property \"" + domain.getSchemaName() + "." + domain.getQueryName() + "." + candidate.columnName() + "\"",
-                            urls.urlSchemaBrowser(c, domain.getSchemaName(), domain.getQueryName())
-                        );
-                    });
-            });
+            .forEach(candidate -> handler.handle(c, candidate.type(), candidate.format(),
+                () -> {
+                    GWTDomain<?> domain = DomainUtil.getDomainDescriptor(user, candidate.domainUri(), c);
+                    return new DisplayFormatContext(
+                        candidate.type().name() + " property \"" + domain.getSchemaName() + "." + domain.getQueryName() + "." + candidate.columnName() + "\"",
+                            _queryUrls.urlSchemaBrowser(c, domain.getSchemaName(), domain.getQueryName())
+                    );
+                }));
     }
 
     public void handleAll(User user, DisplayFormatHandler handler)
@@ -175,5 +172,14 @@ public class DisplayFormatAnalyzer
             analyzer.handleAll(User.getAdminServiceUser(), (c, type, format, contextProvider) -> badFormats.add(format));
             return Map.of("nonStandardDateDisplayFormats", badFormats);
         };
+    }
+
+    private <P extends UrlProvider> @NotNull P urlProvider(Class<P> inter)
+    {
+        P provider = PageFlowUtil.urlProvider(inter);
+        if (provider == null)
+            throw new IllegalStateException("No urlProvider found for " + inter.getName());
+
+        return provider;
     }
 }
