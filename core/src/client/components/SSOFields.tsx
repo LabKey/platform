@@ -66,7 +66,9 @@ export const ImageAndFileAttachmentForm: FC<ImgFileAttachFormProps> = memo(props
                         </div>
                     </>
                 ) : (
-                    <div className="sso-fields__image-holder--view-only">{imageUrl ? img : <NoImageSelectedDisplay />}</div>
+                    <div className="sso-fields__image-holder--view-only">
+                        {imageUrl ? img : <NoImageSelectedDisplay />}
+                    </div>
                 )}
             </div>
         </>

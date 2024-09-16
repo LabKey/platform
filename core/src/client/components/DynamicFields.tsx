@@ -37,12 +37,13 @@ export const TextInput: FC<TextInputProps> = memo(props => {
                     value={value}
                     onChange={onChange_}
                     className={
-                        'auth-config-input-row__input' + (requiredFieldEmpty ? ' auth-config-input-row__input--error' : '')
+                        'auth-config-input-row__input' +
+                        (requiredFieldEmpty ? ' auth-config-input-row__input--error' : '')
                     }
                 />
-                ) : (
-                    <span className="auth-config-input-row__input"> {value} </span>
-                )}
+            ) : (
+                <span className="auth-config-input-row__input"> {value} </span>
+            )}
         </div>
     );
 });
@@ -152,7 +153,6 @@ export class FixedHtml extends PureComponent<FixedHtmlProps> {
                         </LabelHelpTip>
                     )}
                 </span>
-
 
                 {/* HTML set is text-only information that lives on the server */}
                 <div className="auth-config-input-row__input">
