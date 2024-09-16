@@ -25,6 +25,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.ColumnValidators;
+import org.labkey.api.data.validator.RequiredValidator;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
@@ -236,9 +237,14 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
             }
         }
 
+        SimpleTranslator convert = new SimpleTranslator(input, context);
+        convert.setDebugName("StandardDIB convert");
+        convert.setMvContainer(_c);
+
         //
         // check for unbound columns that are required
         //
+        Map<String, String> additionalRequiredColumns = _target.getAdditionalRequiredInsertColumns();
         if (_validate && !context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.SkipRequiredFieldValidation) && !context.getInsertOption().updateOnly)
         {
             for (TranslateHelper pair : unusedCols.values())
@@ -246,11 +252,19 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
                 if (isRequiredForInsert(pair.target, pair.dp))
                     setupError.addGlobalError("Data does not contain required field: " + pair.target.getName());
             }
-        }
 
-        SimpleTranslator convert = new SimpleTranslator(input, context);
-        convert.setDebugName("StandardDIB convert");
-        convert.setMvContainer(_c);
+            if (!additionalRequiredColumns.isEmpty())
+            {
+                Set<String> allColumns = new CaseInsensitiveHashSet(convert.getColumnNameMap().keySet());
+                for (Map.Entry<String, String> entry : additionalRequiredColumns.entrySet())
+                {
+                    if (!allColumns.contains(entry.getKey()) && !allColumns.contains(entry.getValue()))
+                    {
+                        setupError.addGlobalError("Data does not contain required field: " + entry.getValue());
+                    }
+                }
+            }
+        }
 
         for (TranslateHelper pair : convertTargetCols)
         {
@@ -263,7 +277,6 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
             else
                 convert.addConvertColumn(pair.target, pair.indexFrom, pair.indexMv, pd, pt, pair.target.getRemapMissingBehavior());
         }
-
 
         //
         // CONCEPT mapping data iterator
@@ -282,6 +295,9 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
 
         if (_validate)
         {
+            Set<String> additionalRequiredCols = new CaseInsensitiveHashSet();
+            additionalRequiredCols.addAll(additionalRequiredColumns.keySet());
+            additionalRequiredCols.addAll(additionalRequiredColumns.values());
             ValidatorIterator validate = getValidatorIterator(validateInput, context, translateHelperMap, _c, _user);
 
             for (int index = 1; index <= validateInput.getColumnCount(); index++)
@@ -289,7 +305,15 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
                 ColumnInfo col = validateInput.getColumnInfo(index);
                 TranslateHelper pair = translateHelperMap.get(getTranslateHelperKey(col));
                 if (null == pair)
+                {
+                    if (additionalRequiredCols.contains(col.getColumnName()))
+                    {
+                        List<ColumnValidator> validators = new ArrayList<>();
+                        validators.add(new RequiredValidator(col.getColumnName(), false, context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.PreserveEmptyString)));
+                        validate.addValidators(index, validators);
+                    }
                     continue;
+                }
                 List<ColumnValidator> validators = ColumnValidators.create(pair.target, pair.dp, context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.PreserveEmptyString));
                 validate.addValidators(index, validators);
             }

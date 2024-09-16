@@ -112,6 +112,8 @@ public interface ExpDataClass extends ExpObject
 
     @NotNull Map<String, String> getImportAliases() throws IOException;
 
+    @NotNull Map<String, String> getRequiredImportAliases() throws IOException;
+
     @NotNull Map<String, Map<String, Object>> getImportAliasMap() throws IOException;
 
     void setImportAliasMap(Map<String, Map<String, Object>> aliasMap);

@@ -6963,6 +6963,22 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             addDataInputs(inputDatas, protApp2._object, user);
             addMaterialInputs(inputMaterials, protApp2._object, user);
 
+            Set<String> inputDataTypes = new CaseInsensitiveHashSet();
+            for (ExpData expData : inputDatas.keySet())
+            {
+                ExpDataClass dataClass = expData.getDataClass(user);
+                if (dataClass != null)
+                    inputDataTypes.add(ExpData.DATA_INPUT_PARENT + "/" + dataClass.getName());
+            }
+
+            for (ExpMaterial expMaterial : inputMaterials.keySet())
+            {
+                ExpSampleType sampleType = expMaterial.getSampleType();
+                if (sampleType != null)
+                    inputDataTypes.add(ExpMaterial.MATERIAL_INPUT_PARENT + "/" + sampleType.getName());
+            }
+
+            Set<String> requiredDataTypes = new CaseInsensitiveHashSet();
             for (ExpMaterial outputMaterial : outputMaterials.keySet())
             {
                 if (outputMaterial.getSourceApplication() != null)
@@ -6973,6 +6989,18 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 {
                     throw new IllegalArgumentException("Output material " + outputMaterial.getName() + " is already marked as being created by another run");
                 }
+
+                try
+                {
+                    ExpSampleType sampleType = outputMaterial.getSampleType();
+                    if (sampleType != null)
+                        requiredDataTypes.addAll(sampleType.getRequiredImportAliases().values());
+                }
+                catch (IOException e)
+                {
+                    throw new RuntimeException(e);
+                }
+
                 outputMaterial.setSourceApplication(protApp2);
                 outputMaterial.setRun(run);
                 Table.update(user, getTinfoMaterial(), ((ExpMaterialImpl)outputMaterial)._object, outputMaterial.getRowId());
@@ -6990,10 +7018,25 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 {
                     throw new ExperimentException("Output data " + outputData.getName() + " (RowId " + outputData.getRowId() + ") is already marked as being created by another protocol application");
                 }
+
+                try
+                {
+                    ExpDataClass dataClass = outputData.getDataClass(user);
+                    if (dataClass != null)
+                        requiredDataTypes.addAll(dataClass.getRequiredImportAliases().values());
+                }
+                catch (IOException e)
+                {
+                    throw new RuntimeException(e);
+                }
+
                 outputData.setSourceApplication(protApp2);
                 outputData.setRun(run);
                 Table.update(user, getTinfoData(), ((ExpDataImpl)outputData).getDataObject(), outputData.getRowId());
             }
+
+            if (!requiredDataTypes.equals(inputDataTypes))
+                throw new ExperimentException("Inputs are required: " + String.join(",", requiredDataTypes));
 
             initializeProtocolApplication(protApp3, date, action3, run, outputProtocol, context);
             protApp3.save(user);
@@ -7638,6 +7681,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     private ExpRunImpl createRun(Map<? extends ExpMaterial, String> inputMaterials, Map<? extends ExpData, String> inputDatas,
                          Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas, ViewBackgroundInfo info) throws ExperimentException, ValidationException
     {
+        User user = info.getUser();
         PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(info.getContainer());
         if (pipeRoot == null || !pipeRoot.isValid())
             throw new ValidationException("The child folder, " + info.getContainer().getPath() + ", must have a valid pipeline root.");

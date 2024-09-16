@@ -816,9 +816,12 @@ public class ExpDataIterators
     /* setup mini dataiterator pipeline to process lineage */
     public static void derive(User user, Container container, DataIterator di, boolean isSample, ExpObject dataType, boolean skipAliquot) throws BatchValidationException
     {
-        ExpDataIterators.DerivationDataIteratorBuilder ddib = new ExpDataIterators.DerivationDataIteratorBuilder(di, container, user, isSample, dataType, skipAliquot);
+        ExpDataIterators.DerivationDataIteratorBuilder ddib = new ExpDataIterators.DerivationDataIteratorBuilder(di, container, user, isSample, dataType, skipAliquot, true);
         DataIteratorContext context = new DataIteratorContext();
-        context.setInsertOption(QueryUpdateService.InsertOption.MERGE);
+        context.setInsertOption(QueryUpdateService.InsertOption.UPDATE);
+        Map<Enum, Object> configParameters = new HashMap<>();
+        configParameters.put(ExperimentService.QueryOptions.UseLsidForUpdate, true);
+        context.setConfigParameters(configParameters);
         DataIterator derive = ddib.getDataIterator(context);
         new Pump(derive, context).run();
         if (context.getErrors().hasErrors())
@@ -833,8 +836,9 @@ public class ExpDataIterators
         final boolean _isSample;
         final boolean _skipAliquot;
         final ExpObject _currentDataType;
+        final boolean _checkRequiredParents; // Required values check are normally handled by StandardDataIteratorBuilder, but some code path (ExpDataIterators.derive) didn't go through that so explicit check is needed
 
-        public DerivationDataIteratorBuilder(DataIteratorBuilder pre, Container container, User user, boolean isSample, ExpObject currentDataType, boolean skipAliquot)
+        public DerivationDataIteratorBuilder(DataIteratorBuilder pre, Container container, User user, boolean isSample, ExpObject currentDataType, boolean skipAliquot, boolean checkRequiredParents)
         {
             _pre = pre;
             _container = container;
@@ -842,6 +846,7 @@ public class ExpDataIterators
             _isSample = isSample;
             _skipAliquot = skipAliquot;
             _currentDataType = currentDataType;
+            _checkRequiredParents = checkRequiredParents;
         }
 
         @Override
@@ -854,7 +859,7 @@ public class ExpDataIterators
             }
 
             if (context.getInsertOption() == QueryUpdateService.InsertOption.UPDATE)
-                return LoggingDataIterator.wrap(new ImportWithUpdateDerivationDataIterator(pre, context, _container, _user, _currentDataType, _isSample));
+                return LoggingDataIterator.wrap(new ImportWithUpdateDerivationDataIterator(pre, context, _container, _user, _currentDataType, _isSample, _checkRequiredParents));
             return LoggingDataIterator.wrap(new DerivationDataIterator(pre, context, _container, _user, _currentDataType, _isSample, _skipAliquot));
         }
     }
@@ -873,6 +878,7 @@ public class ExpDataIterators
         final Integer _lsidCol;
         final Integer _nameCol;
         final Map<Integer, String> _parentCols;
+        final Map<Integer, String> _requiredParentCols;
         final Map<String, String> _aliquotParents;
         /** Cache sample type lookups because even though we do caching in SampleTypeService, it's still a lot of overhead to check permissions for the user */
         final Map<String, ExpSampleType> _sampleTypes = new HashMap<>();
@@ -886,26 +892,44 @@ public class ExpDataIterators
         final boolean _isSample;
         final TSVWriter _tsvWriter;
 
-        protected DerivationDataIteratorBase(DataIterator di, DataIteratorContext context, Container container, User user, ExpObject currentDataType, boolean isSample)
+        protected DerivationDataIteratorBase(DataIterator di, DataIteratorContext context, Container container, User user, ExpObject currentDataType, boolean isSample, boolean checkRequiredParent)
         {
             super(di);
             _context = context;
             _isSample = isSample;
+            Set<String> requiredParents = new CaseInsensitiveHashSet();
             if (isSample)
             {
                 _currentSampleType = (ExpSampleType) currentDataType;
+                try
+                {
+                    if (checkRequiredParent)
+                        requiredParents.addAll(_currentSampleType.getRequiredImportAliases().values());
+                }
+                catch (IOException ignore)
+                {
+                }
                 _currentDataClass = null;
             }
             else
             {
                 _currentSampleType = null;
                 _currentDataClass = (ExpDataClass) currentDataType;
+                try
+                {
+                    if (checkRequiredParent)
+                        requiredParents.addAll(_currentDataClass.getRequiredImportAliases().values());
+                }
+                catch (IOException ignore)
+                {
+                }
             }
 
             Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
             _lsidCol = map.get("lsid");
             _nameCol = map.get("name");
             _parentCols = new HashMap<>();
+            _requiredParentCols = new HashMap<>();
             _aliquotParents = new LinkedHashMap<>();
             _container = container;
             _user = user;
@@ -916,6 +940,8 @@ public class ExpDataIterators
                 if (ExperimentService.isInputOutputColumn(name) || _isSample && equalsIgnoreCase("parent",name))
                 {
                     _parentCols.put(entry.getValue(), entry.getKey());
+                    if (requiredParents.contains(name))
+                        _requiredParentCols.put(entry.getValue(), entry.getKey());
                 }
             }
 
@@ -1132,7 +1158,7 @@ public class ExpDataIterators
 
         protected DerivationDataIterator(DataIterator di, DataIteratorContext context, Container container, User user, ExpObject currentDataType, boolean isSample, boolean skipAliquot)
         {
-            super(di, context, container, user, currentDataType, isSample);
+            super(di, context, container, user, currentDataType, isSample, false /* for insert/merge, required parents are always checked in StandardDataIteratorBuilder */);
             _skipAliquot = skipAliquot || context.getConfigParameterBoolean(SampleTypeService.ConfigParameters.DeferAliquotRuns);
 
             Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
@@ -1334,9 +1360,9 @@ public class ExpDataIterators
 
         final boolean _useLsid;
 
-        protected ImportWithUpdateDerivationDataIterator(DataIterator di, DataIteratorContext context, Container container, User user, ExpObject currentDataType, boolean isSample)
+        protected ImportWithUpdateDerivationDataIterator(DataIterator di, DataIteratorContext context, Container container, User user, ExpObject currentDataType, boolean isSample, boolean checkRequiredParent)
         {
-            super(di, context, container, user, currentDataType, isSample);
+            super(di, context, container, user, currentDataType, isSample, checkRequiredParent);
 
             Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
             _parentNames = new LinkedHashMap<>();
@@ -1378,10 +1404,13 @@ public class ExpDataIterators
                     key = (String) get(_lsidCol);
                 else if (_nameCol != null)
                     key = (String) get(_nameCol);
+
+                String aliquotParentName = null;
+
                 if (_aliquotParentCol > -1 && !_context.getConfigParameterBoolean(SampleTypeService.ConfigParameters.DeferAliquotRuns))
                 {
                     Object o = get(_aliquotParentCol);
-                    String aliquotParentName = null;
+
                     if (o != null)
                     {
                         if (o instanceof String)
@@ -1402,6 +1431,16 @@ public class ExpDataIterators
                     }
                 }
 
+                // for non-aliquot, check required parent lineage
+                if (aliquotParentName == null && !_requiredParentCols.isEmpty())
+                {
+                    for (Integer parentCol : _requiredParentCols.keySet())
+                    {
+                        Object parentVal = get(parentCol);
+                        if (parentVal == null || (parentVal instanceof String && ((String) parentVal).isEmpty()))
+                            getErrors().addRowError(new ValidationException("Missing value for required property: " + _requiredParentCols.get(parentCol)));
+                    }
+                }
 
                 Set<Pair<String, String>> allParts = _getParentParts();
                 if (!allParts.isEmpty())
@@ -2350,7 +2389,7 @@ public class ExpDataIterators
             }
 
             // Wire up derived parent/child data and materials
-            DataIteratorBuilder step6 = LoggingDataIterator.wrap(new ExpDataIterators.DerivationDataIteratorBuilder(step5, _container, _user, isSample, _dataTypeObject, false));
+            DataIteratorBuilder step6 = LoggingDataIterator.wrap(new ExpDataIterators.DerivationDataIteratorBuilder(step5, _container, _user, isSample, _dataTypeObject, false, false/*Validation already done in StandardDataIterator*/));
 
             DataIteratorBuilder step7 = step6;
             boolean hasRollUpColumns = colNameMap.containsKey(ROOT_RECOMPUTE_ROWID_COL);

@@ -18,7 +18,7 @@ public class ImportAliasesDeserializer extends StdDeserializer<Map<String, Map<S
     }
 
     @Override
-    public Map<String, Map<String, Object>> deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException,
+    public Map<String, Map<String, Object>> deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException
     {
         JsonNode node = jsonParser.readValueAsTree();
         if (node == null)

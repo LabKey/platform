@@ -1515,6 +1515,25 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     }
 
     @Override
+    @NotNull
+    public Map<String, String> getAdditionalRequiredInsertColumns()
+    {
+        if (getSampleType() == null)
+            return Collections.emptyMap();
+
+        Map<String, String> required = new CaseInsensitiveHashMap<>();
+        try
+        {
+            required.putAll(getSampleType().getRequiredImportAliases());
+            return required;
+        }
+        catch (IOException e)
+        {
+            return Collections.emptyMap();
+        }
+    }
+
+    @Override
     public DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context)
     {
         TableInfo propertiesTable = _ss.getTinfo();

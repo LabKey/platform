@@ -895,6 +895,25 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     }
 
     @Override
+    @NotNull
+    public Map<String, String> getAdditionalRequiredInsertColumns()
+    {
+        if (getDataClass() == null)
+            return Collections.emptyMap();
+
+        Map<String, String> required = new CaseInsensitiveHashMap<>();
+        try
+        {
+            required.putAll(getDataClass().getRequiredImportAliases());
+            return required;
+        }
+        catch (IOException e)
+        {
+            return Collections.emptyMap();
+        }
+    }
+
+    @Override
     public DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context)
     {
         TableInfo propertiesTable = _dataClassDataTableSupplier.get();

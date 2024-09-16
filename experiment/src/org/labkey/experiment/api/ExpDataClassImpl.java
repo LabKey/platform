@@ -531,6 +531,18 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
     }
 
     @Override
+    public @NotNull Map<String, String> getRequiredImportAliases() throws IOException
+    {
+        Map<String, String> aliases = new HashMap<>();
+        for (Map.Entry<String, Map<String, Object>> entry : getImportAliasMap().entrySet())
+        {
+            if ((Boolean) entry.getValue().get("required"))
+                aliases.put(entry.getKey(), (String) entry.getValue().get("inputType"));
+        }
+        return Collections.unmodifiableMap(aliases);
+    }
+
+    @Override
     public @NotNull Map<String, Map<String, Object>> getImportAliasMap() throws IOException
     {
         return Collections.unmodifiableMap(getImportAliases(_object));

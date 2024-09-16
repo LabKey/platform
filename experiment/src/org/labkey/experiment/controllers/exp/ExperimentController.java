@@ -58,6 +58,7 @@ import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.*;
 import org.labkey.api.dataiterator.DataIteratorContext;
@@ -5406,6 +5407,11 @@ public class ExperimentController extends SpringActionController
                 if (form.getDataRegionSelectionKey() != null)
                     DataRegionSelection.clearAll(getViewContext(), form.getDataRegionSelectionKey());
             }
+            catch (Exception e)
+            {
+                errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+                return false;
+            }
 
             return true;
         }
@@ -5724,10 +5730,12 @@ public class ExperimentController extends SpringActionController
             // TODO: support list of resolved ExpData or ExpMaterial instead of string concatenated names
             // Create "MaterialInputs/<SampleSet>" columns with a value containing a comma-separated list of Material names
             final Map<String, Set<String>> parentInputNames = new HashMap<>();
+            Set<String> inputTypes = new CaseInsensitiveHashSet();
             for (ExpMaterial material : materialInputs.keySet())
             {
                 ExpSampleType st = material.getSampleType();
                 String keyName = ExpMaterial.MATERIAL_INPUT_PARENT + "/" + st.getName();
+                inputTypes.add(keyName);
                 parentInputNames.computeIfAbsent(keyName, (x) -> new LinkedHashSet<>()).add(material.getName());
             }
 
@@ -5737,18 +5745,21 @@ public class ExperimentController extends SpringActionController
             {
                 ExpDataClass dc = d.getDataClass(getUser());
                 String keyName = ExpData.DATA_INPUT_PARENT + "/" + dc.getName();
+                inputTypes.add(keyName);
                 parentInputNames.computeIfAbsent(keyName, (x) -> new LinkedHashSet<>()).add(d.getName());
             }
 
 
             try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
             {
+                Set<String> requiredParentTypes = new CaseInsensitiveHashSet();
 
                 // output materials
                 Map<ExpMaterial, String> outputMaterials = new HashMap<>();
                 int materialOutputCount = Math.max(form.materialOutputCount, form.materialOutputs != null ? form.materialOutputs.size() : 0);
                 if (materialOutputCount > 0 && outSampleType != null)
                 {
+                    requiredParentTypes.addAll(outSampleType.getRequiredImportAliases().values());
                     DerivedOutputs<ExpMaterial> derived = new DerivedOutputs<ExpMaterial>(parentInputNames, form.materialDefault, form.materialOutputs, materialOutputCount, "Material")
                     {
                         @Override
@@ -5776,6 +5787,7 @@ public class ExperimentController extends SpringActionController
                 int dataOutputCount = Math.max(form.dataOutputCount, form.dataOutputs != null ? form.dataOutputs.size() : 0);
                 if (dataOutputCount > 0 && outDataClass != null)
                 {
+                    requiredParentTypes.addAll(outDataClass.getRequiredImportAliases().values());
                     DerivedOutputs<ExpData> derived = new DerivedOutputs<ExpData>(parentInputNames, form.dataDefault, form.dataOutputs, dataOutputCount, "Data")
                     {
                         @Override
@@ -5800,6 +5812,9 @@ public class ExperimentController extends SpringActionController
 
                 if (outputMaterials.isEmpty() && outputData.isEmpty())
                     throw new IllegalStateException("Expected to create " + materialOutputCount + " materials and " + dataOutputCount + " datas");
+
+                if (!inputTypes.equals(requiredParentTypes))
+                    throw new IllegalStateException("Inputs are required: " + String.join(",", requiredParentTypes));
 
                 // finally, create the derived run if there are any parents
                 ExpRun run = null;
