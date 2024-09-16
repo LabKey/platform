@@ -2,13 +2,6 @@ import React, { FC, memo, useCallback, useState } from 'react';
 import { FileAttachmentForm } from '@labkey/components';
 import classNames from 'classnames';
 
-const NoImageSelectedDisplay: FC = memo(() => (
-    <div className="sso-fields__null-image">
-        <span className="fa fa-5x fa-image" style={{ color: '#DCDCDC' }} />
-        <div className="sso-fields__null-image__text">None selected</div>
-    </div>
-));
-
 interface ImgFileAttachFormProps {
     canEdit: boolean;
     fileTitle: string;
