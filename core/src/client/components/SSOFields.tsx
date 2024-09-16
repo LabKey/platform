@@ -36,38 +36,38 @@ export const ImageAndFileAttachmentForm: FC<ImgFileAttachFormProps> = memo(props
 
     return (
         <>
-            <div className="sso-fields__label">{text}</div>
-            <div className="sso-fields__inputs">
+            <div className="auth-config-input-row">
+                <div className="auth-config-input-row__caption">{text}</div>
+
                 {canEdit ? (
                     <>
-                        <div className="sso-fields__image-holder">
-                            {imageUrl ? (
-                                <div className="sso-fields__img_container">
-                                    {img}
-                                    <div className="sso-fields__delete-img-icon" onClick={onDelete}>
-                                        <span className="fa fa-times-circle sso-fields__delete-img clickable" />
-                                    </div>
+                        {imageUrl && (
+                            <div className="sso-fields__image-holder">
+                                {img}
+                                <div className="sso-fields__delete-img-icon" onClick={onDelete}>
+                                    <span className="fa fa-times-circle sso-fields__delete-img clickable" />
                                 </div>
-                            ) : (
-                                <NoImageSelectedDisplay />
-                            )}
-                        </div>
+                            </div>
+                        )}
 
-                        <div className="sso-fields__file-attachment" id={fileTitle}>
-                            <FileAttachmentForm
-                                index={index}
-                                showLabel={false}
-                                allowMultiple={false}
-                                allowDirectories={false}
-                                acceptedFormats=".jpg,.jpeg,.png,.gif,.tif"
-                                showAcceptedFormats={false}
-                                onFileChange={onChange}
-                            />
-                        </div>
+                        {!imageUrl && (
+                            <div className="sso-fields__file-attachment" id={fileTitle}>
+                                <FileAttachmentForm
+                                    index={index}
+                                    showLabel={false}
+                                    allowMultiple={false}
+                                    allowDirectories={false}
+                                    acceptedFormats=".jpg,.jpeg,.png,.gif,.tif"
+                                    showAcceptedFormats={false}
+                                    compact={true}
+                                    onFileChange={onChange}
+                                />
+                            </div>
+                        )}
                     </>
                 ) : (
                     <div className="sso-fields__image-holder--view-only">
-                        {imageUrl ? img : <NoImageSelectedDisplay />}
+                        {imageUrl && img}
                     </div>
                 )}
             </div>

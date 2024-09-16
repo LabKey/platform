@@ -100,23 +100,12 @@
   flex-grow: 1;
 }
 
-.sso-fields__inputs {
-  display: flex;
-  height: 100px;
-  align-items: center;
-  position: relative;
-}
-
-.sso-fields__label {
-  margin-top: 5px;
-}
-
 .sso-fields__file-attachment {
   flex-grow: 1;
 }
 
 .sso-fields__image-holder {
-  width: 220px;
+  flex-grow: 1;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -137,7 +126,7 @@
 }
 
 .sso-fields__image__header-logo {
-  max-height: 26px;
+  max-height: 44px;
 }
 
 .sso-fields__image__page-logo {
@@ -150,9 +139,8 @@
 
 .sso-fields__delete-img {
   color: #d9534f;
-  position: absolute;
-  top: 0;
-  right: 0;
+  margin-left: 5px;
+  padding-bottom: 30px;
 }
 
 .sso-fields__image-holder {
