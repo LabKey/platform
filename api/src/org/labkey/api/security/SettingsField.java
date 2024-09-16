@@ -59,4 +59,11 @@ public class SettingsField extends HashMap<String, Object>
         put("dictateFieldVisibility", true);
         return this;
     }
+
+    //The field will be displayed under the configured section header
+    public SettingsField configureFieldSectionHeader(String sectionHeaderName)
+    {
+        put("sectionHeader", sectionHeaderName);
+        return this;
+    }
 }
