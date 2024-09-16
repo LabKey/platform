@@ -212,7 +212,7 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Part
                     requiredFieldEmpty={requiredFieldEmpty}
                     required={true}
                     name="description"
-                    caption="Description"
+                    caption="Name/Description"
                 />
 
                 <DynamicFields

@@ -17,8 +17,8 @@ export const TextInput: FC<TextInputProps> = memo(props => {
     );
 
     return (
-        <div className="modal__text-input">
-            <span className="modal__field-label">
+        <div className="auth-config-input-row">
+            <span className="auth-config-input-row__caption">
                 {caption}
                 {description && (
                     <LabelHelpTip title="Tip">
@@ -37,12 +37,12 @@ export const TextInput: FC<TextInputProps> = memo(props => {
                     value={value}
                     onChange={onChange_}
                     className={
-                        'modal__text-input-field' + (requiredFieldEmpty ? ' modal__text-input-field--error' : '')
+                        'auth-config-input-row__input' + (requiredFieldEmpty ? ' auth-config-input-row__input--error' : '')
                     }
                 />
-            ) : (
-                <span className="modal__text-input-field"> {value} </span>
-            )}
+                ) : (
+                    <span className="auth-config-input-row__input"> {value} </span>
+                )}
         </div>
     );
 });
@@ -62,20 +62,18 @@ export const CheckBoxInput: FC<CheckBoxInputProps> = memo(props => {
     );
 
     return (
-        <div className="modal__field">
-            <label htmlFor={name}>
-                <span className="modal__field-label">
-                    {caption}
-                    {description && (
-                        <LabelHelpTip title="Tip">
-                            <div> {description} </div>
-                        </LabelHelpTip>
-                    )}
-                    {required ? ' *' : null}
-                </span>
-            </label>
+        <div className="auth-config-input-row">
+            <span className="auth-config-input-row__caption">
+                {caption}
+                {description && (
+                    <LabelHelpTip title="Tip">
+                        <div> {description} </div>
+                    </LabelHelpTip>
+                )}
+                {required ? ' *' : null}
+            </span>
 
-            <span className="modal__input">
+            <span className="auth-config-input-row__input">
                 <input checked={value} disabled={!canEdit} id={name} onChange={onChange_} type="checkbox" />
             </span>
         </div>
@@ -96,8 +94,8 @@ export const Select: FC<SelectProps> = props => {
         [name, onChange]
     );
     return (
-        <div className="modal__option-field">
-            <span className="modal__field-label">
+        <div className="auth-config-input-row">
+            <span className="auth-config-input-row__caption">
                 {caption}
                 {description && (
                     <LabelHelpTip title="Tip">
@@ -108,7 +106,7 @@ export const Select: FC<SelectProps> = props => {
             </span>
 
             {canEdit && (
-                <div className="modal__option-input">
+                <div className="auth-config-input-row__input">
                     <FormControl componentClass="select" name={name} onChange={onChange_} value={value}>
                         {Object.keys(options).map(item => (
                             <option value={item} key={item}>
@@ -145,16 +143,19 @@ export class FixedHtml extends PureComponent<FixedHtmlProps> {
         });
 
         return (
-            <div className="modal__fixed-html-field">
-                <span className="modal__field-label">{caption}</span>
-                {description && (
-                    <LabelHelpTip title="Tip">
-                        <div> {description} </div>
-                    </LabelHelpTip>
-                )}
+            <div className="auth-config-input-row">
+                <span className="auth-config-input-row__caption">
+                    {caption}
+                    {description && (
+                        <LabelHelpTip title="Tip">
+                            <div> {description} </div>
+                        </LabelHelpTip>
+                    )}
+                </span>
+
 
                 {/* HTML set is text-only information that lives on the server */}
-                <div className="modal__fixed-html-text">
+                <div className="auth-config-input-row__input">
                     <div dangerouslySetInnerHTML={{ __html: stringTemplatedHtml }} />
                 </div>
             </div>
@@ -175,8 +176,8 @@ export const SmallFileUpload: FC<SmallFileInputProps> = props => {
     const onFileRemoval = useCallback(() => props.onFileRemoval(name), [name, props.onFileRemoval]);
 
     return (
-        <div className="modal__compact-file-upload-field">
-            <span className="modal__field-label">
+        <div className="auth-config-input-row">
+            <span className="auth-config-input-row__caption">
                 {caption}
                 {description && (
                     <LabelHelpTip title="Tip">
@@ -189,7 +190,7 @@ export const SmallFileUpload: FC<SmallFileInputProps> = props => {
             {requiredFieldEmpty && <div className="modal__tiny-error--small-file-input"> This file is required </div>}
 
             {canEdit ? (
-                <div className="modal__compact-file-upload-input">
+                <div className="auth-config-input-row__input">
                     <FileAttachmentForm
                         index={index}
                         showLabel={false}
