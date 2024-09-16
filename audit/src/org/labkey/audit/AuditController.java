@@ -384,10 +384,11 @@ public class AuditController extends SpringActionController
         public Object execute(AuditTransactionForm form, BindException errors)
         {
             List<Integer> rowIds;
+            ContainerFilter cf = ContainerFilter.getContainerFilterByName(form.getContainerFilter(), getContainer(), getUser());
             if (form.isSampleType())
-                rowIds = AuditLogImpl.get().getTransactionSampleIds(form.getTransactionAuditId(), ElevatedUser.ensureCanSeeAuditLogRole(getContainer(), getUser()), getContainer());
+                rowIds = AuditLogImpl.get().getTransactionSampleIds(form.getTransactionAuditId(), ElevatedUser.ensureCanSeeAuditLogRole(getContainer(), getUser()), getContainer(), cf);
             else
-                rowIds = AuditLogImpl.get().getTransactionSourceIds(form.getTransactionAuditId(), getUser(), getContainer());
+                rowIds = AuditLogImpl.get().getTransactionSourceIds(form.getTransactionAuditId(), getUser(), getContainer(), cf);
 
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("success", true);
@@ -402,6 +403,7 @@ public class AuditController extends SpringActionController
         private Long _transactionAuditId;
         private String _dataType;
         private boolean _isSampleType;
+        String _containerFilter;
 
         public Long getTransactionAuditId()
         {
@@ -426,6 +428,16 @@ public class AuditController extends SpringActionController
         public boolean isSampleType()
         {
             return _isSampleType;
+        }
+
+        public String getContainerFilter()
+        {
+            return _containerFilter;
+        }
+
+        public void setContainerFilter(String containerFilter)
+        {
+            _containerFilter = containerFilter;
         }
 
         public void validate(Errors errors)
