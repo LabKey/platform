@@ -8,6 +8,7 @@ public class SettingsField extends HashMap<String, Object>
 {
     public enum FieldType
     {
+        section,
         checkbox,
         fixedHtml,
         input,
@@ -16,6 +17,15 @@ public class SettingsField extends HashMap<String, Object>
         pem  // file picker that allows upload of a PEM file (used on SAML settings page)
     }
 
+    public static SettingsField of(@NotNull String name, @NotNull FieldType type, @NotNull String caption)
+    {
+        SettingsField sf = new SettingsField();
+        sf.put("name", name);
+        sf.put("type", type.toString());
+        sf.put("caption", caption);
+
+        return sf;
+    }
     public static SettingsField of(@NotNull String name, @NotNull FieldType type, @NotNull String caption, @NotNull String description, boolean required, Object defaultValue)
     {
         SettingsField sf = of(name, type, caption, required, defaultValue);
@@ -57,13 +67,6 @@ public class SettingsField extends HashMap<String, Object>
     public SettingsField dictateFieldVisibility()
     {
         put("dictateFieldVisibility", true);
-        return this;
-    }
-
-    //The field will be displayed under the configured section header
-    public SettingsField configureFieldSectionHeader(String sectionHeaderName)
-    {
-        put("sectionHeader", sectionHeaderName);
         return this;
     }
 }
