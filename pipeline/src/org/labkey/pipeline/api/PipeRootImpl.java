@@ -249,7 +249,8 @@ public class PipeRootImpl implements PipeRoot
     @NotNull
     public FileObject getLogDirectoryFileObject(boolean forWrite)
     {
-        return AuthorizedFileSystem.create(getLogDirectory(), true, forWrite).getRoot();
+        return AuthorizedFileSystem.create(getLogDirectory(),
+                forWrite ? AuthorizedFileSystem.Mode.Read_Write : AuthorizedFileSystem.Mode.Read).getRoot();
     }
 
     public synchronized List<File> getRootPaths()
@@ -278,7 +279,8 @@ public class PipeRootImpl implements PipeRoot
                 NetworkDrive.ensureDrive(file.getPath());
             }
         }
-        return _rootPaths.stream().map(f -> AuthorizedFileSystem.create(f, true, forWrite).getRoot()).toList();
+        return _rootPaths.stream().map(f -> AuthorizedFileSystem.create(f,
+                forWrite ? AuthorizedFileSystem.Mode.Read_Write : AuthorizedFileSystem.Mode.Read).getRoot()).toList();
     }
 
     public synchronized List<Path> getRootNioPaths()

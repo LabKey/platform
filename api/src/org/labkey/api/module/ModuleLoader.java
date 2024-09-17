@@ -477,7 +477,7 @@ public class ModuleLoader implements MemTrackerListener
         setTomcatVersion();
 
         var webapp = FileUtil.getAbsoluteCaseSensitiveFile(new File(_servletContext.getRealPath("")));
-        _webappDir = AuthorizedFileSystem.create(webapp, true, false).getRoot();
+        _webappDir = AuthorizedFileSystem.create(webapp, AuthorizedFileSystem.Mode.Read).getRoot();
 
         String extraWebappPath = System.getProperty(EXTRA_WEBAPP_DIR);
         File extraWebappDir;
@@ -490,11 +490,11 @@ public class ModuleLoader implements MemTrackerListener
             extraWebappDir = new File(extraWebappPath);
         }
         if (extraWebappDir.isDirectory())
-            _extraWebappDir = AuthorizedFileSystem.create(webapp, true, false).getRoot();
+            _extraWebappDir = AuthorizedFileSystem.create(webapp, AuthorizedFileSystem.Mode.Read).getRoot();
 
         var startup = FileUtil.appendName(webapp.getParentFile(), "startup");
         if (startup.isDirectory())
-            _startupPropertiesDir = AuthorizedFileSystem.create(startup, true, false).getRoot();
+            _startupPropertiesDir = AuthorizedFileSystem.create(startup, AuthorizedFileSystem.Mode.Read).getRoot();
 
         // load startup configuration information from properties, side-effect may set _newinstall=true
         // Wiki: https://www.labkey.org/Documentation/wiki-page.view?name=bootstrapProperties#using
@@ -1238,7 +1238,7 @@ public class ModuleLoader implements MemTrackerListener
         {
             throw new IllegalStateException("WebappDir is already set to " + _webappDir + ", cannot reset it to " + webappDir);
         }
-        _webappDir = AuthorizedFileSystem.create(webappDir, true, false).getRoot();
+        _webappDir = AuthorizedFileSystem.create(webappDir, AuthorizedFileSystem.Mode.Read).getRoot();
     }
 
     // Attempt to parse "enlistment.id" property from a file named "enlistment.properties" in this directory, if it exists
