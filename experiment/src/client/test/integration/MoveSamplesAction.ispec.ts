@@ -226,7 +226,7 @@ describe('Move Samples', () => {
 
             const sampleEventsInTarget = await getSampleTimelineAuditLogs(sampleRowId, targetFolderOptions, valueChanges ? DEFAULT_AUDIT_LOG_COLUMNS + ",OldValues,NewValues": DEFAULT_AUDIT_LOG_COLUMNS);
             expect(sampleEventsInTarget).toHaveLength(2);
-            expect(caseInsensitive(sampleEventsInTarget[0], 'Comment')).toEqual("Sample project was updated.");
+            expect(caseInsensitive(sampleEventsInTarget[0], 'Comment')).toEqual("Sample folder was updated.");
             expect(caseInsensitive(sampleEventsInTarget[0], 'userComment')).toBe(userComment);
 
             if (valueChanges) {
