@@ -16,19 +16,15 @@
 
 package org.labkey.api.action;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.view.UnauthorizedException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
-/**
- * User: jeckels
- * Date: Feb 8, 2008
- */
 public abstract class GWTServiceAction extends BaseViewAction<Object>
 {
     protected GWTServiceAction()
@@ -38,7 +34,7 @@ public abstract class GWTServiceAction extends BaseViewAction<Object>
     }
 
     @Override
-    public ModelAndView handleRequest(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse)
+    public ModelAndView handleRequest(@NotNull HttpServletRequest httpServletRequest, @NotNull HttpServletResponse httpServletResponse)
     {
         // Use Core as the catch-all to consolidate reporting, even though GWT uses are distributed across modules
         SimpleMetricsService.get().increment("Core", "GWTService", getClass().getSimpleName());
@@ -59,8 +55,7 @@ public abstract class GWTServiceAction extends BaseViewAction<Object>
 
     protected abstract BaseRemoteService createService();
 
-
-    // methods we ignore, but have to implement since we extends BaseViewAction
+    // methods we ignore, but have to implement since we extend BaseViewAction
     @Override
     protected String getCommandClassMethodName()
     {

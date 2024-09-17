@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.api.pipeline.PipeRoot" %>
 <%@ page import="org.labkey.api.pipeline.PipelineService" %>
 <%@ page import="org.labkey.api.pipeline.PipelineStatusUrls" %>
+<%@ page import="org.labkey.api.util.FileUtil" %>
 <%@ page import="org.labkey.api.util.NetworkDrive" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -31,12 +32,13 @@
 <%@ page import="org.labkey.pipeline.api.PipelineStatusManager" %>
 <%@ page import="org.labkey.pipeline.status.StatusController" %>
 <%@ page import="org.labkey.pipeline.status.StatusController.ConfirmDeleteStatusForm" %>
-<%@ page import="java.io.File" %>
+<%@ page import="java.lang.Override" %>
+<%@ page import="java.lang.String" %>
+<%@ page import="java.lang.StringBuilder" %>
+<%@ page import="java.nio.file.Path" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
-<%@ page import="org.labkey.api.util.FileUtil" %>
-<%@ page import="java.nio.file.Path" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -110,7 +112,7 @@
 
         // Recurse into child jobs
         List<PipelineStatusFileImpl> children = PipelineStatusManager.getSplitStatusFiles(file.getJobId());
-        if (children.size() > 0)
+        if (!children.isEmpty())
         {
             sb.append("<ul>");
             for (PipelineStatusFileImpl child : children)
