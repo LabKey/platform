@@ -8110,7 +8110,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             errors = DomainUtil.updateDomainDescriptor(original, update, c, u, hasNameChange, auditComment);
 
-            QueryService.get().saveCalculatedFieldsMetadata(schemaKey.toString(), update.getQueryName(), hasNameChange ? newName : null, update.getCalculatedFields(), false, u, c);
+            QueryService.get().saveCalculatedFieldsMetadata(schemaKey.toString(), update.getQueryName(), hasNameChange ? newName : null, update.getCalculatedFields(), !original.getCalculatedFields().isEmpty(), u, c);
 
             if (hasNameChange)
                 addObjectLegacyName(dataClass.getObjectId(), ExperimentServiceImpl.getNamespacePrefix(ExpDataClass.class), oldDataClassName, u);

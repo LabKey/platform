@@ -137,7 +137,6 @@ public class StatusDetailsBean
                     statusFiles = files.stream().map(f -> new StatusDetailFile(c, psf.getRowId(), f)).collect(toList());
                 }
 
-
                 // read from the offset to the end of the file content
                 try
                 {
@@ -145,7 +144,7 @@ public class StatusDetailsBean
                     long count = transferTo(sb, path, logOffset);
                     if (psf.isActive())
                     {
-                        // if the job is still running and we aren't on an end-of-lne,
+                        // if the job is still running and we aren't on an end-of-line,
                         // wind back to the most recent newline.
                         while (sb.length() > 1)
                         {
@@ -180,9 +179,9 @@ public class StatusDetailsBean
         if (!splitStatusFiles.isEmpty())
         {
             splitStatus = splitStatusFiles.stream()
-                    .sorted(Comparator.comparing(PipelineStatusFile::getDescription, String.CASE_INSENSITIVE_ORDER))
-                    .map(split -> new StatusDetailsBean(split.lookupContainer(), split))
-                    .collect(toList());
+                .sorted(Comparator.comparing(PipelineStatusFile::getDescription, String.CASE_INSENSITIVE_ORDER))
+                .map(split -> new StatusDetailsBean(split.lookupContainer(), split))
+                .collect(toList());
         }
 
         return new StatusDetailsBean(c, psf, statusFiles, statusRuns, parentStatus, splitStatus, statusLog, fetchCount, PipelineService.get().getPipelineQueue().getQueuePositions().get(psf.getJobId()));
@@ -212,8 +211,8 @@ public class StatusDetailsBean
             catch (LimitedSizeInputStream.LimitReachedException e)
             {
                 String extraMessage = System.lineSeparator() + System.lineSeparator() +
-                        "Log file viewing is capped at " + MAX_LOG_SIZE + " bytes. Download the raw file to view the remainder."
-                        + System.lineSeparator();
+                    "Log file viewing is capped at " + MAX_LOG_SIZE + " bytes. Download the raw file to view the remainder."
+                    + System.lineSeparator();
                 out.append(extraMessage);
                 return e.getBytesRead() + extraMessage.getBytes(Charset.defaultCharset()).length;
             }
