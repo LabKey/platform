@@ -163,6 +163,22 @@ export class FixedHtml extends PureComponent<FixedHtmlProps> {
     }
 }
 
+interface SectionProps {
+    caption: string;
+}
+
+export class Section extends PureComponent<SectionProps> {
+    render() {
+        const { caption } = this.props;
+
+        return (
+            <div className="auth-config-section">
+                {caption}
+            </div>
+        );
+    }
+}
+
 interface SmallFileInputProps extends InputFieldProps {
     index: number;
     onFileChange: (attachment, name: string) => void;
@@ -313,6 +329,7 @@ export const DynamicFields: FC<DynamicFieldsProps> = memo(props => {
                         defaultValue={field.defaultValue}
                         name={field.name}
                         caption={field.caption}
+                        description={field.description}
                         required={field.required}
                         type={field.type}
                     />
@@ -343,6 +360,14 @@ export const DynamicFields: FC<DynamicFieldsProps> = memo(props => {
                         html={field.html}
                         description={field.description}
                         authConfig={authConfig}
+                    />
+                );
+
+            case 'section':
+                return (
+                    <Section
+                        key={field.caption}
+                        caption={field.caption}
                     />
                 );
 
