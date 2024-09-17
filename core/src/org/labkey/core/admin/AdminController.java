@@ -151,6 +151,7 @@ import org.labkey.api.pipeline.DirectoryNotDeletedException;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.PipelineValidationException;
@@ -429,8 +430,8 @@ public class AdminController extends SpringActionController
         // Configuration
         AdminConsole.addLink(Configuration, "authentication", urlProvider(LoginUrls.class).getConfigureURL());
         AdminConsole.addLink(Configuration, "email customization", new ActionURL(CustomizeEmailAction.class, root), AdminPermission.class);
-        AdminConsole.addLink(Configuration, "deprecated features", new ActionURL(OptionalFeaturesAction.class, root).addParameter("type", FeatureType.Deprecated.name()), AdminOperationsPermission.class);
-        AdminConsole.addLink(Configuration, "experimental features", new ActionURL(OptionalFeaturesAction.class, root).addParameter("type", FeatureType.Experimental.name()), AdminOperationsPermission.class);
+        AdminConsole.addLink(Configuration, "deprecated features", new ActionURL(OptionalFeaturesAction.class, root).addParameter("type", FeatureType.Deprecated.name()), TroubleshooterPermission.class);
+        AdminConsole.addLink(Configuration, "experimental features", new ActionURL(OptionalFeaturesAction.class, root).addParameter("type", FeatureType.Experimental.name()), TroubleshooterPermission.class);
         if (!ProductRegistry.getProducts().isEmpty())
             AdminConsole.addLink(Configuration, "product configuration", new ActionURL(ProductConfigurationAction.class, root), AdminOperationsPermission.class);
         // TODO move to FileContentModule
@@ -1614,17 +1615,16 @@ public class AdminController extends SpringActionController
 
     public static class ViewValidationResultsForm
     {
-        private String _fileName;
+        private int _rowId;
 
-        public String getFileName()
+        public int getRowId()
         {
-            return _fileName;
+            return _rowId;
         }
 
-        @SuppressWarnings("unused")
-        public void setFileName(String fileName)
+        public void setRowId(int rowId)
         {
-            _fileName = fileName;
+            _rowId = rowId;
         }
     }
 
@@ -1634,14 +1634,20 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getView(ViewValidationResultsForm form, BindException errors) throws Exception
         {
-            if (StringUtils.isBlank(form.getFileName()))
-                throw new NotFoundException();
-            PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
-            File results = FileUtil.appendName(root.getLogDirectory(), form.getFileName());
-            if (!results.isFile())
-                throw new NotFoundException("File not found: " + form.getFileName());
+            PipelineStatusFile statusFile = PipelineService.get().getStatusFile(form.getRowId());
+            if (null == statusFile)
+                throw new NotFoundException("Status file not found");
+            if (!getContainer().equals(statusFile.lookupContainer()))
+                throw new UnauthorizedException("Wrong container");
 
-            return new HtmlView(HtmlString.unsafe(PageFlowUtil.getFileContentsAsString(results)));
+            String logFilePath = statusFile.getFilePath();
+            String htmlFilePath = FileUtil.getBaseName(logFilePath) + ".html";
+            File htmlFile = new File(htmlFilePath);
+
+            if (!htmlFile.exists())
+                throw new NotFoundException("Results file not found");
+
+            return new HtmlView(HtmlString.unsafe(PageFlowUtil.getFileContentsAsString(htmlFile)));
         }
 
         @Override
@@ -9240,8 +9246,7 @@ public class AdminController extends SpringActionController
         }
     }
 
-    @AdminConsoleAction
-    @RequiresPermission(AdminOperationsPermission.class)
+    @RequiresPermission(TroubleshooterPermission.class)
     public class OptionalFeaturesAction extends SimpleViewAction<OptionalFeaturesForm>
     {
         private FeatureType _type;
@@ -11640,12 +11645,6 @@ public class AdminController extends SpringActionController
                 new ShowAdminAction()
             );
 
-            // @AdminConsoleAction
-            // @RequiresPermission(AdminOperationsPermission.class)
-            assertForAdminOperationsPermission(ContainerManager.getRoot(), user,
-                controller.new OptionalFeaturesAction()
-            );
-
             // @RequiresSiteAdmin
             assertForRequiresSiteAdmin(user,
                 controller.new EnvironmentVariablesAction(),
@@ -11657,6 +11656,7 @@ public class AdminController extends SpringActionController
             );
 
             assertForTroubleshooterPermission(ContainerManager.getRoot(), user,
+                controller.new OptionalFeaturesAction(),
                 controller.new ShowModuleErrorsAction(),
                 new ModuleStatusAction()
             );

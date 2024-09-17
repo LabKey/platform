@@ -15,9 +15,11 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.settings.AdminConsole" %>
 <%@ page import="org.labkey.api.settings.AdminConsole.OptionalFeatureFlag" %>
 <%@ page import="org.labkey.api.settings.OptionalFeatureService.FeatureType" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.core.admin.AdminController.OptionalFeaturesForm" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -25,6 +27,7 @@
     OptionalFeaturesForm form = (OptionalFeaturesForm)getModelBean();
     FeatureType type = form.getTypeEnum();
     boolean showHidden = form.isShowHidden();
+    boolean hasAdminOpsPerms = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
 %>
 <style>
     .toggle-label-text {
@@ -42,6 +45,7 @@
 <p class="labkey-error">
 <%=type.getAdminGuidance()%>
 </p>
+<%=getTroubleshooterWarning(hasAdminOpsPerms, HtmlString.EMPTY_STRING, HtmlString.unsafe("<br>"))%>
 <div class="list-group">
 <%
     for (OptionalFeatureFlag flag : AdminConsole.getOptionalFeatureFlags(type))
@@ -51,7 +55,7 @@
 %>
 <div class="list-group-item">
     <label>
-        <input id="<%=h(flag.getFlag())%>" type="checkbox" <%=checked(flag.isEnabled())%>>
+        <input id="<%=h(flag.getFlag())%>" type="checkbox"<%=checked(flag.isEnabled())%><%=disabled(!hasAdminOpsPerms)%>>
         <span class="toggle-label-text"><%=h(flag.getTitle())%></span>
     </label>
     <div class="list-group-item-text"><%=h(flag.getDescription())%></div>

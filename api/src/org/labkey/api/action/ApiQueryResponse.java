@@ -207,7 +207,6 @@ public class ApiQueryResponse implements ApiResponse
 
                 }
             }
-            writer.endResponse();
         }
         catch (Exception ex)
         {
@@ -215,6 +214,7 @@ public class ApiQueryResponse implements ApiResponse
         }
         finally
         {
+            writer.endResponse();
             writer.close();
         }
     }

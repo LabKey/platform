@@ -743,7 +743,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         {
             ValidationException exception = updateDomainDescriptor(original, update, container, user);
 
-            QueryService.get().saveCalculatedFieldsMetadata("study", update.getQueryName(), hasNameChange ? datasetProperties.getName() : null, update.getCalculatedFields(), false, user, container);
+            QueryService.get().saveCalculatedFieldsMetadata("study", update.getQueryName(), hasNameChange ? datasetProperties.getName() : null, update.getCalculatedFields(), !original.getCalculatedFields().isEmpty(), user, container);
 
             if (!exception.hasErrors() && def != null)
                 exception = updateDataset(datasetProperties, original.getDomainURI(), exception, study, container, user, def);

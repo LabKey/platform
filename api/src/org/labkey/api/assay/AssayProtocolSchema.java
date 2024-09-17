@@ -50,6 +50,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.query.ExpExperimentTable;
 import org.labkey.api.exp.query.ExpQCFlagTable;
 import org.labkey.api.exp.query.ExpRunTable;
@@ -365,6 +366,8 @@ public abstract class AssayProtocolSchema extends AssaySchema implements UserSch
         defaultCols.add(FieldKey.fromParts(ExpExperimentTable.Column.Name));
         defaultCols.add(FieldKey.fromParts(ExpExperimentTable.Column.CreatedBy));
         defaultCols.add(FieldKey.fromParts(ExpExperimentTable.Column.RunCount));
+        List<FieldKey> calculatedFieldKeys = DomainUtil.getCalculatedFieldsForDefaultView(result);
+        defaultCols.addAll(calculatedFieldKeys);
         result.setDefaultVisibleColumns(defaultCols);
 
         Domain batchDomain = provider.getBatchDomain(protocol);
@@ -428,6 +431,9 @@ public abstract class AssayProtocolSchema extends AssaySchema implements UserSch
         List<FieldKey> visibleColumns = new ArrayList<>(runTable.getDefaultVisibleColumns());
         visibleColumns.remove(FieldKey.fromParts(ExpRunTable.Column.Protocol));
         visibleColumns.remove(FieldKey.fromParts(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME));
+
+        List<FieldKey> calculatedFieldKeys = DomainUtil.getCalculatedFieldsForDefaultView(runTable);
+        visibleColumns.addAll(calculatedFieldKeys);
 
         // Add the batch column, but replace the lookup with one to the assay's Batches table.
         var batchColumn = runTable.addColumn(AssayService.BATCH_COLUMN_NAME, ExpRunTable.Column.Batch);
