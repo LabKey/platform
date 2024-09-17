@@ -67,7 +67,9 @@ import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
+import org.labkey.api.settings.AdminConsole.OptionalFeatureFlag;
 import org.labkey.api.settings.OptionalFeatureService;
+import org.labkey.api.settings.OptionalFeatureService.FeatureType;
 import org.labkey.api.specimen.SpecimenSampleTypeDomainKind;
 import org.labkey.api.specimen.model.AdditiveTypeDomainKind;
 import org.labkey.api.specimen.model.DerivativeTypeDomainKind;
@@ -421,18 +423,18 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             "Merging of dataset that uses server-managed third key (such as GUID or auto RowId) is not officially supported. Unexpected outcome might be experienced when merge is performed.",
             false);
 
-        AdminConsole.addExperimentalFeatureFlag(Study.GWT_STUDY_DESIGN,
-            "Vaccine Study Protocol Editor",
+        AdminConsole.addOptionalFeatureFlag(new OptionalFeatureFlag(Study.GWT_STUDY_DESIGN,
+            "Restore vaccine study protocol editor",
             "The study protocol editor (accessed from the Vaccine Study Protocols webpart) has been deprecated and protocol " +
-            "information will be shown in a read only mode. The edit button can be shown by enabling this feature, " +
-            "but this capability will be removed permanently in a future release. " +
+            "information will be shown in read-only mode. The edit button can be shown by enabling this feature, " +
+            "but this option and all support for this study protocol editor will be removed in LabKey Server v24.12. " +
             "Please create any new study protocols in the format as defined by the \"Manage Study Products\" link on the study Manage tab.",
-            false);
+            false, false, FeatureType.Deprecated));
 
-        AdminConsole.addOptionalFeatureFlag(new AdminConsole.OptionalFeatureFlag(ENABLE_EXTERNAL_REPORT,
+        AdminConsole.addOptionalFeatureFlag(new OptionalFeatureFlag(ENABLE_EXTERNAL_REPORT,
             "Restore support for deprecated advanced reports",
             "This option and all support for advanced reports will be removed in LabKey Server v24.12.",
-            true, false, OptionalFeatureService.FeatureType.Deprecated));
+            true, false, FeatureType.Deprecated));
 
         ReportAndDatasetChangeDigestProvider.get().addNotificationInfoProvider(new DatasetNotificationInfoProvider());
 
