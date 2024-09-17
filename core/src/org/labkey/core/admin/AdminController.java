@@ -11647,12 +11647,6 @@ public class AdminController extends SpringActionController
                 new ShowAdminAction()
             );
 
-            // @AdminConsoleAction
-            // @RequiresPermission(AdminOperationsPermission.class)
-            assertForAdminOperationsPermission(ContainerManager.getRoot(), user,
-                controller.new OptionalFeaturesAction()
-            );
-
             // @RequiresSiteAdmin
             assertForRequiresSiteAdmin(user,
                 controller.new EnvironmentVariablesAction(),
@@ -11664,6 +11658,7 @@ public class AdminController extends SpringActionController
             );
 
             assertForTroubleshooterPermission(ContainerManager.getRoot(), user,
+                controller.new OptionalFeaturesAction(),
                 controller.new ShowModuleErrorsAction(),
                 new ModuleStatusAction()
             );
