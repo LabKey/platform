@@ -28,43 +28,41 @@ export const ImageAndFileAttachmentForm: FC<ImgFileAttachFormProps> = memo(props
     const img = <img className={imageClassName} src={imageUrl} onError={onError} alt="Sign in" />;
 
     return (
-        <>
-            <div className="auth-config-input-row">
-                <div className="auth-config-input-row__caption">{text}</div>
+        <div className="auth-config-input-row sso-logo-pane-container">
+            <div className="auth-config-input-row__caption sso-fields-label">{text}</div>
 
-                {canEdit ? (
-                    <>
-                        {imageUrl && (
-                            <div className="sso-fields__image-holder">
-                                {img}
-                                <div className="sso-fields__delete-img-icon" onClick={onDelete}>
-                                    <span className="fa fa-times-circle sso-fields__delete-img clickable" />
-                                </div>
+            {canEdit ? (
+                <>
+                    {imageUrl && (
+                        <div className="sso-fields__image-holder">
+                            {img}
+                            <div className="sso-fields__delete-img-icon" onClick={onDelete}>
+                                <span className="fa fa-times-circle sso-fields__delete-img clickable" />
                             </div>
-                        )}
+                        </div>
+                    )}
 
-                        {!imageUrl && (
-                            <div className="sso-fields__file-attachment" id={fileTitle}>
-                                <FileAttachmentForm
-                                    index={index}
-                                    showLabel={false}
-                                    allowMultiple={false}
-                                    allowDirectories={false}
-                                    acceptedFormats=".jpg,.jpeg,.png,.gif,.tif"
-                                    showAcceptedFormats={false}
-                                    compact={true}
-                                    onFileChange={onChange}
-                                />
-                            </div>
-                        )}
-                    </>
-                ) : (
-                    <div className="sso-fields__image-holder--view-only">
-                        {imageUrl && img}
-                    </div>
-                )}
-            </div>
-        </>
+                    {!imageUrl && (
+                        <div className="sso-fields__file-attachment" id={fileTitle}>
+                            <FileAttachmentForm
+                                index={index}
+                                showLabel={false}
+                                allowMultiple={false}
+                                allowDirectories={false}
+                                acceptedFormats=".jpg,.jpeg,.png,.gif,.tif"
+                                showAcceptedFormats={false}
+                                compact={true}
+                                onFileChange={onChange}
+                            />
+                        </div>
+                    )}
+                </>
+            ) : (
+                <div className="sso-fields__image-holder--view-only">
+                    {imageUrl && img}
+                </div>
+            )}
+        </div>
     );
 });
 

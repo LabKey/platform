@@ -192,7 +192,7 @@ export const SmallFileUpload: FC<SmallFileInputProps> = props => {
     const onFileRemoval = useCallback(() => props.onFileRemoval(name), [name, props.onFileRemoval]);
 
     return (
-        <div className="auth-config-input-row">
+        <div className="auth-config-input-row file-upload-field">
             <span className="auth-config-input-row__caption">
                 {caption}
                 {description && (
