@@ -834,6 +834,15 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     public void save(User user, boolean skipCleanUpTasks /* index and cache might have been called explicitly in a postcommit task*/)
     {
         boolean isNew = _object.getRowId() == 0;
+
+        //Issue 51024: When materialLSIDprefix is set via XAR, naming collisions can happen
+        if (isNew)
+        {
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("MaterialLSIDPrefix"), getMaterialLSIDPrefix());
+            if (new TableSelector(ExperimentServiceImpl.get().getTinfoSampleType(), filter, null).exists())
+                throw new RuntimeException("Duplicate 'MaterialLSIDPrefix' found: " + getMaterialLSIDPrefix());
+        }
+
         save(user, ExperimentServiceImpl.get().getTinfoSampleType(), true);
         if (isNew)
         {
