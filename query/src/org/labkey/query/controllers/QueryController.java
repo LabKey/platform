@@ -3444,7 +3444,7 @@ public class QueryController extends SpringActionController
             if (null != StringUtils.trimToNull(form.getViewName()) &&
                     null == view.getQueryDef().getCustomView(getUser(), getViewContext().getRequest(), form.getViewName()))
             {
-                throw new NotFoundException("The requested view does not exist for this user!");
+                throw new NotFoundException("The requested view does not exist for this user: " + form.getViewName() + ".");
             }
 
             TableInfo t = view.getTable();
