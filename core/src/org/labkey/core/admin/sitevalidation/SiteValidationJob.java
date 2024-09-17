@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;
@@ -37,8 +39,9 @@ public class SiteValidationJob extends PipelineJob
     @Override
     public URLHelper getStatusHref()
     {
+        PipelineStatusFile statusFile = PipelineService.get().getStatusFile(getJobGUID());
         return new ActionURL(ViewValidationResultsAction.class, getContainer())
-            .addParameter("fileName", getResultsFileName());
+            .addParameter("rowId", statusFile.getRowId());
     }
 
     @Override

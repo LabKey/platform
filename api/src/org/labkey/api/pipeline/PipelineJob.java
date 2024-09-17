@@ -358,7 +358,7 @@ abstract public class PipelineJob extends Job implements Serializable
 
     /**
      * This job has been restored from a checkpoint for the purpose of
-     * a retry.  Record retry information before it is checkpointed again.
+     * a retry. Record retry information before it is checkpointed again.
      */
     public void retryUpdate()
     {
