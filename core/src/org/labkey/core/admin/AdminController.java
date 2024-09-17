@@ -430,8 +430,8 @@ public class AdminController extends SpringActionController
         // Configuration
         AdminConsole.addLink(Configuration, "authentication", urlProvider(LoginUrls.class).getConfigureURL());
         AdminConsole.addLink(Configuration, "email customization", new ActionURL(CustomizeEmailAction.class, root), AdminPermission.class);
-        AdminConsole.addLink(Configuration, "deprecated features", new ActionURL(OptionalFeaturesAction.class, root).addParameter("type", FeatureType.Deprecated.name()), AdminOperationsPermission.class);
-        AdminConsole.addLink(Configuration, "experimental features", new ActionURL(OptionalFeaturesAction.class, root).addParameter("type", FeatureType.Experimental.name()), AdminOperationsPermission.class);
+        AdminConsole.addLink(Configuration, "deprecated features", new ActionURL(OptionalFeaturesAction.class, root).addParameter("type", FeatureType.Deprecated.name()), TroubleshooterPermission.class);
+        AdminConsole.addLink(Configuration, "experimental features", new ActionURL(OptionalFeaturesAction.class, root).addParameter("type", FeatureType.Experimental.name()), TroubleshooterPermission.class);
         if (!ProductRegistry.getProducts().isEmpty())
             AdminConsole.addLink(Configuration, "product configuration", new ActionURL(ProductConfigurationAction.class, root), AdminOperationsPermission.class);
         // TODO move to FileContentModule
@@ -9246,8 +9246,7 @@ public class AdminController extends SpringActionController
         }
     }
 
-    @AdminConsoleAction
-    @RequiresPermission(AdminOperationsPermission.class)
+    @RequiresPermission(TroubleshooterPermission.class)
     public class OptionalFeaturesAction extends SimpleViewAction<OptionalFeaturesForm>
     {
         private FeatureType _type;
@@ -11648,12 +11647,6 @@ public class AdminController extends SpringActionController
                 new ShowAdminAction()
             );
 
-            // @AdminConsoleAction
-            // @RequiresPermission(AdminOperationsPermission.class)
-            assertForAdminOperationsPermission(ContainerManager.getRoot(), user,
-                controller.new OptionalFeaturesAction()
-            );
-
             // @RequiresSiteAdmin
             assertForRequiresSiteAdmin(user,
                 controller.new EnvironmentVariablesAction(),
@@ -11665,6 +11658,7 @@ public class AdminController extends SpringActionController
             );
 
             assertForTroubleshooterPermission(ContainerManager.getRoot(), user,
+                controller.new OptionalFeaturesAction(),
                 controller.new ShowModuleErrorsAction(),
                 new ModuleStatusAction()
             );
