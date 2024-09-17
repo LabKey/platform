@@ -41,6 +41,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TimeZone;
 
 /**
@@ -1092,12 +1093,21 @@ public enum PropertyType
     @NotNull
     public static PropertyType getFromJdbcType(JdbcType jdbcType)
     {
+        return Objects.requireNonNull(getFromJdbcType(jdbcType, true));
+    }
+
+    @Nullable
+    public static PropertyType getFromJdbcType(JdbcType jdbcType, boolean throwIfNotFound)
+    {
         for (PropertyType t : values())
         {
             if (t.jdbcType.equals(jdbcType))
                 return t;
         }
-        throw new IllegalArgumentException("No such JdbcType mapping: " + (null != jdbcType ? jdbcType.getClass().toString() : "null"));
+        if (throwIfNotFound)
+            throw new IllegalArgumentException("No such JdbcType mapping: " + (null != jdbcType ? jdbcType.getClass().toString() : "null"));
+        else
+            return null;
     }
 
     @Nullable

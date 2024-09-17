@@ -16,6 +16,8 @@
 
 package org.labkey.api.action;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.DynaBean;
@@ -59,8 +61,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -183,7 +183,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
 
 
     @Override
-    public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws Exception
+    public ModelAndView handleRequest(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response) throws Exception
     {
         if (null == getPropertyValues())
             setProperties(new ServletRequestParameterPropertyValues(request));
@@ -285,11 +285,11 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
     }
 
 
-    protected Object newInstance(Class c)
+    protected Object newInstance(Class<?> c)
     {
         try
         {
-            return c == null ? null : c.newInstance();
+            return c == null ? null : c.getConstructor().newInstance();
         }
         catch (Exception x)
         {
