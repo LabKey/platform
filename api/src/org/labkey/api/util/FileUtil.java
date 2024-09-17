@@ -1512,7 +1512,7 @@ quickScan:
     public static FileObject createTempDirectoryFileObject(@Nullable String prefix) throws IOException
     {
         Path path = Files.createTempDirectory(prefix).toAbsolutePath();
-        return AuthorizedFileSystem.create(path, true, true).getRoot();
+        return AuthorizedFileSystem.create(path, AuthorizedFileSystem.Mode.Read_Write).getRoot();
     }
 
     public static boolean deleteTempDirectoryFileObject(@NotNull FileObject fileObject) throws IOException

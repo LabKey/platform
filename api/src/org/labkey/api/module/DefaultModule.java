@@ -16,6 +16,9 @@
 package org.labkey.api.module;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.logging.log4j.LogManager;
@@ -70,9 +73,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.web.servlet.mvc.Controller;
 
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -1206,7 +1206,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
             if (f.isDirectory())
                 l.add(f);
         }
-        return l.stream().map(f -> AuthorizedFileSystem.create(f,true,false).getRoot()).toList();
+        return l.stream().map(f -> AuthorizedFileSystem.create(f, AuthorizedFileSystem.Mode.Read).getRoot()).toList();
     }
 
     File _resourceDirectory;

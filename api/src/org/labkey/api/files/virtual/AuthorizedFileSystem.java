@@ -56,13 +56,32 @@ public class AuthorizedFileSystem extends AbstractFileSystem
     final boolean _allowRead;
     final boolean _allowWrite;
 
-    public static AuthorizedFileSystem create(File f, boolean read, boolean write)
+    public enum Mode
+    {
+        Read(true, false),
+        Write(false, true),
+        Read_Write(true, true);
+
+        private final boolean _canRead;
+        private final boolean _canWrite;
+
+        Mode(boolean canRead, boolean canWrite)
+        {
+            _canRead = canRead;
+            _canWrite = canWrite;
+        }
+
+        boolean canRead() {return _canRead;}
+        boolean canWrite() {return _canWrite;}
+    }
+
+    public static AuthorizedFileSystem create(File f, Mode mode)
     {
         if (!f.isAbsolute())
             throw new IllegalArgumentException(f + " is not absolute");
         try
         {
-            return new AuthorizedFileSystem(VFS.getManager().resolveFile(f.toURI()), read, write);
+            return new AuthorizedFileSystem(VFS.getManager().resolveFile(f.toURI()), mode);
         }
         catch (FileSystemException e)
         {
@@ -70,14 +89,13 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         }
     }
 
-
-    public static AuthorizedFileSystem create(Path path, boolean read, boolean write)
+    public static AuthorizedFileSystem create(Path path, Mode mode)
     {
         if (!path.isAbsolute())
             throw new IllegalArgumentException(path + " is not absolute");
         try
         {
-            return new AuthorizedFileSystem(VFS.getManager().resolveFile("file://" + path), read, write);
+            return new AuthorizedFileSystem(VFS.getManager().resolveFile("file://" + path), mode);
         }
         catch (FileSystemException e)
         {
@@ -90,7 +108,7 @@ public class AuthorizedFileSystem extends AbstractFileSystem
     {
         if (src._allowRead && !src._allowWrite)
             return src;
-        return new AuthorizedFileSystem(src._rootInnerFileObject, true, false);
+        return new AuthorizedFileSystem(src._rootInnerFileObject, Mode.Read);
     }
 
 
@@ -98,11 +116,11 @@ public class AuthorizedFileSystem extends AbstractFileSystem
     {
         if (src._allowRead && src._allowWrite)
             return src;
-        return new AuthorizedFileSystem(src._rootInnerFileObject, true, true);
+        return new AuthorizedFileSystem(src._rootInnerFileObject, Mode.Read_Write);
     }
 
 
-    private AuthorizedFileSystem(FileObject wrappedFileObjectRoot, boolean read, boolean write)
+    private AuthorizedFileSystem(FileObject wrappedFileObjectRoot, Mode mode)
     {
         super(new VirtualFileName(SCHEME, "/", FileType.FOLDER), null, null);
         try
@@ -117,8 +135,8 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         _rootInnerFileObject = wrappedFileObjectRoot;
         _rootWrapperFileObject = wrapFileObject(_rootInnerFileObject);
         _wrappedFileSystem = wrappedFileObjectRoot.getFileSystem();
-        _allowRead = read;
-        _allowWrite = write;
+        _allowRead = mode.canRead();
+        _allowWrite = mode.canWrite();
     }
 
     public FileObject getInnerFileObject()

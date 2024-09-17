@@ -121,7 +121,7 @@ public class FileSystemResource extends AbstractWebdavResource
         _name = name.toString();
         setSecurableResource(resource);
         // NOTE: we don't have a user yet, so we don't know if the user has write permissions (assuming read)
-        FileObject root = AuthorizedFileSystem.create(FileUtil.getAbsoluteCaseSensitiveFile(file), true, false).getRoot();
+        FileObject root = AuthorizedFileSystem.create(FileUtil.getAbsoluteCaseSensitiveFile(file), AuthorizedFileSystem.Mode.Read).getRoot();
         _files = Collections.singletonList(new FileInfo(root));
     }
 
@@ -151,7 +151,7 @@ public class FileSystemResource extends AbstractWebdavResource
         this(path);
         setSecurableResource(resource);
         // NOTE: we don't have a user yet, so we're can't limit to read-only
-        FileObject root = AuthorizedFileSystem.create(FileUtil.getAbsoluteCaseSensitiveFile(file), true, false).getRoot();
+        FileObject root = AuthorizedFileSystem.create(FileUtil.getAbsoluteCaseSensitiveFile(file), AuthorizedFileSystem.Mode.Read).getRoot();
         _files = Collections.singletonList(new FileInfo(root));
     }
 

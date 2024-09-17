@@ -1646,7 +1646,6 @@ public class AdminController extends SpringActionController
 
             if (!htmlFile.exists())
                 throw new NotFoundException("Results file not found");
-
             return new HtmlView(HtmlString.unsafe(PageFlowUtil.getFileContentsAsString(htmlFile)));
         }
 
