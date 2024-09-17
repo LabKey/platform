@@ -1058,7 +1058,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
             if (!errors.hasErrors())
             {
-                QueryService.get().saveCalculatedFieldsMetadata(SamplesSchema.SCHEMA_NAME, update.getQueryName(), hasNameChange ? newName : null, update.getCalculatedFields(), false, user, container);
+                QueryService.get().saveCalculatedFieldsMetadata(SamplesSchema.SCHEMA_NAME, update.getQueryName(), hasNameChange ? newName : null, update.getCalculatedFields(), !original.getCalculatedFields().isEmpty(), user, container);
 
                 if (hasNameChange)
                     ExperimentService.get().addObjectLegacyName(st.getObjectId(), ExperimentServiceImpl.getNamespacePrefix(ExpSampleType.class), oldSampleTypeName, user);

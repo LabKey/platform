@@ -1,5 +1,4 @@
 import { reorder, isEquivalent, addOrUpdateAnAuthConfig } from './utils'
-import {ActionURL} from "@labkey/api";
 
 describe('Utils', () => {
     test('reorder', () => {
