@@ -1037,7 +1037,7 @@ public class NameGenerator
                         hasDateBasedSampleCounterFormat = true;
                 }
 
-                String sTok = token.toString().toLowerCase();
+                String sTok = QueryKey.decodePart(token.toString()).toLowerCase();
                 if (isParentInput(sTok, importAliases, _currentDataTypeName, _container, user))
                 {
                     isParentPart = true;
@@ -2390,6 +2390,9 @@ public class NameGenerator
                 expression = expression.replaceAll(ANCESTOR_INPUT_PREFIX_DATA.replace("[", "\\["), ANCESTOR_INPUT_PREFIX_DATA_NOSLASH);
             }
 
+            expression = expression.replaceAll("%", "%25");
+            expression = expression.replaceAll("[+]", "%2B");
+
             return super.parsePart(expression);
         }
 
@@ -2543,7 +2546,7 @@ public class NameGenerator
         public CounterExpressionPart(String expression, int startIndex, String counterFormatStr, boolean strictIncremental, Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix)
         {
             _prefixExpression = expression;
-            _parsedNameExpression = FieldKeyStringExpression.create(expression, false, StringExpressionFactory.AbstractStringExpression.NullValueBehavior.ReplaceNullWithBlank, true);
+            _parsedNameExpression = NameGenerationExpression.create(expression, false, NullValueBehavior.ReplaceNullWithBlank, true, container, null, null, false);
             _startIndex = startIndex;
             _strictIncremental = strictIncremental;
             _container = container;

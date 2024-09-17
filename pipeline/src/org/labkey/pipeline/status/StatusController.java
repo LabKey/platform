@@ -89,12 +89,10 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
-import java.util.Collection;
 import java.util.Date;
 import java.util.Set;
 import java.util.TreeSet;
 
-import static java.util.Collections.singleton;
 import static org.labkey.pipeline.api.PipelineStatusManager.cancelStatus;
 import static org.labkey.pipeline.api.PipelineStatusManager.completeStatus;
 import static org.labkey.pipeline.api.PipelineStatusManager.deleteStatus;
@@ -105,16 +103,9 @@ public class StatusController extends SpringActionController
 {
     private static final DefaultActionResolver _resolver = new DefaultActionResolver(StatusController.class);
 
-    protected static final String _newline = System.getProperty("line.separator");
-
     private void reject(Errors errors, String message)
     {
-        errors.reject(message);
-    }
-
-    private void reject(BindException errors, String message)
-    {
-        errors.reject(message);
+        errors.reject(ERROR_MSG, message);
     }
 
     public StatusController()
@@ -153,7 +144,7 @@ public class StatusController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class BeginAction extends SimpleRedirectAction
+    public static class BeginAction extends SimpleRedirectAction<Object>
     {
         @Override
         public ActionURL getRedirectURL(Object o)
@@ -397,7 +388,7 @@ public class StatusController extends SpringActionController
             if (_statusFile == null)
                 throw new NotFoundException("Could not find status file for rowId " + form.getRowId());
 
-            if (!_statusFile.lookupContainer().equals(getContainer()))
+            if (!getContainer().equals(_statusFile.lookupContainer()))
             {
                 ActionURL url = getViewContext().cloneActionURL();
                 url.setContainer(_statusFile.lookupContainer());
@@ -532,13 +523,12 @@ public class StatusController extends SpringActionController
         }
     }
 
-
     public static ActionURL urlShowFile(Container c, int rowId, String filename, boolean download)
     {
         return new ActionURL(ShowFileAction.class, c)
-                .addParameter(RowIdForm.Params.rowId, Integer.toString(rowId))
-                .addParameter(ShowFileForm.Params.filename, filename)
-                .addParameter(ShowFileForm.Params.download, download);
+            .addParameter(RowIdForm.Params.rowId, Integer.toString(rowId))
+            .addParameter(ShowFileForm.Params.filename, filename)
+            .addParameter(ShowFileForm.Params.download, download);
     }
 
     @RequiresPermission(ReadPermission.class)
@@ -557,7 +547,7 @@ public class StatusController extends SpringActionController
             {
                 fileName = form.getFilename();
 
-                if (fileName != null && fileName.length() != 0)
+                if (fileName != null && !fileName.isEmpty())
                 {
                     Path fileStatus = FileUtil.getPath(getContainer(), FileUtil.createUri(sf.getFilePath()));
                     String statusName = fileStatus.getFileName().toString();
@@ -618,13 +608,13 @@ public class StatusController extends SpringActionController
             while ((line = br.readLine()) != null)
             {
                 out.write(line);
-                out.write(_newline);
+                out.write(System.lineSeparator());
             }
         }
         catch (IOException e)
         {
             out.write("...Error reading file...");
-            out.write(_newline);
+            out.write(System.lineSeparator());
         }
     }
 
@@ -1061,7 +1051,7 @@ public class StatusController extends SpringActionController
 
             // @RequiresPermission(ReadPermission.class)
             assertForReadPermission(user, false,
-                controller.new BeginAction(),
+                new BeginAction(),
                 controller.new ShowListAction(),
                 controller.new ShowListRegionAction(),
                 controller.new ShowPartRegionAction(),

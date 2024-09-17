@@ -240,11 +240,25 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
             if (!prop.isHidden())
                 visibleColumns.add(FieldKey.fromParts("Run", prop.getName()));
         }
+        TableInfo runTable = schema.getTable(AssayProtocolSchema.RUNS_TABLE_NAME);
+        if (runTable != null)
+        {
+            calculatedFieldKeys = DomainUtil.getCalculatedFieldsForDefaultView(runTable);
+            for (FieldKey calculatedFieldKey : calculatedFieldKeys)
+                visibleColumns.add(FieldKey.fromParts("Run", calculatedFieldKey.getName()));
+        }
 
         for (DomainProperty prop : _provider.getBatchDomain(_protocol).getProperties())
         {
             if (!prop.isHidden())
                 visibleColumns.add(FieldKey.fromParts("Run", AssayService.BATCH_COLUMN_NAME, prop.getName()));
+        }
+        TableInfo batchTable = schema.getTable(AssayProtocolSchema.BATCHES_TABLE_NAME);
+        if (batchTable != null)
+        {
+            calculatedFieldKeys = DomainUtil.getCalculatedFieldsForDefaultView(batchTable);
+            for (FieldKey calculatedFieldKey : calculatedFieldKeys)
+                visibleColumns.add(FieldKey.fromParts("Run", AssayService.BATCH_COLUMN_NAME, calculatedFieldKey.getName()));
         }
 
         // add any QC filter conditions if applicable
