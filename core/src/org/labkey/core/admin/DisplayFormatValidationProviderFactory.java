@@ -6,6 +6,8 @@ import org.labkey.api.admin.sitevalidation.SiteValidationProviderFactory;
 import org.labkey.api.admin.sitevalidation.SiteValidationResultList;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 
 public class DisplayFormatValidationProviderFactory implements SiteValidationProviderFactory
 {
@@ -40,7 +42,14 @@ public class DisplayFormatValidationProviderFactory implements SiteValidationPro
                 SiteValidationResultList results = new SiteValidationResultList();
                 _analyzer.handle(container, u, (c, type, format, contextProvider) -> {
                     DisplayFormatAnalyzer.DisplayFormatContext context = contextProvider.get();
-                    results.addWarn(context.message() + ": " + format, context.url());
+                    results.addWarn(
+                        HtmlStringBuilder.of(context.message() + ": ")
+                            .append(HtmlString.unsafe("<i>"))
+                            .append(format)
+                            .append(HtmlString.unsafe("</i>"))
+                            .getHtmlString(),
+                        context.url()
+                    );
                 });
 
                 return results.nullIfEmpty();

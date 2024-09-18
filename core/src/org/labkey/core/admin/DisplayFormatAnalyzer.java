@@ -30,6 +30,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -112,6 +113,7 @@ public class DisplayFormatAnalyzer
         List<QueryException> errors = new ArrayList<>();
         _queryCandidatesMap.get(c).stream()
             .map(candidate -> _queryService.getQueryDef(user, c, candidate.schemaName, candidate.queryName))
+            .filter(Objects::nonNull)
             .forEach(definition -> {
                 TablesDocument doc = definition.getMetadataTablesDocument();
                 if (doc != null)

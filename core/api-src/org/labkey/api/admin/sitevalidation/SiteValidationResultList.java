@@ -16,6 +16,8 @@
 package org.labkey.api.admin.sitevalidation;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.admin.sitevalidation.SiteValidationResult.Level;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.view.ActionURL;
 
 import java.util.ArrayList;
@@ -28,12 +30,19 @@ public class SiteValidationResultList
 {
     private final List<SiteValidationResult> results = new ArrayList<>();
 
-    public SiteValidationResult addResult(SiteValidationResult.Level level, String message)
+    // TODO: Add more HtmlString taking addResult() methods.
+
+    public SiteValidationResult addResult(Level level, String message)
     {
         return addResult(level, message, null);
     }
 
-    public SiteValidationResult addResult(SiteValidationResult.Level level, String message, ActionURL link)
+    public SiteValidationResult addResult(Level level, String message, ActionURL link)
+    {
+        return addResult(level, HtmlString.of(message), link);
+    }
+
+    public SiteValidationResult addResult(Level level, HtmlString message, ActionURL link)
     {
         SiteValidationResult result = level.create(message, link);
         results.add(result);
@@ -47,7 +56,7 @@ public class SiteValidationResultList
 
     public SiteValidationResult addInfo(String message, ActionURL link)
     {
-        return addResult(SiteValidationResult.Level.INFO, message, link);
+        return addResult(Level.INFO, message, link);
     }
 
     public SiteValidationResult addWarn(String message)
@@ -57,7 +66,12 @@ public class SiteValidationResultList
 
     public SiteValidationResult addWarn(String message, ActionURL link)
     {
-        return addResult(SiteValidationResult.Level.WARN, message, link);
+        return addWarn(HtmlString.of(message), link);
+    }
+
+    public SiteValidationResult addWarn(HtmlString message, ActionURL link)
+    {
+        return addResult(Level.WARN, message, link);
     }
 
     public SiteValidationResult addError(String message)
@@ -67,7 +81,7 @@ public class SiteValidationResultList
 
     public SiteValidationResult addError(String message, ActionURL link)
     {
-        return addResult(SiteValidationResult.Level.ERROR, message, link);
+        return addResult(Level.ERROR, message, link);
     }
 
     public List<SiteValidationResult> getResults()
@@ -75,7 +89,7 @@ public class SiteValidationResultList
         return getResults(null);
     }
 
-    public List<SiteValidationResult> getResults(@Nullable SiteValidationResult.Level level)
+    public List<SiteValidationResult> getResults(@Nullable Level level)
     {
         if (null == level)
             return results;

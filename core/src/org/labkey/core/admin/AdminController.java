@@ -4460,7 +4460,7 @@ public class AdminController extends SpringActionController
                                 .unsafeAppend("</b><br<ul style=\"list-style: none;\">");
                             for (var r : results)
                             {
-                                HtmlString item = isBlank(r.getMessage()) ? NBSP : HtmlString.of(r.getMessage());
+                                HtmlString item = r.getMessage().isEmpty() ? NBSP : r.getMessage();
                                 contentBuilder.unsafeAppend("<li>")
                                     .append(item)
                                     .unsafeAppend("</li>\n");

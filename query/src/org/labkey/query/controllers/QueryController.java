@@ -560,7 +560,7 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public ActionURL urlCreateExcelTemplate(Container c, String schemaName, String queryName)
+        public @NotNull ActionURL urlCreateExcelTemplate(Container c, String schemaName, String queryName)
         {
             return new ActionURL(ExportExcelTemplateAction.class, c)
                 .addParameter(QueryParam.schemaName, schemaName)

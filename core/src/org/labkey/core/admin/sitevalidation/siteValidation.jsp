@@ -106,7 +106,7 @@
                                 {
 %>
                                     <li>
-                                        <%=h(result.getMessage())%>
+                                        <%=result.getMessage()%>
 <%
                                     if (null != result.getLink())
                                     {
@@ -129,7 +129,7 @@
                                         {
 %>
                                             <li>
-                                        <span class="labkey-error"><%=h(result.getMessage())%></span>
+                                        <span class="labkey-error"><%=result.getMessage()%></span>
 <%
                                             if (null != result.getLink())
                                             {
@@ -156,7 +156,7 @@
                                         {
 %>
                                                     <li>
-                                        <%=h(result.getMessage())%>
+                                        <%=result.getMessage()%>
 <%
                                             if (null != result.getLink())
                                             {
@@ -250,7 +250,7 @@
                                     for (SiteValidationResult result : containerInfos)
                                     {
 %>
-                                    <li><%=h(result.getMessage())%>
+                                    <li><%=result.getMessage()%>
                                         <% if (null != result.getLink()) { %>
                                         <span><%=link(LINK_HEADING, result.getLink())%></span>
                                         <% } %>
@@ -260,7 +260,7 @@
                                     <li>Errors:
                                         <ul>
                                         <% for (SiteValidationResult result : containerErrors) { %>
-                                            <li><span class="labkey-error"><%=h(result.getMessage())%></span>
+                                            <li><span class="labkey-error"><%=result.getMessage()%></span>
                                             <% if (null != result.getLink()) { %>
                                             <span><%=link(LINK_HEADING, result.getLink())%></span>
                                             <% } %>
@@ -277,7 +277,7 @@
                                         <ul>
                                         <%  for (SiteValidationResult result : containerWarnings)
                                             { %>
-                                        <li><%=h(result.getMessage())%>
+                                        <li><%=result.getMessage()%>
                                             <% if (null != result.getLink()) { %>
                                             <span><%=link(LINK_HEADING, result.getLink())%></span>
                                             <% } %>
