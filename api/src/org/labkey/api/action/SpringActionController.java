@@ -106,8 +106,7 @@ import static org.labkey.api.view.template.PageConfig.Template.Dialog;
 
 /**
  * CONSIDER using DispatchServlet instead of Controller here, or perhaps make the Module expose a DispatchServlet
- *
- * This class acts pretty much as DispatchServlet.  However, it does not follow all the rules/conventions of DispatchServlet.
+ * This class acts pretty much as DispatchServlet. However, it does not follow all the rules/conventions of DispatchServlet.
  * Whenever a discrepancy is found that someone cares about, please go ahead and make a change in the direction of better
  * compatibility.
  */
@@ -340,7 +339,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
     private ModelAndView handleBadRequestException(HttpServletRequest request, HttpServletResponse response, Controller controller, BadRequestException x) throws Exception
    {
-       // TODO: we are assuming that all ApiActions respond with JSON and all !ApiAction respond HTML.  Would be better to be explicit.
+       // TODO: we are assuming that all ApiActions respond with JSON and all !ApiAction respond HTML. Would be better to be explicit.
        boolean jsonResponse = controller instanceof BaseApiAction;
        boolean textResponse = controller instanceof ExportAction;
        boolean htmlWrappedJson = !"XMLHttpRequest".equals(request.getHeader("X-Requested-With" )); // might be hidden form post (e.g. Ext)

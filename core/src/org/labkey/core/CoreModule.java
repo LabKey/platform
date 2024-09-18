@@ -226,6 +226,7 @@ import org.labkey.core.admin.miniprofiler.MiniProfilerController;
 import org.labkey.core.admin.sitevalidation.SiteValidationServiceImpl;
 import org.labkey.core.admin.sql.SqlScriptController;
 import org.labkey.core.admin.test.SchemaXMLTestCase;
+import org.labkey.core.admin.test.UnknownSchemasTest;
 import org.labkey.core.admin.usageMetrics.UsageMetricsServiceImpl;
 import org.labkey.core.admin.writer.FolderSerializationRegistryImpl;
 import org.labkey.core.admin.writer.FolderTypeWriterFactory;
@@ -1389,6 +1390,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             SqlDialect.DialectTestCase.class,
             SqlScriptController.TestCase.class,
             TableViewFormTestCase.class,
+            UnknownSchemasTest.class,
             UserController.TestCase.class
         );
 
