@@ -16,6 +16,7 @@
 
 package org.labkey.api.qc;
 
+import org.apache.commons.vfs2.FileObject;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.property.DomainProperty;
@@ -37,7 +38,7 @@ public interface TransformResult
 
     Map<DomainProperty, String> getBatchProperties();
 
-    List<File> getUploadedFiles();
+    List<FileObject> getUploadedFiles();
 
     String getAssayId();
 

@@ -15,6 +15,7 @@
  */
 package org.labkey.api.reader;
 
+import org.apache.commons.vfs2.FileObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
@@ -61,4 +62,9 @@ public interface DataLoaderService
     DataLoader createLoader(Resource r, boolean hasColumnHeaders, Container mvIndicatorContainer, @Nullable FileType guessFormat) throws IOException;
 
     DataLoader createLoader(File file, String contentType, boolean hasColumnHeaders, Container mvIndicatorContainer, @Nullable FileType guessFormat) throws IOException;
+
+    default DataLoader createLoader(FileObject file, String contentType, boolean hasColumnHeaders, Container mvIndicatorContainer, @Nullable FileType guessFormat) throws IOException
+    {
+        return createLoader(file.getPath().toFile(), contentType, hasColumnHeaders, mvIndicatorContainer, guessFormat);
+    };
 }

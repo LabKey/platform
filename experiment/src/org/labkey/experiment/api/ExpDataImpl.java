@@ -17,6 +17,7 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.vfs2.FileObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -327,6 +328,12 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     public File getFile()
     {
         return _object.getFile();
+    }
+
+    @Override
+    public @Nullable FileObject getFileObject()
+    {
+        return _object.getFileObject();
     }
 
     @Override

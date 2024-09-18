@@ -15,6 +15,7 @@
  */
 package org.labkey.api.assay.pipeline;
 
+import org.apache.commons.vfs2.FileObject;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -63,13 +64,13 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
     private String _runComments;
     private Integer _runWorkflowTask;
     private ActionURL _actionURL;
-    private Map<String, File> _uploadedData;
+    private Map<String, FileObject> _uploadedData;
     /** propertyId -> value */
     private Map<Integer, String> _runPropertiesById;
     /** propertyId -> value */
     private Map<Integer, String> _batchPropertiesById;
     /** RowIds for all the domains associated with properties we need to remember */
-    private Set<Integer> _domainIds = new HashSet<>();
+    private final Set<Integer> _domainIds = new HashSet<>();
     private Integer _reRunId;
     private boolean _allowCrossRunFileInputs;
 
@@ -216,7 +217,7 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
         logger.info("----- Start Run Properties -----");
         logger.info("\tUploaded Files:");
 
-        for(Map.Entry<String, File> entry : getUploadedData().entrySet())
+        for(Map.Entry<String, FileObject> entry : getUploadedData().entrySet())
         {
             logger.info("\t\t* " + entry.getValue().getName());
         }
@@ -330,7 +331,7 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
 
     @NotNull
     @Override
-    public Map<String, File> getUploadedData()
+    public Map<String, FileObject> getUploadedData()
     {
         return _uploadedData;
     }

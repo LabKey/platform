@@ -1540,7 +1540,7 @@ public class PageFlowUtil
             return DOM.createHtml(A(id(id).cl("_helpPopup").at(tabindex,"-1", style, "cursor: help")
                 .data(width != 0, "popupwidth", width)
                 .data(isNotBlank(titleText),"popuptitle", titleText)
-                .data("popupcontent", helpHtml.toString()),
+                .data("popupcontent", helpHtml),
                 linkHtml));
         }
     }

@@ -16,6 +16,7 @@
 
 package org.labkey.api.qc;
 
+import org.apache.commons.vfs2.FileObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
@@ -37,7 +38,7 @@ public class DefaultTransformResult implements TransformResult
     private Map<ExpData, DataIteratorBuilder> _dataMap = Collections.emptyMap();
     private Map<DomainProperty, String> _batchProperties = Collections.emptyMap();
     private Map<DomainProperty, String> _runProperties = Collections.emptyMap();
-    private List<File> _uploadedFiles;
+    private List<FileObject> _uploadedFiles;
     private String _assayId;
     private String _comments;
     private HtmlString _warnings;
@@ -116,12 +117,12 @@ public class DefaultTransformResult implements TransformResult
     }
 
     @Override
-    public List<File> getUploadedFiles()
+    public List<FileObject> getUploadedFiles()
     {
         return _uploadedFiles;
     }
 
-    public void setUploadedFiles(List<File> uploadedFiles)
+    public void setUploadedFiles(List<FileObject> uploadedFiles)
     {
         _uploadedFiles = uploadedFiles;
     }

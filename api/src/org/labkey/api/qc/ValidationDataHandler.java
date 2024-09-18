@@ -15,6 +15,7 @@
  */
 package org.labkey.api.qc;
 
+import org.apache.commons.vfs2.FileObject;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.exp.ExperimentException;
@@ -38,5 +39,5 @@ public interface ValidationDataHandler
      * used to locate a data handler that can import data in the same tsv format into the DB. This would be the case when an external data transform script
      * is invoked to possibly modify uploaded data.
      */
-    Map<DataType, DataIteratorBuilder> getValidationDataMap(ExpData data, File dataFile, ViewBackgroundInfo info, Logger log, XarContext context, DataLoaderSettings settings) throws ExperimentException;
+    Map<DataType, DataIteratorBuilder> getValidationDataMap(ExpData data, FileObject dataFile, ViewBackgroundInfo info, Logger log, XarContext context, DataLoaderSettings settings) throws ExperimentException;
 }

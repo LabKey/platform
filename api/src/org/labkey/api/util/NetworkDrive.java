@@ -16,6 +16,8 @@
 package org.labkey.api.util;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.vfs2.FileObject;
+import org.apache.commons.vfs2.FileSystemException;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.pipeline.PipelineJobService;
@@ -126,6 +128,26 @@ public class NetworkDrive
             return true;
         ensureDrive(f.getPath());
         return f.exists();
+    }
+
+    /**
+     * @return whether the file exists, mounting the drive if needed
+     */
+    public static boolean exists(@Nullable FileObject f)
+    {
+        if (f == null)
+            return false;
+        try
+        {
+            if (f.exists())
+                return true;
+            ensureDrive(f.getPath().toString());
+            return f.exists();
+        }
+        catch (FileSystemException e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
     }
 
     /**

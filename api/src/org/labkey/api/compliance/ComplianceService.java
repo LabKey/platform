@@ -27,11 +27,14 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.column.ColumnInfoFilter;
 import org.labkey.api.query.column.ColumnInfoTransformer;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
+
+import java.util.stream.Stream;
 
 /**
  * ComplianceService: ALL METHODS MUST CHECK IF ComplianceModule is enabled in container (if appropriate); callers don't check
@@ -96,6 +99,8 @@ public interface ComplianceService
     TableInfo createTermsOfUseTable(UserSchema schema, ContainerFilter containerFilter);
 
     StringExpression getSnapshotDownloadUrlExpression(Container c);
+
+    Stream<Class<? extends Permission>> filterPermissions(User user, Stream<Class<? extends Permission>> permissions);
 
     class DefaultComplianceService implements ComplianceService
     {
@@ -176,6 +181,12 @@ public interface ComplianceService
         public StringExpression getSnapshotDownloadUrlExpression(Container c)
         {
             return null;
+        }
+
+        @Override
+        public Stream<Class<? extends Permission>> filterPermissions(User user, Stream<Class<? extends Permission>> permissions)
+        {
+            return permissions;
         }
     }
 }

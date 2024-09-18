@@ -18,6 +18,8 @@ package org.labkey.api.assay;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.vfs2.FileObject;
+import org.apache.commons.vfs2.FileSystemException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -150,8 +152,8 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         boolean importInBackground = forceAsync || (provider.isBackgroundUpload(protocol) && HttpView.hasCurrentView());
         if (!importInBackground)
         {
-            File primaryFile = context.getUploadedData().get(AssayDataCollector.PRIMARY_FILE);
-            run = AssayService.get().createExperimentRun(context.getName(), context.getContainer(), protocol, primaryFile);
+            FileObject primaryFile = context.getUploadedData().get(AssayDataCollector.PRIMARY_FILE);
+            run = AssayService.get().createExperimentRun(context.getName(), context.getContainer(), protocol, primaryFile.getPath().toFile());
             run.setComments(context.getComments());
             run.setWorkflowTaskId(context.getWorkflowTask());
 
@@ -189,7 +191,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             // Queue up a pipeline job to do the actual import in the background
             ViewBackgroundInfo info = new ViewBackgroundInfo(context.getContainer(), context.getUser(), context.getActionURL());
 
-            File primaryFile = context.getUploadedData().get(AssayDataCollector.PRIMARY_FILE);
+            FileObject primaryFile = context.getUploadedData().get(AssayDataCollector.PRIMARY_FILE);
             // Check if the primary file from the previous import is no longer present for a re-run
             if (primaryFile == null && !context.getUploadedData().isEmpty())
             {
@@ -203,7 +205,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 batch,
                 forceSaveBatchProps,
                 PipelineService.get().getPipelineRootSetting(context.getContainer()),
-                primaryFile
+                null==primaryFile ? null : primaryFile.getPath().toFile()
             );
 
             context.setPipelineJobGUID(pipelineJob.getJobGUID());
@@ -643,23 +645,30 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         // Inspect the uploaded files which will be added as outputs of the run
         if (context.isAllowCrossRunFileInputs())
         {
-            Map<String, File> files = context.getUploadedData();
-            for (Map.Entry<String, File> entry : files.entrySet())
+            Map<String, FileObject> files = context.getUploadedData();
+            for (Map.Entry<String, FileObject> entry : files.entrySet())
             {
                 String key = entry.getKey();
                 if (AssayDataCollector.PRIMARY_FILE.equals(key))
                 {
-                    File file = entry.getValue();
+                    FileObject file = entry.getValue();
 
                     // Check if the file is created by a run
-                    ExpData existingData = ExperimentService.get().getExpDataByURL(file, context.getContainer());
-                    if (existingData != null && existingData.getRunId() != null && !inputDatas.containsKey(existingData))
+                    try
                     {
-                        // Add this file as an input to the run. When we add the outputs to the run, we will detect
-                        // that this file was already added as an input and create a new exp.data for the same file
-                        // path and attach it as an output.
-                        log.debug("found existing cross run file input: name={}, rowId={}, dataFileUrl={}", existingData.getName(), existingData.getRowId(), existingData.getDataFileUrl());
-                        inputDatas.put(existingData, CROSS_RUN_DATA_INPUT_ROLE);
+                        ExpData existingData = ExperimentService.get().getExpDataByURL(file.getURL().toString(), context.getContainer());
+                        if (existingData != null && existingData.getRunId() != null && !inputDatas.containsKey(existingData))
+                        {
+                            // Add this file as an input to the run. When we add the outputs to the run, we will detect
+                            // that this file was already added as an input and create a new exp.data for the same file
+                            // path and attach it as an output.
+                            log.debug("found existing cross run file input: name={}, rowId={}, dataFileUrl={}", existingData.getName(), existingData.getRowId(), existingData.getDataFileUrl());
+                            inputDatas.put(existingData, CROSS_RUN_DATA_INPUT_ROLE);
+                        }
+                    }
+                    catch (FileSystemException fse)
+                    {
+                        throw UnexpectedException.wrap(fse);
                     }
                 }
             }
@@ -861,20 +870,20 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         Logger log = context.getLogger() != null ? context.getLogger() : LOG;
 
         // Create set of existing input files
-        Set<File> inputFiles = new HashSet<>();
+        Set<FileObject> inputFiles = new HashSet<>();
         for (ExpData inputData : inputDatas.keySet())
         {
-            File f = inputData.getFile();
+            FileObject f = inputData.getFileObject();
             if (f != null)
                 inputFiles.add(f);
         }
 
-        Map<String, File> files = context.getUploadedData();
+        Map<String, FileObject> files = context.getUploadedData();
 
         AssayDataType dataType;
-        for (Map.Entry<String, File> entry : files.entrySet())
+        for (Map.Entry<String, FileObject> entry : files.entrySet())
         {
-            File file = entry.getValue();
+            FileObject file = entry.getValue();
             dataType = context.getProvider().getDataType();
 
             // Reuse existing exp.data as the assay output file unless:
@@ -899,9 +908,9 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             log.debug("==> reuseExistingData = {}", reuseExistingData);
             log.debug("==> errorIfDataOwned = {}", errorIfDataOwned);
 
-            ExpData data = DefaultAssayRunCreator.createData(context.getContainer(), file, file.getName(), dataType, reuseExistingData, errorIfDataOwned, log);
+            ExpData data = DefaultAssayRunCreator.createData(context.getContainer(), file.getPath().toFile(), file.getName().getBaseName(), dataType, reuseExistingData, errorIfDataOwned, log);
             String role = ExpDataRunInput.DEFAULT_ROLE;
-            if (dataType != null && dataType.getFileType().isType(file))
+            if (dataType != null && dataType.getFileType().isType(file.getPath().toFile()))
             {
                 if (dataType.getRole() != null)
                 {
@@ -911,7 +920,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             outputDatas.put(data, role);
         }
 
-        File primaryFile = files.get(AssayDataCollector.PRIMARY_FILE);
+        FileObject primaryFile = files.get(AssayDataCollector.PRIMARY_FILE);
         if (primaryFile != null)
         {
             addRelatedOutputDatas(context, inputFiles, outputDatas, primaryFile);
@@ -926,31 +935,40 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
      */
     public void addRelatedOutputDatas(
         AssayRunUploadContext<ProviderType> context,
-        Set<File> inputFiles,
+        Set<FileObject> inputFiles,
         Map<ExpData, String> outputDatas,
-        final File primaryFile
+        final FileObject primaryFile
     ) throws ValidationException
     {
         AssayDataType dataType = getProvider().getDataType();
-        final String baseName = dataType == null ? null : dataType.getFileType().getBaseName(primaryFile);
+        final String baseName = dataType == null ? null : dataType.getFileType().getBaseName(primaryFile.getPath());
         if (baseName != null)
         {
-            // Grab all the files that are related based on naming convention
-            File[] relatedFiles = primaryFile.getParentFile().listFiles(getRelatedOutputDataFileFilter(primaryFile, baseName));
-            if (relatedFiles != null)
+            try
             {
-                for (File relatedFile : relatedFiles)
+                // Grab all the files that are related based on naming convention
+                FileObject parent = primaryFile.getParent();
+                File[] relatedFiles = parent.getPath().toFile().listFiles(getRelatedOutputDataFileFilter(primaryFile.getPath().toFile(), baseName));
+                if (relatedFiles != null)
                 {
-                    // Ignore files already considered inputs to the run
-                    if (inputFiles.contains(relatedFile))
-                        continue;
-
-                    Pair<ExpData, String> dataOutput = createdRelatedOutputData(context, baseName, relatedFile);
-                    if (dataOutput != null)
+                    for (File f : relatedFiles)
                     {
-                        outputDatas.put(dataOutput.getKey(), dataOutput.getValue());
+                        FileObject relatedFile = parent.resolveFile(f.getName());
+                        // Ignore files already considered inputs to the run
+                        if (inputFiles.contains(relatedFile))
+                            continue;
+
+                        Pair<ExpData, String> dataOutput = createdRelatedOutputData(context, baseName, f);
+                        if (dataOutput != null)
+                        {
+                            outputDatas.put(dataOutput.getKey(), dataOutput.getValue());
+                        }
                     }
                 }
+            }
+            catch (FileSystemException fse)
+            {
+                throw UnexpectedException.wrap(fse);
             }
         }
     }

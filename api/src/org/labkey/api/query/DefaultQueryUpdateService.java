@@ -763,6 +763,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         convertTypes(user, c, row,  getDbTable(), null);
     }
 
+    // TODO Path->FileObject
     protected void convertTypes(User user, Container c, Map<String,Object> row, TableInfo t, @Nullable Path fileLinkDirPath) throws ValidationException
     {
         for (ColumnInfo col : t.getColumns())

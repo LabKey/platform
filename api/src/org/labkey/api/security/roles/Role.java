@@ -114,6 +114,11 @@ public interface Role extends Parameter.JdbcParameterValue
     @NotNull
     Set<UserPrincipal> getExcludedPrincipals();
 
+    default boolean isExcludedPrincipal(@NotNull UserPrincipal principal)
+    {
+        return getExcludedPrincipals().contains(principal);
+    };
+
     /**
      * @return Whether this role is applicable to the policy. For example, some roles might only make sense in the context of a
      * certain type of resource, such as a folder (or particular type of folder) or dataset

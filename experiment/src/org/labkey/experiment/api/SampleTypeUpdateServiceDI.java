@@ -767,7 +767,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         keys = new Object[]{lsid};
         TableInfo t = _sampleType.getTinfo();
         // Sample type uses FILE_LINK not FILE_ATTACHMENT, use convertTypes() to handle posted files
-        Path path = AssayFileWriter.getUploadDirectoryPath(c, "sampletype");
+        Path path = AssayFileWriter.getUploadDirectoryPath(c, "sampletype").getPath();
         convertTypes(user, c, validRowCopy, t, path);
         if (t.getColumnNameSet().stream().anyMatch(validRowCopy::containsKey))
         {

@@ -56,17 +56,20 @@ public interface ExperimentDataHandler extends Handler<ExpData>
      * Import whatever content from the file is destined for storage in the database. Typically persisted in a schema
      * owned by the module that holds the implementation of the ExperimentDataHandler.
      */
+    // TODO File->FileOject
     void importFile(@NotNull ExpData data, File dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context) throws ExperimentException;
     default void importFile(@NotNull ExpData data, File dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context, boolean allowLookupByAlternateKey) throws ExperimentException
     {
         importFile(data, dataFile, info, log, context);
     }
 
+    // TODO File->FileOject
     default void importFile(@NotNull ExpData data, File dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context, boolean allowLookupByAlternateKey, boolean autoFillDefaultResultColumns) throws ExperimentException
     {
         importFile(data, dataFile, info, log, context);
     }
 
+    // TODO File->FileOject
     default void importFile(@NotNull ExpData data, Path dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context) throws ExperimentException
     {
         if (FileUtil.hasCloudScheme(dataFile))
@@ -75,9 +78,10 @@ public interface ExperimentDataHandler extends Handler<ExpData>
     }
 
     /**
-     * Stream the content of this data object. Typically this just streams the bytes of the file from disk, but could
+     * Stream the content of this data object. Typically, this just streams the bytes of the file from disk, but could
      * create something based exclusively on what's in the database.
      */
+    // TODO File->FileOject
     void exportFile(ExpData data, File dataFile, User user, OutputStream out) throws ExperimentException;
     default void exportFile(ExpData data, Path dataFile, String rootFilePath, User user, OutputStream out) throws ExperimentException
     {
@@ -102,6 +106,7 @@ public interface ExperimentDataHandler extends Handler<ExpData>
      */
     void deleteData(ExpData data, Container container, User user);
 
+    // TODO File->FileOject
     boolean hasContentToExport(ExpData data, File file);
     default boolean hasContentToExport(ExpData data, Path file)
     {

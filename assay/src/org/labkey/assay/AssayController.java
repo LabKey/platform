@@ -20,6 +20,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.commons.vfs2.FileObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -748,20 +749,20 @@ public class AssayController extends SpringActionController
             List<List<String>> runNamesPerFile = new ArrayList<>();
             try
             {
-                File targetDirectory = AssayFileWriter.ensureUploadDirectory(getContainer());
+                FileObject targetDirectory = AssayFileWriter.ensureUploadDirectory(getContainer());
                 JSONArray fileNames = form.getJsonObject() == null ? null : form.getJsonObject().getJSONArray("fileNames");
                 if (fileNames != null && fileNames.length() > 0)
                 {
                     for (int i = 0; i < fileNames.length(); i++)
                     {
                         String fileName = (String)fileNames.get(i);
-                        File f = new File(targetDirectory, fileName);
+                        FileObject f = targetDirectory.resolveFile(fileName);
                         if (f.exists())
                         {
                             duplicate = true;
-                            File newFile = AssayFileWriter.findUniqueFileName(fileName, targetDirectory);
-                            newFileNames.add(i, newFile.getName());  // will infer duplication by whether an element exists at that position or not
-                            ExpData expData = ExperimentService.get().getExpDataByURL(f, null);
+                            FileObject newFile = AssayFileWriter.findUniqueFileName(fileName, targetDirectory);
+                            newFileNames.add(i, newFile.getName().getBaseName());  // will infer duplication by whether an element exists at that position or not
+                            ExpData expData = ExperimentService.get().getExpDataByURL(f.getURL().toString(), null);
                             List<String> runNames = new ArrayList<>();
                             if (expData != null)
                             {
@@ -820,8 +821,8 @@ public class AssayController extends SpringActionController
 
             try
             {
-                File targetDirectory = AssayFileWriter.ensureUploadDirectory(getContainer());
-                return AssayFileWriter.findUniqueFileName(filename, targetDirectory);
+                FileObject targetDirectory = AssayFileWriter.ensureUploadDirectory(getContainer());
+                return AssayFileWriter.findUniqueFileName(filename, targetDirectory).getPath().toFile();
             }
             catch (ExperimentException e)
             {
@@ -909,11 +910,11 @@ public class AssayController extends SpringActionController
 
             if (handler != null)
             {
-                File tempDir = getTempFolder();
+                FileObject tempDir = getTempFolder();
 
                 try {
                     handler.createSampleData(protocol, getViewContext(), tempDir);
-                    File[] files = tempDir.listFiles();
+                    File[] files = tempDir.getPath().toFile().listFiles();
 
                     if (files.length > 0)
                     {
@@ -944,16 +945,16 @@ public class AssayController extends SpringActionController
                 }
                 finally
                 {
-                    FileUtil.deleteDir(tempDir);
+                    FileUtil.deleteDir(tempDir.getPath().toFile());
                 }
             }
             return null;
         }
 
-        private File getTempFolder() throws IOException
+        private FileObject getTempFolder() throws IOException
         {
-            File tempDir = new File(System.getProperty("java.io.tmpdir"));
-            File tempFolder = new File(tempDir.getAbsolutePath() + File.separator + "QCSampleData", String.valueOf(Thread.currentThread().getId()));
+            FileObject tempDir = FileUtil.getTempDirectoryFileObject();
+            FileObject tempFolder = tempDir.resolveFile("QCSampleData").resolveFile(String.valueOf(Thread.currentThread().getId()));
             if (!tempFolder.exists())
                 FileUtil.mkdirs(tempFolder);
 

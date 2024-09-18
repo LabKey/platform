@@ -16,6 +16,7 @@
 package org.labkey.api.assay.plate;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.vfs2.FileObject;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayDataCollector;
 import org.labkey.api.assay.AssayFileWriter;
@@ -150,8 +151,8 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
 
         try
         {
-            File uploadDirectory = AssayFileWriter.ensureUploadDirectory(_container);
-            _metadataFile = AssayFileWriter.findUniqueFileName(metadata.getOriginalFilename(), uploadDirectory);
+            FileObject uploadDirectory = AssayFileWriter.ensureUploadDirectory(_container);
+            _metadataFile = AssayFileWriter.findUniqueFileName(metadata.getOriginalFilename(), uploadDirectory).getPath().toFile();
             try (BufferedOutputStream fos = new BufferedOutputStream(new FileOutputStream(_metadataFile));
                 InputStream is = metadata.getInputStream())
             {

@@ -20,7 +20,9 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.file.SimplePathVisitor;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.vfs2.Capability;
 import org.apache.commons.vfs2.FileObject;
+import org.apache.commons.vfs2.FileSystem;
 import org.apache.commons.vfs2.FileSystemException;
 import org.apache.commons.vfs2.NameScope;
 import org.apache.logging.log4j.Logger;
@@ -36,6 +38,7 @@ import org.labkey.api.files.virtual.AuthorizedFileSystem;
 import org.labkey.api.security.Crypt;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewServlet;
 
 import java.io.BufferedInputStream;
@@ -91,6 +94,7 @@ public class FileUtil
     private static final Logger LOG = LogHelper.getLogger(FileUtil.class, "FileUtil.java logger");
 
     private static File _tempDir = null;
+    private static FileObject _tempDirObject = null;
 
     static private final String windowsRestricted = "\\/:*?\"<>|`";
     // and ` seems like a bad idea for linux?
@@ -143,6 +147,16 @@ public class FileUtil
     public static boolean deleteDirectoryContents(Path dir) throws IOException
     {
         return deleteDirectoryContents(dir, null);
+    }
+
+
+    public static boolean deleteDirectoryContents(FileObject dir) throws IOException
+    {
+        FileSystem fs = dir.getFileSystem();
+        if (!fs.hasCapability(Capability.DELETE))
+            throw new UnauthorizedException();
+        // TODO native FileObject version of deleteDirectoryContents()
+        return deleteDirectoryContents(dir.getPath(), null);
     }
 
 
@@ -327,6 +341,11 @@ public class FileUtil
         return mkdir(file, AppProps.getInstance().isInvalidFilenameBlocked());
     }
 
+    public static boolean mkdir(FileObject file) throws IOException
+    {
+        return mkdir(file.getPath().toFile(), AppProps.getInstance().isInvalidFilenameBlocked());
+    }
+
     public static boolean mkdir(File file, boolean checkFileName) throws IOException
     {
         if (checkFileName)
@@ -341,6 +360,12 @@ public class FileUtil
         return mkdirs(file, AppProps.getInstance().isInvalidFilenameBlocked());
     }
 
+    public static boolean mkdirs(FileObject file) throws IOException
+    {
+        var ret = mkdirs(file.getPath().toFile(), AppProps.getInstance().isInvalidFilenameBlocked());
+        file.refresh();
+        return ret;
+    }
 
     public static boolean mkdirs(File file, boolean checkFileName) throws IOException
     {
@@ -376,6 +401,12 @@ public class FileUtil
     public static Path createDirectories(Path path) throws IOException
     {
         return createDirectories(path, AppProps.getInstance().isInvalidFilenameBlocked());
+    }
+
+
+    public static void createDirectories(FileObject fo) throws IOException
+    {
+        createDirectories(fo.getPath(), AppProps.getInstance().isInvalidFilenameBlocked());
     }
 
 
@@ -1521,6 +1552,7 @@ quickScan:
         return FileUtil.deleteDirectoryContents(localPath.toFile());
     }
 
+
     // Under Catalina, it seems to pick \tomcat\temp
     // On the web server under Tomcat, it seems to pick c:\Documents and Settings\ITOMCAT_EDI\Local Settings\Temp
     public static File getTempDirectory()
@@ -1530,7 +1562,7 @@ quickScan:
             try
             {
                 File temp = createTempFile("deleteme", null);
-                _tempDir = temp.getParentFile();
+                _tempDir = temp.getParentFile().getAbsoluteFile();
                 temp.delete();
             }
             catch (IOException e)
@@ -1540,6 +1572,16 @@ quickScan:
         }
 
         return _tempDir;
+    }
+
+
+    public static FileObject getTempDirectoryFileObject()
+    {
+        if (null == _tempDirObject)
+        {
+            _tempDirObject = AuthorizedFileSystem.create(getTempDirectory(), true, true).getRoot();
+        }
+        return _tempDirObject;
     }
 
 
@@ -1558,6 +1600,13 @@ quickScan:
     public static File createTempFile(@Nullable String prefix, @Nullable String suffix) throws IOException
     {
         return createTempFile(prefix, suffix, false);
+    }
+
+    // Use this instead of File.createTempFile() (see Issue #46794)
+    public static FileObject createTempFileObject(@Nullable String prefix, @Nullable String suffix) throws IOException
+    {
+        var file = createTempFile(prefix, suffix, false);
+        return AuthorizedFileSystem.create(file.getParentFile(), true, true).resolveFile(file.getName());
     }
 
 

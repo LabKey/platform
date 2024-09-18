@@ -18,6 +18,8 @@ package org.labkey.pipeline.api;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.vfs2.FileObject;
+import org.apache.commons.vfs2.FileSystemException;
+import org.apache.commons.vfs2.NameScope;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -36,13 +38,10 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.DeletePermission;
-import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.NotFoundException;
@@ -235,6 +234,12 @@ public class PipeRootImpl implements PipeRoot
     }
 
     @Override
+    public @NotNull FileObject getRootFileObject()
+    {
+        return AuthorizedFileSystem.create(getRootNioPath(), true, true).getRoot();
+    }
+
+    @Override
     @NotNull
     public File getLogDirectory()
     {
@@ -365,58 +370,93 @@ public class PipeRootImpl implements PipeRoot
         return null;
     }
 
+
     @Override
     @Nullable
-    public File resolvePath(String path)
+    public File resolvePath(String pathStr)
     {
-        if (null == path)
+        if (null == pathStr)
             throw new NotFoundException("Must specify a file path");
 
-        // Remove leading "./" sometimes added by the client side FileBrowser
-        if (path.startsWith("./"))
-            path = path.substring(2);
+        return resolvePath(org.labkey.api.util.Path.parse(pathStr));
+    }
 
+
+    @Nullable
+    public File resolvePath(org.labkey.api.util.Path path)
+    {
+        var pair = _resolveRoot(path);
+        if (null == pair)
+            return null;
+        return pair.second;
+    }
+
+
+    @Override
+    public @Nullable FileObject resolvePathToFileObject(String relativePath)
+    {
+        var pair = _resolveRoot(org.labkey.api.util.Path.parse(relativePath));
+        if (null == pair)
+            return null;
+        var afs = AuthorizedFileSystem.create(pair.first, true, true);
+        try
+        {
+            return afs.getRoot().resolveFile(relativePath, NameScope.DESCENDENT_OR_SELF);
+        }
+        catch (FileSystemException fse)
+        {
+            throw UnexpectedException.wrap(fse);
+        }
+    }
+
+
+    /* return file root and relative path */
+    @Nullable
+    public Pair<File,File> _resolveRoot(org.labkey.api.util.Path path)
+    {
         // Check if the file already exists on disk
         for (File root : getRootPaths())
         {
-            File file = new File(root, path);
+            File file = FileUtil.appendPath(root, path);
             // Check that it's under the root to protect against ../../ type paths
             if (file.exists() && isUnderRoot(file))
             {
-                return file;
+                return new Pair<>(root,file);
             }
         }
 
         // Return the path to the default location
         File root = getRootPath();
-        File file = FileUtil.getAbsoluteCaseSensitiveFile(new File(root, path));
+        File file = FileUtil.getAbsoluteCaseSensitiveFile(FileUtil.appendPath(root, path));
         // Check that it's under the root to protect against ../../ type paths
         if (!isUnderRoot(file))
         {
             return null;
         }
-        return file;
+        return new Pair<>(root,file);
     }
 
     @Override
     @Nullable
-    public Path resolveToNioPath(String path)
+    public Path resolveToNioPath(String pathStr)
     {
-        if (path == null)
+        if (pathStr == null)
             throw new NotFoundException("Must specify a file path");
+
+        // Remove leading "./" sometimes added by the client side FileBrowser
+        if (pathStr.startsWith("./"))
+            pathStr = pathStr.substring(2);
+
+        var path = org.labkey.api.util.Path.parse(pathStr);
 
         try
         {
             if (ROOT_BASE.cloud.equals(_defaultRoot))
             {
-                // Remove leading "./" sometimes added by the client side FileBrowser
-                if (path.startsWith("./"))
-                    path = path.substring(2);
-
                 // Return the path to the default location
-                org.labkey.api.util.Path combinedPath = StringUtils.isNotBlank(_uris.get(0).getPath()) ?
-                        new org.labkey.api.util.Path(_uris.get(0).getPath(), path) :
-                        new org.labkey.api.util.Path(path);
+                var combinedPath = StringUtils.isNotBlank(_uris.get(0).getPath()) ?
+                        org.labkey.api.util.Path.parse(_uris.get(0).getPath()).append(path) :
+                        path;
                 return CloudStoreService.get().getPath(getContainer(), _cloudStoreName, combinedPath);
                 // TODO: Do we need? Check that it's under the root to protect against ../../ type paths
             }

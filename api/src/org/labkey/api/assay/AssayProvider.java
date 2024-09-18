@@ -16,6 +16,7 @@
 
 package org.labkey.api.assay;
 
+import org.apache.commons.vfs2.FileObject;
 import org.fhcrc.cpas.exp.xml.ExperimentRunType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -61,6 +62,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -106,7 +108,17 @@ public interface AssayProvider extends Handler<ExpProtocol>
     AssayRunCreator getRunCreator();
 
     /** @return all the legal data collectors that the user can choose from for the current import attempt */
+    // TODO File->FileObject
     List<AssayDataCollector> getDataCollectors(Map<String, File> uploadedFiles, AssayRunUploadForm context);
+
+    default List<AssayDataCollector> getDataCollectorsFileObject(Map<String, FileObject> uploadedFileObjects, AssayRunUploadForm context)
+    {
+        Map<String,File> map = new HashMap<>();
+        if (uploadedFileObjects != null)
+            for (var entry : uploadedFileObjects.entrySet())
+                map.put(entry.getKey(), entry.getValue().getPath().toFile());
+        return getDataCollectors(map, context);
+    }
 
     /**
      * @return the name of the assay provider.
@@ -225,9 +237,11 @@ public interface AssayProvider extends Handler<ExpProtocol>
      * File based QC and analysis scripts can be added to a protocol and invoked when the validate
      * method is called. Set to an empty list if no scripts exist.
      */
+    // TODO File->FileObject
     ValidationException setValidationAndAnalysisScripts(ExpProtocol protocol, @NotNull List<File> scripts) throws ExperimentException;
 
     @NotNull
+    // TODO File->FileObject
     List<File> getValidationAndAnalysisScripts(ExpProtocol protocol, Scope scope);
 
     void setSaveScriptFiles(ExpProtocol protocol, boolean save) throws ExperimentException;

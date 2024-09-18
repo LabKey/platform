@@ -21,6 +21,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.vfs2.FileObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -31,6 +32,7 @@ import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.files.virtual.AuthorizedFileSystem;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.module.AllowedBeforeInitialUserIsSet;
@@ -47,6 +49,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HttpUtil;
@@ -547,14 +550,17 @@ public abstract class SpringActionController implements Controller, HasViewConte
         return null;
     }
 
-    private static File TEMP_UPLOAD_DIR;
+    private static FileObject TEMP_UPLOAD_DIR;
     /** Issue 46598 - use a directory of the primary temp dir for file uploads */
-    public static File getTempUploadDir()
+    public static FileObject getTempUploadDir()
     {
         if (TEMP_UPLOAD_DIR == null)
         {
-            TEMP_UPLOAD_DIR = FileUtil.appendName(new File(System.getProperty("java.io.tmpdir")), "httpUploads").getAbsoluteFile();
-            TEMP_UPLOAD_DIR.mkdirs();
+            var httpUploads = FileUtil.appendName(new File(System.getProperty("java.io.tmpdir")), "httpUploads").getAbsoluteFile();
+            httpUploads.mkdirs();
+            if (!httpUploads.isDirectory())
+                throw new ConfigurationException("Can't create temp upload directory: " + httpUploads);
+            TEMP_UPLOAD_DIR = AuthorizedFileSystem.create(httpUploads, true, true).getRoot();
         }
         return TEMP_UPLOAD_DIR;
     }

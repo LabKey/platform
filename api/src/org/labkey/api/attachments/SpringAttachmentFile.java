@@ -16,6 +16,7 @@
 
 package org.labkey.api.attachments;
 
+import org.apache.commons.vfs2.FileObject;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.FileUtil;
@@ -144,6 +145,19 @@ public class SpringAttachmentFile implements AttachmentFile
     {
         InputStream is = openInputStream();
         try (OutputStream out = new FileOutputStream(targetFile))
+        {
+            FileUtil.copyData(is, out);
+        }
+        finally
+        {
+            closeInputStream();
+        }
+    }
+
+    public void saveTo(FileObject targetFile) throws IOException
+    {
+        InputStream is = openInputStream();
+        try (OutputStream out = targetFile.getContent().getOutputStream())
         {
             FileUtil.copyData(is, out);
         }

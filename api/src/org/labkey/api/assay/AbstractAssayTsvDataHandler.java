@@ -18,6 +18,7 @@ package org.labkey.api.assay;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.vfs2.FileObject;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -72,6 +73,7 @@ import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.ValidatorContext;
+import org.labkey.api.files.virtual.AuthorizedFileSystem;
 import org.labkey.api.qc.DataLoaderSettings;
 import org.labkey.api.qc.ValidationDataHandler;
 import org.labkey.api.query.BatchValidationException;
@@ -167,7 +169,8 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         // type conversion error).
         settings.setBestEffortConversion(true);
 
-        Map<DataType, DataIteratorBuilder> rawData = getValidationDataMap(data, dataFile, info, log, context, settings);
+        FileObject fo = AuthorizedFileSystem.convertToFileObject(dataFile);
+        Map<DataType, DataIteratorBuilder> rawData = getValidationDataMap(data, fo, info, log, context, settings);
         assert(rawData.size() <= 1);
         try
         {
@@ -193,7 +196,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     }
 
     @Override
-    public Map<DataType, DataIteratorBuilder> getValidationDataMap(ExpData data, File dataFile, ViewBackgroundInfo info, Logger log, XarContext context, DataLoaderSettings settings) throws ExperimentException
+    public Map<DataType, DataIteratorBuilder> getValidationDataMap(ExpData data, FileObject dataFile, ViewBackgroundInfo info, Logger log, XarContext context, DataLoaderSettings settings) throws ExperimentException
     {
         ExpProtocol protocol = data.getRun().getProtocol();
         AssayProvider provider = AssayService.get().getProvider(protocol);
@@ -208,7 +211,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             if (plateMetadataEnabled && AssayPlateMetadataService.isExperimentalAppPlateEnabled())
             {
                 Integer plateSetId = getPlateSetValueFromRunProps(context, provider, protocol);
-                dataRows = AssayPlateMetadataService.get().parsePlateData(context.getContainer(), context.getUser(), provider, protocol, plateSetId, dataFile, dataRows);
+                dataRows = AssayPlateMetadataService.get().parsePlateData(context.getContainer(), context.getUser(), provider, protocol, plateSetId, dataFile.getPath().toFile(), dataRows);
             }
 
             // assays with plate metadata support will merge the plate metadata with the data rows to make it easier for
@@ -255,7 +258,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
      * Creates a DataLoader that can handle missing value indicators if the columns on the domain
      * are configured to support it.
      */
-    public static DataLoader createLoaderForImport(File dataFile, ExpRun run, @Nullable Domain dataDomain, DataLoaderSettings settings, boolean shouldInferTypes)
+    public static DataLoader createLoaderForImport(FileObject dataFile, ExpRun run, @Nullable Domain dataDomain, DataLoaderSettings settings, boolean shouldInferTypes)
     {
         Map<String, DomainProperty> aliases = new HashMap<>();
         Set<String> mvEnabledColumns = Sets.newCaseInsensitiveHashSet();

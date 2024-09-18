@@ -53,6 +53,9 @@ public interface PipeRoot extends SecurableResource
     Path getRootNioPath();
 
     @NotNull
+    FileObject getRootFileObject();
+
+    @NotNull
     File getLogDirectory();
 
     @NotNull
@@ -72,6 +75,9 @@ public interface PipeRoot extends SecurableResource
      */
     @Nullable
     File resolvePath(String relativePath);
+
+    @Nullable
+    FileObject resolvePathToFileObject(String relativePath);
 
     /**
      * Get a local directory that can be used for importing (Read/Write)

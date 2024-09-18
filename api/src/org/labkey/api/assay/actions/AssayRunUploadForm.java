@@ -20,6 +20,7 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.vfs2.FileObject;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -98,7 +99,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     private String _uploadStep;
     private String _targetStudy;
     private boolean _resetDefaultValues;
-    private Map<String, File> _uploadedData;
+    private Map<String, FileObject> _uploadedData;
     private boolean _successfulUploadComplete;
     private String _uploadAttemptID = GUID.makeGUID();
     private Map<DomainProperty, File> _additionalFiles;
@@ -277,7 +278,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     }
 
     @Override @NotNull
-    public Map<String, File> getUploadedData() throws ExperimentException
+    public Map<String, FileObject> getUploadedData() throws ExperimentException
     {
         if (_uploadedData == null)
         {

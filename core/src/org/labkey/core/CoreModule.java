@@ -507,7 +507,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         try
         {
             // Issue 46598 - clean up previously created temp files from file uploads
-            FileUtil.deleteDirectoryContents(SpringActionController.getTempUploadDir().toPath());
+            FileUtil.deleteDirectoryContents(SpringActionController.getTempUploadDir());
         }
         catch (IOException e)
         {

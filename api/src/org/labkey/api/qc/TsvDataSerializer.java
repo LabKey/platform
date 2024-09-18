@@ -17,6 +17,9 @@
 package org.labkey.api.qc;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.vfs2.FileObject;
+import org.apache.commons.vfs2.FileSystemException;
+import org.apache.commons.vfs2.VFS;
 import org.labkey.api.assay.AbstractAssayTsvDataHandler;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
@@ -30,6 +33,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.writer.PrintWriters;
 
 import java.io.File;
@@ -48,10 +52,10 @@ import java.util.Map;
 public class TsvDataSerializer implements DataExchangeHandler.DataSerializer
 {
     @Override
-    public void exportRunData(ExpProtocol protocol, List<DataIteratorBuilder> data, File runDataFile) throws IOException, BatchValidationException
+    public void exportRunData(ExpProtocol protocol, List<DataIteratorBuilder> data, FileObject runDataFile) throws IOException, BatchValidationException
     {
         List<String> columns = null;
-        try (PrintWriter pw = PrintWriters.getPrintWriter(runDataFile))
+        try (PrintWriter pw = PrintWriters.getPrintWriter(runDataFile.getContent().getOutputStream()))
         {
             for (DataIteratorBuilder dib : data)
             {
@@ -141,10 +145,18 @@ public class TsvDataSerializer implements DataExchangeHandler.DataSerializer
         loaderSettings.setAllowUnexpectedColumns(true);
 
         return context -> {
-            // DataLoader will be closed via DataIterator
-            //noinspection resource
-            DataLoader loader = AbstractAssayTsvDataHandler.createLoaderForImport(runData, null, dataDomain, loaderSettings, shouldInferTypes);
-            return loader.getDataIterator(new DataIteratorContext());
+            try
+            {
+                FileObject fo = VFS.getManager().resolveFile(runData.toURI());
+                // DataLoader will be closed via DataIterator
+                //noinspection resource
+                DataLoader loader = AbstractAssayTsvDataHandler.createLoaderForImport(fo, null, dataDomain, loaderSettings, shouldInferTypes);
+                return loader.getDataIterator(new DataIteratorContext());
+            }
+            catch (FileSystemException e)
+            {
+                throw UnexpectedException.wrap(e);
+            }
         };
 
     }

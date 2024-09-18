@@ -16,6 +16,7 @@
 package org.labkey.assay.pipeline;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.vfs2.FileObject;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -35,6 +36,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.pipeline.XarGeneratorId;
+import org.labkey.api.files.virtual.AuthorizedFileSystem;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.AbstractTaskFactory;
@@ -432,7 +434,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
         private File getExplodedZipDir(PipelineJob job, File dataFile)
         {
             File analysisDir = ((AbstractFileAnalysisJob)job).getAnalysisDirectory();
-            return new File(analysisDir, String.format("%s-expanded", dataFile.getName()));
+            return FileUtil.appendName(analysisDir, String.format("%s-expanded", dataFile.getName()));
         }
     }
 
@@ -817,7 +819,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             // Add the job inputs as the assay run's inputs
             factory.setInputDatas(getInputs(getJob()));
 
-            File uploadedData = new File(matchedFile.getURI());
+            FileObject uploadedData = AuthorizedFileSystem.convertToFileObject(new File(matchedFile.getURI()));
             factory.setUploadedData(Collections.singletonMap(AssayDataCollector.PRIMARY_FILE, uploadedData));
 
             // Add raw data if specified, either raw data or uploaded file can be used but not both

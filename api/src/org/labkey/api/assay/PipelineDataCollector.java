@@ -16,12 +16,14 @@
 
 package org.labkey.api.assay;
 
+import org.apache.commons.vfs2.FileObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.files.virtual.AuthorizedFileSystem;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.Pair;
@@ -134,6 +136,7 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext<? e
         existingFiles.addAll(files);
     }
 
+    /* TODO File->FileObject convert FileQueue */
     public static List<Map<String, File>> getFileQueue(AssayRunUploadContext context)
     {
         return getFileQueue(context.getRequest().getSession(true), context.getContainer(), context.getProtocol());
@@ -150,13 +153,7 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext<? e
             session.setAttribute(PipelineDataCollector.class.getName(), collections);
         }
         Pair<Container, Integer> key = new Pair<>(c, protocol.getRowId());
-        List<Map<String, File>> result = collections.get(key);
-        if (result == null)
-        {
-            result = new ArrayList<>();
-            collections.put(key, result);
-        }
-        return result;
+        return collections.computeIfAbsent(key, k -> new ArrayList<>());
     }
 
     public static synchronized void clearFileQueue(HttpSession session, Container c, ExpProtocol protocol)
@@ -171,7 +168,7 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext<? e
 
     @Override
     @NotNull
-    public Map<String, File> createData(ContextType context) throws IOException, ExperimentException
+    public Map<String, FileObject> createData(ContextType context) throws IOException, ExperimentException
     {
         List<Map<String, File>> files = getFileQueue(context);
         if (files.isEmpty())
@@ -203,13 +200,13 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext<? e
     // When importing via pipeline, the file is already on the server so return the path of that file
     @Nullable
     @Override
-    protected File getFilePath(ContextType context, @Nullable ExpRun run, File tempDirFile)
+    protected FileObject getFilePath(ContextType context, @Nullable ExpRun run, FileObject tempDirFile)
     {
         Map<String, File> files = getFileQueue(context).get(0);
         for (File file : files.values())
         {
-            if(file.getName().equals(tempDirFile.getName()))
-                return file;
+            if (file.getName().equals(tempDirFile.getName().getBaseName()))
+                return AuthorizedFileSystem.convertToFileObject(file);
         }
 
         return null;
@@ -224,9 +221,9 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext<? e
     }
 
     @Override
-    public Map<String, File> uploadComplete(ContextType context, @Nullable ExpRun run) throws ExperimentException
+    public Map<String, FileObject> uploadComplete(ContextType context, @Nullable ExpRun run) throws ExperimentException
     {
-        Map<String, File> result = super.uploadComplete(context, run);
+        Map<String, FileObject> result = super.uploadComplete(context, run);
         List<Map<String, File>> files = getFileQueue(context);
         if (!files.isEmpty())
         {

@@ -16,6 +16,8 @@
 package org.labkey.api.assay;
 
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.vfs2.FileObject;
+import org.apache.commons.vfs2.FileSystemException;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -25,10 +27,10 @@ import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.files.virtual.AuthorizedFileSystem;
 import org.labkey.api.qc.DefaultTransformResult;
 import org.labkey.api.qc.TransformResult;
 import org.labkey.api.security.User;
@@ -37,8 +39,10 @@ import org.labkey.api.view.ActionURL;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -158,18 +162,20 @@ public class AssayRunDatabaseContext<ProviderType extends AssayProvider> impleme
 
     @NotNull
     @Override
-    public Map<String, File> getUploadedData() throws ExperimentException
+    public Map<String, FileObject> getUploadedData() throws ExperimentException
     {
-        Map<String, File> result = new HashMap<>();
+        List<File> list = new ArrayList<>();
         for (ExpData data : _run.getOutputDatas(_provider.getDataType()))
         {
             File f = data.getFile();
-            if (f == null || !NetworkDrive.exists(f))
-            {
+            if (!NetworkDrive.exists(f))
                 throw new ExperimentException("Data file " + data.getName() + " is no longer available on the server's file system");
-            }
-            result.put(f.getName(), f);
+            list.add(f);
         }
+        List<FileObject> files = AuthorizedFileSystem.convertToFileObjects(list);
+        Map<String, FileObject> result = new HashMap<>();
+        for (FileObject file : files)
+            result.put(file.getName().getBaseName(), file);
         return result;
     }
 

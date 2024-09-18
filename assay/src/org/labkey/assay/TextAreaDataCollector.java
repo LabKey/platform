@@ -16,6 +16,7 @@
 
 package org.labkey.assay;
 
+import org.apache.commons.vfs2.FileObject;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.assay.AbstractTempDirDataCollector;
 import org.labkey.api.assay.AssayProvider;
@@ -64,7 +65,7 @@ public class TextAreaDataCollector<ContextType extends AssayRunUploadContext<? e
 
     @Override
     @NotNull
-    public Map<String, File> createData(ContextType context) throws IOException, ExperimentException
+    public Map<String, FileObject> createData(ContextType context) throws IOException, ExperimentException
     {
         if (_uploadComplete)
             return Collections.emptyMap();
@@ -80,11 +81,11 @@ public class TextAreaDataCollector<ContextType extends AssayRunUploadContext<? e
         }
 
         // NOTE: We use a 'tmp' file extension so that DataLoaderService will sniff the file type by parsing the file's header.
-        File dir = getFileTargetDir(context);
-        File file = createFile(protocol, dir, "tmp");
+        FileObject dir = getFileTargetDir(context);
+        FileObject file = createFile(protocol, dir, "tmp");
         ByteArrayInputStream bIn = new ByteArrayInputStream(data.getBytes(context.getRequest().getCharacterEncoding()));
 
-        writeFile(bIn, file);
+        writeFile(bIn, file.getPath().toFile());
         return Collections.singletonMap(PRIMARY_FILE, file);
     }
 

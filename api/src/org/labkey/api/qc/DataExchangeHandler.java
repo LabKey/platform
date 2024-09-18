@@ -15,6 +15,7 @@
  */
 package org.labkey.api.qc;
 
+import org.apache.commons.vfs2.FileObject;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayRunUploadContext;
@@ -29,7 +30,6 @@ import org.labkey.api.view.ViewContext;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -42,10 +42,10 @@ import java.util.Set;
  */
 public interface DataExchangeHandler
 {
-    Pair<File, Set<File>> createTransformationRunInfo(AssayRunUploadContext<? extends AssayProvider> context, ExpRun run, File scriptDir, Map<DomainProperty, String> runProperties, Map<DomainProperty, String> batchProperties) throws Exception;
-    void createSampleData(@NotNull ExpProtocol protocol, ViewContext viewContext, File scriptDir) throws Exception;
+    Pair<FileObject, Set<FileObject>> createTransformationRunInfo(AssayRunUploadContext<? extends AssayProvider> context, ExpRun run, FileObject scriptDir, Map<DomainProperty, String> runProperties, Map<DomainProperty, String> batchProperties) throws Exception;
+    void createSampleData(@NotNull ExpProtocol protocol, ViewContext viewContext, FileObject scriptDir) throws Exception;
 
-    TransformResult processTransformationOutput(AssayRunUploadContext<? extends AssayProvider> context, File runInfo, ExpRun run, File scriptFile, TransformResult mergeResult, Set<File> inputDataFiles) throws ValidationException;
+    TransformResult processTransformationOutput(AssayRunUploadContext<? extends AssayProvider> context, FileObject runInfo, ExpRun run, FileObject scriptFile, TransformResult mergeResult, Set<FileObject> inputDataFiles) throws ValidationException;
 
     DataSerializer getDataSerializer();
     
@@ -54,9 +54,9 @@ public interface DataExchangeHandler
         /**
          * Called to save or import transformed or QC'd run data to the specified reader or writer.
          */
-        void exportRunData(ExpProtocol protocol, List<DataIteratorBuilder> data, File runData) throws IOException, BatchValidationException;
+        void exportRunData(ExpProtocol protocol, List<DataIteratorBuilder> data, FileObject runData) throws IOException, BatchValidationException;
 
-        default void exportRunData(ExpProtocol protocol, DataIteratorBuilder data, File runData) throws IOException, BatchValidationException
+        default void exportRunData(ExpProtocol protocol, DataIteratorBuilder data, FileObject runData) throws IOException, BatchValidationException
         {
             exportRunData(protocol, Collections.singletonList(data), runData);
         }

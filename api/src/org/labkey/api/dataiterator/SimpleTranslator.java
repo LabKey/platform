@@ -21,6 +21,7 @@ import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Triple;
+import org.apache.commons.vfs2.FileObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -71,6 +72,7 @@ import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.UnexpectedException;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -1816,9 +1818,14 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
                 try
                 {
+                    // Why does this return Object???
                     Object file = AbstractQueryUpdateService.saveFile(_user, _container, _name, value, _dirName);
-                    assert file instanceof File;
-                    value = ((File)file).getPath();
+                    if (file instanceof File)
+                        value = ((File)file).getPath();
+                    else if (file instanceof FileObject)
+                        value = ((FileObject)file).getPath();
+                    else
+                        throw UnexpectedException.wrap(null,"Unknown type returned from saveFile");
                     _savedFiles.put(origFileName, (String)value);
                 }
                 catch (QueryUpdateServiceException | ValidationException ex)

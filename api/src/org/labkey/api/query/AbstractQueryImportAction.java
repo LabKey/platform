@@ -16,6 +16,7 @@
 package org.labkey.api.query;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.vfs2.FileObject;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -397,7 +398,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         if (errors.hasErrors())
             throw errors;
 
-        File dataFile = null;
+        FileObject dataFile = null;
         boolean hasPostData = false;
         FileStream file = null;
         String originalName = null;
@@ -524,29 +525,29 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                     hasPostData = true;
                     originalName = multipartfile.getOriginalFilename();
                     // can't read the multipart file twice so create temp file (12800)
-                    dataFile = FileUtil.createTempFile("~upload", multipartfile.getOriginalFilename());
+                    dataFile = FileUtil.createTempFileObject("~upload", multipartfile.getOriginalFilename());
                     PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
                     if (null != root && (Boolean.parseBoolean(saveToPipeline) || _useAsync))
                     {
-                        File dataFileDir = new File(root.getRootPath().getAbsolutePath() + File.separator + "QueryImportFiles");
+                        FileObject dataFileDir = root.getRootFileObject().resolveFile("QueryImportFiles");
                         if (dataFileDir.isFile())
                         {
-                            dataFileDir = AssayFileWriter.findUniqueFileName("QueryImportFiles", root.getRootPath());
+                            dataFileDir = AssayFileWriter.findUniqueFileName("QueryImportFiles", root.getRootFileObject());
                             if (!FileUtil.mkdir(dataFileDir))
-                                throw new RuntimeException("Error attempting to create directory " + dataFileDir.getAbsolutePath()
+                                throw new RuntimeException("Error attempting to create directory " + dataFileDir.getPath()
                                         + " for uploaded query import file " + multipartfile.getOriginalFilename());
                         }
                         else if (!dataFileDir.exists())
                         {
                             if (!FileUtil.mkdir(dataFileDir))
-                                throw new RuntimeException("Error attempting to create directory " + dataFileDir.getAbsolutePath()
+                                throw new RuntimeException("Error attempting to create directory " + dataFileDir
                                         + " for uploaded query import file " + multipartfile.getOriginalFilename());
                         }
 
                         dataFile = AssayFileWriter.findUniqueFileName(multipartfile.getOriginalFilename(), dataFileDir);
 
                     }
-                    multipartfile.transferTo(dataFile);
+                    multipartfile.transferTo(dataFile.getPath());
                     if (_useAsync)
                     {
                         if (!isBackgroundImportSupported())
@@ -562,7 +563,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
                             QueryImportPipelineJob.QueryImportAsyncContextBuilder importContextBuilder = new QueryImportPipelineJob.QueryImportAsyncContextBuilder();
                             importContextBuilder
-                                .setPrimaryFile(dataFile)
+                                .setPrimaryFile(dataFile.getPath().toFile())
                                 .setHasColumnHeaders(_hasColumnHeaders)
                                 .setFileContentType(multipartfile.getContentType())
                                 .setSchemaName(schemaName)
@@ -587,7 +588,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
                     }
 
-                    loader = DataLoader.get().createLoader(dataFile, multipartfile.getContentType(), _hasColumnHeaders, null, null);
+                    loader = DataLoader.get().createLoader(dataFile.getPath().toFile(), multipartfile.getContentType(), _hasColumnHeaders, null, null);
                     file = new FileAttachmentFile(dataFile, multipartfile.getOriginalFilename());
                 }
             }

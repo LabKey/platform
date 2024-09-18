@@ -17,6 +17,7 @@
 package org.labkey.api.assay;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.apache.commons.vfs2.FileObject;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -85,7 +86,7 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
      * Map of file name to uploaded file that will be parsed and imported by the assay's DataHandler.
      */
     @NotNull
-    Map<String, File> getUploadedData() throws ExperimentException;
+    Map<String, FileObject> getUploadedData() throws ExperimentException;
 
     @Nullable
     default DataIteratorBuilder getRawData()
@@ -222,7 +223,7 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
         protected boolean _allowCrossRunFileInputs;
         protected boolean _allowLookupByAlternateKey = true;
         protected DataIteratorBuilder _rawData;
-        protected Map<String, File> _uploadedData;
+        protected Map<String, FileObject> _uploadedData;
         protected String _jobDescription;
         protected String _jobNotificationProvider;
         protected String _auditUserComment;
@@ -355,7 +356,7 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
          * Map of file name to uploaded file that will be parsed and imported by the assay's DataHandler.
          * One of either uploadedData or rawData can be used, not both.
          */
-        public final FACTORY setUploadedData(Map<String, File> uploadedData)
+        public final FACTORY setUploadedData(Map<String, FileObject> uploadedData)
         {
             _uploadedData = uploadedData;
             return self();

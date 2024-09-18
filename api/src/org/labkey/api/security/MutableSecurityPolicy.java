@@ -84,7 +84,7 @@ public class MutableSecurityPolicy extends SecurityPolicy
     {
         if (!role.isAssignable() && !(role instanceof NoPermissionsRole))
             throw new IllegalArgumentException("This role may not be assigned: " + role.getName());
-        if (role.getExcludedPrincipals().contains(principal))
+        if (role.isExcludedPrincipal(principal))
             throw new IllegalArgumentException("The principal " + principal.getName() + " may not be assigned the role " + role.getName() + "!");
         if (null != _resource && (validate && !role.isApplicable(this, _resource)))
             throw new IllegalArgumentException("The role " + role.getName() + " is not applicable to this resource '" + _resource.getDebugName() + "'!");

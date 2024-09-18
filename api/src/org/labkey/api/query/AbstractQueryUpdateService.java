@@ -18,6 +18,7 @@ package org.labkey.api.query;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.vfs2.FileObject;
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -148,7 +149,12 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     @Override
     public boolean hasPermission(@NotNull UserPrincipal user, Class<? extends Permission> acl)
     {
-        return getQueryTable().hasPermission(user, acl);
+        var ret = getQueryTable().hasPermission(user, acl);
+        {
+            if (!ret)
+                return  getQueryTable().hasPermission(user, acl);
+        }
+        return ret;
     }
 
     protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys, boolean allowCrossContainer)
@@ -327,7 +333,10 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     protected int _importRowsUsingDIB(User user, Container container, DataIteratorBuilder in, @Nullable final ArrayList<Map<String, Object>> outputRows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
     {
         if (!hasImportRowsPermission(user, container, context))
-            throw new UnauthorizedException("You do not have permission to " + (context.getInsertOption().updateOnly ? "update data in this table." : "insert data into this table."));
+        {
+            if (!hasImportRowsPermission(user, container, context))
+                throw new UnauthorizedException("You do not have permission to " + (context.getInsertOption().updateOnly ? "update data in this table." : "insert data into this table."));
+        }
 
         if (!context.getConfigParameterBoolean(ConfigParameters.SkipInsertOptionValidation))
             assert(getQueryTable().supportsInsertOption(context.getInsertOption()));
@@ -936,19 +945,19 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
     public static Object saveFile(User user, Container container, String name, Object value, @Nullable String dirName) throws ValidationException, QueryUpdateServiceException
     {
-        Path path = AssayFileWriter.getUploadDirectoryPath(container, dirName);
-        return saveFile(user, container, name, value, path);
+        FileObject dirPath = AssayFileWriter.getUploadDirectoryPath(container, dirName);
+        return saveFile(user, container, name, value, dirPath);
     }
 
     /**
      * Save uploaded file to dirName directory under file or pipeline root.
      */
-    public static Object saveFile(User user, Container container, String name, Object value, @Nullable Path dirPath) throws ValidationException, QueryUpdateServiceException
+    public static Object saveFile(User user, Container container, String name, Object value, @Nullable FileObject dirPath) throws ValidationException, QueryUpdateServiceException
     {
-        File file = null;
+        FileObject file = null;
         try
         {
-            File dir = AssayFileWriter.ensureUploadDirectory(dirPath);
+            FileObject dir = AssayFileWriter.ensureUploadDirectory(dirPath);
 
             if (value instanceof MultipartFile)
             {
@@ -960,7 +969,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                 }
                 file = AssayFileWriter.findUniqueFileName(multipartFile.getOriginalFilename(), dir);
                 file = checkFileUnderRoot(container, file);
-                multipartFile.transferTo(file);
+                multipartFile.transferTo(file.getPath());
             }
             else if (value instanceof SpringAttachmentFile)
             {
@@ -978,7 +987,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         if (file == null)
             return value;
 
-        ensureExpData(user, container, file);
+        ensureExpData(user, container, file.getPath().toFile());
         return file;
     }
 
@@ -1006,24 +1015,24 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
     // For security reasons, make sure the user hasn't tried to reference a file that's not under
     // the pipeline root or @assayfiles root. Otherwise, they could get access to any file on the server
-    static File checkFileUnderRoot(Container container, File file) throws ExperimentException
+    static FileObject checkFileUnderRoot(Container container, FileObject file) throws ExperimentException
     {
         Path assayFilesRoot = FileContentService.get().getFileRootPath(container, FileContentService.ContentType.assayfiles);
-        if (assayFilesRoot != null && URIUtil.isDescendant(assayFilesRoot.toUri(), file.toURI()))
+        if (assayFilesRoot != null && URIUtil.isDescendant(assayFilesRoot.toUri(), file.getURI()))
             return file;
 
         PipeRoot root = PipelineService.get().findPipelineRoot(container);
         if (root == null)
             throw new ExperimentException("Pipeline root not available in container " + container.getPath());
 
-        if (!root.isUnderRoot(file))
+        if (!root.isUnderRoot(file.getPath()))
         {
-            File resolved = root.resolvePath(file.toString());
-            if (resolved == null)
+//            File resolved = root.resolvePath(file.toString());
+//            if (resolved == null)
                 throw new ExperimentException("Cannot reference file '" + file + "' from " + container.getPath());
 
-            // File column values are stored as the absolute resolved path.
-            file = resolved;
+//            // File column values are stored as the absolute resolved path.
+//            file = resolved;
         }
 
         return file;

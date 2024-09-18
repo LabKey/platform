@@ -17,6 +17,7 @@
 package org.labkey.api.assay;
 
 
+import org.apache.commons.vfs2.FileObject;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpRun;
@@ -31,7 +32,7 @@ import java.util.Map;
 public abstract class AbstractAssayDataCollector<ContextType extends AssayRunUploadContext<? extends AssayProvider>> extends AssayFileWriter<ContextType> implements AssayDataCollector<ContextType>
 {
     @Override
-    public Map<String, File> uploadComplete(ContextType context, @Nullable ExpRun run) throws ExperimentException
+    public Map<String, FileObject> uploadComplete(ContextType context, @Nullable ExpRun run) throws ExperimentException
     {
         return context.getUploadedData();
     }

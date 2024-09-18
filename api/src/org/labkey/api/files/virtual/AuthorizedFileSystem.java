@@ -19,10 +19,12 @@ import org.apache.commons.vfs2.provider.AbstractFileName;
 import org.apache.commons.vfs2.provider.AbstractFileObject;
 import org.apache.commons.vfs2.provider.AbstractFileSystem;
 import org.apache.commons.vfs2.util.RandomAccessMode;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.UnauthorizedException;
 
 import java.io.File;
@@ -38,6 +40,7 @@ import java.nio.file.Path;
 import java.security.cert.Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -55,6 +58,9 @@ public class AuthorizedFileSystem extends AbstractFileSystem
     final boolean _allowList = true;
     final boolean _allowRead;
     final boolean _allowWrite;
+    final boolean _allowDeleteRoot;
+
+    private static final Logger LOG = LogHelper.getLogger(AuthorizedFileSystem.class, "Virtual file system");
 
     public enum Mode
     {
@@ -77,11 +83,16 @@ public class AuthorizedFileSystem extends AbstractFileSystem
 
     public static AuthorizedFileSystem create(File f, Mode mode)
     {
+        return create(f, mode.canRead(), mode.canWrite());
+    }
+
+    public static AuthorizedFileSystem create(File f, boolean read, boolean write)
+    {
         if (!f.isAbsolute())
             throw new IllegalArgumentException(f + " is not absolute");
         try
         {
-            return new AuthorizedFileSystem(VFS.getManager().resolveFile(f.toURI()), mode);
+            return new AuthorizedFileSystem(VFS.getManager().resolveFile(f.toURI()), read, write, false);
         }
         catch (FileSystemException e)
         {
@@ -91,15 +102,82 @@ public class AuthorizedFileSystem extends AbstractFileSystem
 
     public static AuthorizedFileSystem create(Path path, Mode mode)
     {
+        return create(path, mode.canRead(), mode.canWrite());
+    }
+
+    public static AuthorizedFileSystem create(Path path, boolean read, boolean write)
+    {
         if (!path.isAbsolute())
             throw new IllegalArgumentException(path + " is not absolute");
         try
         {
-            return new AuthorizedFileSystem(VFS.getManager().resolveFile("file://" + path), mode);
+            return new AuthorizedFileSystem(VFS.getManager().resolveFile("file://" + path), read, write, false);
         }
         catch (FileSystemException e)
         {
             throw UnexpectedException.wrap(e);
+        }
+    }
+
+    // same as create(), but allows the root to be deleted.  This is useful for temp subdirectories.
+    public static AuthorizedFileSystem createTemp(File f)
+    {
+        if (!f.isAbsolute())
+            throw new IllegalArgumentException(f + " is not absolute");
+        try
+        {
+            return new AuthorizedFileSystem(VFS.getManager().resolveFile(f.toURI()), true, true, true);
+        }
+        catch (FileSystemException e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
+    }
+
+    /** This is a helper for transitioning from File->FileObject
+     *<br>
+     * a) In experiment land we often have free floating file URIs with no associated file system "root directory".  The
+     *    solution for now is to wrap these files with an AFS scoped to its parent directory.
+     * b) We often have a list of files that may be colocated, and it makes sense to create one (or a few) AFS that they share.
+     *<br>
+     * Given a collection of File objects that are likely in the same directory, convert them to FileObject object that are
+     * each scoped to their own parent directory.
+     * <br>
+     * We should try to minimize usage of this method, however, it is useful while migrating the codebase.
+     */
+    public static List<FileObject> convertToFileObjects(List<File> files)
+    {
+        try
+        {
+            Map<File, AuthorizedFileSystem> map = new HashMap<>();
+            List<FileObject> ret = new ArrayList<>(files.size());
+            for (File file : files)
+            {
+                File parent = file.getParentFile();
+                AuthorizedFileSystem fs = map.computeIfAbsent(parent, key -> AuthorizedFileSystem.create(parent, true, true));
+                ret.add(fs.resolveFile(file.getName()));
+            }
+            return ret;
+        }
+        catch (FileSystemException e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
+    }
+
+    /* See note above.  We should try to minimize usage of this method, however, it is useful while migrating the codebase. */
+    public static FileObject convertToFileObject(File file)
+    {
+        try
+        {
+            if (null == file)
+                return null;
+            File parent = file.getParentFile();
+            return AuthorizedFileSystem.create(parent, true, true).getRoot().resolveFile(file.getName());
+        }
+        catch (FileSystemException fse)
+        {
+            throw UnexpectedException.wrap(fse);
         }
     }
 
@@ -108,7 +186,7 @@ public class AuthorizedFileSystem extends AbstractFileSystem
     {
         if (src._allowRead && !src._allowWrite)
             return src;
-        return new AuthorizedFileSystem(src._rootInnerFileObject, Mode.Read);
+        return new AuthorizedFileSystem(src._rootInnerFileObject, true, false, false);
     }
 
 
@@ -116,16 +194,17 @@ public class AuthorizedFileSystem extends AbstractFileSystem
     {
         if (src._allowRead && src._allowWrite)
             return src;
-        return new AuthorizedFileSystem(src._rootInnerFileObject, Mode.Read_Write);
+        return new AuthorizedFileSystem(src._rootInnerFileObject, true, true, false);
     }
 
 
-    private AuthorizedFileSystem(FileObject wrappedFileObjectRoot, Mode mode)
+    private AuthorizedFileSystem(FileObject wrappedFileObjectRoot, boolean read, boolean write, boolean allowDeleteRoot)
     {
         super(new VirtualFileName(SCHEME, "/", FileType.FOLDER), null, null);
+        LOG.debug("AuthorizedFileSystem(" + wrappedFileObjectRoot.getPath() + "," + (read?"r":"") + (write?"w":"")+")");
         try
         {
-            if (!wrappedFileObjectRoot.isFolder())
+            if (wrappedFileObjectRoot.isFile())
                 throw new IllegalArgumentException("parentLayer must be a Folder");
         }
         catch (FileSystemException e)
@@ -135,8 +214,9 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         _rootInnerFileObject = wrappedFileObjectRoot;
         _rootWrapperFileObject = wrapFileObject(_rootInnerFileObject);
         _wrappedFileSystem = wrappedFileObjectRoot.getFileSystem();
-        _allowRead = mode.canRead();
-        _allowWrite = mode.canWrite();
+        _allowRead = read;
+        _allowWrite = write;
+        _allowDeleteRoot = allowDeleteRoot;
     }
 
     public FileObject getInnerFileObject()
@@ -501,9 +581,12 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         {
             throw UnexpectedException.wrap(e);
         }
+        String absPath;
         if (".".equals(relative))
-            relative = "/";
-        var name = new VirtualFileName(SCHEME, relative, FileType.FILE_OR_FOLDER);
+            absPath = "/";
+        else
+            absPath = "/" + relative;
+        var name = new VirtualFileName(SCHEME, absPath, FileType.FILE_OR_FOLDER);
         return new _FileObject(name, fo);
     }
 
@@ -603,7 +686,7 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         public boolean delete() throws FileSystemException
         {
             checkWritable();
-            if ("/".equals(getName().getPath()))
+            if (!_allowDeleteRoot && "/".equals(getName().getPath()))
                 throw new UnauthorizedException();
             var ret = _fo.delete();
             refresh();
@@ -692,28 +775,24 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         @Override
         public String getPublicURIString()
         {
-            // TODO
             return _fo.getPublicURIString();
         }
 
         @Override
         public URI getURI()
         {
-            // TODO
             return _fo.getURI();
         }
 
         @Override
         public Path getPath()
         {
-            // NOTE this is what we want to discourage!
             return _fo.getPath();
         }
 
         @Override
         public URL getURL() throws FileSystemException
         {
-            // TODO
             return _fo.getURL();
         }
 
@@ -974,19 +1053,44 @@ public class AuthorizedFileSystem extends AbstractFileSystem
                 FileUtil.deleteTempDirectoryFileObject(root);
             }
         }
+
+        @Test
+        public void testFileName() throws Exception
+        {
+            // just to make sure I understand how FileName works
+            FileObject fo = VFS.getManager().resolveFile("/a/b/file%20name.txt");
+            assertNotNull(fo);
+
+            FileName fn = fo.getName();
+            assertNotNull(fn);
+            assertEquals("file name.txt", fn.getBaseName());
+            assertEquals("file:///a/b/file name.txt", fn.toString());
+            assertEquals("txt", fn.getExtension());
+
+            Path path = fo.getPath();
+            assertEquals("/a/b/file name.txt", path.toString());
+
+            assertEquals(fo.getURI().toString(), fo.getURL().toString());
+        }
     }
 }
 
 /*
  TODO
-
-[ ] get clear on proper time to use encoded or decoded paths
-[ ] Do we need to support URI methods?
+[ ] exp.data.datafileurl is a problem.  We really need to be able to map those back to a current PipeRoot
 [ ] use AbstractFileSystem.close()?
-[ ] There is way too much metadata caching going on.
+[ ] There is way too much metadata caching going on.  NOTE FileInfo in FileSystemResource teies to solve the same
+    problem of excessive calls to isFile(), exists() etc.  So there are cases where we want the caching.
 
 CONSIDER
 
 [ ] fine-grained permissions list/read/insert/update/delete
 [ ] handling declared exception FileSystemException is annoying
+
+NOTES
+To find File usages that are candidates for conversion look for
+- File (case-sensitive whole word), especially in interfaces and Controller classes.
+- getPath().toFile()
+- FileUtil.appendName()
+
 */

@@ -16,6 +16,7 @@
 package org.labkey.api.assay;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.apache.commons.vfs2.FileObject;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -79,7 +80,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     private final String _auditUserComment;
 
     // Lazily created fields
-    private Map<String, File> _uploadedData;
+    private Map<String, FileObject> _uploadedData;
     private Map<DomainProperty, String> _runProperties;
     private Map<DomainProperty, String> _batchProperties;
     private Map<String, Object> _unresolvedRunProperties;
@@ -302,14 +303,14 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
      */
     @Override
     @NotNull
-    public Map<String, File> getUploadedData() throws ExperimentException
+    public Map<String, FileObject> getUploadedData() throws ExperimentException
     {
         if (_uploadedData == null && _context != null)
         {
             try
             {
                 AssayDataCollector<AssayRunUploadContextImpl<?>> collector = new FileUploadDataCollector<>(1, emptyMap(), FILE_INPUT_NAME);
-                Map<String, File> files = collector.createData(this);
+                Map<String, FileObject> files = collector.createData(this);
                 // HACK: rekey the map using PRIMARY_FILE instead of FILE_INPUT_NAME
                 _uploadedData = Collections.singletonMap(AssayDataCollector.PRIMARY_FILE, files.get(FILE_INPUT_NAME));
             }

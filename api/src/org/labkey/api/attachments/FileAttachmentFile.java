@@ -16,6 +16,7 @@
 
 package org.labkey.api.attachments;
 
+import org.apache.commons.vfs2.FileObject;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.PageFlowUtil;
@@ -42,6 +43,16 @@ public class FileAttachmentFile implements AttachmentFile
     public FileAttachmentFile(File file)
     {
         this(file, null);
+    }
+
+    public FileAttachmentFile(FileObject file)
+    {
+        this(file.getPath().toFile(), null);
+    }
+
+    public FileAttachmentFile(FileObject file, @Nullable String originalName)
+    {
+        this(file.getPath().toFile(), originalName);
     }
 
     public FileAttachmentFile(File file, @Nullable String originalName)

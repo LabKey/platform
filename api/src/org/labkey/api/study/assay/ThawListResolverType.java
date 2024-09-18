@@ -17,6 +17,7 @@
 package org.labkey.api.study.assay;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.vfs2.FileObject;
 import org.json.JSONObject;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.assay.AbstractAssayProvider;
@@ -284,8 +285,8 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
                     in = new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8));
                 }
 
-                File uploadDir = ensureUploadDirectory(context.getContainer());
-                File file = createFile(context.getProtocol(), uploadDir, "thawList");
+                FileObject uploadDir = ensureUploadDirectory(context.getContainer());
+                File file = createFile(context.getProtocol(), uploadDir, "thawList").getPath().toFile();
                 try
                 {
                     writeFile(in, file);
