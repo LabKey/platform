@@ -26,13 +26,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.labkey.api.exp.api.ExperimentJSONConverter.DATA_INPUTS;
-import static org.labkey.api.exp.api.ExperimentJSONConverter.MATERIAL_INPUTS;
+import static org.labkey.api.exp.api.ExperimentJSONConverter.DATA_INPUTS_ALIAS_PREFIX;
+import static org.labkey.api.exp.api.ExperimentJSONConverter.MATERIAL_INPUTS_ALIAS_PREFIX;
 
 public class ExperimentQueryChangeListener implements QueryChangeListener
 {
-    public static final String MATERIAL_INPUTS_ALIAS_PREFIX = MATERIAL_INPUTS + "/";
-    public static final String DATA_INPUTS_ALIAS_PREFIX = DATA_INPUTS + "/";
 
     @Override
     public void queryCreated(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull Collection<String> queries)

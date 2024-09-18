@@ -3940,6 +3940,54 @@ public class ExperimentController extends SpringActionController
         return new ApiSimpleResponse(Map.of("sampleSet", sampleType, "success", true));
     }
 
+    public static class DataTypesWithRequiredLineageForm
+    {
+        private Integer _parentDataTypeRowId;
+        private boolean _sampleParent;
+
+        public Integer getParentDataTypeRowId()
+        {
+            return _parentDataTypeRowId;
+        }
+
+        public void setParentDataTypeRowId(Integer parentDataTypeRowId)
+        {
+            this._parentDataTypeRowId = parentDataTypeRowId;
+        }
+
+        public boolean isSampleParent()
+        {
+            return _sampleParent;
+        }
+
+        public void setSampleParent(boolean sampleParent)
+        {
+            _sampleParent = sampleParent;
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public static class GetDataTypesWithRequiredLineageAction extends ReadOnlyApiAction<DataTypesWithRequiredLineageForm>
+    {
+        @Override
+        public void validateForm(DataTypesWithRequiredLineageForm form, Errors errors)
+        {
+            if (form.getParentDataTypeRowId() == null)
+                errors.reject(ERROR_REQUIRED, "ParentDataTypeRowId must be provided");
+        }
+
+        @Override
+        public Object execute(DataTypesWithRequiredLineageForm form, BindException errors) throws Exception
+        {
+            return getDataTypesWithRequiredLineageResponse(form.getParentDataTypeRowId(), form.isSampleParent(), getContainer(), getUser());
+        }
+    }
+    @NotNull
+    private static ApiSimpleResponse getDataTypesWithRequiredLineageResponse(Integer parentDataType, boolean isSampleParent, Container container, User user)
+    {
+        Pair<Set<String>, Set<String>> requiredLineages = ExperimentServiceImpl.get().getDataTypesWithRequiredLineage(parentDataType, isSampleParent, container, user);
+        return new ApiSimpleResponse(Map.of("sampleTypes", requiredLineages.first, "dataClasses", requiredLineages.second,"success", true));
+    }
 
     @RequiresPermission(DesignSampleTypePermission.class)
     public static class EditSampleTypeAction extends SimpleViewAction<SampleTypeForm>

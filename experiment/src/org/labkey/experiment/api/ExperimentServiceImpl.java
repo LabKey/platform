@@ -294,6 +294,8 @@ import static org.labkey.api.exp.XarContext.XAR_JOB_ID_NAME;
 import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ExperimentRun;
 import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ExperimentRunOutput;
 import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ProtocolApplication;
+import static org.labkey.api.exp.api.ExperimentJSONConverter.DATA_INPUTS_ALIAS_PREFIX;
+import static org.labkey.api.exp.api.ExperimentJSONConverter.MATERIAL_INPUTS_ALIAS_PREFIX;
 import static org.labkey.api.exp.api.NameExpressionOptionService.NAME_EXPRESSION_REQUIRED_MSG;
 import static org.labkey.api.exp.api.NameExpressionOptionService.NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS;
 import static org.labkey.api.exp.api.ProvenanceService.PROVENANCE_PROTOCOL_LSID;
@@ -9213,7 +9215,70 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public Map<String, Object> getNameExpressionMetrics()
+    public Map<String, Map<String, Object>> getDomainMetrics()
+    {
+        Map<String, Map<String, Object>> metrics = new HashMap<>();
+        metrics.put("nameexpression", getNameExpressionMetrics());
+        metrics.put("parentalias", getParentAliasMetrics());
+        return metrics;
+    }
+
+    private Pair<Long, Long> getParentAliasMetrics(TableInfo tableInfo, String aliasField)
+    {
+        SQLFragment sql = new SQLFragment("SELECT ")
+                .append(aliasField)
+                .append(" FROM ")
+                .append(tableInfo)
+                .append(" WHERE ")
+                .append(aliasField)
+                .append(" LIKE ?")
+                .add("\"required\":true");
+        List<String> aliases = new SqlSelector(ExperimentService.get().getSchema(), sql).getArrayList(String.class);
+
+        Long requiredSampleParentCount = 0L;
+        Long requiredDataParentCount = 0L;
+        try
+        {
+            for (String aliasStr : aliases)
+            {
+                Map<String, Map<String, Object>> aliasMaps = ExperimentJSONConverter.parseImportAliases(aliasStr);
+                for (Map<String, Object> aliasMap : aliasMaps.values())
+                {
+                    if ((Boolean) aliasMap.get("required"))
+                    {
+                        String inputType = (String) aliasMap.get("inputType");
+                        if (inputType.startsWith(MATERIAL_INPUTS_ALIAS_PREFIX))
+                            requiredSampleParentCount++;
+                        else if (inputType.startsWith(DATA_INPUTS_ALIAS_PREFIX))
+                            requiredDataParentCount++;
+                    }
+                }
+            }
+        }
+        catch (IOException ignore)
+        {
+        }
+
+        return new Pair<>(requiredSampleParentCount, requiredDataParentCount);
+    }
+
+    private Map<String, Object> getParentAliasMetrics()
+    {
+        Map<String, Object> metrics = new HashMap<>();
+        Pair<Long, Long> samplesMetrics = getParentAliasMetrics(getTinfoSampleType(), "materialparentimportaliasmap");
+        if (samplesMetrics.first > 0)
+            metrics.put("RequiredSampleParentsForSampleTypes", samplesMetrics.first);
+        if (samplesMetrics.second > 0)
+            metrics.put("RequiredSourceParentsForSampleTypes", samplesMetrics.first);
+        Pair<Long, Long> dataMetrics = getParentAliasMetrics(getTinfoDataClass(), "dataparentimportaliasmap");
+        if (dataMetrics.first > 0)
+            metrics.put("RequiredSampleParentsForDataClasses", dataMetrics.first);
+        if (dataMetrics.second > 0)
+            metrics.put("RequiredSourceParentsForDataClasses", dataMetrics.first);
+        return metrics;
+    }
+
+    private Map<String, Object> getNameExpressionMetrics()
     {
         Map<String, Object> metrics = new HashMap<>();
 
@@ -9288,6 +9353,55 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
 
         return metrics;
+    }
+
+    public @NotNull Pair<Set<String>, Set<String>> getDataTypesWithRequiredLineage(Integer parentDataTypeRowId, boolean isSampleParent, Container container, User user)
+    {
+        Set<String> sampleTypes = new CaseInsensitiveHashSet();
+        Set<String> dataClasses = new CaseInsensitiveHashSet();
+
+        String parentDataTypeName = null;
+        if (isSampleParent)
+        {
+            ExpSampleType sampleType = SampleTypeService.get().getSampleType(parentDataTypeRowId);
+            if (sampleType != null)
+                parentDataTypeName = sampleType.getName();
+        }
+        else
+        {
+            ExpDataClass dataClass = getDataClass(container, user, parentDataTypeRowId, true);
+            if (dataClass != null)
+                parentDataTypeName = dataClass.getName();
+        }
+
+        if (StringUtils.isEmpty(parentDataTypeName))
+            return new Pair<>(sampleTypes, dataClasses);
+
+        String targetInputType = (isSampleParent ? MATERIAL_INPUTS_ALIAS_PREFIX : DATA_INPUTS_ALIAS_PREFIX) + parentDataTypeName;
+        for (ExpSampleType sampleType : SampleTypeService.get().getSampleTypes(container, user, true))
+        {
+            try
+            {
+                if (sampleType.getRequiredImportAliases().containsValue(targetInputType))
+                    sampleTypes.add(sampleType.getName());
+            }
+            catch (IOException ignore)
+            {
+            }
+        }
+        for (ExpDataClassImpl dataClass : getDataClasses(container, user, true))
+        {
+            try
+            {
+                if (dataClass.getRequiredImportAliases().containsValue(targetInputType))
+                    dataClasses.add(dataClass.getName());
+            }
+            catch (IOException ignore)
+            {
+            }
+        }
+
+        return new Pair<>(sampleTypes, dataClasses);
     }
 
     private static @Nullable TableInfo getTableInfo(String schemaName)

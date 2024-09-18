@@ -109,6 +109,9 @@ public class ExperimentJSONConverter
     public static final String MATERIAL_OUTPUTS = "materialOutputs";
     public static final String STEPS = "steps";
 
+    public static final String MATERIAL_INPUTS_ALIAS_PREFIX = MATERIAL_INPUTS + "/";
+    public static final String DATA_INPUTS_ALIAS_PREFIX = DATA_INPUTS + "/";
+
     // Material properties
     public static final String SAMPLE_TYPE = "sampleSet";
 
@@ -922,12 +925,12 @@ public class ExperimentJSONConverter
             if (trimmedVal.equalsIgnoreCase(NEW_SAMPLE_TYPE_ALIAS_VALUE) ||
                     trimmedVal.equalsIgnoreCase(MATERIAL_INPUTS_PREFIX + NEW_SAMPLE_TYPE_ALIAS_VALUE))
             {
-                trimmedVal = MATERIAL_INPUTS_PREFIX + currentAliasName;
+                trimmedVal = MATERIAL_INPUTS_ALIAS_PREFIX + currentAliasName;
             }
             else if (trimmedVal.equalsIgnoreCase(NEW_DATA_CLASS_ALIAS_VALUE) ||
                     trimmedVal.equalsIgnoreCase(DATA_INPUTS_PREFIX + NEW_DATA_CLASS_ALIAS_VALUE))
             {
-                trimmedVal = DATA_INPUTS_PREFIX + currentAliasName;
+                trimmedVal = DATA_INPUTS_ALIAS_PREFIX + "/" + currentAliasName;
             }
 
             cleanAliases.put(trimmedKey, Map.of("inputType", trimmedVal, "required", Boolean.valueOf(requiredStr)));
