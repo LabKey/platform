@@ -92,7 +92,9 @@ LABKEY.WebSocket = new function ()
             }
             else if (evt.code === CloseEventCode.GOING_AWAY && evt.reason && evt.reason !== "") {
                 // 1001 sent when server is shutdown normally (AND on page reload in FireFox, but that one doesn't have a reason)
-                setTimeout(showDisconnectedMessage, 1000);
+                setTimeout(function() {
+                    showDisconnectedMessage(false, evt.reason);
+                }, 1000);
             }
             else if (evt.code === CloseEventCode.POLICY_VIOLATION) {
                 // Tomcat closes the websocket with "1008 Policy Violation" code when the session has expired.
@@ -124,14 +126,14 @@ LABKEY.WebSocket = new function ()
                 setTimeout(function() {
                     // Issue 51021: check for null _websocket before showing unavailable message as this can be triggered
                     // in FF by having the API call aborted because of a page navigation
-                    if (_websocket === null) showDisconnectedMessage();
+                    if (_websocket === null) showDisconnectedMessage(false, "Failed login-whoami.api call.");
                 }, 1000);
             }
         });
     }
 
-    function showDisconnectedMessage(skipReopen) {
-        displayModal("Server Unavailable", "The server is currently unavailable. Please try reloading the page to continue.", false, skipReopen);
+    function showDisconnectedMessage(skipReopen, reason) {
+        displayModal("Server Unavailable", "The server is currently unavailable. Please try reloading the page to continue. " + reason, false, skipReopen);
         // CONSIDER: Periodically attempt to reestablish connection until the server comes back up.
     }
 
