@@ -16,9 +16,7 @@
 package org.labkey.api.cache;
 
 /**
- *  A thread-safe Cache implementation that tracks summary statistics on its current state and usage.
- * User: adam
- * Date: Jun 20, 2010
+ * A thread-safe Cache implementation that tracks summary statistics on its current state and usage.
  */
 public interface TrackingCache<K, V> extends Cache<K, V>, Tracking
 {
