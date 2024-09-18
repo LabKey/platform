@@ -181,7 +181,7 @@ export class Section extends PureComponent<SectionProps> {
 
 interface SmallFileInputProps extends InputFieldProps {
     index: number;
-    onFileChange: (attachment, name: string) => void;
+    onFileChange: (attachment: File, name: string) => void;
     onFileRemoval: (name: string) => void;
     requiredFieldEmpty?: boolean;
 }
@@ -239,7 +239,7 @@ interface DynamicFieldsProps {
     fields: AuthConfigField[];
     modalType: AuthConfigProvider;
     onChange: (name: string, value: string | boolean) => void;
-    onFileChange: (attachment, logoType: string) => void;
+    onFileChange: (attachment: File, logoType: string) => void;
     onFileRemoval: (name: string) => void;
 }
 

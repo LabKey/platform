@@ -8,7 +8,7 @@ interface ImgFileAttachFormProps {
     handleDeleteLogo: (name: string) => void;
     imageUrl: string;
     index: number;
-    onFileChange: (attachment, name: string) => void;
+    onFileChange: (attachment: File, name: string) => void;
     text: string;
 }
 
@@ -71,7 +71,7 @@ interface Props {
     handleDeleteLogo: (name: string) => void;
     headerLogoUrl: string;
     loginLogoUrl: string;
-    onFileChange: (attachment, name: string) => void;
+    onFileChange: (attachment: File, name: string) => void;
 }
 
 export const SSOFields: FC<Props> = memo(({ canEdit, handleDeleteLogo, headerLogoUrl, loginLogoUrl, onFileChange }) => (
