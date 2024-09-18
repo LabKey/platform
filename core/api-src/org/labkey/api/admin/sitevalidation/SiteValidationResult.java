@@ -31,7 +31,7 @@ public class SiteValidationResult
 
         public SiteValidationResult create() { return create(HtmlString.EMPTY_STRING);}
         public SiteValidationResult create(HtmlString html) { return create(html, null);}
-        public SiteValidationResult create(HtmlString message, ActionURL link) { return new SiteValidationResult(this, message, link);}
+        public SiteValidationResult create(HtmlString message, @Nullable ActionURL link) { return new SiteValidationResult(this, message, link);}
     }
 
     private final Level level;

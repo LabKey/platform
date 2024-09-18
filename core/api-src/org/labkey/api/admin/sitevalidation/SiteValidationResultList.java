@@ -32,17 +32,12 @@ public class SiteValidationResultList
 
     // TODO: Add more HtmlString taking addResult() methods.
 
-    public SiteValidationResult addResult(Level level, String message)
-    {
-        return addResult(level, message, null);
-    }
-
-    public SiteValidationResult addResult(Level level, String message, ActionURL link)
+    public SiteValidationResult addResult(Level level, String message, @Nullable ActionURL link)
     {
         return addResult(level, HtmlString.of(message), link);
     }
 
-    public SiteValidationResult addResult(Level level, HtmlString message, ActionURL link)
+    public SiteValidationResult addResult(Level level, HtmlString message, @Nullable ActionURL link)
     {
         SiteValidationResult result = level.create(message, link);
         results.add(result);
@@ -54,7 +49,7 @@ public class SiteValidationResultList
         return addInfo(message, null);
     }
 
-    public SiteValidationResult addInfo(String message, ActionURL link)
+    public SiteValidationResult addInfo(String message, @Nullable ActionURL link)
     {
         return addResult(Level.INFO, message, link);
     }
@@ -64,12 +59,12 @@ public class SiteValidationResultList
         return addWarn(message, null);
     }
 
-    public SiteValidationResult addWarn(String message, ActionURL link)
+    public SiteValidationResult addWarn(String message, @Nullable ActionURL link)
     {
         return addWarn(HtmlString.of(message), link);
     }
 
-    public SiteValidationResult addWarn(HtmlString message, ActionURL link)
+    public SiteValidationResult addWarn(HtmlString message, @Nullable ActionURL link)
     {
         return addResult(Level.WARN, message, link);
     }
@@ -79,7 +74,7 @@ public class SiteValidationResultList
         return addError(message, null);
     }
 
-    public SiteValidationResult addError(String message, ActionURL link)
+    public SiteValidationResult addError(String message, @Nullable ActionURL link)
     {
         return addResult(Level.ERROR, message, link);
     }
