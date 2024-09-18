@@ -309,7 +309,7 @@ public class DbSchema
 
         if (null == factory && isModuleSchema())
         {
-            _log.warn("SchemaTableInfoFactory for table \"" + getName() + "." + requestedTableName + "\" was null! This could indicate a problem with DbSchema.loadTableMetaData().");
+            _log.warn("SchemaTableInfoFactory for table \"{}.{}\" was null! This could indicate a problem with DbSchema.loadTableMetaData().", getName(), requestedTableName);
         }
 
         return null != factory ? factory.getSchemaTableInfo(this) : null;
@@ -329,7 +329,7 @@ public class DbSchema
             }
             catch (Exception e)
             {
-                _log.error("Exception retrieving schemas for module \"" + module + "\"", e);
+                _log.error("Exception retrieving schemas for module \"{}\"", module, e);
             }
         }
 
