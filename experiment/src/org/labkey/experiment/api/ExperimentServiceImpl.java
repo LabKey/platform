@@ -9862,7 +9862,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             TableInfo provisioned = type.getTinfo();
             TableInfo tableInfo = samplesUserSchema.getTable(type.getName());
-            if (tableInfo == null)
+            if (tableInfo == null || provisioned == null)
                 continue;
             List<ColumnInfo> uniqueIdCols = provisioned.getColumns().stream().filter(ColumnInfo::isScannableField).toList();
             numUniqueIdCols += uniqueIdCols.size();

@@ -470,7 +470,7 @@ public interface QueryService
      */
     void addAuditEvent(QueryView queryView, String comment, @Nullable Integer dataRowCount);
     void addAuditEvent(User user, Container c, String schemaName, String queryName, ActionURL sortFilter, String comment, @Nullable Integer dataRowCount);
-    List<DetailedAuditTypeEvent> getQueryUpdateAuditRecords(User user, Container container, long transactionAuditId);
+    List<DetailedAuditTypeEvent> getQueryUpdateAuditRecords(User user, Container container, long transactionAuditId, @Nullable ContainerFilter containerFilter);
     AuditHandler getDefaultAuditHandler();
 
     int moveAuditEvents(Container targetContainer, List<Integer> rowPks, String schemaName, String queryName);

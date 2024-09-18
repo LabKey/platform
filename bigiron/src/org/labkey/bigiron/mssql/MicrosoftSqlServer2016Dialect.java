@@ -160,7 +160,7 @@ public class MicrosoftSqlServer2016Dialect extends MicrosoftSqlServer2014Dialect
         @Override
         public void setObject(int parameterIndex, Object x, int targetSqlType, int scale) throws SQLException
         {
-            if (targetSqlType == Types.TIMESTAMP)
+            if (targetSqlType == Types.TIMESTAMP && x instanceof Timestamp)
                 setObject(parameterIndex, x);
             else
                 super.setObject(parameterIndex, x, targetSqlType, scale);
@@ -169,7 +169,7 @@ public class MicrosoftSqlServer2016Dialect extends MicrosoftSqlServer2014Dialect
         @Override
         public void setObject(int parameterIndex, Object x, int targetSqlType) throws SQLException
         {
-            if (targetSqlType == Types.TIMESTAMP)
+            if (targetSqlType == Types.TIMESTAMP && x instanceof Timestamp)
                 setObject(parameterIndex, x);
             else
                 super.setObject(parameterIndex, x, targetSqlType);
@@ -184,7 +184,7 @@ public class MicrosoftSqlServer2016Dialect extends MicrosoftSqlServer2014Dialect
         @Override
         public void setObject(String parameterName, Object x, int targetSqlType, int scale) throws SQLException
         {
-            if (targetSqlType == Types.TIMESTAMP)
+            if (targetSqlType == Types.TIMESTAMP && x instanceof Timestamp)
                 setObject(parameterName, x);
             else
                 super.setObject(parameterName, x, targetSqlType, scale);
@@ -193,7 +193,7 @@ public class MicrosoftSqlServer2016Dialect extends MicrosoftSqlServer2014Dialect
         @Override
         public void setObject(String parameterName, Object x, int targetSqlType) throws SQLException
         {
-            if (targetSqlType == Types.TIMESTAMP)
+            if (targetSqlType == Types.TIMESTAMP && x instanceof Timestamp)
                 setObject(parameterName, x);
             else
                 super.setObject(parameterName, x, targetSqlType);

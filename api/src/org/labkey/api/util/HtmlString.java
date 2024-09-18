@@ -136,6 +136,12 @@ public final class HtmlString implements SafeToRender, DOM.Renderable, Comparabl
     }
 
     @Override
+    public String renderToString()
+    {
+        return _s;
+    }
+
+    @Override
     public boolean equals(Object o)
     {
         if (this == o) return true;
