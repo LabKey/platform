@@ -37,7 +37,6 @@ import org.labkey.api.data.dialect.TableResolver;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.util.HtmlString;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.template.Warnings;
 import org.labkey.bigiron.mssql.synonym.SynonymTableResolver;
@@ -464,7 +463,8 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
                 throw new IllegalArgumentException("ERROR: Limit SQL doesn't start with SELECT: " + sql);
 
             int index = 6;
-            if (sql.substring(0, 15).equalsIgnoreCase("SELECT DISTINCT"))
+            // NOTE: check for the trailing space to ensure we do not accidentally split a field name that begins with distinct
+            if (sql.substring(0, 16).equalsIgnoreCase("SELECT DISTINCT "))
                 index = 15;
             frag.insert(index, " TOP " + (Table.NO_ROWS == maxRows ? 0 : maxRows));
         }
@@ -900,9 +900,9 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         return "dtproperties,sysconstraints,syssegments";
     }
 
-    private static final Set<String> SYSTEM_SCHEMAS = PageFlowUtil.set("db_accessadmin", "db_backupoperator",
+    private static final Set<String> SYSTEM_SCHEMAS = CaseInsensitiveHashSet.of("db_accessadmin", "db_backupoperator",
             "db_datareader", "db_datawriter", "db_ddladmin", "db_denydatareader", "db_denydatawriter", "db_owner",
-            "db_securityadmin", "guest", "INFORMATION_SCHEMA", "sys");
+            "db_securityadmin", "dbo", "guest", "INFORMATION_SCHEMA", "sys");
 
     @Override
     public boolean isSystemSchema(String schemaName)

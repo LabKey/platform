@@ -828,9 +828,11 @@ public class DOM
         html.append(" ");
         html.append(key.name());
         html.append("=\"");
-        if (value instanceof HtmlString)
+        // NOTE it is somewhat unusual to pass in a Renderable, but it is possible that we
+        // want to render HTML into an attribute.  We still need to re-encode the value before trying to wrap with "".
+        if (value instanceof Renderable r)
         {
-            html.append(value.toString());
+            html.append(filter(r.renderToString()));
         }
         else
         {

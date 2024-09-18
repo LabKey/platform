@@ -38,7 +38,7 @@ public class FormTag extends BodyTagSupport
     private Boolean isNoValidate;
     private String name;
     private String method="GET";
-    private HtmlString action;
+    private String action;
     private String enctype;
     private String target;
     private String onsubmit;
@@ -77,12 +77,12 @@ public class FormTag extends BodyTagSupport
                 s = ctx.getActionURL().getController() + "-" + s;
         }
 
-        this.action = HtmlString.of(s);
+        this.action = s;
     }
 
     public void setAction(ActionURL action)
     {
-        this.action = null == action ? null : HtmlString.of(action.toString());
+        this.action = null == action ? null : action.toString();
     }
 
     public String getEnctype()
@@ -180,7 +180,7 @@ public class FormTag extends BodyTagSupport
             formAttributes.at(DOM.Attribute.name, name);
         if (isNotBlank(method))
             formAttributes.at(DOM.Attribute.method, method);
-        if (!HtmlString.isBlank(action))
+        if (isNotBlank(action))
             formAttributes.at(DOM.Attribute.action, action);
         if (isNotBlank(enctype))
             formAttributes.at(DOM.Attribute.enctype, enctype);

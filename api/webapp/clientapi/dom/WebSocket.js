@@ -163,6 +163,8 @@ LABKEY.WebSocket = new function ()
     }
 
     function hideModal() {
+        if (!_modalShowing) return;
+
         toggleBackgroundBlurred(false);
 
         var modal = $('#lk-utils-modal');
