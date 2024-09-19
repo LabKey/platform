@@ -219,7 +219,7 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
 
         for(Map.Entry<String, FileObject> entry : getUploadedData().entrySet())
         {
-            logger.info("\t\t* " + entry.getValue().getName());
+            logger.info("\t\t* " + entry.getValue().getName().getBaseName());
         }
 
         if(_runName == null)

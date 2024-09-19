@@ -92,7 +92,7 @@ public class AuthorizedFileSystem extends AbstractFileSystem
             throw new IllegalArgumentException(f + " is not absolute");
         try
         {
-            return new AuthorizedFileSystem(VFS.getManager().resolveFile(f.toURI()), read, write, false);
+            return new AuthorizedFileSystem(VFS.getManager().resolveFile(f.getAbsolutePath()), read, write, false);
         }
         catch (FileSystemException e)
         {
@@ -111,7 +111,7 @@ public class AuthorizedFileSystem extends AbstractFileSystem
             throw new IllegalArgumentException(path + " is not absolute");
         try
         {
-            return new AuthorizedFileSystem(VFS.getManager().resolveFile("file://" + path), read, write, false);
+            return new AuthorizedFileSystem(VFS.getManager().resolveFile(path.toAbsolutePath().toString()), read, write, false);
         }
         catch (FileSystemException e)
         {
@@ -201,7 +201,9 @@ public class AuthorizedFileSystem extends AbstractFileSystem
     private AuthorizedFileSystem(FileObject wrappedFileObjectRoot, boolean read, boolean write, boolean allowDeleteRoot)
     {
         super(new VirtualFileName(SCHEME, "/", FileType.FOLDER), null, null);
-        LOG.debug("AuthorizedFileSystem(" + wrappedFileObjectRoot.getPath() + "," + (read?"r":"") + (write?"w":"")+")");
+
+        // NOTE: wrappedFileObjectRoot.getPath() calls wrappedFileObjectRoot.getURI() which does not seem to handle unicode very well???
+        LOG.debug("AuthorizedFileSystem(" + wrappedFileObjectRoot.getName().getPath() + "," + (read?"r":"") + (write?"w":"")+")");
         try
         {
             if (wrappedFileObjectRoot.isFile())
@@ -1072,6 +1074,35 @@ public class AuthorizedFileSystem extends AbstractFileSystem
 
             assertEquals(fo.getURI().toString(), fo.getURL().toString());
         }
+
+        @Test
+        public void bug() throws Exception
+        {
+            java.nio.file.Path nioPath;
+            // what am I doing wrong here?
+            try
+            {
+                File f = new File("/lk/develop/build/deploy/files/FileRootTestProject1☃~!@$&()_+{}-=[],.%23äöü/Subfolder1/SubSubfolder/@files");
+                FileObject localFile = VFS.getManager().resolveFile(f.getAbsolutePath());
+                nioPath = localFile.getPath();
+            }
+            catch (Exception e)
+            {
+                System.err.println(e);
+            }
+
+            try
+            {
+                // what am I doing wrong here?
+                File f = new File("/lk/develop/build/deploy/files/FileRootTestProject1☃~!@$&()_+{}-=[],.%23äöü/Subfolder1/SubSubfolder/@files");
+                FileObject localFile = VFS.getManager().resolveFile(f.toURI());
+                nioPath = localFile.getPath();
+            }
+            catch (Exception e)
+            {
+                System.err.println(e);
+            }
+        }
     }
 }
 
@@ -1092,5 +1123,6 @@ To find File usages that are candidates for conversion look for
 - File (case-sensitive whole word), especially in interfaces and Controller classes.
 - getPath().toFile()
 - FileUtil.appendName()
+- The JDK implementation of LocalFile seems to have problems with Unicode (e.g. fileobject.getPath() blows up!), use new File(fileobject.getName().getPath()) instead?
 
 */
