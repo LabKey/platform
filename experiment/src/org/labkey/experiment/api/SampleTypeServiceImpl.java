@@ -1036,6 +1036,27 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 hasMetricUnitChanged = true;
 
             st.setMetricUnit(options.getMetricUnit());
+
+            if (options.getImportAliases() != null && !options.getImportAliases().isEmpty())
+            {
+                try
+                {
+                    Map<String, Map<String, Object>> newAliases = options.getImportAliases();
+                    Set<String> existingRequiredInputs = new HashSet<>(st.getRequiredImportAliases().values());
+                    String invalidAlias = ExperimentServiceImpl.get().getInvalidRequiredImportAliasUpdate(st.getLSID(), true, newAliases, existingRequiredInputs, container, user);
+                    if (invalidAlias != null)
+                    {
+                        errors = new ValidationException();
+                        errors.addError(new SimpleValidationError("The import alias '" + invalidAlias + "' cannot be required when there are existing rows with missing parent."));
+                        return errors;
+                    }
+                }
+                catch (IOException e)
+                {
+                    throw new RuntimeException(e);
+                }
+            }
+
             st.setImportAliasMap(options.getImportAliases());
             String targetContainerId = StringUtils.trimToNull(options.getAutoLinkTargetContainerId());
             st.setAutoLinkTargetContainer(targetContainerId != null ? ContainerManager.getForId(targetContainerId) : null);
