@@ -607,12 +607,6 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         }
 
         @Override
-        public boolean equals(Object obj)
-        {
-            return obj instanceof _FileObject other && _fo.equals(other._fo);
-        }
-
-        @Override
         protected long doGetContentSize() throws Exception
         {
             throw new UnsupportedOperationException();
@@ -907,10 +901,24 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         }
 
         @Override
-        public int compareTo(@NotNull FileObject o)
+        public int compareTo(@NotNull FileObject other)
         {
             checkReadable();
-            return _fo.compareTo(o);
+            if (!(other instanceof _FileObject otherFO))
+                throw new IllegalArgumentException();
+            return _fo.compareTo(otherFO._fo);
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return _fo.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object obj)
+        {
+            return obj instanceof _FileObject other && _fo.equals(other._fo);
         }
     }
 
