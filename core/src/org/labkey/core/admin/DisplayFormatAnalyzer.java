@@ -14,7 +14,8 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.gwt.client.model.GWTDomain;
-import org.labkey.api.query.QueryException;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUrls;
 import org.labkey.api.security.User;
@@ -23,14 +24,11 @@ import org.labkey.api.usageMetrics.UsageMetricsProvider;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.ColumnType;
-import org.labkey.data.xml.TablesDocument;
+import org.labkey.data.xml.TableType;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -48,7 +46,7 @@ public class DisplayFormatAnalyzer
     }
 
     private record NonStandardDefaultFormat(Container container, DateDisplayFormatType type, String format) {}
-    private record QueryCandidate(Container container, String schemaName, String queryName) {}
+    private record QueryCandidate(Container container, String schemaName, String queryName, int rowId) {}
     private record PropertyCandidate(Container container, String tableName, String columnName, String domainUri, String rangeUri, String format)
     {
         DateDisplayFormatType type()
@@ -58,7 +56,7 @@ public class DisplayFormatAnalyzer
     }
 
     private final MultiValuedMap<Container, NonStandardDefaultFormat> _defaultFormatsMap = new ArrayListValuedHashMap<>();
-    private final MultiValuedMap<Container, QueryCandidate> _queryCandidatesMap = new ArrayListValuedHashMap<>();
+    private final MultiValuedMap<Container, QueryCandidate> _queryDefXmlCandidatesMap = new ArrayListValuedHashMap<>();
     private final MultiValuedMap<Container, PropertyCandidate> _propertyCandidateMap = new ArrayListValuedHashMap<>();
 
     private final AdminUrls _adminUrls = urlProvider(AdminUrls.class);
@@ -81,9 +79,11 @@ public class DisplayFormatAnalyzer
             });
         }
 
-        new SqlSelector(CoreSchema.getInstance().getSchema(), new SQLFragment("SELECT Container, \"schema\" AS SchemaName, Name AS QueryName FROM query.QueryDef WHERE metadata LIKE '%<formatString>%'"))
+        new SqlSelector(CoreSchema.getInstance().getSchema(),
+            new SQLFragment("SELECT Container, QueryDefId AS RowId, \"schema\" AS SchemaName, Name AS QueryName FROM query.QueryDef WHERE metadata LIKE '%<formatString>%'")
+        )
             .stream(QueryCandidate.class)
-            .forEach(candidate -> _queryCandidatesMap.put(candidate.container(), candidate));
+            .forEach(candidate -> _queryDefXmlCandidatesMap.put(candidate.container(), candidate));
 
         SQLFragment sql = new SQLFragment(
                 "SELECT dd.Container, DomainURI, dd.Name AS TableName, pd.Name AS ColumnName, RangeURI, Format FROM " + OntologyManager.getTinfoDomainDescriptor() + " dd\n" +
@@ -107,18 +107,16 @@ public class DisplayFormatAnalyzer
                 )
             ));
 
-        // First, inspect QueryDefinition to identify columns where XML has explicitly set a display format
+        // First, inspect QueryDef metadata to find columns where XML has explicitly set a display format
         // (as opposed to inheriting a display format from another query or table definition). Then inspect
-        // those columns via the TableInfo to determine date-time columns with non-standard formats.
-        List<QueryException> errors = new ArrayList<>();
-        _queryCandidatesMap.get(c).stream()
-            .map(candidate -> _queryService.getQueryDef(user, c, candidate.schemaName, candidate.queryName))
-            .filter(Objects::nonNull)
-            .forEach(definition -> {
-                TablesDocument doc = definition.getMetadataTablesDocument();
-                if (doc != null)
+        // those columns via the TableInfo to find date-time columns with non-standard formats.
+        _queryDefXmlCandidatesMap.get(c)
+            .forEach(candidate -> {
+                TableType tableType = _queryService.getQueryDefMetadata(c, candidate.rowId());
+
+                if (tableType != null)
                 {
-                    ColumnType[] columnTypes = doc.getTables().getTableArray()[0].getColumns().getColumnArray();
+                    ColumnType[] columnTypes = tableType.getColumns().getColumnArray();
                     String[] columnsWithDisplayFormats = Arrays.stream(columnTypes)
                         .filter(ColumnType::isSetFormatString)
                         .map(ColumnType::getColumnName)
@@ -126,20 +124,31 @@ public class DisplayFormatAnalyzer
 
                     if (columnsWithDisplayFormats.length > 0)
                     {
-                        TableInfo table = definition.getTable(errors, true);
-                        if (table != null)
+                        QuerySchema schema = DefaultSchema.get(user, c).getSchema(candidate.schemaName());
+                        if (schema != null)
                         {
-                            table.getColumns(columnsWithDisplayFormats)
-                                .forEach(column -> {
-                                    DateDisplayFormatType type = DateDisplayFormatType.getForJdbcType(column.getJdbcType());
-                                    if (type != null && !type.isStandardFormat(column.getFormat()))
-                                        handler.handle(c, type, column.getFormat(),
-                                            () -> new DisplayFormatContext(
-                                                "Query metadata for \"" + table.getSchema().getDisplayName() + "." + table.getName() + "." + column.getName() + "\" " + type.name() + " column",
-                                                _queryUrls.urlMetadataQuery(c, definition.getSchemaName(), definition.getName())
-                                            )
-                                        );
-                                });
+                            try
+                            {
+                                TableInfo table = schema.getTable(candidate.queryName());
+                                if (table != null)
+                                {
+                                    table.getColumns(columnsWithDisplayFormats)
+                                        .forEach(column -> {
+                                            DateDisplayFormatType type = DateDisplayFormatType.getForJdbcType(column.getJdbcType());
+                                            if (type != null && !type.isStandardFormat(column.getFormat()))
+                                                handler.handle(c, type, column.getFormat(),
+                                                    () -> new DisplayFormatContext(
+                                                        "Metadata for \"" + table.getSchema().getDisplayName() + "." + table.getName() + "." + column.getName() + "\" " + type.name() + " column",
+                                                        _queryUrls.urlMetadataQuery(c, schema.getName(), table.getName())
+                                                    )
+                                                );
+                                        });
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                // likely query parsing problem - skip this query/table
+                            }
                         }
                     }
                 }
@@ -159,7 +168,7 @@ public class DisplayFormatAnalyzer
     public void handleAll(User user, DisplayFormatHandler handler)
     {
         Set<Container> containers = new HashSet<>(_defaultFormatsMap.keySet());
-        containers.addAll(_queryCandidatesMap.keySet());
+        containers.addAll(_queryDefXmlCandidatesMap.keySet());
         containers.addAll(_propertyCandidateMap.keySet());
 
         containers.forEach(c -> handle(c, user, handler));

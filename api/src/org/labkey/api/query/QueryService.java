@@ -104,6 +104,11 @@ public interface QueryService
 
     QueryDefinition getQueryDef(User user, Container container, String schema, String name);
 
+    /**
+     * Returns the parsed metadata for the specified query.QueryDef row. Could be a query or a built-in table override.
+     */
+    @Nullable TableType getQueryDefMetadata(Container container, int rowId);
+
     QueryDefinition createQueryDef(User user, Container container, SchemaKey schema, String name);
     QueryDefinition createQueryDef(User user, Container container, UserSchema schema, String name);
     QueryDefinition createQueryDefForTable(UserSchema schema, String tableName);
