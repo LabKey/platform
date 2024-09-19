@@ -1073,7 +1073,7 @@ public final class PlateManagerTest
                 .setOperation(ReformatOptions.ReformatOperation.quadrant)
                 .setPlateRowIds(List.of(sourcePlate1.getRowId(), sourcePlate2.getRowId(), sourcePlate3.getRowId()))
                 .setTargetPlateSet(new ReformatOptions.ReformatPlateSet().setType(PlateSetType.assay))
-                .setTargetPlateTypeId(PLATE_TYPE_384_WELLS.getRowId())
+                .setTargetPlateSource(new ReformatOptions.ReformatPlateSource(PLATE_TYPE_384_WELLS))
                 .setPreview(true);
 
         // Act (preview)
@@ -1154,7 +1154,7 @@ public final class PlateManagerTest
             .setOperation(ReformatOptions.ReformatOperation.reverseQuadrant)
             .setPlateRowIds(List.of(sourcePlate.getRowId()))
             .setTargetPlateSet(new ReformatOptions.ReformatPlateSet().setRowId(targetPlateSetId))
-            .setTargetPlateTypeId(PLATE_TYPE_96_WELLS.getRowId())
+            .setTargetPlateSource(new ReformatOptions.ReformatPlateSource(PLATE_TYPE_96_WELLS))
             .setPreview(true);
 
         // Act (preview)
@@ -1233,7 +1233,7 @@ public final class PlateManagerTest
                 .setOperation(ReformatOptions.ReformatOperation.columnCompression)
                 .setPlateRowIds(List.of(sourcePlate.getRowId()))
                 .setTargetPlateSet(new ReformatOptions.ReformatPlateSet().setRowId(targetPlateSetId))
-                .setTargetPlateTypeId(PLATE_TYPE_12_WELLS.getRowId())
+                .setTargetPlateSource(new ReformatOptions.ReformatPlateSource(PLATE_TYPE_12_WELLS))
                 .setPreview(true);
 
         // Act (preview)
@@ -1314,7 +1314,7 @@ public final class PlateManagerTest
                 .setOperation(ReformatOptions.ReformatOperation.rowCompression)
                 .setPlateRowIds(List.of(sourcePlate.getRowId()))
                 .setTargetPlateSet(new ReformatOptions.ReformatPlateSet().setRowId(targetPlateSetId))
-                .setTargetPlateTypeId(PLATE_TYPE_12_WELLS.getRowId())
+                .setTargetPlateSource(new ReformatOptions.ReformatPlateSource(PLATE_TYPE_12_WELLS))
                 .setPreview(true);
 
         // Act (preview)

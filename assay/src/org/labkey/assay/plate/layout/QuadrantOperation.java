@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateType;
 import org.labkey.api.query.ValidationException;
+import org.labkey.assay.plate.data.WellData;
 import org.labkey.assay.plate.model.ReformatOptions;
 
 import java.util.ArrayList;
@@ -15,7 +16,7 @@ public class QuadrantOperation implements LayoutOperation
     private PlateType _targetPlateType;
 
     @Override
-    public List<WellLayout> execute(ReformatOptions options, @NotNull List<Plate> sourcePlates, PlateType targetPlateType)
+    public List<WellLayout> execute(ReformatOptions options, @NotNull List<Plate> sourcePlates, PlateType targetPlateType, Plate targetTemplate, List<WellData> targetTemplateWellData)
     {
         List<WellLayout> layouts = new ArrayList<>();
         WellLayout target = null;
@@ -62,7 +63,7 @@ public class QuadrantOperation implements LayoutOperation
     }
 
     @Override
-    public void init(ReformatOptions options, @NotNull List<Plate> sourcePlates, PlateType targetPlateType, List<? extends PlateType> allPlateTypes) throws ValidationException
+    public void init(ReformatOptions options, @NotNull List<Plate> sourcePlates, PlateType targetPlateType, Plate targetTemplate, List<? extends PlateType> allPlateTypes) throws ValidationException
     {
         _sourcePlateType = getSourcePlateType(sourcePlates);
         _targetPlateType = getTargetPlateType(_sourcePlateType, allPlateTypes);
