@@ -2111,6 +2111,9 @@ public abstract class AbstractAssayProvider implements AssayProvider
         }
     }
 
+    // Issue 51316: While this issue is being addressed this feature has been disabled.
+    private final static boolean ENABLE_UPDATE_PROPERTY_LINEAGE = false;
+
     @Override
     public void updatePropertyLineage(
         Container container,
@@ -2124,6 +2127,9 @@ public abstract class AbstractAssayProvider implements AssayProvider
         @NotNull Map<Integer, ExpMaterial> materialsCache
     ) throws ValidationException
     {
+        if (!ENABLE_UPDATE_PROPERTY_LINEAGE)
+            return;
+
         Domain domain = table.getDomain();
         if (domain == null || newRow == null || oldRow == null)
             return;
