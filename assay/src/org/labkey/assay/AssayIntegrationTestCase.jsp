@@ -594,7 +594,7 @@
     @Test
     public void testRunResultLineageUpdate() throws Exception
     {
-        // Regression coverage for Issue 45594.
+        // Regression coverage for Issue 45594 and Issue 51316.
         // Verify run/result properties backed by lineage update when query data is updated.
 
         // Arrange
@@ -602,24 +602,26 @@
         var provider = assayPair.first;
         var assayProtocol = assayPair.second;
 
-        var samples = createSamples(5);
+        var samples = createSamples(10);
         var runSample1 = samples.get(0);
         var runSample2 = samples.get(1);
         var resultSample1 = samples.get(2);
         var resultSample2 = samples.get(3);
-        var sampleLookupSample = samples.get(4);
+        var resultSample3 = samples.get(4);
+        var sampleLookupSample = samples.get(5);
 
         // create a file in the pipeline root to import
-        var fileContents = String.format("ResultExpMaterialsLookup\tSampleTypeLookup\n%s\t%s\n", resultSample1.getName(), sampleLookupSample.getName());
+        var fileContents = String.format("ResultExpMaterialsLookup\tSampleTypeLookup\n%s\t%s\n%s\n", resultSample1.getName(), sampleLookupSample.getName(), resultSample3.getName());
         var file = createAssayDataFile(fileContents);
 
         // create a run
         var run = assayImportFile(c, user, provider, assayProtocol, file, false, Map.of("runExpMaterialsLookup", runSample1.getName()));
 
         // Verify pre-conditions
-        assertEquals(3, run.getMaterialInputs().size());
+        assertEquals(4, run.getMaterialInputs().size());
         assertEquals("RunExpMaterialsLookup", run.getMaterialInputs().get(runSample1));
         assertEquals("ResultExpMaterialsLookup", run.getMaterialInputs().get(resultSample1));
+        assertEquals("ResultExpMaterialsLookup", run.getMaterialInputs().get(resultSample3));
         assertEquals("SampleTypeLookup", run.getMaterialInputs().get(sampleLookupSample));
 
         AssayProtocolSchema schema = provider.createProtocolSchema(user, c, assayProtocol, null);
@@ -633,18 +635,20 @@
         if (errors.hasErrors())
             throw errors;
 
-        var resultRow = new TableSelector(resultsTable).getMapArray()[0];
-        var updatedResultRow = CaseInsensitiveHashMap.of("RowId", resultRow.get("RowId"), "ResultExpMaterialsLookup", resultSample2.getRowId());
-        resultsTable.getUpdateService().updateRows(user, c, List.of((Map) updatedResultRow), null, errors, null, null);
+        var resultRows = new TableSelector(resultsTable).getMapArray();
+        var updatedResultRow1 = CaseInsensitiveHashMap.of("RowId", resultRows[0].get("RowId"), "ResultExpMaterialsLookup", resultSample2.getRowId());
+        var updatedResultRow2 = CaseInsensitiveHashMap.of("RowId", resultRows[1].get("RowId"), "resultProp", 42);
+        resultsTable.getUpdateService().updateRows(user, c, List.of(updatedResultRow1, updatedResultRow2), null, errors, null, null);
         if (errors.hasErrors())
             throw errors;
 
         // Assert
         var updatedRun = ExperimentService.get().getExpRun(run.getRowId());
         assertNotNull(updatedRun);
-        assertEquals(3, updatedRun.getMaterialInputs().size());
+        assertEquals(4, updatedRun.getMaterialInputs().size());
         assertEquals("RunExpMaterialsLookup", updatedRun.getMaterialInputs().get(runSample2));
         assertEquals("ResultExpMaterialsLookup", updatedRun.getMaterialInputs().get(resultSample2));
+        assertEquals("ResultExpMaterialsLookup", updatedRun.getMaterialInputs().get(resultSample3));
         assertEquals("SampleTypeLookup", updatedRun.getMaterialInputs().get(sampleLookupSample));
     }
 %>
