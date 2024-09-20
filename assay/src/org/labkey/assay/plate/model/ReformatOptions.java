@@ -1,6 +1,7 @@
 package org.labkey.assay.plate.model;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateSetType;
 import org.labkey.api.assay.plate.PlateType;
 
@@ -103,6 +104,12 @@ public class ReformatOptions
         {
             _sourceType = SourceType.type;
             _rowId = plateType.getRowId();
+        }
+
+        public ReformatPlateSource(@NotNull Plate template)
+        {
+            _sourceType = SourceType.template;
+            _rowId = template.getRowId();
         }
 
         public Integer getRowId()

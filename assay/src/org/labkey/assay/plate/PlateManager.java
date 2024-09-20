@@ -3126,8 +3126,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     {
         for (WellData wellData : wellDataList)
         {
-            boolean isSampleWell = WellGroup.Type.SAMPLE.equals(wellData.getType());
-            boolean isReplicateWell = WellGroup.Type.REPLICATE.equals(wellData.getType());
+            boolean isSampleWell = wellData.isSample();
+            boolean isReplicateWell = wellData.isReplicate();
             boolean isSampleOrReplicate = isSampleWell || isReplicateWell;
 
             Pair<WellGroup.Type, String> groupKey = null;

@@ -127,8 +127,8 @@ public class ArrayOperation implements LayoutOperation
 
             for (WellData wellData : targetTemplateWellData)
             {
-                boolean isSampleWell = WellGroup.Type.SAMPLE.equals(wellData.getType());
-                boolean isReplicateWell = WellGroup.Type.REPLICATE.equals(wellData.getType());
+                boolean isSampleWell = wellData.isSample();
+                boolean isReplicateWell = wellData.isReplicate();
                 boolean isSampleOrReplicate = isSampleWell || isReplicateWell;
 
                 Pair<WellGroup.Type, String> groupKey = null;
@@ -203,7 +203,7 @@ public class ArrayOperation implements LayoutOperation
             for (WellData wellData : sourceWellData)
             {
                 Integer wellSampleId = wellData.getSampleId();
-                if (wellSampleId != null && !sampleWells.containsKey(wellSampleId) && WellGroup.Type.SAMPLE.equals(wellData.getType()))
+                if (wellSampleId != null && !sampleWells.containsKey(wellSampleId) && (wellData.isSample() || wellData.isReplicate()))
                 {
                     sampleWells.put(wellSampleId, new WellLayout.Well(-1, -1, sourceRowId, wellData.getRow(), wellData.getCol(), null));
                 }
