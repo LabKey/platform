@@ -90,9 +90,13 @@ LABKEY.WebSocket = new function ()
                     }, 1000);
                 }
             }
-            else if (evt.code === CloseEventCode.GOING_AWAY && evt.reason && evt.reason !== "") {
+            else if (evt.code === CloseEventCode.GOING_AWAY && evt.reason) {
                 // 1001 sent when server is shutdown normally (AND on page reload in FireFox, but that one doesn't have a reason)
-                setTimeout(showDisconnectedMessage, 1000);
+                if (evt.reason !== "" && evt.reason.indexOf("The current thread was interrupted") === -1) {
+                    setTimeout(function () {
+                        showDisconnectedMessage(false, evt.reason);
+                    }, 1000);
+                }
             }
             else if (evt.code === CloseEventCode.POLICY_VIOLATION) {
                 // Tomcat closes the websocket with "1008 Policy Violation" code when the session has expired.
@@ -130,8 +134,8 @@ LABKEY.WebSocket = new function ()
         });
     }
 
-    function showDisconnectedMessage(skipReopen) {
-        displayModal("Server Unavailable", "The server is currently unavailable. Please try reloading the page to continue.", false, skipReopen);
+    function showDisconnectedMessage(skipReopen, reason) {
+        displayModal("Server Unavailable", "The server is currently unavailable. " + (reason ?? '') + " Please try reloading the page to continue.", false, skipReopen);
         // CONSIDER: Periodically attempt to reestablish connection until the server comes back up.
     }
 
