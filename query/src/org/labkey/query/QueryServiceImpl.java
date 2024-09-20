@@ -44,7 +44,6 @@ import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.query.ExpTable;
-import org.labkey.api.files.FileContentService;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.module.Module;
@@ -109,7 +108,6 @@ import org.springframework.web.servlet.mvc.Controller;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
@@ -3396,7 +3394,7 @@ public class QueryServiceImpl implements QueryService
     @Override
     public @Nullable ContainerFilter getProductContainerFilterForLookups(Container container, User user, ContainerFilter defaultContainerFilter)
     {
-        if (isProductProjectsAllFolderScopeEnabled())
+        if (isProductFoldersAllFolderScopeEnabled())
         {
             ContainerFilter lookupCf = getContainerFilterForLookups(container, user);
             if (lookupCf != null)
@@ -3422,9 +3420,9 @@ public class QueryServiceImpl implements QueryService
     @Nullable
     public ContainerFilter.Type getContainerFilterTypeForLookups(Container container)
     {
-        if (container != null && container.isProductProjectsEnabled())
+        if (container != null && container.isProductFoldersEnabled())
         {
-            if (isProductProjectsAllFolderScopeEnabled())
+            if (isProductFoldersAllFolderScopeEnabled())
                 return ContainerFilter.Type.AllInProjectPlusShared;
 
             return ContainerFilter.Type.CurrentPlusProjectAndShared;
@@ -3434,13 +3432,13 @@ public class QueryServiceImpl implements QueryService
     }
 
     @Override
-    public boolean isProductProjectsAllFolderScopeEnabled()
+    public boolean isProductFoldersAllFolderScopeEnabled()
     {
         return AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_PRODUCT_ALL_FOLDER_LOOKUPS);
     }
 
     @Override
-    public boolean isProductProjectsDataListingScopedToProject()
+    public boolean isProductFoldersDataListingScopedToProject()
     {
         return AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED);
     }

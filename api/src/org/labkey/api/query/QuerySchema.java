@@ -103,7 +103,7 @@ public interface QuerySchema extends SchemaTreeNode, ContainerUser
 
     default ContainerFilter getDefaultLookupContainerFilter()
     {
-        if (QueryService.get().isProductProjectsAllFolderScopeEnabled())
+        if (QueryService.get().isProductFoldersAllFolderScopeEnabled())
         {
             ContainerFilter.Type cfType = QueryService.get().getContainerFilterTypeForLookups(getContainer());
             if (cfType != null)

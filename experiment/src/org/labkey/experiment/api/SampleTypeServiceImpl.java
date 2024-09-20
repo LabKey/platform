@@ -740,7 +740,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         if (!svc.allowUserSpecifiedNames(c))
         {
             if (nameExpression == null)
-                throw new ExperimentException(c.hasProductProjects() ? NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS : NAME_EXPRESSION_REQUIRED_MSG);
+                throw new ExperimentException(c.hasProductFolders() ? NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS : NAME_EXPRESSION_REQUIRED_MSG);
         }
 
         if (svc.getExpressionPrefix(c) != null)
@@ -1016,7 +1016,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 if (!NameExpressionOptionService.get().allowUserSpecifiedNames(container) && sampleIdPattern == null)
                 {
                     errors = new ValidationException();
-                    errors.addError(new SimpleValidationError(container.hasProductProjects() ? NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS : NAME_EXPRESSION_REQUIRED_MSG));
+                    errors.addError(new SimpleValidationError(container.hasProductFolders() ? NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS : NAME_EXPRESSION_REQUIRED_MSG));
                     return errors;
                 }
             }
