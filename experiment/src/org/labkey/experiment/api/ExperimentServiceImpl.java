@@ -9435,6 +9435,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 .append("\nWHERE cpastype = ? ")
                 .add(childCpasType);
 
+        if (isSampleChild)
+        {
+            totalSql.append(" AND cur.rowId = cur.rootmaterialrowid"); // exclude aliquots
+        }
+
         Long totalCount = new SqlSelector(dataTableInfo.getSchema(), totalSql).getObject(Long.class);
 
         if (totalCount == 0)
@@ -9456,6 +9461,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 .add(childCpasType)
                 .append(" AND p.cpastype = ? ")
                 .add(parentCpasType);
+        if (isSampleChild)
+        {
+            sql.append(" AND cur.rowId = cur.rootmaterialrowid"); // exclude aliquots
+        }
 
         Long withParentCount = new SqlSelector(dataTableInfo.getSchema(), sql).getObject(Long.class);
 
