@@ -3,8 +3,6 @@ package org.labkey.assay.plate.layout;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateType;
-import org.labkey.assay.plate.data.WellData;
-import org.labkey.assay.plate.model.ReformatOptions;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,19 +23,19 @@ public class CompressionOperation implements LayoutOperation
     }
 
     @Override
-    public List<WellLayout> execute(ReformatOptions options, @NotNull List<Plate> sourcePlates, PlateType targetPlateType, Plate targetTemplate, List<WellData> targetTemplateWellData)
+    public List<WellLayout> execute(ExecutionContext context)
     {
         List<WellLayout> layouts = new ArrayList<>();
         WellLayout target = null;
         boolean isColumnLayout = Layout.Column.equals(_layout);
 
-        int targetCols = targetPlateType.getColumns();
-        int targetRows = targetPlateType.getRows();
+        int targetCols = context.targetPlateType().getColumns();
+        int targetRows = context.targetPlateType().getRows();
 
         int targetColIdx = 0;
         int targetRowIdx = 0;
 
-        for (Plate sourcePlate : sourcePlates)
+        for (Plate sourcePlate : context.sourcePlates())
         {
             int sourceRowId = sourcePlate.getRowId();
             PlateType sourcePlateType = sourcePlate.getPlateType();
@@ -47,7 +45,7 @@ public class CompressionOperation implements LayoutOperation
                 for (int c = 0; c < sourcePlateType.getColumns(); c++)
                 {
                     if (target == null)
-                        target = new WellLayout(targetPlateType);
+                        target = new WellLayout(context.targetPlateType());
 
                     if (sourcePlate.getWell(r, c).getSampleId() == null)
                         continue;

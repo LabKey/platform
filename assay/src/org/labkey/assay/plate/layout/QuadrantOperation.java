@@ -3,9 +3,9 @@ package org.labkey.assay.plate.layout;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateType;
+import org.labkey.api.data.Container;
 import org.labkey.api.query.ValidationException;
-import org.labkey.assay.plate.data.WellData;
-import org.labkey.assay.plate.model.ReformatOptions;
+import org.labkey.api.security.User;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,17 +16,17 @@ public class QuadrantOperation implements LayoutOperation
     private PlateType _targetPlateType;
 
     @Override
-    public List<WellLayout> execute(ReformatOptions options, @NotNull List<Plate> sourcePlates, PlateType targetPlateType, Plate targetTemplate, List<WellData> targetTemplateWellData)
+    public List<WellLayout> execute(ExecutionContext context)
     {
         List<WellLayout> layouts = new ArrayList<>();
         WellLayout target = null;
 
-        for (int i = 0; i < sourcePlates.size(); i++)
+        for (int i = 0; i < context.sourcePlates().size(); i++)
         {
             if (target == null)
                 target = new WellLayout(_targetPlateType);
 
-            Plate sourcePlate = sourcePlates.get(i);
+            Plate sourcePlate = context.sourcePlates().get(i);
             Integer plateRowId = sourcePlate.getRowId();
 
             int quadrant = i % 4;
@@ -63,9 +63,9 @@ public class QuadrantOperation implements LayoutOperation
     }
 
     @Override
-    public void init(ReformatOptions options, @NotNull List<Plate> sourcePlates, PlateType targetPlateType, Plate targetTemplate, List<? extends PlateType> allPlateTypes) throws ValidationException
+    public void init(Container container, User user, ExecutionContext context, List<? extends PlateType> allPlateTypes) throws ValidationException
     {
-        _sourcePlateType = getSourcePlateType(sourcePlates);
+        _sourcePlateType = getSourcePlateType(context.sourcePlates());
         _targetPlateType = getTargetPlateType(_sourcePlateType, allPlateTypes);
     }
 

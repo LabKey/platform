@@ -3,12 +3,13 @@ package org.labkey.assay.plate.layout;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateType;
-import org.labkey.api.assay.plate.Well;
 import org.labkey.api.assay.plate.WellGroup;
+import org.labkey.api.data.Container;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
+import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.data.WellData;
-import org.labkey.assay.plate.model.ReformatOptions;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,6 +29,7 @@ public class ArrayOperation implements LayoutOperation
     }
 
     private final Layout _layout;
+    private Map<Integer, WellLayout.Well> _sampleWells;
 
     public ArrayOperation(@NotNull Layout layout)
     {
@@ -35,27 +37,20 @@ public class ArrayOperation implements LayoutOperation
     }
 
     @Override
-    public List<WellLayout> execute(
-        ReformatOptions options,
-        @NotNull List<Plate> sourcePlates,
-        PlateType targetPlateType,
-        Plate targetTemplate,
-        List<WellData> targetTemplateWellData
-    ) throws ValidationException
+    public List<WellLayout> execute(ExecutionContext context) throws ValidationException
     {
-        Map<Integer, WellLayout.Well> sampleWells = getSampleWellsFromSourcePlates(sourcePlates);
-        if (sampleWells.isEmpty())
+        if (_sampleWells.isEmpty())
             return emptyList();
 
         if (Layout.Column.equals(_layout) || Layout.Row.equals(_layout))
-            return executeRowColumnLayout(sampleWells, targetPlateType);
+            return executeRowColumnLayout(context.targetPlateType());
         else if (Layout.Template.equals(_layout))
-            return executeTemplateLayout(sampleWells, targetTemplate, targetTemplateWellData);
+            return executeTemplateLayout(context.targetTemplate(), context.targetTemplateWellData());
 
         throw new UnsupportedOperationException(String.format("The layout \"%s\" is not supported.", _layout));
     }
 
-    private List<WellLayout> executeRowColumnLayout(Map<Integer, WellLayout.Well> sampleWells, PlateType targetPlateType)
+    private List<WellLayout> executeRowColumnLayout(PlateType targetPlateType)
     {
         List<WellLayout> layouts = new ArrayList<>();
         WellLayout target = null;
@@ -67,7 +62,7 @@ public class ArrayOperation implements LayoutOperation
         int targetColIdx = 0;
         int targetRowIdx = 0;
 
-        for (Map.Entry<Integer, WellLayout.Well> entry : sampleWells.entrySet())
+        for (Map.Entry<Integer, WellLayout.Well> entry : _sampleWells.entrySet())
         {
             if (target == null)
                 target = new WellLayout(targetPlateType, true, null);
@@ -115,14 +110,14 @@ public class ArrayOperation implements LayoutOperation
         return layouts;
     }
 
-    private List<WellLayout> executeTemplateLayout(Map<Integer, WellLayout.Well> sampleWells, Plate targetTemplate, List<WellData> targetTemplateWellData) throws ValidationException
+    private List<WellLayout> executeTemplateLayout(Plate targetTemplate, List<WellData> targetTemplateWellData) throws ValidationException
     {
         int counter = 0;
         List<WellLayout> layouts = new ArrayList<>();
         Map<Pair<WellGroup.Type, String>, Integer> groupSampleMap = new HashMap<>();
 
         List<Integer> sampleIds = new ArrayList<>();
-        for (Map.Entry<Integer, WellLayout.Well> entry : sampleWells.entrySet())
+        for (Map.Entry<Integer, WellLayout.Well> entry : _sampleWells.entrySet())
             sampleIds.add(entry.getKey());
 
         while (counter < sampleIds.size())
@@ -149,7 +144,7 @@ public class ArrayOperation implements LayoutOperation
                     if (isSampleOrReplicate && groupKey != null && groupSampleMap.containsKey(groupKey))
                     {
                         Integer sampleId = groupSampleMap.get(groupKey);
-                        WellLayout.Well sourceWell = sampleWells.get(sampleId);
+                        WellLayout.Well sourceWell = _sampleWells.get(sampleId);
                         layout.setWell(wellData.getRow(), wellData.getCol(), sourceWell.sourcePlateId(), sourceWell.sourceRowIdx(), sourceWell.sourceColIdx(), sampleId);
                     }
                 }
@@ -175,7 +170,7 @@ public class ArrayOperation implements LayoutOperation
                         counter++;
                     }
 
-                    WellLayout.Well sourceWell = sampleWells.get(sampleId);
+                    WellLayout.Well sourceWell = _sampleWells.get(sampleId);
                     layout.setWell(wellData.getRow(), wellData.getCol(), sourceWell.sourcePlateId(), sourceWell.sourceRowIdx(), sourceWell.sourceColIdx(), sampleId);
                 }
             }
@@ -190,27 +185,27 @@ public class ArrayOperation implements LayoutOperation
         return layouts;
     }
 
-    private Map<Integer, WellLayout.Well> getSampleWellsFromSourcePlates(@NotNull List<Plate> sourcePlates)
+    @Override
+    public void init(Container container, User user, ExecutionContext context, List<? extends PlateType> allPlateTypes)
+    {
+        _sampleWells = getSampleWellsFromSourcePlates(container, user, context.sourcePlates());
+    }
+
+    private Map<Integer, WellLayout.Well> getSampleWellsFromSourcePlates(Container container, User user, @NotNull List<Plate> sourcePlates)
     {
         LinkedHashMap<Integer, WellLayout.Well> sampleWells = new LinkedHashMap<>();
 
         for (Plate sourcePlate : sourcePlates)
         {
             int sourceRowId = sourcePlate.getRowId();
-            PlateType sourcePlateType = sourcePlate.getPlateType();
+            List<WellData> sourceWellData = PlateManager.get().getWellData(container, user, sourceRowId, true, false);
 
-            for (int r = 0; r < sourcePlateType.getRows(); r++)
+            for (WellData wellData : sourceWellData)
             {
-                for (int c = 0; c < sourcePlateType.getColumns(); c++)
+                Integer wellSampleId = wellData.getSampleId();
+                if (wellSampleId != null && !sampleWells.containsKey(wellSampleId) && WellGroup.Type.SAMPLE.equals(wellData.getType()))
                 {
-                    // TODO: May need to be more discerning regarding controls v samples
-                    Well well = sourcePlate.getWell(r, c);
-                    Integer wellSampleId = well.getSampleId();
-                    if (wellSampleId == null)
-                        continue;
-
-                    if (!sampleWells.containsKey(wellSampleId))
-                        sampleWells.put(wellSampleId, new WellLayout.Well(-1, -1, sourceRowId, r, c, null));
+                    sampleWells.put(wellSampleId, new WellLayout.Well(-1, -1, sourceRowId, wellData.getRow(), wellData.getCol(), null));
                 }
             }
         }

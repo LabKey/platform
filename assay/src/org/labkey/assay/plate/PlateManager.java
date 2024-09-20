@@ -3315,7 +3315,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return fileBytes;
     }
 
-    private List<WellData> getWellData(Container container, User user, int plateRowId, boolean includeSamples, boolean includeMetadata)
+    public List<WellData> getWellData(Container container, User user, int plateRowId, boolean includeSamples, boolean includeMetadata)
     {
         Set<String> columns = new HashSet<>();
         columns.add(WellTable.Column.Col.name());
@@ -3728,14 +3728,16 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
     /**
      * Reformat a set of source plates to new plates via a reformat operation (e.g. quadrant, stamp, etc.).
-     * @return The return ReformatResult will contain different data when previewing versus saving (not previewing).
+     * @return A ReformatResult which will contain different data when previewing versus saving (not previewing).
      * - preview:
      *      The previewData contains the preview data. Null if the "previewData" flag is false.
-     *      The plateCount is the count of the number of plates that will be created.
-     *      Both plateSetRowId, plateSetName and plateRowIds will be null.
+     *      The plateCount is the number of plates that will be created.
+     *      The platedSampleCount is the number of samples that will be plated for re-array operations.
+     *      The plateSetRowId, plateSetName and plateRowIds will be null.
      * - saving (not preview):
      *      The previewData is null.
-     *      The plateCount is the count of the number of plates that have been created.
+     *      The plateCount is the number of plates that have been created.
+     *      The platedSampleCount is the number of samples that have been plated for re-array operations.
      *      The plateSetRowId is the rowId of the target plate set.
      *      The plateSetName is the name of the target plate set.
      *      The plateRowIds are the rowIds of all newly generated plates.
@@ -3759,13 +3761,17 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         PlateType targetPlateType = targetPlateSource.first;
         Plate targetTemplate = targetPlateSource.second;
 
-        List<WellData> targetTemplateWellData = null;
-        if (targetTemplate != null)
-            targetTemplateWellData = getWellData(container, user, targetTemplate.getRowId(), false, false);
+        LayoutEngine engine = new LayoutEngine(options, sourcePlates, getPlateTypes());
 
-        LayoutEngine engine = new LayoutEngine(options, sourcePlates, targetPlateType, targetTemplate, targetTemplateWellData, getPlateTypes());
+        if (targetPlateType != null)
+            engine.setTargetPlateType(targetPlateType);
+        else if (targetTemplate != null)
+        {
+            List<WellData> targetTemplateWellData = getWellData(container, user, targetTemplate.getRowId(), false, false);
+            engine.setTargetTemplate(targetTemplate, targetTemplateWellData);
+        }
 
-        List<WellLayout> wellLayouts = engine.run();
+        List<WellLayout> wellLayouts = engine.run(container, user);
         int availablePlateCount = destinationPlateSet.availablePlateCount();
 
         if (availablePlateCount < wellLayouts.size())
