@@ -10912,6 +10912,7 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
+    // TODO Should this be renamed UpdateContainerSettingsAction? There's nothing that explicity checks for this being a project vs. a folder
     public static class UpdateProjectSettingsAction extends MutatingApiAction<SimpleApiJsonForm>
     {
         @Override
@@ -10926,7 +10927,6 @@ public class AdminController extends SpringActionController
         public Object execute(SimpleApiJsonForm form, BindException errors)
         {
             JSONObject json = form.getJsonObject();
-            Container c = getContainer();
 
             boolean saved = saveProjectSettings(json, getUser(), getContainer(), errors);
 
