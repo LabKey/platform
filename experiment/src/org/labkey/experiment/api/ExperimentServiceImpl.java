@@ -9292,7 +9292,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (dataMetrics.first > 0)
             metrics.put("RequiredSampleParentsForDataClasses", dataMetrics.first);
         if (dataMetrics.second > 0)
-            metrics.put("RequiredSourceParentsForDataClasses", dataMetrics.first);
+            metrics.put("RequiredSourceParentsForDataClasses", dataMetrics.second);
         return metrics;
     }
 
