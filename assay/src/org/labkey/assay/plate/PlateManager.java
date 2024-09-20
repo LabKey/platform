@@ -542,14 +542,6 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return new SqlSelector(ExperimentService.get().getSchema(), sql);
     }
 
-    @NotNull Plate createPlateTemplate(Container container, String assayType, @NotNull PlateType plateType)
-    {
-        Plate plate = createPlate(container, assayType, plateType);
-        ((PlateImpl)plate).setTemplate(true);
-
-        return plate;
-    }
-
     @Override
     public @Nullable Plate getPlate(Container container, int rowId)
     {
