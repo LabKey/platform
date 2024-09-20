@@ -1040,7 +1040,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
 
                 AssayProvider assayProvider = AssayService.get().getProvider(run);
                 if (assayProvider != null)
-                    assayProvider.updatePropertyLineage(container, user, getQueryTable(), run, row, true, _cache, getMaterialsCache());
+                    assayProvider.updatePropertyLineage(container, user, getQueryTable(), run, row, oldRow, true, _cache, getMaterialsCache());
 
                 run.save(user);
 
