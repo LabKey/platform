@@ -29,14 +29,10 @@ import org.labkey.api.files.FileRoot;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 
-/**
- * User: klum
- * Date: Jan 29, 2010
- * Time: 12:53:12 PM
- */
 public class FileRootManager
 {
-    public static final String FILECONTENT_SCHEMA_NAME = "filecontent";
+    public static final String FILE_CONTENT_SCHEMA_NAME = "filecontent";
+
     private static final FileRootManager _instance = new FileRootManager();
     private static final BlockingCache<String, FileRoot> CACHE = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "FileRoots", (key, c) -> {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromString("Container"), c);
@@ -53,7 +49,7 @@ public class FileRootManager
 
     public static DbSchema getFileContentSchema()
     {
-        return DbSchema.get(FILECONTENT_SCHEMA_NAME, DbSchemaType.Module);
+        return DbSchema.get(FILE_CONTENT_SCHEMA_NAME, DbSchemaType.Module);
     }
 
     public static TableInfo getTinfoFileRoots()
@@ -84,17 +80,17 @@ public class FileRootManager
         CACHE.remove(getCacheKey(c));
     }
 
-    public FileRoot saveFileRoot(User user, FileRoot root)
+    public void saveFileRoot(User user, FileRoot root)
     {
         try
         {
             if (root.isNew())
             {
-                return Table.insert(user, getTinfoFileRoots(), root);
+                Table.insert(user, getTinfoFileRoots(), root);
             }
             else
             {
-                return Table.update(user, getTinfoFileRoots(), root, root.getRowId());
+                Table.update(user, getTinfoFileRoots(), root, root.getRowId());
             }
         }
         finally
