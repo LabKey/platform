@@ -235,7 +235,7 @@ public class FileContentModule extends DefaultModule
     @NotNull
     public Set<String> getSchemaNames()
     {
-        return PageFlowUtil.set(FileRootManager.FILECONTENT_SCHEMA_NAME);
+        return PageFlowUtil.set(FileRootManager.FILE_CONTENT_SCHEMA_NAME);
     }
 
     @Override
