@@ -630,7 +630,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         typeColumnInfo.setShownInInsertView(false);
 
         addColumn(Column.MaterialExpDate);
-
+        addContainerColumn(Column.Folder, null);
         var runCol = addColumn(Column.Run);
         runCol.setFk(new ExpSchema(_userSchema.getUser(), getContainer()).getRunIdForeignKey(getContainerFilter()));
         runCol.setShownInInsertView(false);
