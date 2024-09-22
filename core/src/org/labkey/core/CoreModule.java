@@ -1151,7 +1151,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             results.put("analyticsTrackingStatus", AnalyticsServiceImpl.get().getTrackingStatus().toString());
             String labkeyContextPath = AppProps.getInstance().getContextPath();
             results.put("webappContextPath", labkeyContextPath);
-            results.put("embeddedTomcat", AppProps.getInstance().isEmbeddedTomcat());
+            results.put("embeddedTomcat", true);
             boolean customLog4JConfig = false;
             if (ModuleLoader.getServletContext() != null)
             {
