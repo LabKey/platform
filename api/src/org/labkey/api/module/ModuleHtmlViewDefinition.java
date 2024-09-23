@@ -159,7 +159,8 @@ public class ModuleHtmlViewDefinition
     protected void calculatePermissions(String resource) throws ViewDefinitionException
     {
         PermissionsListType permsList = _viewDef.getPermissions();
-        if (permsList != null && permsList.getPermissionArray() != null)
+        boolean hasOldStylePerms = permsList != null && permsList.getPermissionArray() != null;
+        if (hasOldStylePerms)
         {
             _log.warn("The \"<permissions>\" element used in \"{}\" is deprecated and support will be removed in LabKey Server 24.8! Migrate uses to \"<requiresPermissions>\", \"<requiresNoPermission>\", or \"<requiresLogin>\".", resource);
             for (PermissionType permEntry : permsList.getPermissionArray())
@@ -188,15 +189,18 @@ public class ModuleHtmlViewDefinition
             if (_viewDef.isSetRequiresPermissions())
                 addPermissionClasses(_viewDef.getRequiresPermissions(), resource, true);
         }
-        else if (!_viewDef.isSetRequiresNoPermission())
+        else if (!hasOldStylePerms) // Don't override old-style permissions if they were specified
         {
-            // No permission elements are present, so assume read permissions are required
-            addPermissionClass(ReadPermission.class.getName());
-        }
-        else
-        {
-            // No permissions case: for now, clear out old-style perms as well
-            _requiredPerms = SimpleAction.PermissionEnum.none.toInt();
+            if (!_viewDef.isSetRequiresNoPermission())
+            {
+                // No permission elements are present, so assume read permissions are required unless
+                addPermissionClass(ReadPermission.class.getName());
+            }
+            else
+            {
+                // No permissions case: for now, clear out old-style perms as well
+                _requiredPerms = SimpleAction.PermissionEnum.none.toInt();
+            }
         }
 
         if (_viewDef.isSetRequiresLogin())
@@ -324,6 +328,12 @@ public class ModuleHtmlViewDefinition
         @Test
         public void testPermissions()
         {
+            // Note: When merging to develop, these four checks belong in the isFeatureEnabled() block
+            testPermissions("<permissions><permission name=\"none\"/></permissions>", ACL.PERM_NONE, Set.of(), false);
+            testPermissions("<permissions><permission name=\"login\"/></permissions>", ACL.PERM_READ, Set.of(), true);
+            testPermissions("<permissions><permission name=\"insert\"/></permissions>", ACL.PERM_INSERT + ACL.PERM_READ, Set.of(), false);
+            testPermissions("<permissions><permission name=\"admin\"/></permissions>", ACL.PERM_ADMIN + ACL.PERM_READ, Set.of(), false);
+
             testPermissions(null, ACL.PERM_READ, Set.of(), false); // No .view.xml file -> read
             testPermissions("", ACL.PERM_READ, Set.of(ReadPermission.class), false); // No permission elements -> read
             testPermissions("<requiresLogin/>", ACL.PERM_READ, Set.of(ReadPermission.class), true); // read + login
@@ -380,6 +390,7 @@ public class ModuleHtmlViewDefinition
         private void testPermissions(@Nullable String permissions, int expectedPerms, Set<Class<? extends Permission>> expectedPermissionClasses, boolean expectedLogin)
         {
             ModuleHtmlViewDefinition def = new ModuleHtmlViewDefinition("test.html", HtmlString.of("Success!"), permissions != null ? getViewXmlResource(permissions) : null, true);
+            assertFalse("Exception while parsing XML: " + def.getHtml(), def.getHtml().toString().contains("labkey-error"));
             assertEquals(expectedPerms, def.getRequiredPerms());
             assertEquals(expectedPermissionClasses, def.getRequiredPermissionClasses());
             assertEquals(expectedLogin, def.isRequiresLogin());
