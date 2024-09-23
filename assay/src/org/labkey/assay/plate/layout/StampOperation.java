@@ -1,9 +1,6 @@
 package org.labkey.assay.plate.layout;
 
-import org.jetbrains.annotations.NotNull;
 import org.labkey.api.assay.plate.Plate;
-import org.labkey.api.assay.plate.PlateType;
-import org.labkey.assay.plate.model.ReformatOptions;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,10 +8,10 @@ import java.util.List;
 public class StampOperation implements LayoutOperation
 {
     @Override
-    public List<WellLayout> execute(ReformatOptions options, @NotNull List<Plate> sourcePlates, PlateType targetPlateType)
+    public List<WellLayout> execute(ExecutionContext context)
     {
         List<WellLayout> result = new ArrayList<>();
-        for (Plate plate : sourcePlates)
+        for (Plate plate : context.sourcePlates())
         {
             WellLayout wellLayout = new WellLayout(plate.getPlateType());
             int plateId = plate.getRowId();
