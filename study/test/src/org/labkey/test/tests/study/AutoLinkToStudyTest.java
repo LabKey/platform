@@ -155,7 +155,7 @@ public class AutoLinkToStudyTest extends BaseWebDriverTest
         customizeView.addColumn("linked_to_Auto_Link_To_Study_Test_Study_2_Study");
         customizeView.addColumn("linked_to_Auto_Link_To_Study_Test_Study_3_Study");
         customizeView.addColumn("linked_to_Auto_Link_To_Study_Test_Study");
-        customizeView.clickViewGrid();
+        customizeView.applyCustomView();
 
         /*
             Ensuring additional 'Linked to Study' columns are not visible for linked Datasets.

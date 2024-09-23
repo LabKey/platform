@@ -28,7 +28,6 @@ import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SchemaTableInfo;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.test.TestTimeout;
 import org.labkey.api.test.TestWhen;
@@ -60,7 +59,7 @@ public class SchemaXMLTestCase extends Assert
         return parameters;
     }
 
-    private DbSchema schemaToTest;
+    private final DbSchema schemaToTest;
 
     public SchemaXMLTestCase(DbSchema schemaToTest, String displayName)
     {
@@ -130,6 +129,6 @@ public class SchemaXMLTestCase extends Assert
                 }
             }
         }
-        assertTrue("<div>Type errors in schema " + schema.getName() + ":<br><br>" + typeErrors + "<div>", "".equals(typeErrors.toString()));
+        assertTrue("<div>Type errors in schema " + schema.getName() + ":<br><br>" + typeErrors + "<div>", typeErrors.toString().isEmpty());
     }
 }

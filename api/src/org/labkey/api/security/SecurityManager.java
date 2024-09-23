@@ -41,7 +41,6 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.audit.provider.GroupAuditProvider;
-import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
@@ -3265,10 +3264,7 @@ public class SecurityManager
         Stream<Class<? extends Permission>> permissions = roles.flatMap(role -> role.getPermissions().stream());
 
         if (principal instanceof User user)
-        {
             permissions = user.getImpersonationContext().filterPermissions(permissions);
-            permissions = ComplianceService.get().filterPermissions(user, permissions);
-        }
 
         return permissions.collect(Collectors.toSet());
     }

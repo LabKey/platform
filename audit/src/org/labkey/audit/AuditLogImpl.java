@@ -264,7 +264,7 @@ public class AuditLogImpl implements AuditLogService, StartupListener
         return new ActionURL(AuditController.ShowAuditLogAction.class, ContainerManager.getRoot());
     }
 
-    public List<Integer> getTransactionSampleIds(long transactionAuditId, User user, Container container)
+    public List<Integer> getTransactionSampleIds(long transactionAuditId, User user, Container container, @Nullable ContainerFilter containerFilter)
     {
         List<AuditTypeEvent> transactionEvents = TRANSACTION_EVENT_CACHE.get(transactionAuditId).second;
         if (!transactionEvents.isEmpty())
@@ -280,11 +280,11 @@ public class AuditLogImpl implements AuditLogService, StartupListener
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(FieldKey.fromParts("TransactionID"), transactionAuditId);
 
-        List<SampleTimelineAuditEvent> events = AuditLogService.get().getAuditEvents(container, user, SampleTimelineAuditEvent.EVENT_TYPE, filter, null);
+        List<SampleTimelineAuditEvent> events = AuditLogService.get().getAuditEvents(container, user, SampleTimelineAuditEvent.EVENT_TYPE, filter, null, containerFilter);
         return events.stream().map(SampleTimelineAuditEvent::getSampleId).collect(Collectors.toList());
     }
 
-    public List<Integer> getTransactionSourceIds(long transactionAuditId, User user, Container container)
+    public List<Integer> getTransactionSourceIds(long transactionAuditId, User user, Container container, @Nullable ContainerFilter containerFilter)
     {
         List<String> lsids = new ArrayList<>();
         List<Integer> sourceIds = new ArrayList<>();
@@ -307,7 +307,7 @@ public class AuditLogImpl implements AuditLogService, StartupListener
         }
         else
         {
-            List<DetailedAuditTypeEvent> events = QueryService.get().getQueryUpdateAuditRecords(user, container, transactionAuditId);
+            List<DetailedAuditTypeEvent> events = QueryService.get().getQueryUpdateAuditRecords(user, container, transactionAuditId, containerFilter);
 
             events.forEach((event) -> {
                 if (event.getNewRecordMap() != null)

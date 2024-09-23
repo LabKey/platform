@@ -2299,7 +2299,7 @@ public class NameGenerator
                         });
                     }
 
-                    if (value instanceof String) // convert "parent1,parent2" to [parent1, parent2]
+                    if (!parents.isEmpty()) // convert "parent1,parent2" to [parent1, parent2]
                         inputs.computeIfAbsent(parts[0] + "/" + parts[1],  (s) -> new LinkedHashSet<>()).addAll(parents);
                 }
             }

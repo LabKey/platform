@@ -3115,12 +3115,12 @@ public class QueryServiceImpl implements QueryService
     }
 
     @Override
-    public List<DetailedAuditTypeEvent> getQueryUpdateAuditRecords(User user, Container container, long transactionAuditId)
+    public List<DetailedAuditTypeEvent> getQueryUpdateAuditRecords(User user, Container container, long transactionAuditId, @Nullable ContainerFilter containerFilter)
     {
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(FieldKey.fromParts("TransactionID"), transactionAuditId);
 
-        return AuditLogService.get().getAuditEvents(container, user, QUERY_UPDATE_AUDIT_EVENT, filter, null);
+        return AuditLogService.get().getAuditEvents(container, user, QUERY_UPDATE_AUDIT_EVENT, filter, null, containerFilter);
     }
 
     @Override
