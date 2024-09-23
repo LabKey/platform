@@ -51,6 +51,16 @@ public class WellData
         return _sampleId != null || _type != null && _wellGroup != null || !getMetadata().isEmpty();
     }
 
+    public boolean isReplicate()
+    {
+        return WellGroup.Type.REPLICATE.equals(getType());
+    }
+
+    public boolean isSample()
+    {
+        return WellGroup.Type.SAMPLE.equals(getType());
+    }
+
     public Integer getCol()
     {
         return _col;
