@@ -62,6 +62,12 @@ public class AuthorizedFileSystem extends AbstractFileSystem
 
     private static final Logger LOG = LogHelper.getLogger(AuthorizedFileSystem.class, "Virtual file system");
 
+
+    public interface Wrapper
+    {
+        FileObject unwrap();
+    }
+
     public enum Mode
     {
         Read(true, false),
@@ -81,6 +87,36 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         boolean canWrite() {return _canWrite;}
     }
 
+    public static String toURIPath(String decodedPath)
+    {
+        return toURIPath(new File(decodedPath));
+    }
+
+    public static String toURIPath(File f)
+    {
+        boolean absolute = f.isAbsolute();
+        if (!absolute)
+            f = new File("/" + f.getPath());
+        var encPath = f.toURI().getRawPath();
+        StringBuilder sb = new StringBuilder();
+        for (int i=0 ; i<encPath.length() ; i++)
+        {
+            char ch = encPath.charAt(i);
+            switch (ch)
+            {
+                // note all of these generate 2-digit hex codes, so that is convenient
+                case 32, 34, 60, 62, 94, 96 :   // SPACE " < > ^ `
+                    sb.append('%');
+                    sb.append(Integer.toHexString(ch));
+                    break;
+                default:
+                    sb.append(ch);
+                    break;
+            }
+        }
+        return absolute ? sb.toString() : sb.substring(1);
+    }
+
     public static AuthorizedFileSystem create(File f, Mode mode)
     {
         return create(f, mode.canRead(), mode.canWrite());
@@ -92,7 +128,7 @@ public class AuthorizedFileSystem extends AbstractFileSystem
             throw new IllegalArgumentException(f + " is not absolute");
         try
         {
-            return new AuthorizedFileSystem(VFS.getManager().resolveFile(f.toURI()), read, write, false);
+            return new AuthorizedFileSystem(VFS.getManager().resolveFile(toURIPath(f)), read, write, false);
         }
         catch (FileSystemException e)
         {
@@ -126,13 +162,14 @@ public class AuthorizedFileSystem extends AbstractFileSystem
             throw new IllegalArgumentException(f + " is not absolute");
         try
         {
-            return new AuthorizedFileSystem(VFS.getManager().resolveFile(f.toURI()), true, true, true);
+            return new AuthorizedFileSystem(VFS.getManager().resolveFile(toURIPath(f)), true, true, true);
         }
         catch (FileSystemException e)
         {
             throw UnexpectedException.wrap(e);
         }
     }
+
 
     /** This is a helper for transitioning from File->FileObject
      *<br>
@@ -155,7 +192,7 @@ public class AuthorizedFileSystem extends AbstractFileSystem
             {
                 File parent = file.getParentFile();
                 AuthorizedFileSystem fs = map.computeIfAbsent(parent, key -> AuthorizedFileSystem.create(parent, true, true));
-                ret.add(fs.resolveFile(file.getName()));
+                ret.add(fs.resolveFile(toURIPath(file.getName())));
             }
             return ret;
         }
@@ -173,7 +210,7 @@ public class AuthorizedFileSystem extends AbstractFileSystem
             if (null == file)
                 return null;
             File parent = file.getParentFile();
-            return AuthorizedFileSystem.create(parent, true, true).getRoot().resolveFile(file.getName());
+            return AuthorizedFileSystem.create(parent, true, true).getRoot().resolveFile(toURIPath(file.getName()));
         }
         catch (FileSystemException fse)
         {
@@ -201,9 +238,9 @@ public class AuthorizedFileSystem extends AbstractFileSystem
     private AuthorizedFileSystem(FileObject wrappedFileObjectRoot, boolean read, boolean write, boolean allowDeleteRoot)
     {
         super(new VirtualFileName(SCHEME, "/", FileType.FOLDER), null, null);
-        LOG.debug("AuthorizedFileSystem(" + wrappedFileObjectRoot.getPath() + "," + (read?"r":"") + (write?"w":"")+")");
         try
         {
+            LOG.debug("AuthorizedFileSystem(" + wrappedFileObjectRoot.getName().getPathDecoded() + "," + (read ? "r" : "") + (write ? "w" : "") + ")");
             if (wrappedFileObjectRoot.isFile())
                 throw new IllegalArgumentException("parentLayer must be a Folder");
         }
@@ -344,8 +381,8 @@ public class AuthorizedFileSystem extends AbstractFileSystem
     @Override
     public FileObject resolveFile(String s) throws FileSystemException
     {
-        String fullPath = _rootInnerFileObject.getName().getPath() + "/" + s;
-        FileObject fo = _wrappedFileSystem.resolveFile(fullPath);
+        String encFullPath = _rootInnerFileObject.getName().getPath() + "/" + s;
+        FileObject fo = _wrappedFileSystem.resolveFile(encFullPath);
         return wrapFileObject(fo);
     }
 
@@ -594,7 +631,7 @@ public class AuthorizedFileSystem extends AbstractFileSystem
      * AbstractFileObject maybe isn't the right base class, we don't want it to do any caching at all.
      * e.g. see doGetType()
      */
-    class _FileObject extends AbstractFileObject<AuthorizedFileSystem>
+    class _FileObject extends AbstractFileObject<AuthorizedFileSystem> implements Wrapper
     {
         final FileObject _fo;
 
@@ -602,6 +639,12 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         {
             super(name, AuthorizedFileSystem.this);
             _fo = fo;
+        }
+
+        @Override
+        public FileObject unwrap()
+        {
+            return _fo;
         }
 
         @Override
@@ -686,7 +729,7 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         public boolean delete() throws FileSystemException
         {
             checkWritable();
-            if (!_allowDeleteRoot && "/".equals(getName().getPath()))
+            if (!_allowDeleteRoot && "/".equals(getName().getPathDecoded()))
                 throw new UnauthorizedException();
             var ret = _fo.delete();
             refresh();
@@ -781,13 +824,15 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         @Override
         public URI getURI()
         {
-            return _fo.getURI();
+            // https://issues.apache.org/jira/browse/VFS-840
+            throw new UnsupportedOperationException("use FileObject.getName()");
         }
 
         @Override
         public Path getPath()
         {
-            return _fo.getPath();
+            // https://issues.apache.org/jira/browse/VFS-840
+            throw new UnsupportedOperationException("use FileObject.getName()");
         }
 
         @Override
@@ -916,23 +961,11 @@ public class AuthorizedFileSystem extends AbstractFileSystem
     public static class TestCase extends org.junit.Assert
     {
         @Test
-        public void nopermission()
-        {
-
-        }
-
-        @Test
-        public void readonly()
-        {
-
-        }
-
-        @Test
         public void create_delete() throws Exception
         {
             FileObject root = FileUtil.createTempDirectoryFileObject(AuthorizedFileSystem.class.getName());
             assertTrue(root.getFileSystem() instanceof AuthorizedFileSystem);
-            var readOnlyRoot = createReadOnly((AuthorizedFileSystem)root.getFileSystem()).getRoot();
+            var readOnlyRoot = createReadOnly((AuthorizedFileSystem) root.getFileSystem()).getRoot();
 
             try
             {
@@ -1004,7 +1037,7 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         public void read_write() throws Exception
         {
             FileObject root = FileUtil.createTempDirectoryFileObject(AuthorizedFileSystem.class.getName());
-            var readOnlyRoot = createReadOnly((AuthorizedFileSystem)root.getFileSystem()).getRoot();
+            var readOnlyRoot = createReadOnly((AuthorizedFileSystem) root.getFileSystem()).getRoot();
             try
             {
                 assertNotNull(root);
@@ -1024,7 +1057,7 @@ public class AuthorizedFileSystem extends AbstractFileSystem
                 assertTrue(a.isFile());
 
                 try (FileContent contentRW = a.getContent();
-                    OutputStream os = contentRW.getOutputStream())
+                     OutputStream os = contentRW.getOutputStream())
                 {
                     Writer w = new OutputStreamWriter(os, Charset.defaultCharset());
                     w.write("Hello World");
@@ -1067,10 +1100,67 @@ public class AuthorizedFileSystem extends AbstractFileSystem
             assertEquals("file:///a/b/file name.txt", fn.toString());
             assertEquals("txt", fn.getExtension());
 
-            Path path = fo.getPath();
+            String path = fo.getName().getPathDecoded();
             assertEquals("/a/b/file name.txt", path.toString());
 
             assertEquals(fo.getURI().toString(), fo.getURL().toString());
+        }
+
+        @Test
+        public void testToURI() throws Exception
+        {
+            // JDK and VFS don't like each other, lets make sure our toURI() works
+            for (char ch = 32; ch <= 127; ch++)
+            {
+                if (ch == '/') continue;
+                if (ch == '\\') continue;
+                File f = new File("/" + ch + "☃");
+                var root = AuthorizedFileSystem.create(f, false, false).getRoot();
+                var local = ((Wrapper)root).unwrap();
+                assertEquals("fail for char " + (int)ch + "='" + ch + "'",
+                        f.getPath(), local.getName().getPathDecoded());
+            }
+
+
+            // JDK and VFS don't like each other, lets make sure our toURI() works
+            var root = AuthorizedFileSystem.create(new File("/"), false, false).getRoot();
+            for (char ch = 32; ch <= 127; ch++)
+            {
+                if (ch == '/') continue;
+                String decodedPath = "x/" + ch + "☃";
+                var fo = root.resolveFile(toURIPath(decodedPath));
+                assertNotNull(fo);
+                var local = ((Wrapper)fo).unwrap();
+                assertEquals("fail for char " + (int)ch + "=" + ch,
+                        decodedPath, local.getName().getPathDecoded());
+            }
+        }
+
+        @Test
+        public void toFile() throws Exception
+        {
+            AuthorizedFileSystem afs = AuthorizedFileSystem.create(new File("/tmp/a"), true, false);
+            FileObject root = afs.getRoot();
+            assertEquals("/", root.getName().getPathDecoded());
+            FileObject fileC = root.resolveFile("b/c.txt");
+            assertEquals("/b/c.txt", fileC.getName().getPathDecoded());
+            assertEquals("/tmp/a/b/c.txt", FileUtil.toFile(fileC).getPath());
+        }
+
+        @Test
+        public void resolveFile() throws Exception
+        {
+            // NOTE resolveFiles also takes encoded paths!
+            var root = AuthorizedFileSystem.create(new File("/tmp/a"), true, false).getRoot();
+            var file = root.resolveFile("/%23xyz");
+            assertTrue(file.getName().getPath().endsWith("/#xyz"));
+            assertTrue(file.getName().getPathDecoded().endsWith("/#xyz"));
+            assertEquals("#xyz", file.getName().getBaseName());
+
+            file = root.resolveFile("/%25xyz");
+            assertTrue(file.getName().getPath().endsWith("/%25xyz"));
+            assertTrue(file.getName().getPathDecoded().endsWith("/%xyz"));
+            assertEquals("%25xyz", file.getName().getBaseName());
         }
     }
 }
@@ -1079,7 +1169,7 @@ public class AuthorizedFileSystem extends AbstractFileSystem
  TODO
 [ ] exp.data.datafileurl is a problem.  We really need to be able to map those back to a current PipeRoot
 [ ] use AbstractFileSystem.close()?
-[ ] There is way too much metadata caching going on.  NOTE FileInfo in FileSystemResource teies to solve the same
+[ ] There is way too much metadata caching going on.  NOTE FileInfo in FileSystemResource tries to solve the same
     problem of excessive calls to isFile(), exists() etc.  So there are cases where we want the caching.
 
 CONSIDER

@@ -202,7 +202,8 @@ public abstract class SpringModule extends DefaultModule
         else
         {
             // Fall back on a directory that's a peer to the webapp directory
-            dirConfig = FileUtil.appendName(ModuleLoader.getInstance().getWebappDir().getPath().toFile().getParentFile(), "config");
+            File webappDir = FileUtil.toFile(ModuleLoader.getInstance().getWebappDir());
+            dirConfig = FileUtil.appendName(webappDir.getParentFile(), "config");
         }
         return dirConfig;
     }
