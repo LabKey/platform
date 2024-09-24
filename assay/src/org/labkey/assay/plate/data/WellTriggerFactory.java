@@ -31,6 +31,7 @@ public class WellTriggerFactory implements TriggerFactory
     public @NotNull Collection<Trigger> createTrigger(@Nullable Container c, TableInfo table, Map<String, Object> extraContext)
     {
         return List.of(
+            // new trigger - ensurePPSSampleType. remember to only do work in sampleId is set
             new ValidatePrimaryPlateSetUniqueSamplesTrigger(),
             new ComputeWellGroupsTrigger()
         );

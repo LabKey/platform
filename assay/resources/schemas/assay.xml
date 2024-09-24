@@ -117,6 +117,7 @@
       <column columnName="PlateSetId"/>
       <column columnName="PropertyURI"/>
       <column columnName="PropertyId"/>
+      <column columnName="FieldKey"/>
     </columns>
   </table>
   <table tableName="PlateSet" tableDbType="TABLE">

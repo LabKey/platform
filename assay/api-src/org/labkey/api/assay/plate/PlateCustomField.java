@@ -1,7 +1,9 @@
 package org.labkey.api.assay.plate;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.micrometer.common.lang.Nullable;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.query.FieldKey;
 
 import java.util.Objects;
 
@@ -14,11 +16,18 @@ public class PlateCustomField
     private String _label;
     private String _name;
     private String _propertyURI;
+    private String _fieldKey;
     private String _rangeURI;
     private String _container;
 
     public PlateCustomField()
     {
+    }
+
+    public PlateCustomField(FieldKey fieldKey)
+    {
+        _fieldKey = fieldKey.getName();
+        _name = fieldKey.getName();
     }
 
     public PlateCustomField(String propertyURI)
@@ -31,6 +40,7 @@ public class PlateCustomField
         _name = prop.getName();
         _label = prop.getLabel();
         _propertyURI = prop.getPropertyURI();
+//        _fieldKey = prop.getPropertyDescriptor().getF
         _rangeURI = prop.getRangeURI();
         _container = prop.getContainer().getId();
     }
@@ -63,6 +73,16 @@ public class PlateCustomField
     public void setPropertyURI(String propertyURI)
     {
         _propertyURI = propertyURI;
+    }
+
+    public String getFieldKey()
+    {
+        return _fieldKey;
+    }
+
+    public void setFieldKey(String fieldKey)
+    {
+        _fieldKey = fieldKey;
     }
 
     public String getRangeURI()
@@ -101,6 +121,7 @@ public class PlateCustomField
 
         return (
             Objects.equals(this.getName(), field.getName()) &&
+            Objects.equals(this.getFieldKey(), field.getFieldKey()) &&
             Objects.equals(this.getPropertyURI(), field.getPropertyURI()) &&
             Objects.equals(this.getRangeURI(), field.getRangeURI()) &&
             Objects.equals(this.getLabel(), field.getLabel()) &&
