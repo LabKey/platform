@@ -93,6 +93,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -198,6 +199,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 // Choose another file as the primary
                 primaryFile = context.getUploadedData().entrySet().iterator().next().getValue();
             }
+            primaryFile = Objects.requireNonNull(primaryFile);
             AssayRunAsyncContext asyncContext = context.getProvider().createRunAsyncContext(context);
             final AssayUploadPipelineJob<ProviderType> pipelineJob = new AssayUploadPipelineJob<ProviderType>(
                 asyncContext,
@@ -205,7 +207,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 batch,
                 forceSaveBatchProps,
                 PipelineService.get().getPipelineRootSetting(context.getContainer()),
-                null==primaryFile ? null : primaryFile.getPath().toFile()
+                primaryFile.getPath().toFile()
             );
 
             context.setPipelineJobGUID(pipelineJob.getJobGUID());

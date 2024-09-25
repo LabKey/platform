@@ -41,6 +41,7 @@ import java.security.cert.Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -863,8 +864,6 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         @Override
         public FileObject resolveFile(String path) throws FileSystemException
         {
-            if (!_allowRead)
-                return null;
             if (path.startsWith("/"))
                 return AuthorizedFileSystem.this.resolveFile(path);
             else
@@ -874,8 +873,6 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         @Override
         public FileObject resolveFile(String name, NameScope scope) throws FileSystemException
         {
-            if (!_allowRead)
-                return null;
             return wrapFileObject(_fo.resolveFile(name, scope));
         }
 
@@ -903,7 +900,6 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         @Override
         public int compareTo(@NotNull FileObject other)
         {
-            checkReadable();
             if (!(other instanceof _FileObject otherFO))
                 throw new IllegalArgumentException();
             return _fo.compareTo(otherFO._fo);
@@ -1084,31 +1080,86 @@ public class AuthorizedFileSystem extends AbstractFileSystem
         }
 
         @Test
+        public void testSet() throws Exception
+        {
+            // we put files in maps and sets, test that this works for _FileObject
+
+            // same file from different roots, and different files same root
+            FileObject a = AuthorizedFileSystem.create(new File("/a/"),false,false).getRoot();
+            FileObject c1 = a.resolveFile("b/c.txt");
+            assertNotNull(c1);
+            FileObject b = AuthorizedFileSystem.create(new File("/a/b/"),false,false).getRoot();
+            FileObject c2 = b.resolveFile("c.txt");
+            assertNotNull(c2);
+            FileObject d1 =  b.resolveFile("d.txt");
+            assertNotNull(d1);
+            FileObject d2 =  b.resolveFile("c/d.txt");
+            assertNotNull(d2);
+
+            assertEquals(c1, c2);
+            assertEquals(0, c1.compareTo(c2));
+            assertEquals(c1.hashCode(), c2.hashCode());
+            assertNotEquals(d1, d2);
+
+            HashSet<FileObject> s = new HashSet<>();
+            s.add(c1);
+            assertTrue(s.contains(c2));
+            s.add(d1);
+            assertTrue(s.contains(d1));
+            assertFalse(s.contains(d2));
+        }
+
+        @Test
         public void bug() throws Exception
         {
             java.nio.file.Path nioPath;
-            // what am I doing wrong here?
+/*
             try
             {
+                // TLDR; resolveFile() tries to infer escaped/not escaped.  Blows up in an unexpected place when UNICODE chars are involved.
+                // This is example is wrong because resolveFile() expects an encoded path.
+                // This _usually_ works because resolveFile() looks for '%' to decide that the path does not need to be decoded.
+                // However, this string has both a % (and a sequence that looks like a valid escape) AND unicode chars which are not valid in an escaped string
+                // resolveFile() lets this through, but blows up when getPath() tries to use URI(String str) on this escaped string with UNICODE
                 File f = new File("/lk/develop/build/deploy/files/FileRootTestProject1☃~!@$&()_+{}-=[],.%23äöü/Subfolder1/SubSubfolder/@files");
+                // resolveFile will always call
                 FileObject localFile = VFS.getManager().resolveFile(f.getAbsolutePath());
                 nioPath = localFile.getPath();
+                fail("expect URISyntaxException");
             }
             catch (Exception e)
             {
-                System.err.println(e);
+                // pass
             }
 
             try
             {
-                // what am I doing wrong here?
+                // I think this should be work
+                // f.toURI() _SHOULD_ create a URL that VFS thinks is fine
+                // NOTE: alas no. File.toURI() will encode the %, but passes the unicode chars, again this blows up in URI(String path, Strings scheme)
                 File f = new File("/lk/develop/build/deploy/files/FileRootTestProject1☃~!@$&()_+{}-=[],.%23äöü/Subfolder1/SubSubfolder/@files");
                 FileObject localFile = VFS.getManager().resolveFile(f.toURI());
+                nioPath = localFile.getPath();
+                fail("This throws in 2.7.0");
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+            }
+*/
+            try
+            {
+                // HOW about if we do the encoding ourselves
+                File f = new File("/lk/develop/build/deploy/files/FileRootTestProject1☃~!@$&()_+{}-=[],.%23äöü/Subfolder1/SubSubfolder/@files");
+                var uri = FileUtil.createUri(f.getAbsolutePath());
+                assertFalse(uri.toString().contains("☃"));
+                assertTrue(f.getPath().equals(uri.getPath()));
+                FileObject localFile = VFS.getManager().resolveFile(uri);
                 nioPath = localFile.getPath();
             }
             catch (Exception e)
             {
-                System.err.println(e);
+                fail("This should work");
             }
         }
     }

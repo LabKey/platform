@@ -70,6 +70,9 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class ConnectionWrapper implements java.sql.Connection
 {
+    // create a package logger, to make sure it shows up in the admin/loggers list
+    @SuppressWarnings("SSBasedInspection")
+    private static final Logger packageLogger = LogManager.getLogger(ConnectionWrapper.class.getPackageName());
     private static final Logger LOG = LogHelper.getLogger(ConnectionWrapper.class, "All JDBC metadata and SQL execution calls being made");
 
     private static final Map<ConnectionWrapper, Pair<Thread, Throwable>> _openConnections = Collections.synchronizedMap(new IdentityHashMap<>());
