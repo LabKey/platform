@@ -404,7 +404,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         for (Plate plate : plateSet.getPlates())
         {
             QueryView plateQueryView = getPlateQueryView(c, user, cf, plate, false);
-            Map<String, FieldKey> displayColumns = getPlateDisplayColumns(plateQueryView, Collections.singletonList("sampleID"))
+            Map<String, FieldKey> displayColumns = getPlateDisplayColumns(plateQueryView)
                     .stream()
                     .filter(col -> col.getFilterKey() != null)
                     .collect(Collectors.toMap(col -> col.getColumnInfo().getPropertyURI(), DisplayColumn::getFilterKey));
@@ -3294,7 +3294,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             // For non-map export view we always want "position" first
             fieldKeys.add(0, WellTable.Column.Position.fieldKey());
         }
-        for (PlateCustomField customField : plate.getCustomFields())
+        List<String> excludedColumns = Arrays.asList("SampleID", "Type", "WellGroup"); // todo
+        List<PlateCustomField> customFields = plate.getCustomFields().stream().filter(field -> !excludedColumns.contains(field.getFieldKey())).toList();
+        for (PlateCustomField customField : customFields)
         {
             fieldKeys.add(FieldKey.fromParts(customField.getName()));
         }
@@ -3317,7 +3319,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return new QueryView(userSchema, settings, null);
     }
 
-    private List<DisplayColumn> getPlateDisplayColumns(QueryView queryView, List<String> columnsToExclude)
+    private List<DisplayColumn> getPlateDisplayColumns(QueryView queryView)
     {
         // We have to use the display columns from the DataRegion returned from createDataView in order to get the
         // correct columns that we set via QuerySettings in getPlateQueryView, if we don't then we'll only get the
@@ -3327,7 +3329,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         // Filter on isQueryColumn, so we don't get the details or update columns
         return dataRegion.getDisplayColumns().stream()
                 .filter(DisplayColumn::isQueryColumn)
-                .filter(col -> !columnsToExclude.contains(col.getName()))
+                .filter(col -> !col.getName().equals("sampleID")) // PR flag / comment flag
                 .toList();
     }
 
@@ -3345,7 +3347,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             if (plate != null)
             {
                 QueryView plateQueryView = getPlateQueryView(c, user, cf, plate, false);
-                List<DisplayColumn> displayColumns = getPlateDisplayColumns(plateQueryView, Collections.singletonList("sampleID"));
+                List<DisplayColumn> displayColumns = getPlateDisplayColumns(plateQueryView);
                 PlateFileBytes plateFileBytes = new PlateFileBytes(plate.getName(), new ByteArrayOutputStream());
 
                 try (TSVGridWriter writer = new TSVGridWriter(plateQueryView::getResults, displayColumns, Collections.singletonMap("SampleId/Name", "Sample ID")))
@@ -3374,7 +3376,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             if (plate != null)
             {
                 QueryView plateQueryView = getPlateQueryView(c, user, cf, plate, true);
-                List<DisplayColumn> displayColumns = getPlateDisplayColumns(plateQueryView, Arrays.asList("sampleIdName", "wellGroup", "type"));
+                List<DisplayColumn> displayColumns = getPlateDisplayColumns(plateQueryView);
                 PlateFileBytes plateFileBytes = new PlateFileBytes(plate.getName(), new ByteArrayOutputStream());
                 PlateMapExcelWriter writer = new PlateMapExcelWriter(plate, displayColumns, plateQueryView);
                 writer.renderWorkbook(plateFileBytes.bytes);

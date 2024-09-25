@@ -26,13 +26,16 @@ import org.labkey.assay.plate.query.WellTable;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class PlateMapExcelWriter extends ExcelWriter
 {
     private static final Logger logger = LogHelper.getLogger(PlateMapExcelWriter.class, "Plate map export");
+    private static final Set<String> excludedFields = Set.of("sampleid", "type", "wellgroup");
 
     private final Plate _plate;
     private final QueryView _queryView;
@@ -184,6 +187,17 @@ public class PlateMapExcelWriter extends ExcelWriter
         }
     }
 
+    // remember to add comment!
+    protected List<DisplayColumn> getDisplayColumns()
+    {
+        return _displayColumns.stream().filter(col -> !excludedFields.contains(col.getName().toLowerCase())).toList();
+    }
+
+    protected List<PlateCustomField> getCustomFields()
+    {
+        return _plate.getCustomFields().stream().filter(field -> !new ArrayList<>(excludedFields).contains(field.getFieldKey() != null ? field.getFieldKey().toLowerCase() : null)).toList();
+    }
+
     @Override
     protected void renderSheet(Workbook workbook, int sheetNumber)
     {
@@ -191,20 +205,21 @@ public class PlateMapExcelWriter extends ExcelWriter
         Sheet sheet = ensureSheet(ctx, workbook, sheetNumber, false);
         ((SXSSFSheet) sheet).trackAllColumnsForAutoSizing();
 
+        List<DisplayColumn> displayCols = getDisplayColumns();
         try
         {
             renderSheetHeader(sheet);
             List<DisplayColumn> displayColumns;
 
             if (sheetNumber == 0) // Summary view, render all values in each cell
-                displayColumns = _displayColumns.stream().filter(dc -> !dc.getName().equals("row") && !dc.getName().equals("col")).toList();
+                displayColumns = displayCols.stream().filter(dc -> !dc.getName().equals("row") && !dc.getName().equals("col")).toList();
             else if (sheetNumber == 1) // Sample ID view
-                displayColumns = List.of(_displayColumns.get(0));
+                displayColumns = List.of(displayCols.get(0));
             else // CustomField view
             {
-                PlateCustomField customField = _plate.getCustomFields().get(sheetNumber - 2);
+                PlateCustomField customField = getCustomFields().get(sheetNumber - 2);
                 FieldKey fieldKey = FieldKey.fromParts(customField.getName());
-                displayColumns = _displayColumns.stream().filter(dc -> dc.getColumnInfo().getFieldKey().equals(fieldKey)).toList();
+                displayColumns = displayCols.stream().filter(dc -> dc.getColumnInfo().getFieldKey().equals(fieldKey)).toList();
             }
 
             renderGrid(sheet, displayColumns);
@@ -218,7 +233,7 @@ public class PlateMapExcelWriter extends ExcelWriter
     @Override
     protected void renderSheets(Workbook workbook)
     {
-        List<PlateCustomField> customFields = _plate.getCustomFields();
+        List<PlateCustomField> customFields = getCustomFields();
         // Summary sheet, SampleId sheet, and one sheet per custom field
         int sheetCount = 2 + customFields.size();
 
