@@ -175,6 +175,13 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
         return new Path(path,length,abs,dir);
     }
 
+    public Path absolute()
+    {
+        if (isAbsolute())
+            return this;
+        return new Path(_path, _length, true, _isDirectory);
+    }
+
     public boolean isAbsolute()
     {
         return _isAbsolute;
@@ -495,6 +502,13 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
             return name.substring(name.lastIndexOf('.') + 1);
         }
         return null;
+    }
+
+    public String[] toArray()
+    {
+        var ret = new String[_length];
+        System.arraycopy(_path, 0, ret, 0, _length);
+        return ret;
     }
 
     public String toString()
