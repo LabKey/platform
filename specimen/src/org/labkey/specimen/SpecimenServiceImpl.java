@@ -43,9 +43,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.specimen.DefaultSpecimenTablesTemplate;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
-import org.labkey.specimen.importer.SimpleSpecimenImporter;
-import org.labkey.specimen.importer.SpecimenColumn;
-import org.labkey.api.specimen.location.LocationCache;
 import org.labkey.api.specimen.model.SpecimenTablesProvider;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.SpecimenChangeListener;
@@ -58,6 +55,8 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.specimen.importer.SimpleSpecimenImporter;
+import org.labkey.specimen.importer.SpecimenColumn;
 import org.labkey.specimen.pipeline.SpecimenReloadJob;
 import org.labkey.specimen.requirements.SpecimenRequestRequirementProvider;
 
@@ -74,11 +73,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-/**
- * User: brittp
- * Date: Oct 2, 2007
- * Time: 3:38:28 PM
- */
 public class SpecimenServiceImpl implements SpecimenService
 {
     private final List<SpecimenImportStrategyFactory> _importStrategyFactories = new CopyOnWriteArrayList<>();
@@ -250,7 +244,7 @@ public class SpecimenServiceImpl implements SpecimenService
         if (null != studyContainer && null != StringUtils.trimToNull(participantId) && null != visit)
         {
             List<Vial> matches = SpecimenManager.get().getVials(studyContainer, user, participantId, visit);
-            if (matches.size() > 0)
+            if (!matches.isEmpty())
             {
                 Set<ParticipantVisit> result = new HashSet<>();
                 for (Vial match : matches)

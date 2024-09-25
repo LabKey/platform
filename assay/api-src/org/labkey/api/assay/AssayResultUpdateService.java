@@ -114,7 +114,7 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
 
         AssayProvider assayProvider = AssayService.get().getProvider(run);
         if (assayProvider != null)
-            assayProvider.updatePropertyLineage(container, user, getQueryTable(), run, updatedValues, false, getRemapCache(), getMaterialsCache());
+            assayProvider.updatePropertyLineage(container, user, getQueryTable(), run, updatedValues, oldRow, false, getRemapCache(), getMaterialsCache());
 
         String userComment = configParameters == null ? null : (String) configParameters.get(AuditUserComment);
         ExperimentService.get().auditRunEvent(user, run.getProtocol(), run, null, sb.toString(), userComment);
