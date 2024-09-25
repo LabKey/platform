@@ -248,7 +248,7 @@ export const DynamicFields: FC<DynamicFieldsProps> = memo(props => {
         props;
 
     // If dictateFieldVisibility is set on a checkbox field, its value determines the visibility of all subsequent
-    // fields until the next checkbox with a dictateFieldVisibility value, or the end of the form
+    // fields until the next checkbox with a dictateFieldVisibility value, or encounters a section field or the end of the form
     let on = true;
     const fieldsToCreate = fields.filter(field => {
         const returnVal = on;
@@ -257,6 +257,12 @@ export const DynamicFields: FC<DynamicFieldsProps> = memo(props => {
             on = fieldValues[field['name']];
             return true;
         }
+
+        if (field.type === 'section') {
+            on = true;
+            return true;
+        }
+
         return returnVal;
     });
 
