@@ -38,7 +38,7 @@ import java.util.*;
  * @version $Id: MacroRepository.java,v 1.9 2003/12/17 13:35:36 stephan Exp $
  */
 
-public class MacroRepository extends PluginRepository {
+public class MacroRepository extends PluginRepository<Macro> {
   private static Logger log = LogManager.getLogger(MacroRepository.class);
 
   private InitialRenderContext context;

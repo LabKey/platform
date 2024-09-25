@@ -49,7 +49,7 @@ public class FilterTestSupport {
 
   public void setUp() throws Exception {
     if (null != filter) {
-      filter.setInitialContext(new BaseInitialRenderContext());
+      filter.setInitialContext(new BaseInitialRenderContext(null));
     }
   }
 }
