@@ -1,7 +1,6 @@
 package org.labkey.api.assay.plate;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import io.micrometer.common.lang.Nullable;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.FieldKey;
 
@@ -40,7 +39,6 @@ public class PlateCustomField
         _name = prop.getName();
         _label = prop.getLabel();
         _propertyURI = prop.getPropertyURI();
-//        _fieldKey = prop.getPropertyDescriptor().getF
         _rangeURI = prop.getRangeURI();
         _container = prop.getContainer().getId();
     }

@@ -31,10 +31,52 @@ public class WellTriggerFactory implements TriggerFactory
     public @NotNull Collection<Trigger> createTrigger(@Nullable Container c, TableInfo table, Map<String, Object> extraContext)
     {
         return List.of(
-            // new trigger - ensurePPSSampleType. remember to only do work in sampleId is set
+            new EnsureSampleWellTypeTrigger(),
             new ValidatePrimaryPlateSetUniqueSamplesTrigger(),
             new ComputeWellGroupsTrigger()
         );
+    }
+
+    protected class EnsureSampleWellTypeTrigger implements Trigger
+    {
+        // When no type is given but sampleid is populated, provide 'Sample' as the type
+        private void addTypeSample(@Nullable Map<String, Object> newRow)
+        {
+            if (
+                    newRow != null &&
+                            newRow.containsKey(WellTable.Column.SampleId.name()) &&
+                            newRow.getOrDefault(WellTable.Column.SampleId.name(), null) != null &&
+                            !newRow.containsKey(WellTable.Column.Type.name())
+            )
+                newRow.put(WellTable.Column.Type.name(), WellGroup.Type.SAMPLE.name());
+        }
+
+        @Override
+        public void afterInsert(
+                TableInfo table,
+                Container c,
+                User user,
+                @Nullable Map<String, Object> newRow,
+                ValidationException errors,
+                Map<String, Object> extraContext
+        )
+        {
+            addTypeSample(newRow);
+        }
+
+        @Override
+        public void afterUpdate(
+                TableInfo table,
+                Container c,
+                User user,
+                @Nullable Map<String, Object> newRow,
+                @Nullable Map<String, Object> oldRow,
+                ValidationException errors,
+                Map<String, Object> extraContext
+        )
+        {
+            addTypeSample(newRow);
+        }
     }
 
     protected class ValidatePrimaryPlateSetUniqueSamplesTrigger implements Trigger

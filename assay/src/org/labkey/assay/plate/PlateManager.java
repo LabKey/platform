@@ -21,7 +21,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.checkerframework.checker.units.qual.C;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayListener;
@@ -157,12 +156,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -305,7 +302,6 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             if (plate == null)
                 throw new IllegalStateException("Unexpected failure. Failed to retrieve plate after save (pre-commit).");
 
-            // todo: comment here
             if (plateSetId == null)
                 deriveCustomFieldsFromWellData(container, user, plate, data, getPlateBuiltInFields().subList(1, 3));
             else
@@ -408,9 +404,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         for (Plate plate : plateSet.getPlates())
         {
             QueryView plateQueryView = getPlateQueryView(c, user, cf, plate, false);
-            Map<String, FieldKey> displayColumns = getPlateDisplayColumns(plateQueryView)
+            Map<String, FieldKey> displayColumns = getPlateDisplayColumns(plateQueryView, Collections.singletonList("sampleID"))
                     .stream()
-                    .filter(col -> col.getFilterKey() != null && !col.getName().equals("sampleID"))
+                    .filter(col -> col.getFilterKey() != null)
                     .collect(Collectors.toMap(col -> col.getColumnInfo().getPropertyURI(), DisplayColumn::getFilterKey));
 
             for (PlateCustomField field : plate.getCustomFields())
@@ -893,13 +889,13 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         {
             plate.setMetadataDomainId(domain.getTypeId());
             List<DomainProperty> metadataFields = getPlateMetadataDomainProperties(domain, plate.getRowId());
-            List<String> builtInFields = getPlateBuiltInProperties(plate.getRowId()); // todo clean
+            List<FieldKey> builtInFields = getPlateBuiltInProperties(plate.getRowId());
 
             if (!metadataFields.isEmpty() || !builtInFields.isEmpty())
             {
                 plate.setCustomFields(Stream.concat(
                         builtInFields.stream()
-                                .map(s -> new PlateCustomField(FieldKey.fromParts(s))),
+                                .map(PlateCustomField::new),
                         metadataFields.stream()
                                 .sorted(Comparator.comparing(DomainProperty::getName))
                                 .map(PlateCustomField::new)
@@ -1110,7 +1106,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             }
 
             if (!updateExisting && !plate.getCustomFields().isEmpty())
-                setFields(container, user, plate.getRowId(), plate.getCustomFields()); // higher up, determine plate.getCustomFields is accurate
+                setFields(container, user, plate.getRowId(), plate.getCustomFields());
 
             final Integer plateRowId = plateId;
             transaction.addCommitTask(() -> {
@@ -1771,7 +1767,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         {
             // Copy the plate
             PlateImpl newPlate = new PlateImpl(container, name, null, sourcePlate.getAssayType(), sourcePlate.getPlateType());
-            newPlate.setCustomFields(sourcePlate.getCustomFields()); // flag todo
+            newPlate.setCustomFields(sourcePlate.getCustomFields());
             newPlate.setDescription(description);
 
             if (copyAsTemplate)
@@ -2188,7 +2184,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 .toList();
     }
 
-    public @NotNull List<PlateCustomField> getPlateBuiltInFields()
+    public List<PlateCustomField> getPlateBuiltInFields()
     {
         return Arrays.asList(
                 new PlateCustomField(FieldKey.fromParts("SampleID")),
@@ -2221,16 +2217,16 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         Map<Boolean, List<PlateCustomField>> fieldsPartition = fields.stream().collect(Collectors.partitioningBy(field -> field.getPropertyURI() == null));
 
         // Process metadata fields
-        Set<String> existingPropsMetdata = plate.getCustomFields().stream().map(PlateCustomField::getPropertyURI).collect(Collectors.toSet());
+        Set<String> existingPropsMetadata = plate.getCustomFields().stream().map(PlateCustomField::getPropertyURI).collect(Collectors.toSet());
         for (PlateCustomField field : fieldsPartition.get(false))
         {
             DomainProperty dp = domain.getPropertyByURI(field.getPropertyURI());
             if (dp == null)
                 throw new IllegalArgumentException("Failed to add plate custom field. \"" + field.getPropertyURI() + "\" does not exist on domain.");
-            if (!existingPropsMetdata.contains(field.getPropertyURI()))
+            if (!existingPropsMetadata.contains(field.getPropertyURI()))
                 fieldsToAdd.add(Map.of(
                         "rowId", plateSet.getRowId(),
-                        "propertyId", dp.getPropertyId(), // todo: clean
+                        "propertyId", dp.getPropertyId(),
                         "propertyURI", dp.getPropertyURI()
                 ));
         }
@@ -2274,7 +2270,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     /**
      * Returns the list of custom properties associated with a plate
      */
-    private List<DomainProperty> getPlateMetadataDomainProperties(@NotNull Domain plateMetadataDomain, Integer plateId) // todo other usage
+    private List<DomainProperty> getPlateMetadataDomainProperties(@NotNull Domain plateMetadataDomain, Integer plateId)
     {
         AssayDbSchema schema = AssayDbSchema.getInstance();
         SQLFragment sql = new SQLFragment("SELECT PropertyURI FROM ").append(schema.getTableInfoPlateSetProperty(), "PP")
@@ -2293,14 +2289,14 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return fields;
     }
 
-    private List<String> getPlateBuiltInProperties(Integer plateId)
+    private List<FieldKey> getPlateBuiltInProperties(Integer plateId)
     {
         AssayDbSchema schema = AssayDbSchema.getInstance();
         SQLFragment sql = new SQLFragment("SELECT FieldKey FROM ").append(schema.getTableInfoPlateSetProperty(), "PP")
                 .append(" INNER JOIN ").append(schema.getTableInfoPlate(), "PL").append(" ON PL.PlateSet = PP.PlateSetId")
                 .append(" WHERE PropertyURI IS NULL AND PL.RowId = ?").add(plateId);
 
-        return new ArrayList<>(new SqlSelector(schema.getSchema(), sql).getArrayList(String.class));
+        return new ArrayList<>(new SqlSelector(schema.getSchema(), sql).getArrayList(FieldKey.class));
     }
 
     public @NotNull List<WellCustomField> getWellCustomFields(User user, Plate plate, Integer wellId)
@@ -2314,7 +2310,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             return Collections.emptyList();
 
         List<WellCustomField> fields = new ArrayList<>(getPlateMetadataDomainProperties(domain, plate.getRowId()).stream().map(WellCustomField::new).toList());
-        fields.addAll(getPlateBuiltInProperties(plate.getRowId()).stream().map(s -> new WellCustomField(FieldKey.fromParts(s))).toList());
+        fields.addAll(getPlateBuiltInProperties(plate.getRowId()).stream().map(WellCustomField::new).toList());
 
         if (fields.isEmpty())
             return Collections.emptyList();
@@ -2346,7 +2342,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return fields.stream().sorted(Comparator.comparing(PlateCustomField::getName)).toList();
     }
 
-    public List<PlateCustomField> removeFields(Container container, User user, Integer plateId, List<PlateCustomField> fields) throws ValidationException // NK: single fn, logic flows
+    public List<PlateCustomField> removeFields(Container container, User user, Integer plateId, List<PlateCustomField> fields) throws ValidationException
     {
         Plate plate = requirePlate(container, plateId, "Failed to remove plate custom fields.");
         PlateSet plateSet = requirePlateSet(plate, "Failed to remove plate custom fields.");
@@ -2419,7 +2415,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     {
         requirePlate(container, plateRowId, "Failed to set plate custom fields.");
         List<PlateCustomField> builtInFields = getPlateBuiltInFields();
-        List<PlateCustomField> metadataFields = getPlateMetadataFields(container, user); // 'metadataFields'
+        List<PlateCustomField> metadataFields = getPlateMetadataFields(container, user);
         Set<PlateCustomField> currentFields = new HashSet<>(getFields(container, plateRowId));
 
         Set<PlateCustomField> desiredFields = new HashSet<>();
@@ -2428,8 +2424,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         for (PlateCustomField partialField : fields)
         {
+            // When obtaining the field from the partialField, first check the small set of built-in fields, then check metadata fields
             PlateCustomField field = builtInFields.stream()
-                    .filter(f -> f.getFieldKey().equals(partialField.getName())) // todo comments.... also, bad form?
+                    .filter(f -> f.getFieldKey().equals(partialField.getName()))
                     .findFirst()
                     .or(() -> metadataFields.stream()
                             .filter(f -> f.getName().equals(partialField.getName()) || f.getPropertyURI().equals(partialField.getPropertyURI()))
@@ -3320,15 +3317,18 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return new QueryView(userSchema, settings, null);
     }
 
-    private List<DisplayColumn> getPlateDisplayColumns(QueryView queryView)
+    private List<DisplayColumn> getPlateDisplayColumns(QueryView queryView, List<String> columnsToExclude)
     {
         // We have to use the display columns from the DataRegion returned from createDataView in order to get the
         // correct columns that we set via QuerySettings in getPlateQueryView, if we don't then we'll only get the
         // columns from the default view of the Well table, which could be anything.
         DataRegion dataRegion = queryView.createDataView().getDataRegion();
 
-        // Filter on isQueryColumn so we don't get the details or update columns
-        return dataRegion.getDisplayColumns().stream().filter(DisplayColumn::isQueryColumn).toList();
+        // Filter on isQueryColumn, so we don't get the details or update columns
+        return dataRegion.getDisplayColumns().stream()
+                .filter(DisplayColumn::isQueryColumn)
+                .filter(col -> !columnsToExclude.contains(col.getName()))
+                .toList();
     }
 
     public record PlateFileBytes(String plateName, ByteArrayOutputStream bytes) {}
@@ -3345,7 +3345,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             if (plate != null)
             {
                 QueryView plateQueryView = getPlateQueryView(c, user, cf, plate, false);
-                List<DisplayColumn> displayColumns = getPlateDisplayColumns(plateQueryView).stream().filter(col -> !col.getName().equals("sampleID")).toList(); // todo: this is bad
+                List<DisplayColumn> displayColumns = getPlateDisplayColumns(plateQueryView, Collections.singletonList("sampleID"));
                 PlateFileBytes plateFileBytes = new PlateFileBytes(plate.getName(), new ByteArrayOutputStream());
 
                 try (TSVGridWriter writer = new TSVGridWriter(plateQueryView::getResults, displayColumns, Collections.singletonMap("SampleId/Name", "Sample ID")))
@@ -3374,7 +3374,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             if (plate != null)
             {
                 QueryView plateQueryView = getPlateQueryView(c, user, cf, plate, true);
-                List<DisplayColumn> displayColumns = getPlateDisplayColumns(plateQueryView);
+                List<DisplayColumn> displayColumns = getPlateDisplayColumns(plateQueryView, Arrays.asList("sampleIdName", "wellGroup", "type"));
                 PlateFileBytes plateFileBytes = new PlateFileBytes(plate.getName(), new ByteArrayOutputStream());
                 PlateMapExcelWriter writer = new PlateMapExcelWriter(plate, displayColumns, plateQueryView);
                 writer.renderWorkbook(plateFileBytes.bytes);
