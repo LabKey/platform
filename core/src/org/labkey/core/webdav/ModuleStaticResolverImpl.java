@@ -38,6 +38,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileStream;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.ModuleChangeListener;
 import org.labkey.api.util.PageFlowUtil;
@@ -231,7 +232,8 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
             {
                 for (FileObject d :  m.getStaticFileDirectories())
                 {
-                    if (seen.add(d.getPath().toString()))
+                    String localPath = FileUtil.toFile(d).getPath();
+                    if (seen.add(localPath))
                         roots.add(d);
                 }
             }
@@ -527,8 +529,8 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
         {
             if (!exists())
                 return null;
-            FileObject f = _files.get(0);
-            return f.getPath().toFile();
+            FileObject fo = _files.get(0);
+            return FileUtil.toFile(fo);
         }
 
         @Override

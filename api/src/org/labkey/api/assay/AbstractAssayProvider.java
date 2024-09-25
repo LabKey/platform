@@ -2111,20 +2111,27 @@ public abstract class AbstractAssayProvider implements AssayProvider
         }
     }
 
+    // Issue 51316: While this issue is being addressed this feature has been disabled.
+    private final static boolean ENABLE_UPDATE_PROPERTY_LINEAGE = false;
+
     @Override
     public void updatePropertyLineage(
         Container container,
         User user,
         TableInfo table,
         ExpRun run,
-        Map<String, Object> row,
+        Map<String, Object> newRow,
+        Map<String, Object> oldRow,
         boolean isRunProperties,
         @NotNull RemapCache cache,
         @NotNull Map<Integer, ExpMaterial> materialsCache
     ) throws ValidationException
     {
+        if (!ENABLE_UPDATE_PROPERTY_LINEAGE)
+            return;
+
         Domain domain = table.getDomain();
-        if (domain == null)
+        if (domain == null || newRow == null || oldRow == null)
             return;
 
         Set<Integer> removedMaterialInputs = new HashSet<>();
@@ -2132,8 +2139,13 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
         // There can be multiple columns within a row that are lineage-backed material lookups.
         // Coalesce these material input updates across columns.
-        for (var entry : row.entrySet())
+        for (var entry : newRow.entrySet())
         {
+            Object newValue = entry.getValue();
+            Object oldValue = oldRow.get(entry.getKey());
+            if (newValue == oldValue)
+                continue;
+
             ColumnInfo column = table.getColumn(entry.getKey());
 
             if (column != null && (!isRunProperties || column instanceof PropertyColumn))
@@ -2147,14 +2159,28 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 {
                     String inputRole = AssayService.get().getPropertyInputLineageRole(dp);
 
-                    // Remove all material inputs with the same role
+                    // Remove material inputs with the same role
                     for (var materialEntry : run.getMaterialInputs().entrySet())
                     {
                         if (inputRole.equalsIgnoreCase(materialEntry.getValue()))
-                            removedMaterialInputs.add(materialEntry.getKey().getRowId());
+                        {
+                            // Issue 51316: Resolve the original material input rowId for this column
+                            Integer originalRowId = null;
+                            if (oldValue instanceof Integer _originalRowId)
+                                originalRowId = _originalRowId;
+                            else if (oldValue != null)
+                            {
+                                ExpMaterial originalMaterial = ExperimentService.get().findExpMaterial(container, user, oldValue, sampleType, cache, materialsCache);
+                                if (originalMaterial != null)
+                                    originalRowId = originalMaterial.getRowId();
+                            }
+
+                            if (originalRowId != null && originalRowId == materialEntry.getKey().getRowId())
+                                removedMaterialInputs.add(originalRowId);
+                        }
                     }
 
-                    ExpMaterial newInputMaterial = ExperimentService.get().findExpMaterial(container, user, entry.getValue(), sampleType, cache, materialsCache);
+                    ExpMaterial newInputMaterial = ExperimentService.get().findExpMaterial(container, user, newValue, sampleType, cache, materialsCache);
                     if (newInputMaterial != null)
                     {
                         // Prevent direct cycles

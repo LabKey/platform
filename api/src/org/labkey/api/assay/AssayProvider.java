@@ -404,7 +404,8 @@ public interface AssayProvider extends Handler<ExpProtocol>
         User user,
         TableInfo table,
         ExpRun run,
-        Map<String, Object> row,
+        Map<String, Object> newRow,
+        Map<String, Object> olRow,
         boolean isRunProperties,
         @NotNull RemapCache cache,
         @NotNull Map<Integer, ExpMaterial> materialsCache

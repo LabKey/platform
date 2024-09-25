@@ -22,6 +22,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.vfs2.FileObject;
+import org.apache.commons.vfs2.FileSystemException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -57,6 +58,7 @@ import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.HttpView;
@@ -566,7 +568,14 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
     public static MultipartConfigElement getMultiPartConfigElement()
     {
-        return new MultipartConfigElement(SpringActionController.getTempUploadDir().getPath().toString());
+        try
+        {
+            return new MultipartConfigElement(SpringActionController.getTempUploadDir().getName().getPathDecoded());
+        }
+        catch (FileSystemException e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
     }
 
     protected void handleException(Throwable x, ViewContext context, PageConfig pageConfig)

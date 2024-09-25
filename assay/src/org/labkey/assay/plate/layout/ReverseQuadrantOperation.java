@@ -3,8 +3,9 @@ package org.labkey.assay.plate.layout;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateType;
+import org.labkey.api.data.Container;
 import org.labkey.api.query.ValidationException;
-import org.labkey.assay.plate.model.ReformatOptions;
+import org.labkey.api.security.User;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,9 +15,9 @@ public class ReverseQuadrantOperation implements LayoutOperation
     private PlateType _targetPlateType;
 
     @Override
-    public List<WellLayout> execute(ReformatOptions options, @NotNull List<Plate> sourcePlates, PlateType targetPlateType)
+    public List<WellLayout> execute(ExecutionContext context)
     {
-        Plate sourcePlate = sourcePlates.get(0);
+        Plate sourcePlate = context.sourcePlates().get(0);
         Integer plateRowId = sourcePlate.getRowId();
 
         List<WellLayout> layouts = new ArrayList<>();
@@ -63,12 +64,12 @@ public class ReverseQuadrantOperation implements LayoutOperation
     }
 
     @Override
-    public void init(ReformatOptions options, @NotNull List<Plate> sourcePlates, PlateType targetPlateType, List<? extends PlateType> allPlateTypes) throws ValidationException
+    public void init(Container container, User user, ExecutionContext context, List<? extends PlateType> allPlateTypes) throws ValidationException
     {
-        if (sourcePlates.size() != 1)
+        if (context.sourcePlates().size() != 1)
             throw new ValidationException("The reverse quadrant operation requires a single source plate.");
 
-        _targetPlateType = getTargetPlateType(sourcePlates.get(0).getPlateType(), allPlateTypes);
+        _targetPlateType = getTargetPlateType(context.sourcePlates().get(0).getPlateType(), allPlateTypes);
     }
 
     private @NotNull PlateType getTargetPlateType(@NotNull PlateType sourcePlateType, List<? extends PlateType> allPlateTypes) throws ValidationException

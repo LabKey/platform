@@ -21,6 +21,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.file.SimplePathVisitor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.vfs2.Capability;
+import org.apache.commons.vfs2.FileName;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSystem;
 import org.apache.commons.vfs2.FileSystemException;
@@ -155,8 +156,7 @@ public class FileUtil
         FileSystem fs = dir.getFileSystem();
         if (!fs.hasCapability(Capability.DELETE))
             throw new UnauthorizedException();
-        // TODO native FileObject version of deleteDirectoryContents()
-        return deleteDirectoryContents(dir.getPath(), null);
+        return deleteDirectoryContents(toFile(dir).toPath(), null);
     }
 
 
@@ -341,9 +341,30 @@ public class FileUtil
         return mkdir(file, AppProps.getInstance().isInvalidFilenameBlocked());
     }
 
-    public static boolean mkdir(FileObject file) throws IOException
+    public static File toFile(FileObject fileObject)
     {
-        return mkdir(file.getPath().toFile(), AppProps.getInstance().isInvalidFilenameBlocked());
+        if (null == fileObject)
+            return null;
+        FileObject fo = fileObject;
+        while (fo instanceof AuthorizedFileSystem.Wrapper w && null != w.unwrap())
+            fo = w.unwrap();
+        FileName fn = fo.getName();
+        if (!"file".equals(fn.getScheme()))
+            throw new IllegalArgumentException();
+        try
+        {
+            fileObject.refresh();
+            return new File(fo.getName().getPathDecoded());
+        }
+        catch (FileSystemException fse)
+        {
+            throw UnexpectedException.wrap(fse);
+        }
+    }
+
+    public static boolean mkdir(FileObject fileObject) throws IOException
+    {
+        return mkdir(toFile(fileObject), AppProps.getInstance().isInvalidFilenameBlocked());
     }
 
     public static boolean mkdir(File file, boolean checkFileName) throws IOException
@@ -360,10 +381,10 @@ public class FileUtil
         return mkdirs(file, AppProps.getInstance().isInvalidFilenameBlocked());
     }
 
-    public static boolean mkdirs(FileObject file) throws IOException
+    public static boolean mkdirs(FileObject fileObject) throws IOException
     {
-        var ret = mkdirs(file.getPath().toFile(), AppProps.getInstance().isInvalidFilenameBlocked());
-        file.refresh();
+        var ret = mkdirs(toFile(fileObject), AppProps.getInstance().isInvalidFilenameBlocked());
+        fileObject.refresh();
         return ret;
     }
 
@@ -406,7 +427,8 @@ public class FileUtil
 
     public static void createDirectories(FileObject fo) throws IOException
     {
-        createDirectories(fo.getPath(), AppProps.getInstance().isInvalidFilenameBlocked());
+        File target = toFile(fo);
+        createDirectories(target.toPath(), AppProps.getInstance().isInvalidFilenameBlocked());
     }
 
 
@@ -725,7 +747,7 @@ public class FileUtil
     }
 
 
-    /* Only returns a child path */
+    /** Only returns a child path */
     public static File appendPath(File dir, org.labkey.api.util.Path path)
     {
         path = path.normalize();
@@ -737,6 +759,44 @@ public class FileUtil
             throw new IllegalArgumentException(path.toString());
         return ret;
     }
+
+
+    /** Only returns a child path */
+    public static FileObject appendPath(FileObject dir, org.labkey.api.util.Path path)
+    {
+        try
+        {
+        path = path.normalize();
+        if (path.size() > 0 && "..".equals(path.get(0)))
+            throw new IllegalArgumentException(path.toString());
+        var encPath = AuthorizedFileSystem.toURIPath(path.toString("",""));
+        var ret = dir.resolveFile(encPath, NameScope.DESCENDENT);
+        if (!URIUtil.isDescendant(dir.getURI(), ret.getURI()))
+            throw new IllegalArgumentException(path.toString());
+        return ret;
+        }
+        catch (FileSystemException fse)
+        {
+            throw UnexpectedException.wrap(fse);
+        }
+    }
+
+
+    /** Resolve a relative path, may not be a descendant.  */
+    public static FileObject resolveFile(FileObject dir, org.labkey.api.util.Path path)
+    {
+        try
+        {
+            path = path.normalize();
+            var encPath = AuthorizedFileSystem.toURIPath(path.toString());
+            return dir.resolveFile(encPath);
+        }
+        catch (FileSystemException fse)
+        {
+            throw UnexpectedException.wrap(fse);
+        }
+    }
+
 
 
     /* Only returns an immediate child */
@@ -769,7 +829,11 @@ public class FileUtil
         legalPathPartThrow(name);
         try
         {
-            return dir.resolveFile(name, NameScope.DESCENDENT);
+            var encName = AuthorizedFileSystem.toURIPath(name);
+            var ret = dir.resolveFile(encName, NameScope.DESCENDENT);
+            if (!ret.getParent().equals(dir))
+                throw new IllegalArgumentException(name);
+            return ret;
         }
         catch (FileSystemException fse)
         {
@@ -1548,8 +1612,9 @@ quickScan:
 
     public static boolean deleteTempDirectoryFileObject(@NotNull FileObject fileObject) throws IOException
     {
-        var localPath = ((AuthorizedFileSystem)fileObject.getFileSystem()).getInnerFileObject().getPath();
-        return FileUtil.deleteDirectoryContents(localPath.toFile());
+        if (!"/".equals(fileObject.getName().getPathDecoded()))
+            throw new IllegalArgumentException("expected object returned by createTempDirectoryFileObject");
+        return FileUtil.deleteDirectoryContents(toFile(fileObject));
     }
 
 
