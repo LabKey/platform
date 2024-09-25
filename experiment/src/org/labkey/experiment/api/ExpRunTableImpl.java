@@ -23,8 +23,6 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayFileWriter;
-import org.labkey.api.assay.AssayProvider;
-import org.labkey.api.assay.AssayService;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.*;
@@ -687,7 +685,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 }
                 ctx.put("experimentId", oldExperimentId);
             }
-            if (sb.length() == 0)
+            if (sb.isEmpty())
             {
                 return "";
             }
@@ -700,7 +698,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             return buildString(ctx, false);
         }
 
-        // 10481: convince ExcelColumn.setSimpleType() that we are actually a string.
+        // Issue 10481: convince ExcelColumn.setSimpleType() that we are actually a string.
         @Override
         public Class<?> getDisplayValueClass()
         {
@@ -1038,10 +1036,6 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                     }
                 }
 
-                AssayProvider assayProvider = AssayService.get().getProvider(run);
-                if (assayProvider != null)
-                    assayProvider.updatePropertyLineage(container, user, getQueryTable(), run, row, oldRow, true, _cache, getMaterialsCache());
-
                 run.save(user);
 
                 String auditUserComment = configParameters == null ? null : (String) configParameters.get(DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment);
@@ -1193,9 +1187,9 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         {
             final ExperimentServiceImpl svc = ExperimentServiceImpl.get();
             String sql = "SELECT RowId FROM " + svc.getTinfoExperimentRun() + " WHERE Container = ?";
-            int[] runIds = ArrayUtils.toPrimitive(new SqlSelector(svc.getExpSchema(), sql, c).getArray(Integer.class));
+            int[] runIds = ArrayUtils.toPrimitive(new SqlSelector(ExperimentServiceImpl.getExpSchema(), sql, c).getArray(Integer.class));
 
-            ExperimentServiceImpl.get().deleteExperimentRunsByRowIds(c, user, runIds);
+            svc.deleteExperimentRunsByRowIds(c, user, runIds);
             return runIds.length;
         }
 

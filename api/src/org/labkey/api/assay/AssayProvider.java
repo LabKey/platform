@@ -23,7 +23,7 @@ import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.assay.pipeline.AssayRunAsyncContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.RemapCache;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Handler;
@@ -32,7 +32,6 @@ import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpExperiment;
-import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.IAssayDomainType;
@@ -44,6 +43,8 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.qc.DataExchangeHandler;
+import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.publish.PublishKey;
@@ -385,17 +386,15 @@ public interface AssayProvider extends Handler<ExpProtocol>
      * This can be called during the update of a run/result to ensure the associated lineage is updated when
      * associated run/result property values change.
      */
-    default void updatePropertyLineage(
+    default void syncSampleLookupLineage(
         Container container,
         User user,
-        TableInfo table,
         ExpRun run,
-        Map<String, Object> newRow,
-        Map<String, Object> olRow,
-        boolean isRunProperties,
-        @NotNull RemapCache cache,
-        @NotNull Map<Integer, ExpMaterial> materialsCache
-    ) throws ValidationException
+        TableInfo tableInfo,
+        SimpleFilter scopeFilter,
+        Collection<FieldKey> sampleLookups,
+        BatchValidationException errors
+    )
     {
     }
 }

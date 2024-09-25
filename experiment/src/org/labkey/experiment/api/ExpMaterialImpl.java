@@ -76,11 +76,9 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.labkey.api.util.StringUtilsLabKey.append;
 
@@ -319,7 +317,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     @Override
     public void save(User user)
     {
-        save(user, (ExpSampleTypeImpl) getSampleType());
+        save(user, getSampleType());
     }
 
     public void save(User user, ExpSampleTypeImpl st)
@@ -530,7 +528,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     @Override
     public Map<String, Object> getProperties()
     {
-        return getProperties((ExpSampleTypeImpl) getSampleType());
+        return getProperties(getSampleType());
     }
 
     public Map<String,Object> getProperties(ExpSampleTypeImpl st)
@@ -556,7 +554,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     @Override
     public Map<PropertyDescriptor, Object> getPropertyValues()
     {
-        ExpSampleTypeImpl sampleType = (ExpSampleTypeImpl) getSampleType();
+        ExpSampleTypeImpl sampleType = getSampleType();
         Map<String,Object> uriMap = getProperties(sampleType);
         Map<PropertyDescriptor, Object> values = new HashMap<>();
         if (sampleType != null)
@@ -572,7 +570,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     @Override
     public Map<String, ObjectProperty> getObjectProperties()
     {
-        return getObjectProperties((ExpSampleTypeImpl) getSampleType());
+        return getObjectProperties(getSampleType());
     }
 
     public Map<String, ObjectProperty> getObjectProperties(ExpSampleTypeImpl st)
@@ -610,7 +608,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
 
     public void setProperties(User user, Map<String,?> values_, boolean insertNullValues) throws ValidationException
     {
-        ExpSampleTypeImpl st = (ExpSampleTypeImpl) getSampleType();
+        ExpSampleTypeImpl st = getSampleType();
         Map<String, Object> values = new HashMap<>(values_);
         Map<String,Object> converted = new HashMap<>();
         RemapCache cache = new RemapCache();

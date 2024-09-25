@@ -17,6 +17,7 @@
 package org.labkey.api.assay;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.apache.commons.collections4.map.LRUMap;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -52,7 +53,6 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.XarContext;
@@ -81,6 +81,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.qc.DataExchangeHandler;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryService;
@@ -139,6 +140,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.emptySet;
 import static org.labkey.api.data.CompareType.IN;
 import static org.labkey.api.util.PageFlowUtil.jsString;
 
@@ -1462,7 +1466,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     @Override
     public List<AssayDataType> getRelatedDataTypes()
     {
-        return Collections.emptyList();
+        return emptyList();
     }
 
     public void setMaxFileInputs(int maxFileInputs)
@@ -2111,86 +2115,40 @@ public abstract class AbstractAssayProvider implements AssayProvider
         }
     }
 
-    // Issue 51316: While this issue is being addressed this feature has been disabled.
-    private final static boolean ENABLE_UPDATE_PROPERTY_LINEAGE = false;
-
     @Override
-    public void updatePropertyLineage(
+    public void syncSampleLookupLineage(
         Container container,
         User user,
-        TableInfo table,
         ExpRun run,
-        Map<String, Object> newRow,
-        Map<String, Object> oldRow,
-        boolean isRunProperties,
-        @NotNull RemapCache cache,
-        @NotNull Map<Integer, ExpMaterial> materialsCache
-    ) throws ValidationException
+        TableInfo table,
+        SimpleFilter scopeFilter,
+        Collection<FieldKey> sampleLookups,
+        BatchValidationException errors
+    )
     {
-        if (!ENABLE_UPDATE_PROPERTY_LINEAGE)
+        if (sampleLookups.isEmpty())
             return;
 
-        Domain domain = table.getDomain();
-        if (domain == null || newRow == null || oldRow == null)
+        var inputContext = computeMaterialInputs(container, user, table, scopeFilter, sampleLookups, errors);
+
+        if (errors.hasErrors())
             return;
 
-        Set<Integer> removedMaterialInputs = new HashSet<>();
-        Map<ExpMaterial, String> addedMaterialInputs = new HashMap<>();
+        var addedMaterialInputs = inputContext.materialInputs;
+        var lineageRoles = inputContext.lineageRoles;
+        var removedMaterialInputs = new HashSet<Integer>();
 
-        // There can be multiple columns within a row that are lineage-backed material lookups.
-        // Coalesce these material input updates across columns.
-        for (var entry : newRow.entrySet())
+        for (var materialEntry : run.getMaterialInputs().entrySet())
         {
-            Object newValue = entry.getValue();
-            Object oldValue = oldRow.get(entry.getKey());
-            if (newValue == oldValue)
+            // This material input is sourced from a different column or other source. Skip it.
+            if (!lineageRoles.contains(materialEntry.getValue()))
                 continue;
 
-            ColumnInfo column = table.getColumn(entry.getKey());
-
-            if (column != null && (!isRunProperties || column instanceof PropertyColumn))
-            {
-                DomainProperty dp = domain.getPropertyByURI(column.getPropertyURI());
-                if (dp == null)
-                    continue;
-
-                ExpSampleType sampleType = ExperimentService.get().getLookupSampleType(dp, container, user);
-                if (sampleType != null || ExperimentService.get().isLookupToMaterials(dp))
-                {
-                    String inputRole = AssayService.get().getPropertyInputLineageRole(dp);
-
-                    // Remove material inputs with the same role
-                    for (var materialEntry : run.getMaterialInputs().entrySet())
-                    {
-                        if (inputRole.equalsIgnoreCase(materialEntry.getValue()))
-                        {
-                            // Issue 51316: Resolve the original material input rowId for this column
-                            Integer originalRowId = null;
-                            if (oldValue instanceof Integer _originalRowId)
-                                originalRowId = _originalRowId;
-                            else if (oldValue != null)
-                            {
-                                ExpMaterial originalMaterial = ExperimentService.get().findExpMaterial(container, user, oldValue, sampleType, cache, materialsCache);
-                                if (originalMaterial != null)
-                                    originalRowId = originalMaterial.getRowId();
-                            }
-
-                            if (originalRowId != null && originalRowId == materialEntry.getKey().getRowId())
-                                removedMaterialInputs.add(originalRowId);
-                        }
-                    }
-
-                    ExpMaterial newInputMaterial = ExperimentService.get().findExpMaterial(container, user, newValue, sampleType, cache, materialsCache);
-                    if (newInputMaterial != null)
-                    {
-                        // Prevent direct cycles
-                        if (run.getMaterialOutputs().contains(newInputMaterial))
-                            throw new ValidationException(String.format("Material \"%s\" is already marked as an output of this run and cannot be used as an input.", newInputMaterial.getName()));
-
-                        addedMaterialInputs.put(newInputMaterial, inputRole);
-                    }
-                }
-            }
+            var material = materialEntry.getKey();
+            if (addedMaterialInputs.containsKey(material))
+                addedMaterialInputs.remove(material);
+            else
+                removedMaterialInputs.add(material.getRowId());
         }
 
         if (!removedMaterialInputs.isEmpty())
@@ -2209,5 +2167,68 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     pa.addMaterialInput(user, entry.getKey(), entry.getValue());
             }
         }
+    }
+
+    private record InputContext(Map<ExpMaterial, String> materialInputs, Set<String> lineageRoles) {}
+
+    private InputContext computeMaterialInputs(
+        Container container,
+        User user,
+        TableInfo table,
+        SimpleFilter scopeFilter,
+        Collection<FieldKey> sampleLookups,
+        BatchValidationException errors
+    )
+    {
+        var domain = table.getDomain();
+        if (domain == null)
+        {
+            errors.addRowError(new ValidationException(String.format("Failed to resolve domain for table \"%s\".", table.getName())));
+            return new InputContext(emptyMap(), emptySet());
+        }
+
+        var materialInputs = new HashMap<ExpMaterial, String>();
+        var lineageRoles = new HashSet<String>();
+        var columns = QueryService.get().getColumns(table, sampleLookups);
+        var columnContext = new HashMap<ColumnInfo, Pair<DomainProperty, ExpSampleType>>();
+        var remapCache = new RemapCache();
+        var materialsCache = new LRUMap<Integer, ExpMaterial>(1_000);
+
+        for (ColumnInfo column : columns.values())
+        {
+            var dp = domain.getPropertyByURI(column.getPropertyURI());
+            var sampleType = ExperimentService.get().getLookupSampleType(dp, container, user);
+            columnContext.put(column, Pair.of(dp, sampleType));
+        }
+
+        new TableSelector(table, columns.values(), scopeFilter, null).forEachResults(results -> {
+            for (var column : columns.values())
+            {
+                var context = columnContext.get(column);
+
+                try
+                {
+                    // TODO: We likely need to elevate permissions or use a service user here
+                    var expMaterial = ExperimentService.get().findExpMaterial(container, user, column.getValue(results), context.second, remapCache, materialsCache);
+
+                    if (expMaterial != null)
+                    {
+                        var role = AssayService.get().getPropertyInputLineageRole(context.first);
+                        lineageRoles.add(role);
+                        materialInputs.putIfAbsent(expMaterial, role);
+                    }
+                }
+                catch (ValidationException v)
+                {
+                    // TODO: Is there a way to cancel out of this forEachResult so we stop processing?
+                    errors.addRowError(v);
+                }
+            }
+        });
+
+        if (errors.hasErrors())
+            return new InputContext(emptyMap(), emptySet());
+
+        return new InputContext(materialInputs, lineageRoles);
     }
 }
