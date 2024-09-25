@@ -78,7 +78,7 @@ public class AdminBean
     public static final String serverGuid = AppProps.getInstance().getServerGUID();
     public static final String serverSessionGuid = AppProps.getInstance().getServerSessionGUID();
     public static final String servletContainer = ModuleLoader.getServletContext().getServerInfo();
-    public static final String servletConfiguration = AppProps.getInstance().isEmbeddedTomcat() ? "Embedded" : "Standalone";
+    public static final String servletConfiguration = "Embedded";
     public static final String sessionTimeout = Formats.commaf0.format(ModuleLoader.getServletContext().getSessionTimeout());
     @SuppressWarnings("unused") // Available substitution property, not used directly in code
     public static final String buildTime = ModuleLoader.getInstance().getCoreModule().getBuildTime();
