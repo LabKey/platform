@@ -37,15 +37,13 @@ import java.util.Map;
  * @version $Id: PluginRepository.java,v 1.5 2003/12/17 13:41:54 stephan Exp $
  */
 
-public class PluginRepository {
-  protected Map plugins;
-  protected List list;
-
-  protected static PluginRepository instance;
+public class PluginRepository<Type> {
+  protected Map<String, Type> plugins;
+  protected List<Type> list;
 
   public PluginRepository() {
-    plugins = new HashMap();
-    list = new ArrayList();
+    plugins = new HashMap<>();
+    list = new ArrayList<>();
   }
 
   public boolean containsKey(String key) {
@@ -56,11 +54,11 @@ public class PluginRepository {
     return plugins.get(key);
   }
 
-  public List getPlugins() {
-    return new ArrayList(plugins.values());
+  public List<Type> getPlugins() {
+    return new ArrayList<>(plugins.values());
   }
 
-  public void put(String key, Object value) {
+  public void put(String key, Type value) {
     plugins.put(key, value);
     list.add(value);
   }

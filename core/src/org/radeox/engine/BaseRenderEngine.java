@@ -59,7 +59,7 @@ public class BaseRenderEngine implements RenderEngine {
   }
 
   public BaseRenderEngine() {
-    this(new BaseInitialRenderContext());
+    this(new BaseInitialRenderContext(null));
   }
 
   protected void init() {

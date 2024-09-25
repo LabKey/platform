@@ -28,7 +28,6 @@ package org.radeox.macro.table;
 import org.radeox.macro.PluginRepository;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -38,9 +37,9 @@ import java.util.List;
  * @version $Id: FunctionRepository.java,v 1.2 2003/05/23 10:47:25 stephan Exp $
  */
 
-public class FunctionRepository extends PluginRepository {
+public class FunctionRepository extends PluginRepository<Function> {
   protected static FunctionRepository instance;
-  protected List loaders;
+  protected List<FunctionLoader> loaders;
 
   public synchronized  static FunctionRepository getInstance() {
     if (null == instance) {
@@ -50,14 +49,13 @@ public class FunctionRepository extends PluginRepository {
   }
 
  private void load() {
-    Iterator iterator = loaders.iterator();
-    while (iterator.hasNext()) {
-      FunctionLoader loader = (FunctionLoader) iterator.next();
-      loader.loadPlugins(this);
-    }
+     for (FunctionLoader loader : loaders)
+     {
+         loader.loadPlugins(this);
+     }
   }
   private FunctionRepository() {
-    loaders = new ArrayList();
+    loaders = new ArrayList<>();
     loaders.add(new FunctionLoader());
 
     load();
