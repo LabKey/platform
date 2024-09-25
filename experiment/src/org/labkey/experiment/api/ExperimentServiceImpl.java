@@ -8236,12 +8236,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
     }
 
-    private @NotNull List<ExpProtocolImpl> getExpProtocols(SimpleFilter filter)
+    private @NotNull List<ExpProtocolImpl> getExpProtocols(@Nullable SimpleFilter filter)
     {
         return getExpProtocols(filter, null, null);
     }
 
-    private @NotNull List<ExpProtocolImpl> getExpProtocols(SimpleFilter filter, @Nullable Sort sort, @Nullable Integer maxRows)
+    private @NotNull List<ExpProtocolImpl> getExpProtocols(@Nullable SimpleFilter filter, @Nullable Sort sort, @Nullable Integer maxRows)
     {
         TableSelector selector = new TableSelector(getTinfoProtocol(), filter, sort);
         if (maxRows != null)
@@ -8270,7 +8270,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public List<ExpProtocolImpl> getAllExpProtocols()
     {
-        return getExpProtocols(null, null);
+        return getExpProtocols((SimpleFilter) null, null, null);
     }
 
     @Override
@@ -8765,7 +8765,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     {
         for (ExperimentListener listener : _listeners)
         {
-            listener.beforeRunCreated(container, user, protocol, run);
+            listener.beforeRunSaved(container, user, protocol, run);
         }
     }
 
