@@ -2296,7 +2296,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 .append(" INNER JOIN ").append(schema.getTableInfoPlate(), "PL").append(" ON PL.PlateSet = PP.PlateSetId")
                 .append(" WHERE PropertyURI IS NULL AND PL.RowId = ?").add(plateId);
 
-        return new ArrayList<>(new SqlSelector(schema.getSchema(), sql).getArrayList(FieldKey.class));
+        return new ArrayList<>(new SqlSelector(schema.getSchema(), sql).getArrayList(String.class).stream().map(FieldKey::fromParts).toList());
     }
 
     public @NotNull List<WellCustomField> getWellCustomFields(User user, Plate plate, Integer wellId)
