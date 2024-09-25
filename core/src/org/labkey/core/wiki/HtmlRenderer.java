@@ -80,7 +80,7 @@ public class HtmlRenderer implements WikiRenderer
     }
     
     @Override
-    public FormattedHtml format(String text, String sourceDescription)
+    public FormattedHtml format(String text)
     {
         LinkedList<String> errors = new LinkedList<>();
         if (text == null)

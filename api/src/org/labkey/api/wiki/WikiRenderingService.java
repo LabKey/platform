@@ -36,13 +36,18 @@ public interface WikiRenderingService
      * @param sourceDescription info on where the text came from for debugging purposes. For example: Announcement 6654 in /MyContainer
      */
     HtmlString getFormattedHtml(WikiRendererType rendererType, String source, @Nullable String sourceDescription);
+
     /**
      * @param sourceDescription info on where the text came from for debugging purposes. For example: Announcement 6654 in /MyContainer
      */
     HtmlString getFormattedHtml(WikiRendererType rendererType, String source, @Nullable String sourceDescription,
                                 String attachPrefix, Collection<? extends Attachment> attachments);
 
+    /**
+     * @param sourceDescription info on where the text came from for debugging purposes. For example: Announcement 6654 in /MyContainer
+     */
     WikiRenderer getRenderer(WikiRendererType rendererType, String hrefPrefix,
                              String attachPrefix, Map<String, String> nameTitleMap,
-                             Collection<? extends Attachment> attachments);
+                             Collection<? extends Attachment> attachments,
+                             String sourceDescription);
 }
