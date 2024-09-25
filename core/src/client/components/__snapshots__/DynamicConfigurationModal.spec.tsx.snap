@@ -58,7 +58,7 @@ exports[`<DynamicConfigurationModal/> CAS Modal 1`] = `
   </div>
   <Memo()
     canEdit={true}
-    caption="Description"
+    caption="Name/Description"
     name="description"
     onChange={[Function]}
     required={true}
@@ -211,7 +211,7 @@ exports[`<DynamicConfigurationModal/> CAS Modal View-only 1`] = `
   </div>
   <Memo()
     canEdit={false}
-    caption="Description"
+    caption="Name/Description"
     name="description"
     onChange={[Function]}
     required={true}
@@ -371,7 +371,7 @@ exports[`<DynamicConfigurationModal/> Duo Modal 1`] = `
   </div>
   <Memo()
     canEdit={true}
-    caption="Description"
+    caption="Name/Description"
     name="description"
     onChange={[Function]}
     required={true}
@@ -555,7 +555,7 @@ exports[`<DynamicConfigurationModal/> Duo Modal View-only 1`] = `
   </div>
   <Memo()
     canEdit={false}
-    caption="Description"
+    caption="Name/Description"
     name="description"
     onChange={[Function]}
     required={true}

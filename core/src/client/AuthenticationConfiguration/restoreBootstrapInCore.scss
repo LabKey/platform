@@ -1,3 +1,7 @@
+.modal-dialog {
+  width: 800px;
+}
+
 .modal__test-button {
   display: flex;
   justify-content: flex-end;
@@ -13,16 +17,16 @@
   color: red;
   font-size: 10px;
   position: absolute;
-  left: 270px;
-  top: 30px;
+  left: 222px;
+  top: 40px;
 }
 
 .modal__tiny-error--small-file-input {
   color: red;
   font-size: 10px;
   position: absolute;
-  left: 285px;
-  top: 192px;
+  left: 222px;
+  top: 46px;
 }
 
 .modal__enable-toggle {
@@ -30,78 +34,18 @@
   float: right;
 }
 
-.modal__description-title {
-  height: 40px;
-}
-
 .modal__settings-text {
-  margin-bottom: 17px;
+  margin-bottom: 10px;
 }
 
-.modal__field-label {
-  height: 40px;
-}
-
-.modal__field {
-  height: 30px;
-}
-
-.modal__text-input-field {
-  border-radius: 5px;
-  float: right;
-  width: 300px;
-}
-
-.modal__text-input-field--error {
+.auth-config-input-row__input--error {
   border:1px solid #FF0004;
-}
-
-.modal__textarea-field {
-  height: 55px;
-}
-
-.modal__option-field {
-  height: 38px;
-}
-
-.modal__compact-file-upload-field {
-  height: 55px;
-}
-
-.modal__fixed-html-field {
-  height: 80px;
-  margin-top: 10px;
-}
-
-.modal__text-input {
-  height: 45px;
-  position: relative;
-}
-
-.modal__input {
-  float: right;
-  margin-right: 285px;
-}
-
-.modal__compact-file-upload-input {
-  float: right;
-  width: 300px;
-}
-
-.modal__option-input {
-  float: right;
-  width: 300px;
 }
 
 .modal__pem-input {
   width: 300px;
   float: right;
   overflow: scroll;
-}
-
-.modal__fixed-html-text {
-  float: right;
-  width: 300px;
 }
 
 .modal__help-link {

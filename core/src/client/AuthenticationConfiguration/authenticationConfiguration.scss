@@ -31,7 +31,7 @@
   margin-left: 14px;
 }
 
-.configurations__auth-tab{
+.configurations__auth-tab {
   margin-top: 14px;
   border-bottom: 1px solid #eee;
   margin-bottom: 16px;
@@ -84,23 +84,35 @@
   float: right;
 }
 
-.sso-fields__label {
-  width: 130px;
+.auth-config-input-row {
+  display: flex;
+  height: 50px;
+  align-items: center;
+  position: relative;
+}
+
+.auth-config-input-row__caption {
+  width: 220px;
+  flex-shrink: 0;
+}
+
+.auth-config-input-row__input {
+  flex-grow: 1;
+}
+
+.auth-config-section {
+  margin-top: 10px;
+  font-weight: bold;
 }
 
 .sso-fields__file-attachment {
-  width: 300px;
-  margin-left: auto;
-  margin-right: 0;
+  flex-grow: 1;
 }
 
 .sso-fields__image-holder {
-  float: left;
-  width: 255px;
-  height: 95px;
+  flex-grow: 1;
   display: flex;
   align-items: center;
-  flex-direction: column;
   justify-content: center;
 }
 
@@ -119,22 +131,17 @@
 }
 
 .sso-fields__image__header-logo {
-  max-height: 26px;
+  max-height: 44px;
 }
 
 .sso-fields__image__page-logo {
   max-height: 44px;
 }
 
-.sso-fields__null-image {
-  margin-left: 7px;
-}
-
 .sso-fields__delete-img {
   color: #d9534f;
-  position: absolute;
-  top: 0;
-  right: 0;
+  margin-left: 5px;
+  padding-bottom: 30px;
 }
 
 .sso-fields__image-holder {
@@ -142,13 +149,7 @@
 }
 
 .sso-fields__image-holder--view-only {
-  margin-left: 265px;
-}
-
-.sso-fields__null-image__text {
-  font-size: smaller;
-  color: #DCDCDC;
-  margin-left: 5px;
+  margin-left: 20px;
 }
 
 .fa-cloud-upload:before {
@@ -191,4 +192,17 @@
 }
 .configurations__dropdown .dropdown .dropdown-menu .disabled:hover::after {
   display: inline;
+}
+
+// Adjusts styling of FileAttachmentForm for our specific purposes
+.file-upload--one-row {
+  display: block;
+}
+
+.file-upload--file-entry-listing {
+  overflow-y: auto;
+}
+
+.wizard-row--container {
+  margin: 0;
 }

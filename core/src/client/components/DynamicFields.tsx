@@ -17,8 +17,8 @@ export const TextInput: FC<TextInputProps> = memo(props => {
     );
 
     return (
-        <div className="modal__text-input">
-            <span className="modal__field-label">
+        <div className="auth-config-input-row">
+            <span className="auth-config-input-row__caption">
                 {caption}
                 {description && (
                     <LabelHelpTip title="Tip">
@@ -37,11 +37,12 @@ export const TextInput: FC<TextInputProps> = memo(props => {
                     value={value}
                     onChange={onChange_}
                     className={
-                        'modal__text-input-field' + (requiredFieldEmpty ? ' modal__text-input-field--error' : '')
+                        'auth-config-input-row__input' +
+                        (requiredFieldEmpty ? ' auth-config-input-row__input--error' : '')
                     }
                 />
             ) : (
-                <span className="modal__text-input-field"> {value} </span>
+                <span className="auth-config-input-row__input"> {value} </span>
             )}
         </div>
     );
@@ -62,20 +63,18 @@ export const CheckBoxInput: FC<CheckBoxInputProps> = memo(props => {
     );
 
     return (
-        <div className="modal__field">
-            <label htmlFor={name}>
-                <span className="modal__field-label">
-                    {caption}
-                    {description && (
-                        <LabelHelpTip title="Tip">
-                            <div> {description} </div>
-                        </LabelHelpTip>
-                    )}
-                    {required ? ' *' : null}
-                </span>
-            </label>
+        <div className="auth-config-input-row">
+            <span className="auth-config-input-row__caption">
+                {caption}
+                {description && (
+                    <LabelHelpTip title="Tip">
+                        <div> {description} </div>
+                    </LabelHelpTip>
+                )}
+                {required ? ' *' : null}
+            </span>
 
-            <span className="modal__input">
+            <span className="auth-config-input-row__input">
                 <input checked={value} disabled={!canEdit} id={name} onChange={onChange_} type="checkbox" />
             </span>
         </div>
@@ -96,8 +95,8 @@ export const Select: FC<SelectProps> = props => {
         [name, onChange]
     );
     return (
-        <div className="modal__option-field">
-            <span className="modal__field-label">
+        <div className="auth-config-input-row">
+            <span className="auth-config-input-row__caption">
                 {caption}
                 {description && (
                     <LabelHelpTip title="Tip">
@@ -108,7 +107,7 @@ export const Select: FC<SelectProps> = props => {
             </span>
 
             {canEdit && (
-                <div className="modal__option-input">
+                <div className="auth-config-input-row__input">
                     <FormControl componentClass="select" name={name} onChange={onChange_} value={value}>
                         {Object.keys(options).map(item => (
                             <option value={item} key={item}>
@@ -145,16 +144,18 @@ export class FixedHtml extends PureComponent<FixedHtmlProps> {
         });
 
         return (
-            <div className="modal__fixed-html-field">
-                <span className="modal__field-label">{caption}</span>
-                {description && (
-                    <LabelHelpTip title="Tip">
-                        <div> {description} </div>
-                    </LabelHelpTip>
-                )}
+            <div className="auth-config-input-row">
+                <span className="auth-config-input-row__caption">
+                    {caption}
+                    {description && (
+                        <LabelHelpTip title="Tip">
+                            <div> {description} </div>
+                        </LabelHelpTip>
+                    )}
+                </span>
 
                 {/* HTML set is text-only information that lives on the server */}
-                <div className="modal__fixed-html-text">
+                <div className="auth-config-input-row__input">
                     <div dangerouslySetInnerHTML={{ __html: stringTemplatedHtml }} />
                 </div>
             </div>
@@ -162,9 +163,25 @@ export class FixedHtml extends PureComponent<FixedHtmlProps> {
     }
 }
 
+interface SectionProps {
+    caption: string;
+}
+
+export class Section extends PureComponent<SectionProps> {
+    render() {
+        const { caption } = this.props;
+
+        return (
+            <div className="auth-config-section">
+                {caption}
+            </div>
+        );
+    }
+}
+
 interface SmallFileInputProps extends InputFieldProps {
     index: number;
-    onFileChange: (attachment, name: string) => void;
+    onFileChange: (attachment: File, name: string) => void;
     onFileRemoval: (name: string) => void;
     requiredFieldEmpty?: boolean;
 }
@@ -175,8 +192,8 @@ export const SmallFileUpload: FC<SmallFileInputProps> = props => {
     const onFileRemoval = useCallback(() => props.onFileRemoval(name), [name, props.onFileRemoval]);
 
     return (
-        <div className="modal__compact-file-upload-field">
-            <span className="modal__field-label">
+        <div className="auth-config-input-row file-upload-field">
+            <span className="auth-config-input-row__caption">
                 {caption}
                 {description && (
                     <LabelHelpTip title="Tip">
@@ -189,7 +206,7 @@ export const SmallFileUpload: FC<SmallFileInputProps> = props => {
             {requiredFieldEmpty && <div className="modal__tiny-error--small-file-input"> This file is required </div>}
 
             {canEdit ? (
-                <div className="modal__compact-file-upload-input">
+                <div className="auth-config-input-row__input">
                     <FileAttachmentForm
                         index={index}
                         showLabel={false}
@@ -222,7 +239,7 @@ interface DynamicFieldsProps {
     fields: AuthConfigField[];
     modalType: AuthConfigProvider;
     onChange: (name: string, value: string | boolean) => void;
-    onFileChange: (attachment, logoType: string) => void;
+    onFileChange: (attachment: File, logoType: string) => void;
     onFileRemoval: (name: string) => void;
 }
 
@@ -231,7 +248,7 @@ export const DynamicFields: FC<DynamicFieldsProps> = memo(props => {
         props;
 
     // If dictateFieldVisibility is set on a checkbox field, its value determines the visibility of all subsequent
-    // fields until the next checkbox with a dictateFieldVisibility value, or the end of the form
+    // fields until the next checkbox with a dictateFieldVisibility value, or a section field or the end of the form
     let on = true;
     const fieldsToCreate = fields.filter(field => {
         const returnVal = on;
@@ -240,6 +257,12 @@ export const DynamicFields: FC<DynamicFieldsProps> = memo(props => {
             on = fieldValues[field['name']];
             return true;
         }
+
+        if (field.type === 'section') {
+            on = true;
+            return true;
+        }
+
         return returnVal;
     });
 
@@ -312,6 +335,7 @@ export const DynamicFields: FC<DynamicFieldsProps> = memo(props => {
                         defaultValue={field.defaultValue}
                         name={field.name}
                         caption={field.caption}
+                        description={field.description}
                         required={field.required}
                         type={field.type}
                     />
@@ -342,6 +366,14 @@ export const DynamicFields: FC<DynamicFieldsProps> = memo(props => {
                         html={field.html}
                         description={field.description}
                         authConfig={authConfig}
+                    />
+                );
+
+            case 'section':
+                return (
+                    <Section
+                        key={field.caption}
+                        caption={field.caption}
                     />
                 );
 

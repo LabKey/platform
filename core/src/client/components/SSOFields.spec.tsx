@@ -1,6 +1,5 @@
 import React from 'react';
 
-import renderer from 'react-test-renderer';
 import { mount } from 'enzyme';
 
 import { SSOFields, ImageAndFileAttachmentForm } from './SSOFields';
@@ -19,7 +18,7 @@ describe('<SSOFields/>', () => {
             />
         );
 
-        expect(wrapper.find('.sso-fields__null-image').exists()).toEqual(true);
+        expect(wrapper.find('.sso-fields__file-attachment').exists()).toEqual(true);
         expect(wrapper.find('.sso-fields__image').exists()).toEqual(false);
         expect(wrapper.find('.sso-fields__delete-img-icon').exists()).toEqual(false);
     });
@@ -35,7 +34,7 @@ describe('<SSOFields/>', () => {
             />
         );
 
-        expect(wrapper.find('.sso-fields__null-image').exists()).toEqual(false);
+        expect(wrapper.find('.sso-fields__file-attachment').exists()).toEqual(false);
         expect(wrapper.find('.sso-fields__image').exists()).toEqual(true);
         expect(wrapper.find('.sso-fields__delete-img-icon').exists()).toEqual(true);
     });
@@ -50,7 +49,6 @@ describe('<SSOFields/>', () => {
                 handleDeleteLogo={jest.fn()}
             />
         );
-        expect(wrapper.find('.sso-fields__image-holder').exists()).toEqual(true);
         expect(wrapper.find('.sso-fields__file-attachment').exists()).toEqual(true);
         expect(wrapper.find('.sso-fields__image-holder--view-only').exists()).toEqual(false);
     });
@@ -84,8 +82,8 @@ describe('<ImageAndFileAttachmentForm/>', () => {
             />
         );
         const wrapper = mount(component);
-        expect(wrapper.find('.sso-fields__null-image').exists()).toEqual(false);
+        expect(wrapper.find('.sso-fields__file-attachment').exists()).toEqual(false);
         wrapper.find('.sso-fields__delete-img-icon').simulate('click');
-        expect(wrapper.find('.sso-fields__null-image').exists()).toEqual(true);
+        expect(wrapper.find('.sso-fields__file-attachment').exists()).toEqual(true);
     });
 });
