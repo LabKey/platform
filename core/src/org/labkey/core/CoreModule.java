@@ -566,7 +566,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         if (users.isEmpty())
             return;
 
-        Map<StashedStartupProperties, StartupPropertyEntry> map = AppProps.getInstance().getStashedProperties();
+        Map<StashedStartupProperties, StartupPropertyEntry> map = AppProps.getInstance().getStashedStartupProperties();
         String fromEmail = getValue(map, siteAvailableEmailFrom);
         String subject = getValue(map, siteAvailableEmailSubject);
         String body = getValue(map, siteAvailableEmailMessage);
@@ -1280,7 +1280,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             throw UnexpectedException.wrap(e);
         }
 
-        if (MothershipReport.shouldReceiveMarketingUpdates(MothershipReport.getDistributionName()))
+        if (MothershipReport.shouldReceiveMarketingUpdates())
         {
             if (AppProps.getInstance().getUsageReportingLevel() == UsageReportingLevel.NONE)
             {
@@ -1595,7 +1595,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
      */
     private void populateSiteSettingsWithStartupProps()
     {
-        Map<StashedStartupProperties, StartupPropertyEntry> props = AppProps.getInstance().getStashedProperties();
+        Map<StashedStartupProperties, StartupPropertyEntry> props = AppProps.getInstance().getStashedStartupProperties();
 
         StartupPropertyEntry folderTypeEntry = props.get(homeProjectFolderType);
         if (null != folderTypeEntry)

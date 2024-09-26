@@ -32,6 +32,8 @@
 <%@ page import="org.labkey.api.util.HtmlString"%>
 <%@ page import="org.labkey.api.view.NavTree" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="java.lang.Math" %>
+<%@ page import="java.lang.String" %>
 <%@ page import="java.text.DecimalFormat" %>
 <%@ page import="java.time.Duration" %>
 <%@ page import="java.time.LocalDateTime" %>
@@ -114,7 +116,8 @@
                 <tr class="<%=getShadeRowClass(row++)%>"><td>User Home Dir</td><td><%=h(AdminBean.userHomeDir)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Webapp Dir</td><td><%=h(AdminBean.webappDir)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Site-Wide File Root Dir</td><td><%=h(FileContentService.get() == null ? "" : FileContentService.get().getSiteDefaultRoot().getPath())%></td></tr>
-                <tr class="<%=getShadeRowClass(row++)%>"><td>Distribution</td><td><%=h(AdminBean.distribution)%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Distribution Name</td><td><%=h(AdminBean.distributionName)%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Distribution Filename</td><td><%=h(AdminBean.distributionFilename)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Build Time</td><td><%=h(AdminBean.buildTime)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>OS</td><td><%=h(AdminBean.osName)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Working Dir</td><td><%=h(AdminBean.workingDir)%></td></tr>
