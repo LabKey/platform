@@ -8120,11 +8120,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 dataClass.setName(newName);
                 ExpDataClass existing = getDataClass(c, u, newName);
                 if (existing != null)
-                {
-                    errors = new ValidationException();
-                    errors.addError(new SimpleValidationError("DataClass '" + newName + "' already exists."));
-                    return errors;
-                }
+                    throw new IllegalArgumentException("DataClass '" + newName + "' already exists.");
             }
             dataClass.setDescription(options.getDescription());
             dataClass.setNameExpression(options.getNameExpression());
@@ -8138,11 +8134,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     Set<String> existingRequiredInputs = new HashSet<>(dataClass.getRequiredImportAliases().values());
                     String invalidAlias = getInvalidRequiredImportAliasUpdate(dataClass.getLSID(), false, newAliases, existingRequiredInputs, c, u);
                     if (invalidAlias != null)
-                    {
-                        errors = new ValidationException();
-                        errors.addError(new SimpleValidationError("The import alias '" + invalidAlias + "' cannot be required when there are existing rows with missing parent."));
-                        return errors;
-                    }
+                        throw new IllegalArgumentException("'" + invalidAlias + "' cannot be required as a parent type when there are existing data without a parent of this type.");
                 }
                 catch (IOException e)
                 {
@@ -8152,12 +8144,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             dataClass.setImportAliasMap(options.getImportAliases());
 
             if (!NameExpressionOptionService.get().allowUserSpecifiedNames(c) && options.getNameExpression() == null)
-            {
-                errors = new ValidationException();
-                errors.addError(new SimpleValidationError(c.hasProductProjects() ? NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS : NAME_EXPRESSION_REQUIRED_MSG));
-
-                return errors;
-            }
+                throw new IllegalArgumentException(c.hasProductProjects() ? NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS : NAME_EXPRESSION_REQUIRED_MSG);
         }
 
         try (DbScope.Transaction transaction = ensureTransaction())

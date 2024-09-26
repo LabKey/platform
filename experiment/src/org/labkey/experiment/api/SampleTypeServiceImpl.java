@@ -987,11 +987,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         {
             ExpSampleType duplicateType = SampleTypeService.get().getSampleType(container, user, newName);
             if (duplicateType != null)
-            {
-                errors = new ValidationException();
-                errors.addError(new SimpleValidationError("A Sample Type with name '" + newName + "' already exists."));
-                return errors;
-            }
+                throw new IllegalArgumentException("A Sample Type with name '" + newName + "' already exists.");
 
             hasNameChange = true;
             st.setName(newName);
@@ -1014,11 +1010,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             {
                 st.setNameExpression(sampleIdPattern);
                 if (!NameExpressionOptionService.get().allowUserSpecifiedNames(container) && sampleIdPattern == null)
-                {
-                    errors = new ValidationException();
-                    errors.addError(new SimpleValidationError(container.hasProductProjects() ? NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS : NAME_EXPRESSION_REQUIRED_MSG));
-                    return errors;
-                }
+                    throw new IllegalArgumentException(container.hasProductProjects() ? NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS : NAME_EXPRESSION_REQUIRED_MSG);
             }
 
             String aliquotIdPattern = StringUtils.trimToNull(options.getAliquotNameExpression());
@@ -1045,11 +1037,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                     Set<String> existingRequiredInputs = new HashSet<>(st.getRequiredImportAliases().values());
                     String invalidAlias = ExperimentServiceImpl.get().getInvalidRequiredImportAliasUpdate(st.getLSID(), true, newAliases, existingRequiredInputs, container, user);
                     if (invalidAlias != null)
-                    {
-                        errors = new ValidationException();
-                        errors.addError(new SimpleValidationError("The import alias '" + invalidAlias + "' cannot be required when there are existing rows with missing parent."));
-                        return errors;
-                    }
+                        throw new IllegalArgumentException("'" + invalidAlias + "' cannot be required as a parent type when there are existing samples without a parent of this type.");
+
                 }
                 catch (IOException e)
                 {
