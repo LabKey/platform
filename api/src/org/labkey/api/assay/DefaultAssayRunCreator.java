@@ -26,6 +26,7 @@ import org.json.JSONArray;
 import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.assay.pipeline.AssayRunAsyncContext;
 import org.labkey.api.assay.pipeline.AssayUploadPipelineJob;
+import org.labkey.api.assay.sample.AssaySampleLookupContext;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -621,12 +622,12 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             // Lookup must point at "Samples.*", "exp.materials.*", or "exp.Materials"
             DomainProperty dp = entry.getKey();
-            ExpSampleType st = ExperimentService.get().getLookupSampleType(dp, context.getContainer(), context.getUser());
-            if (st == null && !ExperimentService.get().isLookupToMaterials(dp))
+            var sampleLookup = AssaySampleLookupContext.checkSampleLookup(context.getContainer(), context.getUser(), dp);
+            if (!sampleLookup.isLookup())
                 continue;
 
             String role = AssayService.get().getPropertyInputLineageRole(dp);
-            addMaterials(context, inputMaterials, Map.of(value, role), st, cache, materialCache);
+            addMaterials(context, inputMaterials, Map.of(value, role), sampleLookup.expSampleType(), cache, materialCache);
         }
     }
 
