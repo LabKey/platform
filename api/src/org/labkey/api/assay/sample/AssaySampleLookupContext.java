@@ -55,7 +55,7 @@ public class AssaySampleLookupContext
             _sampleLookups.put(col.getFieldKey(), checkSampleLookup(container, user, col).isLookup);
 
         AssayProvider assayProvider = AssayService.get().getProvider(run);
-        if (_sampleLookups.get(col.getFieldKey()) && assayProvider != null && assayProvider.supportsSampleLookupLineage())
+        if (_sampleLookups.get(col.getFieldKey()) && assayProvider != null)
             _runsWithSampleLookupChanges.add(run.getRowId());
     }
 
