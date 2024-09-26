@@ -39,7 +39,7 @@ public class PlainTextRenderer implements WikiRenderer
      * @param text Wiki source
      */
     @Override
-    public FormattedHtml format(String text, String sourceDescription)
+    public FormattedHtml format(String text)
     {
         if (text == null)
             return new FormattedHtml(HtmlString.EMPTY_STRING);

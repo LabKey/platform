@@ -38,12 +38,12 @@ import java.util.Iterator;
  * @version $Id: PluginLoader.java,v 1.6 2004/01/09 12:27:14 stephan Exp $
  */
 
-public abstract class PluginLoader {
-  private static Logger log = LogManager.getLogger(PluginLoader.class);
+public abstract class PluginLoader<T> {
+  private static final Logger log = LogManager.getLogger(PluginLoader.class);
 
   protected MacroRepository repository;
 
-  public PluginRepository loadPlugins(PluginRepository repository) {
+  public PluginRepository<T> loadPlugins(PluginRepository<T> repository) {
     return loadPlugins(repository, getLoadClass());
   }
 
@@ -51,17 +51,17 @@ public abstract class PluginLoader {
     this.repository = repository;
   }
 
-  public Iterator getPlugins(Class klass) {
+  public Iterator<T> getPlugins(Class<T> klass) {
     return Service.providers(klass);
   }
 
-  public PluginRepository loadPlugins(PluginRepository repository, Class klass) {
+  public PluginRepository<T> loadPlugins(PluginRepository<T> repository, Class<T> klass) {
     if (null != repository) {
       /* load all macros found in the services plugin control file */
-      Iterator iterator = getPlugins(klass);
+      Iterator<T> iterator = getPlugins(klass);
       while (iterator.hasNext()) {
         try {
-          Object plugin = iterator.next();
+          T plugin = iterator.next();
           add(repository, plugin);
           log.debug("PluginLoader: Loaded plugin: " + plugin.getClass());
         } catch (Exception e) {
@@ -77,7 +77,7 @@ public abstract class PluginLoader {
    *
    * @param plugin Plugin to add
    */
-  public abstract void add(PluginRepository repository, Object plugin);
+  public abstract void add(PluginRepository<T> repository, T plugin);
 
-  public abstract Class getLoadClass();
+  public abstract Class<T> getLoadClass();
 }

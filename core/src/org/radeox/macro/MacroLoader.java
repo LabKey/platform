@@ -25,9 +25,6 @@
 
 package org.radeox.macro;
 
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
-
 /**
  * Plugin loader for macros
  *
@@ -35,26 +32,21 @@ import org.apache.logging.log4j.LogManager;
  * @version $Id: MacroLoader.java,v 1.3 2003/06/11 10:04:27 stephan Exp $
  */
 
-public class MacroLoader extends PluginLoader {
-  private static Logger log = LogManager.getLogger(MacroLoader.class);
+public class MacroLoader extends PluginLoader<Macro> {
 
   @Override
-  public Class getLoadClass() {
+  public Class<Macro> getLoadClass() {
     return Macro.class;
   }
 
   /**
    * Add a plugin to the known plugin map
    *
-   * @param macro Macro to add
+   * @param m Macro to add
    */
   @Override
-  public void add(PluginRepository repository, Object plugin) {
-    if (plugin instanceof Macro) {
-      repository.put(((Macro) plugin).getName(), plugin);
-    } else {
-      log.debug("MacroLoader: " + plugin.getClass() + " not of Type " + getLoadClass());
-    }
+  public void add(PluginRepository<Macro> repository, Macro m) {
+      repository.put(m.getName(), m);
   }
 
 }
