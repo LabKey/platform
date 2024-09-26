@@ -66,6 +66,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
      */
     public static final String WORKING_DIRECTORY = "external.script.engine.workingDirectory";
     public static final String PARAM_REPLACEMENT_MAP = "external.script.engine.replacementMap";
+    /** Identifier of the pipeline job that initiated the script execution, if any */
     public static final String PIPELINE_JOB_GUID = "external.script.engine.pipelineJobGuid";
     public static final String PARAM_SCRIPT = "scriptFile";
     public static final String SCRIPT_PATH = "scriptPath";
