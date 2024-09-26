@@ -700,7 +700,7 @@ public class AssayUpgradeCode implements UpgradeCode
         DbScope scope = AssayDbSchema.getInstance().getSchema().getScope();
         try (DbScope.Transaction tx = scope.ensureTransaction())
         {
-            SQLFragment sqlFragment = new SQLFragment("SELECT DISTINCT plateset FROM assay.Plate WHERE assaytype = 'Standard'");
+            SQLFragment sqlFragment = new SQLFragment("SELECT DISTINCT plateset FROM assay.Plate WHERE assaytype = '" + TsvPlateLayoutHandler.TYPE + "'");
             ArrayList<Integer> plateSetIds = new SqlSelector(AssayDbSchema.getInstance().getSchema(), sqlFragment).getArrayList(Integer.class);
 
             Set<Integer> assayPSes = new HashSet<>();
