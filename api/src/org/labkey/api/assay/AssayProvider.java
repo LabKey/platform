@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.assay.pipeline.AssayRunAsyncContext;
+import org.labkey.api.assay.sample.AssaySampleLookupContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.SimpleFilter;
@@ -381,20 +382,8 @@ public interface AssayProvider extends Handler<ExpProtocol>
         return false;
     }
 
-    /**
-     * Some assay implementations support experiment lineage representation of run/result property values.
-     * This can be called during the update of a run/result to ensure the associated lineage is updated when
-     * associated run/result property values change.
-     */
-    default void syncSampleLookupLineage(
-        Container container,
-        User user,
-        ExpRun run,
-        TableInfo tableInfo,
-        SimpleFilter scopeFilter,
-        Collection<FieldKey> sampleLookups,
-        BatchValidationException errors
-    )
+    default boolean supportsSampleLookupLineage()
     {
+        return true;
     }
 }

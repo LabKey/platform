@@ -19,6 +19,7 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.sample.AssaySampleLookupContext;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
@@ -28,11 +29,8 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ProvenanceService;
-import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.FieldKey;
@@ -48,19 +46,15 @@ import org.labkey.api.view.UnauthorizedException;
 
 import java.nio.file.Path;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 
 import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment;
 
 public class AssayResultUpdateService extends DefaultQueryUpdateService
 {
-    private final Set<Integer> _runsWithSampleLookupChanges;
-    private final Map<FieldKey, Boolean> _sampleLookups;
+    private final AssaySampleLookupContext _assaySampleLookupContext;
 
     public AssayResultUpdateService(AssayProtocolSchema schema, FilteredTable table)
     {
@@ -68,8 +62,7 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
         if (!(table instanceof AssayResultTable))
             throw new IllegalArgumentException("Expected AssayResultTable");
 
-        _runsWithSampleLookupChanges = new HashSet<>();
-        _sampleLookups = new HashMap<>();
+        _assaySampleLookupContext = new AssaySampleLookupContext(getQueryTable(), FieldKey.fromParts("Run", "RowId"));
     }
 
     @Override
@@ -85,7 +78,7 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
     {
         var result = super.updateRows(user, container, rows, oldKeys, errors, configParameters, extraScriptContext);
 
-        syncSampleLookupLineage(container, user, errors);
+        _assaySampleLookupContext.syncLineage(container, user, errors);
 
         if (errors.hasErrors())
             throw errors;
@@ -131,14 +124,8 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
                 Object newValue = entry.getValue();
                 boolean hasValueChanged = !Objects.equals(oldValue, newValue);
 
-                if (hasValueChanged && !_runsWithSampleLookupChanges.contains(run.getRowId()))
-                {
-                    if (!_sampleLookups.containsKey(col.getFieldKey()))
-                        _sampleLookups.put(col.getFieldKey(), isSampleLookup(container, user, table, col));
-
-                    if (_sampleLookups.get(col.getFieldKey()) && AssayService.get().getProvider(run) != null)
-                        _runsWithSampleLookupChanges.add(run.getRowId());
-                }
+                if (hasValueChanged)
+                    _assaySampleLookupContext.markLookup(container, user, col, run);
 
                 TableInfo fkTableInfo = col.getFkTableInfo();
                 // Don't follow the lookup for specimen IDs, since their FK is very special and based on target study, etc
@@ -157,22 +144,6 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
         ExperimentService.get().auditRunEvent(user, run.getProtocol(), run, null, sb.toString(), userComment);
 
         return result;
-    }
-
-    private boolean isSampleLookup(Container container, User user, TableInfo table, ColumnInfo col)
-    {
-        Domain domain = table.getDomain();
-        if (domain != null)
-        {
-            DomainProperty dp = domain.getPropertyByURI(col.getPropertyURI());
-            if (dp != null)
-            {
-                ExpSampleType sampleType = ExperimentService.get().getLookupSampleType(dp, container, user);
-                return sampleType != null || ExperimentService.get().isLookupToMaterials(dp);
-            }
-        }
-
-        return false;
     }
 
     private Object lookupDisplayValue(Object o, @NotNull TableInfo fkTableInfo, ColumnInfo fkTablePkCol)
@@ -274,30 +245,5 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
         sb.append(" to ");
         sb.append(newValue == null ? "blank" : "'" + newValue + "'");
         sb.append(".");
-    }
-
-    private void syncSampleLookupLineage(Container container, User user, BatchValidationException errors)
-    {
-        for (Integer expRunRowId : _runsWithSampleLookupChanges)
-        {
-            ExpRun run = ExperimentService.get().getExpRun(expRunRowId);
-            if (run == null)
-            {
-                errors.addRowError(new ValidationException("Failed to resolve run with rowId " + expRunRowId));
-                return;
-            }
-
-            AssayProvider assayProvider = AssayService.get().getProvider(run);
-            if (assayProvider == null)
-            {
-                errors.addRowError(new ValidationException("Failed to resolve assay provider for run with rowId " + expRunRowId));
-                return;
-            }
-
-            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Run", "RowId"), expRunRowId);
-            List<FieldKey> sampleLookups = _sampleLookups.entrySet().stream().filter(Map.Entry::getValue).map(Map.Entry::getKey).toList();
-
-            assayProvider.syncSampleLookupLineage(container, user, run, getQueryTable(), filter, sampleLookups, errors);
-        }
     }
 }
