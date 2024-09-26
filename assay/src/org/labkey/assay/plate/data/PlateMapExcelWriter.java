@@ -187,7 +187,7 @@ public class PlateMapExcelWriter extends ExcelWriter
         }
     }
 
-    // remember to add comment!
+    // Removes fields explicitly excluded for Map export
     protected List<DisplayColumn> getDisplayColumns()
     {
         return _displayColumns.stream().filter(col -> !excludedFields.contains(col.getName().toLowerCase())).toList();

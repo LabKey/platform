@@ -3299,7 +3299,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             // For non-map export view we always want "position" first
             fieldKeys.add(0, WellTable.Column.Position.fieldKey());
         }
-        List<String> excludedColumns = Arrays.asList("SampleID", "Type", "WellGroup"); // todo
+        Set<String> excludedColumns = new HashSet<>(Arrays.asList("SampleID", "Type", "WellGroup"));
         List<PlateCustomField> customFields = plate.getCustomFields().stream().filter(field -> !excludedColumns.contains(field.getFieldKey())).toList();
         for (PlateCustomField customField : customFields)
         {
@@ -3334,7 +3334,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         // Filter on isQueryColumn, so we don't get the details or update columns
         return dataRegion.getDisplayColumns().stream()
                 .filter(DisplayColumn::isQueryColumn)
-                .filter(col -> !col.getName().equals("sampleID")) // PR flag / comment flag
+                .filter(col -> !col.getName().equals("sampleID"))
                 .toList();
     }
 
