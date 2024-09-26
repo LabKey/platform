@@ -12,6 +12,7 @@ import org.labkey.api.assay.plate.PlateSet;
 import org.labkey.api.assay.plate.PlateSetType;
 import org.labkey.api.assay.plate.PlateType;
 import org.labkey.api.assay.plate.Position;
+import org.labkey.api.assay.plate.Well;
 import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
@@ -1862,6 +1863,42 @@ public final class PlateManagerTest
         List<Map<String, Object>> newDataPS2 = Arrays.asList(createWellRow("A1", "POSITIVE_CONTROL", null, sampleRowIds.get(3)));
         plateData2 = List.of(new PlateManager.PlateData("PS2", plateType.getRowId(), null, null, newDataPS2));
         createPlateSet(plateSetImpl, plateData2, plateSet1.getRowId());
+    }
+
+    @Test
+    public void testBuiltInColumns() throws Exception
+    {
+        // Arrange
+        PlateSetImpl PS1 = new PlateSetImpl();
+        PS1.setType(PlateSetType.primary);
+        var PPS = createPlateSet(PS1, null, null);
+        var PPSPlate = createPlate(PLATE_TYPE_96_WELLS, "PPS_BuiltIn", PPS.getRowId(), null);
+
+        PlateSetImpl PS2 = new PlateSetImpl();
+        PS2.setType(PlateSetType.assay);
+        var APS = createPlateSet(PS2, null, null);
+        var APSPlate = createPlate(PLATE_TYPE_96_WELLS, "APS_BuiltIn", APS.getRowId(), null);
+
+        Plate templatePS = createPlateTemplate(PLATE_TYPE_384_WELLS, "PT", null);
+
+        // Act
+        List<PlateCustomField> one = PlateManager.get().getFields(container, PPSPlate.getRowId());
+        List<PlateCustomField> two = PlateManager.get().getFields(container, APSPlate.getRowId());
+        List<PlateCustomField> three = PlateManager.get().getFields(container, templatePS.getRowId());
+
+        // Assert
+        int i = 0;
+        assertEquals(one.size(), 1);
+        assertEquals(one.get(0).getName(), "SampleID");
+
+        assertEquals(two.size(), 3);
+        assertEquals(two.get(0).getName(), "SampleID");
+        assertEquals(two.get(1).getName(), "Type");
+        assertEquals(two.get(2).getName(), "WellGroup");
+
+        assertEquals(three.size(), 2);
+        assertEquals(two.get(0).getName(), "Type");
+        assertEquals(two.get(1).getName(), "WellGroup");
     }
 
     private Plate createPlate(@NotNull PlateType plateType) throws Exception
