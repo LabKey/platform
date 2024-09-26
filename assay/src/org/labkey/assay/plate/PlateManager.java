@@ -306,7 +306,10 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             if (plateSetId == null)
                 deriveCustomFieldsFromWellData(container, user, plate, data, builtInFields.subList(1, 3));
             else
-                deriveCustomFieldsFromWellData(container, user, plate, data, builtInFields);
+            {
+                PlateSet plateSet = getPlateSet(container, plateSetId); // Will not be null due to above check
+                deriveCustomFieldsFromWellData(container, user, plate, data, plateSet.isPrimary() ? builtInFields.subList(0, 1) : builtInFields);
+            }
 
             tx.commit();
 
@@ -3300,7 +3303,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             fieldKeys.add(0, WellTable.Column.Position.fieldKey());
         }
         Set<String> excludedColumns = new HashSet<>(Arrays.asList("SampleID", "Type", "WellGroup"));
-        List<PlateCustomField> customFields = plate.getCustomFields().stream().filter(field -> !excludedColumns.contains(field.getFieldKey())).toList();
+        List<PlateCustomField> customFields = isMapView
+                ? plate.getCustomFields().stream().filter(field -> !excludedColumns.contains(field.getFieldKey())).toList()
+                : plate.getCustomFields();
         for (PlateCustomField customField : customFields)
         {
             fieldKeys.add(FieldKey.fromParts(customField.getName()));
