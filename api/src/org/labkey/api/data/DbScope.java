@@ -1571,12 +1571,12 @@ public class DbScope
                 }
             }
 
-            // Ensure that the labkeyDataSource (or cpasDataSource, for old installations) exists
-            // and create the associated database if it doesn't already exist.
+            // Ensure that the labkeyDataSource is defined and supported; designate it as the primary data source.
             LabKeyDataSource primaryDS = LabKeyDataSource.setPrimaryDataSource(dataSources);
             labkeyDsName = primaryDS.getDsName();
             // Now that we've tagged the primary datasource we can prepare them all
             dataSources.values().forEach(ds -> ds.getDialect().prepare(ds));
+            // Create the primary database if it doesn't already exist
             ensureDatabase(primaryDS);
         }
         catch (Exception e)
