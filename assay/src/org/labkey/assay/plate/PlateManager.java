@@ -415,6 +415,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
             for (PlateCustomField field : plate.getCustomFields())
             {
+                if (field.getFieldKey() != null && field.getFieldKey().equals("SampleID"))
+                    continue;
                 FieldKey lookupFk = displayColumns.get(field.getPropertyURI());
                 if (lookupFk != null)
                     includedMetadataCols.add(lookupFk);
