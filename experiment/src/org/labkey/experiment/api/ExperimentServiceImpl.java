@@ -8132,9 +8132,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 {
                     Map<String, Map<String, Object>> newAliases = options.getImportAliases();
                     Set<String> existingRequiredInputs = new HashSet<>(dataClass.getRequiredImportAliases().values());
-                    String invalidAlias = getInvalidRequiredImportAliasUpdate(dataClass.getLSID(), false, newAliases, existingRequiredInputs, c, u);
-                    if (invalidAlias != null)
-                        throw new IllegalArgumentException("'" + invalidAlias + "' cannot be required as a parent type when there are existing data without a parent of this type.");
+                    String invalidParentType = getInvalidRequiredImportAliasUpdate(dataClass.getLSID(), false, newAliases, existingRequiredInputs, c, u);
+                    if (invalidParentType != null)
+                        throw new IllegalArgumentException("'" + invalidParentType + "' cannot be required as a parent type when there are existing data without a parent of this type.");
                 }
                 catch (IOException e)
                 {
@@ -9482,7 +9482,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         parentCpas = dataClassParent.getLSID();
                 }
                 if (hasMissingRequiredParent(parentCpas, dataTypeLsid, isParentSamples, isSampleType))
-                    return newEntry.getKey();
+                    return dataTypeName;
             }
         }
 

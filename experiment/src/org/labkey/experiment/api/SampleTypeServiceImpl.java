@@ -1035,9 +1035,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 {
                     Map<String, Map<String, Object>> newAliases = options.getImportAliases();
                     Set<String> existingRequiredInputs = new HashSet<>(st.getRequiredImportAliases().values());
-                    String invalidAlias = ExperimentServiceImpl.get().getInvalidRequiredImportAliasUpdate(st.getLSID(), true, newAliases, existingRequiredInputs, container, user);
-                    if (invalidAlias != null)
-                        throw new IllegalArgumentException("'" + invalidAlias + "' cannot be required as a parent type when there are existing samples without a parent of this type.");
+                    String invalidParentType = ExperimentServiceImpl.get().getInvalidRequiredImportAliasUpdate(st.getLSID(), true, newAliases, existingRequiredInputs, container, user);
+                    if (invalidParentType != null)
+                        throw new IllegalArgumentException("'" + invalidParentType + "' cannot be required as a parent type when there are existing samples without a parent of this type.");
 
                 }
                 catch (IOException e)

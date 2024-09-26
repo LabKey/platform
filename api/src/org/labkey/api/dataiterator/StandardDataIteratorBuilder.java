@@ -28,6 +28,7 @@ import org.labkey.api.data.validator.ColumnValidators;
 import org.labkey.api.data.validator.RequiredValidator;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.ontology.OntologyService;
@@ -253,14 +254,17 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
                     setupError.addGlobalError("Data does not contain required field: " + pair.target.getName());
             }
 
-            if (!additionalRequiredColumns.isEmpty())
+            if (!context.getConfigParameterBoolean(ExperimentService.QueryOptions.DeferRequiredLineageValidation))
             {
-                Set<String> allColumns = new CaseInsensitiveHashSet(convert.getColumnNameMap().keySet());
-                for (Map.Entry<String, String> entry : additionalRequiredColumns.entrySet())
+                if (!additionalRequiredColumns.isEmpty())
                 {
-                    if (!allColumns.contains(entry.getKey()) && !allColumns.contains(entry.getValue()))
+                    Set<String> allColumns = new CaseInsensitiveHashSet(convert.getColumnNameMap().keySet());
+                    for (Map.Entry<String, String> entry : additionalRequiredColumns.entrySet())
                     {
-                        setupError.addGlobalError("Data does not contain required field: " + entry.getValue());
+                        if (!allColumns.contains(entry.getKey()) && !allColumns.contains(entry.getValue()))
+                        {
+                            setupError.addGlobalError("Data does not contain required field: " + entry.getValue());
+                        }
                     }
                 }
             }
@@ -296,8 +300,11 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
         if (_validate)
         {
             Set<String> additionalRequiredCols = new CaseInsensitiveHashSet();
-            additionalRequiredCols.addAll(additionalRequiredColumns.keySet());
-            additionalRequiredCols.addAll(additionalRequiredColumns.values());
+            if (!context.getConfigParameterBoolean(ExperimentService.QueryOptions.DeferRequiredLineageValidation))
+            {
+                additionalRequiredCols.addAll(additionalRequiredColumns.keySet());
+                additionalRequiredCols.addAll(additionalRequiredColumns.values());
+            }
             ValidatorIterator validate = getValidatorIterator(validateInput, context, translateHelperMap, _c, _user);
 
             for (int index = 1; index <= validateInput.getColumnCount(); index++)
