@@ -177,7 +177,6 @@ public class AssaySampleLookupContext
 
                 try
                 {
-                    // TODO: We likely need to elevate permissions or use a service user here
                     var expMaterial = ExperimentService.get().findExpMaterial(container, user, column.getValue(results), context.second, remapCache, materialsCache);
 
                     if (expMaterial != null)
