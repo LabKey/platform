@@ -12,4 +12,4 @@ ALTER TABLE assay.platesetproperty ALTER COLUMN PropertyId INT NULL;
 ALTER TABLE assay.platesetproperty DROP CONSTRAINT UQ_PlateSetProperty_PlateSetId_PropertyId;
 CREATE UNIQUE INDEX UQ_PlateSetProperty_PlateSetId_PropertyId ON assay.platesetproperty (PlateSetId, PropertyId) WHERE PropertyId IS NOT NULL;
 
-SELECT core.executeJavaUpgradeCode('updateBuiltInColumns');
+EXEC core.executeJavaUpgradeCode('updateBuiltInColumns');
