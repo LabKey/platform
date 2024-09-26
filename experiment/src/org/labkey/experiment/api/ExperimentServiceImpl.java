@@ -7037,7 +7037,16 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 Table.update(user, getTinfoData(), ((ExpDataImpl)outputData).getDataObject(), outputData.getRowId());
             }
 
-            if (!requiredDataTypes.equals(inputDataTypes))
+            boolean hasMissingRequiredParent = false;
+            for (String required : requiredDataTypes)
+            {
+                if (!inputDataTypes.contains(required))
+                {
+                    hasMissingRequiredParent = true;
+                    break;
+                }
+            }
+            if (hasMissingRequiredParent)
                 throw new ExperimentException("Inputs are required: " + String.join(",", requiredDataTypes));
 
             initializeProtocolApplication(protApp3, date, action3, run, outputProtocol, context);

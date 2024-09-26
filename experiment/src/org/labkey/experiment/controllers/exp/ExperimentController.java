@@ -5861,7 +5861,16 @@ public class ExperimentController extends SpringActionController
                 if (outputMaterials.isEmpty() && outputData.isEmpty())
                     throw new IllegalStateException("Expected to create " + materialOutputCount + " materials and " + dataOutputCount + " datas");
 
-                if (!inputTypes.equals(requiredParentTypes))
+                boolean hasMissingRequiredParent = false;
+                for (String required : requiredParentTypes)
+                {
+                    if (!inputTypes.contains(required))
+                    {
+                        hasMissingRequiredParent = true;
+                        break;
+                    }
+                }
+                if (hasMissingRequiredParent)
                     throw new IllegalStateException("Inputs are required: " + String.join(",", requiredParentTypes));
 
                 // finally, create the derived run if there are any parents
