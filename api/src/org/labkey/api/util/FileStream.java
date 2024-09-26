@@ -17,13 +17,13 @@ package org.labkey.api.util;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.vfs2.FileContent;
-import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSystemException;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.vfs.FileLike;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -216,9 +216,9 @@ public interface FileStream
             deleteOnClose = delete;
         }
 
-        public FileFileStream(@NotNull FileObject fo, boolean delete) throws IOException
+        public FileFileStream(@NotNull FileLike fo, boolean delete) throws IOException
         {
-            file = fo.getPath().toFile();
+            file = fo.toNioPathForRead().toFile();
             deleteOnClose = delete;
         }
 

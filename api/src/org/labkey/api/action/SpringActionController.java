@@ -21,8 +21,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.vfs2.FileObject;
-import org.apache.commons.vfs2.FileSystemException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -33,7 +31,6 @@ import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.files.virtual.AuthorizedFileSystem;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.module.AllowedBeforeInitialUserIsSet;
@@ -58,7 +55,6 @@ import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.HttpView;
@@ -70,6 +66,8 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -551,9 +549,9 @@ public abstract class SpringActionController implements Controller, HasViewConte
         return null;
     }
 
-    private static FileObject TEMP_UPLOAD_DIR;
+    private static FileLike TEMP_UPLOAD_DIR;
     /** Issue 46598 - use a directory of the primary temp dir for file uploads */
-    public static FileObject getTempUploadDir()
+    public static FileLike getTempUploadDir()
     {
         if (TEMP_UPLOAD_DIR == null)
         {
@@ -561,21 +559,14 @@ public abstract class SpringActionController implements Controller, HasViewConte
             httpUploads.mkdirs();
             if (!httpUploads.isDirectory())
                 throw new ConfigurationException("Can't create temp upload directory: " + httpUploads);
-            TEMP_UPLOAD_DIR = AuthorizedFileSystem.create(httpUploads, true, true).getRoot();
+            TEMP_UPLOAD_DIR = new FileSystemLike.Builder(httpUploads).readwrite().root();
         }
         return TEMP_UPLOAD_DIR;
     }
 
     public static MultipartConfigElement getMultiPartConfigElement()
     {
-        try
-        {
-            return new MultipartConfigElement(SpringActionController.getTempUploadDir().getName().getPathDecoded());
-        }
-        catch (FileSystemException e)
-        {
-            throw UnexpectedException.wrap(e);
-        }
+        return new MultipartConfigElement(SpringActionController.getTempUploadDir().toNioPathForWrite().toString());
     }
 
     protected void handleException(Throwable x, ViewContext context, PageConfig pageConfig)

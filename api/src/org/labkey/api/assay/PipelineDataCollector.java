@@ -16,14 +16,12 @@
 
 package org.labkey.api.assay;
 
-import org.apache.commons.vfs2.FileObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.files.virtual.AuthorizedFileSystem;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.Pair;
@@ -31,6 +29,9 @@ import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 
 import jakarta.servlet.http.HttpSession;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -168,7 +169,7 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext<? e
 
     @Override
     @NotNull
-    public Map<String, FileObject> createData(ContextType context) throws IOException, ExperimentException
+    public Map<String, FileLike> createData(ContextType context) throws IOException, ExperimentException
     {
         List<Map<String, File>> files = getFileQueue(context);
         if (files.isEmpty())
@@ -200,13 +201,13 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext<? e
     // When importing via pipeline, the file is already on the server so return the path of that file
     @Nullable
     @Override
-    protected FileObject getFilePath(ContextType context, @Nullable ExpRun run, FileObject tempDirFile)
+    protected FileLike getFilePath(ContextType context, @Nullable ExpRun run, FileLike tempDirFile)
     {
         Map<String, File> files = getFileQueue(context).get(0);
         for (File file : files.values())
         {
-            if (file.getName().equals(tempDirFile.getName().getBaseName()))
-                return AuthorizedFileSystem.convertToFileObject(file);
+            if (file.getName().equals(tempDirFile.getName()))
+                return FileSystemLike.wrapFile(file);
         }
 
         return null;
@@ -221,9 +222,9 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext<? e
     }
 
     @Override
-    public Map<String, FileObject> uploadComplete(ContextType context, @Nullable ExpRun run) throws ExperimentException
+    public Map<String, FileLike> uploadComplete(ContextType context, @Nullable ExpRun run) throws ExperimentException
     {
-        Map<String, FileObject> result = super.uploadComplete(context, run);
+        Map<String, FileLike> result = super.uploadComplete(context, run);
         List<Map<String, File>> files = getFileQueue(context);
         if (!files.isEmpty())
         {

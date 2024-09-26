@@ -20,7 +20,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.vfs2.FileObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -42,7 +41,6 @@ import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.files.virtual.AuthorizedFileSystem;
 import org.labkey.api.module.ModuleXml.ModuleXmlCacheHandler;
 import org.labkey.api.query.OlapSchemaInfo;
 import org.labkey.api.resource.Resource;
@@ -68,6 +66,8 @@ import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -1171,7 +1171,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     @Override
     @NotNull
-    public List<FileObject> getStaticFileDirectories()
+    public List<FileLike> getStaticFileDirectories()
     {
         List<File> l = new ArrayList<>(3);
         String build = getBuildPath();
@@ -1206,7 +1206,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
             if (f.isDirectory())
                 l.add(f);
         }
-        return l.stream().map(f -> AuthorizedFileSystem.create(f, AuthorizedFileSystem.Mode.Read).getRoot()).toList();
+        return l.stream().map(f -> new FileSystemLike.Builder(f).readonly().root()).toList();
     }
 
     File _resourceDirectory;

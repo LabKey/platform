@@ -16,11 +16,11 @@
 
 package org.labkey.api.attachments;
 
-import org.apache.commons.vfs2.FileObject;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -45,14 +45,14 @@ public class FileAttachmentFile implements AttachmentFile
         this(file, null);
     }
 
-    public FileAttachmentFile(FileObject file)
+    public FileAttachmentFile(FileLike file)
     {
-        this(file.getPath().toFile(), null);
+        this(file.toNioPathForRead().toFile(), null);
     }
 
-    public FileAttachmentFile(FileObject file, @Nullable String originalName)
+    public FileAttachmentFile(FileLike file, @Nullable String originalName)
     {
-        this(file.getPath().toFile(), originalName);
+        this(file.toNioPathForRead().toFile(), originalName);
     }
 
     public FileAttachmentFile(File file, @Nullable String originalName)

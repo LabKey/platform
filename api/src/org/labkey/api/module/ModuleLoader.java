@@ -21,10 +21,6 @@ import jakarta.servlet.ServletException;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.vfs2.FileExtensionSelector;
-import org.apache.commons.vfs2.FileObject;
-import org.apache.commons.vfs2.FileSystemException;
-import org.apache.commons.vfs2.NameScope;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -62,7 +58,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.DatabaseNotSupportedException;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.files.virtual.AuthorizedFileSystem;
 import org.labkey.api.module.ModuleUpgrader.Execution;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.SecurityManager;
@@ -97,6 +92,8 @@ import org.labkey.api.view.template.WarningProvider;
 import org.labkey.api.view.template.WarningService;
 import org.labkey.api.view.template.Warnings;
 import org.labkey.bootstrap.ExplodedModuleService;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
@@ -174,9 +171,9 @@ public class ModuleLoader implements MemTrackerListener
                               /                 \s""".indent(2);
 
     private ServletContext _servletContext = null;
-    private FileObject _webappDir;
-    private FileObject _extraWebappDir;
-    private FileObject _startupPropertiesDir;
+    private FileLike _webappDir;
+    private FileLike _extraWebappDir;
+    private FileLike _startupPropertiesDir;
     private UpgradeState _upgradeState;
 
     private final SqlScriptRunner _upgradeScriptRunner = new SqlScriptRunner();
@@ -477,7 +474,7 @@ public class ModuleLoader implements MemTrackerListener
         setTomcatVersion();
 
         var webapp = FileUtil.getAbsoluteCaseSensitiveFile(new File(_servletContext.getRealPath("")));
-        _webappDir = AuthorizedFileSystem.create(webapp, AuthorizedFileSystem.Mode.Read).getRoot();
+        _webappDir = new FileSystemLike.Builder(webapp).readonly().root();
 
         String extraWebappPath = System.getProperty(EXTRA_WEBAPP_DIR);
         File extraWebappDir;
@@ -490,11 +487,11 @@ public class ModuleLoader implements MemTrackerListener
             extraWebappDir = new File(extraWebappPath);
         }
         if (extraWebappDir.isDirectory())
-            _extraWebappDir = AuthorizedFileSystem.create(webapp, AuthorizedFileSystem.Mode.Read).getRoot();
+            _extraWebappDir = new FileSystemLike.Builder(extraWebappDir).readonly().root();
 
         var startup = FileUtil.appendName(webapp.getParentFile(), "startup");
         if (startup.isDirectory())
-            _startupPropertiesDir = AuthorizedFileSystem.create(startup, AuthorizedFileSystem.Mode.Read).getRoot();
+            _startupPropertiesDir = new FileSystemLike.Builder(startup).readonly().root();
 
         // load startup configuration information from properties, side-effect may set _newinstall=true
         // Wiki: https://www.labkey.org/Documentation/wiki-page.view?name=bootstrapProperties#using
@@ -1234,11 +1231,11 @@ public class ModuleLoader implements MemTrackerListener
 
     public void setWebappDir(File webappDir)
     {
-        if (_webappDir != null && !_webappDir.getPath().equals(webappDir.toPath()))
+        if (_webappDir != null && !_webappDir.toNioPathForRead().equals(webappDir.toPath()))
         {
             throw new IllegalStateException("WebappDir is already set to " + _webappDir + ", cannot reset it to " + webappDir);
         }
-        _webappDir = AuthorizedFileSystem.create(webappDir, AuthorizedFileSystem.Mode.Read).getRoot();
+        _webappDir = new FileSystemLike.Builder(webappDir).readonly().root();
     }
 
     // Attempt to parse "enlistment.id" property from a file named "enlistment.properties" in this directory, if it exists
@@ -1266,12 +1263,12 @@ public class ModuleLoader implements MemTrackerListener
     }
 
 
-    public FileObject getWebappDir()
+    public FileLike getWebappDir()
     {
         return _webappDir;
     }
 
-    public FileObject getExtraWebappDir()
+    public FileLike getExtraWebappDir()
     {
         return _extraWebappDir;
     }
@@ -2405,7 +2402,7 @@ public class ModuleLoader implements MemTrackerListener
             .collect(Collectors.toList());
     }
 
-    public FileObject getStartupPropDirectory()
+    public FileLike getStartupPropDirectory()
     {
         return _startupPropertiesDir;
     }
@@ -2416,75 +2413,68 @@ public class ModuleLoader implements MemTrackerListener
      */
     private void loadStartupProps()
     {
-        FileObject propsDir = getStartupPropDirectory();
+        FileLike propsDir = getStartupPropDirectory();
         if (null == propsDir)
             return;
-        try
+
+        if (!propsDir.isDirectory())
+            return;
+
+        FileLike newinstall = propsDir.resolveChild("newinstall");
+        if (newinstall.isFile())
         {
-            if (!propsDir.isFolder())
-                return;
+            _log.debug("'newinstall' file detected: " + newinstall.toNioPathForRead());
 
-            FileObject newinstall = propsDir.resolveFile("newinstall", NameScope.DESCENDENT);
-            if (newinstall.isFile())
-            {
-                _log.debug("'newinstall' file detected: " + newinstall.getPath());
+            _newInstall = true;
 
-                _newInstall = true;
-
-                // propsDir is readonly, so we need to get a File
-                var newInstallFile = newinstall.getPath().toFile();
-                if (newInstallFile.canWrite())
-                    newInstallFile.delete();
-                else
-                    throw new ConfigurationException("file 'newinstall' exists, but is not writeable: " + newinstall.getPath());
-            }
+            // propsDir is readonly, so we need to cheat to get a File
+            var newInstallFile = newinstall.toNioPathForRead().toFile();
+            if (newInstallFile.canWrite())
+                newInstallFile.delete();
             else
+                throw new ConfigurationException("file 'newinstall' exists, but is not writeable: " + newinstall.toNioPathForRead());
+        }
+        else
+        {
+            _log.debug("no 'newinstall' file detected");
+        }
+
+        List<FileLike> propFiles = propsDir.getChildren().stream().filter(f -> f.getName().endsWith(".properties")).toList();
+
+        if (!propFiles.isEmpty())
+        {
+            List<FileLike> sortedPropFiles = propFiles.stream()
+                .sorted(Comparator.comparing(FileLike::getName))
+                .toList();
+
+            for (FileLike propFile : sortedPropFiles)
             {
-                _log.debug("no 'newinstall' file detected");
-            }
+                _log.debug("loading propsFile: " + propFile.toNioPathForRead());
 
-//            File[] propFiles = propsDir.listFiles((File dir, String name) -> equalsIgnoreCase(FileUtil.getExtension(name), ("properties")));
-            FileObject[] propFiles = propsDir.findFiles(new FileExtensionSelector("properties"));
-
-            if (propFiles != null)
-            {
-                List<FileObject> sortedPropFiles = Arrays.stream(propFiles)
-                    .sorted(Comparator.comparing(FileObject::getName))
-                    .toList();
-
-                for (FileObject propFile : sortedPropFiles)
+                try (InputStream in = propFile.openInputStream())
                 {
-                    _log.debug("loading propsFile: " + propFile.getPath());
+                    Properties props = new Properties();
+                    props.load(in);
 
-                    try (InputStream in = propFile.getContent().getInputStream())
+                    for (Map.Entry<Object, Object> entry : props.entrySet())
                     {
-                        Properties props = new Properties();
-                        props.load(in);
-
-                        for (Map.Entry<Object, Object> entry : props.entrySet())
+                        if (entry.getKey() instanceof String && entry.getValue() instanceof String)
                         {
-                            if (entry.getKey() instanceof String && entry.getValue() instanceof String)
-                            {
-                                _log.trace("property '" + entry.getKey() + "' resolved to value: '" + entry.getValue() + "'");
+                            _log.trace("property '" + entry.getKey() + "' resolved to value: '" + entry.getValue() + "'");
 
-                                addStartupPropertyEntry(entry.getKey().toString(), entry.getValue().toString());
-                            }
+                            addStartupPropertyEntry(entry.getKey().toString(), entry.getValue().toString());
                         }
                     }
-                    catch (Exception e)
-                    {
-                        _log.error("Error parsing startup config properties file '" + propFile.getPath() + "'", e);
-                    }
+                }
+                catch (Exception e)
+                {
+                    _log.error("Error parsing startup config properties file '" + propFile.toNioPathForRead() + "'", e);
                 }
             }
-            else
-            {
-                _log.debug("no propFiles to load");
-            }
         }
-        catch (FileSystemException fse)
+        else
         {
-            _log.error("Error loading startup properties files '" + propsDir.getPath() + "'", fse);
+            _log.debug("no propFiles to load");
         }
 
         // load any system properties with the labkey prop prefix

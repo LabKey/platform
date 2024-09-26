@@ -57,56 +57,8 @@ abstract public class AbstractFileLike implements FileLike
     }
 
     @Override
-    public @NotNull Collection<FileLike> getChildren()
-    {
-        return List.of();
-    }
-
-    @Override
     public void refresh()
     {
-    }
-
-    @Override
-    public boolean exists()
-    {
-        return false;
-    }
-
-    @Override
-    public boolean isDirectory()
-    {
-        return false;
-    }
-
-    @Override
-    public boolean isFile()
-    {
-        return false;
-    }
-
-    @Override
-    public long getSize()
-    {
-        return 0;
-    }
-
-    @Override
-    public OutputStream openOutputStream() throws IOException
-    {
-        return null;
-    }
-
-    @Override
-    public InputStream openInputStream() throws IOException
-    {
-        return null;
-    }
-
-    @Override
-    public int compareTo(@NotNull FileLike o)
-    {
-        return 0;
     }
 
     @Override
@@ -145,7 +97,7 @@ abstract public class AbstractFileLike implements FileLike
         if (path.isEmpty())
             return base;
         if (path.isAbsolute() || base.isEmpty())
-            return path;
+            return path.absolute();
         var resolved = base.resolve(path);
         resolved = resolved.normalize();
         if (null == resolved)
@@ -160,5 +112,11 @@ abstract public class AbstractFileLike implements FileLike
         var absolutePath = resolvePath(this.path, file);
         assert absolutePath.isAbsolute();
         return getFileSystem().resolveFile(absolutePath);
+    }
+
+    @Override
+    public String toString()
+    {
+        return toURI().toString();
     }
 }

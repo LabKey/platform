@@ -1,16 +1,15 @@
 package org.labkey.api.query;
 
-import org.apache.commons.vfs2.FileObject;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.data.Container;
-import org.labkey.api.files.virtual.AuthorizedFileSystem;
 import org.labkey.api.security.User;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.nio.file.Path;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -31,10 +30,10 @@ public class FileColumnValueMapper
 
         if (!valueMap.get(columnName).containsKey(key))
         {
-            FileObject dirPath = null;
+            FileLike dirPath = null;
             // TODO convert fileLinkDirPath to FileObject
             if (null != fileLinkDirPath)
-                dirPath = AuthorizedFileSystem.convertToFileObject(fileLinkDirPath.toFile());
+                dirPath = new FileSystemLike.Builder(fileLinkDirPath).readwrite().root();
             value = AbstractQueryUpdateService.saveFile(user, c, columnName, value, dirPath);
             valueMap.get(columnName).putIfAbsent(key, value);
         }

@@ -17,7 +17,6 @@
 package org.labkey.assay.actions;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.vfs2.FileObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -45,7 +44,6 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.files.virtual.AuthorizedFileSystem;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
@@ -63,6 +61,8 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
@@ -246,7 +246,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         if (file != null)
         {
             factory.setRawData(null);
-            factory.setUploadedData(Collections.singletonMap(PRIMARY_FILE, AuthorizedFileSystem.convertToFileObject(file)));
+            factory.setUploadedData(Collections.singletonMap(PRIMARY_FILE, FileSystemLike.wrapFile(file)));
         }
         else if (rawData != null && !rawData.isEmpty())
         {
@@ -256,7 +256,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             {
                 // try to write out a tmp file containing the imported data so it can be used for transforms or for previewing
                 // the original (untransformed) data within, say, a sample management application.
-                FileObject dir = AssayFileWriter.ensureUploadDirectory(getContainer());
+                FileLike dir = AssayFileWriter.ensureUploadDirectory(getContainer());
                 // NOTE: We use a 'tmp' file extension so that DataLoaderService will sniff the file type by parsing the file's header.
                 var fileObject = createFile(protocol, dir, "tmp");
 
@@ -276,7 +276,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
 
                 try (TSVMapWriter tsvWriter = new TSVMapWriter(columns, rawData))
                 {
-                    tsvWriter.write(fileObject.getPath().toFile());
+                    tsvWriter.write(fileObject.toNioPathForWrite().toFile());
                     factory.setRawData(null);
                     factory.setUploadedData(Collections.singletonMap(PRIMARY_FILE, fileObject));
                 }

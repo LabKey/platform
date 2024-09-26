@@ -259,7 +259,7 @@ public class DebugInfoDumper
         Object bean = ManagementFactory.newPlatformMXBeanProxy(ManagementFactory.getPlatformMBeanServer(), HOTSPOT_BEAN_NAME, hotspotClass);
         Method method = hotspotClass.getMethod("dumpHeap", String.class, boolean.class);
 
-        File destDir = ModuleLoader.getInstance().getWebappDir().getPath().toFile().getParentFile();
+        File destDir = ModuleLoader.getInstance().getWebappDir().toNioPathForRead().toFile().getParentFile();
 
         //defer to -XX:HeapDumpPath
         String prefix = "-XX:HeapDumpPath=";

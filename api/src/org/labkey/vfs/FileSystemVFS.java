@@ -1,6 +1,5 @@
 package org.labkey.vfs;
 
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.vfs2.FileContent;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSystemException;
@@ -15,7 +14,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 public class FileSystemVFS extends AbstractFileSystemLike
 {
@@ -78,15 +79,36 @@ public class FileSystemVFS extends AbstractFileSystemLike
         }
 
         @Override
-        public @NotNull Collection<FileLike> getChildren()
+        public @NotNull List<FileLike> getChildren()
         {
-            throw new NotImplementedException();
+            if (!canList())
+                throw new UnauthorizedException();
+            try
+            {
+                FileObject[] array = vfs.getChildren();
+                List<FileLike> list = Arrays.stream(array).map(fo -> (FileLike) new _FileLike(path.append(fo.getName().getBaseName()), fo)).toList();
+                return list;
+            }
+            catch (FileSystemException e)
+            {
+                throw UnexpectedException.wrap(e);
+            }
         }
 
         @Override
         public void _createFile() throws IOException
         {
             vfs.createFile();
+        }
+
+        @Override
+        public void delete() throws IOException
+        {
+            if (!canWriteFiles())
+                throw new UnauthorizedException();
+            if (this.getPath().isEmpty() && !canDeleteRoot())
+                throw new UnauthorizedException();
+            vfs.delete();
         }
 
         @Override
@@ -172,17 +194,17 @@ public class FileSystemVFS extends AbstractFileSystemLike
         @Override
         public OutputStream openOutputStream() throws IOException
         {
-            if (!canWrite)
+            if (!canWriteFiles())
                 throw new UnauthorizedException();
-            return null;
+            return getContent().getOutputStream();
         }
 
         @Override
         public InputStream openInputStream() throws IOException
         {
-            if (!canRead)
+            if (!canReadFiles())
                 throw new UnauthorizedException();
-            return null;
+            return getContent().getInputStream();
         }
 
         @Override

@@ -18,7 +18,6 @@ package org.labkey.api.query;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.vfs2.FileObject;
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -96,6 +95,7 @@ import org.labkey.api.util.URIUtil;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.vfs.FileLike;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -116,6 +116,8 @@ import static org.labkey.api.audit.TransactionAuditProvider.DB_SEQUENCE_NAME;
 import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior;
 import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment;
 import static org.labkey.api.files.FileContentService.UPLOADED_FILE;
+import static org.labkey.api.util.FileUtil.toFileForRead;
+import static org.labkey.api.util.FileUtil.toFileForWrite;
 
 public abstract class AbstractQueryUpdateService implements QueryUpdateService
 {
@@ -945,19 +947,19 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
     public static Object saveFile(User user, Container container, String name, Object value, @Nullable String dirName) throws ValidationException, QueryUpdateServiceException
     {
-        FileObject dirPath = AssayFileWriter.getUploadDirectoryPath(container, dirName);
+        FileLike dirPath = AssayFileWriter.getUploadDirectoryPath(container, dirName);
         return saveFile(user, container, name, value, dirPath);
     }
 
     /**
      * Save uploaded file to dirName directory under file or pipeline root.
      */
-    public static Object saveFile(User user, Container container, String name, Object value, @Nullable FileObject dirPath) throws ValidationException, QueryUpdateServiceException
+    public static Object saveFile(User user, Container container, String name, Object value, @Nullable FileLike dirPath) throws ValidationException, QueryUpdateServiceException
     {
-        FileObject file = null;
+        FileLike file = null;
         try
         {
-            FileObject dir = AssayFileWriter.ensureUploadDirectory(dirPath);
+            FileLike dir = AssayFileWriter.ensureUploadDirectory(dirPath);
 
             if (value instanceof MultipartFile)
             {
@@ -969,7 +971,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                 }
                 file = AssayFileWriter.findUniqueFileName(multipartFile.getOriginalFilename(), dir);
                 file = checkFileUnderRoot(container, file);
-                multipartFile.transferTo(file.getPath());
+                multipartFile.transferTo(toFileForWrite(file));
             }
             else if (value instanceof SpringAttachmentFile)
             {
@@ -987,7 +989,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         if (file == null)
             return value;
 
-        ensureExpData(user, container, file.getPath().toFile());
+        ensureExpData(user, container, file.toNioPathForRead().toFile());
         return file;
     }
 
@@ -1015,24 +1017,19 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
     // For security reasons, make sure the user hasn't tried to reference a file that's not under
     // the pipeline root or @assayfiles root. Otherwise, they could get access to any file on the server
-    static FileObject checkFileUnderRoot(Container container, FileObject file) throws ExperimentException
+    static FileLike checkFileUnderRoot(Container container, FileLike file) throws ExperimentException
     {
         Path assayFilesRoot = FileContentService.get().getFileRootPath(container, FileContentService.ContentType.assayfiles);
-        if (assayFilesRoot != null && URIUtil.isDescendant(assayFilesRoot.toUri(), file.getURI()))
+        if (assayFilesRoot != null && URIUtil.isDescendant(assayFilesRoot.toUri(), file.toURI()))
             return file;
 
         PipeRoot root = PipelineService.get().findPipelineRoot(container);
         if (root == null)
             throw new ExperimentException("Pipeline root not available in container " + container.getPath());
 
-        if (!root.isUnderRoot(file.getPath()))
+        if (!root.isUnderRoot(toFileForRead(file)))
         {
-//            File resolved = root.resolvePath(file.toString());
-//            if (resolved == null)
-                throw new ExperimentException("Cannot reference file '" + file + "' from " + container.getPath());
-
-//            // File column values are stored as the absolute resolved path.
-//            file = resolved;
+            throw new ExperimentException("Cannot reference file '" + file + "' from " + container.getPath());
         }
 
         return file;

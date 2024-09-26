@@ -17,7 +17,6 @@ package org.labkey.api;
 
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.FilterRegistration;
-import jakarta.servlet.MultipartConfigElement;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletRegistration;
 import org.apache.catalina.filters.CorsFilter;
@@ -95,7 +94,6 @@ import org.labkey.api.dataiterator.StatementDataIterator;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.property.DomainTemplateGroup;
 import org.labkey.api.files.FileSystemWatcherImpl;
-import org.labkey.api.files.virtual.AuthorizedFileSystem;
 import org.labkey.api.iterator.MarkableIterator;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.mbean.LabKeyManagement;
@@ -355,7 +353,6 @@ public class ApiModule extends CodeOnlyModule
             Aggregate.TestCase.class,
             ApiXmlWriter.TestCase.class,
             ArrayListMap.TestCase.class,
-            AuthorizedFileSystem.TestCase.class,
             BooleanFormat.TestCase.class,
             BuilderObjectFactory.TestCase.class,
             CachingDataIterator.ScrollTestCase.class,

@@ -85,6 +85,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.experiment.controllers.exp.ExperimentController;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.net.URI;
@@ -331,9 +332,9 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     }
 
     @Override
-    public @Nullable FileObject getFileObject()
+    public @Nullable FileLike getFileLike()
     {
-        return _object.getFileObject();
+        return _object.getFileLike();
     }
 
     @Override

@@ -16,7 +16,6 @@
 
 package org.labkey.api.assay;
 
-import org.apache.commons.vfs2.FileObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
@@ -24,7 +23,6 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.files.virtual.AuthorizedFileSystem;
 import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.qc.DataTransformer;
 import org.labkey.api.qc.DefaultTransformResult;
@@ -46,6 +44,8 @@ import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import jakarta.servlet.http.HttpServletRequest;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -128,7 +128,7 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
                         if (!externalScriptEngine.supportsContext(LabKeyScriptEngineManager.EngineContext.pipeline))
                             throw new ValidationException("The script engine : " + externalScriptEngine.getEngineDefinition().getName() + " does not support running in a transform script." );
                     }
-                    FileObject scriptDir = null;
+                    FileLike scriptDir = null;
                     // issue 19748: need alternative to JSESSIONID for pipeline job transform script usage (i.e., TransformSession)
                     try (TransformSession session = SecurityManager.createTransformSession(context))
                     {
@@ -138,15 +138,15 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
 
                         Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
                         String script = sb.toString();
-                        Pair<FileObject, Set<FileObject>> files = dataHandler.createTransformationRunInfo(context, run, scriptDir, runProperties, batchProperties);
-                        FileObject runInfo = files.getKey();
+                        Pair<FileLike, Set<FileLike>> files = dataHandler.createTransformationRunInfo(context, run, scriptDir, runProperties, batchProperties);
+                        FileLike runInfo = files.getKey();
 
-                        bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, scriptDir.getPath().toAbsolutePath().toString());
+                        bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, scriptDir.toNioPathForWrite().toString());
                         bindings.put(ExternalScriptEngine.SCRIPT_PATH, scriptFile.getAbsolutePath());
 
                         Map<String, String> paramMap = new HashMap<>();
 
-                        paramMap.put(RUN_INFO_REPLACEMENT, runInfo.getPath().toFile().getAbsolutePath().replaceAll("\\\\", "/"));
+                        paramMap.put(RUN_INFO_REPLACEMENT, runInfo.toNioPathForWrite().toFile().getAbsolutePath());
 
                         addStandardParameters(context.getRequest(), context.getContainer(), scriptFile, session.getApiKey(), paramMap);
 
@@ -154,18 +154,18 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
 
                         Object output = engine.eval(script);
 
-                        FileObject rewrittenScriptFile = null;
+                        FileLike rewrittenScriptFile = null;
                         if (bindings.get(ExternalScriptEngine.REWRITTEN_SCRIPT_FILE) instanceof File)
                         {
                             var rewrittenScriptFileObject = bindings.get(ExternalScriptEngine.REWRITTEN_SCRIPT_FILE);
-                            if (rewrittenScriptFileObject instanceof FileObject fo)
+                            if (rewrittenScriptFileObject instanceof FileLike fo)
                                 rewrittenScriptFile = fo;
                             else
-                                rewrittenScriptFile = AuthorizedFileSystem.convertToFileObject((File)rewrittenScriptFileObject);
+                                rewrittenScriptFile = FileSystemLike.wrapFile((File)rewrittenScriptFileObject);
                         }
                         else
                         {
-                            rewrittenScriptFile = AuthorizedFileSystem.convertToFileObject(scriptFile);
+                            rewrittenScriptFile = FileSystemLike.wrapFile(scriptFile);
                         }
 
                         // process any output from the transformation script
@@ -203,8 +203,8 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
                             {
                                 if (null != scriptDir)
                                 {
-                                    FileUtil.deleteDir(scriptDir.getPath());
-                                    FileObject parent = scriptDir.getParent();
+                                    FileUtil.deleteDir(scriptDir.toNioPathForWrite().toFile());
+                                    FileLike parent = scriptDir.getParent();
                                     if (parent != null)
                                         parent.delete();
                                 }
@@ -260,23 +260,23 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
         return SecurityManager.TRANSFORM_SESSION_ID;
     }
 
-    protected FileObject getScriptDir(ExpProtocol protocol, File scriptFile, boolean isDefault) throws IOException
+    protected FileLike getScriptDir(ExpProtocol protocol, File scriptFile, boolean isDefault) throws IOException
     {
-        FileObject tempDir = FileUtil.getTempDirectoryFileObject();
-        FileObject tempRoot = tempDir.resolveFile(ExternalScriptEngine.DEFAULT_WORKING_DIRECTORY);
+        FileLike tempDir = FileUtil.getTempDirectoryFileLike();
+        FileLike tempRoot = tempDir.resolveChild(ExternalScriptEngine.DEFAULT_WORKING_DIRECTORY);
 
         if (isDefault && scriptFile.exists())
         {
-            // TODO getScriptDir(FileObject scriptFile);
-            tempDir = AuthorizedFileSystem.create(scriptFile.getParentFile(),true,true).getRoot();
-            tempRoot = tempDir.resolveFile("TransformAndValidationFiles");
+            // TODO getScriptDir(FileLike scriptFile);
+            tempDir = new FileSystemLike.Builder(scriptFile.getParentFile()).readwrite().root();
+            tempRoot = tempDir.resolveChild("TransformAndValidationFiles");
         }
 
         if (!tempRoot.exists())
             FileUtil.mkdir(tempRoot);
 
-        FileObject tempParent = tempRoot.resolveFile("AssayId_" + protocol.getRowId());
-        FileObject tempFolder = AssayFileWriter.findUniqueFileName("work", tempParent);
+        FileLike tempParent = tempRoot.resolveChild("AssayId_" + protocol.getRowId());
+        FileLike tempFolder = AssayFileWriter.findUniqueFileName("work", tempParent);
         if (!tempFolder.exists())
             FileUtil.mkdirs(tempFolder);
 

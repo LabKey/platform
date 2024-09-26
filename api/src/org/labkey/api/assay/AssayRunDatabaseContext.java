@@ -16,8 +16,6 @@
 package org.labkey.api.assay;
 
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.vfs2.FileObject;
-import org.apache.commons.vfs2.FileSystemException;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -30,7 +28,6 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.files.virtual.AuthorizedFileSystem;
 import org.labkey.api.qc.DefaultTransformResult;
 import org.labkey.api.qc.TransformResult;
 import org.labkey.api.security.User;
@@ -38,6 +35,9 @@ import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.view.ActionURL;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -162,7 +162,7 @@ public class AssayRunDatabaseContext<ProviderType extends AssayProvider> impleme
 
     @NotNull
     @Override
-    public Map<String, FileObject> getUploadedData() throws ExperimentException
+    public Map<String, FileLike> getUploadedData() throws ExperimentException
     {
         List<File> list = new ArrayList<>();
         for (ExpData data : _run.getOutputDatas(_provider.getDataType()))
@@ -172,10 +172,10 @@ public class AssayRunDatabaseContext<ProviderType extends AssayProvider> impleme
                 throw new ExperimentException("Data file " + data.getName() + " is no longer available on the server's file system");
             list.add(f);
         }
-        List<FileObject> files = AuthorizedFileSystem.convertToFileObjects(list);
-        Map<String, FileObject> result = new HashMap<>();
-        for (FileObject file : files)
-            result.put(file.getName().getBaseName(), file);
+        List<FileLike> files = FileSystemLike.wrapFiles(list);
+        Map<String, FileLike> result = new HashMap<>();
+        for (FileLike file : files)
+            result.put(file.getName(), file);
         return result;
     }
 

@@ -16,7 +16,6 @@
 
 package org.labkey.api.assay.dilution;
 
-import org.apache.commons.vfs2.FileObject;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.WellGroup;
@@ -30,6 +29,7 @@ import org.labkey.api.assay.AssayRunUploadContext;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewContext;
+import org.labkey.vfs.FileLike;
 
 import java.util.List;
 import java.util.Map;
@@ -43,7 +43,7 @@ import java.util.Set;
 public class DilutionDataExchangeHandler extends PlateBasedDataExchangeHandler
 {
     @Override
-    public Pair<FileObject, Set<FileObject>> createTransformationRunInfo(AssayRunUploadContext<? extends AssayProvider> context, ExpRun run, FileObject scriptDir, Map<DomainProperty, String> runProperties, Map<DomainProperty, String> batchProperties) throws Exception
+    public Pair<FileLike, Set<FileLike>> createTransformationRunInfo(AssayRunUploadContext<? extends AssayProvider> context, ExpRun run, FileLike scriptDir, Map<DomainProperty, String> runProperties, Map<DomainProperty, String> batchProperties) throws Exception
     {
         DilutionRunUploadForm<DilutionAssayProvider> form = (DilutionRunUploadForm)context;
 
@@ -61,7 +61,7 @@ public class DilutionDataExchangeHandler extends PlateBasedDataExchangeHandler
     }
 
     @Override
-    public void createSampleData(@NotNull ExpProtocol protocol, ViewContext viewContext, FileObject scriptDir) throws Exception
+    public void createSampleData(@NotNull ExpProtocol protocol, ViewContext viewContext, FileLike scriptDir) throws Exception
     {
         AssayProvider provider = AssayService.get().getProvider(protocol);
         if (provider instanceof AbstractPlateBasedAssayProvider)

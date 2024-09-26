@@ -2,7 +2,6 @@ package org.labkey.api.security;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.vfs2.FileSystemException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -27,9 +26,7 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collections;
@@ -155,10 +152,10 @@ public interface AuthenticationConfiguration<AP extends AuthenticationProvider> 
                                 try
                                 {
                                     var dir = ModuleLoader.getInstance().getStartupPropDirectory();
-                                    var file = dir.resolveFile(value);
-                                    return file.getContent().getInputStream();
+                                    var file = dir.resolveChild(value);
+                                    return file.openInputStream();
                                 }
-                                catch (FileSystemException e)
+                                catch (IOException e)
                                 {
                                     throw UnexpectedException.wrap(e);
                                 }

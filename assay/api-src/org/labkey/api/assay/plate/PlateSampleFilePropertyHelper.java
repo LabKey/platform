@@ -16,7 +16,6 @@
 package org.labkey.api.assay.plate;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.vfs2.FileObject;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayDataCollector;
 import org.labkey.api.assay.AssayFileWriter;
@@ -43,6 +42,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.InsertView;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.vfs.FileLike;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
@@ -151,8 +151,8 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
 
         try
         {
-            FileObject uploadDirectory = AssayFileWriter.ensureUploadDirectory(_container);
-            _metadataFile = AssayFileWriter.findUniqueFileName(metadata.getOriginalFilename(), uploadDirectory).getPath().toFile();
+            FileLike uploadDirectory = AssayFileWriter.ensureUploadDirectory(_container);
+            _metadataFile = AssayFileWriter.findUniqueFileName(metadata.getOriginalFilename(), uploadDirectory).toNioPathForWrite().toFile();
             try (BufferedOutputStream fos = new BufferedOutputStream(new FileOutputStream(_metadataFile));
                 InputStream is = metadata.getInputStream())
             {

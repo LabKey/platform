@@ -16,15 +16,13 @@
 
 package org.labkey.api.attachments;
 
-import org.apache.commons.vfs2.FileObject;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.vfs.FileLike;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -141,23 +139,10 @@ public class SpringAttachmentFile implements AttachmentFile
         return _file.isEmpty();
     }
 
-    public void saveTo(File targetFile) throws IOException
+    public void saveTo(FileLike targetFile) throws IOException
     {
         InputStream is = openInputStream();
-        try (OutputStream out = new FileOutputStream(targetFile))
-        {
-            FileUtil.copyData(is, out);
-        }
-        finally
-        {
-            closeInputStream();
-        }
-    }
-
-    public void saveTo(FileObject targetFile) throws IOException
-    {
-        InputStream is = openInputStream();
-        try (OutputStream out = targetFile.getContent().getOutputStream())
+        try (OutputStream out = targetFile.openOutputStream())
         {
             FileUtil.copyData(is, out);
         }

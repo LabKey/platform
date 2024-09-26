@@ -101,7 +101,7 @@ public class PipelineWebdavProvider implements WebdavService.Provider
             setSecurableResource(root);
 
             _files = new ArrayList<>();
-            for (FileObject fileObject : root.getRootPathFileObjects(true))
+            for (var fileObject : root.getRootPathFileObjects(true))
             {
                 _files.add(new FileInfo(fileObject));
             }

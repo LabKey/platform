@@ -16,8 +16,6 @@
 
 package org.labkey.api.assay.dilution;
 
-import org.apache.commons.vfs2.FileObject;
-import org.apache.commons.vfs2.FileSystemException;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.exp.ExperimentException;
@@ -33,10 +31,8 @@ import org.labkey.api.assay.AssayDataCollector;
 import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.assay.plate.PlateSamplePropertyHelper;
 import org.labkey.api.study.assay.ThawListResolverType;
-import org.labkey.api.util.UnexpectedException;
-import org.labkey.api.view.UnauthorizedException;
+import org.labkey.vfs.FileLike;
 
-import java.io.File;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -130,28 +126,28 @@ public class DilutionRunUploadForm<Provider extends DilutionAssayProvider> exten
     }
 
     @Override @NotNull
-    public Map<String, FileObject> getUploadedData() throws ExperimentException
+    public Map<String, FileLike> getUploadedData() throws ExperimentException
     {
         // we don't want to re-populate the upload form with the re-run file if this is a reshow due to error during
         // a re-upload process:
-        Map<String, FileObject> currentUpload = super.getUploadedData();
+        Map<String, FileLike> currentUpload = super.getUploadedData();
         if (currentUpload.isEmpty())
         {
             ExpRun reRun = getReRun();
             if (reRun != null)
             {
                 List<ExpData> outputs = reRun.getDataOutputs();
-                FileObject dataFile = null;
+                FileLike dataFile = null;
                 for (ExpData data : outputs)
                 {
-                    FileObject possibleFile = data.getFileObject();
+                    FileLike possibleFile = data.getFileLike();
                     String dataLsid = data.getLSID();
                     if (possibleFile != null && dataLsid != null && getProvider().getDataType() != null && getProvider().getDataType().matches(new Lsid(dataLsid)))
                     {
                         if (dataFile != null)
                         {
                             throw new ExperimentException(getProvider().getResourceName() + " runs are expected to produce a single file output. " +
-                                    dataFile.getPath() + " and " + possibleFile.getPath() + " are both associated with run " + reRun.getRowId());
+                                    dataFile.toNioPathForRead() + " and " + possibleFile.toNioPathForRead() + " are both associated with run " + reRun.getRowId());
                         }
                         dataFile = possibleFile;
                     }
@@ -159,18 +155,11 @@ public class DilutionRunUploadForm<Provider extends DilutionAssayProvider> exten
                 if (dataFile == null)
                     throw new ExperimentException(getProvider().getResourceName() + " runs are expected to produce a file output.");
 
-                try
+                if (dataFile.exists())
                 {
-                    if (dataFile.exists())
-                    {
-                        AssayFileWriter writer = new AssayFileWriter<>();
-                        FileObject dup = writer.safeDuplicate(getViewContext(), dataFile);
-                        return Collections.singletonMap(AssayDataCollector.PRIMARY_FILE, dup);
-                    }
-                }
-                catch (FileSystemException fse)
-                {
-                    throw UnexpectedException.wrap(fse);
+                    AssayFileWriter writer = new AssayFileWriter<>();
+                    FileLike dup = writer.safeDuplicate(getViewContext(), dataFile);
+                    return Collections.singletonMap(AssayDataCollector.PRIMARY_FILE, dup);
                 }
             }
         }

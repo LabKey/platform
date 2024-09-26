@@ -16,8 +16,7 @@
 package org.labkey.api.webdav;
 
 import org.apache.commons.vfs2.FileObject;
-import org.apache.commons.vfs2.FileSystemException;
-import org.apache.commons.vfs2.NameScope;
+import org.apache.commons.vfs2.VFS;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -39,7 +38,6 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.files.FileContentService;
-import org.labkey.api.files.virtual.AuthorizedFileSystem;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.search.SearchService;
@@ -60,6 +58,8 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.DefaultContainerUser;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -120,8 +120,7 @@ public class FileSystemResource extends AbstractWebdavResource
         _folder = folder;
         _name = name.toString();
         setSecurableResource(resource);
-        // NOTE: we don't have a user yet, so we don't know if the user has write permissions (assuming read)
-        FileObject root = AuthorizedFileSystem.create(FileUtil.getAbsoluteCaseSensitiveFile(file), AuthorizedFileSystem.Mode.Read).getRoot();
+        FileLike root = new FileSystemLike.Builder(FileUtil.getAbsoluteCaseSensitiveFile(file)).root();
         _files = Collections.singletonList(new FileInfo(root));
     }
 
@@ -132,16 +131,7 @@ public class FileSystemResource extends AbstractWebdavResource
         setSecurableResource(folder.getSecurableResource());
 
         var list = folder._files.stream()
-            .map(file -> {
-                try
-                {
-                    return new FileInfo(file._file.resolveFile(name.toString(), NameScope.DESCENDENT));
-                }
-                catch (FileSystemException e)
-                {
-                    throw UnexpectedException.wrap(e);
-                }
-            })
+            .map(file -> new FileInfo(file._file.resolveChild(name.toString())))
             .toList();
         _files = new ArrayList<>(list);
     }
@@ -151,7 +141,7 @@ public class FileSystemResource extends AbstractWebdavResource
         this(path);
         setSecurableResource(resource);
         // NOTE: we don't have a user yet, so we're can't limit to read-only
-        FileObject root = AuthorizedFileSystem.create(FileUtil.getAbsoluteCaseSensitiveFile(file), AuthorizedFileSystem.Mode.Read).getRoot();
+        FileLike root = new FileSystemLike.Builder(FileUtil.getAbsoluteCaseSensitiveFile(file)).readwrite().root();
         _files = Collections.singletonList(new FileInfo(root));
     }
 
@@ -242,7 +232,7 @@ public class FileSystemResource extends AbstractWebdavResource
         FileInfo f = getFileInfo();
         if (null == f)
             return null;
-        return f._file.getPath().toFile();
+        return f._file.toNioPathForRead().toFile();
     }
 
     @Override
@@ -252,7 +242,13 @@ public class FileSystemResource extends AbstractWebdavResource
             return null;
         if (null == _files || !exists())
             return null;
-        return new FileStream.FileContentFileStream(getFileInfo().getFileObject().getContent());
+        FileLike f = getFileInfo().getFileLike();
+        if ("file".equals(f.getFileSystem().getScheme()))
+            return new FileStream.FileFileStream(f.toNioPathForRead().toFile());
+        FileObject fo = VFS.getManager().resolveFile(f.toURI());
+        if (null == fo)
+            return null;
+        return new FileStream.FileContentFileStream(fo.getContent());
     }
 
     @Override
@@ -350,19 +346,9 @@ public class FileSystemResource extends AbstractWebdavResource
             _files.stream()
                     .filter(fileInfo -> fileInfo.getType() == FileType.directory)
                     .forEach(fileInfo -> {
-                        try
-                        {
-                            FileObject[] children = fileInfo._file.getChildren();
-                            if (null != children)
-                            {
-                                for (FileObject child : children)
-                                    result.add(child.getName().getBaseName());
-                            }
-                        }
-                        catch (FileSystemException x)
-                        {
-                            throw UnexpectedException.wrap(x);
-                        }
+                            List<FileLike> children = fileInfo._file.getChildren();
+                            for (FileLike child : children)
+                                result.add(child.getName());
                     });
         }
         return result;
@@ -758,15 +744,15 @@ public class FileSystemResource extends AbstractWebdavResource
 
     protected static class FileInfo
     {
-        private FileObject _file;
+        private final FileLike _file;
         BasicFileAttributes _attributes;
 
-        public FileInfo(FileObject file)
+        public FileInfo(FileLike file)
         {
             _file = file;
         }
 
-        public FileObject getFileObject()
+        public FileLike getFileLike()
         {
             return _file;
         }
@@ -812,9 +798,9 @@ public class FileSystemResource extends AbstractWebdavResource
             {
                 try
                 {
-                    _attributes = Files.readAttributes(_file.getPath(), BasicFileAttributes.class);
+                    _attributes = Files.readAttributes(_file.toNioPathForRead(), BasicFileAttributes.class);
                 }
-                catch (FileNotFoundException | InvalidPathException | FileSystemException | NoSuchFileException x)
+                catch (FileNotFoundException | InvalidPathException | NoSuchFileException x)
                 {
                     _attributes = doesNotExist;
                 }

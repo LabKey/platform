@@ -7,6 +7,10 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.apache.commons.lang3.StringUtils.defaultIfBlank;
 
@@ -22,6 +26,10 @@ import static org.apache.commons.lang3.StringUtils.defaultIfBlank;
  */
 public interface FileSystemLike
 {
+    default String getScheme()
+    {
+        return getURI().getScheme();
+    }
     URI getURI();
     URI getURI(FileLike fo);
     java.nio.file.Path getNioPath(FileLike fo);
@@ -37,7 +45,7 @@ public interface FileSystemLike
     boolean canDeleteRoot();
 
 
-    class Builder implements org.labkey.api.data.Builder<FileSystemLike>
+    class Builder
     {
         URI uri;
         boolean defaultVfs = false;     // for testing
@@ -50,38 +58,85 @@ public interface FileSystemLike
         {
             this.uri = uri;
         }
+
+        public Builder(File f)
+        {
+            this.uri = f.toURI();
+        }
+
+        public Builder(java.nio.file.Path path)
+        {
+            this.uri = path.toUri();
+        }
+
         public Builder readonly()
         {
             canReadFiles = true;
             canWriteFiles = false;
             return this;
         }
+
         public Builder readwrite()
         {
             canReadFiles = true;
             canWriteFiles = true;
             return this;
         }
+
+        public Builder tempDir()
+        {
+            canDeleteRoot = true;
+            return readwrite();
+        }
+
         public Builder vfs()
         {
             defaultVfs = true;
             return this;
         }
-        @Override
+
         public FileSystemLike build()
         {
-            var scheme = defaultIfBlank(uri.getScheme(),"file");
+            var scheme = defaultIfBlank(uri.getScheme(), "file");
             if (defaultVfs || !"file".equals(scheme))
                 return new FileSystemVFS(uri, canReadFiles, canWriteFiles, canDeleteRoot);
             else
-                return new FileSystemNIO(uri, canReadFiles, canWriteFiles, canDeleteRoot);
+                return new FileSystemLocal(uri, canReadFiles, canWriteFiles, canDeleteRoot);
+        }
+        public FileLike root()
+        {
+            return build().getRoot();
         }
     }
 
+//    static URI toURI(FileLike f)
+//    {
+//        return f.getFileSystem().getURI(f);
+//    }
+//
+//    static java.nio.file.Path toNioPath(FileLike f)
+//    {
+//        var fs = f.getFileSystem();
+//        if (!"file".equals(fs.getScheme()))
+//            throw new UnsupportedOperationException("Unsupported URI scheme: " + fs.getScheme());
+//        return f.getFileSystem().getNioPath(f);
+//    }
+//
+//    static String toFilePath(FileLike f)
+//    {
+//        return toNioPath(f).toString();
+//    }
+
     /** Helper for partially converted code. Parent dir must exist. */
-    static FileLike wrapFile(File f) throws IOException
+    static FileLike wrapFile(File f)
     {
-        return wrapFile(f.getParentFile(), f);
+        FileLike p = new Builder(f.getParentFile()).root();
+        return p.resolveChild(f.getName());
+    }
+
+    static FileLike wrapFile(java.nio.file.Path p)
+    {
+        return wrapFile(p.toFile());
     }
 
     /** Helper for partially converted code. root must exist. */
@@ -99,6 +154,21 @@ public interface FileSystemLike
     {
         java.nio.file.Path p = f.getFileSystem().getNioPath(f);
         return p.toFile();
+    }
+
+
+    /* More efficent version of wrap when many files may be from the same directory */
+    static List<FileLike> wrapFiles(List<File> files)
+    {
+        Map<File, FileSystemLike> map = new HashMap<>();
+        List<FileLike> ret = new ArrayList<>(files.size());
+        for (File file : files)
+        {
+            File parent = file.getParentFile();
+            FileSystemLike fs = map.computeIfAbsent(parent, key -> new FileSystemLike.Builder(parent).readwrite().build());
+            ret.add(fs.resolveFile(new Path(file.getName())));
+        }
+        return ret;
     }
 }
 

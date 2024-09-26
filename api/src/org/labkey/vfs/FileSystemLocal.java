@@ -1,24 +1,27 @@
 package org.labkey.vfs;
 
-import org.apache.commons.lang3.NotImplementedException;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.UnauthorizedException;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
-public class FileSystemNIO extends AbstractFileSystemLike
+public class FileSystemLocal extends AbstractFileSystemLike
 {
     final java.nio.file.Path nioRoot;
     final _FileLike root;
 
-    FileSystemNIO(URI uri, boolean canRead, boolean canWrite, boolean canDeleteRoot)
+    FileSystemLocal(URI uri, boolean canRead, boolean canWrite, boolean canDeleteRoot)
     {
         super(uri, canRead, canWrite, canDeleteRoot);
         nioRoot = java.nio.file.Path.of(uri);
@@ -46,7 +49,7 @@ public class FileSystemNIO extends AbstractFileSystemLike
 
     class _FileLike extends AbstractFileLike
     {
-        final java.nio.file.Path nioPath;
+//        final java.nio.file.Path nioPath;
         final File file;
 
         _FileLike(Path path, java.nio.file.Path nioPath)
@@ -54,20 +57,35 @@ public class FileSystemNIO extends AbstractFileSystemLike
             super(path);
             if (!nioPath.startsWith(nioRoot))
                 throw new IllegalArgumentException("Path can not be resolved");
-            this.nioPath = nioPath;
+//            this.nioPath = nioPath;
             this.file = nioPath.toFile();
+        }
+
+        _FileLike(Path path, File file)
+        {
+            super(path);
+            var nioPath = file.toPath();
+            if (!nioPath.startsWith(nioRoot))
+                throw new IllegalArgumentException("Path can not be resolved");
+//            this.nioPath = nioPath;
+            this.file = file;
         }
 
         @Override
         public FileSystemLike getFileSystem()
         {
-            return FileSystemNIO.this;
+            return FileSystemLocal.this;
         }
 
         @Override
-        public @NotNull Collection<FileLike> getChildren()
+        public @NotNull List<FileLike> getChildren()
         {
-            throw new NotImplementedException();
+            if (!canList())
+                throw new UnauthorizedException();
+            File[] children = file.listFiles();
+            if (null == children || 0 == children.length)
+                return List.of();
+            return Arrays.stream(children).map(f -> (FileLike)new _FileLike(path.append(f.getName()), f)).toList();
         }
 
         @Override
@@ -76,6 +94,13 @@ public class FileSystemNIO extends AbstractFileSystemLike
             FileUtil.createNewFile(file);
         }
 
+        @Override
+        public void delete() throws IOException
+        {
+            if (!canWriteFiles())
+                throw new UnauthorizedException();
+            file.delete();
+        }
 
         @Override
         final public void _mkdir() throws IOException
@@ -116,22 +141,17 @@ public class FileSystemNIO extends AbstractFileSystemLike
         @Override
         public OutputStream openOutputStream() throws IOException
         {
-            if (!canWrite)
+            if (!canWriteFiles())
                 throw new UnauthorizedException();
-            return null;
+            return new FileOutputStream(file);
         }
 
         @Override
         public InputStream openInputStream() throws IOException
         {
-            if (!canRead)
+            if (!canReadFiles())
                 throw new UnauthorizedException();
-            return null;
-        }
-
-        @Override
-        public void refresh()
-        {
+            return new FileInputStream(file);
         }
 
         @Override
@@ -139,13 +159,13 @@ public class FileSystemNIO extends AbstractFileSystemLike
         {
             if (!(o instanceof _FileLike fl))
                 throw new ClassCastException();
-            return nioPath.compareTo(fl.nioPath);
+            return file.compareTo(fl.file);
         }
 
         @Override
         public int hashCode()
         {
-            return nioPath.hashCode();
+            return file.hashCode();
         }
 
         @Override
@@ -153,7 +173,7 @@ public class FileSystemNIO extends AbstractFileSystemLike
         {
             if (!(obj instanceof _FileLike other))
                 return false;
-            return nioPath.equals(other.nioPath);
+            return file.equals(other.file);
         }
     }
 }

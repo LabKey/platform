@@ -28,7 +28,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.view.FilesWebPart;
-import org.labkey.api.files.virtual.AuthorizedFileSystem;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.DirectoryNotDeletedException;
@@ -46,6 +45,8 @@ import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 
 import java.io.File;
 import java.io.IOException;
@@ -234,9 +235,9 @@ public class PipeRootImpl implements PipeRoot
     }
 
     @Override
-    public @NotNull FileObject getRootFileObject()
+    public @NotNull FileLike getRootFileLike()
     {
-        return AuthorizedFileSystem.create(getRootNioPath(), true, true).getRoot();
+        return new FileSystemLike.Builder(getRootPath()).readwrite().root();
     }
 
     @Override
@@ -252,10 +253,12 @@ public class PipeRootImpl implements PipeRoot
 
     @Override
     @NotNull
-    public FileObject getLogDirectoryFileObject(boolean forWrite)
+    public FileLike getLogDirectoryFileLike(boolean forWrite)
     {
-        return AuthorizedFileSystem.create(getLogDirectory(),
-                forWrite ? AuthorizedFileSystem.Mode.Read_Write : AuthorizedFileSystem.Mode.Read).getRoot();
+        var b = new FileSystemLike.Builder(getLogDirectory()).readonly();
+        if (forWrite)
+            b.readwrite();
+        return b.root();
     }
 
     public synchronized List<File> getRootPaths()
@@ -272,10 +275,9 @@ public class PipeRootImpl implements PipeRoot
         return _rootPaths;
     }
 
-
-    public synchronized List<FileObject> getRootPathFileObjects(boolean forWrite)
+    public synchronized List<FileLike> getRootPathFileObjects(boolean forWrite)
     {
-        if (_rootPaths.size() == 0 && !isCloudRoot())
+        if (_rootPaths.isEmpty() && !isCloudRoot())
         {
             for (URI uri : _uris)
             {
@@ -284,8 +286,10 @@ public class PipeRootImpl implements PipeRoot
                 NetworkDrive.ensureDrive(file.getPath());
             }
         }
-        return _rootPaths.stream().map(f -> AuthorizedFileSystem.create(f,
-                forWrite ? AuthorizedFileSystem.Mode.Read_Write : AuthorizedFileSystem.Mode.Read).getRoot()).toList();
+        if (forWrite)
+            return _rootPaths.stream().map(f -> new FileSystemLike.Builder(f).readwrite().root()).toList();
+        else
+            return _rootPaths.stream().map(f -> new FileSystemLike.Builder(f).readonly().root()).toList();
     }
 
     public synchronized List<Path> getRootNioPaths()
@@ -393,20 +397,15 @@ public class PipeRootImpl implements PipeRoot
 
 
     @Override
-    public @Nullable FileObject resolvePathToFileObject(String relativePath)
+    public @Nullable FileLike resolvePathToFileLike(String relativePath)
     {
-        var pair = _resolveRoot(org.labkey.api.util.Path.parse(relativePath));
+        var parsedPath = org.labkey.api.util.Path.parse(relativePath);
+
+        var pair = _resolveRoot(parsedPath);
         if (null == pair)
             return null;
-        var afs = AuthorizedFileSystem.create(pair.first, true, true);
-        try
-        {
-            return afs.getRoot().resolveFile(relativePath, NameScope.DESCENDENT_OR_SELF);
-        }
-        catch (FileSystemException fse)
-        {
-            throw UnexpectedException.wrap(fse);
-        }
+        var root = new FileSystemLike.Builder(pair.first).readwrite().root();
+        return root.resolveFile(parsedPath);
     }
 
 

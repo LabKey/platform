@@ -15,17 +15,13 @@
  */
 package org.labkey.experiment.api;
 
-import org.apache.commons.vfs2.FileObject;
-import org.apache.commons.vfs2.FileSystemException;
-import org.apache.commons.vfs2.VFS;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.api.ExpData;
-import org.labkey.api.exp.api.ExpObject;
-import org.labkey.api.files.virtual.AuthorizedFileSystem;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 
 import java.io.File;
 import java.net.URI;
@@ -78,22 +74,12 @@ public class Data extends RunItem
     }
 
 
-    public FileObject getFileObject()
+    public FileLike getFileLike()
     {
         File f = getFile();
         if (null == f)
             return null;
-        try
-        {
-            /* The Data object does not provide us with a File System root.  We'll just use the parent directory as the FS scope.
-             * CONSIDER: Create a fast way to resolve the likely FS root using the container of the Data object.
-             */
-            return AuthorizedFileSystem.create(f.getParentFile(), true, true).getRoot().resolveFile(f.getName());
-        }
-        catch (FileSystemException e)
-        {
-            throw UnexpectedException.wrap(e);
-        }
+        return FileSystemLike.wrapFile(f);
     }
 
 

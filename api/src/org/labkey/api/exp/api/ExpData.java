@@ -16,7 +16,6 @@
 
 package org.labkey.api.exp.api;
 
-import org.apache.commons.vfs2.FileObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.ExperimentDataHandler;
@@ -25,6 +24,7 @@ import org.labkey.api.exp.XarSource;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.security.User;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.net.URI;
@@ -60,7 +60,7 @@ public interface ExpData extends ExpRunItem
 
     /** @return the file if this data is backed by a 'file:'-style URI. */
     @Nullable
-    FileObject getFileObject();
+    FileLike getFileLike();
 
     @Nullable
     Path getFilePath();

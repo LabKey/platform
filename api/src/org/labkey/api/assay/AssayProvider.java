@@ -16,7 +16,6 @@
 
 package org.labkey.api.assay;
 
-import org.apache.commons.vfs2.FileObject;
 import org.fhcrc.cpas.exp.xml.ExperimentRunType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -54,6 +53,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
+import org.labkey.vfs.FileLike;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
@@ -111,12 +111,12 @@ public interface AssayProvider extends Handler<ExpProtocol>
     // TODO File->FileObject
     List<AssayDataCollector> getDataCollectors(Map<String, File> uploadedFiles, AssayRunUploadForm context);
 
-    default List<AssayDataCollector> getDataCollectorsFileObject(Map<String, FileObject> uploadedFileObjects, AssayRunUploadForm context)
+    default List<AssayDataCollector> getDataCollectorsFileObject(Map<String, FileLike> uploadedFileObjects, AssayRunUploadForm context)
     {
         Map<String,File> map = new HashMap<>();
         if (uploadedFileObjects != null)
             for (var entry : uploadedFileObjects.entrySet())
-                map.put(entry.getKey(), entry.getValue().getPath().toFile());
+                map.put(entry.getKey(), entry.getValue().toNioPathForRead().toFile());
         return getDataCollectors(map, context);
     }
 

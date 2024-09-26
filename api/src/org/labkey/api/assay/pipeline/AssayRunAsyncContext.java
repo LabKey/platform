@@ -15,7 +15,6 @@
  */
 package org.labkey.api.assay.pipeline;
 
-import org.apache.commons.vfs2.FileObject;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -38,6 +37,8 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.view.ActionURL;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.labkey.vfs.FileLike;
+
 import java.io.File;
 import java.io.Serializable;
 import java.util.Collections;
@@ -64,7 +65,7 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
     private String _runComments;
     private Integer _runWorkflowTask;
     private ActionURL _actionURL;
-    private Map<String, FileObject> _uploadedData;
+    private Map<String, FileLike> _uploadedData;
     /** propertyId -> value */
     private Map<Integer, String> _runPropertiesById;
     /** propertyId -> value */
@@ -217,9 +218,9 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
         logger.info("----- Start Run Properties -----");
         logger.info("\tUploaded Files:");
 
-        for(Map.Entry<String, FileObject> entry : getUploadedData().entrySet())
+        for(Map.Entry<String, FileLike> entry : getUploadedData().entrySet())
         {
-            logger.info("\t\t* " + entry.getValue().getName().getBaseName());
+            logger.info("\t\t* " + entry.getValue().getName());
         }
 
         if(_runName == null)
@@ -331,7 +332,7 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
 
     @NotNull
     @Override
-    public Map<String, FileObject> getUploadedData()
+    public Map<String, FileLike> getUploadedData()
     {
         return _uploadedData;
     }

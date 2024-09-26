@@ -22,7 +22,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.collections4.Factory;
-import org.apache.commons.vfs2.FileObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -41,6 +40,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.vfs.FileLike;
 import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.File;
@@ -377,7 +377,7 @@ public interface Module
      * @return a list of static file locations
      */
     @NotNull
-    List<FileObject> getStaticFileDirectories();
+    List<FileLike> getStaticFileDirectories();
 
     // Should LabKey should automatically uninstall this module (drop its schemas, delete SqlScripts rows, delete Modules rows)
     // if the module no longer exists?  This setting gets saved to the Modules table.

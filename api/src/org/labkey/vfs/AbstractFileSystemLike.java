@@ -9,24 +9,23 @@ import static org.labkey.api.files.virtual.AuthorizedFileSystem.toURIPath;
 abstract public class AbstractFileSystemLike implements FileSystemLike
 {
     final URI uri;
+    final String scheme;
     final String strUri;    // no trailing '/'
     final boolean canDeleteRoot;
     final boolean canList = true;
     final boolean canRead;
     final boolean canWrite;
 
-
     AbstractFileSystemLike(URI uri, boolean canRead, boolean canWrite, boolean canDeleteRoot)
     {
-        var scheme = uri.getScheme();
-        var path = uri.getPath();
-        this.strUri = scheme + "://" + path;
-        this.uri = URI.create(strUri);
+        // Is there value id re-encoding the URI so that it is consistently encoded?
+        this.uri = uri;
+        this.strUri = uri.toString();
+        this.scheme = uri.getScheme();
         this.canRead = canRead;
         this.canWrite = canWrite;
         this.canDeleteRoot = canDeleteRoot;
     }
-
 
     /* wrapper to make sure we're being consistent */
     String toURIPath(org.labkey.api.util.Path path)
@@ -41,8 +40,17 @@ abstract public class AbstractFileSystemLike implements FileSystemLike
     }
 
     @Override
+    public String getScheme()
+    {
+        return scheme;
+    }
+
+    @Override
     public URI getURI(FileLike fo)
     {
+        String encPath = toURIPath(fo.getPath());
+        if (!strUri.endsWith("/") && !encPath.startsWith("/"))
+            return URI.create(strUri + '/' + encPath);
         return URI.create(strUri + toURIPath(fo.getPath()));
     }
 

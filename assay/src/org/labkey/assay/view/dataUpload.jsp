@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.api.exp.ExperimentException" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.vfs.FileLike" %>
 <%@ page import="java.io.File" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.List" %>
@@ -36,7 +37,7 @@
     <%
         boolean first = true;
         List<AssayDataCollector> visibleCollectors = new ArrayList<>();
-        Map<String, FileObject> uploadedData = null;
+        Map<String, FileLike> uploadedData = null;
         try
         {
             uploadedData = bean.getUploadedData();

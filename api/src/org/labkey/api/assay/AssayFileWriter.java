@@ -17,9 +17,6 @@
 package org.labkey.api.assay;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.vfs2.FileObject;
-import org.apache.commons.vfs2.FileSystemException;
-import org.apache.commons.vfs2.NameScope;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -28,7 +25,6 @@ import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.files.virtual.AuthorizedFileSystem;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.AbstractQueryUpdateService;
@@ -37,6 +33,10 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ViewContext;
+
+import org.labkey.vfs.FileLike;
+
+import org.labkey.vfs.FileSystemLike;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
@@ -53,7 +53,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-import static org.labkey.api.util.FileUtil.resolveFile;
+import static org.labkey.api.util.FileUtil.toFileForRead;
+import static org.labkey.api.util.FileUtil.toFileForWrite;
+
 
 public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends AssayProvider>>
 {
@@ -64,18 +66,18 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
     public static final String TEMP_DIR_NAME = ".uploadTemp";
 
     /** Make sure there's an assaydata subdirectory available for this container */
-    public static FileObject ensureUploadDirectory(Container container) throws ExperimentException
+    public static FileLike ensureUploadDirectory(Container container) throws ExperimentException
     {
         return ensureUploadDirectory(container, DIR_NAME);
     }
 
-    public static FileObject ensureSubdirectory(Container container, String subName) throws ExperimentException
+    public static FileLike ensureSubdirectory(Container container, String subName) throws ExperimentException
     {
-        FileObject subDir=null;
+        FileLike subDir=null;
         try
         {
-            FileObject uploadDir = ensureUploadDirectory(container);
-            subDir = uploadDir.resolveFile(subName);
+            FileLike uploadDir = ensureUploadDirectory(container);
+            subDir = uploadDir.resolveChild(subName);
             if (!NetworkDrive.exists(subDir))
             {
                     boolean success = FileUtil.mkdir(subDir);
@@ -90,35 +92,28 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
         }
     }
 
-    public static FileObject getUploadDirectoryPath(Container container, String dirName)
+    public static FileLike getUploadDirectoryPath(Container container, String dirName)
     {
         if (dirName == null)
             dirName = "";
         PipeRoot root = getPipelineRoot(container);
-        FileObject fileObject = root.getRootFileObject();
-        try
-        {
-            return fileObject.resolveFile(dirName, NameScope.DESCENDENT);
-        }
-        catch (FileSystemException e)
-        {
-            throw UnexpectedException.wrap(e);
-        }
+        FileLike fileObject = root.getRootFileLike();
+        return fileObject.resolveChild(dirName);
     }
 
-    public static FileObject ensureUploadDirectory(Container container, String dirName) throws ExperimentException
+    public static FileLike ensureUploadDirectory(Container container, String dirName) throws ExperimentException
     {
-        FileObject dir = getUploadDirectoryPath(container, dirName);
+        FileLike dir = getUploadDirectoryPath(container, dirName);
         ensureUploadDirectory(dir);
         return dir;
     }
 
-    public static FileObject ensureUploadDirectory(FileObject dir) throws ExperimentException
+    public static FileLike ensureUploadDirectory(FileLike dir) throws ExperimentException
     {
-        FileObject fileObject = ensureUploadDirectoryPath(dir);
+        FileLike fileObject = ensureUploadDirectoryPath(dir);
         if (null != fileObject)
         {
-            if (!FileUtil.hasCloudScheme(fileObject.getURI()))
+            if (!FileUtil.hasCloudScheme(fileObject.getFileSystem().getURI()))
                 return fileObject;
             else
                 throw new ExperimentException("Operation not supported for cloud-based file storage.");
@@ -128,11 +123,11 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
     }
 
     /** Make sure there's a subdirectory of the specified name available for this container */
-    public static FileObject ensureUploadDirectoryPath(FileObject dir) throws ExperimentException
+    public static FileLike ensureUploadDirectoryPath(FileLike dir) throws ExperimentException
     {
         try
         {
-            if (null != dir && !dir.isFolder())
+            if (null != dir && !dir.isDirectory())
                 FileUtil.createDirectories(dir);
             return dir;
         }
@@ -146,7 +141,7 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
      * Create file name based upon the assay protocol's name and the current time.
      * e.g., <code>assayname-2020-04-14-1602345</code>
      */
-    public static FileObject createFile(ExpProtocol protocol, FileObject dir, String extension)
+    public static FileLike createFile(ExpProtocol protocol, FileLike dir, String extension)
     {
         Date dateCreated = new Date();
         String dateString = DateUtil.formatDateTime(dateCreated, "yyy-MM-dd-HHmmss-SSS");
@@ -164,23 +159,16 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
         }
         protocolName = new String(characters);
 
-        try
+        FileLike file;
+        do
         {
-            FileObject file;
-            do
-            {
-                String extra = id++ == 0 ? "" : String.valueOf(id);
-                String fileName = protocolName + "-" + dateString + extra + "." + extension;
-                fileName = fileName.replace('\\', '_').replace('/', '_').replace(':', '_');
-                file = dir.resolveFile(fileName);
-            }
-            while (file.exists());
-            return file;
+            String extra = id++ == 0 ? "" : String.valueOf(id);
+            String fileName = protocolName + "-" + dateString + extra + "." + extension;
+            fileName = fileName.replace('\\', '_').replace('/', '_').replace(':', '_');
+            file = dir.resolveChild(fileName);
         }
-        catch (FileSystemException e)
-        {
-            throw UnexpectedException.wrap(e);
-        }
+        while (file.exists());
+        return file;
     }
 
     protected void writeFile(InputStream in, File file) throws IOException
@@ -215,29 +203,22 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
         return file;
     }
 
-    public static FileObject findUniqueFileName(String originalFilename, FileObject dir)
+    public static FileLike findUniqueFileName(String originalFilename, FileLike dir)
     {
-        try
+        if (originalFilename == null || originalFilename.isEmpty())
         {
-            if (originalFilename == null || originalFilename.isEmpty())
-            {
-                originalFilename = "[unnamed]";
-            }
-            FileObject file;
-            int uniquifier = 0;
-            do
-            {
-                String fullName = getAppendedFileName(originalFilename, uniquifier);
-                file = dir.resolveFile(fullName);
-                uniquifier++;
-            }
-            while (file.exists());
-            return file;
+            originalFilename = "[unnamed]";
         }
-        catch (FileSystemException fse)
+        FileLike file;
+        int uniquifier = 0;
+        do
         {
-            throw UnexpectedException.wrap(fse);
+            String fullName = getAppendedFileName(originalFilename, uniquifier);
+            file = dir.resolveChild(fullName);
+            uniquifier++;
         }
+        while (file.exists());
+        return file;
     }
 
     public static String getAppendedFileName(String originalFilename, int uniquifier)
@@ -255,19 +236,19 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
         return prefix + (uniquifier == 0 ? "" : "-" + uniquifier) + suffix;
     }
 
-    protected FileObject getFileTargetDir(ContextType context) throws ExperimentException
+    protected FileLike getFileTargetDir(ContextType context) throws ExperimentException
     {
         return ensureUploadDirectory(context.getContainer());
     }
 
-    /* TODO: this is a really awkward transition between File->FileObject (files come from FileQueue) */
-    public Map<String, FileObject> savePipelineFiles(ContextType context, Map<String, File> files) throws ExperimentException, IOException
+    /* TODO: this is a really awkward transition between File->FileLike (files come from FileQueue) */
+    public Map<String, FileLike> savePipelineFiles(ContextType context, Map<String, File> files) throws ExperimentException, IOException
     {
-        Map<String, FileObject> savedFiles = new TreeMap<>();
+        Map<String, FileLike> savedFiles = new TreeMap<>();
         if (context.getRequest() instanceof MultipartHttpServletRequest)
         {
             PipeRoot root = getPipelineRoot(context.getContainer());
-            FileObject dir = getFileTargetDir(context);
+            FileLike dir = getFileTargetDir(context);
 
             for (String key : files.keySet())
             {
@@ -275,23 +256,23 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
                 File file = files.get(key);
                 if (!root.isUnderRoot(file))
                 {
-                    File savedFile = dir.resolveFile(file.getName()).getPath().toFile();
-                    LOG.debug("savePipelineFiles: file '" + file.getPath() + "' is not under pipeline root. copying to savedFile=" + savedFile.getPath());
-                    FileUtils.copyFile(file, savedFile);
-                    file = savedFile;
+                    FileLike savedFile = dir.resolveChild(file.getName());
+                    LOG.debug("savePipelineFiles: file '" + file + "' is not under pipeline root. copying to savedFile=" + savedFile);
+                    FileUtils.copyFile(file, toFileForWrite(savedFile));
+                    savedFiles.put(key, savedFile);
                 }
                 else
                 {
+                    savedFiles.put(key, FileSystemLike.wrapFile(file));
                     LOG.debug("savePipelineFiles: file '" + file.getPath() + "' is already under pipeline root. not copying");
                 }
-                savedFiles.put(key, AuthorizedFileSystem.convertToFileObject(file));
             }
         }
         else
         {
             for (var entry : files.entrySet())
             {
-                savedFiles.put(entry.getKey(), AuthorizedFileSystem.convertToFileObject(entry.getValue()));
+                savedFiles.put(entry.getKey(), FileSystemLike.wrapFile((entry.getValue())));
             }
         }
 
@@ -303,14 +284,14 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
         return file.getOriginalFilename();
     }
 
-    public Map<String, FileObject> savePostedFiles(ContextType context, Set<String> parameterNames, boolean allowMultiple, boolean ensureExpData) throws ExperimentException, IOException
+    public Map<String, FileLike> savePostedFiles(ContextType context, Set<String> parameterNames, boolean allowMultiple, boolean ensureExpData) throws ExperimentException, IOException
     {
-        Map<String, FileObject> files = new TreeMap<>();
+        Map<String, FileLike> files = new TreeMap<>();
         Set<String> originalFileNames = new HashSet<>();
         if (context.getRequest() instanceof MultipartHttpServletRequest multipartRequest)
         {
             Iterator<Map.Entry<String, List<MultipartFile>>> iter = multipartRequest.getMultiFileMap().entrySet().iterator();
-            Deque<FileObject> overflowFiles = new ArrayDeque<>();  // using a deque for easy removal of single elements
+            Deque<FileLike> overflowFiles = new ArrayDeque<>();  // using a deque for easy removal of single elements
             Set<String> unusedParameterNames = new HashSet<>(parameterNames);
             while (iter.hasNext())
             {
@@ -328,9 +309,9 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
                         }
                         if (!multipartFile.isEmpty())
                         {
-                            FileObject dir = getFileTargetDir(context);
-                            FileObject file = findUniqueFileName(fileName, dir);
-                            multipartFile.transferTo(file.getPath().toFile());
+                            FileLike dir = getFileTargetDir(context);
+                            FileLike file = findUniqueFileName(fileName, dir);
+                            multipartFile.transferTo(toFileForWrite(file));
                             if (!isAfterFirstFile)  // first file gets stored with multipartFile's name
                             {
                                 files.put(multipartFile.getName(), file);
@@ -343,7 +324,7 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
                             }
 
                             if (ensureExpData)
-                                AbstractQueryUpdateService.ensureExpData(context.getUser(), context.getContainer(), file.getPath().toFile());
+                                AbstractQueryUpdateService.ensureExpData(context.getUser(), context.getContainer(), toFileForWrite(file));
                         }
                     }
                 }
@@ -366,13 +347,13 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
         return files;
     }
 
-    public FileObject safeDuplicate(ViewContext context, FileObject file) throws ExperimentException
+    public FileLike safeDuplicate(ViewContext context, FileLike file) throws ExperimentException
     {
-        FileObject dir = ensureUploadDirectory(context.getContainer());
-        FileObject newFile = findUniqueFileName(file.getName().getBaseName(), dir);
+        FileLike dir = ensureUploadDirectory(context.getContainer());
+        FileLike newFile = findUniqueFileName(file.getName(), dir);
         try
         {
-            FileUtils.copyFile(file.getPath().toFile(), newFile.getContent().getOutputStream());
+            FileUtils.copyFile(toFileForRead(file), newFile.openOutputStream());
             return newFile;
         }
         catch (IOException e)

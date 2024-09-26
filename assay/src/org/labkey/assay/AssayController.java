@@ -20,7 +20,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.commons.vfs2.FileObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -152,6 +151,7 @@ import org.labkey.assay.actions.SetDefaultValuesAssayAction;
 import org.labkey.assay.actions.ShowSelectedDataAction;
 import org.labkey.assay.actions.ShowSelectedRunsAction;
 import org.labkey.assay.actions.TemplateAction;
+import org.labkey.vfs.FileLike;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -749,20 +749,20 @@ public class AssayController extends SpringActionController
             List<List<String>> runNamesPerFile = new ArrayList<>();
             try
             {
-                FileObject targetDirectory = AssayFileWriter.ensureUploadDirectory(getContainer());
+                FileLike targetDirectory = AssayFileWriter.ensureUploadDirectory(getContainer());
                 JSONArray fileNames = form.getJsonObject() == null ? null : form.getJsonObject().getJSONArray("fileNames");
                 if (fileNames != null && fileNames.length() > 0)
                 {
                     for (int i = 0; i < fileNames.length(); i++)
                     {
                         String fileName = (String)fileNames.get(i);
-                        FileObject f = targetDirectory.resolveFile(fileName);
+                        FileLike f = targetDirectory.resolveChild(fileName);
                         if (f.exists())
                         {
                             duplicate = true;
-                            FileObject newFile = AssayFileWriter.findUniqueFileName(fileName, targetDirectory);
-                            newFileNames.add(i, newFile.getName().getBaseName());  // will infer duplication by whether an element exists at that position or not
-                            ExpData expData = ExperimentService.get().getExpDataByURL(f.getURL().toString(), null);
+                            FileLike newFile = AssayFileWriter.findUniqueFileName(fileName, targetDirectory);
+                            newFileNames.add(i, newFile.getName());  // will infer duplication by whether an element exists at that position or not
+                            ExpData expData = ExperimentService.get().getExpDataByURL(f.toURI().toString(), null);
                             List<String> runNames = new ArrayList<>();
                             if (expData != null)
                             {
@@ -821,8 +821,8 @@ public class AssayController extends SpringActionController
 
             try
             {
-                FileObject targetDirectory = AssayFileWriter.ensureUploadDirectory(getContainer());
-                return AssayFileWriter.findUniqueFileName(filename, targetDirectory).getPath().toFile();
+                FileLike targetDirectory = AssayFileWriter.ensureUploadDirectory(getContainer());
+                return AssayFileWriter.findUniqueFileName(filename, targetDirectory).toNioPathForWrite().toFile();
             }
             catch (ExperimentException e)
             {
@@ -910,11 +910,11 @@ public class AssayController extends SpringActionController
 
             if (handler != null)
             {
-                FileObject tempDir = getTempFolder();
+                FileLike tempDir = getTempFolder();
 
                 try {
                     handler.createSampleData(protocol, getViewContext(), tempDir);
-                    File[] files = tempDir.getPath().toFile().listFiles();
+                    File[] files = tempDir.toNioPathForRead().toFile().listFiles();
 
                     if (files.length > 0)
                     {
@@ -945,16 +945,16 @@ public class AssayController extends SpringActionController
                 }
                 finally
                 {
-                    FileUtil.deleteDir(tempDir.getPath().toFile());
+                    FileUtil.deleteDir(tempDir.toNioPathForWrite().toFile());
                 }
             }
             return null;
         }
 
-        private FileObject getTempFolder() throws IOException
+        private FileLike getTempFolder() throws IOException
         {
-            FileObject tempDir = FileUtil.getTempDirectoryFileObject();
-            FileObject tempFolder = tempDir.resolveFile("QCSampleData").resolveFile(String.valueOf(Thread.currentThread().getId()));
+            FileLike tempDir = FileUtil.getTempDirectoryFileLike();
+            FileLike tempFolder = tempDir.resolveChild("QCSampleData").resolveChild(String.valueOf(Thread.currentThread().getId()));
             if (!tempFolder.exists())
                 FileUtil.mkdirs(tempFolder);
 

@@ -16,7 +16,6 @@
 
 package org.labkey.api.pipeline;
 
-import org.apache.commons.vfs2.FileObject;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -25,9 +24,9 @@ import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.List;
@@ -53,13 +52,13 @@ public interface PipeRoot extends SecurableResource
     Path getRootNioPath();
 
     @NotNull
-    FileObject getRootFileObject();
+    FileLike getRootFileLike();
 
     @NotNull
     File getLogDirectory();
 
     @NotNull
-    FileObject getLogDirectoryFileObject(boolean forWrite);
+    FileLike getLogDirectoryFileLike(boolean forWrite);
 
     @Nullable
     Path resolveToNioPath(String path);
@@ -77,7 +76,7 @@ public interface PipeRoot extends SecurableResource
     File resolvePath(String relativePath);
 
     @Nullable
-    FileObject resolvePathToFileObject(String relativePath);
+    FileLike resolvePathToFileLike(String relativePath);
 
     /**
      * Get a local directory that can be used for importing (Read/Write)

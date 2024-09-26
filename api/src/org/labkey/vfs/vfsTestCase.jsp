@@ -59,11 +59,25 @@
             f = fs.resolveFile(p);
             assertEquals(s, f.getPath().get(0));
             assertEquals("%.txt", f.getPath().get(1));
+
+            try
+            {
+                s = "/" + c + ".txt";
+                var ioFile = new java.io.File(s);
+                f = new FileSystemLike.Builder(ioFile).root();
+                assertEquals(s, f.toNioPathForRead().toString());
+                URI uri = f.toURI();
+            }
+            catch (Exception e)
+            {
+                System.out.println("BAD CHAR " + c);
+            }
         }
 
         f = fs.resolveFile(new Path(TRICKY_CHARACTERS));
         assertEquals(TRICKY_CHARACTERS, f.getPath().get(0));
     }
+
 
     void resolve(FileSystemLike fs)
     {

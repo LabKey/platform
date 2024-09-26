@@ -15,13 +15,13 @@
  */
 package org.labkey.api.reader;
 
-import org.apache.commons.vfs2.FileObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.FileType;
+import org.labkey.vfs.FileLike;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -63,8 +63,8 @@ public interface DataLoaderService
 
     DataLoader createLoader(File file, String contentType, boolean hasColumnHeaders, Container mvIndicatorContainer, @Nullable FileType guessFormat) throws IOException;
 
-    default DataLoader createLoader(FileObject file, String contentType, boolean hasColumnHeaders, Container mvIndicatorContainer, @Nullable FileType guessFormat) throws IOException
+    default DataLoader createLoader(FileLike file, String contentType, boolean hasColumnHeaders, Container mvIndicatorContainer, @Nullable FileType guessFormat) throws IOException
     {
-        return createLoader(file.getPath().toFile(), contentType, hasColumnHeaders, mvIndicatorContainer, guessFormat);
+        return createLoader(file.toNioPathForRead().toFile(), contentType, hasColumnHeaders, mvIndicatorContainer, guessFormat);
     };
 }

@@ -17,7 +17,6 @@ package org.labkey.api.module;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.apache.commons.vfs2.FileObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -36,6 +35,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.vfs.FileLike;
 import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.File;
@@ -398,7 +398,7 @@ public class MockModule implements Module
 
     @Override
     @NotNull
-    public List<FileObject> getStaticFileDirectories()
+    public List<FileLike> getStaticFileDirectories()
     {
         return Collections.emptyList();
     }

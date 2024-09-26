@@ -16,13 +16,12 @@
 
 package org.labkey.api.assay;
 
-import org.apache.commons.vfs2.FileObject;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.files.virtual.AuthorizedFileSystem;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.io.IOException;
@@ -94,7 +93,7 @@ public class FileUploadDataCollector<ContextType extends AssayRunUploadContext<?
 
     @Override
     @NotNull
-    public Map<String, FileObject> createData(ContextType context) throws IOException, IllegalArgumentException, ExperimentException
+    public Map<String, FileLike> createData(ContextType context) throws IOException, IllegalArgumentException, ExperimentException
     {
         if (_uploadComplete)
             return Collections.emptyMap();
@@ -110,7 +109,7 @@ public class FileUploadDataCollector<ContextType extends AssayRunUploadContext<?
             fileInputIndex++;
         }
 
-        Map<String, FileObject> files = savePostedFiles(context, fileInputs, false, false);
+        Map<String, FileLike> files = savePostedFiles(context, fileInputs, false, false);
 
         // Figure out if we have any data files to work with -
         boolean foundFiles = files.containsKey(_fileInputName);
@@ -120,18 +119,18 @@ public class FileUploadDataCollector<ContextType extends AssayRunUploadContext<?
             // In the case that we're allowing reuse through this codepath
             // use any previously uploaded files that are still selected
             PreviouslyUploadedDataCollector<ContextType> previousCollector = new PreviouslyUploadedDataCollector<>(Collections.emptyMap(), PreviouslyUploadedDataCollector.Type.ReRun);
-            Map<String, FileObject> reusedFiles = previousCollector.createData(context);
+            Map<String, FileLike> reusedFiles = previousCollector.createData(context);
 
             // Merge the two sets of files
-            Map<String, FileObject> mergedFiles = new HashMap<>();
+            Map<String, FileLike> mergedFiles = new HashMap<>();
             int index = 0;
             // Start with the reused ones so we preserve the original "primary" file if possible
-            for (Map.Entry<String, FileObject> entry : reusedFiles.entrySet())
+            for (Map.Entry<String, FileLike> entry : reusedFiles.entrySet())
             {
                 mergedFiles.put(PRIMARY_FILE + (index++ == 0 ? "" : Integer.toString(index)), entry.getValue());
             }
             // Add in any newly uploaded files
-            for (Map.Entry<String, FileObject> entry : files.entrySet())
+            for (Map.Entry<String, FileLike> entry : files.entrySet())
             {
                 mergedFiles.put(PRIMARY_FILE + (index++ == 0 ? "" : Integer.toString(index)), entry.getValue());
             }
