@@ -2824,6 +2824,16 @@ public class ExpDataIterators
                     _orderDependencies.values().forEach(set -> set.remove(typeName));
                 }
             });
+            // if the parent type referenced as parent input, but no data of that type is being created, there is no dependency
+            _orderDependencies.values().forEach(set -> {
+                Set<String> parentTypeNotBeingCreated = new HashSet<>();
+                for (String dep : set)
+                {
+                    if (!allKeys.contains(dep))
+                        parentTypeNotBeingCreated.add(dep);
+                }
+                set.removeAll(parentTypeNotBeingCreated);
+            });
 
             allKeys.forEach(key -> {
                 if (!_orderDependencies.containsKey(key) || _orderDependencies.get(key).isEmpty())
