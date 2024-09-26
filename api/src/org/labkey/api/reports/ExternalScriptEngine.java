@@ -322,7 +322,6 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
     protected int runProcess(ScriptContext context, ProcessBuilder pb, StringBuffer output, long timeout, TimeUnit timeoutUnit)
     {
         String jobGuid = (String)context.getBindings(ScriptContext.ENGINE_SCOPE).get(PIPELINE_JOB_GUID);
-        AutoCloseable canceler = null;
 
         Process proc;
         try
@@ -357,10 +356,9 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
                 try (BufferedReader procReader = Readers.getReader(proc.getInputStream()))
                 {
                     String line;
-                    int count = 0;
+
                     while ((line = procReader.readLine()) != null)
                     {
-                        count++;
                         output.append(line);
                         output.append('\n');
                         if (writer != null)
@@ -373,7 +371,8 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
                     }
                     if (writer != null)
                         writer.flush();
-                    return count;
+                    // Return a value so that the lambda is treated as a Callable, which unlike a Runnable, can throw exceptions
+                    return null;
                 }
             });
 
@@ -400,7 +399,8 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
 
                 appendConsoleOutput(context, output);
 
-                int count = out.get();
+                // Ensure that the Future has completed its work
+                out.get();
 
                 return code;
             }
