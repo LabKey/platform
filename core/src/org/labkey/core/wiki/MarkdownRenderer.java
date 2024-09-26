@@ -33,7 +33,7 @@ public class MarkdownRenderer extends HtmlRenderer
     }
 
     @Override
-    public FormattedHtml format(String text, String sourceDescription)
+    public FormattedHtml format(String text)
     {
         // translate the markdown to html and reuse the html renderer
         MarkdownService markdownService = MarkdownService.get();
@@ -41,21 +41,21 @@ public class MarkdownRenderer extends HtmlRenderer
         {
             try
             {
-                return super.format(markdownService.toHtml(text), sourceDescription);
+                return super.format(markdownService.toHtml(text));
             }
             catch( NoSuchMethodException | ScriptException e)
             {
                 // if the translation from markdown to html doesnt work then show an error message in the view of the html
                 StringBuilder errorMsg = new StringBuilder("<div class=\"labkey-error\"><b>An exception occurred while converting markdown to HTML</b></div><br>The error message was: ");
                 errorMsg.append(e.getMessage());
-                return super.format(errorMsg.toString(), sourceDescription);
+                return super.format(errorMsg.toString());
             }
         }
         else
         {
             // if no markdownService available then show an error message in the view of the html
             String errorMsg = "<div class=\"labkey-error\"><b>No markdown service was available to convert the markdown to HTML</b></div><br>";
-            return super.format(errorMsg, sourceDescription);
+            return super.format(errorMsg);
         }
     }
 }
