@@ -18,11 +18,11 @@ package org.labkey.experiment.api;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.collections4.map.LRUMap;
 import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayFileWriter;
+import org.labkey.api.assay.sample.AssaySampleLookupContext;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.*;
@@ -901,12 +901,15 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
 
     private static class RunTableUpdateService extends AbstractQueryUpdateService
     {
-        private final RemapCache _cache = new RemapCache();
-        private Map<Integer, ExpMaterial> _materialsCache;
+        private final AssaySampleLookupContext _assaySampleLookupContext;
+        private final RemapCache _cache;
 
         RunTableUpdateService(ExpRunTable queryTable)
         {
             super(queryTable);
+
+            _assaySampleLookupContext = new AssaySampleLookupContext(getQueryTable(), FieldKey.fromParts(Column.RowId));
+            _cache = new RemapCache();
         }
 
         @Override
@@ -919,6 +922,27 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 return new TableSelector(getQueryTable(), new SimpleFilter(FieldKey.fromParts(Column.RowId), rowId), null).getMap();
             }
             return null;
+        }
+
+        @Override
+        public List<Map<String, Object>> updateRows(
+            User user,
+            Container container,
+            List<Map<String, Object>> rows,
+            List<Map<String, Object>> oldKeys,
+            BatchValidationException errors,
+            @Nullable Map<Enum, Object> configParameters,
+            Map<String, Object> extraScriptContext
+        ) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+        {
+            var result = super.updateRows(user, container, rows, oldKeys, errors, configParameters, extraScriptContext);
+
+            _assaySampleLookupContext.syncLineage(container, user, errors);
+
+            if (errors.hasErrors())
+                throw errors;
+
+            return result;
         }
 
         @Override
@@ -1032,6 +1056,10 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                                 newValue = newLookupTarget.get(fkTableInfo.getTitleColumn());
                             }
                         }
+
+                        if (!Objects.equals(oldValue, newValue))
+                            _assaySampleLookupContext.markLookup(container, user, col, run);
+
                         appendPropertyIfChanged(auditComment, propertyDescriptor.getNonBlankCaption(), oldValue, newValue);
                     }
                 }
@@ -1191,13 +1219,6 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
 
             svc.deleteExperimentRunsByRowIds(c, user, runIds);
             return runIds.length;
-        }
-
-        private Map<Integer, ExpMaterial> getMaterialsCache()
-        {
-            if (_materialsCache == null)
-                _materialsCache = new LRUMap<>(1_000);
-            return _materialsCache;
         }
     }
 }

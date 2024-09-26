@@ -593,7 +593,6 @@
     }
 
     @Test
-    @Ignore // NK: Ignored while Issue 51316 is being triaged and fixed.
     public void testRunResultLineageUpdate() throws Exception
     {
         // Regression coverage for Issue 45594 and Issue 51316.
