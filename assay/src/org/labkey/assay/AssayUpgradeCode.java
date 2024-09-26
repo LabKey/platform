@@ -2,13 +2,17 @@ package org.labkey.assay;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayResultDomainKind;
+import org.labkey.api.assay.AssaySchema;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.plate.AbstractPlateBasedAssayProvider;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateBasedAssayProvider;
+import org.labkey.api.assay.plate.PlateService;
+import org.labkey.api.assay.plate.PlateSet;
 import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -49,6 +53,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.util.Pair;
+import org.labkey.assay.plate.PlateCache;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.PlateMetadataDomainKind;
 import org.labkey.assay.plate.PlateSetImpl;
@@ -57,11 +62,13 @@ import org.labkey.assay.plate.model.PlateSetLineage;
 import org.labkey.assay.plate.query.PlateTable;
 import org.labkey.assay.query.AssayDbSchema;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -671,6 +678,65 @@ public class AssayUpgradeCode implements UpgradeCode
             }
 
             tx.commit();
+        }
+    }
+
+    private static void addInsertedValues(List<List<?>> insertedValues, Integer rowId, String... types) {
+        for (String type : types) {
+            insertedValues.add(Arrays.asList(rowId, null, null, type));
+        }
+    }
+
+    /**
+     * Called from assay-24.012-24.013.sql, in order to support the ability to add or remove 'built-in' columns from
+     * the plate grid view.
+     */
+    @SuppressWarnings({"UnusedDeclaration"})
+    public static void updateBuiltInColumns(ModuleContext ctx)
+    {
+        if (ctx.isNewInstall())
+            return;
+
+        DbScope scope = AssayDbSchema.getInstance().getSchema().getScope();
+        try (DbScope.Transaction tx = scope.ensureTransaction())
+        {
+            SQLFragment sqlFragment = new SQLFragment("SELECT DISTINCT plateset FROM assay.Plate WHERE assaytype = 'Standard'");
+            ArrayList<Integer> plateSetIds = new SqlSelector(AssayDbSchema.getInstance().getSchema(), sqlFragment).getArrayList(Integer.class);
+
+            Set<Integer> assayPSes = new HashSet<>();
+            Set<Integer> primaryPSes = new HashSet<>();
+            Set<Integer> templatePSes = new HashSet<>();
+
+            for (Integer plateSetId : plateSetIds)
+            {
+                PlateSet PS = PlateService.get().getPlateSet(ContainerFilter.EVERYTHING, plateSetId);
+                if (PS == null)
+                    throw new IllegalStateException("updateBuiltInColumns: Plate Set with plate of id " + plateSetId + " not found.");
+
+                if (PS.isTemplate())
+                    templatePSes.add(PS.getRowId());
+                else if (PS.isStandalone() || PS.isAssay())
+                    assayPSes.add(PS.getRowId());
+                else if (PS.isPrimary())
+                    primaryPSes.add(PS.getRowId());
+            }
+
+            List<List<?>> insertedValues = new LinkedList<>();
+
+            assayPSes.forEach(rowId -> addInsertedValues(insertedValues, rowId, "SampleID", "Type", "WellGroup"));
+            primaryPSes.forEach(rowId -> addInsertedValues(insertedValues, rowId, "SampleID"));
+            templatePSes.forEach(rowId -> addInsertedValues(insertedValues, rowId, "Type", "WellGroup"));
+
+            String insertSql = "INSERT INTO " + AssayDbSchema.getInstance().getTableInfoPlateSetProperty() +
+                    " (plateSetId, propertyId, propertyURI, FieldKey)" +
+                    " VALUES (?, CAST(? AS INT), CAST(? AS VARCHAR), CAST(? AS VARCHAR))";
+            Table.batchExecute(AssayDbSchema.getInstance().getSchema(), insertSql, insertedValues);
+
+            tx.commit();
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeException(e);
         }
     }
 

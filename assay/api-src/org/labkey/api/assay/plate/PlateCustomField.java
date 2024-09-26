@@ -1,6 +1,7 @@
 package org.labkey.api.assay.plate;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.FieldKey;
 
@@ -27,6 +28,12 @@ public class PlateCustomField
     {
         _fieldKey = fieldKey.getName();
         _name = fieldKey.getName();
+    }
+
+    public PlateCustomField(ColumnInfo columnInfo)
+    {
+        _fieldKey = columnInfo.getFieldKey().getName();
+        _name = columnInfo.getName();
     }
 
     public PlateCustomField(String propertyURI)

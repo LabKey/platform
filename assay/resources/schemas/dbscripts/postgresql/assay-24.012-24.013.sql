@@ -7,3 +7,5 @@ ALTER TABLE assay.platesetproperty
 
 ALTER TABLE assay.platesetproperty ALTER COLUMN PropertyURI DROP NOT NULL;
 ALTER TABLE assay.platesetproperty ALTER COLUMN PropertyId DROP NOT NULL;
+
+SELECT core.executeJavaUpgradeCode('updateBuiltInColumns');

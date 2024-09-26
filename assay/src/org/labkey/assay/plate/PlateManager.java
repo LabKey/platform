@@ -302,10 +302,11 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             if (plate == null)
                 throw new IllegalStateException("Unexpected failure. Failed to retrieve plate after save (pre-commit).");
 
+            List<PlateCustomField> builtInFields = getPlateBuiltInFields(container, user);
             if (plateSetId == null)
-                deriveCustomFieldsFromWellData(container, user, plate, data, getPlateBuiltInFields().subList(1, 3));
+                deriveCustomFieldsFromWellData(container, user, plate, data, builtInFields.subList(1, 3));
             else
-                deriveCustomFieldsFromWellData(container, user, plate, data, getPlateBuiltInFields());
+                deriveCustomFieldsFromWellData(container, user, plate, data, builtInFields);
 
             tx.commit();
 
@@ -2184,12 +2185,13 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 .toList();
     }
 
-    public List<PlateCustomField> getPlateBuiltInFields()
+    public List<PlateCustomField> getPlateBuiltInFields(Container container, User user)
     {
+        TableInfo wellTable = getWellTable(container, user);
         return Arrays.asList(
-                new PlateCustomField(FieldKey.fromParts("SampleID")),
-                new PlateCustomField(FieldKey.fromParts("Type")),
-                new PlateCustomField(FieldKey.fromParts("WellGroup"))
+                new PlateCustomField(wellTable.getColumn(WellTable.Column.SampleId.fieldKey())),
+                new PlateCustomField(wellTable.getColumn(WellTable.Column.Type.fieldKey())),
+                new PlateCustomField(wellTable.getColumn(WellTable.Column.WellGroup.fieldKey()))
             );
     }
 
@@ -2209,26 +2211,29 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         Plate plate = requirePlate(container, plateId, "Failed to add plate custom fields.");
         PlateSet plateSet = requirePlateSet(plate, "Failed to add plate custom fields.");
 
-        Domain domain = getPlateMetadataDomain(container, user);
-        if (domain == null)
-            throw new IllegalArgumentException("Failed to add plate custom fields. Custom fields domain does not exist. Try creating fields first.");
-
         List<Map<String, Object>> fieldsToAdd = new ArrayList<>();
         Map<Boolean, List<PlateCustomField>> fieldsPartition = fields.stream().collect(Collectors.partitioningBy(field -> field.getPropertyURI() == null));
 
         // Process metadata fields
-        Set<String> existingPropsMetadata = plate.getCustomFields().stream().map(PlateCustomField::getPropertyURI).collect(Collectors.toSet());
-        for (PlateCustomField field : fieldsPartition.get(false))
+        if (!fieldsPartition.get(false).isEmpty())
         {
-            DomainProperty dp = domain.getPropertyByURI(field.getPropertyURI());
-            if (dp == null)
-                throw new IllegalArgumentException("Failed to add plate custom field. \"" + field.getPropertyURI() + "\" does not exist on domain.");
-            if (!existingPropsMetadata.contains(field.getPropertyURI()))
-                fieldsToAdd.add(Map.of(
-                        "rowId", plateSet.getRowId(),
-                        "propertyId", dp.getPropertyId(),
-                        "propertyURI", dp.getPropertyURI()
-                ));
+            Domain domain = getPlateMetadataDomain(container, user);
+            if (domain == null)
+                throw new IllegalArgumentException("Failed to add plate custom fields. Custom fields domain does not exist. Try creating fields first.");
+
+            Set<String> existingPropsMetadata = plate.getCustomFields().stream().map(PlateCustomField::getPropertyURI).collect(Collectors.toSet());
+            for (PlateCustomField field : fieldsPartition.get(false))
+            {
+                DomainProperty dp = domain.getPropertyByURI(field.getPropertyURI());
+                if (dp == null)
+                    throw new IllegalArgumentException("Failed to add plate custom field. \"" + field.getPropertyURI() + "\" does not exist on domain.");
+                if (!existingPropsMetadata.contains(field.getPropertyURI()))
+                    fieldsToAdd.add(Map.of(
+                            "rowId", plateSet.getRowId(),
+                            "propertyId", dp.getPropertyId(),
+                            "propertyURI", dp.getPropertyURI()
+                    ));
+            }
         }
         // Process built-in fields
         Set<String> existingPropsBuiltIn = plate.getCustomFields().stream().map(PlateCustomField::getFieldKey).collect(Collectors.toSet());
@@ -2414,7 +2419,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     public List<PlateCustomField> setFields(Container container, User user, Integer plateRowId, List<PlateCustomField> fields) throws SQLException, ValidationException
     {
         requirePlate(container, plateRowId, "Failed to set plate custom fields.");
-        List<PlateCustomField> builtInFields = getPlateBuiltInFields();
+        List<PlateCustomField> builtInFields = getPlateBuiltInFields(container, user);
         List<PlateCustomField> metadataFields = getPlateMetadataFields(container, user);
         Set<PlateCustomField> currentFields = new HashSet<>(getFields(container, plateRowId));
 
