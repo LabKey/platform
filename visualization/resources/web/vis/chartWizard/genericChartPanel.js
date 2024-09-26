@@ -1079,6 +1079,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         reportConfig.description = data.reportDescription;
 
         reportConfig["public"] = data.shared;
+        reportConfig.inheritable = data.inheritable;
         reportConfig.thumbnailType =  data.thumbnailType;
         reportConfig.svg = this.chartSVG;
 
@@ -1189,6 +1190,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             name: config.name,
             description: config.description,
             shared: config.shared,
+            inheritable: config.inheritable,
             reportProps: config.reportProps,
             thumbnailURL: config.thumbnailURL
         });

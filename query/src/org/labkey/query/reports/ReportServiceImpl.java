@@ -606,7 +606,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
 
             if (null != report)
             {
-                if ((report.getDescriptor().getFlags() & ReportDescriptor.FLAG_INHERITABLE) != 0)
+                if (report.getDescriptor().isInheritable())
                     return report;
                 else
                     return null;
