@@ -1861,6 +1861,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                     {
                         SampleTimelineAuditEvent event = createAuditRecord(targetContainer, "Sample folder was updated.", userComment, sample, null);
                         Map<String, Object> oldRecordMap = new HashMap<>();
+                        // ContainerName is remapped to "Folder" within SampleTimelineEvent, but we don't
+                        // use "Folder" here because this sample-type field is filtered out of timeline events by default
                         oldRecordMap.put("ContainerName", sourceContainer.getName());
                         Map<String, Object> newRecordMap = new HashMap<>();
                         newRecordMap.put("ContainerName", targetContainer.getName());
