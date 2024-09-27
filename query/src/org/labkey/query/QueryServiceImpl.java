@@ -17,6 +17,8 @@
 
 package org.labkey.query;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.SetValuedMap;
@@ -40,11 +42,40 @@ import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.LabKeyCollectors;
-import org.labkey.api.data.*;
+import org.labkey.api.data.AuditConfigurable;
+import org.labkey.api.data.ColumnHeaderType;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ColumnRenderPropertiesImpl;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ConvertHelper;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.Filter;
+import org.labkey.api.data.ForeignKey;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MethodInfo;
+import org.labkey.api.data.MutableColumnInfo;
+import org.labkey.api.data.Parameter;
+import org.labkey.api.data.QueryLogging;
+import org.labkey.api.data.Results;
+import org.labkey.api.data.ResultsImpl;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SQLGenerationException;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.query.ExpTable;
-import org.labkey.api.files.FileContentService;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.module.Module;
@@ -55,8 +86,31 @@ import org.labkey.api.module.ModuleResourceCacheListener;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.ResourceRootProvider;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.query.*;
+import org.labkey.api.query.AliasManager;
+import org.labkey.api.query.AliasedColumn;
+import org.labkey.api.query.CustomView;
+import org.labkey.api.query.CustomViewChangeListener;
+import org.labkey.api.query.CustomViewInfo;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.InvalidNamedSetException;
+import org.labkey.api.query.MetadataColumnJSON;
+import org.labkey.api.query.MetadataUnavailableException;
+import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.query.QueryChangeListener.QueryPropertyChange;
+import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QueryIconURLProvider;
+import org.labkey.api.query.QueryParam;
+import org.labkey.api.query.QueryParseException;
+import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.SchemaKey;
+import org.labkey.api.query.SimpleUserSchema;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.query.column.ColumnInfoTransformer;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
@@ -100,16 +154,30 @@ import org.labkey.query.persist.CstmView;
 import org.labkey.query.persist.ExternalSchemaDef;
 import org.labkey.query.persist.LinkedSchemaDef;
 import org.labkey.query.persist.QueryDef;
+import org.labkey.query.persist.QueryDefCache;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.persist.QuerySnapshotDef;
-import org.labkey.query.sql.*;
+import org.labkey.query.sql.CalculatedExpressionColumn;
+import org.labkey.query.sql.Method;
+import org.labkey.query.sql.QDot;
+import org.labkey.query.sql.QExpr;
+import org.labkey.query.sql.QField;
+import org.labkey.query.sql.QIfDefined;
+import org.labkey.query.sql.QInternalExpr;
+import org.labkey.query.sql.QMethodCall;
+import org.labkey.query.sql.QNode;
+import org.labkey.query.sql.QQuery;
+import org.labkey.query.sql.QRowStar;
+import org.labkey.query.sql.QUnion;
+import org.labkey.query.sql.Query;
+import org.labkey.query.sql.QueryRelation;
+import org.labkey.query.sql.QuerySelectView;
+import org.labkey.query.sql.QueryTableInfo;
+import org.labkey.query.sql.SqlBuilder;
+import org.labkey.query.sql.SqlParser;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.web.servlet.mvc.Controller;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
-
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
@@ -946,6 +1014,24 @@ public class QueryServiceImpl implements QueryService
             ret.put(queryDef.getName(), queryDef);
 
         return ret.get(name);
+    }
+
+    @Override
+    public @Nullable TableType getQueryDefMetadata(Container container, int rowId)
+    {
+        TableType ret = null;
+        QueryDef def = QueryDefCache.getQueryDefById(container, rowId);
+
+        if (null != def)
+        {
+            TablesDocument tables = def.getParsedMetadata().getTablesDocument(new ArrayList<>());
+            if (tables != null)
+            {
+                ret = tables.getTables().getTableArray(0);
+            }
+        }
+
+        return ret;
     }
 
     /**

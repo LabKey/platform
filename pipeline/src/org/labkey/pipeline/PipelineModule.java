@@ -90,7 +90,7 @@ import org.labkey.pipeline.mule.RemoteServerStartup;
 import org.labkey.pipeline.mule.filters.TaskJmsSelectorFilter;
 import org.labkey.pipeline.status.StatusController;
 import org.labkey.pipeline.trigger.PipelineTriggerRegistryImpl;
-import org.labkey.pipeline.validators.PipelineSetupValidator;
+import org.labkey.pipeline.validators.PipelineSetupValidatorFactory;
 import org.labkey.pipeline.xml.ExecTaskType;
 import org.labkey.pipeline.xml.ScriptTaskType;
 
@@ -212,7 +212,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         SiteValidationService svc = SiteValidationService.get();
         if (null != svc)
         {
-            svc.registerProvider(getName(), new PipelineSetupValidator());
+            svc.registerProviderFactory(getName(), new PipelineSetupValidatorFactory());
         }
 
         AuditLogService.get().registerAuditType(new ProtocolManagementAuditProvider());

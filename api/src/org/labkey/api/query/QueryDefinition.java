@@ -16,6 +16,7 @@
 
 package org.labkey.api.query;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
@@ -29,8 +30,8 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.TableType;
+import org.labkey.data.xml.TablesDocument;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
@@ -115,6 +116,7 @@ public interface QueryDefinition
 
     String getSql();
     String getMetadataXml();
+    TablesDocument getMetadataTablesDocument();
     String getDescription();
     String getModuleName();
 

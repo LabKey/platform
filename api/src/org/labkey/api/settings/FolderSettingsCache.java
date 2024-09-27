@@ -27,12 +27,6 @@ import java.beans.PropertyChangeEvent;
 import java.util.Collection;
 import java.util.Collections;
 
-/**
- * User: adam
- * Date: 12/15/13
- * Time: 10:31 AM
- */
-
 // Folder settings inherit all the way up the folder tree. All the property sets involved should be cached, but the walk
 // up the tree is a potentially expensive operation just to format a date or number. So, we cache the set of resolved
 // properties on a per-container basis and clear the entire cache on every change of look and feel settings.
