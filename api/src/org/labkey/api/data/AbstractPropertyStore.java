@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.data.PropertyManager.PropertyMap;
+import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.security.Encryption;
 import org.labkey.api.security.User;
 
@@ -77,37 +78,37 @@ public abstract class AbstractPropertyStore implements PropertyStore
     }
 
     @Override
-    public PropertyMap getWritableProperties(User user, Container container, String category, boolean create)
+    public WritablePropertyMap getWritableProperties(User user, Container container, String category, boolean create)
     {
         PropertyMap existingMap = _cache.getProperties(user, container, category);
         if (existingMap != null)
         {
-            return new PropertyMap(existingMap);
+            return new WritablePropertyMap(existingMap);
         }
 
         if (create)
         {
-            // Assign a dummy ID we can use later to tell if we need to insert a brand new set during save
-            return new PropertyMap(-1, user, container.getId(), category, getPreferredPropertyEncryption(), this);
+            // Assign a dummy ID we can use later to tell if we need to insert a brand-new set during save
+            return new WritablePropertyMap(-1, user, container.getId(), category, getPreferredPropertyEncryption(), this);
         }
 
         return null;
     }
 
     @Override
-    public PropertyMap getWritableProperties(User user, String category, boolean create)
+    public WritablePropertyMap getWritableProperties(User user, String category, boolean create)
     {
         return getWritableProperties(user, ContainerManager.getRoot(), category, create);
     }
 
     @Override
-    public PropertyMap getWritableProperties(Container container, String category, boolean create)
+    public WritablePropertyMap getWritableProperties(Container container, String category, boolean create)
     {
         return getWritableProperties(PropertyManager.SHARED_USER, container, category, create);
     }
 
     @Override
-    public PropertyMap getWritableProperties(String category, boolean create)
+    public WritablePropertyMap getWritableProperties(String category, boolean create)
     {
         return getWritableProperties(ContainerManager.getRoot(), category, create);
     }

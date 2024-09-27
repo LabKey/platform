@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.apache.commons.collections4.map.AbstractMapDecorator;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -109,25 +110,25 @@ public class PropertyManager
     }
 
     /** For global system properties that get attached to the root container. */
-    public static PropertyMap getWritableProperties(String category, boolean create)
+    public static WritablePropertyMap getWritableProperties(String category, boolean create)
     {
-        PropertyMap ret = STORE.getWritableProperties(category, create);
+        WritablePropertyMap ret = STORE.getWritableProperties(category, create);
         assert assertWritableProperties(ret, create);
         return ret;
     }
 
 
-    public static PropertyMap getWritableProperties(Container container, String category, boolean create)
+    public static WritablePropertyMap getWritableProperties(Container container, String category, boolean create)
     {
-        PropertyMap ret = STORE.getWritableProperties(container, category, create);
+        WritablePropertyMap ret = STORE.getWritableProperties(container, category, create);
         assert assertWritableProperties(ret, create);
         return ret;
     }
 
 
-    public static PropertyMap getWritableProperties(User user, Container container, String category, boolean create)
+    public static WritablePropertyMap getWritableProperties(User user, Container container, String category, boolean create)
     {
-        PropertyMap ret = STORE.getWritableProperties(user, container, category, create);
+        WritablePropertyMap ret = STORE.getWritableProperties(user, container, category, create);
         assert assertWritableProperties(ret, create);
         return ret;
     }
@@ -226,9 +227,9 @@ public class PropertyManager
      * Get a list of categories optionally filtered by user, container, and category prefix.
      * Returns entries from unencrypted store only.
      *
-     * @param user   User of the property. If null properties for all users (NOT JUST THE NULL USER) will be found.
-     * @param container Container to search for. If null properties of all containers will be found
-     * @param categoryPrefix Prefix to search for. If null properties of all categories will be found
+     * @param user   User of the property. If null, properties for all users (NOT JUST THE NULL USER) will be found.
+     * @param container Container to search for. If null, properties of all containers will be found
+     * @param categoryPrefix Prefix to search for. If null, properties of all categories will be found
      * @return list of categories array containing found properties
      */
     public static List<String> getCategoriesByPrefix(@Nullable User user, @Nullable Container container, @Nullable String categoryPrefix)
@@ -273,7 +274,7 @@ public class PropertyManager
         return new TableSelector(prop.getTableInfoPropertyEntries(), filter, sort).getArray(PropertyEntry.class);
     }
 
-    public static class PropertyMap extends HashMap<String, String> implements InitializingBean
+    public static class PropertyMap extends AbstractMapDecorator<String, String> implements InitializingBean
     {
         private int _set;
         @NotNull
@@ -289,20 +290,14 @@ public class PropertyManager
         private Set<Object> removedKeys = null;
         private boolean _locked = false;
 
-        /** Clone the existing map, creating our own copy of the underlying data */
-        PropertyMap(PropertyMap copy)
-        {
-            super(copy);
-            _set = copy._set;
-            _user = copy._user;
-            _objectId = copy._objectId;
-            _category = copy._category;
-            _propertyEncryption = copy._propertyEncryption;
-            _store = copy._store;
-        }
-
         PropertyMap(int set, @NotNull User user, @NotNull String objectId, @NotNull String category, PropertyEncryption propertyEncryption, AbstractPropertyStore store)
         {
+            this(set, user, objectId, category, propertyEncryption, store, new HashMap<>()); // TODO: Wrap with unmodified!
+        }
+
+        protected PropertyMap(int set, @NotNull User user, @NotNull String objectId, @NotNull String category, PropertyEncryption propertyEncryption, AbstractPropertyStore store, Map<String, String> map)
+        {
+            super(map);
             _set = set;
             _user = user;
             _objectId = objectId;
@@ -311,12 +306,28 @@ public class PropertyManager
             _store = store;
         }
 
-
         int getSet()
         {
             return _set;
         }
 
+        @NotNull
+        public User getUser()
+        {
+            return _user;
+        }
+
+        @NotNull
+        public String getObjectId()
+        {
+            return _objectId;
+        }
+
+        @NotNull
+        public String getCategory()
+        {
+            return _category;
+        }
 
         PropertyEncryption getEncryptionAlgorithm()
         {
@@ -557,25 +568,6 @@ public class PropertyManager
             }
         }
 
-        @NotNull
-        public String getObjectId()
-        {
-            return _objectId;
-        }
-
-
-        @NotNull
-        public User getUser()
-        {
-            return _user;
-        }
-
-        @NotNull
-        public String getCategory()
-        {
-            return _category;
-        }
-
         public void lock()
         {
             _locked = true;
@@ -588,7 +580,25 @@ public class PropertyManager
     }
 
     /**
-     * In general, callers should always go through PropertyMap.delete(). This is exposed here for cases
+     * This subclass is mutable and can be saved, deleted, etc.
+     */
+    public static class WritablePropertyMap extends PropertyMap
+    {
+        /** Clone the existing map, creating our own copy of the underlying data */
+        WritablePropertyMap(PropertyMap copy)
+        {
+            super(copy._set, copy._user, copy._objectId, copy._category, copy._propertyEncryption, copy._store, new HashMap<>(copy));
+        }
+
+        /** New empty, writable map */
+        WritablePropertyMap(int set, @NotNull User user, @NotNull String objectId, @NotNull String category, PropertyEncryption propertyEncryption, AbstractPropertyStore store)
+        {
+            super(set, user, objectId, category, propertyEncryption, store, new HashMap<>());
+        }
+    }
+
+    /**
+     * In general, callers should always go through WritablePropertyMap.delete(). This is exposed here for cases
      * where we can't create a PropertyMap because we fail to decrypt the values previously stored, and need
      * a direct way to delete the properties. See issue 18938
      */
