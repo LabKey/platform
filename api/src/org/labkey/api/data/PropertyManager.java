@@ -16,7 +16,14 @@
 
 package org.labkey.api.data;
 
+import org.apache.commons.collections4.IterableMap;
+import org.apache.commons.collections4.MapIterator;
+import org.apache.commons.collections4.collection.UnmodifiableCollection;
+import org.apache.commons.collections4.iterators.EntrySetMapIterator;
+import org.apache.commons.collections4.iterators.UnmodifiableMapIterator;
 import org.apache.commons.collections4.map.AbstractMapDecorator;
+import org.apache.commons.collections4.map.UnmodifiableEntrySet;
+import org.apache.commons.collections4.set.UnmodifiableSet;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -25,6 +32,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.collections.CollectionUtils;
 import org.labkey.api.data.DbScope.Transaction;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.Encryption.EncryptionMigrationHandler;
@@ -158,7 +166,7 @@ public class PropertyManager
     {
         String value = getCoalescedPropertyForContainer(user, c, category, name);
 
-        if(includeNullUser && value == null && user != SHARED_USER)
+        if (includeNullUser && value == null && user != SHARED_USER)
             value = getCoalescedPropertyForContainer(SHARED_USER, c, category, name);
 
         return value;
@@ -203,12 +211,12 @@ public class PropertyManager
             String value = getProperty(user, curContainer, category, name);
             Map<Integer, String> containerMap = new HashMap<>();
 
-            if(value != null)
+            if (value != null)
                 containerMap.put(user.getUserId(), value);
             else if (includeNullContainers)
                 containerMap.put(0, value);
 
-            if(!containerMap.isEmpty())
+            if (!containerMap.isEmpty())
                 map.put(curContainer, containerMap);
 
             curContainer = curContainer.getParent();
@@ -274,6 +282,9 @@ public class PropertyManager
         return new TableSelector(prop.getTableInfoPropertyEntries(), filter, sort).getArray(PropertyEntry.class);
     }
 
+    // Instances of this specific class are guaranteed to be immutable; all mutating Map methods (put(), remove(), etc.)
+    // will throw exceptions. keySet(), values(), entrySet(), and mapIterator() return immutable data structures.
+    // Instances of subclass WritablePropertyMap ARE mutable and can be saved, deleted, etc.
     public static class PropertyMap extends AbstractMapDecorator<String, String> implements InitializingBean
     {
         private int _set;
@@ -290,11 +301,6 @@ public class PropertyManager
         private Set<Object> removedKeys = null;
         private boolean _locked = false;
 
-        PropertyMap(int set, @NotNull User user, @NotNull String objectId, @NotNull String category, PropertyEncryption propertyEncryption, AbstractPropertyStore store)
-        {
-            this(set, user, objectId, category, propertyEncryption, store, new HashMap<>()); // TODO: Wrap with unmodified!
-        }
-
         protected PropertyMap(int set, @NotNull User user, @NotNull String objectId, @NotNull String category, PropertyEncryption propertyEncryption, AbstractPropertyStore store, Map<String, String> map)
         {
             super(map);
@@ -304,6 +310,13 @@ public class PropertyManager
             _category = category;
             _propertyEncryption = propertyEncryption;
             _store = store;
+            validate(map);
+        }
+
+        protected void validate(Map<String, String> map)
+        {
+            if (CollectionUtils.isModifiableCollectionMapOrArray(map))
+                throw new IllegalStateException("Map is modifiable!");
         }
 
         int getSet()
@@ -371,7 +384,7 @@ public class PropertyManager
         @Override
         public String toString()
         {
-            return "PropertyMap: " + _objectId + ", " + _category + ", " + _user.getDisplayName(null) + ": " + super.toString();
+            return getClass().getSimpleName() + ": " + _objectId + ", " + _category + ", " + _user.getDisplayName(null) + ": " + super.toString();
         }
 
         @Override
@@ -392,28 +405,6 @@ public class PropertyManager
             removedKeys.addAll(keySet());
             _modified = true;
             super.clear();
-        }
-
-
-        @NotNull
-        @Override
-        public Set<String> keySet()
-        {
-            return Collections.unmodifiableSet(super.keySet());
-        }
-
-        @NotNull
-        @Override
-        public Collection<String> values()
-        {
-            return Collections.unmodifiableCollection(super.values());
-        }
-
-        @NotNull
-        @Override
-        public Set<Map.Entry<String, String>> entrySet()
-        {
-            return Collections.unmodifiableSet(super.entrySet());
         }
 
         @Override
@@ -594,6 +585,44 @@ public class PropertyManager
         WritablePropertyMap(int set, @NotNull User user, @NotNull String objectId, @NotNull String category, PropertyEncryption propertyEncryption, AbstractPropertyStore store)
         {
             super(set, user, objectId, category, propertyEncryption, store, new HashMap<>());
+        }
+
+        @Override
+        protected void validate(Map<String, String> map)
+        {
+            // This class allows modifiable maps
+        }
+
+        // The following four overrides are not needed in PropertyMap since instances of that class are guaranteed to
+        // be unmodifiable.
+
+        @Override
+        public MapIterator<String, String> mapIterator() {
+            Map<String, String> map = decorated();
+            if (map instanceof IterableMap) {
+                final MapIterator<String, String> it = ((IterableMap<String, String>) decorated()).mapIterator();
+                return UnmodifiableMapIterator.unmodifiableMapIterator(it);
+            }
+            final MapIterator<String, String> it = new EntrySetMapIterator<>(map);
+            return UnmodifiableMapIterator.unmodifiableMapIterator(it);
+        }
+
+        @Override
+        public @NotNull Set<Map.Entry<String, String>> entrySet() {
+            final Set<Map.Entry<String, String>> set = super.entrySet();
+            return UnmodifiableEntrySet.unmodifiableEntrySet(set);
+        }
+
+        @Override
+        public @NotNull Set<String> keySet() {
+            final Set<String> set = super.keySet();
+            return UnmodifiableSet.unmodifiableSet(set);
+        }
+
+        @Override
+        public @NotNull Collection<String> values() {
+            final Collection<String> coll = super.values();
+            return UnmodifiableCollection.unmodifiableCollection(coll);
         }
     }
 
