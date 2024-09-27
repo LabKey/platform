@@ -63,6 +63,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 import org.springframework.validation.BindException;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
@@ -102,7 +103,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     private Map<String, FileLike> _uploadedData;
     private boolean _successfulUploadComplete;
     private String _uploadAttemptID = GUID.makeGUID();
-    private Map<DomainProperty, File> _additionalFiles;
+    private Map<DomainProperty, FileLike> _additionalFiles;
     private Integer _batchId;
     private Integer _reRunId;
     private String _severityLevel;
@@ -112,7 +113,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     private ExpRun _reRun;
     private boolean _allowCrossRunFileInputs;
 
-    public static File BLANK_FILE = new File("");
+    public static FileLike BLANK_FILE = FileSystemLike.wrapFile(new File("/.blank_file"));
 
     public List<? extends DomainProperty> getRunDataProperties()
     {
@@ -147,7 +148,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     protected Map<DomainProperty, String> getPropertyMapFromRequest(List<? extends DomainProperty> columns) throws ExperimentException
     {
         Map<DomainProperty, String> properties = new LinkedHashMap<>();
-        Map<DomainProperty, File> additionalFiles = getAdditionalPostedFiles(columns);
+        Map<DomainProperty, FileLike> additionalFiles = getAdditionalPostedFiles(columns);
         for (DomainProperty pd : columns)
         {
             String propName = UploadWizardAction.getInputName(pd);
@@ -163,7 +164,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
             }
 
             if (additionalFiles.containsKey(pd))
-                properties.put(pd, additionalFiles.get(pd).getPath());
+                properties.put(pd, additionalFiles.get(pd).toNioPathForRead().toString());
             else
                 properties.put(pd, value);
         }
@@ -301,7 +302,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
         return _uploadedData;
     }
 
-    public Map<DomainProperty, File> getAdditionalFiles()
+    public Map<DomainProperty, FileLike> getAdditionalFiles()
     {
         return _additionalFiles;
     }
@@ -315,7 +316,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
 
     }
 
-    public Map<DomainProperty, File> getAdditionalPostedFiles(List<? extends DomainProperty> pds) throws ExperimentException
+    public Map<DomainProperty, FileLike> getAdditionalPostedFiles(List<? extends DomainProperty> pds) throws ExperimentException
     {
         if (_additionalFiles == null)
         {
@@ -338,8 +339,8 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
                 {
                     // Initialize member variable so we know that we've already tried to save the posted files in case of error
                     _additionalFiles = new HashMap<>();
-                    Map<String, File> postedFiles = writer.savePostedFiles(this, fileParameters.keySet(), false, false);
-                    for (Map.Entry<String, File> entry : postedFiles.entrySet())
+                    Map<String, FileLike> postedFiles = writer.savePostedFiles(this, fileParameters.keySet(), false, false);
+                    for (Map.Entry<String, FileLike> entry : postedFiles.entrySet())
                         _additionalFiles.put(fileParameters.get(entry.getKey()), entry.getValue());
 
                     File previousFile;
@@ -363,10 +364,11 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
 
                                 // Only add hidden file parameter if it is a valid file in the pipeline root directory and
                                 // a new file hasn't been uploaded for that parameter
-                                if (previousFile.isFile() && FileUtils.directoryContains(getAssayDirectory(getContainer(), null), previousFile)
+                                if (previousFile.isFile()
+                                        && FileUtils.directoryContains(getAssayDirectory(getContainer(), null), previousFile)
                                         && !_additionalFiles.containsKey(fileParameters.get(fileParam)))
                                 {
-                                    _additionalFiles.put(fileParameters.get(fileParam), previousFile);
+                                    _additionalFiles.put(fileParameters.get(fileParam), FileSystemLike.wrapFile(previousFile));
                                 }
                             }
                         }

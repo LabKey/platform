@@ -1,5 +1,7 @@
 package org.labkey.vfs;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Path;
@@ -52,6 +54,8 @@ public class FileSystemLocal extends AbstractFileSystemLike
     }
 
 
+    @JsonSerialize(using = FileLike.FileLikeSerializer.class)
+    @JsonDeserialize(using = FileLike.FileLikeDeserializer.class)
     class _FileLike extends AbstractFileLike
     {
         final File file;
@@ -173,6 +177,8 @@ public class FileSystemLocal extends AbstractFileSystemLike
         @Override
         public boolean equals(Object obj)
         {
+            // assert to find bad usages
+            assert !(obj instanceof File);
             if (!(obj instanceof _FileLike other))
                 return false;
             return file.equals(other.file);

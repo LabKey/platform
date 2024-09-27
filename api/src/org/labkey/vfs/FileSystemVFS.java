@@ -1,5 +1,8 @@
 package org.labkey.vfs;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.vfs2.FileContent;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSystemException;
@@ -15,7 +18,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 
 public class FileSystemVFS extends AbstractFileSystemLike
@@ -57,7 +59,8 @@ public class FileSystemVFS extends AbstractFileSystemLike
             path = path.absolute().normalize();
             if (null == path)
                 throw new IllegalArgumentException("Path could not be resolved");
-            var vfsPath = vfsRoot.resolveFile(toURIPath(path));
+            var encRelativePath = StringUtils.strip(toURIPath(path),"/");
+            var vfsPath = vfsRoot.resolveFile(encRelativePath);
             return new _FileLike(path, vfsPath);
         }
         catch (FileSystemException e)
@@ -67,6 +70,8 @@ public class FileSystemVFS extends AbstractFileSystemLike
     }
 
 
+    @JsonSerialize(using = FileLike.FileLikeSerializer.class)
+    @JsonDeserialize(using = FileLike.FileLikeDeserializer.class)
     class _FileLike extends AbstractFileLike
     {
         final FileObject vfs;

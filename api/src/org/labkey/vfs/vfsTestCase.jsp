@@ -24,6 +24,10 @@
 <%@ page import="org.labkey.vfs.FileLike" %>
 <%@ page import="static org.junit.Assert.*" %>
 <%@ page import="java.util.HashSet" %>
+<%@ page import="org.labkey.api.util.JsonUtil" %>
+<%@ page import="com.fasterxml.jackson.databind.ObjectMapper" %>
+<%@ page import="java.io.ByteArrayOutputStream" %>
+<%@ page import="java.io.ByteArrayInputStream" %>
 
 
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
@@ -111,6 +115,25 @@
         assertEquals(TRICKY_CHARACTERS, f.getPath().get(0));
     }
 
+    void serialize(FileSystemLike fs) throws Exception
+    {
+        ObjectMapper m = JsonUtil.DEFAULT_MAPPER;
+
+        var root = fs.getRoot();
+        var bos = new ByteArrayOutputStream();
+        m.writeValue(bos, root);
+        var root2 = m.readValue(new ByteArrayInputStream(bos.toByteArray()), FileLike.class);
+        assertNotNull(root2);
+        assertEquals(root, root2);
+
+        var file = root.resolveFile(Path.parse("/a/b/c.txt"));
+        bos = new ByteArrayOutputStream();
+        m.writeValue(bos, file);
+        var file2 = m.readValue(new ByteArrayInputStream(bos.toByteArray()), FileLike.class);
+        assertNotNull(file2);
+        assertEquals(file, file2);
+    }
+
 
     void resolve(FileSystemLike fs)
     {
@@ -141,6 +164,7 @@
         list(fs);
         createFile(fs);
         mkdir(fs);
+        serialize(fs);
     }
 
     @Test
@@ -152,5 +176,6 @@
         list(fs);
         createFile(fs);
         mkdir(fs);
+        serialize(fs);
     }
 %>

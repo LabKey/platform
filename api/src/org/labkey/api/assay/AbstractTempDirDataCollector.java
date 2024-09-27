@@ -26,7 +26,6 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.vfs.FileLike;
 
 import java.io.File;
@@ -182,12 +181,12 @@ public abstract class AbstractTempDirDataCollector<ContextType extends AssayRunU
     @Override
     public Map<String, FileLike> uploadComplete(ContextType context, @Nullable ExpRun run) throws ExperimentException
     {
-        Map<File, String> fileToName = new HashMap<>();
+        Map<FileLike, String> fileToName = new HashMap<>();
         Map<String, FileLike> uploadedData = context.getUploadedData();
         Map<String, FileLike> result = new HashMap<>(uploadedData);
         for (Map.Entry<String, FileLike> entry : uploadedData.entrySet())
         {
-            fileToName.put(entry.getValue().toNioPathForRead().toFile(), entry.getKey());
+            fileToName.put(entry.getValue(), entry.getKey());
         }
 
         // Copy the data files from the temp directory into the real assay directory, and fix up any references
@@ -209,7 +208,7 @@ public abstract class AbstractTempDirDataCollector<ContextType extends AssayRunU
                     }
                     for (ExpData expData : allData)
                     {
-                        if (tempDirFile.equals(expData.getFile()))
+                        if (tempDirFile.equals(expData.getFileLike()))
                         {
                             expData.setDataFileURI(assayDirFile.toURI());
                             expData.save(context.getUser());
