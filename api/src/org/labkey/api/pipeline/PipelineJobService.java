@@ -120,7 +120,7 @@ public interface PipelineJobService extends TaskPipelineRegistry
 
     @NotNull LocationType getLocationType();
 
-    /** @return all of the engines that are currently known to the pipeline module */
+    /** @return all the engines that are currently known to the pipeline module */
     List<? extends RemoteExecutionEngine<?>> getRemoteExecutionEngines();
 
     /** Registers a remote execution engine. Intended for calling during module startup */
@@ -131,6 +131,21 @@ public interface PipelineJobService extends TaskPipelineRegistry
      * @param installPath if non-null, use this as the path to the file instead of the standard tools directory
      */
     String getExecutablePath(String exeRel, @Nullable String installPath, String packageName, String ver, Logger jobLogger) throws FileNotFoundException;
+
+    interface Closer extends AutoCloseable
+    {
+        @Override
+        void close();
+    }
+
+    /**
+     * Tracks processes launched by pipeline jobs so they can be killed if the pipeline job gets canceled.
+     * Callers should invoke the close() on the returned object when the process completes normally and no longer
+     * needs to be tracked
+     */
+    Closer trackForJobCancellation(String jobGuid, Process process);
+
+    void cancelForJob(String jobGuid);
 
     /**
      * Similar to getExecutablePath(), but allows resolution of non-executable tool directory files

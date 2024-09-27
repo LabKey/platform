@@ -19,11 +19,6 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.view.ActionURL;
-/*
- * User: Karl Lum
- * Date: Jul 15, 2008
- * Time: 2:53:11 PM
- */
 
 public interface QueryUrls extends UrlProvider
 {
@@ -42,4 +37,5 @@ public interface QueryUrls extends UrlProvider
      * @param query Query name
      */
     ActionURL urlExecuteQuery(Container c, String schema, String query);
+    ActionURL urlMetadataQuery(Container c, String schemaName, String queryName);
 }

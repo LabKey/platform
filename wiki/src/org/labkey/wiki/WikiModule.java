@@ -82,7 +82,7 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
         SiteValidationService svc = SiteValidationService.get();
         if (null != svc)
         {
-            svc.registerProvider(getName(), new WikiValidationProvider());
+            svc.registerProviderFactory(getName(), new WikiValidationProviderFactory());
         }
     }
 
