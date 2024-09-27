@@ -25,7 +25,6 @@ import org.apache.commons.collections4.map.AbstractMapDecorator;
 import org.apache.commons.collections4.map.UnmodifiableEntrySet;
 import org.apache.commons.collections4.set.UnmodifiableSet;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -42,6 +41,7 @@ import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.logging.LogHelper;
 import org.springframework.beans.factory.InitializingBean;
 
 import java.util.Collection;
@@ -57,8 +57,8 @@ public class PropertyManager
 {
     public static final User SHARED_USER = User.guest;  // Shared properties are saved with the guest user
 
-    private static final Logger _log = LogManager.getLogger(PropertyManager.class);
-    private static final PropertySchema prop = PropertySchema.getInstance();
+    private static final Logger LOG = LogHelper.getLogger(PropertyManager.class, "Property map save and delete operations");
+    private static final PropertySchema PROP_SCHEMA = PropertySchema.getInstance();
     private static final NormalPropertyStore STORE = new NormalPropertyStore();
     private static final PropertySchema SCHEMA = PropertySchema.getInstance();
     private static final LockManager<PropertyMap> PROPERTY_MAP_LOCK_MANAGER = new LockManager<>();
@@ -158,7 +158,6 @@ public class PropertyManager
      * This is designed to coalesce up the container hierarchy, returning the first non-null value
      * If a userId is provided, it first traverses containers using that user. If no value is found,
      * it then defaults to all users (i.e. User.guest), then retry all containers
-     *
      * NOTE: this does not test permissions. Callers should ensure the requested user has the appropriate
      * permissions to read these properties
      */
@@ -252,7 +251,7 @@ public class PropertyManager
 
         Sort sort = new Sort("UserId,ObjectId,Category,Name");
 
-        return new TableSelector(prop.getTableInfoPropertyEntries(), Collections.singleton("Category"), filter, sort).getArrayList(String.class);
+        return new TableSelector(PROP_SCHEMA.getTableInfoPropertyEntries(), Collections.singleton("Category"), filter, sort).getArrayList(String.class);
     }
 
     /**
@@ -279,7 +278,7 @@ public class PropertyManager
 
         Sort sort = new Sort("UserId,ObjectId,Category,Name");
 
-        return new TableSelector(prop.getTableInfoPropertyEntries(), filter, sort).getArray(PropertyEntry.class);
+        return new TableSelector(PROP_SCHEMA.getTableInfoPropertyEntries(), filter, sort).getArray(PropertyEntry.class);
     }
 
     // Instances of this specific class are guaranteed to be immutable; all mutating Map methods (put(), remove(), etc.)
@@ -288,17 +287,14 @@ public class PropertyManager
     public static class PropertyMap extends AbstractMapDecorator<String, String> implements InitializingBean
     {
         private int _set;
-        @NotNull
-        private final User _user;
-        @NotNull
-        private final String _objectId;
-        @NotNull
-        private final String _category;
+        private final @NotNull User _user;
+        private final @NotNull String _objectId;
+        private final @NotNull String _category;
         private final PropertyEncryption _propertyEncryption;
         private final AbstractPropertyStore _store;
 
         private boolean _modified = false;
-        private Set<Object> removedKeys = null;
+        private Set<Object> _removedKeys = null;
         private boolean _locked = false;
 
         protected PropertyMap(int set, @NotNull User user, @NotNull String objectId, @NotNull String category, PropertyEncryption propertyEncryption, AbstractPropertyStore store, Map<String, String> map)
@@ -351,11 +347,11 @@ public class PropertyManager
         public String remove(Object key)
         {
             checkLocked();
-            if (null == removedKeys)
-                removedKeys = new HashSet<>();
+            if (null == _removedKeys)
+                _removedKeys = new HashSet<>();
             if (containsKey(key))
             {
-                removedKeys.add(key);
+                _removedKeys.add(key);
                 _modified = true;
             }
             return super.remove(key);
@@ -374,8 +370,8 @@ public class PropertyManager
         public String put(String key, @Nullable String value)
         {
             checkLocked();
-            if (null != removedKeys)
-                removedKeys.remove(key);
+            if (null != _removedKeys)
+                _removedKeys.remove(key);
             if (!StringUtils.equals(value, get(key)))
                 _modified = true;
             return super.put(key, value);
@@ -400,9 +396,9 @@ public class PropertyManager
         public void clear()
         {
             checkLocked();
-            if (null == removedKeys)
-                removedKeys = new HashSet<>();
-            removedKeys.addAll(keySet());
+            if (null == _removedKeys)
+                _removedKeys = new HashSet<>();
+            _removedKeys.addAll(keySet());
             _modified = true;
             super.clear();
         }
@@ -417,9 +413,8 @@ public class PropertyManager
 
             if (!_user.equals(that._user)) return false;
             if (!_category.equals(that._category)) return false;
-            if (!_objectId.equals(that._objectId)) return false;
 
-            return true;
+            return _objectId.equals(that._objectId);
         }
 
         @Override
@@ -480,7 +475,7 @@ public class PropertyManager
             ReentrantLock lock = PROPERTY_MAP_LOCK_MANAGER.getLock(this);
             try (Transaction transaction = SCHEMA.getSchema().getScope().ensureTransaction(DbScope.FINAL_COMMIT_UNLOCK_TRANSACTION_KIND, lock))
             {
-                _log.debug(String.format("<PropertyMap.save() [%d, %s, %s, %d, map.hashCode: %d, lock: %s]>", _user.getUserId(), _objectId, _category, _set, hashCode(), lock.toString()));
+                LOG.debug("<PropertyMap.save() [{}, {}, {}, {}, map.hashCode: {}, lock: {}]>", _user.getUserId(), _objectId, _category, _set, hashCode(), lock.toString());
 
                 Container container = ContainerManager.getForId(_objectId);
                 if (container == null)
@@ -515,9 +510,9 @@ public class PropertyManager
                 }
 
                 // delete removed properties
-                if (null != removedKeys)
+                if (null != _removedKeys)
                 {
-                    for (Object removedKey : removedKeys)
+                    for (Object removedKey : _removedKeys)
                     {
                         String name = toNullString(removedKey);
                         saveValue(name, null);
@@ -526,9 +521,8 @@ public class PropertyManager
 
                 // set properties
                 // we're not tracking modified or not, so set them all
-                for (Object entry : entrySet())
+                for (Map.Entry<String, String> e : entrySet())
                 {
-                    Map.Entry e = (Map.Entry) entry;
                     String name = toNullString(e.getKey());
                     String value = toNullString(e.getValue());
                     saveValue(name, value);
@@ -537,7 +531,7 @@ public class PropertyManager
                 transaction.addCommitTask(() -> _store.clearCache(PropertyMap.this), DbScope.CommitTaskOption.IMMEDIATE, DbScope.CommitTaskOption.POSTCOMMIT);
                 transaction.commit();
 
-                _log.debug(String.format("</PropertyMap.save() [%d, %s, %s, %d, map.hashCode: %d, lock: %s]>", _user.getUserId(), _objectId, _category, _set, hashCode(), lock.toString()));
+                LOG.debug("</PropertyMap.save() [{}, {}, {}, {}, map.hashCode: {}, lock: {}]>", _user.getUserId(), _objectId, _category, _set, hashCode(), lock.toString());
             }
         }
 
@@ -548,14 +542,14 @@ public class PropertyManager
             final ReentrantLock lock = PROPERTY_MAP_LOCK_MANAGER.getLock(this);
             try (Transaction transaction = SCHEMA.getSchema().getScope().ensureTransaction(DbScope.FINAL_COMMIT_UNLOCK_TRANSACTION_KIND, lock))
             {
-                _log.debug(String.format("<PropertyMap.delete() [%d, %s, %s, %d, map.hashCode: %d, lock: %s]>", _user.getUserId(), _objectId, _category, _set, hashCode(), lock.toString()));
+                LOG.debug("<PropertyMap.delete() [{}, {}, {}, {}, map.hashCode: {}, lock: {}]>", _user.getUserId(), _objectId, _category, _set, hashCode(), lock.toString());
 
                 deleteSetDirectly(_user, _objectId, _category, _store);
 
                 // Make sure that we clear the previously cached version of the map
                 transaction.addCommitTask(() -> _store.clearCache(PropertyMap.this), DbScope.CommitTaskOption.IMMEDIATE, DbScope.CommitTaskOption.POSTCOMMIT);
                 transaction.commit();
-                _log.debug(String.format("</PropertyMap.delete() [%d, %s, %s, %d, map.hashCode: %d, lock: %s]>", _user.getUserId(), _objectId, _category, _set, hashCode(), lock.toString()));
+                LOG.debug("</PropertyMap.delete() [{}, {}, {}, {}, map.hashCode: {}, lock: {}]>", _user.getUserId(), _objectId, _category, _set, hashCode(), lock.toString());
             }
         }
 
@@ -865,6 +859,12 @@ public class PropertyManager
             assertEquals(map.get("foo"), "bar");
             assertFalse(map.containsKey("this"));
             assertFalse(map.containsKey("zoo"));
+
+            // Test immutability of PropertyMap
+            assertThrows(IllegalStateException.class, () -> map.put("bar", "blue"));
+            assertThrows(IllegalStateException.class, () -> map.putAll(Map.of("foo", "bar", "color", "red")));
+            assertThrows(IllegalStateException.class, () -> map.remove("foo"));
+            assertThrows(IllegalStateException.class, map::clear);
         }
 
         @Test
