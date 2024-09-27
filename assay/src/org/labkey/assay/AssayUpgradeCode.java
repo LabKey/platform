@@ -709,16 +709,23 @@ public class AssayUpgradeCode implements UpgradeCode
 
             for (Integer plateSetId : plateSetIds)
             {
-                PlateSet PS = PlateService.get().getPlateSet(ContainerFilter.EVERYTHING, plateSetId);
-                if (PS == null)
+                PlateSet plateSet = PlateService.get().getPlateSet(ContainerFilter.EVERYTHING, plateSetId);
+                if (plateSet == null)
                     throw new IllegalStateException("updateBuiltInColumns: Plate Set with plate of id " + plateSetId + " not found.");
 
-                if (PS.isTemplate())
-                    templatePSes.add(PS.getRowId());
-                else if (PS.isStandalone() || PS.isAssay())
-                    assayPSes.add(PS.getRowId());
-                else if (PS.isPrimary())
-                    primaryPSes.add(PS.getRowId());
+                SQLFragment sql = new SQLFragment("SELECT template, type FROM assay.PlateSet WHERE rowid = " + plateSet.getRowId() + "");
+                Map<String, Object> result = new SqlSelector(AssayDbSchema.getInstance().getSchema(), sql).getMap();
+
+                boolean isTemplatePlateSet = (boolean) result.get("template");
+                boolean isAssayPlateSet = result.get("type").equals("assay");
+                boolean isPrimaryPlateSet = result.get("type").equals("primary");
+
+                if (isTemplatePlateSet)
+                    templatePSes.add(plateSet.getRowId());
+                else if (isAssayPlateSet)
+                    assayPSes.add(plateSet.getRowId());
+                else if (isPrimaryPlateSet)
+                    primaryPSes.add(plateSet.getRowId());
             }
 
             List<List<?>> insertedValues = new LinkedList<>();

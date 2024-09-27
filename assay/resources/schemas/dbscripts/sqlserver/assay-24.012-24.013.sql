@@ -1,5 +1,5 @@
 ALTER TABLE assay.platesetproperty
-    ADD FieldKey NVARCHAR(256);
+    ADD FieldKey NVARCHAR(255);
 GO
 
 ALTER TABLE assay.platesetproperty

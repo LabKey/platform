@@ -1,5 +1,5 @@
 ALTER TABLE assay.platesetproperty
-    ADD COLUMN FieldKey VARCHAR(256);
+    ADD COLUMN FieldKey VARCHAR(255);
 
 ALTER TABLE assay.platesetproperty
     ADD CONSTRAINT either_identifier
