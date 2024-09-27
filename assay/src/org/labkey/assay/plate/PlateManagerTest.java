@@ -421,7 +421,7 @@ public final class PlateManagerTest
 
         // remove amount and amountUnits metadata fields
         fields = PlateManager.get().removeFields(container, user, plateId, List.of(fields.get(0), fields.get(1)));
-        assertEquals("Expected 5 plate custom fields", 7, fields.size());
+        assertEquals("Unexpected number of custom fields", 7, fields.size());
         assertEquals("Expected Concentration custom field", "Concentration", fields.get(2).getName());
         assertEquals("Expected ConcentrationUnits custom field", "ConcentrationUnits", fields.get(3).getName());
 
@@ -499,7 +499,7 @@ public final class PlateManagerTest
         );
 
         Plate plate = createPlate(PLATE_TYPE_96_WELLS, "hit selection plate", null, rows);
-        assertEquals("Expected 2 plate custom fields", 4, plate.getCustomFields().size());
+        assertEquals("Unexpected number of plate custom fields", 5, plate.getCustomFields().size());
 
         TableInfo wellTable = getWellTable();
         FieldKey fkConcentration = FieldKey.fromParts("concentration");
@@ -1887,14 +1887,13 @@ public final class PlateManagerTest
         List<PlateCustomField> three = PlateManager.get().getFields(container, templatePS.getRowId());
 
         // Assert
-        int i = 0;
         assertEquals(one.size(), 1);
         assertEquals(one.get(0).getName(), "SampleID");
 
         assertEquals(two.size(), 3);
-        assertEquals(two.get(0).getName(), "SampleID");
-        assertEquals(two.get(1).getName(), "Type");
-        assertEquals(two.get(2).getName(), "WellGroup");
+        assertEquals(two.get(0).getName(), "Type");
+        assertEquals(two.get(1).getName(), "WellGroup");
+        assertEquals(two.get(2).getName(), "SampleID");
 
         assertEquals(three.size(), 2);
         assertEquals(two.get(0).getName(), "Type");

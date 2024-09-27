@@ -103,7 +103,12 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
         Properties,
         RowId,
         Template,
-        WellsFilled
+        WellsFilled;
+
+        public FieldKey fieldKey()
+        {
+            return FieldKey.fromParts(name());
+        }
     }
 
     static

@@ -26,7 +26,6 @@ import org.labkey.assay.plate.query.WellTable;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -195,7 +194,7 @@ public class PlateMapExcelWriter extends ExcelWriter
 
     protected List<PlateCustomField> getCustomFields()
     {
-        return _plate.getCustomFields().stream().filter(field -> !new ArrayList<>(excludedFields).contains(field.getFieldKey() != null ? field.getFieldKey().toLowerCase() : null)).toList();
+        return _plate.getCustomFields().stream().filter(field -> !field.isBuiltIn()).toList();
     }
 
     @Override

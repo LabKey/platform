@@ -1,6 +1,9 @@
 package org.labkey.api.assay.plate;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.FieldKey;
@@ -16,7 +19,7 @@ public class PlateCustomField
     private String _label;
     private String _name;
     private String _propertyURI;
-    private String _fieldKey;
+    private FieldKey _fieldKey;
     private String _rangeURI;
     private String _container;
 
@@ -24,21 +27,33 @@ public class PlateCustomField
     {
     }
 
-    public PlateCustomField(FieldKey fieldKey)
+    public PlateCustomField(@NotNull PlateCustomField field)
     {
-        _fieldKey = fieldKey.getName();
+        _label = field._label;
+        _name = field._name;
+        _propertyURI = field._propertyURI;
+        _fieldKey = field._fieldKey;
+        _rangeURI = field._rangeURI;
+        _container = field._container;
+    }
+
+    public PlateCustomField(@NotNull FieldKey fieldKey)
+    {
+        _fieldKey = fieldKey;
         _name = fieldKey.getName();
     }
 
-    public PlateCustomField(ColumnInfo columnInfo)
-    {
-        _fieldKey = columnInfo.getFieldKey().getName();
-        _name = columnInfo.getName();
-    }
-
-    public PlateCustomField(String propertyURI)
+    public PlateCustomField(@NotNull String propertyURI)
     {
         _propertyURI = propertyURI;
+    }
+
+    public PlateCustomField(@NotNull ColumnInfo columnInfo)
+    {
+        _fieldKey = columnInfo.getFieldKey();
+        _name = columnInfo.getName();
+        _label = columnInfo.getLabel();
+        _rangeURI = columnInfo.getRangeURI();
     }
 
     public PlateCustomField(DomainProperty prop)
@@ -48,6 +63,12 @@ public class PlateCustomField
         _propertyURI = prop.getPropertyURI();
         _rangeURI = prop.getRangeURI();
         _container = prop.getContainer().getId();
+    }
+
+    @JsonIgnore
+    public boolean isBuiltIn()
+    {
+        return _fieldKey != null;
     }
 
     public String getLabel()
@@ -80,14 +101,26 @@ public class PlateCustomField
         _propertyURI = propertyURI;
     }
 
-    public String getFieldKey()
+    @JsonIgnore
+    public FieldKey getFieldKey()
     {
         return _fieldKey;
     }
 
-    public void setFieldKey(String fieldKey)
+    public void setFieldKey(FieldKey fieldKey)
     {
         _fieldKey = fieldKey;
+    }
+
+    public void setFieldKey(String fieldKey)
+    {
+        setFieldKey(FieldKey.fromParts(fieldKey));
+    }
+
+    @JsonProperty("fieldKey")
+    public String getFieldKeyString()
+    {
+        return _fieldKey == null ? null : _fieldKey.toString();
     }
 
     public String getRangeURI()
@@ -113,7 +146,7 @@ public class PlateCustomField
     @Override
     public int hashCode()
     {
-        return Objects.hash(_name, _label, _propertyURI, _rangeURI, _container);
+        return Objects.hash(_name, _fieldKey, _label, _propertyURI, _rangeURI, _container);
     }
 
     @Override
