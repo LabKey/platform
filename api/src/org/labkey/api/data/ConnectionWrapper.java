@@ -53,9 +53,11 @@ import java.sql.Savepoint;
 import java.sql.Statement;
 import java.sql.Struct;
 import java.text.DateFormat;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -174,6 +176,31 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         return true;
+    }
+
+    public static void closeConnections(Thread thread)
+    {
+        List<ConnectionWrapper> toClose = new ArrayList<>();
+
+        synchronized (_openConnections)
+        {
+            for (Map.Entry<ConnectionWrapper, Pair<Thread, Throwable>> entry : _openConnections.entrySet())
+            {
+                if (entry.getValue().first == thread)
+                {
+                    toClose.add(entry.getKey());
+                }
+            }
+        }
+
+        for (ConnectionWrapper connectionWrapper : toClose)
+        {
+            try
+            {
+                connectionWrapper.close(thread);
+            }
+            catch (SQLException ignored) {}
+        }
     }
 
     public static boolean dumpOpenConnections(@NotNull Logger log)
@@ -373,9 +400,14 @@ public class ConnectionWrapper implements java.sql.Connection
     @Override
     public void close() throws SQLException
     {
+        close(Thread.currentThread());
+    }
+
+    public void close(Thread thread) throws SQLException
+    {
         DbScope.Transaction t;
 
-        if (_type != ConnectionType.Pooled && null != (t = _scope.getCurrentTransaction()))
+        if (_type != ConnectionType.Pooled && null != (t = _scope.getTransactionImpl(thread)))
         {
             assert t.getConnection() == this : "Attempting to close a different connection from the one associated with this thread: " + this + " vs " + t.getConnection(); //Should release same conn we handed out
         }

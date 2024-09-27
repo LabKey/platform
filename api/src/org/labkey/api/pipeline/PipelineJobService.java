@@ -39,6 +39,12 @@ public interface PipelineJobService extends TaskPipelineRegistry
     String VERSION_SUBSTITUTION = "${version}";
     String VERSION_PLAIN_SUBSTITUTION = "${versionPlain}";
 
+    /** Associates the current thread with the job so that if the job is canceled, we can close those resources to abort it */
+    void trackJobThread(PipelineJob job);
+
+    /** The job is done using the thread */
+    void clearJobThread(PipelineJob job);
+
     /**
      * We use Spring-based XML to register and wire up implementations, which breaks our standard ServiceRegistry
      * methodology. Use this hack to manage the instance
