@@ -930,7 +930,7 @@ public class ExperimentJSONConverter
             else if (trimmedVal.equalsIgnoreCase(NEW_DATA_CLASS_ALIAS_VALUE) ||
                     trimmedVal.equalsIgnoreCase(DATA_INPUTS_PREFIX + NEW_DATA_CLASS_ALIAS_VALUE))
             {
-                trimmedVal = DATA_INPUTS_ALIAS_PREFIX + "/" + currentAliasName;
+                trimmedVal = DATA_INPUTS_ALIAS_PREFIX + currentAliasName;
             }
 
             cleanAliases.put(trimmedKey, Map.of("inputType", trimmedVal, "required", Boolean.valueOf(requiredStr)));

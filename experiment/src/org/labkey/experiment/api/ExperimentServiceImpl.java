@@ -8135,11 +8135,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             dataClass.setNameExpression(options.getNameExpression());
             dataClass.setSampleType(options.getSampleType());
             dataClass.setCategory(options.getCategory());
-            if (options.getImportAliases() != null && !options.getImportAliases().isEmpty())
+            Map<String, Map<String, Object>> newAliases = options.getImportAliases();
+            if (newAliases != null && !newAliases.isEmpty())
             {
                 try
                 {
-                    Map<String, Map<String, Object>> newAliases = options.getImportAliases();
                     Set<String> existingRequiredInputs = new HashSet<>(dataClass.getRequiredImportAliases().values());
                     String invalidParentType = getInvalidRequiredImportAliasUpdate(dataClass.getLSID(), false, newAliases, existingRequiredInputs, c, u);
                     if (invalidParentType != null)
@@ -8150,7 +8150,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     throw new RuntimeException(e);
                 }
             }
-            dataClass.setImportAliasMap(options.getImportAliases());
+            dataClass.setImportAliasMap(newAliases);
 
             if (!NameExpressionOptionService.get().allowUserSpecifiedNames(c) && options.getNameExpression() == null)
                 throw new IllegalArgumentException(c.hasProductProjects() ? NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS : NAME_EXPRESSION_REQUIRED_MSG);
@@ -9280,15 +9280,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     {
         Map<String, Object> metrics = new HashMap<>();
         Pair<Long, Long> samplesMetrics = getParentAliasMetrics(getTinfoSampleType(), "materialparentimportaliasmap");
-        if (samplesMetrics.first > 0)
-            metrics.put("RequiredSampleParentsForSampleTypes", samplesMetrics.first);
-        if (samplesMetrics.second > 0)
-            metrics.put("RequiredSourceParentsForSampleTypes", samplesMetrics.first);
+        metrics.put("RequiredSampleParentsForSampleTypes", samplesMetrics.first);
+        metrics.put("RequiredSourceParentsForSampleTypes", samplesMetrics.first);
         Pair<Long, Long> dataMetrics = getParentAliasMetrics(getTinfoDataClass(), "dataparentimportaliasmap");
-        if (dataMetrics.first > 0)
-            metrics.put("RequiredSampleParentsForDataClasses", dataMetrics.first);
-        if (dataMetrics.second > 0)
-            metrics.put("RequiredSourceParentsForDataClasses", dataMetrics.second);
+        metrics.put("RequiredSampleParentsForDataClasses", dataMetrics.first);
+        metrics.put("RequiredSourceParentsForDataClasses", dataMetrics.second);
         return metrics;
     }
 

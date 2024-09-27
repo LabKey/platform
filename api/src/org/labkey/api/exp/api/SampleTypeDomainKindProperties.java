@@ -3,6 +3,7 @@ package org.labkey.api.exp.api;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 
 import java.io.IOException;
@@ -136,13 +137,15 @@ public class SampleTypeDomainKindProperties implements Cloneable
     }
 
     @JsonIgnore
+    @Nullable
     public Map<String, String> getImportAliasesMap()
     {
-        if (getImportAliases() == null)
+        Map<String, Map<String, Object>> importAliases = getImportAliases();
+        if (importAliases == null)
             return null;
 
         Map<String, String> aliases = new HashMap<>();
-        for (Map.Entry<String, Map<String, Object>> entry : getImportAliases().entrySet())
+        for (Map.Entry<String, Map<String, Object>> entry : importAliases.entrySet())
         {
             aliases.put(entry.getKey(), (String) entry.getValue().get("inputType"));
         }

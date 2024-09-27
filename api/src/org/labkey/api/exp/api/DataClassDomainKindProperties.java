@@ -173,13 +173,15 @@ public class DataClassDomainKindProperties
     }
 
     @JsonIgnore
+    @Nullable
     public Map<String, String> getImportAliasesMap()
     {
-        if (getImportAliases() == null)
+        Map<String, Map<String, Object>> importAliases = getImportAliases();
+        if (importAliases == null)
             return null;
 
         Map<String, String> aliases = new HashMap<>();
-        for (Map.Entry<String, Map<String, Object>> entry : getImportAliases().entrySet())
+        for (Map.Entry<String, Map<String, Object>> entry : importAliases.entrySet())
         {
             aliases.put(entry.getKey(), (String) entry.getValue().get("inputType"));
         }
