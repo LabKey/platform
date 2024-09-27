@@ -78,7 +78,7 @@ public interface SampleTypeService
         AddAssayData("addition of associated assay data", InsertPermission.class),
         LinkToStudy("linking to study", InsertPermission.class),
         RecallFromStudy("recalling from a study", DeletePermission.class),
-        Move("moving to a different project", MoveEntitiesPermission.class);
+        Move("moving to a different folder", MoveEntitiesPermission.class);
 
         private final String _description; // used as a suffix in messaging users about what is not allowed
         private final Class<? extends Permission> _permissionClass;
