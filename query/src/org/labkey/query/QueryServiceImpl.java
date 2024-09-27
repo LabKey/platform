@@ -3482,7 +3482,7 @@ public class QueryServiceImpl implements QueryService
     @Override
     public @Nullable ContainerFilter getProductContainerFilterForLookups(Container container, User user, ContainerFilter defaultContainerFilter)
     {
-        if (isProductProjectsAllFolderScopeEnabled())
+        if (isProductFoldersAllFolderScopeEnabled())
         {
             ContainerFilter lookupCf = getContainerFilterForLookups(container, user);
             if (lookupCf != null)
@@ -3508,9 +3508,9 @@ public class QueryServiceImpl implements QueryService
     @Nullable
     public ContainerFilter.Type getContainerFilterTypeForLookups(Container container)
     {
-        if (container != null && container.isProductProjectsEnabled())
+        if (container != null && container.isProductFoldersEnabled())
         {
-            if (isProductProjectsAllFolderScopeEnabled())
+            if (isProductFoldersAllFolderScopeEnabled())
                 return ContainerFilter.Type.AllInProjectPlusShared;
 
             return ContainerFilter.Type.CurrentPlusProjectAndShared;
@@ -3520,13 +3520,13 @@ public class QueryServiceImpl implements QueryService
     }
 
     @Override
-    public boolean isProductProjectsAllFolderScopeEnabled()
+    public boolean isProductFoldersAllFolderScopeEnabled()
     {
         return AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_PRODUCT_ALL_FOLDER_LOOKUPS);
     }
 
     @Override
-    public boolean isProductProjectsDataListingScopedToProject()
+    public boolean isProductFoldersDataListingScopedToProject()
     {
         return AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED);
     }

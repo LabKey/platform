@@ -8007,7 +8007,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (!svc.allowUserSpecifiedNames(c))
             {
                 if (nameExpression == null)
-                    throw new ExperimentException(c.hasProductProjects() ? NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS : NAME_EXPRESSION_REQUIRED_MSG);
+                    throw new ExperimentException(c.hasProductFolders() ? NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS : NAME_EXPRESSION_REQUIRED_MSG);
             }
 
             if (svc.getExpressionPrefix(c) != null)
@@ -8089,7 +8089,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (!NameExpressionOptionService.get().allowUserSpecifiedNames(c) && options.getNameExpression() == null)
             {
                 errors = new ValidationException();
-                errors.addError(new SimpleValidationError(c.hasProductProjects() ? NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS : NAME_EXPRESSION_REQUIRED_MSG));
+                errors.addError(new SimpleValidationError(c.hasProductFolders() ? NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS : NAME_EXPRESSION_REQUIRED_MSG));
 
                 return errors;
             }
