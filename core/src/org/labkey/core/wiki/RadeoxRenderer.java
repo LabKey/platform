@@ -84,6 +84,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
     private static final String MISSING_CLASS_NAME = "missing";
     private static final String WIKI_DEPENDENCIES_KEY = "~~wiki.dependencies~~";
     private static final String ANCHORS_KEY = "~~wiki.anchors~~";
+    private final String _sourceDescription;
 
     private String _wikiHrefPrefix = "?name=";
     private String _createPrefix = null;
@@ -95,17 +96,19 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
     private Map<String, String> _pageTitles;
     private Collection<? extends Attachment> _attachments;
 
-    public RadeoxRenderer()
+    public RadeoxRenderer(String sourceDescription)
     {
-        super(new BaseInitialRenderContext());
+        super(new BaseInitialRenderContext(sourceDescription));
+        _sourceDescription = sourceDescription;
         MemTracker.getInstance().put(this);
     }
 
     // UNDONE: switch to format from prefix
     public RadeoxRenderer(String hrefPrefix, String attachPrefix,
-                          Map<String, String> pageTitles, @Nullable Collection<? extends Attachment> attachments)
+                          Map<String, String> pageTitles, @Nullable Collection<? extends Attachment> attachments,
+                          String sourceDescription)
     {
-        this();
+        this(sourceDescription);
         if (null != hrefPrefix)
             _wikiHrefPrefix = hrefPrefix;
         _attachmentPrefix = attachPrefix;
@@ -116,12 +119,12 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
     }
 
     @Override
-    public FormattedHtml format(String text, String sourceDescription)
+    public FormattedHtml format(String text)
     {
         if (text == null)
             text = "";
 
-        RenderContext context = new BaseRenderContext(sourceDescription);
+        RenderContext context = new BaseRenderContext(_sourceDescription);
         context.setRenderEngine(this);
         context.setParameters(new HashMap<>());
         Set<String> dependencies = new HashSet<>();
@@ -917,7 +920,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
         @Before
         public void setup()
         {
-           _r = new RadeoxRenderer();
+           _r = new RadeoxRenderer(null);
            _wrs = WikiRenderingService.get();
         }
 
@@ -940,14 +943,14 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
         // Service should wrap rendered HTML in a <div> but renderer shouldn't. 
         private void test(String wiki, String html)
         {
-            assertEquals(html, HtmlString.toString(_r.format(wiki, null).getHtml()));
+            assertEquals(html, HtmlString.toString(_r.format(wiki).getHtml()));
             assertEquals(HtmlStringBuilder.of(WikiRenderingService.WIKI_PREFIX).unsafeAppend(html).append(WikiRenderingService.WIKI_SUFFIX).getHtmlString(), _wrs.getFormattedHtml(WikiRendererType.RADEOX, wiki, null));
         }
 
         @Test
         public void testWikiDependencies()
         {
-            FormattedHtml html = _r.format("[this] [that] [some text|tother] [some other text|this] nolink anothernolink", null);
+            FormattedHtml html = _r.format("[this] [that] [some text|tother] [some other text|this] nolink anothernolink");
             Set<String> dependencies = html.getWikiDependencies();
             assertNotNull(dependencies);
             assertEquals(3, dependencies.size());
