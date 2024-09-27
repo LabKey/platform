@@ -15,7 +15,6 @@
  */
 package org.labkey.api.assay;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -457,8 +456,8 @@ public abstract class AssayProtocolSchema extends AssaySchema implements UserSch
             visibleColumns.add(FieldKey.fromParts(AssayQCFlagColumn.NAME));
         }
 
-        boolean hasProductProjects = getContainer().hasProductProjects();
-        if (hasProductProjects)
+        boolean hasProductFolders = getContainer().hasProductFolders();
+        if (hasProductFolders)
         {
             var folderColumn = runTable.getMutableColumn(ExpRunTable.Column.Folder);
             folderColumn.setLabel("Project");

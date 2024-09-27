@@ -144,7 +144,7 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
         if (Column.Container.name().equalsIgnoreCase(col.getName()))
         {
             wrap.setFieldKey(FieldKey.fromParts("Folder"));
-            wrap.setLabel(getContainer().hasProductProjects() ? "Project" : "Folder");
+            wrap.setLabel(getContainer().hasProductFolders() ? "Project" : "Folder");
         }
     }
 

@@ -229,8 +229,8 @@ public class QueryModule extends DefaultModule
                 "For schema, query, and view metadata requests include a Last-Modified header such that the browser can cache the response. " +
                 "The metadata is invalidated when performing actions such as creating a new List or modifying the columns on a custom view", false);
         AdminConsole.addExperimentalFeatureFlag(USE_ROW_BY_ROW_UPDATE, "Use row-by-row update", "For Query.updateRows api, do row-by-row update, instead of using a prepared statement that updates rows in batches.", false);
-        AdminConsole.addExperimentalFeatureFlag(QueryServiceImpl.EXPERIMENTAL_PRODUCT_ALL_FOLDER_LOOKUPS, "Less restrictive product project lookups",
-                "Allow for lookup fields in product projects to query across all folders within the top-level folder.", false);
+        AdminConsole.addExperimentalFeatureFlag(QueryServiceImpl.EXPERIMENTAL_PRODUCT_ALL_FOLDER_LOOKUPS, "Less restrictive product folder lookups",
+                "Allow for lookup fields in product folders to query across all folders within the top-level folder.", false);
         AdminConsole.addExperimentalFeatureFlag(QueryServiceImpl.EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED, "Product projects display project-specific data",
                 "Only list project-specific data within product projects.", false);
     }
@@ -411,11 +411,11 @@ public class QueryModule extends DefaultModule
         boolean hasEditQueriesPermission = context.getContainer().hasPermission(context.getUser(), EditQueriesPermission.class);
         json.put("hasEditQueriesPermission", hasEditQueriesPermission);
         Container container = context.getContainer();
-        boolean isProductProjectsEnabled = container != null && container.isProductProjectsEnabled();  // TODO: should these be moved to CoreModule?
-        json.put(QueryService.PRODUCT_PROJECTS_ENABLED, isProductProjectsEnabled);
-        json.put(QueryService.PRODUCT_PROJECTS_EXIST, isProductProjectsEnabled && container.hasProductProjects());
-        json.put(QueryService.EXPERIMENTAL_PRODUCT_ALL_FOLDER_LOOKUPS, QueryService.get().isProductProjectsAllFolderScopeEnabled());
-        json.put(QueryService.EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED, QueryService.get().isProductProjectsDataListingScopedToProject());
+        boolean isProductFoldersEnabled = container != null && container.isProductFoldersEnabled();  // TODO: should these be moved to CoreModule?
+        json.put(QueryService.PRODUCT_FOLDERS_ENABLED, isProductFoldersEnabled);
+        json.put(QueryService.PRODUCT_FOLDERS_EXIST, isProductFoldersEnabled && container.hasProductFolders());
+        json.put(QueryService.EXPERIMENTAL_PRODUCT_ALL_FOLDER_LOOKUPS, QueryService.get().isProductFoldersAllFolderScopeEnabled());
+        json.put(QueryService.EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED, QueryService.get().isProductFoldersDataListingScopedToProject());
         return json;
     }
 }
