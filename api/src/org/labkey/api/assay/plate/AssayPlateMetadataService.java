@@ -1,6 +1,7 @@
 package org.labkey.api.assay.plate;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -10,6 +11,9 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.OptionalFeatureService;
@@ -20,6 +24,8 @@ public interface AssayPlateMetadataService
 {
     String PLATE_SET_COLUMN_NAME = "PlateSet";
     String EXPERIMENTAL_APP_PLATE_SUPPORT = "experimental-app-plate-support";
+    String REPLICATE_STD_DEV_SUFFIX = "_StdDev";
+    String REPLICATE_MEAN_SUFFIX = "_Mean";
 
     static void setInstance(AssayPlateMetadataService serviceImpl)
     {
@@ -84,5 +90,22 @@ public interface AssayPlateMetadataService
         ExpData data,
         ExpProtocol protocol,
         AssayProvider provider
+    ) throws ExperimentException;
+
+    /**
+     * Return the domain representing the plate replicate statistical columns that are created for plate based
+     * assays with replicate well groups.
+     */
+    @Nullable Domain getPlateReplicateStatsDomain(ExpProtocol protocol);
+
+    /**
+     * Called when a plate enabled protocol has changes to its results domain. This is to allow analogous changes
+     * to the replicate table to create/delete fields to track replicate statistics.
+     */
+    void updateReplicateStatsDomain(
+        User user,
+        ExpProtocol protocol,
+        GWTDomain<GWTPropertyDescriptor> update,
+        Domain resultsDomain
     ) throws ExperimentException;
 }

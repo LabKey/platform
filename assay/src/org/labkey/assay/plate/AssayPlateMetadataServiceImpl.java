@@ -7,8 +7,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.labkey.api.assay.AssayProtocolSchema;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayResultDomainKind;
+import org.labkey.api.assay.AssaySchema;
 import org.labkey.api.assay.SimpleAssayDataImportHelper;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.plate.ExcelPlateReader;
@@ -21,14 +23,21 @@ import org.labkey.api.assay.plate.Position;
 import org.labkey.api.assay.plate.PositionImpl;
 import org.labkey.api.assay.plate.Well;
 import org.labkey.api.assay.plate.WellCustomField;
+import org.labkey.api.assay.plate.WellGroup;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ImportAliasable;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.ParameterMapStatement;
+import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.statistics.MathStat;
+import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
@@ -36,21 +45,29 @@ import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.UnexpectedException;
+import org.labkey.assay.TSVProtocolSchema;
 import org.labkey.assay.plate.model.WellBean;
 import org.labkey.assay.query.AssayDbSchema;
 
@@ -526,9 +543,87 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         return new PlateMetadataImportHelper(data, container, user, run, protocol, provider);
     }
 
+    @Override
+    public void updateReplicateStatsDomain(User user, ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> update, Domain resultsDomain) throws ExperimentException
+    {
+        Domain replicateDomain = ensurePlateReplicateStatsDomain(protocol);
+        boolean domainDirty = false;
+        Set<String> suffixes = Set.of(
+                AssayPlateMetadataService.REPLICATE_MEAN_SUFFIX,
+                AssayPlateMetadataService.REPLICATE_STD_DEV_SUFFIX);
+        Set<String> domainBaseProperties = replicateDomain.getBaseProperties().stream().map(DomainProperty::getName).collect(Collectors.toSet());
+        Map<String, DomainProperty> existingFields = new HashMap<>();
+        replicateDomain.getProperties().forEach(dp -> {
+            if (!domainBaseProperties.contains(dp.getName()))
+                existingFields.put(dp.getName(), dp);
+        });
+
+        for (GWTPropertyDescriptor prop : update.getFields())
+        {
+            // for measures of type : numeric create the stats fields
+            if (prop.isMeasure())
+            {
+                PropertyType type = PropertyType.getFromURI(null, prop.getRangeURI());
+                if (type.getJdbcType().isNumeric())
+                {
+                    for (String suffix : suffixes)
+                    {
+                        String name = prop.getName() + suffix;
+                        // check for additions
+                        if (!existingFields.containsKey(name))
+                        {
+                            // create the property
+                            PropertyStorageSpec spec = new PropertyStorageSpec(name, JdbcType.DOUBLE);
+                            replicateDomain.addProperty(spec);
+
+                            domainDirty = true;
+                        }
+                        else
+                            existingFields.remove(name);
+                    }
+                }
+            }
+        }
+
+        // check for removals
+        if (!existingFields.isEmpty())
+        {
+            domainDirty = true;
+            for (DomainProperty prop : existingFields.values())
+                prop.delete();
+        }
+
+        if (domainDirty)
+            replicateDomain.save(user);
+    }
+
+    @Override
+    public @Nullable Domain getPlateReplicateStatsDomain(ExpProtocol protocol)
+    {
+        String uri = getPlateReplicateStatsDomainUri(protocol);
+        return PropertyService.get().getDomain(protocol.getContainer(), uri);
+    }
+
+    private String getPlateReplicateStatsDomainUri(ExpProtocol protocol)
+    {
+        DomainKind domainKind = PropertyService.get().getDomainKindByName(PlateReplicateStatsDomainKind.KIND_NAME);
+        return domainKind.generateDomainURI(AssaySchema.NAME, protocol.getName(), protocol.getContainer(), null);
+    }
+
+    private Domain ensurePlateReplicateStatsDomain(ExpProtocol protocol)
+    {
+        Domain domain = getPlateReplicateStatsDomain(protocol);
+        if (domain == null)
+            domain = PropertyService.get().createDomain(protocol.getContainer(), getPlateReplicateStatsDomainUri(protocol), PlateReplicateStatsDomainKind.NAME);
+
+        return domain;
+    }
+
     private static class PlateMetadataImportHelper extends SimpleAssayDataImportHelper
     {
-        private final Map<Integer, Map<Position, Lsid>> _wellPositionMap;
+        private final Map<Integer, Map<Position, Lsid>> _wellPositionMap;       // map of plate position to well table
+        private final Map<Integer, Map<Position, Lsid>> _wellReplicateMap;      // map of plate position to replicate stats table
+        private final Map<Lsid, List<Map<String, Object>>> _replicateRows;
         private final Map<Object, Plate> _plateIdentifierMap;
         private final Container _container;
         private final User _user;
@@ -540,6 +635,8 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         {
             super(data, protocol, provider);
             _wellPositionMap = new HashMap<>();
+            _wellReplicateMap = new HashMap<>();
+            _replicateRows = new HashMap<>();
             _plateIdentifierMap = new HashMap<>();
             _container = container;
             _user = user;
@@ -588,6 +685,22 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             }
             Map<Position, Lsid> positionToWellLsid = _wellPositionMap.get(plate.getRowId());
 
+            // create the map of well locations to the replicate stats table lsid for the plate
+            if (!_wellReplicateMap.containsKey(plate.getRowId()))
+            {
+                Map<Position, Lsid> positionToReplicateLsid = new HashMap<>();
+
+                for (WellGroup wellGroup : plate.getWellGroups(WellGroup.Type.REPLICATE))
+                {
+                    // will need to generate a new lsid for the replicate table
+                    Lsid lsid = PlateReplicateStatsDomainKind.generateReplicateLsid(_container, plate.getPlateSet(), wellGroup);
+                    if (lsid != null)
+                        wellGroup.getPositions().forEach(p -> positionToReplicateLsid.put(p, lsid));
+                }
+                _wellReplicateMap.put(plate.getRowId(), positionToReplicateLsid);
+            }
+            Map<Position, Lsid> positionToReplicateLsid = _wellReplicateMap.get(plate.getRowId());
+
             // to join plate based metadata to assay results we need to line up the incoming assay results with the
             // corresponding well on the plate used in the import
             String wellLocationStr = (String) PropertyService.get().getDomainPropertyValueFromRow(wellLocationProperty, map);
@@ -598,6 +711,83 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 pos.setCol(pos.getColumn() - 1);
                 if (positionToWellLsid.containsKey(pos))
                     target.put(WELL_LSID_COLUMN_NAME, positionToWellLsid.get(pos));
+
+                // find the associated replicate well group for this position (if any)
+                if (positionToReplicateLsid.containsKey(pos))
+                {
+                    Lsid lsid = positionToReplicateLsid.get(pos);
+                    //target.put("WellReplicate", lsid);
+                    _replicateRows.computeIfAbsent(lsid, k -> new ArrayList<>()).add(map);
+                }
+            }
+        }
+
+        @Override
+        public void afterBatchInsert(int rowCount)
+        {
+            // compute replicate calculations and insert into the replicate stats table
+            Domain resultDomain = _provider.getResultsDomain(_protocol);
+            Map<String, List<Double>> measures = new CaseInsensitiveHashMap();
+            resultDomain.getProperties().forEach(dp -> {
+                if (dp.isMeasure() && dp.getJdbcType().isNumeric())
+                    measures.put(dp.getName(), new ArrayList<>());
+            });
+
+            if (!measures.isEmpty())
+            {
+                List<Map<String, Object>> replicates = new ArrayList<>();
+                for (Map.Entry<Lsid, List<Map<String, Object>>> entry : _replicateRows.entrySet())
+                {
+                    if (!entry.getValue().isEmpty())
+                    {
+                        // organize values for each replicate well group by measure
+                        for (Map<String, Object> row : entry.getValue())
+                        {
+                            for (Map.Entry<String, Object> col : row.entrySet())
+                            {
+                                if (measures.containsKey(col.getKey()) && col.getValue() != null)
+                                    measures.get(col.getKey()).add(Double.valueOf(String.valueOf(col.getValue())));
+                            }
+                        }
+
+                        Map<String, Object> replicateRow = new HashMap<>();
+                        replicates.add(replicateRow);
+                        replicateRow.put("Lsid", entry.getKey());
+                        for (Map.Entry<String, List<Double>> measure : measures.entrySet())
+                        {
+                            MathStat stat = StatsService.get().getStats(measure.getValue());
+                            replicateRow.put(measure.getKey() + AssayPlateMetadataService.REPLICATE_MEAN_SUFFIX, stat.getMean());
+                            replicateRow.put(measure.getKey() + AssayPlateMetadataService.REPLICATE_STD_DEV_SUFFIX, stat.getStdDev());
+                        }
+                    }
+                }
+
+                if (!replicates.isEmpty())
+                {
+                    try
+                    {
+                        // persist to replicate stats table
+                        AssayProtocolSchema schema = _provider.createProtocolSchema(_user, _container, _protocol, null);
+                        TableInfo tableInfo = schema.createTable(TSVProtocolSchema.PLATE_REPLICATE_STATS_TABLE, null);
+                        if (tableInfo != null)
+                        {
+                            QueryUpdateService qus = tableInfo.getUpdateService();
+                            BatchValidationException errors = new BatchValidationException();
+
+/*
+                            qus.insertRows(_user, _container, replicates, errors, null, null);
+                            if (errors.hasErrors())
+                            {
+                                throw new ExperimentException(errors.getLastRowError());
+                            }
+*/
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        throw UnexpectedException.wrap(e);
+                    }
+                }
             }
         }
     }

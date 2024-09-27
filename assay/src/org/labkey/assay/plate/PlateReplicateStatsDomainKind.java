@@ -2,12 +2,15 @@ package org.labkey.assay.plate;
 
 import org.labkey.api.assay.AbstractTsvAssayProvider;
 import org.labkey.api.assay.AssayDomainKind;
+import org.labkey.api.assay.plate.PlateSet;
+import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -21,8 +24,9 @@ import java.util.Set;
 
 public class PlateReplicateStatsDomainKind extends AssayDomainKind
 {
-    public static final String ASSAY_PLATE_REPLICATE = ExpProtocol.ASSAY_DOMAIN_PREFIX + "AssayPlateReplicateStats";
-    public static final String KIND_NAME = "AssayPlateReplicateStatsDomainKind";
+    public static final String NAME = "AssayPlateReplicateStats";
+    public static final String ASSAY_PLATE_REPLICATE = ExpProtocol.ASSAY_DOMAIN_PREFIX + NAME;
+    public static final String KIND_NAME = NAME + "DomainKind";
 
     private static String XAR_SUBSTITUTION_SCHEMA_NAME = "SchemaName";
     private static String XAR_SUBSTITUTION_TABLE_NAME = "TableName";
@@ -97,5 +101,15 @@ public class PlateReplicateStatsDomainKind extends AssayDomainKind
         {
             return null;
         }
+    }
+
+    public static Lsid generateReplicateLsid(Container container, PlateSet plateSet, WellGroup wellGroup)
+    {
+        if (plateSet != null)
+        {
+            String object = String.format("PS-%d-WG-%s", plateSet.getRowId(), wellGroup.getName());
+            return new Lsid("Replicate", "Folder-" + container.getRowId(), object);
+        }
+        return null;
     }
 }
