@@ -15,13 +15,15 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.admin.sitevalidation.SiteValidationProvider" %>
+<%@ page import="jakarta.servlet.jsp.JspWriter" %>
+<%@ page import="org.labkey.api.admin.sitevalidation.SiteValidationProviderFactory" %>
 <%@ page import="org.labkey.api.admin.sitevalidation.SiteValidationService" %>
 <%@ page import="org.labkey.api.util.DOM" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.core.admin.AdminController.SiteValidationAction" %>
 <%@ page import="org.labkey.core.admin.AdminController.SiteValidationBackgroundAction" %>
 <%@ page import="java.io.IOException" %>
+<%@ page import="java.lang.String" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
@@ -29,17 +31,17 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-    private void renderProviderList(String title, Map<String, Set<SiteValidationProvider>> providerMap, JspWriter out) throws IOException
+    private void renderProviderList(String title, Map<String, Set<SiteValidationProviderFactory>> factoryMap, JspWriter out) throws IOException
     {
-        if (!providerMap.isEmpty())
+        if (!factoryMap.isEmpty())
         {
             renderTitle(title, out);
 
-            List<SiteValidationProvider> providers = providerMap.values().stream()
+            List<SiteValidationProviderFactory> factories = factoryMap.values().stream()
                 .flatMap(Collection::stream)
                 .toList();
 
-            for (SiteValidationProvider provider : providers)
+            for (SiteValidationProviderFactory provider : factories)
             {
                 out.println(
                     DOM.createHtmlFragment(
@@ -71,15 +73,15 @@ Clicking the "Validate" button will run the selected validators in the designate
 <labkey:form id="form" action="<%=urlFor(SiteValidationAction.class)%>" method="get">
     <%
         if (getContainer().isRoot())
-            renderProviderList("Site Validation Providers", validationService.getSiteProviders(), out);
-        renderProviderList("Folder Validation Providers", validationService.getContainerProviders(), out);
+            renderProviderList("Site Validation Providers", validationService.getSiteFactories(), out);
+        renderProviderList("Folder Validation Providers", validationService.getContainerFactories(), out);
         renderTitle("Folder Validation Options", out);
         if (getContainer().isRoot())
         {
             out.println(
                 DOM.createHtmlFragment(
                     input().name("includeSubfolders").type("radio").value("true").checked(true),
-                    "All projects and folders in this site",
+                    "The root plus all projects and folders in this site",
                     DOM.BR(),
                     input().name("includeSubfolders").type("radio").value("false").checked(false),
                     "Just the projects",

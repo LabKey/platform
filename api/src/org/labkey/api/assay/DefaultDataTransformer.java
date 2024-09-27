@@ -23,6 +23,10 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.qc.DataTransformer;
 import org.labkey.api.qc.DefaultTransformResult;
@@ -151,6 +155,17 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
                         addStandardParameters(context.getRequest(), context.getContainer(), scriptFile, session.getApiKey(), paramMap);
 
                         bindings.put(ExternalScriptEngine.PARAM_REPLACEMENT_MAP, paramMap);
+
+                        // Issue 50774 - associate external process with the job that spawned it so that we can
+                        // kill it if the job is canceled
+                        if (run.getJobId() != null)
+                        {
+                            PipelineStatusFile statusFile = PipelineService.get().getStatusFile(run.getJobId());
+                            if (statusFile != null)
+                            {
+                                bindings.put(ExternalScriptEngine.PIPELINE_JOB_GUID, statusFile.getJobId());
+                            }
+                        }
 
                         Object output = engine.eval(script);
 

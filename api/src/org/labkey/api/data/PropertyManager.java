@@ -44,12 +44,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
 
-
-/**
- * User: mbellew
- * Date: Apr 26, 2004
- * Time: 9:57:10 AM
- */
 public class PropertyManager
 {
     public static final User SHARED_USER = User.guest;  // Shared properties are saved with the guest user
@@ -66,18 +60,15 @@ public class PropertyManager
     {
     }
 
-
     public static PropertyStore getNormalStore()
     {
         return STORE;
     }
 
-
     public static PropertyStore getEncryptedStore()
     {
         return ENCRYPTED_STORE;
     }
-
 
     /**
      * For global system properties that are attached to the root container
@@ -156,10 +147,10 @@ public class PropertyManager
 
     /**
      * This is designed to coalesce up the container hierarchy, returning the first non-null value
-     * If a userId is provided, it first traverses containers using that user.  If no value is found,
-     * it then default to all users (ie. User.guest), then retry all containers
+     * If a userId is provided, it first traverses containers using that user. If no value is found,
+     * it then defaults to all users (i.e. User.guest), then retry all containers
      *
-     * NOTE: this does not test permissions.  Callers should ensure the requested user has the appropriate
+     * NOTE: this does not test permissions. Callers should ensure the requested user has the appropriate
      * permissions to read these properties
      */
     public static String getCoalescedProperty(User user, Container c, String category, String name, boolean includeNullUser)
@@ -233,7 +224,7 @@ public class PropertyManager
 
     /**
      * Get a list of categories optionally filtered by user, container, and category prefix.
-     * eturns entries from unencrypted store only.
+     * Returns entries from unencrypted store only.
      *
      * @param user   User of the property. If null properties for all users (NOT JUST THE NULL USER) will be found.
      * @param container Container to search for. If null properties of all containers will be found
@@ -780,7 +771,6 @@ public class PropertyManager
             });
         }
 
-
         private void testPropertyStore(PropertyStore store, PropertyStoreTest test)
         {
             TestContext context = TestContext.get();
@@ -810,7 +800,6 @@ public class PropertyManager
                 assertSame(m, AbstractPropertyStore.NULL_MAP);
             }
         }
-
 
         private void testProperties(PropertyStore store, User user, Container test, String category)
         {

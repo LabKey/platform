@@ -45,9 +45,6 @@ import java.util.Objects;
 import java.util.TimeZone;
 
 /**
- * User: migra
- * Date: Oct 25, 2005
- *
  * TODO: Add more types? Entity, Lsid, User, ...
  */
 public enum PropertyType
