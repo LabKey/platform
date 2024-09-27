@@ -2105,9 +2105,6 @@ public class DbScope
                 TransactionImpl t2 = scope.getTransactionImpl(thread);
                 t = t2 == null || t2 == t ? null : t2;
             }
-
-            // Also close down connections that might not have been connected with a Transaction object
-            ConnectionWrapper.closeConnections(thread);
         }
     }
 

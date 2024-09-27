@@ -30,6 +30,7 @@ import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CopyOnWriteHashMap;
+import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.formSchema.CheckboxField;
@@ -300,6 +301,9 @@ public class PipelineJobServiceImpl implements PipelineJobService
             if (jobThread != null)
             {
                 DbScope.closeAllConnectionsForThread(jobThread);
+
+                // Also close down connections that might not have been connected with a Transaction object
+                ConnectionWrapper.closeConnections(jobThread);
             }
         }
     }
