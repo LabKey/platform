@@ -2227,7 +2227,7 @@ public class ExpDataIterators
 
         private String _fileLinkDirectory = null;
         Function<List<String>, Runnable> _indexFunction;
-        Map<String, String> _importAliases;
+        final Map<String, String> _importAliases;
 
         // expTable is the shared experiment table e.g. exp.Data or exp.Materials
         public PersistDataIteratorBuilder(@NotNull DataIteratorBuilder in, TableInfo expTable, TableInfo propsTable, ExpObject typeObject, Container container, User user, Map<String, String> importAliases, @Nullable Integer ownerObjectId)
@@ -2238,7 +2238,7 @@ public class ExpDataIterators
             _dataTypeObject = typeObject;
             _container = container;
             _user = user;
-            _importAliases = importAliases;
+            _importAliases = importAliases != null ? new CaseInsensitiveHashMap<>(importAliases) : new CaseInsensitiveHashMap<>();
         }
 
         public PersistDataIteratorBuilder setIndexFunction(Function<List<String>, Runnable> indexFunction)
@@ -2278,15 +2278,11 @@ public class ExpDataIterators
 
             final Map<String, Integer> colNameMap = DataIteratorUtil.createColumnNameMap(input);
 
-            Map<String, String> aliases = _importAliases != null ?
-                    _importAliases :
-                    new CaseInsensitiveHashMap<>();
-
             assert _expTable instanceof ExpMaterialTableImpl || _expTable instanceof ExpDataClassDataTableImpl;
             boolean isSample = _expTable instanceof ExpMaterialTableImpl;
 
             SimpleTranslator step1 = new SimpleTranslator(input, context);
-            step1.selectAll(Sets.newCaseInsensitiveHashSet("alias"), aliases);
+            step1.selectAll(Sets.newCaseInsensitiveHashSet("alias"), _importAliases);
             if (colNameMap.containsKey("alias"))
                 step1.addColumn(ExperimentService.ALIASCOLUMNALIAS, colNameMap.get("alias")); // see AliasDataIteratorBuilder
 
