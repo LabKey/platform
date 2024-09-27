@@ -20,20 +20,15 @@ import org.labkey.api.data.Container;
 
 import java.text.DecimalFormat;
 
-import static org.labkey.api.settings.LookAndFeelFolderProperties.defaultTimeFormatString;
-import static org.labkey.api.settings.LookAndFeelProperties.LOOK_AND_FEEL_SET_NAME;
-
 import static org.labkey.api.settings.LookAndFeelFolderProperties.defaultDateFormatString;
 import static org.labkey.api.settings.LookAndFeelFolderProperties.defaultDateTimeFormatString;
 import static org.labkey.api.settings.LookAndFeelFolderProperties.defaultNumberFormatString;
-
-import static org.labkey.api.settings.LookAndFeelProperties.Properties.*;
-
-/**
- * User: adam
- * Date: Aug 1, 2008
- * Time: 9:35:40 PM
- */
+import static org.labkey.api.settings.LookAndFeelFolderProperties.defaultTimeFormatString;
+import static org.labkey.api.settings.LookAndFeelProperties.LOOK_AND_FEEL_SET_NAME;
+import static org.labkey.api.settings.LookAndFeelProperties.Properties.extraDateParsingPattern;
+import static org.labkey.api.settings.LookAndFeelProperties.Properties.extraDateTimeParsingPattern;
+import static org.labkey.api.settings.LookAndFeelProperties.Properties.extraTimeParsingPattern;
+import static org.labkey.api.settings.LookAndFeelProperties.Properties.restrictedColumnsEnabled;
 
 // Handles only the properties that can be set at the folder level
 public class WriteableFolderLookAndFeelProperties extends AbstractWriteableSettingsGroup

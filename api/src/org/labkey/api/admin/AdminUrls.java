@@ -45,18 +45,21 @@ public interface AdminUrls extends UrlProvider
     ActionURL getNotificationsURL(Container c);
     ActionURL getExportFolderURL(Container c);
     ActionURL getImportFolderURL(Container c);
-    ActionURL getFolderSettingsURL(Container c);
     ActionURL getFileRootsURL(Container c);
 
+    /**
+     * Get the appropriate settings page for the passed in container (root, project, or folder)
+     */
+    ActionURL getLookAndFeelSettingsURL(Container c);
     ActionURL getSiteLookAndFeelSettingsURL();
+    ActionURL getProjectSettingsURL(Container c);
+    ActionURL getProjectSettingsMenuURL(Container c);
+    ActionURL getProjectSettingsFileURL(Container c);
+    ActionURL getFolderSettingsURL(Container c);
 
     ActionURL getCreateProjectURL(@Nullable ActionURL returnURL);
     ActionURL getCreateFolderURL(Container c, @Nullable ActionURL returnURL);
     ActionURL getMemTrackerURL();
-    ActionURL getLookAndFeelSettingsURL();
-    ActionURL getProjectSettingsURL(Container c);
-    ActionURL getProjectSettingsMenuURL(Container c);
-    ActionURL getProjectSettingsFileURL(Container c);
     ActionURL getCustomizeEmailURL(Container c, Class<? extends EmailTemplate> selectedTemplate, URLHelper returnURL);
     ActionURL getFilesSiteSettingsURL(boolean upgrade);
     ActionURL getSessionLoggingURL();
