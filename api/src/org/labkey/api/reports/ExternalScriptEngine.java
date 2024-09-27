@@ -21,6 +21,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.miniprofiler.CustomTiming;
 import org.labkey.api.miniprofiler.MiniProfiler;
+import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.util.ExceptionUtil;
@@ -65,6 +66,8 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
      */
     public static final String WORKING_DIRECTORY = "external.script.engine.workingDirectory";
     public static final String PARAM_REPLACEMENT_MAP = "external.script.engine.replacementMap";
+    /** Identifier of the pipeline job that initiated the script execution, if any */
+    public static final String PIPELINE_JOB_GUID = "external.script.engine.pipelineJobGuid";
     public static final String PARAM_SCRIPT = "scriptFile";
     public static final String SCRIPT_PATH = "scriptPath";
     public static final String SCRIPT_NAME_REPLACEMENT = "${scriptName}";
@@ -136,7 +139,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
             int exitCode = runProcess(context, pb, output, timeout, TimeUnit.SECONDS);
             if (exitCode != 0)
             {
-                throw new ScriptException("An error occurred when running the script '" + scriptFile.getName() + "', exit code: " + exitCode + ").\n" + output.toString());
+                throw new ScriptException("An error occurred when running the script '" + scriptFile.getName() + "', exit code: " + exitCode + ".\n" + output);
             }
             else
                 return output.toString();
@@ -318,6 +321,8 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
      */
     protected int runProcess(ScriptContext context, ProcessBuilder pb, StringBuffer output, long timeout, TimeUnit timeoutUnit)
     {
+        String jobGuid = (String)context.getBindings(ScriptContext.ENGINE_SCOPE).get(PIPELINE_JOB_GUID);
+
         Process proc;
         try
         {
@@ -337,81 +342,85 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
             throw new RuntimeException(message, eio);
         }
 
-        // Write script process output to the provided writer
-        // if the writer isn't the original writer (a PrintWriter over the tomcat console).
-        Writer writer = context.getWriter() == _originalWriter ? null : context.getWriter();
+        try (PipelineJobService.Closer ignored = PipelineJobService.get().trackForJobCancellation(jobGuid, proc))
+        {
+            // Write script process output to the provided writer
+            // if the writer isn't the original writer (a PrintWriter over the tomcat console).
+            Writer writer = context.getWriter() == _originalWriter ? null : context.getWriter();
 
-        // create thread pool for collecting the process output
-        ExecutorService pool = Executors.newSingleThreadExecutor();
+            // create thread pool for collecting the process output
+            ExecutorService pool = Executors.newSingleThreadExecutor();
 
-        // collect output using separate thread so we can enforce a timeout on the process
-        Future<Integer> out = pool.submit(() -> {
-            try (BufferedReader procReader = Readers.getReader(proc.getInputStream()))
-            {
-                String line;
-                int count = 0;
-                while ((line = procReader.readLine()) != null)
+            // collect output using separate thread so we can enforce a timeout on the process
+            Future<Integer> out = pool.submit(() -> {
+                try (BufferedReader procReader = Readers.getReader(proc.getInputStream()))
                 {
-                    count++;
-                    output.append(line);
-                    output.append('\n');
-                    if (writer != null)
+                    String line;
+
+                    while ((line = procReader.readLine()) != null)
                     {
-                        writer.write(line);
-                        writer.write('\n');
-                        // flush after every write so LogPrintWriter will forward the message to the Log4j Logger
+                        output.append(line);
+                        output.append('\n');
+                        if (writer != null)
+                        {
+                            writer.write(line);
+                            writer.write('\n');
+                            // flush after every write so LogPrintWriter will forward the message to the Log4j Logger
+                            writer.flush();
+                        }
+                    }
+                    if (writer != null)
                         writer.flush();
+                    // Return a value so that the lambda is treated as a Callable, which unlike a Runnable, can throw exceptions
+                    return null;
+                }
+            });
+
+            try
+            {
+                if (timeout > 0)
+                {
+                    if (!proc.waitFor(timeout, timeoutUnit))
+                    {
+                        proc.destroyForcibly().waitFor();
+
+                        String msg = "Process killed after exceeding timeout of " + timeout + " " + timeoutUnit.name().toLowerCase() + "\n";
+                        output.append(msg);
+                        if (writer != null)
+                            writer.write(msg);
                     }
                 }
-                if (writer != null)
-                    writer.flush();
-                return count;
-            }
-        });
-
-        try
-        {
-            if (timeout > 0)
-            {
-                if (!proc.waitFor(timeout, timeoutUnit))
+                else
                 {
-                    proc.destroyForcibly().waitFor();
-
-                    String msg = "Process killed after exceeding timeout of " + timeout + " " + timeoutUnit.name().toLowerCase() + "\n";
-                    output.append(msg);
-                    if (writer != null)
-                        writer.write(msg);
+                    proc.waitFor();
                 }
+
+                int code = proc.exitValue();
+
+                appendConsoleOutput(context, output);
+
+                // Ensure that the Future has completed its work
+                out.get();
+
+                return code;
             }
-            else
+            catch (IOException ex)
             {
-                proc.waitFor();
+                throw new RuntimeException("Failed writing output for process in '" + pb.directory().getPath() + "'.", ex);
             }
+            catch (InterruptedException ei)
+            {
+                throw new RuntimeException("Interrupted process for '" + pb.command() + " in " + pb.directory() + "'.", ei);
+            }
+            catch (ExecutionException ex)
+            {
+                // Exception thrown in output collecting thread
+                Throwable cause = ex.getCause();
+                if (cause instanceof IOException)
+                    throw new RuntimeException("Failed writing output for process in '" + pb.directory().getPath() + "'.", cause);
 
-            int code = proc.exitValue();
-
-            appendConsoleOutput(context, output);
-
-            int count = out.get();
-
-            return code;
-        }
-        catch (IOException ex)
-        {
-            throw new RuntimeException("Failed writing output for process in '" + pb.directory().getPath() + "'.", ex);
-        }
-        catch (InterruptedException ei)
-        {
-            throw new RuntimeException("Interrupted process for '" + pb.command() + " in " + pb.directory() + "'.", ei);
-        }
-        catch (ExecutionException ex)
-        {
-            // Exception thrown in output collecting thread
-            Throwable cause = ex.getCause();
-            if (cause instanceof IOException)
-                throw new RuntimeException("Failed writing output for process in '" + pb.directory().getPath() + "'.", cause);
-
-            throw new RuntimeException(cause);
+                throw new RuntimeException(cause);
+            }
         }
     }
 
@@ -522,10 +531,8 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
         String fileName = _def.getOutputFileName();
         if (fileName != null)
         {
-            if (context.getAttribute(REWRITTEN_SCRIPT_FILE) instanceof File)
+            if (context.getAttribute(REWRITTEN_SCRIPT_FILE) instanceof File scriptFile)
             {
-                File scriptFile = (File)context.getAttribute(REWRITTEN_SCRIPT_FILE);
-
                 // Replace the ${scriptName} substitution with the actual name of the script file (minus extension)
                 // E.g., if "script.R" is the filename and "${scriptName}.Rout" is the replacement, try "script.Rout"
                 int index = scriptFile.getName().lastIndexOf(".");
