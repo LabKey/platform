@@ -38,6 +38,12 @@ public class FileSystemVFS extends AbstractFileSystemLike
     }
 
     @Override
+    public URI getURI(FileLike fo)
+    {
+        return ((_FileLike)fo).vfs.getURI();
+    }
+
+    @Override
     public FileLike getRoot()
     {
         return root;

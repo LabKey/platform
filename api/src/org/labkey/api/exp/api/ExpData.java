@@ -24,6 +24,7 @@ import org.labkey.api.exp.XarSource;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.security.User;
+import org.labkey.api.util.FileUtil;
 import org.labkey.vfs.FileLike;
 
 import java.io.File;
@@ -110,4 +111,19 @@ public interface ExpData extends ExpRunItem
     /** If this file is under the file root for its parent container, return the WebDAV URL that can be used to interact with it */
     @Nullable
     String getWebDavURL(@NotNull FileContentService.PathType type);
+
+    static String normalizeDataFileURI(URI uri)
+    {
+        if (uri != null && !uri.isAbsolute())
+        {
+            throw new IllegalArgumentException("URI must be absolute.");
+        }
+        String s = FileUtil.uriToString(uri);
+        // Strip off any trailing "/"
+        if (s != null && s.endsWith("/"))
+        {
+            s = s.substring(0, s.length() - 1);
+        }
+        return s;
+    }
 }

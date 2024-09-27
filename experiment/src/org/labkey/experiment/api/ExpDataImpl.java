@@ -17,7 +17,6 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.vfs2.FileObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -246,18 +245,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     public void setDataFileURI(URI uri)
     {
         ensureUnlocked();
-        if (uri != null && !uri.isAbsolute())
-        {
-            throw new IllegalArgumentException("URI must be absolute.");
-        }
-        String s = FileUtil.uriToString(uri);
-
-        // Strip off any trailing "/"
-        if (s != null && s.endsWith("/"))
-        {
-            s = s.substring(0, s.length() - 1);
-        }
-        _object.setDataFileUrl(s);
+        _object.setDataFileUrl(ExpData.normalizeDataFileURI(uri));
     }
 
     @Override

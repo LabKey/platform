@@ -46,15 +46,6 @@ abstract public class AbstractFileSystemLike implements FileSystemLike
     }
 
     @Override
-    public URI getURI(FileLike fo)
-    {
-        String encPath = toURIPath(fo.getPath());
-        if (!strUri.endsWith("/") && !encPath.startsWith("/"))
-            return URI.create(strUri + '/' + encPath);
-        return URI.create(strUri + toURIPath(fo.getPath()));
-    }
-
-    @Override
     public Path getNioPath(FileLike fo)
     {
         return Path.of(getURI(fo));

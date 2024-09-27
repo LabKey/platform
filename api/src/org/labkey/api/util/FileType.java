@@ -27,6 +27,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.io.IOException;
@@ -474,6 +475,11 @@ public class FileType implements Serializable
     public boolean isType(File file)
     {
         return isType(file, null, null);
+    }
+
+    public boolean isType(FileLike file)
+    {
+        return isType(file.toNioPathForRead(), null, null);
     }
 
     public boolean isType(java.nio.file.Path path)

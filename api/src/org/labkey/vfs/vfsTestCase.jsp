@@ -16,12 +16,14 @@
 <%@ page import="org.junit.After" %>
 <%@ page import="org.junit.Before" %>
 <%@ page import="org.junit.Test" %>
+<%@ page import="java.io.File" %>
 <%@ page import="java.net.URI" %>
 <%@ page import="org.labkey.api.util.FileUtil" %>
 <%@ page import="org.labkey.vfs.FileSystemLike" %>
 <%@ page import="org.labkey.api.util.Path" %>
 <%@ page import="org.labkey.vfs.FileLike" %>
 <%@ page import="static org.junit.Assert.*" %>
+<%@ page import="java.util.HashSet" %>
 
 
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
@@ -40,6 +42,37 @@
     public void tearDown() throws Exception
     {
         FileUtil.deleteDir(tempPath);
+    }
+
+
+    @Test
+    public void testSet() throws Exception
+    {
+        // we put files in maps and sets, test that this works for _FileObject
+
+        // same file from different roots, and different files same root
+        FileLike a = new FileSystemLike.Builder(new File("/a/")).root();
+        FileLike c1 = a.resolveFile(Path.parse("b/c.txt"));
+        assertNotNull(c1);
+        FileLike b = new FileSystemLike.Builder(new File("/a/b/")).root();
+        FileLike c2 = b.resolveChild("c.txt");
+        assertNotNull(c2);
+        FileLike d1 =  b.resolveChild("d.txt");
+        assertNotNull(d1);
+        FileLike d2 =  b.resolveFile(Path.parse("c/d.txt"));
+        assertNotNull(d2);
+
+        assertEquals(c1, c2);
+        assertEquals(0, c1.compareTo(c2));
+        assertEquals(c1.hashCode(), c2.hashCode());
+        assertNotEquals(d1, d2);
+
+        HashSet<FileLike> s = new HashSet<>();
+        s.add(c1);
+        assertTrue(s.contains(c2));
+        s.add(d1);
+        assertTrue(s.contains(d1));
+        assertFalse(s.contains(d2));
     }
 
 

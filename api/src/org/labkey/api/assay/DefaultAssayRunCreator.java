@@ -655,7 +655,8 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                     FileLike file = entry.getValue();
 
                     // Check if the file is created by a run
-                    ExpData existingData = ExperimentService.get().getExpDataByURL(file.toURI().toString(), context.getContainer());
+                    // Don't use getExpDataByURL(String). That method expects string in a very particular format.
+                    ExpData existingData = ExperimentService.get().getExpDataByURL(file.toNioPathForRead(), context.getContainer());
                     if (existingData != null && existingData.getRunId() != null && !inputDatas.containsKey(existingData))
                     {
                         // Add this file as an input to the run. When we add the outputs to the run, we will detect
@@ -904,7 +905,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             ExpData data = DefaultAssayRunCreator.createData(context.getContainer(), file.toNioPathForRead().toFile(), file.getName(), dataType, reuseExistingData, errorIfDataOwned, log);
             String role = ExpDataRunInput.DEFAULT_ROLE;
-            if (dataType != null && dataType.getFileType().isType(file.toNioPathForRead().toFile()))
+            if (dataType != null && dataType.getFileType().isType(file))
             {
                 if (dataType.getRole() != null)
                 {

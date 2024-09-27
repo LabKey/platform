@@ -13,7 +13,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 
 public class FileSystemLocal extends AbstractFileSystemLike
@@ -26,6 +25,12 @@ public class FileSystemLocal extends AbstractFileSystemLike
         super(uri, canRead, canWrite, canDeleteRoot);
         nioRoot = java.nio.file.Path.of(uri);
         root = new _FileLike(Path.rootPath, nioRoot);
+    }
+
+    @Override
+    public URI getURI(FileLike fo)
+    {
+        return ((_FileLike)fo).file.toURI();
     }
 
     @Override
@@ -49,7 +54,6 @@ public class FileSystemLocal extends AbstractFileSystemLike
 
     class _FileLike extends AbstractFileLike
     {
-//        final java.nio.file.Path nioPath;
         final File file;
 
         _FileLike(Path path, java.nio.file.Path nioPath)
@@ -57,7 +61,6 @@ public class FileSystemLocal extends AbstractFileSystemLike
             super(path);
             if (!nioPath.startsWith(nioRoot))
                 throw new IllegalArgumentException("Path can not be resolved");
-//            this.nioPath = nioPath;
             this.file = nioPath.toFile();
         }
 
@@ -67,7 +70,6 @@ public class FileSystemLocal extends AbstractFileSystemLike
             var nioPath = file.toPath();
             if (!nioPath.startsWith(nioRoot))
                 throw new IllegalArgumentException("Path can not be resolved");
-//            this.nioPath = nioPath;
             this.file = file;
         }
 
