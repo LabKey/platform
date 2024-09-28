@@ -22,6 +22,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -59,6 +60,7 @@ public interface ExpProtocolApplication extends ExpObject
      */
     @NotNull ExpDataRunInput addDataInput(User user, ExpData input, String inputRole);
     @NotNull ExpDataRunInput addDataInput(User user, ExpData input, String inputRole, @Nullable ExpDataProtocolInput protocolInput);
+    void removeAllDataInputs(User user);
     void removeDataInput(User user, ExpData data);
     void removeDataInputs(User user, Collection<Integer> rowIds);
 
@@ -69,8 +71,11 @@ public interface ExpProtocolApplication extends ExpObject
      */
     @NotNull ExpMaterialRunInput addMaterialInput(User user, ExpMaterial material, @Nullable String inputRole);
     @NotNull ExpMaterialRunInput addMaterialInput(User user, ExpMaterial material, @Nullable String inputRole, @Nullable ExpMaterialProtocolInput protocolInput);
+    void addMaterialInputs(User user, Collection<Integer> materialRowIds, @Nullable String inputRole, @Nullable ExpMaterialProtocolInput protocolInput) throws SQLException;
+    void removeAllMaterialInputs(User user);
     void removeMaterialInput(User user, ExpMaterial material);
     void removeMaterialInputs(User user, Collection<Integer> rowIds);
+
     void addProvenanceInput(Set<String> lsids);
     void addProvenanceMapping(Set<Pair<String, String>> lsidPairs);
     Set<Pair<String, String>> getProvenanceMapping();

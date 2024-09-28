@@ -62,7 +62,7 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
         if (!(table instanceof AssayResultTable))
             throw new IllegalArgumentException("Expected AssayResultTable");
 
-        _assaySampleLookupContext = new AssaySampleLookupContext(getQueryTable(), FieldKey.fromParts("Run", "RowId"));
+        _assaySampleLookupContext = new AssaySampleLookupContext(getQueryTable());
     }
 
     @Override
