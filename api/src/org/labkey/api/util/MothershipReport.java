@@ -300,7 +300,7 @@ public class MothershipReport implements Runnable
     @Override
     public void run()
     {
-        LOG.debug("Starting to submit report to " + _url);
+        LOG.debug("Starting to submit report to {}", _url);
         try
         {
             HttpURLConnection connection = openConnectionWithRedirects(_url, _forwardedFor);
@@ -457,7 +457,6 @@ public class MothershipReport implements Runnable
         String servletContainer = context == null ? null : context.getServerInfo();
         addParam("servletContainer", servletContainer);
         addParam("distribution", AppProps.getInstance().getDistributionName());
-        addParam("distributionFilename", AppProps.getInstance().getDistributionFilename());
         addParam("usageReportingLevel", AppProps.getInstance().getUsageReportingLevel().toString());
         addParam("exceptionReportingLevel", AppProps.getInstance().getExceptionReportingLevel().toString());
         addParam("apiVersion", "23.11");

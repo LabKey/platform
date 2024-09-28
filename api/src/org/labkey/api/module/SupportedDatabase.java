@@ -22,7 +22,7 @@ public enum SupportedDatabase
         if (dialect.isSqlServer())
             return mssql;
 
-        throw new IllegalStateException("Dialect not supported");
+        throw new IllegalStateException("Dialect not supported: " + dialect.getProductName());
     }
 
     // databases parameter is a comma-separated list of databases: "pgsql, mssql", "mssql", "pgsql", etc.
