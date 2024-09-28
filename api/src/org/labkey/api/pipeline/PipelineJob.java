@@ -112,7 +112,7 @@ abstract public class PipelineJob extends Job implements Serializable
     // only write ERROR level events to the system log
     private static final Logger _logJobStopStart = LogManager.getLogger(Job.class);
 
-    public static Logger getJobLogger(Class clazz)
+    public static Logger getJobLogger(Class<?> clazz)
     {
         return LogManager.getLogger(PipelineJob.class.getName() + ".." + clazz.getName());
     }
@@ -420,7 +420,7 @@ abstract public class PipelineJob extends Job implements Serializable
         return updateStatusForTask();
     }
 
-    public TaskFactory getActiveTaskFactory()
+    public TaskFactory<?> getActiveTaskFactory()
     {
         if (getActiveTaskId() == null)
             return null;
@@ -443,7 +443,7 @@ abstract public class PipelineJob extends Job implements Serializable
     public void setLogFile(Path logFile)
     {
         // Set Log file path and clear/reset logger
-        _logFile = logFile.toAbsolutePath().normalize();;
+        _logFile = logFile.toAbsolutePath().normalize();
         _logger = null; //This should trigger getting the new Logger next time getLogger is called
     }
 
@@ -560,7 +560,7 @@ abstract public class PipelineJob extends Job implements Serializable
 
     public boolean updateStatusForTask()
     {
-        TaskFactory factory = getActiveTaskFactory();
+        TaskFactory<?> factory = getActiveTaskFactory();
         TaskStatus status = getActiveTaskStatus();
 
         if (factory != null && !TaskStatus.error.equals(status) && !TaskStatus.cancelled.equals(status))
@@ -669,12 +669,12 @@ abstract public class PipelineJob extends Job implements Serializable
 
     public void validateParameters() throws PipelineValidationException
     {
-        TaskPipeline taskPipeline = getTaskPipeline();
+        TaskPipeline<?> taskPipeline = getTaskPipeline();
         if (taskPipeline != null)
         {
             for (TaskId taskId : taskPipeline.getTaskProgression())
             {
-                TaskFactory taskFactory = PipelineJobService.get().getTaskFactory(taskId);
+                TaskFactory<?> taskFactory = PipelineJobService.get().getTaskFactory(taskId);
                 if (taskFactory == null)
                     throw new PipelineValidationException("Task '" + taskId + "' not found");
                 taskFactory.validateParameters(this);
@@ -692,7 +692,7 @@ abstract public class PipelineJob extends Job implements Serializable
         restoreQueue(queue);
 
         // Initialize the task pipeline
-        TaskPipeline taskPipeline = getTaskPipeline();
+        TaskPipeline<?> taskPipeline = getTaskPipeline();
         if (taskPipeline != null)
         {
             // Save the current job state marshalled to XML, in case of error.
@@ -776,21 +776,21 @@ abstract public class PipelineJob extends Job implements Serializable
      * @return a task pipeline to run for this job
      */
     @Nullable
-    public TaskPipeline getTaskPipeline()
+    public TaskPipeline<?> getTaskPipeline()
     {
         return null;
     }
 
     public boolean isActiveTaskLocal()
     {
-        TaskFactory factory = getActiveTaskFactory();
+        TaskFactory<?> factory = getActiveTaskFactory();
         return (factory != null &&
                 TaskFactory.WEBSERVER.equalsIgnoreCase(factory.getExecutionLocation()));
     }
 
     public void runActiveTask() throws IOException, PipelineJobException
     {
-        TaskFactory factory = getActiveTaskFactory();
+        TaskFactory<?> factory = getActiveTaskFactory();
         if (factory == null)
             return;
 
@@ -813,7 +813,7 @@ abstract public class PipelineJob extends Job implements Serializable
             boolean success = false;
             try
             {
-                logStartStopInfo("Starting to run task '" + factory.getId() + "' for job '" + toString() + "' with log file " + getLogFilePath());
+                logStartStopInfo("Starting to run task '" + factory.getId() + "' for job '" + this + "' with log file " + getLogFilePath());
                 getLogger().info("Starting to run task '" + factory.getId() + "' at location '" + factory.getExecutionLocation() + "'");
                 if (PipelineJobService.get().getLocationType() != PipelineJobService.LocationType.WebServer)
                 {
@@ -824,10 +824,10 @@ abstract public class PipelineJob extends Job implements Serializable
                     }
                 }
 
-                if (task instanceof WorkDirectoryTask)
+                if (task instanceof WorkDirectoryTask<?> wdTask)
                 {
                     workDirectory = factory.createWorkDirectory(getJobGUID(), getJobSupport(FileAnalysisJobSupport.class), getLogger());
-                    ((WorkDirectoryTask)task).setWorkDirectory(workDirectory);
+                    wdTask.setWorkDirectory(workDirectory);
                 }
 
                 actions = task.run();
@@ -836,14 +836,14 @@ abstract public class PipelineJob extends Job implements Serializable
             finally
             {
                 getLogger().info((success ? "Successfully completed" : "Failed to complete") + " task '" + factory.getId() + "'");
-                logStartStopInfo((success ? "Successfully completed" : "Failed to complete") + " task '" + factory.getId() + "' for job '" + toString() + "' with log file " + getLogFile());
+                logStartStopInfo((success ? "Successfully completed" : "Failed to complete") + " task '" + factory.getId() + "' for job '" + this + "' with log file " + getLogFile());
 
                 try
                 {
                     if (workDirectory != null)
                     {
                         workDirectory.remove(success);
-                        ((WorkDirectoryTask)task).setWorkDirectory(null);
+                        ((WorkDirectoryTask<?>)task).setWorkDirectory(null);
                     }
                 }
                 catch (IOException e)
@@ -875,7 +875,7 @@ abstract public class PipelineJob extends Job implements Serializable
         }
         else
         {
-            logStartStopInfo("Skipping already completed task '" + factory.getId() + "' for job '" + toString() + "' with log file " + getLogFile());
+            logStartStopInfo("Skipping already completed task '" + factory.getId() + "' for job '" + this + "' with log file " + getLogFile());
             getLogger().info("Skipping already completed task '" + factory.getId() + "' at location '" + factory.getExecutionLocation() + "'");
         }
 
@@ -890,7 +890,7 @@ abstract public class PipelineJob extends Job implements Serializable
 
     public boolean runStateMachine()
     {
-        TaskPipeline pipeline = getTaskPipeline();
+        TaskPipeline<?> pipeline = getTaskPipeline();
         if (pipeline == null)
         {
             assert false : "Either override getTaskPipeline() or run() for " + getClass();
@@ -953,7 +953,11 @@ abstract public class PipelineJob extends Job implements Serializable
     {
         for (int i = 0; i < progression.length; i++)
         {
-            TaskFactory factory = PipelineJobService.get().getTaskFactory(progression[i]);
+            TaskFactory<?> factory = PipelineJobService.get().getTaskFactory(progression[i]);
+            if (factory == null)
+            {
+                throw new IllegalStateException("Could not find factory for " + progression[i]);
+            }
             if (factory.getId().equals(_activeTaskId) ||
                     factory.getActiveId(this).equals(_activeTaskId))
                 return i;
@@ -970,6 +974,10 @@ abstract public class PipelineJob extends Job implements Serializable
             try
             {
                 factory = PipelineJobService.get().getTaskFactory(progression[i]);
+                if (factory == null)
+                {
+                    throw new IllegalStateException("Could not find factory for " + progression[i]);
+                }
                 // Stop, if this task requires a change in join state
                 if ((factory.isJoin() && isSplitJob()) || (!factory.isJoin() && isSplittable()))
                     break;
@@ -988,8 +996,6 @@ abstract public class PipelineJob extends Job implements Serializable
 
         if (i < progression.length)
         {
-            assert factory != null : "Factory not found.";
-
             if (factory.isJoin() && isSplitJob())
             {
                 setActiveTaskId(factory.getId(), false);   // ID is just a marker for state machine
@@ -1030,7 +1036,7 @@ abstract public class PipelineJob extends Job implements Serializable
 
     public boolean isAutoRetry()
     {
-        TaskFactory factory = getActiveTaskFactory();
+        TaskFactory<?> factory = getActiveTaskFactory();
         return null != factory && _activeTaskRetries < factory.getAutoRetry() && factory.isAutoRetryEnabled(this);
     }
 
@@ -1166,7 +1172,7 @@ abstract public class PipelineJob extends Job implements Serializable
 
         // A join job with an active task that is not a join task,
         // is waiting for a split to complete.
-        TaskFactory factory = getActiveTaskFactory();
+        TaskFactory<?> factory = getActiveTaskFactory();
         return (factory != null && !factory.isJoin());
     }
 
@@ -1286,7 +1292,7 @@ abstract public class PipelineJob extends Job implements Serializable
             // If the command has a path, then prepend its parent directory to the PATH
             // environment variable as well.
             String exePath = pb.command().get(0);
-            if (exePath != null && !"".equals(exePath) && exePath.indexOf(File.separatorChar) != -1)
+            if (exePath != null && !exePath.isEmpty() && exePath.indexOf(File.separatorChar) != -1)
             {
                 File fileExe = new File(exePath);
                 String exeDir = fileExe.getParent();
@@ -1331,87 +1337,86 @@ abstract public class PipelineJob extends Job implements Serializable
         }
         catch (IOException eio)
         {
-            Map<String, String> env = pb.environment();
-            String path = env.get("PATH");
-            if(path == null) path = env.get("Path");
             throw new PipelineJobException("Failed starting process '" + pb.command() + "'", eio);
         }
 
 
-        // create thread pool for collecting the process output
-        ExecutorService pool = Executors.newSingleThreadExecutor();
-
-        try (PrintWriter fileWriter = createPrintWriter(outputFile, append))
+        try (PipelineJobService.Closer ignored = PipelineJobService.get().trackForJobCancellation(_jobGUID, proc))
         {
-            // collect output using separate thread so we can enforce a timeout on the process
-            Future<Integer> output = pool.submit(() -> {
-                try (BufferedReader procReader = Readers.getReader(proc.getInputStream()))
-                {
-                    String line;
-                    int count = 0;
-                    while ((line = procReader.readLine()) != null)
+            // create thread pool for collecting the process output
+            ExecutorService pool = Executors.newSingleThreadExecutor();
+
+            try (PrintWriter fileWriter = createPrintWriter(outputFile, append))
+            {
+                // collect output using separate thread so we can enforce a timeout on the process
+                Future<Integer> output = pool.submit(() -> {
+                    try (BufferedReader procReader = Readers.getReader(proc.getInputStream()))
                     {
-                        count++;
-                        if (fileWriter == null)
-                            info(line);
-                        else
+                        String line;
+                        int count = 0;
+                        while ((line = procReader.readLine()) != null)
                         {
-                            if (logLineInterval > 0 && count < logLineInterval)
+                            count++;
+                            if (fileWriter == null)
                                 info(line);
-                            else if (count == logLineInterval)
-                                info("Writing additional tool output lines to " + outputFile.getName());
-                            fileWriter.println(line);
+                            else
+                            {
+                                if (logLineInterval > 0 && count < logLineInterval)
+                                    info(line);
+                                else if (count == logLineInterval)
+                                    info("Writing additional tool output lines to " + outputFile.getName());
+                                fileWriter.println(line);
+                            }
+                        }
+                        return count;
+                    }
+                });
+
+                try
+                {
+                    if (timeout > 0)
+                    {
+                        if (!proc.waitFor(timeout, timeoutUnit))
+                        {
+                            proc.destroyForcibly().waitFor();
+
+                            error("Process killed after exceeding timeout of " + timeout + " " + timeoutUnit.name().toLowerCase());
                         }
                     }
-                    return count;
-                }
-            });
-
-            try
-            {
-                if (timeout > 0)
-                {
-                    if (!proc.waitFor(timeout, timeoutUnit))
+                    else
                     {
-                        proc.destroyForcibly().waitFor();
-
-                        error("Process killed after exceeding timeout of " + timeout + " " + timeoutUnit.name().toLowerCase());
+                        proc.waitFor();
                     }
+
+                    int result = proc.exitValue();
+                    if (result != 0)
+                    {
+                        throw new ToolExecutionException("Failed running " + pb.command().get(0) + ", exit code " + result, result);
+                    }
+
+                    int count = output.get();
+                    if (fileWriter != null)
+                        info(count + " lines written total to " + outputFile.getName());
                 }
-                else
+                catch (InterruptedException ei)
                 {
-                    proc.waitFor();
+                    throw new PipelineJobException("Interrupted process for '" + dirWork.getPath() + "'.", ei);
                 }
-
-                int result = proc.exitValue();
-                if (result != 0)
+                catch (ExecutionException e)
                 {
-                    throw new ToolExecutionException("Failed running " + pb.command().get(0) + ", exit code " + result, result);
+                    // Exception thrown in output collecting thread
+                    Throwable cause = e.getCause();
+                    if (cause instanceof IOException)
+                        throw new PipelineJobException("Failed writing output for process in '" + dirWork.getPath() + "'.", cause);
+
+                    throw new PipelineJobException(cause);
                 }
-
-                int count = output.get();
-                if (fileWriter != null)
-                    info(count + " lines written total to " + outputFile.getName());
             }
-            catch (InterruptedException ei)
+            finally
             {
-                throw new PipelineJobException("Interrupted process for '" + dirWork.getPath() + "'.", ei);
-            }
-            catch (ExecutionException e)
-            {
-                // Exception thrown in output collecting thread
-                Throwable cause = e.getCause();
-                if (cause instanceof IOException)
-                    throw new PipelineJobException("Failed writing output for process in '" + dirWork.getPath() + "'.", cause);
-
-                throw new PipelineJobException(cause);
+                pool.shutdownNow();
             }
         }
-        finally
-        {
-            pool.shutdownNow();
-        }
-
     }
 
     public String getLogLevel()
@@ -1437,8 +1442,8 @@ abstract public class PipelineJob extends Job implements Serializable
     {
         private final PipelineJob _job;
         private boolean _isSettingStatus;
-        private Path _file;
-        private final String LINE_SEP = System.getProperty("line.separator");
+        private final Path _file;
+        private final String LINE_SEP = System.lineSeparator();
         private final String datePattern = "dd MMM yyyy HH:mm:ss,SSS";
 
         @Deprecated //Prefer the Path version
@@ -1768,6 +1773,7 @@ abstract public class PipelineJob extends Job implements Serializable
 
     public synchronized boolean interrupt()
     {
+        PipelineJobService.get().cancelForJob(getJobGUID());
         if (!canInterrupt())
             return false;
         _interrupted = true;
@@ -1833,7 +1839,10 @@ abstract public class PipelineJob extends Job implements Serializable
     public boolean cancel(boolean mayInterruptIfRunning)
     {
         if (isSubmitted())
+        {
+            PipelineJobService.get().cancelForJob(getJobGUID());
             return super.cancel(mayInterruptIfRunning);
+        }
         return true;
     }
 
@@ -1860,7 +1869,7 @@ abstract public class PipelineJob extends Job implements Serializable
         {
             try
             {
-                error("Uncaught exception in PipelineJob: " + this.toString(), throwable);
+                error("Uncaught exception in PipelineJob: " + this, throwable);
             }
             catch (Exception ignored) {}
         }
@@ -1985,8 +1994,7 @@ abstract public class PipelineJob extends Job implements Serializable
         // Fix issue 35876: Second run of a split XTandem pipeline job not completing - don't rely on the job being
         // represented in memory as a single object
         if (this == o) return true;
-        if (!(o instanceof PipelineJob)) return false;
-        PipelineJob that = (PipelineJob) o;
+        if (!(o instanceof PipelineJob that)) return false;
         return Objects.equals(_jobGUID, that._jobGUID);
     }
 

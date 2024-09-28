@@ -17,12 +17,10 @@ package org.labkey.api.admin.sitevalidation;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.view.ActionURL;
 
-/**
- * User: tgaluhn
- * Date: 4/8/2015
- */
 public class SiteValidationResult
 {
     public enum Level
@@ -31,19 +29,19 @@ public class SiteValidationResult
         WARN,
         ERROR;
 
-        public SiteValidationResult create() { return create("");}
-        public SiteValidationResult create(String message) { return create(message, null);}
-        public SiteValidationResult create(String message, ActionURL link) { return new SiteValidationResult(this, message, link);}
+        public SiteValidationResult create() { return create(HtmlString.EMPTY_STRING);}
+        public SiteValidationResult create(HtmlString html) { return create(html, null);}
+        public SiteValidationResult create(HtmlString message, @Nullable ActionURL link) { return new SiteValidationResult(this, message, link);}
     }
 
     private final Level level;
-    private final StringBuilder sb;
+    private final HtmlStringBuilder builder;
     private final ActionURL link;
 
-    private SiteValidationResult(@NotNull Level level, @NotNull String message, @Nullable ActionURL link)
+    private SiteValidationResult(@NotNull Level level, @NotNull HtmlString message, @Nullable ActionURL link)
     {
         this.level = level;
-        this.sb = new StringBuilder(message);
+        this.builder = HtmlStringBuilder.of(message);
         this.link = link;
     }
 
@@ -52,9 +50,9 @@ public class SiteValidationResult
         return level;
     }
 
-    public String getMessage()
+    public HtmlString getMessage()
     {
-        return sb.toString();
+        return builder.getHtmlString();
     }
 
     public ActionURL getLink()
@@ -62,9 +60,14 @@ public class SiteValidationResult
         return link;
     }
 
+    public SiteValidationResult append(String message)
+    {
+        builder.append(message);
+        return this;
+    }
+
     public SiteValidationResult append(Object o)
     {
-        sb.append(o);
-        return this;
+        return append(o.toString());
     }
 }
