@@ -29,6 +29,7 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 public class PlateMapExcelWriter extends ExcelWriter
@@ -108,7 +109,8 @@ public class PlateMapExcelWriter extends ExcelWriter
         if (ci.isLookup() && ci.getDisplayField() != null)
             ci = ci.getDisplayField();
 
-        return ci.getAlias();
+        // TODO CR FLAG: Temporary code. What the heck is going on?
+        return Objects.equals(ci.getAlias(), "SampleID_fs_Name") ? "SampleID$Name" : ci.getAlias();
     }
 
     protected void renderGridRow(Sheet sheet, List<DisplayColumn> displayColumns)
