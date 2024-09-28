@@ -908,7 +908,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         {
             super(queryTable);
 
-            _assaySampleLookupContext = new AssaySampleLookupContext(getQueryTable(), FieldKey.fromParts(Column.RowId));
+            _assaySampleLookupContext = new AssaySampleLookupContext(getQueryTable());
             _cache = new RemapCache();
         }
 
