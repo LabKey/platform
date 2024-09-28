@@ -630,12 +630,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         typeColumnInfo.setShownInInsertView(false);
 
         addColumn(Column.MaterialExpDate);
-
-        var folderCol = addContainerColumn(Column.Folder, null);
-        boolean hasProductProjects = getContainer().hasProductProjects();
-        if (hasProductProjects)
-            folderCol.setLabel("Project");
-
+        addContainerColumn(Column.Folder, null);
         var runCol = addColumn(Column.Run);
         runCol.setFk(new ExpSchema(_userSchema.getUser(), getContainer()).getRunIdForeignKey(getContainerFilter()));
         runCol.setShownInInsertView(false);
@@ -674,7 +669,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         List<FieldKey> defaultCols = new ArrayList<>();
         defaultCols.add(FieldKey.fromParts(Column.Name));
         defaultCols.add(FieldKey.fromParts(Column.MaterialExpDate));
-        if (hasProductProjects)
+        boolean hasProductFolders = getContainer().hasProductFolders();
+        if (hasProductFolders)
             defaultCols.add(FieldKey.fromParts(Column.Folder));
         defaultCols.add(FieldKey.fromParts(Column.Run));
 

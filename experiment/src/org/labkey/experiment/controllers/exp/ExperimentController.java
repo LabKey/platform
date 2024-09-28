@@ -90,7 +90,6 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpDataProtocolInputTable;
 import org.labkey.api.exp.query.ExpInputTable;
 import org.labkey.api.exp.query.ExpMaterialProtocolInputTable;
-import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.exp.xar.LSIDRelativizer;
@@ -4248,7 +4247,7 @@ public class ExperimentController extends SpringActionController
         {
             _context = createDataIteratorContext(_insertOption, getOptionParamsMap(), auditBehaviorType, auditUserComment, errors, null, getContainer());
 
-            if (_context.isCrossFolderImport() && !getContainer().hasProductProjects())
+            if (_context.isCrossFolderImport() && !getContainer().hasProductFolders())
                 _context.setCrossFolderImport(false);
         }
 

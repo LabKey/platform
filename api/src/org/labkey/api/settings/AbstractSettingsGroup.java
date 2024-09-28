@@ -26,8 +26,6 @@ import java.util.Map;
 
 /**
  * Base class for configuration properties persisted through the "prop" schema.
- * User: adam
- * Date: Aug 2, 2008
  */
 public abstract class AbstractSettingsGroup
 {

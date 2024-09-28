@@ -8062,7 +8062,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (!svc.allowUserSpecifiedNames(c))
             {
                 if (nameExpression == null)
-                    throw new ExperimentException(c.hasProductProjects() ? NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS : NAME_EXPRESSION_REQUIRED_MSG);
+                    throw new ExperimentException(c.hasProductFolders() ? NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS : NAME_EXPRESSION_REQUIRED_MSG);
             }
 
             if (svc.getExpressionPrefix(c) != null)
@@ -8153,7 +8153,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             dataClass.setImportAliasMap(newAliases);
 
             if (!NameExpressionOptionService.get().allowUserSpecifiedNames(c) && options.getNameExpression() == null)
-                throw new IllegalArgumentException(c.hasProductProjects() ? NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS : NAME_EXPRESSION_REQUIRED_MSG);
+                throw new IllegalArgumentException(c.hasProductFolders() ? NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS : NAME_EXPRESSION_REQUIRED_MSG);
         }
 
         try (DbScope.Transaction transaction = ensureTransaction())

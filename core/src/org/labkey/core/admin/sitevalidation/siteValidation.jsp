@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.api.admin.sitevalidation.SiteValidationService" %>
 <%@ page import="org.labkey.api.admin.sitevalidation.SiteValidatorDescriptor" %>
 <%@ page import="org.labkey.core.admin.AdminController.SiteValidationForm" %>
+<%@ page import="java.lang.String" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -50,7 +51,7 @@
 %>
             <strong>Site Level Validation Results</strong>
 <%
-            if (validationService.getSiteProviders().isEmpty())
+            if (validationService.getSiteFactories().isEmpty())
             {
                 info(form, "No site-wide validators are registered");
 %>
@@ -60,7 +61,7 @@
             else
             {
                 info(form, "Running selected site-wide validators");
-                Map<String,Map<SiteValidatorDescriptor, SiteValidationResultList>> siteResults = validationService.runSiteScopeValidators(form.getProviders(), getUser());
+                Map<String, Map<SiteValidatorDescriptor, SiteValidationResultList>> siteResults = validationService.runSiteScopeValidators(form.getProviders(), getUser());
                 if (siteResults.isEmpty())
                 {
                     info(form, "No site-wide validators were selected");
@@ -105,7 +106,7 @@
                                 {
 %>
                                     <li>
-                                        <%=h(result.getMessage())%>
+                                        <%=result.getMessage()%>
 <%
                                     if (null != result.getLink())
                                     {
@@ -128,7 +129,7 @@
                                         {
 %>
                                             <li>
-                                        <span class="labkey-error"><%=h(result.getMessage())%></span>
+                                        <span class="labkey-error"><%=result.getMessage()%></span>
 <%
                                             if (null != result.getLink())
                                             {
@@ -155,7 +156,7 @@
                                         {
 %>
                                                     <li>
-                                        <%=h(result.getMessage())%>
+                                        <%=result.getMessage()%>
 <%
                                             if (null != result.getLink())
                                             {
@@ -228,25 +229,28 @@
                     {
                         for (Map.Entry<String, Map<String, SiteValidationResultList>> projectResult : validatorResults.getValue().entrySet())
                         {
+                            String projectKey = projectResult.getKey();
 %>
-                            <li><%=h("Project: " + projectResult.getKey())%>
+                            <li><%=h(!projectKey.isEmpty() ? "Project: " + projectKey : "Root: /")%>
                                 <ul>
 <%
                             for (Map.Entry<String, SiteValidationResultList> subtreeResult : projectResult.getValue().entrySet())
                             {
+                                String subtreeKey = subtreeResult.getKey();
+                                SiteValidationResultList resultList = subtreeResult.getValue();
 %>
-                                    <li><%=h("Folder: " + subtreeResult.getKey())%>
+                                    <li><%=h(!projectKey.equals(subtreeKey) ? "Folder: " + subtreeKey : "")%>
                                         <ul>
 <%
-                                if (subtreeResult.getValue() != null)
+                                if (resultList != null)
                                 {
-                                    containerInfos = subtreeResult.getValue().getResults(Level.INFO);
-                                    containerErrors = subtreeResult.getValue().getResults(Level.ERROR);
-                                    containerWarnings = subtreeResult.getValue().getResults(Level.WARN);
+                                    containerInfos = resultList.getResults(Level.INFO);
+                                    containerErrors = resultList.getResults(Level.ERROR);
+                                    containerWarnings = resultList.getResults(Level.WARN);
                                     for (SiteValidationResult result : containerInfos)
                                     {
 %>
-                                    <li><%=h(result.getMessage())%>
+                                    <li><%=result.getMessage()%>
                                         <% if (null != result.getLink()) { %>
                                         <span><%=link(LINK_HEADING, result.getLink())%></span>
                                         <% } %>
@@ -256,7 +260,7 @@
                                     <li>Errors:
                                         <ul>
                                         <% for (SiteValidationResult result : containerErrors) { %>
-                                            <li><span class="labkey-error"><%=h(result.getMessage())%></span>
+                                            <li><span class="labkey-error"><%=result.getMessage()%></span>
                                             <% if (null != result.getLink()) { %>
                                             <span><%=link(LINK_HEADING, result.getLink())%></span>
                                             <% } %>
@@ -273,7 +277,7 @@
                                         <ul>
                                         <%  for (SiteValidationResult result : containerWarnings)
                                             { %>
-                                        <li><%=h(result.getMessage())%>
+                                        <li><%=result.getMessage()%>
                                             <% if (null != result.getLink()) { %>
                                             <span><%=link(LINK_HEADING, result.getLink())%></span>
                                             <% } %>

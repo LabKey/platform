@@ -376,12 +376,9 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         LinkedHashSet<FieldKey> defaultVisible = new LinkedHashSet<>();
         defaultVisible.add(FieldKey.fromParts(Column.Name));
 
-        var folderCol = addContainerColumn(Column.Folder, null);
-        if (getContainer().hasProductProjects())
-        {
-            folderCol.setLabel("Project");
+        addContainerColumn(Column.Folder, null);
+        if (getContainer().hasProductFolders())
             defaultVisible.add(FieldKey.fromParts(Column.Folder));
-        }
 
         defaultVisible.add(FieldKey.fromParts(Column.Flag));
 
@@ -1061,7 +1058,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 di = LoggingDataIterator.wrap(new CoerceDataIterator(di, context, ExpDataClassDataTableImpl.this, false));
 
                 TableInfo dataClassTInfo = ExpDataClassDataTableImpl.this;
-                if (c.hasProductProjects() && !c.isProject())
+                if (c.hasProductFolders() && !c.isProject())
                 {
                     // Issue 46939: Naming Patterns for Not Working in Sub Projects
                     User user = getUserSchema().getUser();

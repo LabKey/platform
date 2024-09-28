@@ -740,7 +740,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         if (!svc.allowUserSpecifiedNames(c))
         {
             if (nameExpression == null)
-                throw new ExperimentException(c.hasProductProjects() ? NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS : NAME_EXPRESSION_REQUIRED_MSG);
+                throw new ExperimentException(c.hasProductFolders() ? NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS : NAME_EXPRESSION_REQUIRED_MSG);
         }
 
         if (svc.getExpressionPrefix(c) != null)
@@ -1010,7 +1010,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             {
                 st.setNameExpression(sampleIdPattern);
                 if (!NameExpressionOptionService.get().allowUserSpecifiedNames(container) && sampleIdPattern == null)
-                    throw new IllegalArgumentException(container.hasProductProjects() ? NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS : NAME_EXPRESSION_REQUIRED_MSG);
+                    throw new IllegalArgumentException(container.hasProductFolders() ? NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS : NAME_EXPRESSION_REQUIRED_MSG);
             }
 
             String aliquotIdPattern = StringUtils.trimToNull(options.getAliquotNameExpression());
@@ -1869,11 +1869,13 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 {
                     for (ExpMaterial sample : typeSamples)
                     {
-                        SampleTimelineAuditEvent event = createAuditRecord(targetContainer, "Sample project was updated.", userComment, sample, null);
+                        SampleTimelineAuditEvent event = createAuditRecord(targetContainer, "Sample folder was updated.", userComment, sample, null);
                         Map<String, Object> oldRecordMap = new HashMap<>();
-                        oldRecordMap.put("Project", sourceContainer.getName());
+                        // ContainerName is remapped to "Folder" within SampleTimelineEvent, but we don't
+                        // use "Folder" here because this sample-type field is filtered out of timeline events by default
+                        oldRecordMap.put("ContainerName", sourceContainer.getName());
                         Map<String, Object> newRecordMap = new HashMap<>();
-                        newRecordMap.put("Project", targetContainer.getName());
+                        newRecordMap.put("ContainerName", targetContainer.getName());
                         if (fileMovesBySampleId.containsKey(sample.getRowId()))
                         {
                             fileMovesBySampleId.get(sample.getRowId()).forEach(fileUpdateData -> {
