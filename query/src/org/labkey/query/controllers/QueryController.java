@@ -4803,7 +4803,7 @@ public class QueryController extends SpringActionController
             }
             else
             {
-                // Since we are moving between containers, we know we have product projects enabled
+                // Since we are moving between containers, we know we have product folders enabled
                 if (getContainer().getProject().getAuditCommentsRequired() && StringUtils.isBlank(json.optString("auditUserComment")))
                     errors.reject(ERROR_GENERIC, "A reason for the move of data is required.");
                 else
