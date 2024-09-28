@@ -2295,7 +2295,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
                 String insertSql = "INSERT INTO " + AssayDbSchema.getInstance().getTableInfoPlateSetProperty() +
                         " (plateSetId, propertyId, propertyURI, FieldKey)" +
-                        " VALUES (?, CAST(? AS INT), CAST(? AS VARCHAR), CAST(? AS VARCHAR))";
+                        " VALUES (?, CAST(? AS INT), " +
+                        (DbScope.getLabKeyScope().getSqlDialect().isSqlServer() ? "CAST(? AS VARCHAR(300))" : "CAST(? AS VARCHAR)") +
+                        ", CAST(? AS VARCHAR))";
                 Table.batchExecute(AssayDbSchema.getInstance().getSchema(), insertSql, insertedValues);
 
                 transaction.addCommitTask(() -> PlateCache.uncache(container, plateSet), DbScope.CommitTaskOption.POSTCOMMIT);
@@ -2346,7 +2348,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         order.put(WellTable.Column.Type.fieldKey(), 0);
         order.put(WellTable.Column.WellGroup.fieldKey(), 1);
         order.put(WellTable.Column.SampleId.fieldKey(), 2);
-        Comparator<PlateCustomField> nameComparator = Comparator.comparing(PlateCustomField::getName);
+        Comparator<PlateCustomField> nameComparator = Comparator.comparing(PlateCustomField::getName, Comparator.nullsLast(String::compareTo));
 
         fields.sort((f1, f2) -> {
             if (f1.isBuiltIn() && f2.isBuiltIn())
