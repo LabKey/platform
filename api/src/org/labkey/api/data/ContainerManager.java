@@ -640,7 +640,7 @@ public class ContainerManager
     }
 
     @NotNull
-    public static Map<String, Integer> getProductProjectsMetrics(@NotNull FolderType folderType)
+    public static Map<String, Integer> getProductFoldersMetrics(@NotNull FolderType folderType)
     {
         Container root = getRoot();
         Map<String, Integer> metrics = new TreeMap<>();

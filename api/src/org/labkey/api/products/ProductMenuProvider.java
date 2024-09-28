@@ -43,7 +43,7 @@ public abstract class ProductMenuProvider
         return Collections.emptyList();
     }
 
-    public boolean supportsProductProjects() { return false; }
+    public boolean supportsProductFolders() { return false; }
 
     @NotNull
     public abstract String getModuleName();
