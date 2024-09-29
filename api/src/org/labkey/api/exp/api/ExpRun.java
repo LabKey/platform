@@ -69,7 +69,7 @@ public interface ExpRun extends ExpObject, Identifiable
     @NotNull Map<? extends ExpMaterial, String> getMaterialInputs();
 
     /** @return map from data object to role name. Multiple inputs might use the same role name, hence the direction of the map */
-    Map<? extends ExpData, String> getDataInputs();
+    @NotNull Map<? extends ExpData, String> getDataInputs();
 
     /**
      * @return all the materials objects marked as outputs of this run.
@@ -91,6 +91,9 @@ public interface ExpRun extends ExpObject, Identifiable
     Integer getJobId();
 
     List<? extends ExpProtocolApplication> getProtocolApplications();
+
+    /** Get the core protocol application for this run */
+    @Nullable ExpProtocolApplication getCoreProtocolApplication();
 
     /** Get the protocol application that marks all the inputs to the run as a whole */
     @Nullable ExpProtocolApplication getInputProtocolApplication();

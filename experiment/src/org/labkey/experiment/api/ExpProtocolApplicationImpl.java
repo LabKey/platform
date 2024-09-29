@@ -55,7 +55,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<ProtocolApplication> implements ExpProtocolApplication
 {
@@ -518,7 +517,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         for (Integer materialRowId : materialRowIds)
             params.add(Arrays.asList(materialRowId, getRowId(), role, protocolInputRowId));
 
-        String sql = "INSERT INTO " + ExperimentServiceImpl.get().getTinfoMaterialInput().toString() +
+        String sql = "INSERT INTO " + ExperimentServiceImpl.get().getTinfoMaterialInput().getSelectName() +
                 " (MaterialId, TargetApplicationId, Role, ProtocolInputId)" +
                 " VALUES (?,?, CAST(? AS VARCHAR), CAST(? AS INTEGER))";
 
