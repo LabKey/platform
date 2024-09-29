@@ -128,6 +128,11 @@ public class DbScope
     private static final Logger LOG = LogHelper.getLogger(DbScope.class, "Retrieving database connections and managing transactions");
     private static final ConnectionMap _initializedConnections = newConnectionMap();
     private static final Map<String, DbScopeLoader> _scopeLoaders = new LinkedHashMap<>();
+    /**
+     * Some background threads should share Connections with their parent thread. A key example is AsyncQueryRequest,
+     * which should share the Connection with the HTTP request thread that spawned it. This is useful for ensuring
+     * that it sees any open transactions, as well as avoiding depleting the connection pool.
+     */
     private static final Map<Thread, Thread> _sharedConnections = new WeakHashMap<>();
     private static final Map<String, Throwable> _dataSourceFailures = new ConcurrentHashMap<>();
     // Cache for schema metadata XML files, shared across the whole server
@@ -1030,7 +1035,10 @@ public class DbScope
         return getEffectiveThread(Thread.currentThread());
     }
 
-
+    /**
+     * @return the thread that owns the connections for the given thread. Background threads may piggyback on an
+     * HTTP request thread, for example. If no sharing has been established, the same thread as passed
+     */
     private static Thread getEffectiveThread(Thread thread)
     {
         synchronized (_sharedConnections)
