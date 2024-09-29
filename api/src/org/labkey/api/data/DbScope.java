@@ -1025,13 +1025,18 @@ public class DbScope
         }
     }
 
-
     private static Thread getEffectiveThread()
+    {
+        return getEffectiveThread(Thread.currentThread());
+    }
+
+
+    private static Thread getEffectiveThread(Thread thread)
     {
         synchronized (_sharedConnections)
         {
-            Thread result = _sharedConnections.get(Thread.currentThread());
-            return Objects.requireNonNullElseGet(result, Thread::currentThread);
+            Thread result = _sharedConnections.get(thread);
+            return Objects.requireNonNullElse(result, thread);
         }
     }
 
@@ -1052,15 +1057,12 @@ public class DbScope
     /* package */
     @Nullable TransactionImpl getCurrentTransactionImpl()
     {
-        synchronized (_transaction)
-        {
-            List<TransactionImpl> transactions = _transaction.get(getEffectiveThread());
-            return transactions == null ? null : transactions.get(transactions.size() - 1);
-        }
+        return getTransactionImpl(Thread.currentThread());
     }
 
     /* package */ @Nullable TransactionImpl getTransactionImpl(Thread thread)
     {
+        thread = getEffectiveThread(thread);
         synchronized (_transaction)
         {
             List<TransactionImpl> transactions = _transaction.get(thread);
@@ -2103,7 +2105,7 @@ public class DbScope
 
                 // We may have nested concurrent transactions for a given scope, so be sure we close them all
                 TransactionImpl t2 = scope.getTransactionImpl(thread);
-                t = t2 == null || t2 == t ? null : t2;
+                t = (t2 == null || t2 == t) ? null : t2;
             }
         }
     }
