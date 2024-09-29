@@ -326,7 +326,6 @@ public class AssayManager implements AssayService
         return Collections.unmodifiableList(_resultsHeaderLinkProviders);
     }
 
-
     @Override
     public void registerAssayColumnInfoRenderer(AssayColumnInfoRenderer renderer)
     {

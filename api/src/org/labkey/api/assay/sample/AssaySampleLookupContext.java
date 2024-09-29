@@ -52,6 +52,7 @@ public class AssaySampleLookupContext
         if (!_sampleLookups.containsKey(col.getFieldKey()))
             _sampleLookups.put(col.getFieldKey(), checkSampleLookup(container, user, _table, col).isLookup);
 
+        // TODO: Need to make sure we're only doing this for "simple experiment runs"
         if (_runIds.contains(run.getRowId()))
             return;
 
@@ -141,8 +142,15 @@ public class AssaySampleLookupContext
                 return;
             }
 
-            var pa = run.getInputProtocolApplication();
-            if (pa == null)
+            var coreProtocolApplication = run.getCoreProtocolApplication();
+            if (coreProtocolApplication == null)
+            {
+                errors.addRowError(new ValidationException("Failed to resolve core protocol application for run with rowId " + expRunRowId));
+                return;
+            }
+
+            var inputProtocolApplication = run.getInputProtocolApplication();
+            if (inputProtocolApplication == null)
             {
                 errors.addRowError(new ValidationException("Failed to resolve input protocol application for run with rowId " + expRunRowId));
                 return;
@@ -158,7 +166,8 @@ public class AssaySampleLookupContext
             if (currentInputs.equals(newInputs))
                 return;
 
-            pa.removeAllMaterialInputs(user);
+            coreProtocolApplication.removeAllMaterialInputs(user);
+            inputProtocolApplication.removeAllMaterialInputs(user);
 
             if (!newInputs.isEmpty())
             {
@@ -178,7 +187,10 @@ public class AssaySampleLookupContext
                 }
 
                 for (var entry : inputGroups.entrySet())
-                    pa.addMaterialInputs(user, entry.getValue(), entry.getKey(), null);
+                {
+                    coreProtocolApplication.addMaterialInputs(user, entry.getValue(), entry.getKey(), null);
+                    inputProtocolApplication.addMaterialInputs(user, entry.getValue(), entry.getKey(), null);
+                }
             }
 
             if (errors.hasErrors())
