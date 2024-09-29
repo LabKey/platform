@@ -301,9 +301,6 @@ public class PipelineJobServiceImpl implements PipelineJobService
             if (jobThread != null)
             {
                 DbScope.closeAllConnectionsForThread(jobThread);
-
-                // Also close down connections that might not have been connected with a Transaction object
-                ConnectionWrapper.closeConnections(jobThread);
             }
         }
     }
