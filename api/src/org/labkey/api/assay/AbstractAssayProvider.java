@@ -1190,13 +1190,18 @@ public abstract class AbstractAssayProvider implements AssayProvider
      */
     public static void addInputMaterials(ExpRun expRun, User user, Map<ExpMaterial, String> materialInputs)
     {
+        if (materialInputs.isEmpty())
+            return;
+
         for (ExpProtocolApplication protApp : expRun.getProtocolApplications())
         {
-            if (!protApp.getApplicationType().equals(ExpProtocol.ApplicationType.ExperimentRunOutput))
+            if (!ExpProtocol.ApplicationType.ExperimentRunOutput.equals(protApp.getApplicationType()))
             {
                 Map<ExpMaterial, String> newInputs = new LinkedHashMap<>(materialInputs);
                 for (ExpMaterial material : protApp.getInputMaterials())
                     newInputs.remove(material);
+
+                Map<String, Set<Integer>> inputGroups = new HashMap<>();
                 for (Map.Entry<ExpMaterial, String> entry : newInputs.entrySet())
                 {
                     ExpMaterial newInput = entry.getKey();
@@ -1206,8 +1211,13 @@ public abstract class AbstractAssayProvider implements AssayProvider
                         ExpSampleType st = newInput.getSampleType();
                         role = st != null ? st.getName() : "Sample";
                     }
-                    protApp.addMaterialInput(user, newInput, role);
+
+                    inputGroups.putIfAbsent(role, new HashSet<>());
+                    inputGroups.get(role).add(newInput.getRowId());
                 }
+
+                for (var entry : inputGroups.entrySet())
+                    protApp.addMaterialInputs(user, entry.getValue(), entry.getKey(), null);
             }
         }
     }
