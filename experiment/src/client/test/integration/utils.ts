@@ -19,7 +19,7 @@ export async function sampleExists(server: IntegrationTestServer, sampleRowId: n
     return await ExperimentCRUDUtils.sampleExists(server, sampleRowId, sampleType, folderOptions, userOptions);
 }
 
-export async function createSource(server: IntegrationTestServer, sourceName: string, folderOptions: RequestOptions, userOptions: RequestOptions, auditBehavior?, sourceType: string = SOURCE_TYPE_NAME_1) {
+export async function createSource(server: IntegrationTestServer, sourceType: string = SOURCE_TYPE_NAME_1, sourceName: string, folderOptions: RequestOptions, userOptions: RequestOptions, auditBehavior?) {
     const rows = await ExperimentCRUDUtils.createSource(server, sourceName, sourceType, folderOptions, userOptions, auditBehavior);
     return caseInsensitive(rows[0], 'rowId');
 }
@@ -33,7 +33,7 @@ export async function sourceExists(server: IntegrationTestServer, rowId: number,
 }
 
 
-export async function createSample(server: IntegrationTestServer, sampleName: string, folderOptions: RequestOptions, userOptions: RequestOptions, auditBehavior?, sampleType: string = SAMPLE_TYPE_NAME_1) {
+export async function createSample(server: IntegrationTestServer, sampleType: string = SAMPLE_TYPE_NAME_1, sampleName: string, folderOptions: RequestOptions, userOptions: RequestOptions, auditBehavior?) {
     const rows = await ExperimentCRUDUtils.createSample(server, sampleName, sampleType, folderOptions, userOptions, auditBehavior);
     return caseInsensitive(rows[0], 'rowId');
 }
@@ -159,7 +159,7 @@ export async function getAssayResults(server: IntegrationTestServer, assayDesign
     return response.body.rows;
 }
 
-async function getRowIdByName(server: IntegrationTestServer, queryName: string, dataTypeName: string, folderOptions: RequestOptions) {
+async function getRowIdByName(server: IntegrationTestServer, queryName: string, dataTypeName: string, folderOptions: RequestOptions) : Promise<number> {
     const response = await server.post('query', 'selectRows', {
         schemaName: 'exp',
         queryName: queryName,
@@ -312,6 +312,171 @@ export async function checkLackDesignerOrReaderPerm(server: IntegrationTestServe
     }, {...topFolderOptions, ...designerOptions}).expect(403);
 }
 
+export async function verifyRequiredLineageInsertUpdate(server: IntegrationTestServer, isParentSample: boolean, isChildSample: boolean, topFolderOptions: RequestOptions, subfolder1Options: RequestOptions, designerReaderOptions: RequestOptions, readerUserOptions: RequestOptions, editorUserOptions: RequestOptions) {
+    const parentDataType = isParentSample ? "ParentSampleType" : "ParentDataType";
+    await server.post('property', 'createDomain', {
+        kind: isParentSample ? 'SampleSet' : 'DataClass',
+        domainDesign: { name: parentDataType, fields: [{ name: isParentSample ? 'Name' : 'Prop' }] },
+        options: {
+            name: parentDataType,
+        }
+    }, {...topFolderOptions, ...designerReaderOptions}).expect(successfulResponse);
+    const parentDtaTypeRowId : number = await (isParentSample ? getSampleTypeRowIdByName(server, parentDataType, topFolderOptions) : getDataClassRowIdByName(server, parentDataType, topFolderOptions));
+
+    // create some parent data
+    const createParentDataFn = isParentSample ? createSample : createSource;
+    await createParentDataFn(server, parentDataType, 'PDataHome', topFolderOptions, editorUserOptions);
+    await createParentDataFn(server, parentDataType, 'PDataC1', subfolder1Options, editorUserOptions);
+    await createParentDataFn(server, parentDataType, 'PDataHome2', topFolderOptions, editorUserOptions);
+    await createParentDataFn(server, parentDataType, 'PDataC2', subfolder1Options, editorUserOptions);
+
+    const dataType = "withRequired" + (isParentSample ? 'SampleParent' : 'DataParent');
+    let childDomainId = -1, childDomainURI = '';
+    await server.post('property', 'createDomain', {
+        kind: isChildSample ? 'SampleSet' : 'DataClass',
+        domainDesign: { name: dataType, fields: [{ name: isChildSample ? 'Name' : 'Prop' }]},
+        options: {
+            name: dataType,
+            importAliases: {
+                'pAlias': {
+                    inputType: (isParentSample ? 'materialInputs/' : 'dataInputs/') + parentDataType,
+                    required: false,
+                }
+            }
+        }
+    }, {...topFolderOptions, ...designerReaderOptions}).expect((result) => {
+        const domain = JSON.parse(result.text);
+        childDomainId = domain.domainId;
+        childDomainURI = domain.domainURI;
+        return true;
+    });
+
+    const dataTypeRowId = await (isChildSample ? getSampleTypeRowIdByName(server, dataType, topFolderOptions) : getDataClassRowIdByName(server, dataType, topFolderOptions));
+
+    const createChildDataFn = isChildSample ? createSample : createSource;
+    const homeDataRowId = await createChildDataFn(server, dataType, 'CData1', topFolderOptions, editorUserOptions);
+    const sub1DataRowId = await createChildDataFn(server, dataType, 'CData2', subfolder1Options, editorUserOptions);
+
+    // verify cannot add required parent alias with missing lineage
+    const updateDomainPayload = {
+        domainId: childDomainId,
+        domainDesign: {name: dataType, domainId: childDomainId, domainURI: childDomainURI, fields: [{ name: 'Prop' }]},
+        options: {
+            rowId: isChildSample ? undefined : dataTypeRowId /*dataclass update domain needs rowid passed in*/,
+            name: dataType,
+            nameExpression: 'S-${genId}',
+            importAliases: {
+                'pAlias': {
+                    inputType: (isParentSample ? 'materialInputs/' : 'dataInputs/') + parentDataType,
+                    required: true,
+                }
+            }
+        }
+    };
+    let requiredNotAllowedResp = await server.post('property', 'saveDomain', updateDomainPayload, {...topFolderOptions, ...designerReaderOptions});
+    expect(requiredNotAllowedResp['body']['success']).toBeFalsy();
+    expect(requiredNotAllowedResp['body']['exception']).toBe("'" + parentDataType + "' cannot be required as a parent type when there are existing " + (isChildSample ? 'samples' : 'data') + " without a parent of this type.");
+    await verifyRequiredLineageReference(server, parentDtaTypeRowId, isParentSample, topFolderOptions, readerUserOptions);
+
+    const dataSchema = isChildSample ? 'samples' : 'exp.data';
+    const parentInput = (isParentSample ? 'materialInputs/' : "dataInputs/") + parentDataType;
+    // update existing Home data to add missing lineage
+    await ExperimentCRUDUtils.updateRows(server, [{
+        'rowId': homeDataRowId,
+        [parentInput]: 'PDataHome'}], dataSchema, dataType, topFolderOptions, editorUserOptions);
+
+    // required lineage still cannot be added due to missing lineage in child folder
+    requiredNotAllowedResp = await server.post('property', 'saveDomain', updateDomainPayload, {...topFolderOptions, ...designerReaderOptions});
+    expect(requiredNotAllowedResp['body']['success']).toBeFalsy();
+    expect(requiredNotAllowedResp['body']['exception']).toBe("'" + parentDataType + "' cannot be required as a parent type when there are existing " + (isChildSample ? 'samples' : 'data') + " without a parent of this type.");
+
+    // update existing Child data to add missing lineage
+    await ExperimentCRUDUtils.updateRows(server, [{
+        'rowId': sub1DataRowId,
+        [parentInput]: 'PDataC1'}], dataSchema, dataType, subfolder1Options, editorUserOptions);
+
+    // verify required lineage can now be added with all existing data have lineage
+    await server.post('property', 'saveDomain', updateDomainPayload, {...topFolderOptions, ...designerReaderOptions}).expect(successfulResponse);
+    const reference = [dataType];
+    await verifyRequiredLineageReference(server, parentDtaTypeRowId, isParentSample, topFolderOptions, readerUserOptions, isChildSample ? reference : [], isChildSample ? [] : reference);
+
+    // verify creating new data using insert now requires parent lineage
+    await insertRowsExpectError(server, [{'name': 'CData3'}], dataSchema, dataType, 'Data does not contain required field: ' + parentInput, topFolderOptions, editorUserOptions);
+    await insertRowsExpectError(server, [{'name': 'CData3', [parentInput]: ''}], dataSchema, dataType, 'Missing value for required property: ' + parentInput, topFolderOptions, editorUserOptions);
+    await insertRowsExpectError(server, [{'name': 'CData3', ['pAlias']: ''}], dataSchema, dataType, 'Missing value for required property: pAlias', topFolderOptions, editorUserOptions);
+
+    // verify creating new data using import/merge now requires parent lineage
+    let failedImportResp = await ExperimentCRUDUtils.importData(server, 'name\nCData3', dataType, 'IMPORT', topFolderOptions, editorUserOptions, false, false, isChildSample, true);
+    let failedImport = JSON.parse(failedImportResp.text);
+    expect(failedImport.exception).toBe('Data does not contain required field: ' + parentInput);
+    failedImportResp = await ExperimentCRUDUtils.importData(server, 'name\t' + parentInput + '\nCData3\t', dataType, 'IMPORT', topFolderOptions, editorUserOptions, false, false, isChildSample, true);
+    failedImport = JSON.parse(failedImportResp.text);
+    expect(failedImport.exception).toBe('Missing value for required property: ' + parentInput);
+    failedImportResp = await ExperimentCRUDUtils.importData(server, 'name\t' + parentInput + '\nCData3\tbadparentname', dataType, 'IMPORT', topFolderOptions, editorUserOptions, false, false, isChildSample, true);
+    failedImport = JSON.parse(failedImportResp.text);
+    expect(failedImport.exception).toContain("'badparentname' not found in");
+    failedImportResp = await ExperimentCRUDUtils.importData(server, 'name\tpAlias\nCData3\t', dataType, 'IMPORT', topFolderOptions, editorUserOptions, false, false, isChildSample, true);
+    failedImport = JSON.parse(failedImportResp.text);
+    expect(failedImport.exception).toBe('Missing value for required property: pAlias');
+    failedImportResp = await ExperimentCRUDUtils.importData(server, 'name\nCData3', dataType, 'MERGE', topFolderOptions, editorUserOptions, false, false, isChildSample, true);
+    failedImport = JSON.parse(failedImportResp.text);
+    expect(failedImport.exception).toBe('Data does not contain required field: ' + parentInput);
+
+    // verify cannot remove existing data's required lineage using update
+    await updateRowsExpectError(server, [{'rowId': homeDataRowId, [parentInput]: ''}], dataSchema, dataType, 'Missing value for required property: ' + parentInput, topFolderOptions, editorUserOptions);
+    // TODO: parent alias doesn't work for query.update api when used with rowId
+    await updateRowsExpectError(server, [{'rowId': sub1DataRowId, [parentInput]: ''}], dataSchema, dataType, 'Missing value for required property: ' + parentInput, subfolder1Options, editorUserOptions);
+    failedImportResp = await ExperimentCRUDUtils.importData(server, 'name\t' + parentInput + '\nCData1\t', dataType, 'UPDATE', topFolderOptions, editorUserOptions, false, false, isChildSample, true);
+    failedImport = JSON.parse(failedImportResp.text);
+    expect(failedImport.exception).toBe('Missing value for required property: ' + parentInput);
+    failedImportResp = await ExperimentCRUDUtils.importData(server, 'name\tpAlias\nCData1\t', dataType, 'UPDATE', topFolderOptions, editorUserOptions, false, false, isChildSample, true);
+    failedImport = JSON.parse(failedImportResp.text);
+    expect(failedImport.exception).toBe('Missing value for required property: pAlias');
+    failedImportResp = await ExperimentCRUDUtils.importData(server, 'name\nCData1', dataType, 'MERGE', topFolderOptions, editorUserOptions, false, false, isChildSample, true);
+    failedImport = JSON.parse(failedImportResp.text);
+    expect(failedImport.exception).toBe('Data does not contain required field: ' + parentInput);
+    failedImportResp = await ExperimentCRUDUtils.importData(server, 'name\tpAlias\nCData1\t', dataType, 'MERGE', topFolderOptions, editorUserOptions, false, false, isChildSample, true);
+    failedImport = JSON.parse(failedImportResp.text);
+    expect(failedImport.exception).toBe('Missing value for required property: pAlias');
+
+    // verify update (api, from file) is successful when required parent column is not included
+    const selfInput = (isChildSample ? 'materialInputs/' : 'dataInputs/') + dataType;
+    await ExperimentCRUDUtils.updateRows(server, [{'rowId': homeDataRowId, [selfInput]: ''}], dataSchema, dataType, topFolderOptions, editorUserOptions);
+    await ExperimentCRUDUtils.updateRows(server, [{'rowId': sub1DataRowId, 'description': 'updated!'}], dataSchema, dataType, subfolder1Options, editorUserOptions);
+    let successResp = await ExperimentCRUDUtils.importData(server, 'name\t' + selfInput + '\nCData1\t', dataType, 'UPDATE', topFolderOptions, editorUserOptions, false, false, isChildSample);
+    let successImport = JSON.parse(successResp.text);
+    expect(successImport.success).toBeTruthy();
+    successResp = await ExperimentCRUDUtils.importData(server, 'name\tdescription\nCData1\tupdated', dataType, 'UPDATE', topFolderOptions, editorUserOptions, false, false, isChildSample);
+    expect(JSON.parse(successResp.text).success).toBeTruthy();
+
+    // verify updating (api, update using import, merge) required parent to not empty values is successful
+    await ExperimentCRUDUtils.updateRows(server, [{'rowId': homeDataRowId, [parentInput]: 'PDataHome2'}], dataSchema, dataType, topFolderOptions, editorUserOptions);
+    await ExperimentCRUDUtils.updateRows(server, [{'rowId': sub1DataRowId, [parentInput]: 'PDataC2'}], dataSchema, dataType, subfolder1Options, editorUserOptions);
+    successResp = await ExperimentCRUDUtils.importData(server, 'name\tdescription\nCData1\tupdated', dataType, 'UPDATE', topFolderOptions, editorUserOptions, false, false, isChildSample);
+    expect(JSON.parse(successResp.text).success).toBeTruthy();
+    successResp = await ExperimentCRUDUtils.importData(server, 'name\t' + parentInput + '\nCData1\tPDataHome', dataType, 'UPDATE', topFolderOptions, editorUserOptions, false, false, isChildSample);
+    expect(JSON.parse(successResp.text).success).toBeTruthy();
+    successResp = await ExperimentCRUDUtils.importData(server, 'name\tpAlias\nCData1\tPDataHome,PDataHome2', dataType, 'UPDATE', topFolderOptions, editorUserOptions, false, false, isChildSample);
+    expect(JSON.parse(successResp.text).success).toBeTruthy();
+    successResp = await ExperimentCRUDUtils.importData(server, 'name\t' + parentInput + '\nCData1\tPDataHome', dataType, 'MERGE', topFolderOptions, editorUserOptions, false, false, isChildSample);
+    expect(JSON.parse(successResp.text).success).toBeTruthy();
+    successResp = await ExperimentCRUDUtils.importData(server, 'name\tpAlias\nCData1\tPDataHome,PDataHome2', dataType, 'MERGE', topFolderOptions, editorUserOptions, false, false, isChildSample);
+    expect(JSON.parse(successResp.text).success).toBeTruthy();
+
+    // verify creating new data with required parent is successful
+    await ExperimentCRUDUtils.insertRows(server, [{'name': 'CData4', [parentInput]: 'PDataHome'}], dataSchema, dataType, topFolderOptions, editorUserOptions);
+    await ExperimentCRUDUtils.insertRows(server, [{['pAlias']: 'PDataC1'}], dataSchema, dataType, subfolder1Options, editorUserOptions);
+
+    // verify creating new data using import/merge now requires parent lineage
+    successResp = await ExperimentCRUDUtils.importData(server, parentInput + '\nPDataHome', dataType, 'IMPORT', topFolderOptions, editorUserOptions, false, false, isChildSample);
+    expect(JSON.parse(successResp.text).success).toBeTruthy();
+    successResp = await ExperimentCRUDUtils.importData(server, 'pAlias\nPDataHome', dataType, 'IMPORT', topFolderOptions, editorUserOptions, false, false, isChildSample);
+    expect(JSON.parse(successResp.text).success).toBeTruthy();
+    successResp = await ExperimentCRUDUtils.importData(server, 'name\tpAlias\nCData5\tPDataHome', dataType, 'MERGE', topFolderOptions, editorUserOptions, false, false, isChildSample);
+    expect(JSON.parse(successResp.text).success).toBeTruthy();
+
+}
+
 export const getAssayDesignPayload = (name: string, runFields: any[], resultFields: any[]) => {
     return {
         "allowEditableResults": true,
@@ -350,4 +515,31 @@ export const getAssayDesignPayload = (name: string, runFields: any[], resultFiel
         "providerName": "General",
         "status": "Active",
     }
+}
+
+export async function verifyRequiredLineageReference(server: IntegrationTestServer, parentTypeRowId: number, isSampleParent: boolean, folderOptions: RequestOptions, userOptions: RequestOptions, sampleTypeRefs: string[] = [], dataTypeRefs : string[] = []){
+    await server.post('experiment', 'getDataTypesWithRequiredLineage', {
+        parentDataTypeRowId: parentTypeRowId,
+        sampleParent: isSampleParent,
+    }, {...folderOptions, ...userOptions}).expect((result) => {
+        const resp = JSON.parse(result.text);
+        expect(resp['dataClasses']).toEqual(dataTypeRefs);
+        expect(resp['sampleTypes']).toEqual(sampleTypeRefs);
+    });
+}
+
+export async function insertRowsExpectError(server: IntegrationTestServer, rows: any[], schemaName: string, queryName: string, error: string, folderOptions: RequestOptions, userOptions: RequestOptions, isUpdate?: boolean) {
+    await server.post('query', isUpdate? 'updateRows' : 'insertRows', {
+        schemaName,
+        queryName,
+        rows,
+    }, { ...folderOptions, ...userOptions }).expect((result) => {
+        const resp = JSON.parse(result.text);
+        expect(resp.success).toBeFalsy();
+        expect(resp.exception).toBe(error);
+    });
+}
+
+export async function updateRowsExpectError(server: IntegrationTestServer, rows: any[], schemaName: string, queryName: string, error: string, folderOptions: RequestOptions, userOptions: RequestOptions) {
+    return insertRowsExpectError(server, rows, schemaName, queryName, error, folderOptions, userOptions, true);
 }
