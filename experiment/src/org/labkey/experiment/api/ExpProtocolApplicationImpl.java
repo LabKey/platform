@@ -16,11 +16,13 @@
 
 package org.labkey.experiment.api;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
@@ -466,6 +468,8 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
 
         obj = Table.insert(user, ExperimentServiceImpl.get().getTinfoDataInput(), obj);
         ExperimentServiceImpl.get().queueSyncRunEdges(_object.getRunId());
+        _inputDatas = null;
+
         return new ExpDataRunInputImpl(obj);
     }
 
@@ -493,14 +497,14 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
 
         obj = Table.insert(user, ExperimentServiceImpl.get().getTinfoMaterialInput(), obj);
         ExperimentServiceImpl.get().queueSyncRunEdges(_object.getRunId());
+        _inputMaterials = null;
 
         return new ExpMaterialRunInputImpl(obj);
     }
 
     @Override
-    public void addMaterialInputs(User user, Collection<Integer> materialRowIds, @Nullable String role, @Nullable ExpMaterialProtocolInput protocolInput) throws SQLException
+    public void addMaterialInputs(User user, Collection<Integer> materialRowIds, @Nullable String role, @Nullable ExpMaterialProtocolInput protocolInput)
     {
-        // TODO: Shouldn't these addMaterialInput methods be setting inputMaterials = null?
         Integer protocolInputRowId = null;
         if (protocolInput != null)
         {
@@ -514,6 +518,9 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
 
         List<List<?>> params = new ArrayList<>();
 
+        if (StringUtils.trimToNull(role) == null)
+            role = ExpMaterialRunInput.DEFAULT_ROLE;
+
         for (Integer materialRowId : materialRowIds)
             params.add(Arrays.asList(materialRowId, getRowId(), role, protocolInputRowId));
 
@@ -521,9 +528,17 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
                 " (MaterialId, TargetApplicationId, Role, ProtocolInputId)" +
                 " VALUES (?,?, CAST(? AS VARCHAR), CAST(? AS INTEGER))";
 
-        Table.batchExecute(ExperimentServiceImpl.getExpSchema(), sql, params);
+        try
+        {
+            Table.batchExecute(ExperimentServiceImpl.getExpSchema(), sql, params);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
 
         ExperimentServiceImpl.get().queueSyncRunEdges(_object.getRunId());
+        _inputMaterials = null;
     }
 
     private void removeInputs(TableInfo tableInfo, String idColName, Collection<String> inputLsids, Collection<Integer> rowIds)

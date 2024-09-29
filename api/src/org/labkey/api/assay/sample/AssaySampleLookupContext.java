@@ -20,7 +20,6 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -121,7 +120,7 @@ public class AssaySampleLookupContext
         return sampleLookups;
     }
 
-    public void syncLineage(Container container, User user, BatchValidationException errors) throws SQLException
+    public void syncLineage(Container container, User user, BatchValidationException errors)
     {
         if (_runIds.isEmpty())
             return;

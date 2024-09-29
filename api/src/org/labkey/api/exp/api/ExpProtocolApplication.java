@@ -71,7 +71,7 @@ public interface ExpProtocolApplication extends ExpObject
      */
     @NotNull ExpMaterialRunInput addMaterialInput(User user, ExpMaterial material, @Nullable String inputRole);
     @NotNull ExpMaterialRunInput addMaterialInput(User user, ExpMaterial material, @Nullable String inputRole, @Nullable ExpMaterialProtocolInput protocolInput);
-    void addMaterialInputs(User user, Collection<Integer> materialRowIds, @Nullable String inputRole, @Nullable ExpMaterialProtocolInput protocolInput) throws SQLException;
+    void addMaterialInputs(User user, Collection<Integer> materialRowIds, @Nullable String inputRole, @Nullable ExpMaterialProtocolInput protocolInput);
     void removeAllMaterialInputs(User user);
     void removeMaterialInput(User user, ExpMaterial material);
     void removeMaterialInputs(User user, Collection<Integer> rowIds);
