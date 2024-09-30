@@ -3352,7 +3352,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         }
         Set<String> excludedColumns = new HashSet<>(Arrays.asList("SampleID", "Type", "WellGroup"));
         List<PlateCustomField> customFields = isMapView
-                ? plate.getCustomFields().stream().filter(field -> !excludedColumns.contains(field.getFieldKey())).toList()
+                ? plate.getCustomFields().stream().filter(field -> !excludedColumns.contains(field.getFieldKey() == null ? null : field.getFieldKey().getName())).toList()
                 : plate.getCustomFields();
         for (PlateCustomField customField : customFields)
         {
