@@ -692,7 +692,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     @NotNull
     @Override
     public ExpSampleTypeImpl createSampleType(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
-                                              String nameExpression, String aliquotNameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, String> importAliases, @Nullable String labelColor, @Nullable String metricUnit) throws ExperimentException
+                                              String nameExpression, String aliquotNameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, Map<String, Object>> importAliases, @Nullable String labelColor, @Nullable String metricUnit) throws ExperimentException
     {
         return createSampleType(c, u, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, aliquotNameExpression, templateInfo, importAliases, labelColor, metricUnit, null, null, null, null, null, null);
     }
@@ -700,7 +700,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     @NotNull
     @Override
     public ExpSampleTypeImpl createSampleType(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
-                                              String nameExpression, String aliquotNameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, String> importAliases, @Nullable String labelColor, @Nullable String metricUnit,
+                                              String nameExpression, String aliquotNameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, Map<String, Object>> importAliases, @Nullable String labelColor, @Nullable String metricUnit,
                                               @Nullable Container autoLinkTargetContainer, @Nullable String autoLinkCategory, @Nullable String category, @Nullable List<String> disabledSystemField,
                                               @Nullable List<String> excludedContainerIds, @Nullable List<String> excludedDashboardContainerIds)
         throws ExperimentException
@@ -987,11 +987,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         {
             ExpSampleType duplicateType = SampleTypeService.get().getSampleType(container, user, newName);
             if (duplicateType != null)
-            {
-                errors = new ValidationException();
-                errors.addError(new SimpleValidationError("A Sample Type with name '" + newName + "' already exists."));
-                return errors;
-            }
+                throw new IllegalArgumentException("A Sample Type with name '" + newName + "' already exists.");
 
             hasNameChange = true;
             st.setName(newName);
@@ -1014,11 +1010,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             {
                 st.setNameExpression(sampleIdPattern);
                 if (!NameExpressionOptionService.get().allowUserSpecifiedNames(container) && sampleIdPattern == null)
-                {
-                    errors = new ValidationException();
-                    errors.addError(new SimpleValidationError(container.hasProductFolders() ? NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS : NAME_EXPRESSION_REQUIRED_MSG));
-                    return errors;
-                }
+                    throw new IllegalArgumentException(container.hasProductFolders() ? NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS : NAME_EXPRESSION_REQUIRED_MSG);
             }
 
             String aliquotIdPattern = StringUtils.trimToNull(options.getAliquotNameExpression());
@@ -1036,6 +1028,24 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 hasMetricUnitChanged = true;
 
             st.setMetricUnit(options.getMetricUnit());
+
+            if (options.getImportAliases() != null && !options.getImportAliases().isEmpty())
+            {
+                try
+                {
+                    Map<String, Map<String, Object>> newAliases = options.getImportAliases();
+                    Set<String> existingRequiredInputs = new HashSet<>(st.getRequiredImportAliases().values());
+                    String invalidParentType = ExperimentServiceImpl.get().getInvalidRequiredImportAliasUpdate(st.getLSID(), true, newAliases, existingRequiredInputs, container, user);
+                    if (invalidParentType != null)
+                        throw new IllegalArgumentException("'" + invalidParentType + "' cannot be required as a parent type when there are existing samples without a parent of this type.");
+
+                }
+                catch (IOException e)
+                {
+                    throw new RuntimeException(e);
+                }
+            }
+
             st.setImportAliasMap(options.getImportAliases());
             String targetContainerId = StringUtils.trimToNull(options.getAutoLinkTargetContainerId());
             st.setAutoLinkTargetContainer(targetContainerId != null ? ContainerManager.getForId(targetContainerId) : null);
