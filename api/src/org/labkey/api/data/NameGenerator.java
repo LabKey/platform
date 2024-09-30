@@ -3204,20 +3204,20 @@ public class NameGenerator
         @Test
         public void testNameExpressionReservedTokenWarnings()
         {
-            validateNameResult("S-genId", withWarnings("S-genId", "'genId' is recognized as a field. Use ${genId} if you want to include the field value in the naming pattern."));
+            validateNameResult("S-genId", withWarnings("S-genId", "'genId' is recognized as a substitution token. Use ${genId} if you want to include the substitution token value in the naming pattern."));
 
-            validateNameResult("S-genId-now-001", withWarnings("S-genId-now-001", "'genId' is recognized as a field. Use ${genId} if you want to include the field value in the naming pattern.",
-                    "'now' is recognized as a field. Use ${now} if you want to include the field value in the naming pattern."));
+            validateNameResult("S-genId-now-001", withWarnings("S-genId-now-001", "'genId' is recognized as a substitution token. Use ${genId} if you want to include the substitution token value in the naming pattern.",
+                    "'now' is recognized as a substitution token. Use ${now} if you want to include the substitution token value in the naming pattern."));
 
-            validateNameResult("S-Inputs", withWarnings("S-Inputs", "'Inputs' is recognized as a field. Use ${Inputs} if you want to include the field value in the naming pattern."));
+            validateNameResult("S-Inputs", withWarnings("S-Inputs", "'Inputs' is recognized as a substitution token. Use ${Inputs} if you want to include the substitution token value in the naming pattern."));
 
-            validateNameResult("S-MaterialInputs/lookupfield", withWarnings("S-MaterialInputs/lookupfield","'MaterialInputs' is recognized as a field. Use ${MaterialInputs} if you want to include the field value in the naming pattern."));
+            validateNameResult("S-MaterialInputs/lookupfield", withWarnings("S-MaterialInputs/lookupfield","'MaterialInputs' is recognized as a substitution token. Use ${MaterialInputs} if you want to include the substitution token value in the naming pattern."));
 
-            validateNameResult("S-~DataInputs/lookupfield", withWarnings("S-~DataInputs/lookupfield","'~DataInputs' is recognized as a field. Use ${~DataInputs} if you want to include the field value in the naming pattern.", "'DataInputs' is recognized as a field. Use ${DataInputs} if you want to include the field value in the naming pattern."));
+            validateNameResult("S-~DataInputs/lookupfield", withWarnings("S-~DataInputs/lookupfield","'~DataInputs' is recognized as a substitution token. Use ${~DataInputs} if you want to include the substitution token value in the naming pattern.", "'DataInputs' is recognized as a substitution token. Use ${DataInputs} if you want to include the substitution token value in the naming pattern."));
 
-            validateNameResult("AliquotedFrom-001", withWarnings("AliquotedFrom-001", "'AliquotedFrom' is recognized as a field. Use ${AliquotedFrom} if you want to include the field value in the naming pattern."));
+            validateNameResult("AliquotedFrom-001", withWarnings("AliquotedFrom-001", "'AliquotedFrom' is recognized as a substitution token. Use ${AliquotedFrom} if you want to include the substitution token value in the naming pattern."));
 
-            validateNameResult("S-rootSampleCount", withWarnings("S-rootSampleCount", "'rootSampleCount' is recognized as a field. Use ${rootSampleCount} if you want to include the field value in the naming pattern."));
+            validateNameResult("S-rootSampleCount", withWarnings("S-rootSampleCount", "'rootSampleCount' is recognized as a substitution token. Use ${rootSampleCount} if you want to include the substitution token value in the naming pattern."));
         }
 
         @Test
