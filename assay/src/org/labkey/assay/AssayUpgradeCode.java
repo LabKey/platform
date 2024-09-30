@@ -681,8 +681,10 @@ public class AssayUpgradeCode implements UpgradeCode
         }
     }
 
-    private static void addInsertedValues(List<List<?>> insertedValues, Integer rowId, String... types) {
-        for (String type : types) {
+    private static void addInsertedValues(List<List<?>> insertedValues, Integer rowId, String... types)
+    {
+        for (String type : types)
+        {
             insertedValues.add(Arrays.asList(rowId, null, null, type));
         }
     }
