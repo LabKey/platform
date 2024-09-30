@@ -225,6 +225,15 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
         return Collections.emptySet();
     }
 
+    /**
+     * @return a Map<columnName, alternativeColumnName> of additionally required fields during import.
+     * Example usage is specifying the set of required lineage columns during sample/dataclass data creation.
+     */
+    @NotNull default Map<String, String> getAdditionalRequiredInsertColumns()
+    {
+        return Collections.emptyMap();
+    }
+
     ColumnInfo getVersionColumn();
 
     String getVersionColumnName();

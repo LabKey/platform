@@ -807,7 +807,7 @@ public class ExperimentModule extends SpringModule
                 results.put("maxObjectObjectId", new SqlSelector(schema, "SELECT MAX(ObjectId) FROM exp.Object").getObject(Long.class));
                 results.put("maxMaterialRowId", new SqlSelector(schema, "SELECT MAX(RowId) FROM exp.Material").getObject(Long.class));
 
-                results.put("nameexpression", ExperimentService.get().getNameExpressionMetrics());
+                results.putAll(ExperimentService.get().getDomainMetrics());
 
                 return results;
             });

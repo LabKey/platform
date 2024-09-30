@@ -31,8 +31,6 @@ import static org.labkey.api.exp.api.ExperimentJSONConverter.MATERIAL_INPUTS;
 
 public class ExperimentQueryChangeListener implements QueryChangeListener
 {
-    public static final String MATERIAL_INPUTS_ALIAS_PREFIX = MATERIAL_INPUTS + "/";
-    public static final String DATA_INPUTS_ALIAS_PREFIX = DATA_INPUTS + "/";
 
     @Override
     public void queryCreated(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull Collection<String> queries)
@@ -81,25 +79,26 @@ public class ExperimentQueryChangeListener implements QueryChangeListener
                 queryNameChangeMap.put((String)qpc.getOldValue(), (String)qpc.getNewValue());
         }
 
-        String prefix = isSamples ? MATERIAL_INPUTS_ALIAS_PREFIX : DATA_INPUTS_ALIAS_PREFIX;
+        String prefix = (isSamples ? MATERIAL_INPUTS : DATA_INPUTS) + "\\/";
 
         for (String oldQueryName : queryNameChangeMap.keySet())
         {
             String newQueryName = queryNameChangeMap.get(oldQueryName);
 
             String searchStr = "\"" + prefix + oldQueryName + "\"";
-            String replaceStr = "\"" + prefix + newQueryName + "\"";
+            String searchStrRegex = "\"" + prefix.replace("\\/", "\\\\/") + oldQueryName + "\"";
+            String replaceStr = "\"" + prefix.replace("\\/", "\\\\/") + newQueryName + "\"";
 
             for (ExpSampleTypeImpl sampleType : getRenamedSampleTypes(container, searchStr))
             {
-                String updatedAlias = sampleType.getImportAliasJson().replaceAll("(?i)" + searchStr, replaceStr);
+                String updatedAlias = sampleType.getImportAliasJson().replaceAll("(?i)" + searchStrRegex, replaceStr);
                 sampleType.setImportAliasMapJson(updatedAlias);
                 sampleType.save(sampleType.getModifiedBy());
             }
 
             for (ExpDataClassImpl dataClass : getRenamedDataClasses(container, searchStr))
             {
-                String updatedAlias = dataClass.getImportAliasJson().replaceAll("(?i)" + searchStr, replaceStr);
+                String updatedAlias = dataClass.getImportAliasJson().replaceAll("(?i)" + searchStrRegex, replaceStr);
                 dataClass.setImportAliasMapJson(updatedAlias);
                 dataClass.save(dataClass.getModifiedBy());
             }
@@ -115,23 +114,24 @@ public class ExperimentQueryChangeListener implements QueryChangeListener
         if (!isSamples && !isData)
             return;
 
-        String prefix = isSamples ? MATERIAL_INPUTS_ALIAS_PREFIX : DATA_INPUTS_ALIAS_PREFIX;
+        String prefix = (isSamples ? MATERIAL_INPUTS : DATA_INPUTS) + "\\/";
 
         for (String removed : queries)
         {
-            String searchStr = "\"" + prefix + removed + "\"";
+            String inputType = prefix + removed;
+            String searchStr = "\"" + inputType + "\"";
 
             for (ExpSampleTypeImpl sampleType : getRenamedSampleTypes(container, searchStr))
             {
                 try
                 {
-                    Map<String, String> originalMap = sampleType.getImportAliasMap();
-                    Map<String, String> updatedMap = new HashMap<>();
+                    Map<String, Map<String, Object>> originalMap = sampleType.getImportAliasMap();
+                    Map<String, Map<String, Object>> updatedMap = new HashMap<>();
                     for (String alias : originalMap.keySet())
                     {
-                        String dataType = originalMap.get(alias);
-                        if (!dataType.equals(searchStr))
-                            updatedMap.put(alias, dataType);
+                        String dataType = (String) originalMap.get(alias).get("inputType");
+                        if (!dataType.equals(inputType))
+                            updatedMap.put(alias, originalMap.get(alias));
                     }
                     sampleType.setImportAliasMap(updatedMap);
                     sampleType.save(sampleType.getModifiedBy());
@@ -146,13 +146,13 @@ public class ExperimentQueryChangeListener implements QueryChangeListener
             {
                 try
                 {
-                    Map<String, String> originalMap = dataClass.getImportAliasMap();
-                    Map<String, String> updatedMap = new HashMap<>();
+                    Map<String, Map<String, Object>> originalMap = dataClass.getImportAliasMap();
+                    Map<String, Map<String, Object>> updatedMap = new HashMap<>();
                     for (String alias : originalMap.keySet())
                     {
-                        String dataType = originalMap.get(alias);
-                        if (!dataType.equals(searchStr))
-                            updatedMap.put(alias, dataType);
+                        String dataType = (String) originalMap.get(alias).get("inputType");
+                        if (!dataType.equals(inputType))
+                            updatedMap.put(alias, originalMap.get(alias));
                     }
                     dataClass.setImportAliasMap(updatedMap);
                     dataClass.save(dataClass.getModifiedBy());

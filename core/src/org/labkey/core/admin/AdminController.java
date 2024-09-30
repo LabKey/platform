@@ -9633,6 +9633,8 @@ public class AdminController extends SpringActionController
                 // If we had to truncate the name then we want to set the caption to the un-truncated version of the name.
                 CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<>(Portal.getPages(container, true));
                 Portal.PortalPage page = pages.get(name);
+                // Get a mutable copy
+                page = page.copy();
                 page.setCaption(caption);
                 Portal.updatePortalPage(container, page);
             }

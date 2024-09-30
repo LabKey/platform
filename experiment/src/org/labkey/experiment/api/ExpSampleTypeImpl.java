@@ -63,7 +63,6 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.MediaReadPermission;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringExpressionFactory;
@@ -402,7 +401,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         Map<String, String> importAliasMap = null;
         try
         {
-            importAliasMap = getImportAliasMap();
+            importAliasMap = getImportAliases();
         }
         catch (IOException e)
         {
@@ -999,16 +998,14 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     }
 
     @Contract("null -> new")
-    private @NotNull Map<String, String> getImportAliases(MaterialSource ms) throws IOException
+    private @NotNull Map<String, Map<String, Object>> getImportAliases(MaterialSource ms) throws IOException
     {
         if (ms == null || StringUtils.isBlank(ms.getMaterialParentImportAliasMap()))
             return Collections.emptyMap();
 
         try
         {
-            TypeReference<CaseInsensitiveHashMap<String>> typeRef = new TypeReference<>() {};
-
-            return JsonUtil.DEFAULT_MAPPER.readValue(ms.getMaterialParentImportAliasMap(), typeRef);
+            return ExperimentJSONConverter.parseImportAliases(ms.getMaterialParentImportAliasMap());
         }
         catch (IOException e)
         {
@@ -1022,13 +1019,36 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     }
 
     @Override
-    public @NotNull Map<String, String> getImportAliasMap() throws IOException
+    public @NotNull Map<String, String> getImportAliases() throws IOException
+    {
+        Map<String, String> aliases = new HashMap<>();
+        for (Map.Entry<String, Map<String, Object>> entry : getImportAliasMap().entrySet())
+        {
+            aliases.put(entry.getKey(), (String) entry.getValue().get("inputType"));
+        }
+        return Collections.unmodifiableMap(aliases);
+    }
+
+    @Override
+    public @NotNull Map<String, String> getRequiredImportAliases() throws IOException
+    {
+        Map<String, String> aliases = new HashMap<>();
+        for (Map.Entry<String, Map<String, Object>> entry : getImportAliasMap().entrySet())
+        {
+            if ((Boolean) entry.getValue().get("required"))
+                aliases.put(entry.getKey(), (String) entry.getValue().get("inputType"));
+        }
+        return Collections.unmodifiableMap(aliases);
+    }
+
+    @Override
+    public @NotNull Map<String, Map<String, Object>> getImportAliasMap() throws IOException
     {
         return Collections.unmodifiableMap(getImportAliases(_object));
     }
 
     @Override
-    public void setImportAliasMap(Map<String, String> aliasMap)
+    public void setImportAliasMap(Map<String, Map<String, Object>> aliasMap)
     {
         setImportAliasMapJson(ExperimentJSONConverter.getAliasJson(aliasMap, _object.getName()));
     }

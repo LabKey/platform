@@ -148,7 +148,7 @@ async function createSampleWithFileFields(sampleName: string, folderOptions: Req
 }
 
 async function _createSource(sourceName: string, folderOptions: RequestOptions) {
-    return createSource(server, sourceName, folderOptions, editorUserOptions)
+    return createSource(server, SOURCE_TYPE_NAME_1, sourceName, folderOptions, editorUserOptions)
 }
 
 async function _getSampleData(sampleRowId: number, folderOptions: RequestOptions, sampleType: string = SAMPLE_TYPE_NAME_1, columns: string = 'RowId') {
@@ -353,7 +353,7 @@ describe('Move Samples', () => {
 
         it('error, requires insert perm in targetContainer', async () => {
             // Arrange
-            const sampleRowId = await createSample(server, 'sub1-notmoved-3', subfolder1Options, editorUserOptions);
+            const sampleRowId = await createSample(server, SAMPLE_TYPE_NAME_1, 'sub1-notmoved-3', subfolder1Options, editorUserOptions);
 
             // Act
             const response = await server.post('query', 'moveRows.api', {
@@ -376,7 +376,7 @@ describe('Move Samples', () => {
 
         it('success, sample ID not in current parent project', async () => {
             // Arrange
-            const sampleRowId = await createSample(server, 'sub1-movedTo2-1', subfolder1Options, editorUserOptions);
+            const sampleRowId = await createSample(server, SAMPLE_TYPE_NAME_1, 'sub1-movedTo2-1', subfolder1Options, editorUserOptions);
 
             // Act
             const response = await server.post('query', 'moveRows.api', {
@@ -399,7 +399,7 @@ describe('Move Samples', () => {
 
         it('success, sample ID not in current subfolder', async () => {
             // Arrange
-            const sampleRowId = await createSample(server, 'top-movedTo2-1', topFolderOptions, editorUserOptions);
+            const sampleRowId = await createSample(server, SAMPLE_TYPE_NAME_1, 'top-movedTo2-1', topFolderOptions, editorUserOptions);
 
             // Act
             const response = await server.post('query', 'moveRows.api', {
@@ -421,8 +421,8 @@ describe('Move Samples', () => {
 
         it('success, some sample IDs not in current subfolder', async () => {
             // Arrange
-            const sampleRowId1 = await createSample(server, 'top-movedTo1-1', topFolderOptions, editorUserOptions);
-            const sampleRowId2 = await createSample(server, 'sub1-notMovedTo1-1', subfolder1Options, editorUserOptions);
+            const sampleRowId1 = await createSample(server, SAMPLE_TYPE_NAME_1, 'top-movedTo1-1', topFolderOptions, editorUserOptions);
+            const sampleRowId2 = await createSample(server, SAMPLE_TYPE_NAME_1, 'sub1-notMovedTo1-1', subfolder1Options, editorUserOptions);
 
             // Act
             const response = await server.post('query', 'moveRows.api', {
@@ -446,8 +446,8 @@ describe('Move Samples', () => {
 
         it('success, all sample IDs in target subfolder', async () => {
             // Arrange
-            const sampleRowId1 = await createSample(server, 'sub1-notMoved-1', subfolder1Options, editorUserOptions);
-            const sampleRowId2 = await createSample(server, 'sub1-notMoved-2', subfolder1Options, editorUserOptions);
+            const sampleRowId1 = await createSample(server, SAMPLE_TYPE_NAME_1, 'sub1-notMoved-1', subfolder1Options, editorUserOptions);
+            const sampleRowId2 = await createSample(server, SAMPLE_TYPE_NAME_1, 'sub1-notMoved-2', subfolder1Options, editorUserOptions);
 
             // Act
             const response = await server.post('query', 'moveRows.api', {
@@ -470,7 +470,7 @@ describe('Move Samples', () => {
 
         it('success, move sample from parent project to subfolder, no audit logging', async () => {
             // Arrange
-            const sampleRowId = await createSample(server, 'top-movetosub1-1', topFolderOptions, editorUserOptions, 'NONE');
+            const sampleRowId = await createSample(server, SAMPLE_TYPE_NAME_1, 'top-movetosub1-1', topFolderOptions, editorUserOptions, 'NONE');
 
             // Act
             const response = await server.post('query', 'moveRows.api', {
@@ -501,7 +501,7 @@ describe('Move Samples', () => {
 
         it('success, move sample from parent project to subfolder, detailed audit logging', async () => {
             // Arrange
-            const sampleRowId = await createSample(server, 'top-movetosub1-2', topFolderOptions, editorUserOptions, "DETAILED");
+            const sampleRowId = await createSample(server, SAMPLE_TYPE_NAME_1, 'top-movetosub1-2', topFolderOptions, editorUserOptions, "DETAILED");
 
             // Act
             const response = await server.post('query', 'moveRows.api', {
@@ -529,7 +529,7 @@ describe('Move Samples', () => {
 
         it('success, move sample from parent project to subfolder, detailed audit logging with comment', async () => {
             // Arrange
-            const sampleRowId = await createSample(server, 'top-movetosub1-3', topFolderOptions, editorUserOptions, "DETAILED");
+            const sampleRowId = await createSample(server, SAMPLE_TYPE_NAME_1, 'top-movetosub1-3', topFolderOptions, editorUserOptions, "DETAILED");
             const userComment = "Oops! Wrong project.";
             // Act
             const response = await server.post('query', 'moveRows.api', {
@@ -558,7 +558,7 @@ describe('Move Samples', () => {
 
         it('success, move sample from parent project to subfolder with summary logging', async () => {
             // Arrange
-            const sampleRowId = await createSample(server, 'top-movetosub1-4', topFolderOptions, editorUserOptions, "DETAILED");
+            const sampleRowId = await createSample(server, SAMPLE_TYPE_NAME_1, 'top-movetosub1-4', topFolderOptions, editorUserOptions, "DETAILED");
             const userComment = "4 is in the wrong place."
 
             // Act
@@ -593,7 +593,7 @@ describe('Move Samples', () => {
 
         it('success, move sample from subfolder to parent project', async () => {
             // Arrange
-            const sampleRowId = await createSample(server, 'sub1-movetotop-1', subfolder1Options, editorUserOptions, "DETAILED");
+            const sampleRowId = await createSample(server, SAMPLE_TYPE_NAME_1, 'sub1-movetotop-1', subfolder1Options, editorUserOptions, "DETAILED");
 
             // Act
             const response = await server.post('query', 'moveRows.api', {
@@ -622,7 +622,7 @@ describe('Move Samples', () => {
 
         it('success, move sample from subfolder to sibling', async () => {
             // Arrange
-            const sampleRowId = await createSample(server, 'sub1-movetosub2-1', subfolder1Options, editorUserOptions, "DETAILED");
+            const sampleRowId = await createSample(server, SAMPLE_TYPE_NAME_1, 'sub1-movetosub2-1', subfolder1Options, editorUserOptions, "DETAILED");
 
             // Act
             const response = await server.post('query', 'moveRows.api', {
@@ -651,9 +651,9 @@ describe('Move Samples', () => {
 
         it('success, move samples from multiple types', async () => {
             // Arrange
-            const sampleRowId1 = await createSample(server, 'sub1-movetosub2-5', subfolder1Options, editorUserOptions, "DETAILED");
-            const sampleRowId2 = await createSample(server, 'sub1-movetosub2-6', subfolder1Options, editorUserOptions, "DETAILED");
-            const sampleRowId3 = await createSample(server, 'type2-sub1-movetosub2-1', subfolder1Options, editorUserOptions, "DETAILED", SAMPLE_TYPE_NAME_2);
+            const sampleRowId1 = await createSample(server, SAMPLE_TYPE_NAME_1, 'sub1-movetosub2-5', subfolder1Options, editorUserOptions, "DETAILED");
+            const sampleRowId2 = await createSample(server, SAMPLE_TYPE_NAME_1, 'sub1-movetosub2-6', subfolder1Options, editorUserOptions, "DETAILED");
+            const sampleRowId3 = await createSample(server, SAMPLE_TYPE_NAME_2, 'type2-sub1-movetosub2-1', subfolder1Options, editorUserOptions, "DETAILED");
 
             // Act
             const response = await server.post('query', 'moveRows.api', {
@@ -825,9 +825,9 @@ describe('Move Samples', () => {
 
         it('success, move multiple samples', async () => {
             // Arrange
-            const sampleRowId1 = await createSample(server, 'sub1-movetosub2-2', subfolder1Options, editorUserOptions, "DETAILED");
-            const sampleRowId2 = await createSample(server, 'sub1-movetosub2-3', subfolder1Options, editorUserOptions, "DETAILED");
-            const sampleRowId3 = await createSample(server, 'sub1-movetosub2-4', subfolder1Options, editorUserOptions, "DETAILED");
+            const sampleRowId1 = await createSample(server, SAMPLE_TYPE_NAME_1, 'sub1-movetosub2-2', subfolder1Options, editorUserOptions, "DETAILED");
+            const sampleRowId2 = await createSample(server, SAMPLE_TYPE_NAME_1, 'sub1-movetosub2-3', subfolder1Options, editorUserOptions, "DETAILED");
+            const sampleRowId3 = await createSample(server, SAMPLE_TYPE_NAME_1, 'sub1-movetosub2-4', subfolder1Options, editorUserOptions, "DETAILED");
 
             // Act
             const response = await server.post('query', 'moveRows.api', {
@@ -873,7 +873,7 @@ describe('Move Samples', () => {
             await server.addUserToRole(editorUser.username, PermissionRoles.Editor, subfolder3.path);
 
             // create a sample in the top folder
-            const sampleRowId1 = await createSample(server, 'top-parent-1', topFolderOptions, editorUserOptions, "DETAILED");
+            const sampleRowId1 = await createSample(server, SAMPLE_TYPE_NAME_1, 'top-parent-1', topFolderOptions, editorUserOptions, "DETAILED");
 
             // derive samples into new subfolder
             const derivedSamples = await createDerivedSamples(
@@ -928,7 +928,7 @@ describe('Move Samples', () => {
             await server.addUserToRole(editorUser.username, PermissionRoles.Editor, subfolder3.path);
 
             // create a sample in the top folder
-            await createSample(server, 'top-parent-2', topFolderOptions, editorUserOptions, "DETAILED");
+            await createSample(server, SAMPLE_TYPE_NAME_1, 'top-parent-2', topFolderOptions, editorUserOptions, "DETAILED");
 
             // derive samples into new subfolder
             const aliquots = await createAliquots(
@@ -991,7 +991,7 @@ describe('Move Samples', () => {
             await server.addUserToRole(editorUser.username, PermissionRoles.Editor, subfolder3.path);
 
             // create a sample in the top folder
-            await createSample(server, 'top-parent-3', editorUserOptions, topFolderOptions);
+            await createSample(server, SAMPLE_TYPE_NAME_1, 'top-parent-3', editorUserOptions, topFolderOptions);
 
             // create a source in the top folder
             await _createSource('top-source-1', topFolderOptions);
@@ -1002,7 +1002,7 @@ describe('Move Samples', () => {
             const samSourceParentSamples = await createDerivedSamples(['sub3-p3-src1-sample1', 'sub3-p3-src1-sample2'], SAMPLE_TYPE_NAME_2, subfolder3Options, SAMPLE_TYPE_NAME_1, ['top-parent-3'], ['top-source-1']);
 
             // create parent sample in subfolder
-            await createSample(server, 'sub3-parent-1', editorUserOptions, subfolder3Options);
+            await createSample(server, SAMPLE_TYPE_NAME_1, 'sub3-parent-1', editorUserOptions, subfolder3Options);
             // create samples derived from parent in subfolder
             const sub3ParentSamples = await createDerivedSamples(['sub3-parent-sample1', 'sub3-parent-sample2', 'sub3-parent-sample3'], SAMPLE_TYPE_NAME_2, subfolder3Options, SAMPLE_TYPE_NAME_1, ['sub3-parent-1']);
 

@@ -120,7 +120,7 @@ async function createSourceWithAttachments(sourceName: string, folderOptions: Re
 }
 
 async function _createSource(sourceName: string, folderOptions: RequestOptions, auditBehavior?: string, sourceType: string = SOURCE_TYPE_NAME_1) {
-    return createSource(server, sourceName, folderOptions, editorUserOptions, auditBehavior, sourceType)
+    return createSource(server, sourceType, sourceName, folderOptions, editorUserOptions, auditBehavior)
 }
 
 async function _getSourceData(rowId: number, folderOptions: RequestOptions, sourceType: string = SOURCE_TYPE_NAME_1, columns: string = 'RowId') {
@@ -850,7 +850,7 @@ describe('Move Sources', () => {
             await server.addUserToRole(editorUser.username, PermissionRoles.Editor, subfolder3.path);
 
             // create a sample in the top folder
-            await createSample(server, 'top-parent-3', topFolderOptions, editorUserOptions);
+            await createSample(server,  SAMPLE_TYPE_NAME_1, 'top-parent-3', topFolderOptions, editorUserOptions);
 
             // create a source in the top folder
             await _createSource('top-source-1', topFolderOptions);
