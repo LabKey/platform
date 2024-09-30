@@ -297,6 +297,7 @@ describe('Sample Type Designer - Permissions', () => {
 });
 
 
+
 describe('Aliquot crud', () => {
     describe("SMAliquotImportExportTest", () => {
         const aliquotQueryCols = 'name, rowid, lsid, description, str, int, isAliquot, AliquotedFromLsid/name, rootmaterialrowid, Myparentcol, Myaliquotcol, Myindependentcol';
@@ -847,30 +848,15 @@ describe('Aliquot crud', () => {
         });
     })
 
-    describe("With required import alias", () => {
-        // TODO
-        // set up a parent sample type and a parent dataclass
-        // create designer without alias
-        // create a parent without required parent
-        // derive 1 aliquot in home
-        // derive 1 aliquot in child
-        // verify cannot update designer
-        // update parent to have sample parent
-        // update parent to have source parent
-        // verify can set to required
+    describe('Sample Type - Required Lineage', () => {
+        it('Test sample type with required dataclass parents', async () => {
+            await verifyRequiredLineageInsertUpdate(server, false, true, topFolderOptions, subfolder1Options, adminOptions /* so user can create both dataclass and sample type*/, readerUserOptions, editorUserOptions);
+        });
 
-        // verify new aliquot creation (insert, import)
-        // aliquot update (update, iterator, merge)
-        // aliquot deletion
-    })
-});
-
-describe('Sample Type - Required Lineage', () => {
-    it('Test sample type with required dataclass parents', async () => {
-        await verifyRequiredLineageInsertUpdate(server, false, true, topFolderOptions, subfolder1Options, adminOptions /* so user can create both dataclass and sample type*/, readerUserOptions, editorUserOptions);
+        it('Test sample type with required sample parents', async () => {
+            await verifyRequiredLineageInsertUpdate(server, true, true, topFolderOptions, subfolder1Options, designerReaderOptions, readerUserOptions, editorUserOptions);
+        });
     });
 
-    it('Test sample type with required sample parents', async () => {
-        await verifyRequiredLineageInsertUpdate(server, true, true, topFolderOptions, subfolder1Options, designerReaderOptions, readerUserOptions, editorUserOptions);
-    });
 });
+

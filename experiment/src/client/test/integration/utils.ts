@@ -357,6 +357,17 @@ export async function verifyRequiredLineageInsertUpdate(server: IntegrationTestS
     const homeDataRowId = await createChildDataFn(server, dataType, 'CData1', topFolderOptions, editorUserOptions);
     const sub1DataRowId = await createChildDataFn(server, dataType, 'CData2', subfolder1Options, editorUserOptions);
 
+    const dataSchema = isChildSample ? 'samples' : 'exp.data';
+    const parentInput = (isParentSample ? 'materialInputs/' : "dataInputs/") + parentDataType;
+
+    let aliquotRowId = -1;
+    if (isChildSample) {
+        // create an aliquot, check aliquots are excluded from missing required lineage data check
+        const results = await ExperimentCRUDUtils.insertRows(server, [{'AliquotedFrom': 'CData1', [parentInput]: ''}], dataSchema, dataType, topFolderOptions, editorUserOptions);
+        aliquotRowId = caseInsensitive(results[0], 'rowId');
+        await ExperimentCRUDUtils.importSample(server, "AliquotedFrom\nCData1", dataType, 'IMPORT', topFolderOptions, editorUserOptions);
+    }
+
     // verify cannot add required parent alias with missing lineage
     const updateDomainPayload = {
         domainId: childDomainId,
@@ -378,8 +389,6 @@ export async function verifyRequiredLineageInsertUpdate(server: IntegrationTestS
     expect(requiredNotAllowedResp['body']['exception']).toBe("'" + parentDataType + "' cannot be required as a parent type when there are existing " + (isChildSample ? 'samples' : 'data') + " without a parent of this type.");
     await verifyRequiredLineageReference(server, parentDtaTypeRowId, isParentSample, topFolderOptions, readerUserOptions);
 
-    const dataSchema = isChildSample ? 'samples' : 'exp.data';
-    const parentInput = (isParentSample ? 'materialInputs/' : "dataInputs/") + parentDataType;
     // update existing Home data to add missing lineage
     await ExperimentCRUDUtils.updateRows(server, [{
         'rowId': homeDataRowId,
@@ -395,7 +404,7 @@ export async function verifyRequiredLineageInsertUpdate(server: IntegrationTestS
         'rowId': sub1DataRowId,
         [parentInput]: 'PDataC1'}], dataSchema, dataType, subfolder1Options, editorUserOptions);
 
-    // verify required lineage can now be added with all existing data have lineage
+    // verify required lineage can now be added with all existing data have lineage (excluding aliquots)
     await server.post('property', 'saveDomain', updateDomainPayload, {...topFolderOptions, ...designerReaderOptions}).expect(successfulResponse);
     const reference = [dataType];
     await verifyRequiredLineageReference(server, parentDtaTypeRowId, isParentSample, topFolderOptions, readerUserOptions, isChildSample ? reference : [], isChildSample ? [] : reference);
@@ -407,37 +416,30 @@ export async function verifyRequiredLineageInsertUpdate(server: IntegrationTestS
 
     // verify creating new data using import/merge now requires parent lineage
     let failedImportResp = await ExperimentCRUDUtils.importData(server, 'name\nCData3', dataType, 'IMPORT', topFolderOptions, editorUserOptions, false, false, isChildSample, true);
-    let failedImport = JSON.parse(failedImportResp.text);
-    expect(failedImport.exception).toBe('Data does not contain required field: ' + parentInput);
+    expect(JSON.parse(failedImportResp.text).exception).toBe('Data does not contain required field: ' + parentInput);
+    failedImportResp = await ExperimentCRUDUtils.importData(server, 'AliquotedFrom\nCData3', dataType, 'IMPORT', topFolderOptions, editorUserOptions, false, false, isChildSample, true);
+    expect(JSON.parse(failedImportResp.text).exception).toBe('Data does not contain required field: ' + parentInput);
     failedImportResp = await ExperimentCRUDUtils.importData(server, 'name\t' + parentInput + '\nCData3\t', dataType, 'IMPORT', topFolderOptions, editorUserOptions, false, false, isChildSample, true);
-    failedImport = JSON.parse(failedImportResp.text);
-    expect(failedImport.exception).toBe('Missing value for required property: ' + parentInput);
+    expect(JSON.parse(failedImportResp.text).exception).toBe('Missing value for required property: ' + parentInput);
     failedImportResp = await ExperimentCRUDUtils.importData(server, 'name\t' + parentInput + '\nCData3\tbadparentname', dataType, 'IMPORT', topFolderOptions, editorUserOptions, false, false, isChildSample, true);
-    failedImport = JSON.parse(failedImportResp.text);
-    expect(failedImport.exception).toContain("'badparentname' not found in");
+    expect(JSON.parse(failedImportResp.text).exception).toContain("'badparentname' not found in");
     failedImportResp = await ExperimentCRUDUtils.importData(server, 'name\tpAlias\nCData3\t', dataType, 'IMPORT', topFolderOptions, editorUserOptions, false, false, isChildSample, true);
-    failedImport = JSON.parse(failedImportResp.text);
-    expect(failedImport.exception).toBe('Missing value for required property: pAlias');
+    expect(JSON.parse(failedImportResp.text).exception).toBe('Missing value for required property: pAlias');
     failedImportResp = await ExperimentCRUDUtils.importData(server, 'name\nCData3', dataType, 'MERGE', topFolderOptions, editorUserOptions, false, false, isChildSample, true);
-    failedImport = JSON.parse(failedImportResp.text);
-    expect(failedImport.exception).toBe('Data does not contain required field: ' + parentInput);
+    expect(JSON.parse(failedImportResp.text).exception).toBe('Data does not contain required field: ' + parentInput);
 
     // verify cannot remove existing data's required lineage using update
     await updateRowsExpectError(server, [{'rowId': homeDataRowId, [parentInput]: ''}], dataSchema, dataType, 'Missing value for required property: ' + parentInput, topFolderOptions, editorUserOptions);
     // TODO: parent alias doesn't work for query.update api when used with rowId
     await updateRowsExpectError(server, [{'rowId': sub1DataRowId, [parentInput]: ''}], dataSchema, dataType, 'Missing value for required property: ' + parentInput, subfolder1Options, editorUserOptions);
     failedImportResp = await ExperimentCRUDUtils.importData(server, 'name\t' + parentInput + '\nCData1\t', dataType, 'UPDATE', topFolderOptions, editorUserOptions, false, false, isChildSample, true);
-    failedImport = JSON.parse(failedImportResp.text);
-    expect(failedImport.exception).toBe('Missing value for required property: ' + parentInput);
+    expect(JSON.parse(failedImportResp.text).exception).toBe('Missing value for required property: ' + parentInput);
     failedImportResp = await ExperimentCRUDUtils.importData(server, 'name\tpAlias\nCData1\t', dataType, 'UPDATE', topFolderOptions, editorUserOptions, false, false, isChildSample, true);
-    failedImport = JSON.parse(failedImportResp.text);
-    expect(failedImport.exception).toBe('Missing value for required property: pAlias');
+    expect(JSON.parse(failedImportResp.text).exception).toBe('Missing value for required property: pAlias');
     failedImportResp = await ExperimentCRUDUtils.importData(server, 'name\nCData1', dataType, 'MERGE', topFolderOptions, editorUserOptions, false, false, isChildSample, true);
-    failedImport = JSON.parse(failedImportResp.text);
-    expect(failedImport.exception).toBe('Data does not contain required field: ' + parentInput);
+    expect(JSON.parse(failedImportResp.text).exception).toBe('Data does not contain required field: ' + parentInput);
     failedImportResp = await ExperimentCRUDUtils.importData(server, 'name\tpAlias\nCData1\t', dataType, 'MERGE', topFolderOptions, editorUserOptions, false, false, isChildSample, true);
-    failedImport = JSON.parse(failedImportResp.text);
-    expect(failedImport.exception).toBe('Missing value for required property: pAlias');
+    expect(JSON.parse(failedImportResp.text).exception).toBe('Missing value for required property: pAlias');
 
     // verify update (api, from file) is successful when required parent column is not included
     const selfInput = (isChildSample ? 'materialInputs/' : 'dataInputs/') + dataType;
@@ -448,6 +450,12 @@ export async function verifyRequiredLineageInsertUpdate(server: IntegrationTestS
     expect(successImport.success).toBeTruthy();
     successResp = await ExperimentCRUDUtils.importData(server, 'name\tdescription\nCData1\tupdated', dataType, 'UPDATE', topFolderOptions, editorUserOptions, false, false, isChildSample);
     expect(JSON.parse(successResp.text).success).toBeTruthy();
+    if (isChildSample) {
+        // verify aliquot update
+        await ExperimentCRUDUtils.updateRows(server, [{'rowId': aliquotRowId, 'description': 'aliquotupdated!'}], dataSchema, dataType, topFolderOptions, editorUserOptions);
+        successResp = await ExperimentCRUDUtils.importData(server, 'name\tdescription\nCData1-1\taliquotupdatedimport', dataType, 'UPDATE', topFolderOptions, editorUserOptions, false, false, isChildSample);
+        expect(JSON.parse(successResp.text).success).toBeTruthy();
+    }
 
     // verify updating (api, update using import, merge) required parent to not empty values is successful
     await ExperimentCRUDUtils.updateRows(server, [{'rowId': homeDataRowId, [parentInput]: 'PDataHome2'}], dataSchema, dataType, topFolderOptions, editorUserOptions);
@@ -462,6 +470,17 @@ export async function verifyRequiredLineageInsertUpdate(server: IntegrationTestS
     expect(JSON.parse(successResp.text).success).toBeTruthy();
     successResp = await ExperimentCRUDUtils.importData(server, 'name\tpAlias\nCData1\tPDataHome,PDataHome2', dataType, 'MERGE', topFolderOptions, editorUserOptions, false, false, isChildSample);
     expect(JSON.parse(successResp.text).success).toBeTruthy();
+
+    // verify can create aliquot if parent column is present but blank
+    if (isChildSample)
+    {
+        // verify aliquot creation
+        await ExperimentCRUDUtils.insertRows(server, [{'AliquotedFrom': 'CData1', [parentInput]: ''}], dataSchema, dataType, topFolderOptions, editorUserOptions);
+        successResp = await ExperimentCRUDUtils.importData(server, parentInput + '\tAliquotedFrom\n\tCData1', dataType, 'IMPORT', topFolderOptions, editorUserOptions, false, false, isChildSample);
+        expect(JSON.parse(successResp.text).success).toBeTruthy();
+        successResp = await ExperimentCRUDUtils.importData(server, 'AliquotedFrom\tpAlias\nCData1\t', dataType, 'MERGE', topFolderOptions, editorUserOptions, false, false, isChildSample);
+        expect(JSON.parse(successResp.text).success).toBeTruthy();
+    }
 
     // verify creating new data with required parent is successful
     await ExperimentCRUDUtils.insertRows(server, [{'name': 'CData4', [parentInput]: 'PDataHome'}], dataSchema, dataType, topFolderOptions, editorUserOptions);
