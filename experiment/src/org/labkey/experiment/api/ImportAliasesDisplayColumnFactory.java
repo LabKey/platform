@@ -40,7 +40,7 @@ public class ImportAliasesDisplayColumnFactory implements DisplayColumnFactory
                 boolean isDataClass = getDescription() != null && getDescription().contains("data class");
                 JSONObject json = null;
                 Integer rowId = (Integer)getValue(ctx);
-                Map<String, String> aliasMap = null;
+                Map<String, Map<String, Object>> aliasMap = null;
                 if (!isDataClass)
                 {
                     ExpSampleType sampleType = SampleTypeService.get().getSampleType(rowId);
@@ -62,12 +62,12 @@ public class ImportAliasesDisplayColumnFactory implements DisplayColumnFactory
 
                 if (aliasMap != null)
                 {
-                    Map<String, String> finalAliasMap = aliasMap;
+                    Map<String, Map<String, Object>> finalAliasMap = aliasMap;
                     List<String> importKeys = aliasMap.keySet().stream()
-                            .filter(key -> _prefix == null || finalAliasMap.get(key).toLowerCase().startsWith(_prefix))
+                            .filter(key -> _prefix == null || ((String) finalAliasMap.get(key).get("inputType")).toLowerCase().startsWith(_prefix))
                             .sorted().toList();
 
-                    if (importKeys.size() > 0)
+                    if (!importKeys.isEmpty())
                     {
                         json = new JSONObject();
                         for (String importKey : importKeys)

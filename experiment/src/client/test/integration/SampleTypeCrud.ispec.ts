@@ -5,7 +5,8 @@ import {
     createSample,
     deleteSampleType,
     getSampleTypeRowIdByName,
-    initProject
+    initProject,
+    verifyRequiredLineageInsertUpdate
 } from './utils';
 import { caseInsensitive, SAMPLE_TYPE_DESIGNER_ROLE } from '@labkey/components';
 const server = hookServer(process.env);
@@ -32,7 +33,7 @@ async function getSampleTypeRowId(sampleType: string, folderOptions: RequestOpti
 }
 
 async function createASample(sampleTypeName: string, sampleName: string, folderOptions: RequestOptions) {
-    return createSample(server, sampleName, folderOptions, editorUserOptions, undefined,  sampleTypeName);
+    return createSample(server, sampleTypeName, sampleName, folderOptions, editorUserOptions);
 }
 
 async function deleteSampleTypeByRowId(sampleTypeRowId: number, folderOptions: RequestOptions, userOptions: RequestOptions) {
@@ -149,6 +150,14 @@ describe('Sample Type Designer - Permissions', () => {
                 domainDesign: { name: sampleType, fields: [{ name: 'Name' }] },
                 options: {
                     name: sampleType,
+                    importAliases: {
+                        'legacy': 'materialInputs/' + sampleType,
+                        'newAlias': {
+                            inputType: 'materialInputs/' + sampleType,
+                            required: false,
+                        }
+                    }
+
                 }
             };
 
@@ -168,8 +177,16 @@ describe('Sample Type Designer - Permissions', () => {
                 domainId,
                 domainDesign: { name: sampleType, domainId, domainURI },
                 options: {
+                    rowId: sampleTypeRowId,
                     name: sampleType,
-                    metricUnit: "mg"
+                    metricUnit: "mg",
+                    importAliases: {
+                        'legacyupdate': 'materialInputs/' + sampleType,
+                        'newAliasUpdate': {
+                            inputType: 'materialInputs/' + sampleType,
+                            required: false,
+                        }
+                    }
                 }
             };
 
@@ -212,14 +229,36 @@ describe('Sample Type Designer - Permissions', () => {
             const createdSampleId = await createASample(sampleType, 'SampleData1', subfolder1Options);
             expect(createdSampleId === 0).toBeFalsy();
 
-            await server.post('property', 'saveDomain', {
+            const updatedDomainPayload = {
                 domainId,
                 domainDesign: { name: sampleType, domainId, domainURI },
                 options: {
                     name: sampleType,
-                    metricUnit: "kg"
+                    metricUnit: "kg",
+                    importAliases: {
+                        'legacyupdate': 'materialInputs/' + sampleType,
+                        'newAliasUpdate': {
+                            inputType: 'materialInputs/' + sampleType,
+                            required: false,
+                        }
+                    }
                 }
-            }, {...topFolderOptions, ...designerReaderOptions}).expect(successfulResponse);
+            };
+
+            await server.post('property', 'saveDomain', updatedDomainPayload, {...topFolderOptions, ...designerReaderOptions}).expect(successfulResponse);
+
+            // verify cannot add a required import alias with existing data that don't have such parent
+            updatedDomainPayload.options.importAliases = {
+                'legacyupdate': 'materialInputs/' + sampleType,
+                'newAliasUpdate': {
+                    inputType: 'materialInputs/' + sampleType,
+                    required: true,
+                }
+            };
+
+            const requiredNotAllowedResp = await server.post('property', 'saveDomain', updatedDomainPayload, {...topFolderOptions, ...designerReaderOptions});
+            expect(requiredNotAllowedResp['body']['success']).toBeFalsy();
+            expect(requiredNotAllowedResp['body']['exception']).toBe("'FailedDelete' cannot be required as a parent type when there are existing samples without a parent of this type.");
 
             // verify data exist in child prevent designer from delete design
             let deleteResult = await deleteSampleTypeByRowId(sampleTypeRowId, topFolderOptions, designerReaderOptions);
@@ -256,6 +295,7 @@ describe('Sample Type Designer - Permissions', () => {
     });
 
 });
+
 
 
 describe('Aliquot crud', () => {
@@ -807,4 +847,16 @@ describe('Aliquot crud', () => {
             expect(changeFields).toEqual(['int', 'str']);
         });
     })
+
+    describe('Sample Type - Required Lineage', () => {
+        it('Test sample type with required dataclass parents', async () => {
+            await verifyRequiredLineageInsertUpdate(server, false, true, topFolderOptions, subfolder1Options, adminOptions /* so user can create both dataclass and sample type*/, readerUserOptions, editorUserOptions);
+        });
+
+        it('Test sample type with required sample parents', async () => {
+            await verifyRequiredLineageInsertUpdate(server, true, true, topFolderOptions, subfolder1Options, designerReaderOptions, readerUserOptions, editorUserOptions);
+        });
+    });
+
 });
+

@@ -498,7 +498,7 @@ class LineageForeignKey extends AbstractForeignKey
             // NOTE: When adding the LineageForeignKey to exp.Data and exp.Material tables
             // NOTE: the first generation in the lineage will always be an experiment run.  To get
             // NOTE: the first data or material generation, we must skip the run generation -- hence depth of 2.
-            int depth = _expType.equals("ExperimentRuns") ? 1 : 2;
+            int depth = _expType.equals(ExpLineageOptions.LineageExpType.ExperimentRun) ? 1 : 2;
             addLineageColumn("First", depth, _expType, null, null, null);
 
             for (ExpObject item : _items.get())

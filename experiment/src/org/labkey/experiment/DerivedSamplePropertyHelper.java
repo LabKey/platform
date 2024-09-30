@@ -195,7 +195,7 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
 
                 try
                 {
-                    Map<String, String> importAlias = _sampleType.getImportAliasMap();
+                    Map<String, String> importAlias = _sampleType.getImportAliases();
                     extraPropsFns.add(() ->
                         Map.of(PARENT_IMPORT_ALIAS_MAP_PROP, importAlias)
                     );

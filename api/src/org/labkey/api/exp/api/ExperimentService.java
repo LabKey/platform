@@ -138,6 +138,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
         UseLsidForUpdate,
         GetSampleRecomputeCol,
         SkipBulkRemapCache,
+        DeferRequiredLineageValidation,
     }
 
     enum DataTypeForExclusion
@@ -1126,7 +1127,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     void registerNameExpressionType(String dataType, String schemaName, String queryname, String nameExpressionCol);
 
-    Map<String, Object> getNameExpressionMetrics();
+    Map<String, Map<String, Object>> getDomainMetrics();
 
     class XarExportOptions
     {

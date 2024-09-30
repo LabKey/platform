@@ -1511,6 +1511,25 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     }
 
     @Override
+    @NotNull
+    public Map<String, String> getAdditionalRequiredInsertColumns()
+    {
+        if (getSampleType() == null)
+            return Collections.emptyMap();
+
+        Map<String, String> required = new CaseInsensitiveHashMap<>();
+        try
+        {
+            required.putAll(getSampleType().getRequiredImportAliases());
+            return required;
+        }
+        catch (IOException e)
+        {
+            return Collections.emptyMap();
+        }
+    }
+
+    @Override
     public DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context)
     {
         TableInfo propertiesTable = _ss.getTinfo();
@@ -1520,7 +1539,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         // TODO: subclass PersistDataIteratorBuilder to index Materials! not DataClass!
         try
         {
-            var persist = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, _ss, getUserSchema().getContainer(), getUserSchema().getUser(), _ss.getImportAliasMap(), sampleTypeObjectId)
+            var persist = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, _ss, getUserSchema().getContainer(), getUserSchema().getUser(), _ss.getImportAliases(), sampleTypeObjectId)
                     .setFileLinkDirectory("sampletype");
             SearchService searchService = SearchService.get();
             if (null != searchService)
@@ -1580,9 +1599,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         url.addParameter("headerType", ColumnHeaderType.DisplayFieldKey.name());
         try
         {
-            if (getSampleType() != null && !getSampleType().getImportAliasMap().isEmpty())
+            if (getSampleType() != null && !getSampleType().getImportAliases().isEmpty())
             {
-                for (String aliasKey : getSampleType().getImportAliasMap().keySet())
+                for (String aliasKey : getSampleType().getImportAliases().keySet())
                     url.addParameter("includeColumn", aliasKey);
             }
         }

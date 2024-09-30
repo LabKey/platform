@@ -233,9 +233,13 @@ public interface ExpSampleType extends ExpObject
     @Override
     void save(User user);
 
-    @NotNull Map<String, String> getImportAliasMap() throws IOException;
+    @NotNull Map<String, String> getImportAliases() throws IOException;
 
-    void setImportAliasMap(Map<String, String> aliasMap);
+    @NotNull Map<String, String> getRequiredImportAliases() throws IOException;
+
+    @NotNull Map<String, Map<String, Object>> getImportAliasMap() throws IOException;
+
+    void setImportAliasMap(Map<String, Map<String, Object>> aliasMap);
 
     ActionURL urlEditDefinition(ContainerUser cu);
 

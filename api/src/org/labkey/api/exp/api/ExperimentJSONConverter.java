@@ -17,6 +17,7 @@ package org.labkey.api.exp.api;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import org.apache.commons.beanutils.ConvertUtils;
@@ -58,6 +59,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -106,6 +108,9 @@ public class ExperimentJSONConverter
     public static final String DATA_OUTPUTS = "dataOutputs";
     public static final String MATERIAL_OUTPUTS = "materialOutputs";
     public static final String STEPS = "steps";
+
+    public static final String MATERIAL_INPUTS_ALIAS_PREFIX = MATERIAL_INPUTS + "/";
+    public static final String DATA_INPUTS_ALIAS_PREFIX = DATA_INPUTS + "/";
 
     // Material properties
     public static final String SAMPLE_TYPE = "sampleSet";
@@ -886,12 +891,12 @@ public class ExperimentJSONConverter
     }
 
     @Nullable
-    public static String getAliasJson(Map<String, String> importAliases, String currentAliasName)
+    public static String getAliasJson(Map<String, Map<String, Object>> importAliases, String currentAliasName)
     {
-        if (importAliases == null || importAliases.size() == 0)
+        if (importAliases == null || importAliases.isEmpty())
             return null;
 
-        Map<String, String> aliases = sanitizeAliases(importAliases, currentAliasName);
+        Map<String, Map<String, Object>> aliases = sanitizeAliases(importAliases, currentAliasName);
 
         try
         {
@@ -904,12 +909,13 @@ public class ExperimentJSONConverter
         }
     }
 
-    private static Map<String, String> sanitizeAliases(Map<String, String> importAliases, String currentAliasName)
+    private static Map<String, Map<String, Object>> sanitizeAliases(Map<String, Map<String, Object>> importAliases, String currentAliasName)
     {
-        Map<String, String> cleanAliases = new HashMap<>();
+        Map<String, Map<String, Object>> cleanAliases = new HashMap<>();
         importAliases.forEach((key, value) -> {
             String trimmedKey = StringUtils.trimToNull(key);
-            String trimmedVal = StringUtils.trimToNull(value);
+            String trimmedVal = StringUtils.trimToNull((String) value.get("inputType"));
+            String requiredStr = Objects.toString(value.get("required"), null);
 
             // Sanity check this should be caught earlier
             if (trimmedKey == null || trimmedVal == null)
@@ -919,18 +925,48 @@ public class ExperimentJSONConverter
             if (trimmedVal.equalsIgnoreCase(NEW_SAMPLE_TYPE_ALIAS_VALUE) ||
                     trimmedVal.equalsIgnoreCase(MATERIAL_INPUTS_PREFIX + NEW_SAMPLE_TYPE_ALIAS_VALUE))
             {
-                trimmedVal = MATERIAL_INPUTS_PREFIX + currentAliasName;
+                trimmedVal = MATERIAL_INPUTS_ALIAS_PREFIX + currentAliasName;
             }
             else if (trimmedVal.equalsIgnoreCase(NEW_DATA_CLASS_ALIAS_VALUE) ||
                     trimmedVal.equalsIgnoreCase(DATA_INPUTS_PREFIX + NEW_DATA_CLASS_ALIAS_VALUE))
             {
-                trimmedVal = DATA_INPUTS_PREFIX + currentAliasName;
+                trimmedVal = DATA_INPUTS_ALIAS_PREFIX + currentAliasName;
             }
 
-            cleanAliases.put(trimmedKey, trimmedVal);
+            cleanAliases.put(trimmedKey, Map.of("inputType", trimmedVal, "required", Boolean.valueOf(requiredStr)));
         });
 
         return cleanAliases;
+    }
+
+    public static Map<String, Map<String, Object>> parseImportAliases(String parentImportAliasMapStr) throws IOException
+    {
+        if (StringUtils.isBlank(parentImportAliasMapStr))
+            return Collections.emptyMap();
+
+        TypeReference<HashMap<String, Object>> typeRef = new TypeReference<>() {};
+
+        Map<String, Map<String, Object>> aliases = new HashMap<>();
+        Map<String, Object> aliasMap = JsonUtil.DEFAULT_MAPPER.readValue(parentImportAliasMapStr, typeRef);
+        for (Map.Entry<String, Object> entry : aliasMap.entrySet())
+        {
+            String alias = entry.getKey();
+            Object value = entry.getValue();
+            if (value instanceof String)
+            {
+                // legacy importAlias without 'required' field
+                // {"LabParent":"dataInputs/Lab","BloodParent":"materialInputs/Blood"}
+                aliases.put(alias, Map.of("inputType", value, "required", false));
+            }
+            else if (value instanceof Map map)
+            {
+                String inputType = (String) map.get("inputType");
+                String requiredStr = Objects.toString(map.get("required"), null);
+                aliases.put(alias, Map.of("inputType", inputType, "required", Boolean.valueOf(requiredStr)));
+            }
+        }
+
+        return aliases;
     }
 
     public static final class TestCase extends Assert

@@ -719,15 +719,16 @@ public class XarExporter
 
         try
         {
-            Map<String, String> aliasMap = sampleType.getImportAliasMap();
+            Map<String, Map<String, Object>> aliasMap = sampleType.getImportAliasMap();
             if (!aliasMap.isEmpty())
             {
                 SampleSetType.ParentImportAlias parentImportAlias = xSampleSet.addNewParentImportAlias();
-                for (Map.Entry<String, String> entry : aliasMap.entrySet())
+                for (Map.Entry<String, Map<String, Object>> entry : aliasMap.entrySet())
                 {
                     ImportAlias importAlias = parentImportAlias.addNewAlias();
                     importAlias.setName(entry.getKey());
-                    importAlias.setValue(entry.getValue());
+                    importAlias.setValue((String) entry.getValue().get("inputType"));
+                    importAlias.setRequired(Boolean.valueOf(Objects.toString(entry.getValue().get("required"), null)));
                 }
             }
         }
@@ -740,7 +741,7 @@ public class XarExporter
         queueDomain(domain);
     }
 
-    public void addDataClass(ExpDataClass dataClass)
+    public void addDataClass(ExpDataClass dataClass) throws ExperimentException
     {
         if (!_expDataClasses.add(dataClass.getRowId()))
         {
@@ -768,6 +769,26 @@ public class XarExporter
 
         if (dataClass.getSampleType() != null)
             dataClassType.setSampleType(dataClass.getSampleType().getName());
+
+        try
+        {
+            Map<String, Map<String, Object>> aliasMap = dataClass.getImportAliasMap();
+            if (!aliasMap.isEmpty())
+            {
+                DataClassType.ParentImportAlias parentImportAlias = dataClassType.addNewParentImportAlias();
+                for (Map.Entry<String, Map<String, Object>> entry : aliasMap.entrySet())
+                {
+                    ImportAlias importAlias = parentImportAlias.addNewAlias();
+                    importAlias.setName(entry.getKey());
+                    importAlias.setValue((String) entry.getValue().get("inputType"));
+                    importAlias.setRequired(Boolean.valueOf(Objects.toString(entry.getValue().get("required"), null)));
+                }
+            }
+        }
+        catch (IOException e)
+        {
+            throw new ExperimentException(e);
+        }
 
         queueDomain(dataClass.getDomain());
     }
