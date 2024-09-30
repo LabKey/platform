@@ -14,12 +14,13 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 
-import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 public class PlateReplicateStatsDomainKind extends AssayDomainKind
@@ -34,9 +35,19 @@ public class PlateReplicateStatsDomainKind extends AssayDomainKind
     private static String DOMAIN_NAMESPACE_PREFIX_TEMPLATE = "%s-${SchemaName}";
     private static String DOMAIN_LSID_TEMPLATE = "${FolderLSIDBase}:${TableName}";
 
+    // replicate stats columns suffixes
+    public static final String REPLICATE_MEAN_SUFFIX = "_Mean";
+    public static final String REPLICATE_STD_DEV_SUFFIX = "_Standard_Deviation";
+
     public PlateReplicateStatsDomainKind()
     {
         super(ASSAY_PLATE_REPLICATE);
+    }
+
+    public enum Column
+    {
+        Lsid,
+        Run
     }
 
     @Override
@@ -54,7 +65,10 @@ public class PlateReplicateStatsDomainKind extends AssayDomainKind
     @Override
     public Set<PropertyStorageSpec> getBaseProperties(Domain domain)
     {
-        return Collections.singleton(new PropertyStorageSpec("Lsid", JdbcType.VARCHAR, 300).setNullable(false));
+        return Set.of(
+            new PropertyStorageSpec(Column.Lsid.name(), JdbcType.VARCHAR, 300).setNullable(false),
+            new PropertyStorageSpec(Column.Run.name(), JdbcType.INTEGER).setNullable(false)
+        );
     }
 
     @Override
@@ -103,13 +117,24 @@ public class PlateReplicateStatsDomainKind extends AssayDomainKind
         }
     }
 
-    public static Lsid generateReplicateLsid(Container container, PlateSet plateSet, WellGroup wellGroup)
+    public static Lsid generateReplicateLsid(Container container, ExpRun run, PlateSet plateSet, WellGroup wellGroup)
     {
         if (plateSet != null)
         {
-            String object = String.format("PS-%d-WG-%s", plateSet.getRowId(), wellGroup.getName());
+            String object = String.format("%d-PS-%d-WG-%s", run.getRowId(), plateSet.getRowId(), wellGroup.getName());
             return new Lsid("Replicate", "Folder-" + container.getRowId(), object);
         }
         return null;
+    }
+
+    /**
+     * Returns the list of replicate stats field names corresponding
+     * to the specified measure name.
+     */
+    public static List<String> getStatsFieldNames(String colName)
+    {
+        return List.of(
+                colName + REPLICATE_MEAN_SUFFIX,
+                colName + REPLICATE_STD_DEV_SUFFIX);
     }
 }

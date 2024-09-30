@@ -38,6 +38,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.flag.FlagColumnRenderer;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.ExprColumn;
@@ -50,6 +51,7 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.assay.plate.PlateReplicateStatsDomainKind;
 import org.labkey.assay.plate.query.PlateSchema;
 import org.labkey.assay.plate.query.WellTable;
 import org.labkey.assay.query.AssayDbSchema;
@@ -57,6 +59,7 @@ import org.labkey.assay.query.AssayDbSchema;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -191,8 +194,50 @@ public class TSVProtocolSchema extends AssayProtocolSchema
                 }
 
                 defaultColumns.add(0, FieldKey.fromParts("Well", "SampleId"));
+
+                // join to any replicate roll ups
+                Domain replicateDomain = AssayPlateMetadataService.get().getPlateReplicateStatsDomain(getProtocol());
+                if (replicateDomain != null)
+                {
+                    ColumnInfo replicateLsidCol = getColumn(AssayResultDomainKind.REPLICATE_LSID_COLUMN_NAME);
+                    if (replicateLsidCol != null)
+                    {
+                        BaseColumnInfo replicateCol = new AliasedColumn("Replicate", replicateLsidCol);
+                        replicateCol.setFk(QueryForeignKey
+                                .from(getUserSchema(), getContainerFilter())
+                                .to(PLATE_REPLICATE_STATS_TABLE, PlateReplicateStatsDomainKind.Column.Lsid.name(), null)
+                        );
+                        replicateCol.setUserEditable(false);
+                        replicateCol.setCalculated(true);
+                        addColumn(replicateCol);
+
+                        // adjust the default columns to position the replicate columns adjacent to the measures they track
+                        Map<String, FieldKey> replicateFields = new HashMap<>();
+                        for (DomainProperty prop : replicateDomain.getProperties())
+                            replicateFields.put(prop.getName(), FieldKey.fromParts("Replicate", prop.getName()));
+
+                        List<FieldKey> newDefaultColumns = new ArrayList<>();
+                        for (FieldKey fk : defaultColumns)
+                        {
+                            newDefaultColumns.add(fk);
+                            ColumnInfo col = getColumn(fk);
+                            if (col != null && col.isMeasure() && col.getJdbcType().isNumeric())
+                                addReplicateColsForMeasure(newDefaultColumns, col, replicateFields);
+                        }
+                        defaultColumns = newDefaultColumns;
+                    }
+                }
                 setDefaultVisibleColumns(defaultColumns);
             }
+        }
+    }
+
+    private void addReplicateColsForMeasure(List<FieldKey> defaultCols, ColumnInfo measure, Map<String, FieldKey> replicateFields)
+    {
+        for (String replicateName : PlateReplicateStatsDomainKind.getStatsFieldNames(measure.getName()))
+        {
+            if (replicateFields.containsKey(replicateName))
+                defaultCols.add(replicateFields.get(replicateName));
         }
     }
 

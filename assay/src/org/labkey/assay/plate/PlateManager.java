@@ -161,7 +161,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -2868,6 +2867,25 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         deleteHits(filter);
     }
 
+    private void deleteReplicateStats(ExpProtocol protocol, User user, SimpleFilter filter)
+    {
+        AssayProvider provider = AssayService.get().getProvider(protocol);
+        if (provider != null)
+        {
+            Domain replicateDomain = AssayPlateMetadataService.get().getPlateReplicateStatsDomain(protocol);
+            if (replicateDomain != null)
+            {
+                DbScope scope = AssayDbSchema.getInstance().getScope();
+                SQLFragment sql = new SQLFragment("DELETE FROM ")
+                        .append(replicateDomain.getDomainKind().getStorageSchemaName()).append(".")
+                        .append(replicateDomain.getStorageTableName()).append(" ")
+                        .append(filter.getSQLFragment(scope.getSqlDialect()));
+
+                new SqlExecutor(scope).execute(sql);
+            }
+       }
+    }
+
     @Override
     public void beforeProtocolsDeleted(Container c, User user, List<? extends ExpProtocol> protocols)
     {
@@ -2878,6 +2896,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     public void beforeRunDelete(ExpProtocol protocol, ExpRun run, User user)
     {
         deleteHits(FieldKey.fromParts("RunId"), List.of(run));
+        deleteReplicateStats(protocol, user, new SimpleFilter(FieldKey.fromParts(PlateReplicateStatsDomainKind.Column.Run.name()), run.getRowId()));
     }
 
     @Override
@@ -2888,6 +2907,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             return;
 
         deleteHits(run.getProtocol().getRowId(), List.of((Integer) resultRow.get("RowId")));
+
+        // need to recalculate replicate stats for the run
     }
 
     /**

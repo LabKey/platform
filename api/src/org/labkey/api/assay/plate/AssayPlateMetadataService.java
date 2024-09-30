@@ -24,8 +24,6 @@ public interface AssayPlateMetadataService
 {
     String PLATE_SET_COLUMN_NAME = "PlateSet";
     String EXPERIMENTAL_APP_PLATE_SUPPORT = "experimental-app-plate-support";
-    String REPLICATE_STD_DEV_SUFFIX = "_StdDev";
-    String REPLICATE_MEAN_SUFFIX = "_Mean";
 
     static void setInstance(AssayPlateMetadataService serviceImpl)
     {

@@ -88,6 +88,7 @@ import java.util.stream.Collectors;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.labkey.api.assay.AssayResultDomainKind.REPLICATE_LSID_COLUMN_NAME;
 import static org.labkey.api.assay.AssayResultDomainKind.WELL_LSID_COLUMN_NAME;
 
 public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
@@ -432,6 +433,9 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         List<DomainProperty> measureProperties = provider.getResultsDomain(protocol).getProperties().stream().filter(DomainProperty::isMeasure).collect(Collectors.toList());
         if (!multipleMeasures && measureProperties.size() != 1)
             throw new ExperimentException("The assay protocol must have exactly one measure property to support graphical plate layout file parsing.");
+        else if (multipleMeasures && measureProperties.isEmpty())
+            throw new ExperimentException("There are multiple measures specified in the data file but the assay protocol does not define any measures");
+
         String defaultMeasureName = measureProperties.get(0).getName();
 
         // if any of the plateGrids keys have plate identifiers, import using those identifiers
@@ -548,9 +552,6 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
     {
         Domain replicateDomain = ensurePlateReplicateStatsDomain(protocol);
         boolean domainDirty = false;
-        Set<String> suffixes = Set.of(
-                AssayPlateMetadataService.REPLICATE_MEAN_SUFFIX,
-                AssayPlateMetadataService.REPLICATE_STD_DEV_SUFFIX);
         Set<String> domainBaseProperties = replicateDomain.getBaseProperties().stream().map(DomainProperty::getName).collect(Collectors.toSet());
         Map<String, DomainProperty> existingFields = new HashMap<>();
         replicateDomain.getProperties().forEach(dp -> {
@@ -566,9 +567,8 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 PropertyType type = PropertyType.getFromURI(null, prop.getRangeURI());
                 if (type.getJdbcType().isNumeric())
                 {
-                    for (String suffix : suffixes)
+                    for (String name : PlateReplicateStatsDomainKind.getStatsFieldNames(prop.getName()))
                     {
-                        String name = prop.getName() + suffix;
                         // check for additions
                         if (!existingFields.containsKey(name))
                         {
@@ -693,7 +693,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 for (WellGroup wellGroup : plate.getWellGroups(WellGroup.Type.REPLICATE))
                 {
                     // will need to generate a new lsid for the replicate table
-                    Lsid lsid = PlateReplicateStatsDomainKind.generateReplicateLsid(_container, plate.getPlateSet(), wellGroup);
+                    Lsid lsid = PlateReplicateStatsDomainKind.generateReplicateLsid(_container, _run, plate.getPlateSet(), wellGroup);
                     if (lsid != null)
                         wellGroup.getPositions().forEach(p -> positionToReplicateLsid.put(p, lsid));
                 }
@@ -716,7 +716,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 if (positionToReplicateLsid.containsKey(pos))
                 {
                     Lsid lsid = positionToReplicateLsid.get(pos);
-                    //target.put("WellReplicate", lsid);
+                    target.put(REPLICATE_LSID_COLUMN_NAME, lsid);
                     _replicateRows.computeIfAbsent(lsid, k -> new ArrayList<>()).add(map);
                 }
             }
@@ -752,12 +752,14 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 
                         Map<String, Object> replicateRow = new HashMap<>();
                         replicates.add(replicateRow);
-                        replicateRow.put("Lsid", entry.getKey());
+                        replicateRow.put(PlateReplicateStatsDomainKind.Column.Lsid.name(), entry.getKey());
+                        replicateRow.put(PlateReplicateStatsDomainKind.Column.Run.name(), _run.getRowId());
+
                         for (Map.Entry<String, List<Double>> measure : measures.entrySet())
                         {
                             MathStat stat = StatsService.get().getStats(measure.getValue());
-                            replicateRow.put(measure.getKey() + AssayPlateMetadataService.REPLICATE_MEAN_SUFFIX, stat.getMean());
-                            replicateRow.put(measure.getKey() + AssayPlateMetadataService.REPLICATE_STD_DEV_SUFFIX, stat.getStdDev());
+                            replicateRow.put(measure.getKey() + PlateReplicateStatsDomainKind.REPLICATE_MEAN_SUFFIX, stat.getMean());
+                            replicateRow.put(measure.getKey() + PlateReplicateStatsDomainKind.REPLICATE_STD_DEV_SUFFIX, stat.getStdDev());
                         }
                     }
                 }
@@ -773,14 +775,11 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                         {
                             QueryUpdateService qus = tableInfo.getUpdateService();
                             BatchValidationException errors = new BatchValidationException();
-
-/*
                             qus.insertRows(_user, _container, replicates, errors, null, null);
                             if (errors.hasErrors())
                             {
                                 throw new ExperimentException(errors.getLastRowError());
                             }
-*/
                         }
                     }
                     catch (Exception e)

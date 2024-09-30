@@ -469,6 +469,16 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
                     newFields.add(wellLsid);
                 }
 
+                if (!existingFields.contains(AssayResultDomainKind.REPLICATE_LSID_COLUMN_NAME))
+                {
+                    GWTPropertyDescriptor replicateLsid = new GWTPropertyDescriptor(AssayResultDomainKind.REPLICATE_LSID_COLUMN_NAME, PropertyType.STRING.getTypeUri());
+                    replicateLsid.setShownInInsertView(false);
+                    replicateLsid.setShownInUpdateView(false);
+                    replicateLsid.setHidden(true);
+
+                    newFields.add(replicateLsid);
+                }
+
                 if (!newFields.isEmpty())
                 {
                     newFields.addAll(update.getFields());
