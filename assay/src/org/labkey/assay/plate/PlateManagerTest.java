@@ -1913,7 +1913,7 @@ public final class PlateManagerTest
         );
 
         // Act
-        var plate = createPlate(PLATE_TYPE_12_WELLS, "PPS_BuiltIn", null, data);
+        var plate = createPlate(PLATE_TYPE_12_WELLS, "TypeTriggerOne", null, data);
 
         // Assert
         List<String> types = List.of("CONTROL", "SAMPLE");
@@ -1940,7 +1940,7 @@ public final class PlateManagerTest
         );
 
         // Act
-        var plate = createPlate(PLATE_TYPE_12_WELLS, "PPS_BuiltIn", null, data);
+        var plate = createPlate(PLATE_TYPE_12_WELLS, "TypeTriggerTwo", null, data);
         var wellA1 = getWellRow(plate.getRowId(), "A1");
         wellA1.put("sampleId", sampleRowIds.get(1));
         updateWells(List.of(wellA1));
