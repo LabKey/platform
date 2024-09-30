@@ -1074,7 +1074,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                         {
                             // Move to the working directory
                             FileLike tempDirCopy = workingDir.resolveChild(file.getName());
-                            if (!file.equals(tempDirCopy))
+                            if (!file.toPath().equals(tempDirCopy.toNioPathForRead()))
                             {
                                 log.debug("moving to working directory=" + tempDirCopy);
                                 FileUtils.moveFile(file, tempDirCopy.toNioPathForWrite().toFile());

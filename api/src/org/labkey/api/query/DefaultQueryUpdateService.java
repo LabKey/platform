@@ -58,6 +58,7 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.CachingSupplier;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.vfs.FileLike;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -780,7 +781,10 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                         case DATE, TIME, TIMESTAMP -> row.put(col.getName(), value instanceof Date ? value : ConvertUtils.convert(value.toString(), Date.class));
                         default -> {
                             if (PropertyType.FILE_LINK == col.getPropertyType() && (value instanceof MultipartFile || value instanceof AttachmentFile))
-                                value = _fileColumnValueMapping.saveFileColumnValue(user, c, fileLinkDirPath, col.getName(), value);
+                            {
+                                FileLike fl = (FileLike)_fileColumnValueMapping.saveFileColumnValue(user, c, fileLinkDirPath, col.getName(), value);
+                                value = fl.toNioPathForRead().toString();
+                            }
 
                             row.put(col.getName(), ConvertUtils.convert(value.toString(), col.getJdbcType().getJavaClass()));
                         }

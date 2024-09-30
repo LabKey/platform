@@ -2164,7 +2164,7 @@ public class ExpDataIterators
                         {
                             try
                             {
-                                Path path = AssayFileWriter.getUploadDirectoryPath(c, fileLinkDirName).getParent().toNioPathForWrite();
+                                Path path = AssayFileWriter.getUploadDirectoryPath(c, fileLinkDirName).toNioPathForWrite();
                                 Object file = fileColumnValueMapping.saveFileColumnValue(user, c, path, col.getName(), value);
                                 assert file instanceof FileLike;
                                 value = ((FileLike)file).toNioPathForRead().toString();
