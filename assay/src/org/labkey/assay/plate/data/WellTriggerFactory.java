@@ -1,8 +1,10 @@
 package org.labkey.assay.plate.data;
 
+import org.apache.commons.collections4.map.LRUMap;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.plate.PlateSet;
 import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
@@ -37,45 +39,85 @@ public class WellTriggerFactory implements TriggerFactory
         );
     }
 
+    // When no "Type" is given but "SampleId" is populated, provide 'Sample' as the type
     protected class EnsureSampleWellTypeTrigger implements Trigger
     {
-        // When no type is given but sampleid is populated, provide 'Sample' as the type
-        private void addTypeSample(@Nullable Map<String, Object> newRow)
+        private final Map<Integer, String> wellTypeMap = new LRUMap<>(PlateSet.MAX_PLATE_SET_WELLS);
+
+        private void addTypeSample(
+            Container c,
+            User user,
+            @Nullable Map<String, Object> newRow,
+            @Nullable Map<String, Object> oldRow,
+            Map<String, Object> extraContext
+        )
         {
-            if (
-                    newRow != null &&
-                            newRow.containsKey(WellTable.Column.SampleId.name()) &&
-                            newRow.getOrDefault(WellTable.Column.SampleId.name(), null) != null &&
-                            !newRow.containsKey(WellTable.Column.Type.name())
-            )
-                newRow.put(WellTable.Column.Type.name(), WellGroup.Type.SAMPLE.name());
+            if (newRow == null || isCopyOperation(extraContext))
+                return;
+
+            // The "SampleID" is not being modified
+            if (newRow.get(WellTable.Column.SampleId.name()) == null)
+                return;
+
+            // A "Type" is being explicitly provided
+            if (newRow.get(WellTable.Column.Type.name()) != null)
+                return;
+
+            // A "Type" is already specified
+            if (hasWellType(c, user, oldRow))
+                return;
+
+            newRow.put(WellTable.Column.Type.name(), WellGroup.Type.SAMPLE.name());
+        }
+
+        // Since "Type" is a calculated column (i.e. not in the database) its value is not included in
+        // the original row, thus, we need to query for it dynamically.
+        private boolean hasWellType(Container c, User user, @Nullable Map<String, Object> oldRow)
+        {
+            if (oldRow == null)
+                return false;
+
+            var wellRowId = (Integer) oldRow.get(WellTable.Column.RowId.name());
+            if (wellRowId == null)
+                return false;
+
+            if (!wellTypeMap.containsKey(wellRowId))
+            {
+                var plateRowId = (Integer) oldRow.get(WellTable.Column.PlateId.name());
+                if (plateRowId == null)
+                    return false;
+
+                wellTypeMap.putAll(getWellTypes(c, user, plateRowId));
+            }
+
+            return wellTypeMap.get(wellRowId) != null;
         }
 
         @Override
-        public void afterInsert(
-                TableInfo table,
-                Container c,
-                User user,
-                @Nullable Map<String, Object> newRow,
-                ValidationException errors,
-                Map<String, Object> extraContext
+        public void beforeInsert(
+            TableInfo table,
+            Container c,
+            User user,
+            @Nullable Map<String, Object> newRow,
+            ValidationException errors,
+            Map<String, Object> extraContext
         )
         {
-            addTypeSample(newRow);
+            addTypeSample(c, user, newRow, null, extraContext);
         }
 
         @Override
-        public void afterUpdate(
-                TableInfo table,
-                Container c,
-                User user,
-                @Nullable Map<String, Object> newRow,
-                @Nullable Map<String, Object> oldRow,
-                ValidationException errors,
-                Map<String, Object> extraContext
+        public void beforeUpdate(
+            TableInfo table,
+            Container c,
+            User user,
+            @Nullable Map<String, Object> newRow,
+            @Nullable Map<String, Object> oldRow,
+            ValidationException errors,
+            Map<String, Object> extraContext
         )
         {
-            addTypeSample(newRow);
+            addTypeSample(c, user, newRow, oldRow, extraContext);
         }
     }
 
@@ -156,7 +198,7 @@ public class WellTriggerFactory implements TriggerFactory
         )
         {
             // Skip computing well groups when this is a plate copy operation
-            if (isCopyOperation(extraContext) || newRow == null)
+            if (newRow == null || isCopyOperation(extraContext))
                 return;
 
             var hasSampleChange = hasSampleChange(newRow);
@@ -222,16 +264,7 @@ public class WellTriggerFactory implements TriggerFactory
 
         private boolean hasReplicateChange(Container container, User user, @NotNull Integer plateRowId, @NotNull Integer wellRowId)
         {
-            var wellMap = wellTypeMap.computeIfAbsent(plateRowId, (pid) -> {
-                var map = new HashMap<Integer, String>();
-                UserSchema schema = QueryService.get().getUserSchema(user, container, "plate");
-                SQLFragment sql = new SQLFragment("SELECT RowId, Type FROM plate.Well WHERE PlateId = ?").add(pid);
-                QueryService.get().getSelectBuilder(schema, sql.toDebugString())
-                        .buildSqlSelector(null)
-                        .forEach(r -> map.put(r.getInt("RowId"), r.getString("Type")));
-
-                return map;
-            });
+            var wellMap = wellTypeMap.computeIfAbsent(plateRowId, (pid) -> getWellTypes(container, user, pid));
 
             return WellGroup.Type.REPLICATE.name().equals(wellMap.get(wellRowId));
         }
@@ -244,16 +277,6 @@ public class WellTriggerFactory implements TriggerFactory
         private boolean hasTypeGroupChange(@Nullable Map<String, Object> row)
         {
             return row != null && (row.containsKey(WellTable.Column.Type.name()) || row.containsKey(WellTable.Column.WellGroup.name()));
-        }
-
-        private boolean isCopyOperation(Map<String, Object> extraContext)
-        {
-            return extraContext != null && (boolean) extraContext.getOrDefault(PlateManager.PLATE_COPY_FLAG, false);
-        }
-
-        private boolean isSaveOperation(Map<String, Object> extraContext)
-        {
-            return extraContext != null && (boolean) extraContext.getOrDefault(PlateManager.PLATE_SAVE_FLAG, false);
         }
 
         @Override
@@ -312,5 +335,33 @@ public class WellTriggerFactory implements TriggerFactory
 
             checkForChanges(c, user, newRow, oldRow, errors, extraContext);
         }
+    }
+
+    /** Provides the well types for all wells in a plate. Mapped from well "RowId" -> "Type". */
+    private Map<Integer, String> getWellTypes(Container container, User user, int plateRowId)
+    {
+        var map = new HashMap<Integer, String>();
+        UserSchema schema = QueryService.get().getUserSchema(user, container, "plate");
+        SQLFragment sql = new SQLFragment("SELECT RowId, Type FROM plate.Well WHERE PlateId = ?").add(plateRowId);
+        QueryService.get().getSelectBuilder(schema, sql.toDebugString())
+                .buildSqlSelector(null)
+                .forEach(r -> map.put(r.getInt(WellTable.Column.RowId.name()), r.getString(WellTable.Column.Type.name())));
+
+        return map;
+    }
+
+    private static boolean isCopyOperation(Map<String, Object> extraContext)
+    {
+        return isOperation(extraContext, PlateManager.PLATE_COPY_FLAG);
+    }
+
+    private static boolean isSaveOperation(Map<String, Object> extraContext)
+    {
+        return isOperation(extraContext, PlateManager.PLATE_SAVE_FLAG);
+    }
+
+    private static boolean isOperation(Map<String, Object> extraContext, String flag)
+    {
+        return extraContext != null && (boolean) extraContext.getOrDefault(flag, false);
     }
 }
