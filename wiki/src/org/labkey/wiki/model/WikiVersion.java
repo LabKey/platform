@@ -211,12 +211,13 @@ public class WikiVersion
     public WikiRenderer getRenderer(String hrefPrefix,
                                     String attachPrefix,
                                     Map<String, String> nameTitleMap,
-                                    Collection<? extends Attachment> attachments)
+                                    Collection<? extends Attachment> attachments,
+                                    String sourceDescription)
     {
         if (_rendererType == null)
             _rendererType = WikiManager.DEFAULT_WIKI_RENDERER_TYPE;
 
-        return WikiRenderingService.get().getRenderer(_rendererType, hrefPrefix, attachPrefix, nameTitleMap, attachments);
+        return WikiRenderingService.get().getRenderer(_rendererType, hrefPrefix, attachPrefix, nameTitleMap, attachments, sourceDescription);
     }
 
     // Cache the rendered wiki content by default; set to false to avoid caching

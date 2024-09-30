@@ -73,8 +73,8 @@ public interface QueryService
     String EXPERIMENTAL_LAST_MODIFIED = "queryMetadataLastModified";
     String EXPERIMENTAL_PRODUCT_ALL_FOLDER_LOOKUPS = "queryProductAllFolderLookups";
     String EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED = "queryProductProjectDataListingScoped";
-    String PRODUCT_PROJECTS_ENABLED = "isProductProjectsEnabled";
-    String PRODUCT_PROJECTS_EXIST = "hasProductProjects";
+    String PRODUCT_FOLDERS_ENABLED = "isProductFoldersEnabled";
+    String PRODUCT_FOLDERS_EXIST = "hasProductFolders";
     String USE_ROW_BY_ROW_UPDATE = "useLegacyUpdateRows";
 
     String MODULE_QUERIES_DIRECTORY = "queries";
@@ -103,6 +103,11 @@ public interface QueryService
     List<QueryDefinition> getQueryDefs(User user, Container container);
 
     QueryDefinition getQueryDef(User user, Container container, String schema, String name);
+
+    /**
+     * Returns the parsed metadata for the specified query.QueryDef row. Could be a query or a built-in table override.
+     */
+    @Nullable TableType getQueryDefMetadata(Container container, int rowId);
 
     QueryDefinition createQueryDef(User user, Container container, SchemaKey schema, String name);
     QueryDefinition createQueryDef(User user, Container container, UserSchema schema, String name);
@@ -639,7 +644,7 @@ public interface QueryService
     }
 
     /**
-     * Resolves the ContainerFilter to be used for lookups of data in product projects based on the isProductProjectsAllFolderScopeEnabled setting.
+     * Resolves the ContainerFilter to be used for lookups of data in product projects based on the isProductFoldersAllFolderScopeEnabled setting.
      */
     @Nullable
     ContainerFilter getProductContainerFilterForLookups(Container container, User user, ContainerFilter defaultContainerFilter);
@@ -687,12 +692,12 @@ public interface QueryService
     ContainerFilter.Type getContainerFilterTypeForLookups(Container container);
 
     /**
-     * Returns true if the "Less restrictive product project lookups" experimental feature is enabled.
+     * Returns true if the "Less restrictive product folder lookups" experimental feature is enabled.
      */
-    boolean isProductProjectsAllFolderScopeEnabled();
+    boolean isProductFoldersAllFolderScopeEnabled();
 
     /**
      * Returns true if the "Product projects display project-specific data" experimental feature is enabled.
      */
-    boolean isProductProjectsDataListingScopedToProject();
+    boolean isProductFoldersDataListingScopedToProject();
 }

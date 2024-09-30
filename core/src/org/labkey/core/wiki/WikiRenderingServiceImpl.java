@@ -30,7 +30,7 @@ public class WikiRenderingServiceImpl implements WikiRenderingService
                                        Collection<? extends Attachment> attachments)
     {
         return HtmlStringBuilder.of(WIKI_PREFIX)
-            .append(getRenderer(rendererType, null, attachPrefix, null, attachments).format(source, sourceDescription).getHtml())
+            .append(getRenderer(rendererType, null, attachPrefix, null, attachments, sourceDescription).format(source).getHtml())
             .append(WIKI_SUFFIX).getHtmlString();
     }
 
@@ -43,14 +43,14 @@ public class WikiRenderingServiceImpl implements WikiRenderingService
     @Override
     public WikiRenderer getRenderer(WikiRendererType rendererType, String hrefPrefix,
                                     String attachPrefix, Map<String, String> nameTitleMap,
-                                    Collection<? extends Attachment> attachments)
+                                    Collection<? extends Attachment> attachments, String sourceDescription)
     {
         WikiRenderer renderer;
 
         switch (rendererType)
         {
             case RADEOX:
-                renderer = new RadeoxRenderer(hrefPrefix, attachPrefix, nameTitleMap, attachments);
+                renderer = new RadeoxRenderer(hrefPrefix, attachPrefix, nameTitleMap, attachments, sourceDescription);
                 break;
             case HTML:
                 renderer = new HtmlRenderer(hrefPrefix, attachPrefix, nameTitleMap, attachments);
@@ -62,7 +62,7 @@ public class WikiRenderingServiceImpl implements WikiRenderingService
                 renderer = new MarkdownRenderer(hrefPrefix, attachPrefix, nameTitleMap, attachments);
                 break;
             default:
-                renderer = new RadeoxRenderer(null, attachPrefix, null, attachments);
+                renderer = new RadeoxRenderer(null, attachPrefix, null, attachments, sourceDescription);
         }
 
         return renderer;

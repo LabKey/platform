@@ -18,6 +18,7 @@ package org.labkey.core.admin.sitevalidation;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.sitevalidation.SiteValidationProvider;
+import org.labkey.api.admin.sitevalidation.SiteValidationProviderFactory;
 import org.labkey.api.admin.sitevalidation.SiteValidationResultList;
 import org.labkey.api.admin.sitevalidation.SiteValidationService;
 import org.labkey.api.admin.sitevalidation.SiteValidatorDescriptor;
@@ -38,42 +39,42 @@ import java.util.concurrent.ConcurrentSkipListSet;
 
 public class SiteValidationServiceImpl implements SiteValidationService
 {
-    private final Map<String, Set<SiteValidationProvider>> siteValidators = new ConcurrentSkipListMap<>();
-    private final Map<String, Set<SiteValidationProvider>> containerValidators = new ConcurrentSkipListMap<>();
+    private final Map<String, Set<SiteValidationProviderFactory>> _siteFactories = new ConcurrentSkipListMap<>();
+    private final Map<String, Set<SiteValidationProviderFactory>> _containerFactories = new ConcurrentSkipListMap<>();
 
     @Override
-    public void registerProvider(String module, SiteValidationProvider provider)
+    public void registerProviderFactory(String module, SiteValidationProviderFactory factory)
     {
-        if (provider.isSiteScope())
+        if (factory.isSiteScope())
         {
-            Set<SiteValidationProvider> moduleSet = siteValidators.computeIfAbsent(module, k -> new ConcurrentSkipListSet<>());
-            moduleSet.add(provider);
+            Set<SiteValidationProviderFactory> moduleSet = _siteFactories.computeIfAbsent(module, k -> new ConcurrentSkipListSet<>());
+            moduleSet.add(factory);
         }
         else
         {
-            Set<SiteValidationProvider> moduleSet = containerValidators.computeIfAbsent(module, k -> new ConcurrentSkipListSet<>());
-            moduleSet.add(provider);
+            Set<SiteValidationProviderFactory> moduleSet = _containerFactories.computeIfAbsent(module, k -> new ConcurrentSkipListSet<>());
+            moduleSet.add(factory);
         }
     }
 
     @Override
-    public Map<String, Set<SiteValidationProvider>> getSiteProviders()
+    public Map<String, Set<SiteValidationProviderFactory>> getSiteFactories()
     {
-        return getImmutable(siteValidators);
+        return getImmutable(_siteFactories);
     }
 
     @Override
-    public Map<String, Set<SiteValidationProvider>> getContainerProviders()
+    public Map<String, Set<SiteValidationProviderFactory>> getContainerFactories()
     {
-        return getImmutable(containerValidators);
+        return getImmutable(_containerFactories);
     }
 
-    private Map<String, Set<SiteValidationProvider>> getImmutable(Map<String, Set<SiteValidationProvider>> map)
+    private Map<String, Set<SiteValidationProviderFactory>> getImmutable(Map<String, Set<SiteValidationProviderFactory>> map)
     {
-        Map<String, Set<SiteValidationProvider>> copy = new TreeMap<>();
+        Map<String, Set<SiteValidationProviderFactory>> copy = new TreeMap<>();
         for (String key : map.keySet())
         {
-            Set<SiteValidationProvider> set = Collections.unmodifiableSet(new TreeSet<>(map.get(key)));
+            Set<SiteValidationProviderFactory> set = Collections.unmodifiableSet(new TreeSet<>(map.get(key)));
             copy.put(key, set);
         }
         return Collections.unmodifiableMap(copy);
@@ -86,22 +87,22 @@ public class SiteValidationServiceImpl implements SiteValidationService
         Map<String, Map<SiteValidatorDescriptor, SiteValidationResultList>> siteResults = new LinkedHashMap<>();
         Container root = ContainerManager.getRoot();
 
-        for (Map.Entry<String, Set<SiteValidationProvider>> moduleValidators : siteValidators.entrySet())
+        for (Map.Entry<String, Set<SiteValidationProviderFactory>> moduleFactories : _siteFactories.entrySet())
         {
-            List<SiteValidationProvider> validatorsToRun = getValidatorsToRun(moduleValidators, providers);
+            List<SiteValidationProvider> providersToRun = getValidatorsToRun(moduleFactories, providers);
 
             // Skip work if there are no selected validators
-            if (!validatorsToRun.isEmpty())
+            if (!providersToRun.isEmpty())
             {
                 Map<SiteValidatorDescriptor, SiteValidationResultList> moduleResults = new TreeMap<>();
-                siteResults.put(moduleValidators.getKey(), moduleResults);
+                siteResults.put(moduleFactories.getKey(), moduleResults);
 
-                for (SiteValidationProvider validator : validatorsToRun)
+                for (SiteValidationProvider provider : providersToRun)
                 {
-                    SiteValidatorDescriptor descriptor = new SiteValidatorDescriptorImpl(validator.getName(), validator.getDescription());
-                    SiteValidationResultList resultList = validator.runValidation(root, u);
-                    if (null != resultList)
-                        moduleResults.put(descriptor, resultList);
+                    SiteValidationProviderFactory factory = provider.getFactory();
+                    SiteValidatorDescriptor descriptor = new SiteValidatorDescriptorImpl(factory.getName(), factory.getDescription());
+                    SiteValidationResultList resultList = provider.runValidation(root, u);
+                    moduleResults.put(descriptor, null != resultList ? resultList : new SiteValidationResultList());
                 }
             }
         }
@@ -121,37 +122,41 @@ public class SiteValidationServiceImpl implements SiteValidationService
             if (topLevel.isRoot())
             {
                 parentList = ContainerManager.getProjects();
+                if (includeSubFolders)
+                    parentList.add(0, topLevel); // Validate the root as well
             }
             else
             {
                 parentList = Collections.singletonList(topLevel);
             }
 
-            for (Map.Entry<String, Set<SiteValidationProvider>> moduleValidators : containerValidators.entrySet())
+            for (Map.Entry<String, Set<SiteValidationProviderFactory>> moduleFactories : _containerFactories.entrySet())
             {
                 Map<SiteValidatorDescriptor, Map<String, Map<String, SiteValidationResultList>>> moduleResults = new TreeMap<>();
-                List<SiteValidationProvider> validatorsToRun = getValidatorsToRun(moduleValidators, providers);
+                List<SiteValidationProvider> validatorsToRun = getValidatorsToRun(moduleFactories, providers);
 
                 // Skip work if there are no selected validators from this module
                 if (!validatorsToRun.isEmpty())
                 {
                     // Initialize maps for each provider
-                    for (SiteValidationProvider validator : validatorsToRun)
-                    {
-                        SiteValidatorDescriptor descriptor = new SiteValidatorDescriptorImpl(validator.getName(), validator.getDescription());
-                        moduleResults.put(descriptor, new TreeMap<>());
-                    }
+                    validatorsToRun.stream()
+                        .map(SiteValidationProvider::getFactory)
+                        .forEach(factory -> {
+                            SiteValidatorDescriptor descriptor = new SiteValidatorDescriptorImpl(factory.getName(), factory.getDescription());
+                            moduleResults.put(descriptor, new TreeMap<>());
+                        });
 
                     for (Container parent : parentList)
                     {
-                        List<Container> allChildren = includeSubFolders ? ContainerManager.getAllChildren(parent, u) : List.of(parent);
+                        List<Container> allChildren = includeSubFolders && !parent.isRoot() ? ContainerManager.getAllChildren(parent, u) : List.of(parent);
                         for (Container c : allChildren)
                         {
-                            validatorsToRun.stream().filter(validator -> validator.shouldRun(c, u)).forEach(validator -> {
+                            validatorsToRun.forEach(validator -> {
                                 SiteValidationResultList resultList = validator.runValidation(c, u);
                                 if (null != resultList && !resultList.getResults().isEmpty())
                                 {
-                                    SiteValidatorDescriptor descriptor = new SiteValidatorDescriptorImpl(validator.getName(), validator.getDescription());
+                                    SiteValidationProviderFactory factory = validator.getFactory();
+                                    SiteValidatorDescriptor descriptor = new SiteValidatorDescriptorImpl(factory.getName(), factory.getDescription());
                                     Map<String, Map<String, SiteValidationResultList>> providerResults = moduleResults.get(descriptor);
                                     String projectPath = null == parent.getProject() ? parent.getName() : StringUtils.substringAfter(parent.getProject().getPath(), "/");
                                     Map<String, SiteValidationResultList> projectResults = providerResults.computeIfAbsent(projectPath, k -> new TreeMap<>());
@@ -161,7 +166,7 @@ public class SiteValidationServiceImpl implements SiteValidationService
                         }
                     }
 
-                    allContainerResults.put(moduleValidators.getKey(), moduleResults);
+                    allContainerResults.put(moduleFactories.getKey(), moduleResults);
                 }
             }
         }
@@ -169,14 +174,15 @@ public class SiteValidationServiceImpl implements SiteValidationService
         return allContainerResults;
     }
 
-    private List<SiteValidationProvider> getValidatorsToRun(Map.Entry<String, Set<SiteValidationProvider>> moduleValidators, List<String> providers)
+    private List<SiteValidationProvider> getValidatorsToRun(Map.Entry<String, Set<SiteValidationProviderFactory>> factories, List<String> providers)
     {
         Set<String> includedProviderNames = new HashSet<>();
         if (providers != null)
             includedProviderNames.addAll(providers);
 
-        return moduleValidators.getValue().stream()
+        return factories.getValue().stream()
             .filter(validator -> includedProviderNames.contains(validator.getName()))
+            .map(SiteValidationProviderFactory::getSiteValidationProvider)
             .toList();
     }
 }

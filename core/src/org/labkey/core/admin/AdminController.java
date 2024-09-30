@@ -622,12 +622,6 @@ public class AdminController extends SpringActionController
             return new ActionURL(ProjectSettingsAction.class, LookAndFeelProperties.getSettingsContainer(c));
         }
 
-        @Override
-        public ActionURL getLookAndFeelSettingsURL()
-        {
-            return new ActionURL(LookAndFeelSettingsAction.class, ContainerManager.getRoot());
-        }
-
         ActionURL getLookAndFeelResourcesURL(Container c)
         {
             return c.isRoot() ? new ActionURL(AdminConsoleResourcesAction.class, c) : new ActionURL(ResourcesAction.class, LookAndFeelProperties.getSettingsContainer(c));
@@ -762,6 +756,17 @@ public class AdminController extends SpringActionController
         public ActionURL getFileRootsURL(Container c)
         {
             return new ActionURL(FileRootsAction.class, c);
+        }
+
+        @Override
+        public ActionURL getLookAndFeelSettingsURL(Container c)
+        {
+            if (c.isRoot())
+                return getSiteLookAndFeelSettingsURL();
+            else if (c.isProject())
+                return getProjectSettingsURL(c);
+            else
+                return getFolderSettingsURL(c);
         }
 
         @Override
@@ -1234,16 +1239,11 @@ public class AdminController extends SpringActionController
 
             AdminUrls urls = new AdminUrlsImpl();
 
+            // Folder-level settings are just display formats and measure/dimension flags -- no need to increment L&F revision
             if (!folder)
-            {
                 WriteableAppProps.incrementLookAndFeelRevisionAndSave();
-                _returnUrl = c.isRoot() ? urls.getLookAndFeelSettingsURL() : urls.getProjectSettingsURL(c);
-            }
-            else
-            {
-                // Folder-level settings are just display formats and measure/dimension flags -- no need to increment L&F revision
-                _returnUrl = urls.getFolderSettingsURL(c);
-            }
+
+            _returnUrl = urls.getLookAndFeelSettingsURL(c);
 
             return true;
         }
@@ -4459,7 +4459,7 @@ public class AdminController extends SpringActionController
                                 .unsafeAppend("</b><br<ul style=\"list-style: none;\">");
                             for (var r : results)
                             {
-                                HtmlString item = isBlank(r.getMessage()) ? NBSP : HtmlString.of(r.getMessage());
+                                HtmlString item = r.getMessage().isEmpty() ? NBSP : r.getMessage();
                                 contentBuilder.unsafeAppend("<li>")
                                     .append(item)
                                     .unsafeAppend("</li>\n");
@@ -9634,6 +9634,8 @@ public class AdminController extends SpringActionController
                 // If we had to truncate the name then we want to set the caption to the un-truncated version of the name.
                 CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<>(Portal.getPages(container, true));
                 Portal.PortalPage page = pages.get(name);
+                // Get a mutable copy
+                page = page.copy();
                 page.setCaption(caption);
                 Portal.updatePortalPage(container, page);
             }
@@ -10912,6 +10914,7 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
+    // TODO Should this be renamed UpdateContainerSettingsAction? There's nothing that explicity checks for this being a project vs. a folder
     public static class UpdateProjectSettingsAction extends MutatingApiAction<SimpleApiJsonForm>
     {
         @Override
@@ -10926,8 +10929,6 @@ public class AdminController extends SpringActionController
         public Object execute(SimpleApiJsonForm form, BindException errors)
         {
             JSONObject json = form.getJsonObject();
-            Container c = getContainer();
-
             boolean saved = saveProjectSettings(json, getUser(), getContainer(), errors);
 
             ApiSimpleResponse response = new ApiSimpleResponse();

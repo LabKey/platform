@@ -519,9 +519,9 @@ public class WikiManager implements WikiService
         Map<String, String> nameTitleMap = WikiSelectManager.getNameAndAliasTitleMap(c);
 
         //get formatter specified for this version
-        WikiRenderer w = wikiversion.getRenderer(hrefPrefix, attachPrefix, nameTitleMap, wiki.getAttachments());
+        WikiRenderer w = wikiversion.getRenderer(hrefPrefix, attachPrefix, nameTitleMap, wiki.getAttachments(), "Wiki '" + wiki.getName() + "' version " + wikiversion.getVersion() + " in " + wiki.getContainerPath());
 
-        return w.format(wikiversion.getBody(), "Wiki '" + wiki.getName() + "' version " + wikiversion.getVersion() + " in " + wiki.getContainerPath());
+        return w.format(wikiversion.getBody());
     }
 
 

@@ -31,11 +31,6 @@ import org.labkey.data.xml.TablesType;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-/**
- * User: phussey
- * Date: Sep 19, 2005
- * Time: 11:09:11 PM
- */
 public class TableXmlUtils
 {
     private static final Logger _log = LogManager.getLogger(TableXmlUtils.class);

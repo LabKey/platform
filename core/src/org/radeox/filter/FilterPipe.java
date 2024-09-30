@@ -47,7 +47,7 @@ import java.util.List;
  */
 
 public class FilterPipe {
-  private static Logger log = LogManager.getLogger(FilterPipe.class);
+  private static final Logger log = LogManager.getLogger(FilterPipe.class);
 
   public final static String FIRST_IN_PIPE = "all";
   public final static String LAST_IN_PIPE = "none";
@@ -55,40 +55,32 @@ public class FilterPipe {
   public final static String[] NO_REPLACES = new String[]{};
   public final static String[] FIRST_BEFORE = new String[]{ FIRST_IN_PIPE };
 
-  private InitialRenderContext initialContext;
+  private final InitialRenderContext initialContext;
 
-  private List filterList = null;
-  private static Object[] noArguments = new Object[]{};
+  private final List<Filter> filterList;
 
   public FilterPipe() {
-     this(new BaseInitialRenderContext());
+     this(new BaseInitialRenderContext(null));
   }
 
   public FilterPipe(InitialRenderContext context) {
-    filterList = new ArrayList();
+    filterList = new ArrayList<>();
     initialContext = context;
   }
 
   public void init() {
-    Iterator iterator = new ArrayList(filterList).iterator();
-    while (iterator.hasNext()) {
-      Filter filter = (Filter) iterator.next();
-      String[] replaces = filter.replaces();
-      for (int i = 0; i < replaces.length; i++) {
-        String replace = replaces[i];
-        removeFilter(replace);
+      for (Filter filter : new ArrayList<>(filterList))
+      {
+          String[] replaces = filter.replaces();
+          for (String replace : replaces)
+          {
+              removeFilter(replace);
+          }
       }
-    }
   }
 
   public void removeFilter(String filterClass) {
-    Iterator iterator = filterList.iterator();
-    while (iterator.hasNext()) {
-      Filter filter = (Filter) iterator.next();
-      if (filter.getClass().getName().equals(filterClass)) {
-        iterator.remove();
-      }
-    }
+      filterList.removeIf(filter -> filter.getClass().getName().equals(filterClass));
   }
 
   /**
@@ -101,13 +93,14 @@ public class FilterPipe {
 
     int minIndex = Integer.MAX_VALUE;
     String[] before = filter.before();
-    for (int i = 0; i < before.length; i++) {
-      String s = before[i];
-      int index = index(filterList, s);
-      if (index < minIndex) {
-        minIndex = index;
+      for (String s : before)
+      {
+          int index = index(filterList, s);
+          if (index < minIndex)
+          {
+              minIndex = index;
+          }
       }
-    }
     if (minIndex == Integer.MAX_VALUE) {
       // -1 is more usable for not-found than MAX_VALUE
       minIndex = -1;
@@ -128,7 +121,7 @@ public class FilterPipe {
     return FilterPipe.index(filterList, filterName);
   }
 
-  public static int index(List list, final String filterName) {
+  public static int index(List<Filter> list, final String filterName) {
     for (int i = 0; i < list.size(); i++) {
       if (filterName.equals(
           list.get(i).getClass().getName()))
@@ -153,19 +146,15 @@ public class FilterPipe {
   public String filter(String input, FilterContext context) {
     //Logger.debug("FilterPipe.filter: context = "+context);
     String output = input;
-    Iterator filterIterator = filterList.iterator();
+    Iterator<Filter> filterIterator = filterList.iterator();
     RenderContext renderContext = context.getRenderContext();
 
     // Apply every filter in filterList to input string
     while (filterIterator.hasNext()) {
-      Filter f = (Filter) filterIterator.next();
+      Filter f = filterIterator.next();
       try {
         // assume all filters non cacheable
-        if (f instanceof CacheFilter) {
-          renderContext.setCacheable(true);
-        } else {
-          renderContext.setCacheable(false);
-        }
+        renderContext.setCacheable(f instanceof CacheFilter);
         String tmp = f.filter(output, context);
         if (output.equals(tmp)) {
           renderContext.setCacheable(true);
@@ -184,6 +173,6 @@ public class FilterPipe {
   }
 
   public Filter getFilter(int index) {
-    return (Filter) filterList.get(index);
+    return filterList.get(index);
   }
 }

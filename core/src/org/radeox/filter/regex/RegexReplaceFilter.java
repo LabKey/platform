@@ -64,8 +64,8 @@ public class RegexReplaceFilter extends RegexFilter {
     Pattern p;
     String s;
     for (int i = 0; i < size; i++) {
-      p = (Pattern) pattern.get(i);
-      s = (String) substitute.get(i);
+      p = pattern.get(i);
+      s = substitute.get(i);
       try {
         Matcher matcher = Matcher.create(result, p);
         result = matcher.substitute(s);
