@@ -606,7 +606,8 @@ public class SubstitutionFormat
                 if (nameExpression.startsWith("${~", start-3))
                     return messages;
             }
-            messages.add(String.format("The '%s' %s starting at position %d should be preceded by the string '${'.", formatName, noun, start));
+            messages.add(String.format("'%s' is recognized as a %s. Use ${%s} if you want to include the field value in the naming pattern.", formatName, noun, formatName));
+
         }
         // missing ending brace check handled by general check for matching begin and end braces
         return messages;
