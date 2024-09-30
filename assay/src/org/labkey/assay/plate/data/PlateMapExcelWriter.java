@@ -109,8 +109,7 @@ public class PlateMapExcelWriter extends ExcelWriter
         if (ci.isLookup() && ci.getDisplayField() != null)
             ci = ci.getDisplayField();
 
-        // TODO CR FLAG: Temporary code. What the heck is going on?
-        return Objects.equals(ci.getAlias(), "SampleID_fs_Name") ? "SampleID$Name" : ci.getAlias();
+        return ci.getAlias();
     }
 
     protected void renderGridRow(Sheet sheet, List<DisplayColumn> displayColumns)
