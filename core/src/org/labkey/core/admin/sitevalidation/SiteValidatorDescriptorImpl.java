@@ -17,14 +17,10 @@ package org.labkey.core.admin.sitevalidation;
 
 import org.labkey.api.admin.sitevalidation.SiteValidatorDescriptor;
 
-/**
- * User: tgaluhn
- * Date: 10/30/2016
- */
 public class SiteValidatorDescriptorImpl implements SiteValidatorDescriptor
 {
-    final String _name;
-    final String _description;
+    private final String _name;
+    private final String _description;
 
     public SiteValidatorDescriptorImpl(String name, String description)
     {

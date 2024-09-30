@@ -47,7 +47,7 @@ import java.util.List;
 public class SchemaXMLTestCase extends Assert
 {
     @Parameterized.Parameters(name = "{1}")
-    public static Collection schemas()
+    public static Collection<Object[]> schemas()
     {
         List<Object[]> parameters = new ArrayList<>();
 
@@ -81,9 +81,9 @@ public class SchemaXMLTestCase extends Assert
         {
             ActionURL url = new ActionURL(AdminController.GetSchemaXmlDocAction.class, ContainerManager.getRoot()).addParameter("dbSchema", schema.getDisplayName());
             fail(DOM.DIV("Errors in schema " + schema.getDisplayName() + ".xml ",
-                    DOM.A(DOM.at(DOM.Attribute.href, url), "Click here for an XML doc with fixes"),
-                    DOM.BR(),
-                    mismatches.getResults().stream().map(r -> DOM.DIV(r.getMessage()))
+                DOM.A(DOM.at(DOM.Attribute.href, url), "Click here for an XML doc with fixes"),
+                DOM.BR(),
+                mismatches.getResults().stream().map(r -> DOM.DIV(r.getMessage()))
             ).renderToString());
         }
 

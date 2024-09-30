@@ -203,8 +203,7 @@ public class QueryWebPart extends VBox
         }
 
         QueryDefinition queryDef = _settings.getQueryDef(_schema);
-
-        if (_metadata != null)
+        if (_metadata != null && queryDef != null)
             queryDef.setMetadataXml(_metadata);
 
         // need to return any parse errors before we start sending anything back through the response so

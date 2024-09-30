@@ -221,5 +221,4 @@ public class QueryDef extends Entity implements Cloneable
             return _doc;
         }
     }
-
 }

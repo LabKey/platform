@@ -18,6 +18,10 @@ package org.labkey.query.controllers;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import org.antlr.runtime.tree.Tree;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
@@ -191,10 +195,6 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
@@ -560,11 +560,19 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public ActionURL urlCreateExcelTemplate(Container c, String schemaName, String queryName)
+        public @NotNull ActionURL urlCreateExcelTemplate(Container c, String schemaName, String queryName)
         {
             return new ActionURL(ExportExcelTemplateAction.class, c)
                 .addParameter(QueryParam.schemaName, schemaName)
                 .addParameter("query.queryName", queryName);
+        }
+
+        @Override
+        public ActionURL urlMetadataQuery(Container c, String schemaName, String queryName)
+        {
+            return new ActionURL(MetadataQueryAction.class, c)
+                .addParameter(QueryParam.schemaName, schemaName)
+                .addParameter(QueryParam.queryName, queryName);
         }
     }
 
@@ -4795,7 +4803,7 @@ public class QueryController extends SpringActionController
             }
             else
             {
-                // Since we are moving between containers, we know we have product projects enabled
+                // Since we are moving between containers, we know we have product folders enabled
                 if (getContainer().getProject().getAuditCommentsRequired() && StringUtils.isBlank(json.optString("auditUserComment")))
                     errors.reject(ERROR_GENERIC, "A reason for the move of data is required.");
                 else

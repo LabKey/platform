@@ -2175,6 +2175,10 @@ public class PageFlowUtil
         String numberFormat = Formats.getNumberFormatString(settingsContainer);
         if (null != numberFormat)
             json.put("extDefaultNumberFormat", ExtUtil.toExtNumberFormat(numberFormat));
+        json.put("standardDisplayFormats", Map.of(
+            "dateFormats", DateUtil.STANDARD_DATE_DISPLAY_FORMATS,
+            "timeFormats", DateUtil.STANDARD_TIME_DISPLAY_FORMATS
+        ));
 
         json.put("useMDYDateParsing", LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getDateParsingMode().getDayMonth() == DateUtil.MonthDayOption.MONTH_DAY);
 

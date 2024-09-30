@@ -179,10 +179,10 @@ public class ProductRegistry
         return productIds;
     }
 
-    public boolean supportsProductProjects(@NotNull Container container)
+    public boolean supportsProductFolders(@NotNull Container container)
     {
         ProductMenuProvider provider = getPrimaryProductMenuForContainer(container);
-        return provider != null && provider.supportsProductProjects();
+        return provider != null && provider.supportsProductFolders();
     }
 
     @Nullable

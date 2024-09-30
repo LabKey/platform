@@ -416,7 +416,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         ContainerFilter cf = null;
 
         // Issue 46939: Naming Patterns for Not Working in Sub Projects
-        if (dataContainer != null && dataContainer.hasProductProjects())
+        if (dataContainer != null && dataContainer.hasProductFolders())
             cf = new ContainerFilter.CurrentPlusProjectAndShared(dataContainer, user_); // use lookup CF
 
         TableInfo parentTable = QueryService.get().getUserSchema(user_, nameGenContainer, SamplesSchema.SCHEMA_NAME).getTable(getName(), cf);

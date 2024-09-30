@@ -620,7 +620,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
         Container container = null;
         if (PipelineJobService.get().isWebServer())
         {
-            // We're inside of the web server so we have access to the DB and can set up a transform session, among
+            // We're inside the web server so we have access to the DB and can set up a transform session, among
             // other resources
             session = SecurityManager.createTransformSession(getJob().getUser());
             container = getJob().getContainer();
@@ -706,7 +706,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
 
         List<String> args = pb.command();
 
-        if (args.size() == 0)
+        if (args.isEmpty())
             return false;
 
         String commandLine = StringUtils.join(args, " ");
