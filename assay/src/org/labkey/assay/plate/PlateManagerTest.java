@@ -1900,6 +1900,60 @@ public final class PlateManagerTest
         assertEquals(two.get(1).getName(), "WellGroup");
     }
 
+    @Test
+    public void testEnsureSampleWellTypeTriggerPopulates() throws Exception
+    {
+        // Arrange
+        List<ExpMaterial> samples = createSamples(2);
+        List<Integer> sampleRowIds = samples.stream().map(ExpObject::getRowId).sorted().toList();
+
+        List<Map<String, Object>> data = List.of(
+                CaseInsensitiveHashMap.of("wellLocation", "A1", "sampleId", sampleRowIds.get(0), "type", "CONTROL"),
+                CaseInsensitiveHashMap.of("wellLocation", "A2", "sampleId", sampleRowIds.get(1), "type", "")
+        );
+
+        // Act
+        var plate = createPlate(PLATE_TYPE_12_WELLS, "PPS_BuiltIn", null, data);
+
+        // Assert
+        List<String> types = List.of("CONTROL", "SAMPLE");
+        try (var r = getPlateWellResults(plate.getRowId()))
+        {
+            for (int i = 0; i < 2; i++)
+            {
+                r.next();
+                var type = r.getString(FieldKey.fromParts("type"));
+                assertEquals(type, types.get(i));
+            }
+        }
+    }
+
+    @Test
+    public void testEnsureSampleWellTypeTriggerRespectsType() throws Exception
+    {
+        // Arrange
+        List<ExpMaterial> samples = createSamples(2);
+        List<Integer> sampleRowIds = samples.stream().map(ExpObject::getRowId).sorted().toList();
+
+        List<Map<String, Object>> data = List.of(
+                CaseInsensitiveHashMap.of("wellLocation", "A1", "sampleId", sampleRowIds.get(0), "type", "CONTROL")
+        );
+
+        // Act
+        var plate = createPlate(PLATE_TYPE_12_WELLS, "PPS_BuiltIn", null, data);
+        var wellA1 = getWellRow(plate.getRowId(), "A1");
+        wellA1.put("sampleId", sampleRowIds.get(1));
+        updateWells(List.of(wellA1));
+
+        // Assert
+        try (var r = getPlateWellResults(plate.getRowId()))
+        {
+            r.next();
+            var type = r.getString(FieldKey.fromParts("type"));
+            assertEquals(type, "CONTROL");
+        }
+    }
+
     private Plate createPlate(@NotNull PlateType plateType) throws Exception
     {
         return createPlate(plateType, null, null, null);
