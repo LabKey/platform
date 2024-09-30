@@ -1823,9 +1823,9 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                     if (file instanceof File ioFile)
                         value = ioFile.getPath();
                     else if (file instanceof FileLike fl)
-                        value = fl.toNioPathForRead();
+                        value = fl.toNioPathForRead().toString();
                     else
-                        throw UnexpectedException.wrap(null,"Unknown type returned from saveFile");
+                        throw UnexpectedException.wrap(null,"Unexpected type returned from saveFile");
                     _savedFiles.put(origFileName, (String)value);
                 }
                 catch (QueryUpdateServiceException | ValidationException ex)

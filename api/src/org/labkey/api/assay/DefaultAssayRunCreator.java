@@ -153,7 +153,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         if (!importInBackground)
         {
             FileLike primaryFile = context.getUploadedData().get(AssayDataCollector.PRIMARY_FILE);
-            run = AssayService.get().createExperimentRun(context.getName(), context.getContainer(), protocol, primaryFile.toNioPathForRead().toFile());
+            run = AssayService.get().createExperimentRun(context.getName(), context.getContainer(), protocol, null==primaryFile ? null : primaryFile.toNioPathForRead().toFile());
             run.setComments(context.getComments());
             run.setWorkflowTaskId(context.getWorkflowTask());
 

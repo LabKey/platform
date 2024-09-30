@@ -114,6 +114,7 @@ import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.SampleTypeServiceImpl;
 import org.labkey.experiment.api.SampleTypeUpdateServiceDI;
 import org.labkey.experiment.controllers.exp.RunInputOutputBean;
+import org.labkey.vfs.FileLike;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -2126,8 +2127,8 @@ public class ExpDataIterators
                             {
                                 Path path = AssayFileWriter.getUploadDirectoryPath(c, fileLinkDirName).getParent().toNioPathForWrite();
                                 Object file = fileColumnValueMapping.saveFileColumnValue(user, c, path, col.getName(), value);
-                                assert file instanceof File;
-                                value = ((File)file).getPath();
+                                assert file instanceof FileLike;
+                                value = ((FileLike)file).toNioPathForRead().toString();
                                 savedFileName[index] = (String)value;
                             }
                             catch (QueryUpdateServiceException ex)
