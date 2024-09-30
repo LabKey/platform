@@ -107,9 +107,9 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
                         name: 'reportInheritable',
                         fieldLabel: 'Inherit',
                         boxLabel: 'Make this report available in child folders',
+                        hidden: this.shouldAllowInherit(),
                         labelWidth: 125,
                         width: 400,
-                        // hidden: false, // TODO hide for guest and if no child folders
                     }),
                     Ext4.create('Ext.form.RadioGroup', {
                         itemId: 'reportShared',
@@ -262,6 +262,11 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
         return Ext4.isObject(this.reportInfo);
     },
 
+    shouldAllowInherit : function()
+    {
+        return this.allowInherit;
+    },
+
     canSaveChanges : function()
     {
         return this.canEdit;
@@ -316,6 +321,8 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
                 this.down('#onlyMe').setValue(true);
             else
                 this.down('#allReaders').setValue(true);
+
+            this.down('#reportInheritable').setVisible(this.shouldAllowInherit());
             this.down('#reportInheritable').setValue(this.isSavedReport() ? this.reportInfo.inheritable : false);
 
             this.down('#reportThumbnailType').setValue({reportThumbnailType: this.thumbnailType});

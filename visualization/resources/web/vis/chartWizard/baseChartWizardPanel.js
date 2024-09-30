@@ -16,6 +16,7 @@ Ext4.define('LABKEY.ext4.BaseChartWizardPanel', {
     canShare: false,
     isDeveloper: false,
     defaultNumberFormat: null,
+    allowInherit: false,
     allowEditMode: false,
     editModeURL: null,
     baseUrl: null,
@@ -116,6 +117,7 @@ Ext4.define('LABKEY.ext4.BaseChartWizardPanel', {
                 canShare: this.canShare,
                 isDeveloper: this.isDeveloper,
                 defaultNumberFormat: this.defaultNumberFormat,
+                allowInherit: this.allowInherit,
                 allowEditMode: this.allowEditMode,
                 editModeURL: this.editModeURL,
 
@@ -151,6 +153,7 @@ Ext4.define('LABKEY.ext4.BaseChartWizardPanel', {
                 canShare: this.canShare,
                 isDeveloper: this.isDeveloper,
                 defaultNumberFormat: this.defaultNumberFormat,
+                allowInherit: this.allowInherit,
                 allowEditMode: this.allowEditMode,
                 editModeURL: this.editModeURL,
 

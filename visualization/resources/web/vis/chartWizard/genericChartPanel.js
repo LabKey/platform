@@ -632,6 +632,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if (!this.savePanel)
         {
             this.savePanel = Ext4.create('LABKEY.vis.SaveOptionsPanel', {
+                allowInherit: this.allowInherit,
                 canEdit: this.canEdit,
                 canShare: this.canShare,
                 listeners: {
