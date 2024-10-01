@@ -30,7 +30,6 @@ import org.labkey.api.admin.SubfolderWriter;
 import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.assay.AssayResultsFileWriter;
 import org.labkey.api.assay.ReplacedRunFilter;
-import org.labkey.api.assay.sample.AssaySampleLookupContext;
 import org.labkey.api.assay.sample.MaterialInputRoleComparator;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.ImageServlet;
