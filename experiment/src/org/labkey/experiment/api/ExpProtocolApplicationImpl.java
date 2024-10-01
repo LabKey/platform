@@ -371,9 +371,6 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
 
         SQLFragment commonSQL = new SQLFragment(" SET SourceApplicationId = NULL, RunId = NULL WHERE SourceApplicationId = ?", getRowId());
 
-        // TODO: Should we always be clearing the exp.Material SourceApplicationId, RunId (and/or updating) when inputs are changed instead of only when the protocol application is deleted?
-        // Additionally, it seems really odd that we have an input protocol that is supposed to have all the inputs represented on it, but then
-        // we also have those inputs replicated on the core protocol. Is this intentional? Why?
         SQLFragment materialSQL = new SQLFragment("UPDATE " + ExperimentServiceImpl.get().getTinfoMaterial());
         materialSQL.append(commonSQL);
         new SqlExecutor(ExperimentServiceImpl.get().getSchema()).execute(materialSQL);
