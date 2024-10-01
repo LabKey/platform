@@ -79,7 +79,7 @@ public class ReportAuditProvider extends AbstractAuditTypeProvider
 
     public static class ReportAuditEvent extends AuditTypeEvent
     {
-        private String reportId;
+        private int reportId;
         private String reportName;
         private String reportKey;
         private String reportType;
@@ -97,20 +97,20 @@ public class ReportAuditProvider extends AbstractAuditTypeProvider
         public ReportAuditEvent(int reportId, @NotNull ReportDescriptor descriptor, Container container, String comment)
         {
             super(EVENT_NAME, container, comment);
-            this.reportId = String.valueOf(reportId);
+            this.reportId = reportId;
             this.reportName = descriptor.getReportName();
             this.reportKey = descriptor.getReportKey();
             this.reportType = descriptor.getReportType();
         }
 
-        public String getReportId()
+        public int getReportId()
         {
             return reportId;
         }
 
-        public void setReportId(@NotNull Integer reportId)
+        public void setReportId(int reportId)
         {
-            this.reportId = String.valueOf(reportId);
+            this.reportId = reportId;
         }
 
         public String getReportName()
@@ -168,7 +168,7 @@ public class ReportAuditProvider extends AbstractAuditTypeProvider
             super(EVENT_NAME);
 
             fields = new LinkedHashSet<>();
-            fields.add(createPropertyDescriptor(COLUMN_NAME_REPORT_ID, PropertyType.STRING, "Report Id", null, true));
+            fields.add(createPropertyDescriptor(COLUMN_NAME_REPORT_ID, PropertyType.INTEGER, "Report Id", null, true));
             fields.add(createPropertyDescriptor(COLUMN_NAME_REPORT_NAME, PropertyType.STRING, "Report Name", null, true));
             fields.add(createPropertyDescriptor(COLUMN_NAME_REPORT_KEY, PropertyType.STRING, "Report Key", null, false));
             fields.add(createPropertyDescriptor(COLUMN_NAME_REPORT_TYPE, PropertyType.STRING, "Report Type", null, true));
