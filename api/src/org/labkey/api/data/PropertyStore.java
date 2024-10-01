@@ -17,6 +17,7 @@ package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.PropertyManager.PropertyMap;
+import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.security.User;
 
 import java.util.stream.Stream;
@@ -33,10 +34,10 @@ public interface PropertyStore
     @NotNull PropertyMap getProperties(String category);
 
     // If create == true, then never returns null. If create == false, will return null if property set doesn't exist.
-    PropertyMap getWritableProperties(User user, Container container, String category, boolean create);
-    PropertyMap getWritableProperties(User user, String category, boolean create);
-    PropertyMap getWritableProperties(Container container, String category, boolean create);
-    PropertyMap getWritableProperties(String category, boolean create);
+    WritablePropertyMap getWritableProperties(User user, Container container, String category, boolean create);
+    WritablePropertyMap getWritableProperties(User user, String category, boolean create);
+    WritablePropertyMap getWritableProperties(Container container, String category, boolean create);
+    WritablePropertyMap getWritableProperties(String category, boolean create);
 
     void deletePropertySet(User user, Container container, String category);
     void deletePropertySet(User user, String category);

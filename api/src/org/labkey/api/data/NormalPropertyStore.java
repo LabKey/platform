@@ -16,6 +16,7 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.PropertyManager.PropertyMap;
 
 /**
  * A PropertyStore that does not encrypt its values when persisted in the database.
@@ -34,21 +35,19 @@ public class NormalPropertyStore extends AbstractPropertyStore
     }
 
     @Override
-    protected boolean isValidPropertyMap(PropertyManager.PropertyMap props)
+    protected boolean isValidPropertyMap(PropertyMap props)
     {
         return props.getEncryptionAlgorithm() == PropertyEncryption.None;
     }
 
     @Override
-    protected void fillValueMap(TableSelector selector, PropertyManager.PropertyMap props)
+    protected String decryptValue(@Nullable String value, PropertyEncryption encryption)
     {
-        validatePropertyMap(props);
-
-        selector.fillValueMap(props);
+        return value;
     }
 
     @Override
-    protected String getSaveValue(PropertyManager.PropertyMap props, @Nullable String value)
+    protected String getSaveValue(PropertyMap props, @Nullable String value)
     {
         if (props.getEncryptionAlgorithm() != PropertyEncryption.None)
             throw new IllegalStateException("NormalPropertyStore should not be saving a PropertyMap encrypted with " + props.getEncryptionAlgorithm());
