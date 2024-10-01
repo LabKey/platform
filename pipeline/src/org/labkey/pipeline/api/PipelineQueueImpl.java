@@ -100,6 +100,7 @@ public class PipelineQueueImpl extends AbstractPipelineQueue
         // Set centrally to avoid needing to set in each job. See PipelineJobRunner for equivalent functionality
         // when running through Enterprise Pipeline
         QueryService.get().setEnvironment(job);
+        PipelineJobService.get().trackJobThread(job);
     }
 
 
@@ -116,6 +117,7 @@ public class PipelineQueueImpl extends AbstractPipelineQueue
             // Clear centrally to avoid needing to set in each job. See PipelineJobRunner for equivalent functionality
             // when running through Enterprise Pipeline
             QueryService.get().clearEnvironment();
+            PipelineJobService.get().clearJobThread(job);
             DebugInfoDumper.resetThreadDumpContext();
 
             ConnectionWrapper.dumpLeaksForThread(Thread.currentThread());
