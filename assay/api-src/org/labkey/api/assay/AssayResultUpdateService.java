@@ -129,7 +129,7 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
 
                 TableInfo fkTableInfo = col.getFkTableInfo();
                 // Don't follow the lookup for specimen IDs, since their FK is very special and based on target study, etc
-                if (!hasValueChanged && fkTableInfo != null && !AbstractAssayProvider.SPECIMENID_PROPERTY_NAME.equalsIgnoreCase(entry.getKey()))
+                if (hasValueChanged && fkTableInfo != null && !AbstractAssayProvider.SPECIMENID_PROPERTY_NAME.equalsIgnoreCase(entry.getKey()))
                 {
                     // Do type conversion in case there's a mismatch in the lookup source and target columns
                     ColumnInfo fkTablePkCol = fkTableInfo.getPkColumns().get(0);
