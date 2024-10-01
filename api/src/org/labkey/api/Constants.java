@@ -52,11 +52,11 @@ public class Constants
 
     /**
      * Returns the documentation folder name associated with this version of LabKey. These names have typically been the
-     * version numbers of each major release, therefore, this constant should be updated just before every major release.
+     * version numbers of each ESR, therefore, this constant should be updated just before every major release.
      */
     public static String getDocumentationVersion()
     {
-        return "24.7";
+        return "24.11";
     }
 
     /**
@@ -168,7 +168,7 @@ public class Constants
 
             if (!AppProps.UNKNOWN_VERSION.equals(releaseVersion))
             {
-                // If this is a production release version (e.g., 20.7, 21.3, 22.11) then the doc link should match
+                // If this is ESR version (e.g., 20.7, 21.3, 24.11) then the doc link should match
                 VersionNumber vn = new VersionNumber(releaseVersion);
                 if (Set.of(3, 7, 11).contains(vn.getMinor()))
                 {
