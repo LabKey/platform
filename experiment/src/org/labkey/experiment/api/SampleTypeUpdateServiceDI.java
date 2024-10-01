@@ -1073,7 +1073,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         {
             try
             {
-                Map<String, String> importAliases = _sampleType.getImportAliasMap();
+                Map<String, String> importAliases = _sampleType.getImportAliases();
                 for (String col : dataColumns)
                 {
                     if (!hasParentInput && ExperimentService.isInputOutputColumn(col) || equalsIgnoreCase("parent",col) || importAliases.containsKey(col))
@@ -1583,7 +1583,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             this.sampleType = sampleType;
             try
             {
-                this.importAliasMap = sampleType.getImportAliasMap();
+                this.importAliasMap = sampleType.getImportAliases();
                 _extraPropsFns.add(() -> {
                     if (this.importAliasMap != null)
                         return Map.of(PARENT_IMPORT_ALIAS_MAP_PROP, this.importAliasMap);

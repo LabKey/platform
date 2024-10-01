@@ -40,6 +40,7 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.experiment.CompressedInputStreamXarSource;
 import org.labkey.experiment.XarReader;
+import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.SampleTypeServiceImpl;
 import org.labkey.experiment.xar.FolderXarImporterFactory;
 import org.labkey.experiment.xar.XarImportContext;
@@ -49,6 +50,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -162,7 +164,18 @@ public abstract class AbstractExpFolderImporter implements FolderImporter
                         int count = SampleTypeService.get().recomputeSampleTypeRollup(sampleType, ctx.getContainer());
                         SampleTypeServiceImpl.SampleChangeType reason = count > 0 ? update : insert;
                         SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(sampleType, reason);
+                        String invalidParentType = ExperimentServiceImpl.get().getInvalidRequiredImportAliasUpdate(sampleType.getLSID(), true, sampleType.getImportAliasMap(), Collections.emptySet(), ctx.getContainer(), ctx.getUser());
+                        if (invalidParentType != null)
+                            throw new IllegalArgumentException("'" + invalidParentType + "' cannot be required as a parent type when there are samples without a parent of this type.");
+
                     }
+                    for (ExpDataClass dataClass : typesReader.getDataClasses())
+                    {
+                        String invalidParentType = ExperimentServiceImpl.get().getInvalidRequiredImportAliasUpdate(dataClass.getLSID(), false, dataClass.getImportAliasMap(), Collections.emptySet(), ctx.getContainer(), ctx.getUser());
+                        if (invalidParentType != null)
+                            throw new IllegalArgumentException("'" + invalidParentType + "' cannot be required as a parent type when there are data without a parent of this type.");
+                    }
+
                 }
                 else
                     log.info("No types XAR file to process.");
@@ -294,6 +307,7 @@ public abstract class AbstractExpFolderImporter implements FolderImporter
                                     if (isUpdate)
                                         options.put(QueryUpdateService.ConfigParameters.SkipRequiredFieldValidation, true);
                                     options.put(ExperimentService.QueryOptions.UseLsidForUpdate, !isUpdate);
+                                    options.put(ExperimentService.QueryOptions.DeferRequiredLineageValidation, true);
                                     context.setConfigParameters(options);
 
                                     Map<String, Object> extraContext = null;

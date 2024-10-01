@@ -5,7 +5,8 @@ import {
     createSource,
     deleteSourceType,
     getDataClassRowIdByName,
-    initProject
+    initProject,
+    verifyRequiredLineageInsertUpdate,
 } from './utils';
 import { DATA_CLASS_DESIGNER_ROLE } from '@labkey/components';
 const server = hookServer(process.env);
@@ -27,7 +28,7 @@ async function getDataClassRowId(dataClassName: string, folderOptions: RequestOp
 }
 
 async function createData(dataClassName: string, name: string, folderOptions: RequestOptions) {
-    return createSource(server, name, folderOptions, editorUserOptions, undefined, dataClassName);
+    return createSource(server, dataClassName, name, folderOptions, editorUserOptions);
 }
 
 async function deleteDataClass(dataTypeRowId: number, folderOptions: RequestOptions, userOptions: RequestOptions) {
@@ -103,8 +104,16 @@ describe('Data Class Designer - Permissions', () => {
                 domainId,
                 domainDesign: { name: dataType, domainId, domainURI },
                 options: {
+                    rowId: dataTypeRowId,
                     name: dataType,
-                    nameExpression: 'Source-${genId}'
+                    nameExpression: 'S-${genId}',
+                    importAliases: {
+                        'legacy': 'dataInputs/' + dataType,
+                        'newAlias': {
+                            inputType: 'dataInputs/' + dataType,
+                            required: false,
+                        }
+                    }
                 }
             };
             await server.post('property', 'saveDomain', updatePayload, {...topFolderOptions, ...readerUserOptions})
@@ -149,14 +158,35 @@ describe('Data Class Designer - Permissions', () => {
             const createdDataId = await createData(dataType, 'Data1', subfolder1Options);
             expect(createdDataId === 0).toBeFalsy();
 
-            await server.post('property', 'saveDomain', {
+            const updateDomainPayload = {
                 domainId,
-                domainDesign: { name: dataType, domainId, domainURI },
+                domainDesign: {name: dataType, domainId, domainURI},
                 options: {
+                    rowId: dataTypeRowId,
                     name: dataType,
-                    nameExpression: 'Source-${genId}'
+                    nameExpression: 'Source-${genId}',
+                    importAliases: {
+                        'legacy': 'dataInputs/' + dataType,
+                        'newAlias': {
+                            inputType: 'dataInputs/' + dataType,
+                            required: false,
+                        }
+                    }
                 }
-            }, {...topFolderOptions, ...designerReaderOptions}).expect(successfulResponse);
+            };
+            await server.post('property', 'saveDomain', updateDomainPayload, {...topFolderOptions, ...designerReaderOptions}).expect(successfulResponse);
+
+            // verify data exist in child prevent adding new required alias
+            updateDomainPayload.options.importAliases = {
+                'legacy': 'dataInputs/' + dataType,
+                'newAlias': {
+                    inputType: 'dataInputs/' + dataType,
+                    required: true,
+                }
+            };
+            const requiredNotAllowedResp = await server.post('property', 'saveDomain', updateDomainPayload, {...topFolderOptions, ...designerReaderOptions});
+            expect(requiredNotAllowedResp['body']['success']).toBeFalsy();
+            expect(requiredNotAllowedResp['body']['exception']).toBe("'FailedDelete' cannot be required as a parent type when there are existing data without a parent of this type.");
 
             // verify data exist in child prevent designer from delete design
             let deleteResult = await deleteDataClass(dataTypeRowId, topFolderOptions, designerReaderOptions);
@@ -194,5 +224,9 @@ describe('Data Class Designer - Permissions', () => {
 
 });
 
+describe('Data Class - Required Lineage', () => {
+    it('Test dataclass with required dataclass parents', async () => {
+        await verifyRequiredLineageInsertUpdate(server, false, false, topFolderOptions, subfolder1Options, designerReaderOptions, readerUserOptions, editorUserOptions);
+    });
 
-// TODO data crud
+});
