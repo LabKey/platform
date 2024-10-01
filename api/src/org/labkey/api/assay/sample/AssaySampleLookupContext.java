@@ -27,6 +27,7 @@ import org.labkey.api.util.Pair;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -37,7 +38,7 @@ public class AssaySampleLookupContext
     private final Map<FieldKey, Boolean> _sampleLookups;
 
     /** Structure representing a material and its designated role. */
-    private record MaterialInput(Integer materialRowId, String role) {}
+    public record MaterialInput(Integer materialRowId, String role) {}
 
     /** Structure containing the resolved metadata for an assay "sample lookup". */
     public record SampleLookup(
@@ -213,30 +214,33 @@ public class AssaySampleLookupContext
         coreProtocolApplication.removeAllMaterialInputs(user);
         inputProtocolApplication.removeAllMaterialInputs(user);
 
-        if (!newInputs.isEmpty())
+        for (var entry : getInputGroups(newInputs, inputLineageRoles).entrySet())
         {
-            var seen = new HashSet<Integer>();
-            var inputGroups = new HashMap<String, Set<Integer>>();
-
-            // TODO: Compute more consistently
-            // Always choose non-lookup based roles first so they do not get evicted in the future.
-            for (var input : newInputs)
-            {
-                // A sample can be marked as a material input at most once.
-                if (seen.contains(input.materialRowId))
-                    continue;
-
-                seen.add(input.materialRowId);
-                inputGroups.putIfAbsent(input.role, new HashSet<>());
-                inputGroups.get(input.role).add(input.materialRowId);
-            }
-
-            for (var entry : inputGroups.entrySet())
-            {
-                coreProtocolApplication.addMaterialInputs(user, entry.getValue(), entry.getKey(), null);
-                inputProtocolApplication.addMaterialInputs(user, entry.getValue(), entry.getKey(), null);
-            }
+            coreProtocolApplication.addMaterialInputs(user, entry.getValue(), entry.getKey(), null);
+            inputProtocolApplication.addMaterialInputs(user, entry.getValue(), entry.getKey(), null);
         }
+    }
+
+    private Map<String, Set<Integer>> getInputGroups(Set<MaterialInput> inputs, Set<String> inputLineageRoles)
+    {
+        var groups = new LinkedHashMap<String, Set<Integer>>();
+        var seen = new HashSet<Integer>();
+
+        var sortedInputs = new ArrayList<>(inputs);
+        sortedInputs.sort(new MaterialInputRoleComparator(inputLineageRoles));
+
+        for (var input : inputs)
+        {
+            // A sample can be marked as a material input at most once
+            if (seen.contains(input.materialRowId))
+                continue;
+
+            seen.add(input.materialRowId);
+            groups.putIfAbsent(input.role, new HashSet<>());
+            groups.get(input.role).add(input.materialRowId);
+        }
+
+        return groups;
     }
 
     private Set<String> getInputLineageRoles(Map<TableInfoKey, List<SampleLookup>> sampleLookups)
