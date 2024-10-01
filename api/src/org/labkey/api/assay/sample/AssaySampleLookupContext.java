@@ -22,15 +22,20 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.Pair;
+import org.labkey.api.view.UnauthorizedException;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static java.util.Collections.emptySet;
 
 public class AssaySampleLookupContext
 {
@@ -53,7 +58,12 @@ public class AssaySampleLookupContext
 
     public AssaySampleLookupContext()
     {
-        _runIds = new HashSet<>();
+        this(emptySet());
+    }
+
+    public AssaySampleLookupContext(Collection<Integer> runIds)
+    {
+        _runIds = new HashSet<>(runIds);
         _sampleLookups = new HashMap<>();
     }
 
@@ -121,19 +131,29 @@ public class AssaySampleLookupContext
         // Run domain lookups
         {
             var runDomain = assayProvider.getRunDomain(run.getProtocol());
-            var table = runDomain.getDomainKind().getTableInfo(user, container, runDomain, cf);
-            var lookups = getSampleLookups(container, user, table);
-            if (!lookups.isEmpty())
-                sampleLookups.put(new TableInfoKey(table, table.getColumn(FieldKey.fromParts("RowId"))), lookups);
+            if (runDomain != null)
+            {
+                var table = runDomain.getDomainKind().getTableInfo(user, container, runDomain, cf);
+                var lookups = getSampleLookups(container, user, table);
+                var keyColumn = table.getColumn(FieldKey.fromParts("RowId"));
+
+                if (!lookups.isEmpty() && keyColumn != null)
+                    sampleLookups.put(new TableInfoKey(table, keyColumn), lookups);
+            }
         }
 
         // Result domain lookups
         {
             var resultsDomain = assayProvider.getResultsDomain(run.getProtocol());
-            var table = resultsDomain.getDomainKind().getTableInfo(user, container, resultsDomain, cf);
-            var lookups = getSampleLookups(container, user, table);
-            if (!lookups.isEmpty())
-                sampleLookups.put(new TableInfoKey(table, table.getColumn(FieldKey.fromParts("Run"))), lookups);
+            if (resultsDomain != null)
+            {
+                var table = resultsDomain.getDomainKind().getTableInfo(user, container, resultsDomain, cf);
+                var lookups = getSampleLookups(container, user, table);
+                var keyColumn = table.getColumn(FieldKey.fromParts("Run"));
+
+                if (!lookups.isEmpty() && keyColumn != null)
+                    sampleLookups.put(new TableInfoKey(table, keyColumn), lookups);
+            }
         }
 
         return sampleLookups;
@@ -157,6 +177,10 @@ public class AssaySampleLookupContext
         if (_runIds.isEmpty() || errors.hasErrors())
             return;
 
+        // Perform the sync using the service user to ensure that all pre-existing
+        // material inputs are retained regardless of the current users permissions.
+        var serviceUser = User.getAdminServiceUser();
+
         for (Integer expRunRowId : _runIds)
         {
             var run = ExperimentService.get().getExpRun(expRunRowId);
@@ -166,6 +190,10 @@ public class AssaySampleLookupContext
                 return;
             }
 
+            // Ensure the current user has permissions to update in the run's container
+            if (!run.getContainer().hasPermission(user, UpdatePermission.class))
+                throw new UnauthorizedException("You do not have permissions to update run with rowId " + expRunRowId);
+
             var assayProvider = AssayService.get().getProvider(run);
             if (assayProvider == null)
             {
@@ -173,7 +201,12 @@ public class AssaySampleLookupContext
                 return;
             }
 
-            var sampleLookups = getSampleLookups(container, user, run, assayProvider);
+            var sampleLookups = getSampleLookups(container, serviceUser, run, assayProvider);
+
+            // CONSIDER: Do not short-circuit if there are no sample lookups. A domain could have been modified
+            // to no longer contain sample lookups in which case we still need to perform an update.
+            // Unfortunately, that means a lot of extra processing for the more common case, so I have elected to
+            // leave this as-is. Could consider some alternative flag for domain mutations which would not short-circuit.
             if (sampleLookups.isEmpty())
                 continue;
 
@@ -191,7 +224,7 @@ public class AssaySampleLookupContext
                 return;
             }
 
-            syncLineageForRun(user, expRunRowId, sampleLookups, coreProtocolApplication, inputProtocolApplication);
+            syncLineageForRun(serviceUser, expRunRowId, sampleLookups, coreProtocolApplication, inputProtocolApplication);
         }
     }
 
@@ -208,16 +241,21 @@ public class AssaySampleLookupContext
         var isSynced = computed.first;
         var newInputs = computed.second;
 
-        if (isSynced)
+        if (isSynced || newInputs.isEmpty())
             return;
 
-        coreProtocolApplication.removeAllMaterialInputs(user);
-        inputProtocolApplication.removeAllMaterialInputs(user);
-
-        for (var entry : getInputGroups(newInputs, inputLineageRoles).entrySet())
+        try (var tx = ExperimentService.get().ensureTransaction())
         {
-            coreProtocolApplication.addMaterialInputs(user, entry.getValue(), entry.getKey(), null);
-            inputProtocolApplication.addMaterialInputs(user, entry.getValue(), entry.getKey(), null);
+            coreProtocolApplication.removeAllMaterialInputs(user);
+            inputProtocolApplication.removeAllMaterialInputs(user);
+
+            for (var entry : getInputGroups(newInputs, inputLineageRoles).entrySet())
+            {
+                coreProtocolApplication.addMaterialInputs(user, entry.getValue(), entry.getKey(), null);
+                inputProtocolApplication.addMaterialInputs(user, entry.getValue(), entry.getKey(), null);
+            }
+
+            tx.commit();
         }
     }
 
@@ -300,6 +338,9 @@ public class AssaySampleLookupContext
 
     private Set<MaterialInput> getNewMaterialInputs(Map<TableInfoKey, List<SampleLookup>> sampleLookups, Integer expRunRowId)
     {
+        if (sampleLookups.isEmpty())
+            return new HashSet<>();
+
         var sql = new SQLFragment();
         boolean first = true;
 
