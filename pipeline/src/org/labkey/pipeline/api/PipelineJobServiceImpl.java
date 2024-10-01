@@ -30,7 +30,9 @@ import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CopyOnWriteHashMap;
+import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.formSchema.CheckboxField;
 import org.labkey.api.formSchema.Field;
 import org.labkey.api.formSchema.FormSchema;
@@ -107,6 +109,20 @@ public class PipelineJobServiceImpl implements PipelineJobService
     private static final String INSTALLED_PIPELINE_TOOL_ERROR = "Failed to locate %s. Check tool install location defined in pipelineConfig.xml. (Currently '%s')";
     private static final String MODULE_TASKS_DIR = "tasks";
     private static final String MODULE_PIPELINES_DIR = "pipelines";
+
+    private final Map<String, Thread> _jobThreads = new CopyOnWriteHashMap<>();
+
+    @Override
+    public void trackJobThread(PipelineJob job)
+    {
+        _jobThreads.put(job.getJobGUID(), Thread.currentThread());
+    }
+
+    @Override
+    public void clearJobThread(PipelineJob job)
+    {
+        _jobThreads.remove(job.getJobGUID());
+    }
 
     public static PipelineJobServiceImpl get()
     {
@@ -269,6 +285,22 @@ public class PipelineJobServiceImpl implements PipelineJobService
             for (Process p : processes)
             {
                 p.destroyForcibly();
+            }
+        }
+
+        if (PipelineSchema.getInstance().getSqlDialect().isPostgreSQL())
+        {
+            // Issue 50131
+            // Closing a Connection doesn't terminate all pending statements on SQL Server. Calling close
+            // and returning to the pool results in another thread getting a Connection that's still busy and
+            // blocks it.
+
+            // If we need to support query cancellation on SQL Server, we'd have to start tracking the Statements
+            // the Connection hands out and kill them individually.
+            Thread jobThread = _jobThreads.get(jobGuid);
+            if (jobThread != null)
+            {
+                DbScope.closeAllConnectionsForThread(jobThread);
             }
         }
     }

@@ -15,13 +15,17 @@
  */
 package org.labkey.api.data;
 
+import org.apache.commons.collections4.map.UnmodifiableMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.data.PropertyManager.PropertyMap;
+import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.security.Encryption;
 import org.labkey.api.security.User;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -40,7 +44,7 @@ public abstract class AbstractPropertyStore implements PropertyStore
     protected abstract void validateStore();
     protected abstract boolean isValidPropertyMap(PropertyMap props);
     protected abstract String getSaveValue(PropertyMap props, @Nullable String value);
-    protected abstract void fillValueMap(TableSelector selector, PropertyMap props);
+    protected abstract String decryptValue(@Nullable String value, PropertyEncryption encryption);
     protected abstract PropertyEncryption getPreferredPropertyEncryption();
     protected abstract void appendWhereFilter(SQLFragment sql);
 
@@ -77,37 +81,37 @@ public abstract class AbstractPropertyStore implements PropertyStore
     }
 
     @Override
-    public PropertyMap getWritableProperties(User user, Container container, String category, boolean create)
+    public WritablePropertyMap getWritableProperties(User user, Container container, String category, boolean create)
     {
         PropertyMap existingMap = _cache.getProperties(user, container, category);
         if (existingMap != null)
         {
-            return new PropertyMap(existingMap);
+            return new WritablePropertyMap(existingMap);
         }
 
         if (create)
         {
-            // Assign a dummy ID we can use later to tell if we need to insert a brand new set during save
-            return new PropertyMap(-1, user, container.getId(), category, getPreferredPropertyEncryption(), this);
+            // Assign a dummy ID we can use later to tell if we need to insert a brand-new set during save
+            return new WritablePropertyMap(-1, user, container.getId(), category, getPreferredPropertyEncryption(), this);
         }
 
         return null;
     }
 
     @Override
-    public PropertyMap getWritableProperties(User user, String category, boolean create)
+    public WritablePropertyMap getWritableProperties(User user, String category, boolean create)
     {
         return getWritableProperties(user, ContainerManager.getRoot(), category, create);
     }
 
     @Override
-    public PropertyMap getWritableProperties(Container container, String category, boolean create)
+    public WritablePropertyMap getWritableProperties(Container container, String category, boolean create)
     {
         return getWritableProperties(PropertyManager.SHARED_USER, container, category, create);
     }
 
     @Override
-    public PropertyMap getWritableProperties(String category, boolean create)
+    public WritablePropertyMap getWritableProperties(String category, boolean create)
     {
         return getWritableProperties(ContainerManager.getRoot(), category, create);
     }
@@ -177,32 +181,7 @@ public abstract class AbstractPropertyStore implements PropertyStore
 
     static
     {
-        NULL_MAP = new PropertyMap(0, PropertyManager.SHARED_USER, "NULL_MAP", PropertyManager.class.getName(), PropertyEncryption.None, null)
-        {
-            @Override
-            public String put(String key, String value)
-            {
-                throw new UnsupportedOperationException("Cannot modify NULL_MAP");
-            }
-
-            @Override
-            public void clear()
-            {
-                throw new UnsupportedOperationException("Cannot modify NULL_MAP");
-            }
-
-            @Override
-            public String remove(Object key)
-            {
-                throw new UnsupportedOperationException("Cannot modify NULL_MAP");
-            }
-
-            @Override
-            public void putAll(Map<? extends String, ? extends String> m)
-            {
-                throw new UnsupportedOperationException("Cannot modify NULL_MAP");
-            }
-        };
+        NULL_MAP = new PropertyMap(0, PropertyManager.SHARED_USER, "NULL_MAP", PropertyManager.class.getName(), PropertyEncryption.None, null, Collections.emptyMap());
     }
 
     void clearCache(PropertyMap propertyMap)
@@ -236,6 +215,8 @@ public abstract class AbstractPropertyStore implements PropertyStore
         }
     }
 
+    private record PropertySet(int set, String encryption){}
+
     @Nullable
     public PropertyMap getPropertyMapFromDatabase(User user, Container container, String category)
     {
@@ -245,31 +226,32 @@ public abstract class AbstractPropertyStore implements PropertyStore
         SQLFragment sql = new SQLFragment("SELECT " + setSelectName + ", Encryption FROM " + _prop.getTableInfoPropertySets() +
                 " WHERE UserId = ? AND ObjectId = ? AND Category = ?", user, container, category);
 
-        Map<String, Object> map = new SqlSelector(_prop.getSchema(), sql).getMap();
-        if (map == null)
+        PropertySet propertySet = new SqlSelector(_prop.getSchema(), sql).getObject(PropertySet.class);
+        if (propertySet == null)
         {
             return null;
         }
-        PropertyEncryption propertyEncryption;
 
-        String encryptionName = (String) map.get("Encryption");
-        propertyEncryption = PropertyEncryption.getBySerializedName(encryptionName);
+        PropertyEncryption propertyEncryption = PropertyEncryption.getBySerializedName(propertySet.encryption());
 
         if (null == propertyEncryption)
-            throw new IllegalStateException("Unknown encryption name: " + encryptionName);
-
-        // map should always contain the set number
-        int set = (Integer)map.get("Set");
-
-        PropertyMap m = new PropertyMap(set, user, container.getId(), category, propertyEncryption, AbstractPropertyStore.this);
-
-        validatePropertyMap(m);
+            throw new IllegalStateException("Unknown encryption name: " + propertySet.encryption());
 
         // Map-filling query needed only for existing property set
-        Filter filter = new SimpleFilter(setColumn.getFieldKey(), set);
+        Filter filter = new SimpleFilter(setColumn.getFieldKey(), propertySet.set());
         TableInfo tinfo = _prop.getTableInfoProperties();
         TableSelector selector = new TableSelector(tinfo, tinfo.getColumns("Name", "Value"), filter, null);
-        fillValueMap(selector, m);
+        Map<String, String> map = new HashMap<>();
+
+        selector.forEach(rs -> {
+            String value = decryptValue(rs.getString(2), propertyEncryption);
+            map.put(rs.getString(1), value);
+        });
+
+        // Note: This unmodifiable map implementation is aligned with the map wrapper that PropertyMap extends
+        PropertyMap m = new PropertyMap(propertySet.set(), user, container.getId(), category, propertyEncryption, AbstractPropertyStore.this, UnmodifiableMap.unmodifiableMap(map));
+        validatePropertyMap(m);
+
         return m;
     }
 
