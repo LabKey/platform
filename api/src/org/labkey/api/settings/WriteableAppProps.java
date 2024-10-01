@@ -33,8 +33,6 @@ import static org.labkey.api.settings.RandomStartupProperties.*;
 
 /**
  * A mutable version of {@link AppProps}.
- * User: jeckels
- * Date: Dec 6, 2006
  */
 public class WriteableAppProps extends AppPropsImpl
 {
@@ -42,7 +40,6 @@ public class WriteableAppProps extends AppPropsImpl
 
     public WriteableAppProps(Container c)
     {
-        super();
         _container = c;
         makeWriteable(c);
     }
@@ -221,14 +218,11 @@ public class WriteableAppProps extends AppPropsImpl
 
     public void setExternalRedirectHosts(@NotNull List<String> externalRedirectHosts)
     {
-        String urls = "";
-        if (null != externalRedirectHosts)
+        StringBuilder urls = new StringBuilder();
+        for (String externalRedirectURL : externalRedirectHosts)
         {
-            for (String externalRedirectURL : externalRedirectHosts)
-            {
-                urls += externalRedirectURL.trim() + EXTERNAL_REDIRECT_HOST_DELIMITER;
-            }
+            urls.append(externalRedirectURL.trim()).append(EXTERNAL_REDIRECT_HOST_DELIMITER);
         }
-        storeStringValue(externalRedirectHostURLs, urls);
+        storeStringValue(externalRedirectHostURLs, urls.toString());
     }
 }

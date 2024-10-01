@@ -37,6 +37,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.ResourceRootProvider;
+import org.labkey.api.module.SupportedDatabase;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
@@ -316,7 +317,6 @@ public class DbScope
     public static class LabKeyDataSource
     {
         public static final String LABKEY_DATA_SOURCE = "labkeyDataSource";
-        public static final String CPAS_DATA_SOURCE = "cpasDataSource";
         private static final String DEFAULT_APPLICATION_NAME = "LabKey Server";
 
         private final String _dsName; // DataSource name from application.properties
@@ -505,17 +505,25 @@ public class DbScope
         private static LabKeyDataSource setPrimaryDataSource(Map<String, LabKeyDataSource> dataSourceMap)
         {
             LabKeyDataSource primaryDS = dataSourceMap.get(LABKEY_DATA_SOURCE);
-            if (null == primaryDS)
-                primaryDS = dataSourceMap.get(CPAS_DATA_SOURCE);
 
             if (null == primaryDS)
               throw new ConfigurationException("You must have a DataSource named \"" + LABKEY_DATA_SOURCE + "\" defined in " + AppProps.getInstance().getWebappConfigurationFilename() + ".");
+
+            // When running in devMode, allow either database. When running in production mode, throw if the
+            // distribution doesn't support the primary database type.
+            if (!AppProps.getInstance().isDevMode())
+            {
+                SqlDialect primaryDialect = primaryDS.getDialect();
+                SupportedDatabase primaryDatabaseType = SupportedDatabase.get(primaryDialect);
+                if (!AppProps.getInstance().getDistributionSupportedDatabases().contains(primaryDatabaseType))
+                    throw new ConfigurationException("This distribution (" + AppProps.getInstance().getDistributionFilename() + ") does not support " + primaryDialect.getProductName());
+            }
 
             primaryDS.setPrimary();
 
             if (primaryDS.isLogQueries())
             {
-                LOG.warn("Ignoring unsupported parameter in " + AppProps.getInstance().getWebappConfigurationFilename() + " to log queries for LabKey DataSource \"" + primaryDS.getDsName() + "\"");
+                LOG.warn("Ignoring unsupported parameter in {} to log queries for LabKey DataSource \"{}\"", AppProps.getInstance().getWebappConfigurationFilename(), primaryDS.getDsName());
                 primaryDS.setLogQueries(false);
             }
 
@@ -1563,12 +1571,12 @@ public class DbScope
                 }
             }
 
-            // Ensure that the labkeyDataSource (or cpasDataSource, for old installations) exists
-            // and create the associated database if it doesn't already exist.
+            // Ensure that the labkeyDataSource is defined and supported; designate it as the primary data source.
             LabKeyDataSource primaryDS = LabKeyDataSource.setPrimaryDataSource(dataSources);
             labkeyDsName = primaryDS.getDsName();
             // Now that we've tagged the primary datasource we can prepare them all
             dataSources.values().forEach(ds -> ds.getDialect().prepare(ds));
+            // Create the primary database if it doesn't already exist
             ensureDatabase(primaryDS);
         }
         catch (Exception e)

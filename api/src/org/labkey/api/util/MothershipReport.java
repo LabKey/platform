@@ -21,7 +21,6 @@ import jakarta.mail.internet.ContentType;
 import jakarta.servlet.ServletContext;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -30,7 +29,6 @@ import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.reader.Readers;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.logging.LogHelper;
@@ -52,14 +50,12 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * A submission of data to the mothership running on labkey.org. Separate from the Mothership module, which
  * contains the code that receives the report.
- * User: jeckels
- * Date: Apr 20, 2006
  */
 public class MothershipReport implements Runnable
 {
@@ -230,10 +226,7 @@ public class MothershipReport implements Runnable
 
         if (type.includeErrorCode())
         {
-            if (null == errorCode)
-                _errorCode = RandomStringUtils.randomAlphanumeric(ERROR_CODE_LENGTH).toUpperCase();
-            else
-                _errorCode = errorCode;
+            _errorCode = Objects.requireNonNullElseGet(errorCode, () -> RandomStringUtils.randomAlphanumeric(ERROR_CODE_LENGTH).toUpperCase());
 
             addParam("errorCode", _errorCode);
         }
@@ -307,7 +300,7 @@ public class MothershipReport implements Runnable
     @Override
     public void run()
     {
-        LOG.debug("Starting to submit report to " + _url);
+        LOG.debug("Starting to submit report to {}", _url);
         try
         {
             HttpURLConnection connection = openConnectionWithRedirects(_url, _forwardedFor);
@@ -336,7 +329,7 @@ public class MothershipReport implements Runnable
                                 if (data.has("upgradeMessage"))
                                     _upgradeMessage = data.getString("upgradeMessage");
 
-                                if (shouldReceiveMarketingUpdates(getDistributionName()))
+                                if (shouldReceiveMarketingUpdates())
                                 {
                                     if (data.has("marketingUpdate"))
                                     {
@@ -425,7 +418,7 @@ public class MothershipReport implements Runnable
                         out.print("&");
                     }
                     first = false;
-                    out.println(entry.getKey() + "=" + URLEncoder.encode(value, StringUtilsLabKey.DEFAULT_CHARSET.name()));
+                    out.println(entry.getKey() + "=" + URLEncoder.encode(value, StringUtilsLabKey.DEFAULT_CHARSET));
                 }
             }
         }
@@ -463,7 +456,7 @@ public class MothershipReport implements Runnable
         ServletContext context = ModuleLoader.getServletContext();
         String servletContainer = context == null ? null : context.getServerInfo();
         addParam("servletContainer", servletContainer);
-        addParam("distribution", getDistributionName());
+        addParam("distribution", AppProps.getInstance().getDistributionName());
         addParam("usageReportingLevel", AppProps.getInstance().getUsageReportingLevel().toString());
         addParam("exceptionReportingLevel", AppProps.getInstance().getExceptionReportingLevel().toString());
         addParam("apiVersion", "23.11");
@@ -479,35 +472,9 @@ public class MothershipReport implements Runnable
         return _marketingUpdate;
     }
 
-    public static String getDistributionName()
-    {
-        String result;
-        try(InputStream input = MothershipReport.class.getResourceAsStream("/distribution"))
-        {
-            if (null != input)
-            {
-                result = Readers.getReader(input).lines().collect(Collectors.joining("\n"));
-                if (StringUtils.isEmpty(result))
-                {
-                    result = "Distribution File Empty";
-                }
-            }
-            else
-            {
-                result = "localBuild";
-            }
-        }
-        catch (IOException e)
-        {
-            result = "Exception reading distribution file. " + e.getMessage();
-        }
-
-        return result;
-    }
-
     public void setMetrics(Map<String, Object> metrics)
     {
-        if (metrics.size() > 0)
+        if (!metrics.isEmpty())
         {
             String serializedMetrics;
             try
@@ -522,11 +489,15 @@ public class MothershipReport implements Runnable
         }
     }
 
-    public static boolean shouldReceiveMarketingUpdates(String distributionName)
+    // The set of distributions that will receive the marketing message, just community for now
+    private static final Set<String> MARKETING_RECEIVING_DISTRIBUTIONS = Set.of("community");
+
+    // shouldReceiveMarketingUpdates() gets called on every single request, so check once and stash to optimize
+    private static final boolean IS_MARKETING_RECEIVING_DISTRIBUTION = MARKETING_RECEIVING_DISTRIBUTIONS.contains(AppProps.getInstance().getDistributionName());
+
+    public static boolean shouldReceiveMarketingUpdates()
     {
-        // the set of distributions that will receive the marketing message just community for now
-        Set<String> allowed = Set.of("community");
-        return isSelfTestMarketingUpdates() || allowed.contains(distributionName);
+        return isSelfTestMarketingUpdates() || IS_MARKETING_RECEIVING_DISTRIBUTION;
     }
 
     public static void setSelfTestMarketingUpdates(boolean enabled)
