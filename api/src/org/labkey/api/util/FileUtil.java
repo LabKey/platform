@@ -941,7 +941,7 @@ public class FileUtil
 
         try (FileOutputStream os = new FileOutputStream(dst);
              FileChannel out = os.getChannel();
-             FileLock lockOut = out.lock())
+             FileLock lockOut = out.tryLock())
         {
             do
             {
