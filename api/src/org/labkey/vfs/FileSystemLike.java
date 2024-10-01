@@ -1,5 +1,6 @@
 package org.labkey.vfs;
 
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Path;
 
@@ -167,6 +168,22 @@ public interface FileSystemLike
             File parent = file.getParentFile();
             FileSystemLike fs = map.computeIfAbsent(parent, key -> new FileSystemLike.Builder(parent).readwrite().build());
             ret.add(fs.resolveFile(new Path(file.getName())));
+        }
+        return ret;
+    }
+
+    static Map<String, FileLike> wrapFiles(Map<String, File> files)
+    {
+        Map<File, FileSystemLike> map = new HashMap<>();
+        Map<String, FileLike> ret = files instanceof CaseInsensitiveHashMap<File> ?
+                new CaseInsensitiveHashMap<>() :
+                new HashMap<>(files.size());
+        for (var e : files.entrySet())
+        {
+            var file = e.getValue();
+            File parent = file.getParentFile();
+            FileSystemLike fs = map.computeIfAbsent(parent, key -> new FileSystemLike.Builder(parent).readwrite().build());
+            ret.put(e.getKey(), fs.resolveFile(new Path(file.getName())));
         }
         return ret;
     }
