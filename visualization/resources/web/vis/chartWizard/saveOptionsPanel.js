@@ -107,7 +107,7 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
                         name: 'reportInheritable',
                         fieldLabel: 'Inherit',
                         boxLabel: 'Make this report available in child folders',
-                        hidden: this.shouldAllowInherit(),
+                        hidden: !this.shouldAllowInherit(),
                         labelWidth: 125,
                         width: 400,
                     }),
