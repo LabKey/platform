@@ -253,7 +253,7 @@ public enum UsageReportingLevel implements SafeToRenderEnum
                     if (!StringUtils.isEmpty(report.getUpgradeMessage()))
                         _upgradeMessage = HtmlString.unsafe(report.getUpgradeMessage());
 
-                    if (MothershipReport.shouldReceiveMarketingUpdates(MothershipReport.getDistributionName()))
+                    if (MothershipReport.shouldReceiveMarketingUpdates())
                     {
                         if (!StringUtils.isEmpty(report.getMarketingUpdate()))
                             _marketingUpdate = HtmlString.unsafe(report.getMarketingUpdate());

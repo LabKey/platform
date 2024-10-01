@@ -75,23 +75,6 @@ public interface Module
         DISPLAY_FOLDER_TYPE
     }
 
-    enum SupportedDatabase
-    {
-        mssql, pgsql;
-
-        public static SupportedDatabase get(SqlDialect dialect)
-        {
-            if (dialect.isSqlServer())
-                return mssql;
-
-            if (dialect.isPostgreSQL())
-                return pgsql;
-
-            throw new IllegalStateException("Dialect not supported");
-        }
-    }
-
-
     /**
      * Perform any post-constructor initialization
      */

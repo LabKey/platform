@@ -124,7 +124,7 @@ public class CoreWarningProvider implements WarningProvider
     @Override
     public void addDynamicWarnings(@NotNull Warnings warnings, @Nullable ViewContext context, boolean showAllWarnings)
     {
-        if (MothershipReport.shouldReceiveMarketingUpdates(MothershipReport.getDistributionName()))
+        if (MothershipReport.shouldReceiveMarketingUpdates())
         {
             if (UsageReportingLevel.getMarketingUpdate() != null)
                 warnings.add(UsageReportingLevel.getMarketingUpdate());

@@ -373,12 +373,10 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         }
     }
 
-
     @Override
     public void destroy()
     {
     }
-
 
     @Override
     @NotNull
@@ -541,7 +539,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return _supportedDatabases;
     }
 
-
     // Used by Spring configuration reflection
     @SuppressWarnings("UnusedDeclaration")
     public final String getSupportedDatabases()
@@ -550,25 +547,15 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return StringUtils.join(set, ",");
     }
 
-
     // Used by Spring configuration reflection
     @SuppressWarnings("UnusedDeclaration")
     public final void setSupportedDatabases(String list)
     {
-        Set<SupportedDatabase> supported = new HashSet<>();
-        String[] dbs = StringUtils.split(list, ',');
-
-        for (String db : dbs)
-        {
-            if (StringUtils.isEmpty(db))
-                continue;
-            supported.add(SupportedDatabase.valueOf(db));
-        }
+        Set<SupportedDatabase> supported = SupportedDatabase.parseSupportedDatabases(list);
 
         if (!supported.isEmpty())
             _supportedDatabases = supported;
     }
-
 
     @Override
     public String getName()
@@ -584,7 +571,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         if (!StringUtils.isEmpty(_name))
         {
             if (!_name.equals(name))
-                _log.error("Attempt to change name of module from " + _name + " to " + name + ".");
+                _log.error("Attempt to change name of module from {} to {}.", _name, name);
             return;
         }
         _name = name;
@@ -604,7 +591,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         if (null != _schemaVersion)
         {
             if (!_schemaVersion.equals(schemaVersion))
-                _log.error("Attempt to change version of module from " + _schemaVersion + " to " + schemaVersion + ".");
+                _log.error("Attempt to change version of module from {} to {}.", _schemaVersion, schemaVersion);
             return;
         }
         _schemaVersion = schemaVersion;
@@ -1156,7 +1143,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return getController(request, cls);
     }
 
-
     public Controller getController(@Nullable HttpServletRequest request, Class<? extends Controller> cls)
     {
         try
@@ -1275,7 +1261,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return null;
     }
 
-
     protected File getResourceDirectory(File dir)
     {
         File resourcesDir = new File(dir, "resources");
@@ -1298,13 +1283,11 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         _applicationContext = applicationContext;
     }
 
-
     @JsonIgnore
     public ApplicationContext getApplicationContext()
     {
         return _applicationContext;
     }
-
 
     @Override
     public boolean isAutoUninstall()

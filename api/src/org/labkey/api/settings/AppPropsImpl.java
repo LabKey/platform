@@ -26,6 +26,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerManager.RootContainerException;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.SupportedDatabase;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -41,12 +42,16 @@ import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 import static org.labkey.api.settings.RandomStartupProperties.*;
@@ -62,7 +67,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     private volatile String _projectRoot = null;
     private volatile String _enlistmentId = null;
 
-    private static Map<StashedStartupProperties, StartupPropertyEntry> _stashedProperties = Map.of();
+    private static Map<StashedStartupProperties, StartupPropertyEntry> _stashedStartupProperties = Map.of();
 
     static final String LOOK_AND_FEEL_REVISION = "logoRevision";
     static final String DEFAULT_LSID_AUTHORITY_PROP = "defaultLsidAuthority";
@@ -74,7 +79,31 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     private static final String SERVER_GUID_XML_PARAMETER_NAME = "org.labkey.mothership." + SERVER_GUID;
     private static final String SERVER_SESSION_GUID = GUID.makeGUID();
 
+    private static final String DISTRIBUTION_PROPERTIES = "distribution.properties";
+    private static final String DISTRIBUTION_NAME;
+    private static final String DISTRIBUTION_FILENAME;
+    private static final Set<SupportedDatabase> DISTRIBUTION_SUPPORTED_DATABASES;
+
     private static final Logger LOG = LogHelper.getLogger(AppPropsImpl.class, "Site settings startup properties");
+
+    static
+    {
+        Properties props = new Properties();
+
+        try (InputStream is = AppPropsImpl.class.getClassLoader().getResourceAsStream(DISTRIBUTION_PROPERTIES))
+        {
+            if (is != null)
+                props.load(is);
+        }
+        catch (IOException e)
+        {
+            LOG.error("Exception loading \"" + DISTRIBUTION_PROPERTIES + "\" file", e);
+        }
+
+        DISTRIBUTION_NAME = props.getProperty("name", "localBuild");
+        DISTRIBUTION_FILENAME = props.getProperty("filename", "localBuild");
+        DISTRIBUTION_SUPPORTED_DATABASES = SupportedDatabase.parseSupportedDatabases(props.getProperty("supportedDatabases", "pgsql"));
+    }
 
     @Override
     protected String getType()
@@ -221,7 +250,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
         // Bad things happen if you change this value on an existing server, so making read-only per issue 26335
         String result = lookupStringValue(DEFAULT_LSID_AUTHORITY_PROP, "labkey.com");
 
-        if (result == null || "".equals(result) || "NOT_SET".equals(result))
+        if (result == null || result.isEmpty() || "NOT_SET".equals(result))
         {
             // We now prevent empty values but in case there's an installation that has one, convert to "localhost" for
             // backwards compatibility
@@ -557,30 +586,12 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
             {
                 WriteableAppProps writeable = AppProps.getWriteableInstance();
                 properties.forEach((ssp, cp) -> {
-                    LOG.info("Setting site settings startup property '" + ssp.name() + "' to '" + cp.getValue() + "'");
+                    LOG.info("Setting site settings startup property '{}' to '{}'", ssp.name(), cp.getValue());
                     ssp.setValue(writeable, cp.getValue());
                 });
                 writeable.save(null);
             }
         }
-    }
-
-    public static void populateSiteSettingsWithStartupProps()
-    {
-        // populate site settings with values from startup configuration
-        // expects startup properties formatted like: SiteSettings.sslRequired;bootstrap=True
-        // for a list of recognized site setting properties see the "Available Site Settings" action
-
-        ModuleLoader.getInstance().handleStartupProperties(new SiteSettingsPropertyHandler());
-        ModuleLoader.getInstance().handleStartupProperties(new RandomSiteSettingsPropertyHandler());
-        ModuleLoader.getInstance().handleStartupProperties(new StandardStartupPropertyHandler<>(SCOPE_SITE_SETTINGS, StashedStartupProperties.class)
-        {
-            @Override
-            public void handle(Map<StashedStartupProperties, StartupPropertyEntry> properties)
-            {
-                _stashedProperties = properties;
-            }
-        });
     }
 
     @Override
@@ -619,9 +630,45 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
         return new ArrayList<>();
     }
 
-    @Override
-    public Map<StashedStartupProperties, StartupPropertyEntry> getStashedProperties()
+    public static void populateSiteSettingsWithStartupProps()
     {
-        return _stashedProperties;
+        // populate site settings with values from startup configuration
+        // expects startup properties formatted like: SiteSettings.sslRequired;bootstrap=True
+        // for a list of recognized site setting properties see the "Available Site Settings" action
+
+        ModuleLoader.getInstance().handleStartupProperties(new SiteSettingsPropertyHandler());
+        ModuleLoader.getInstance().handleStartupProperties(new RandomSiteSettingsPropertyHandler());
+        ModuleLoader.getInstance().handleStartupProperties(new StandardStartupPropertyHandler<>(SCOPE_SITE_SETTINGS, StashedStartupProperties.class)
+        {
+            @Override
+            public void handle(Map<StashedStartupProperties, StartupPropertyEntry> properties)
+            {
+                _stashedStartupProperties = properties;
+            }
+        });
+    }
+
+    @Override
+    public Map<StashedStartupProperties, StartupPropertyEntry> getStashedStartupProperties()
+    {
+        return _stashedStartupProperties;
+    }
+
+    @Override
+    public @NotNull String getDistributionName()
+    {
+        return DISTRIBUTION_NAME;
+    }
+
+    @Override
+    public @NotNull String getDistributionFilename()
+    {
+        return DISTRIBUTION_FILENAME;
+    }
+
+    @Override
+    public @NotNull Set<SupportedDatabase> getDistributionSupportedDatabases()
+    {
+        return DISTRIBUTION_SUPPORTED_DATABASES;
     }
 }
