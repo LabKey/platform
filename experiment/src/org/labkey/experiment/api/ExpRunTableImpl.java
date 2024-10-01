@@ -908,7 +908,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         {
             super(queryTable);
 
-            _assaySampleLookupContext = new AssaySampleLookupContext(getQueryTable());
+            _assaySampleLookupContext = new AssaySampleLookupContext();
             _cache = new RemapCache();
         }
 
@@ -1001,7 +1001,8 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                     }
 
                     // Also check for properties
-                    if (getQueryTable().getColumn(columnName) instanceof PropertyColumn col)
+                    TableInfo table = getQueryTable();
+                    if (table.getColumn(columnName) instanceof PropertyColumn col)
                     {
                         PropertyDescriptor propertyDescriptor = col.getPropertyDescriptor();
                         Object oldValue = run.getProperty(propertyDescriptor);
@@ -1058,7 +1059,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                         }
 
                         if (!Objects.equals(oldValue, newValue))
-                            _assaySampleLookupContext.markLookup(container, user, col, run);
+                            _assaySampleLookupContext.trackSampleLookupChange(container, user, table, col, run);
 
                         appendPropertyIfChanged(auditComment, propertyDescriptor.getNonBlankCaption(), oldValue, newValue);
                     }

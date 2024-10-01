@@ -62,7 +62,7 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
         if (!(table instanceof AssayResultTable))
             throw new IllegalArgumentException("Expected AssayResultTable");
 
-        _assaySampleLookupContext = new AssaySampleLookupContext(getQueryTable());
+        _assaySampleLookupContext = new AssaySampleLookupContext();
     }
 
     @Override
@@ -125,7 +125,7 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
                 boolean hasValueChanged = !Objects.equals(oldValue, newValue);
 
                 if (hasValueChanged)
-                    _assaySampleLookupContext.markLookup(container, user, col, run);
+                    _assaySampleLookupContext.trackSampleLookupChange(container, user, table, col, run);
 
                 TableInfo fkTableInfo = col.getFkTableInfo();
                 // Don't follow the lookup for specimen IDs, since their FK is very special and based on target study, etc
