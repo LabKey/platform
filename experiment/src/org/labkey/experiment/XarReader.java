@@ -609,10 +609,11 @@ public class XarReader extends AbstractXarImporter
         SampleSetType.ParentImportAlias parentImportAlias = sampleSet.getParentImportAlias();
         if (parentImportAlias != null)
         {
-            Map<String, String> aliasMap = new LinkedHashMap<>();
+            Map<String, Map<String, Object>> aliasMap = new LinkedHashMap<>();
             for (ImportAlias importAlias : parentImportAlias.getAliasArray())
             {
-                aliasMap.put(importAlias.getName(), importAlias.getValue());
+                Boolean required = importAlias.isSetRequired() && importAlias.getRequired();
+                aliasMap.put(importAlias.getName(), Map.of("inputType", importAlias.getValue(), "required", required));
             }
             materialSource.setImportAliasMap(aliasMap);
         }
@@ -697,10 +698,11 @@ public class XarReader extends AbstractXarImporter
         DataClassType.ParentImportAlias parentImportAlias = dataClassType.getParentImportAlias();
         if (parentImportAlias != null)
         {
-            Map<String, String> aliasMap = new LinkedHashMap<>();
+            Map<String, Map<String, Object>> aliasMap = new LinkedHashMap<>();
             for (ImportAlias importAlias : parentImportAlias.getAliasArray())
             {
-                aliasMap.put(importAlias.getName(), importAlias.getValue());
+                Boolean required = importAlias.isSetRequired() && importAlias.getRequired();
+                aliasMap.put(importAlias.getName(), Map.of("inputType", importAlias.getValue(), "required", required));
             }
             dataClass.setImportAliasMap(aliasMap);
         }

@@ -606,14 +606,15 @@ public class SubstitutionFormat
                 if (nameExpression.startsWith("${~", start-3))
                     return messages;
             }
-            messages.add(String.format("The '%s' %s starting at position %d should be preceded by the string '${'.", formatName, noun, start));
+            messages.add(String.format("'%s' is recognized as a %s. Use ${%s} if you want to include the %s value in the naming pattern.", formatName, noun, formatName, noun));
+
         }
         // missing ending brace check handled by general check for matching begin and end braces
         return messages;
     }
     public static List<String> validateNonFunctionalSyntax(String formatName, String nameExpression, int start)
     {
-        return validateNonFunctionalSyntax(formatName, nameExpression, start, "substitution pattern", false);
+        return validateNonFunctionalSyntax(formatName, nameExpression, start, "substitution token", false);
     }
 
     private final static Map<String, SubstitutionFormat> _map = new CaseInsensitiveHashMap<>();
