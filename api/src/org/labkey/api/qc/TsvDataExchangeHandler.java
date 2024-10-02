@@ -90,6 +90,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableMap;
+import static org.apache.poi.util.StringUtil.isNotBlank;
 
 /*
 * User: Karl Lum
@@ -990,8 +991,16 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                     }
                     else if (String.valueOf(row.get("name")).equalsIgnoreCase(Props.runDataUploadedFile.name()))
                     {
-                        List<String> filePaths = Arrays.asList(row.get("value").toString().split(";"));
-                        runDataUploadedFiles.addAll(filePaths.stream().map(File::new).collect(Collectors.toList()));
+                        // TODO: this code does not correctly handle files with semicolumn in the name
+                        // before splitting see if runDataUploadedFile contains one file, that handles one common case
+                        List<String> filePaths;
+                        // check if this is a single file
+                        String value = row.get("value").toString();
+                        if (isNotBlank(value) && new File(value).exists())
+                            filePaths = List.of(value);
+                        else
+                            filePaths = Arrays.asList(row.get("value").toString().split(";"));
+                        runDataUploadedFiles.addAll(filePaths.stream().map(File::new).map(File::getAbsoluteFile).toList());
                     }
                 }
                 _filesToIgnore.addAll(FileSystemLike.wrapFiles(filesToIgnore));
