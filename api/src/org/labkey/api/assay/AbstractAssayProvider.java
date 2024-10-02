@@ -17,7 +17,6 @@
 package org.labkey.api.assay;
 
 import jakarta.servlet.http.HttpServletRequest;
-import org.apache.commons.collections4.map.LRUMap;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -37,7 +36,6 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DetailsColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.ImportAliasable;
-import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -81,7 +79,6 @@ import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.qc.DataExchangeHandler;
-import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryService;
@@ -141,8 +138,6 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 import static java.util.Collections.emptyList;
-import static java.util.Collections.emptyMap;
-import static java.util.Collections.emptySet;
 import static org.labkey.api.data.CompareType.IN;
 import static org.labkey.api.util.PageFlowUtil.jsString;
 

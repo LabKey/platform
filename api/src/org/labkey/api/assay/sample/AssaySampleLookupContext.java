@@ -127,36 +127,30 @@ public class AssaySampleLookupContext
     {
         var sampleLookups = new HashMap<TableInfoKey, List<SampleLookup>>();
         var cf = QueryService.get().getContainerFilterForLookups(container, user);
+        var protocolSchema = assayProvider.createProtocolSchema(user, container, run.getProtocol(), null);
 
-        // Run domain lookups
-        {
-            var runDomain = assayProvider.getRunDomain(run.getProtocol());
-            if (runDomain != null)
-            {
-                var table = runDomain.getDomainKind().getTableInfo(user, container, runDomain, cf);
-                var lookups = getSampleLookups(container, user, table);
-                var keyColumn = table.getColumn(FieldKey.fromParts("RowId"));
-
-                if (!lookups.isEmpty() && keyColumn != null)
-                    sampleLookups.put(new TableInfoKey(table, keyColumn), lookups);
-            }
-        }
-
-        // Result domain lookups
-        {
-            var resultsDomain = assayProvider.getResultsDomain(run.getProtocol());
-            if (resultsDomain != null)
-            {
-                var table = resultsDomain.getDomainKind().getTableInfo(user, container, resultsDomain, cf);
-                var lookups = getSampleLookups(container, user, table);
-                var keyColumn = table.getColumn(FieldKey.fromParts("Run"));
-
-                if (!lookups.isEmpty() && keyColumn != null)
-                    sampleLookups.put(new TableInfoKey(table, keyColumn), lookups);
-            }
-        }
+        populateSampleLookups(container, user, protocolSchema.createRunsTable(cf), FieldKey.fromParts("RowId"), sampleLookups);
+        populateSampleLookups(container, user, protocolSchema.createDataTable(cf), FieldKey.fromParts("Run"), sampleLookups);
 
         return sampleLookups;
+    }
+
+    private void populateSampleLookups(
+        Container container,
+        User user,
+        @Nullable TableInfo table,
+        FieldKey fieldKey,
+        Map<TableInfoKey, List<SampleLookup>> sampleLookups
+    )
+    {
+        if (table == null)
+            return;
+
+        var lookups = getSampleLookups(container, user, table);
+        var keyColumn = table.getColumn(fieldKey);
+
+        if (!lookups.isEmpty() && keyColumn != null)
+            sampleLookups.put(new TableInfoKey(table, keyColumn), lookups);
     }
 
     private List<SampleLookup> getSampleLookups(Container container, User user, TableInfo table)
@@ -178,7 +172,7 @@ public class AssaySampleLookupContext
             return;
 
         // Perform the sync using the service user to ensure that all pre-existing
-        // material inputs are retained regardless of the current users permissions.
+        // material inputs are retained regardless of the current user's permissions.
         var serviceUser = User.getAdminServiceUser();
 
         for (Integer expRunRowId : _runIds)
