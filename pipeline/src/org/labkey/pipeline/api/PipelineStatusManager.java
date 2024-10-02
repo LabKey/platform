@@ -54,9 +54,11 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.jdbc.UncategorizedSQLException;
 
 import java.io.File;
 import java.nio.file.Path;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -205,7 +207,8 @@ public class PipelineStatusManager
             else
             {
                 boolean cancelled = false;
-                if (PipelineJob.TaskStatus.cancelling.matches(sfExist.getStatus()) && sfSet.isActive())
+                if (PipelineJob.TaskStatus.cancelling.matches(sfExist.getStatus()) &&
+                        (sfSet.isActive() || PipelineJob.TaskStatus.error.matches(sfSet.getStatus())))
                 {
                     // Mark as officially dead
                     sfSet.setStatus(PipelineJob.TaskStatus.cancelled.toString());
@@ -249,6 +252,15 @@ public class PipelineStatusManager
         {
             // Issue 49822: Pipeline does not show a job as failed if DB fails
             JobStatusRetryJob.queue(job.getJobGUID(), () -> setStatusFile(job, user, status, info, allowInsert), e);
+            throw e;
+        }
+        catch (UncategorizedSQLException e)
+        {
+            if (e.getCause() != null && e.getCause() instanceof SQLException && "Connection is null.".equals(e.getCause().getMessage()))
+            {
+                // Issue 49822: Pipeline does not show a job as failed if DB fails
+                JobStatusRetryJob.queue(job.getJobGUID(), () -> setStatusFile(job, user, status, info, allowInsert), e);
+            }
             throw e;
         }
     }
@@ -781,7 +793,7 @@ public class PipelineStatusManager
             _schema.getSqlDialect().appendInClauseSql(expSql, statusFileIds);
 
             // Remember that we deleted these rows
-            rowIds.removeAll(statusFileIds);
+            statusFileIds.forEach(rowIds::remove);
 
             if (!container.isRoot())
             {

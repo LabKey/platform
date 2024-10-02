@@ -75,17 +75,9 @@ public class EncryptedPropertyStore extends AbstractPropertyStore implements Enc
     }
 
     @Override
-    protected void fillValueMap(TableSelector selector, final PropertyMap props)
+    protected String decryptValue(@Nullable String value, PropertyEncryption encryption)
     {
-        final PropertyEncryption propertyEncryption = props.getEncryptionAlgorithm();
-
-        validatePropertyMap(props);
-
-        selector.forEach(rs -> {
-            String encryptedValue = rs.getString(2);
-            String value = null == encryptedValue ? null : propertyEncryption.decrypt(Base64.decodeBase64(encryptedValue));
-            props.put(rs.getString(1), value);
-        });
+        return null == value ? null : encryption.decrypt(Base64.decodeBase64(value));
     }
 
     @Override
