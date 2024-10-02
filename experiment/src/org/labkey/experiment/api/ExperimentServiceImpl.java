@@ -687,6 +687,27 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return getExpDatas(new SimpleFilter(FieldKey.fromParts(ExpDataTable.Column.LSID.name()), lsids, IN));
     }
 
+
+    public List<Integer> getOrderedRowIdsFromLsids(TableInfo tableInfo, List<String> lsids)
+    {
+        List<Integer> allRowIds = new ArrayList<>();
+        ListUtils.partition(lsids, 100).forEach(sublist ->
+                {
+                    List<Integer> rowIds = new TableSelector(
+                            tableInfo,
+                            Collections.singleton("RowId"),
+                            new SimpleFilter(FieldKey.fromParts("LSID"), lsids, CompareType.IN),
+                            null
+                    ).getArrayList(Integer.class);
+                    allRowIds.addAll(rowIds);
+                }
+        );
+
+        Collections.sort(allRowIds);
+
+        return allRowIds;
+    }
+
     @Override
     public @NotNull List<ExpDataImpl> getExpDatas(Collection<Integer> rowIds)
     {
@@ -1223,7 +1244,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             .append(" ON d.RowId = di.DataId")
             .append(" WHERE d.classId = ?").add(dataClass.getRowId())
             .append(" AND (di.lastIndexed IS NULL OR di.lastIndexed < ? OR (d.modified IS NOT NULL AND di.lastIndexed < d.modified))")
-            .add(dataClass.getModified());
+            .append(" ORDER BY d.RowId") // Issue 51263: order by RowId to reduce deadlock
+                .add(dataClass.getModified());
 
         var scope = table.getSchema().getScope();
         scope.executeWithRetryReadOnly(tx ->

@@ -284,6 +284,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 .append(" ON m.RowId = mi.MaterialId WHERE m.LSID NOT LIKE ").appendValue("%:" + StudyService.SPECIMEN_NAMESPACE_PREFIX + "%", getExpSchema().getSqlDialect())
                 .append(" AND m.cpasType = ?").add(sampleType.getLSID())
                 .append(" AND (mi.lastIndexed IS NULL OR mi.lastIndexed < ? OR (m.modified IS NOT NULL AND mi.lastIndexed < m.modified))")
+                .append(" ORDER BY m.RowId") // Issue 51263: order by RowId to reduce deadlock
                 .add(sampleType.getModified());
 
         new SqlSelector(getExpSchema().getScope(), sql).forEachBatch(Material.class, 1000, batch -> {
