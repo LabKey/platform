@@ -42,7 +42,6 @@ import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.logging.LogHelper;
-import org.springframework.beans.factory.InitializingBean;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -284,14 +283,14 @@ public class PropertyManager
     // Instances of this specific class are guaranteed to be immutable; all mutating Map methods (put(), remove(), etc.)
     // throw exceptions. keySet(), values(), entrySet(), and mapIterator() return immutable data structures.
     // Instances of subclass WritablePropertyMap, however, are mutable Maps and can be saved & deleted.
-    public static class PropertyMap extends AbstractMapDecorator<String, String> implements InitializingBean
+    public static class PropertyMap extends AbstractMapDecorator<String, String>
     {
-        private int _set;
-        private final @NotNull User _user;
-        private final @NotNull String _objectId;
-        private final @NotNull String _category;
-        private final PropertyEncryption _propertyEncryption;
-        private final AbstractPropertyStore _store;
+        protected int _set;
+        protected final @NotNull User _user;
+        protected final @NotNull String _objectId;
+        protected final @NotNull String _category;
+        protected final PropertyEncryption _propertyEncryption;
+        protected final AbstractPropertyStore _store;
 
         protected PropertyMap(int set, @NotNull User user, @NotNull String objectId, @NotNull String category, PropertyEncryption propertyEncryption, AbstractPropertyStore store, Map<String, String> map)
         {
@@ -367,20 +366,71 @@ public class PropertyManager
             result = 31 * result + _category.hashCode();
             return result;
         }
+    }
 
-        // TODO: Once all repos are migrated to use WritablePropertyMaps, everything below will be moved to WritablePropertyMap.
-        // _locked handling will be removed and cache checking will simply forbid WritablePropertyMap.
-        // I believe that InitializingBean & afterPropertiesSet() can be removed, since we're now loading the map before
-        // constructing WritablePropertyMap.
-
+    /**
+     * This subclass is a mutable Map and can be saved & deleted
+     */
+    public static class WritablePropertyMap extends PropertyMap
+    {
         private boolean _modified = false;
         private Set<Object> _removedKeys = null;
-        private boolean _locked = false;
+
+        /** Clone the existing map, creating our own copy of the underlying data */
+        WritablePropertyMap(PropertyMap copy)
+        {
+            super(copy._set, copy._user, copy._objectId, copy._category, copy._propertyEncryption, copy._store, new HashMap<>(copy));
+        }
+
+        /** New empty, writable map */
+        WritablePropertyMap(int set, @NotNull User user, @NotNull String objectId, @NotNull String category, PropertyEncryption propertyEncryption, AbstractPropertyStore store)
+        {
+            super(set, user, objectId, category, propertyEncryption, store, new HashMap<>());
+        }
+
+        @Override
+        protected void validate(Map<String, String> map)
+        {
+            // This class allows modifiable maps
+        }
+
+        // The following four overrides are not needed in PropertyMap since instances of that class are guaranteed to
+        // be unmodifiable.
+
+        @Override
+        public MapIterator<String, String> mapIterator() {
+            Map<String, String> map = decorated();
+            if (map instanceof IterableMap) {
+                final MapIterator<String, String> it = ((IterableMap<String, String>) decorated()).mapIterator();
+                return UnmodifiableMapIterator.unmodifiableMapIterator(it);
+            }
+            final MapIterator<String, String> it = new EntrySetMapIterator<>(map);
+            return UnmodifiableMapIterator.unmodifiableMapIterator(it);
+        }
+
+        @Override
+        public @NotNull Set<Map.Entry<String, String>> entrySet() {
+            final Set<Map.Entry<String, String>> set = super.entrySet();
+            return UnmodifiableEntrySet.unmodifiableEntrySet(set);
+        }
+
+        @Override
+        public @NotNull Set<String> keySet() {
+            final Set<String> set = super.keySet();
+            return UnmodifiableSet.unmodifiableSet(set);
+        }
+
+        @Override
+        public @NotNull Collection<String> values() {
+            final Collection<String> coll = super.values();
+            return UnmodifiableCollection.unmodifiableCollection(coll);
+        }
+
+        // Map mutating methods below
 
         @Override
         public String remove(Object key)
         {
-            checkLocked();
             if (null == _removedKeys)
                 _removedKeys = new HashSet<>();
             if (containsKey(key))
@@ -391,19 +441,9 @@ public class PropertyManager
             return super.remove(key);
         }
 
-        private void checkLocked()
-        {
-            if (_locked)
-            {
-                throw new IllegalStateException("Cannot modify a locked PropertyMap - use getWritableProperties() for a mutable copy");
-            }
-        }
-
-
         @Override
         public String put(String key, @Nullable String value)
         {
-            checkLocked();
             if (null != _removedKeys)
                 _removedKeys.remove(key);
             if (!StringUtils.equals(value, get(key)))
@@ -414,16 +454,13 @@ public class PropertyManager
         @Override
         public void putAll(Map<? extends String, ? extends String> m)
         {
-            checkLocked();
             _modified = true;   // putAll() calls put(), but just to be safe
             super.putAll(m);
         }
 
-
         @Override
         public void clear()
         {
-            checkLocked();
             if (null == _removedKeys)
                 _removedKeys = new HashSet<>();
             _removedKeys.addAll(keySet());
@@ -431,18 +468,12 @@ public class PropertyManager
             super.clear();
         }
 
+        // Persistence methods below
+
         public boolean isModified()
         {
             return _modified;
         }
-
-
-        @Override
-        public void afterPropertiesSet()
-        {
-            _modified = false;
-        }
-
 
         private static String toNullString(Object o)
         {
@@ -533,7 +564,7 @@ public class PropertyManager
                     saveValue(name, value);
                 }
                 // Make sure that we clear the previously cached version of the map
-                transaction.addCommitTask(() -> _store.clearCache(PropertyMap.this), DbScope.CommitTaskOption.IMMEDIATE, DbScope.CommitTaskOption.POSTCOMMIT);
+                transaction.addCommitTask(() -> _store.clearCache(this), DbScope.CommitTaskOption.IMMEDIATE, DbScope.CommitTaskOption.POSTCOMMIT);
                 transaction.commit();
 
                 LOG.debug("</PropertyMap.save() [{}, {}, {}, {}, map.hashCode: {}, lock: {}]>", _user.getUserId(), _objectId, _category, _set, hashCode(), lock.toString());
@@ -552,76 +583,10 @@ public class PropertyManager
                 deleteSetDirectly(_user, _objectId, _category, _store);
 
                 // Make sure that we clear the previously cached version of the map
-                transaction.addCommitTask(() -> _store.clearCache(PropertyMap.this), DbScope.CommitTaskOption.IMMEDIATE, DbScope.CommitTaskOption.POSTCOMMIT);
+                transaction.addCommitTask(() -> _store.clearCache(this), DbScope.CommitTaskOption.IMMEDIATE, DbScope.CommitTaskOption.POSTCOMMIT);
                 transaction.commit();
                 LOG.debug("</PropertyMap.delete() [{}, {}, {}, {}, map.hashCode: {}, lock: {}]>", _user.getUserId(), _objectId, _category, _set, hashCode(), lock.toString());
             }
-        }
-
-        public void lock()
-        {
-            _locked = true;
-        }
-
-        public boolean isLocked()
-        {
-            return _locked;
-        }
-    }
-
-    /**
-     * This subclass is a mutable Map and can be saved & deleted
-     */
-    public static class WritablePropertyMap extends PropertyMap
-    {
-        /** Clone the existing map, creating our own copy of the underlying data */
-        WritablePropertyMap(PropertyMap copy)
-        {
-            super(copy._set, copy._user, copy._objectId, copy._category, copy._propertyEncryption, copy._store, new HashMap<>(copy));
-        }
-
-        /** New empty, writable map */
-        WritablePropertyMap(int set, @NotNull User user, @NotNull String objectId, @NotNull String category, PropertyEncryption propertyEncryption, AbstractPropertyStore store)
-        {
-            super(set, user, objectId, category, propertyEncryption, store, new HashMap<>());
-        }
-
-        @Override
-        protected void validate(Map<String, String> map)
-        {
-            // This class allows modifiable maps
-        }
-
-        // The following four overrides are not needed in PropertyMap since instances of that class are guaranteed to
-        // be unmodifiable.
-
-        @Override
-        public MapIterator<String, String> mapIterator() {
-            Map<String, String> map = decorated();
-            if (map instanceof IterableMap) {
-                final MapIterator<String, String> it = ((IterableMap<String, String>) decorated()).mapIterator();
-                return UnmodifiableMapIterator.unmodifiableMapIterator(it);
-            }
-            final MapIterator<String, String> it = new EntrySetMapIterator<>(map);
-            return UnmodifiableMapIterator.unmodifiableMapIterator(it);
-        }
-
-        @Override
-        public @NotNull Set<Map.Entry<String, String>> entrySet() {
-            final Set<Map.Entry<String, String>> set = super.entrySet();
-            return UnmodifiableEntrySet.unmodifiableEntrySet(set);
-        }
-
-        @Override
-        public @NotNull Set<String> keySet() {
-            final Set<String> set = super.keySet();
-            return UnmodifiableSet.unmodifiableSet(set);
-        }
-
-        @Override
-        public @NotNull Collection<String> values() {
-            final Collection<String> coll = super.values();
-            return UnmodifiableCollection.unmodifiableCollection(coll);
         }
     }
 
