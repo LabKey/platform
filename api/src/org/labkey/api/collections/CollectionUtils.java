@@ -140,12 +140,10 @@ public class CollectionUtils
     /**
      * Attempts to determine if the provided Set implementation is stable-ordered, i.e., its iteration order matches its
      * insertion order. Currently, LinkedHashSet, Collections.singleton(), and Collections.emptySet() are considered
-     * stable-ordered; HashSet and TreeSet are not. Sets returned by Set.of() are also considered not stable-ordered;
-     * although they seem to iterate in insertion order in current JVMs, their JavaDoc clearly states that "the
-     * iteration order of set elements is unspecified and is subject to change." Similarly, we used to special case
-     * unstable sets with size 1, allowing them since they obviously iterate in a predicable manner. However, we then
-     * encountered code paths that usually pass a one-element set, but in some circumstances pass a larger set. We now
-     * flag all unstable sets regardless of size. If you want to pass a single value then use Collections.singleton().
+     * stable-ordered; HashSet, TreeSet, and sets returned from Set.of() are not. We used to special case unstable sets
+     * with size 1, allowing them since they obviously iterate in a predicable manner. However, we then encountered code
+     * paths that usually pass a one-element set, but in some circumstances pass a larger set. We now flag all unstable
+     * sets regardless of size. If you want to pass a single value then use Collections.singleton().
      */
     public static boolean isStableOrderedSet(@NotNull Set<?> set)
     {

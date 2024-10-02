@@ -1289,9 +1289,10 @@ validNum:       {
     }
 
     /**
-     * Get the default date format string to use in this Container
+     * Get the default date display format string to use in this Container
      * Note: The display format is specified by an admin; it could contain any characters, hence, it may not be safe.
      * Any value formatted by this pattern must be HTML filtered, if rendered to an HTML page.
+     * THIS IS A DISPLAY FORMAT STRING; DO NOT USE IT FOR PARSING!
      */
     public static String getDateFormatString(Container c)
     {
@@ -1299,15 +1300,22 @@ validNum:       {
     }
 
     /**
-     * Get the default date/time format string set in this Container (or one of its parents)
+     * Get the default date/time display format string set in this Container (or one of its parents)
      * Note: The display format is specified by an admin; it could contain any characters, hence, it may not be safe.
      * Any value formatted by this pattern must be HTML filtered, if rendered to an HTML page.
+     * THIS IS A DISPLAY FORMAT STRING; DO NOT USE IT FOR PARSING!
      */
     public static String getDateTimeFormatString(Container c)
     {
         return FolderSettingsCache.getDefaultDateTimeFormat(c);
     }
 
+    /**
+     * Get the default time display format string set in this Container (or one of its parents)
+     * Note: The display format is specified by an admin; it could contain any characters, hence, it may not be safe.
+     * Any value formatted by this pattern must be HTML filtered, if rendered to an HTML page.
+     * THIS IS A DISPLAY FORMAT STRING; DO NOT USE IT FOR PARSING!
+     */
     public static String getTimeFormatString(Container c)
     {
         return FolderSettingsCache.getDefaultTimeFormat(c);
