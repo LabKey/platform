@@ -113,7 +113,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     private ExpRun _reRun;
     private boolean _allowCrossRunFileInputs;
 
-    public static FileLike BLANK_FILE = FileSystemLike.wrapFile(new File("/.blank_file"));
+    public static FileLike BLANK_FILE = new FileSystemLike.Builder(new File("/")).root();
 
     public List<? extends DomainProperty> getRunDataProperties()
     {
