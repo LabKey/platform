@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -521,9 +522,11 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         for (Integer materialRowId : materialRowIds)
             params.add(Arrays.asList(materialRowId, getRowId(), role, protocolInputRowId));
 
-        String sql = "INSERT INTO " + ExperimentServiceImpl.get().getTinfoMaterialInput().getSelectName() +
+        TableInfo table = ExperimentServiceImpl.get().getTinfoMaterialInput();
+
+        String sql = "INSERT INTO " + table.getSelectName() +
                 " (MaterialId, TargetApplicationId, Role, ProtocolInputId)" +
-                " VALUES (?,?, CAST(? AS VARCHAR), CAST(? AS INTEGER))";
+                " VALUES (?, ?, ?, CAST(? AS " + table.getSqlDialect().getSqlCastTypeName(JdbcType.INTEGER) + "))";
 
         try
         {

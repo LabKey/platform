@@ -92,13 +92,21 @@ public interface ExpRun extends ExpObject, Identifiable
 
     List<? extends ExpProtocolApplication> getProtocolApplications();
 
-    /** Get the core protocol application for this run */
-    @Nullable ExpProtocolApplication getCoreProtocolApplication();
+    /**
+     * Get the first protocol application of type {@link ExpProtocol.ApplicationType#ProtocolApplication} for this run.
+     */
+    @Nullable ExpProtocolApplication getProtocolApplication();
 
-    /** Get the protocol application that marks all the inputs to the run as a whole */
+    /**
+     * Get the first protocol application of type {@link ExpProtocol.ApplicationType#ExperimentRun} for this run.
+     * This protocol application marks all the inputs to the run as a whole.
+     */
     @Nullable ExpProtocolApplication getInputProtocolApplication();
 
-    /** Get the protocol application that marks all the outputs to the run as a whole */
+    /**
+     * Get the first protocol application of type {@link ExpProtocol.ApplicationType#ExperimentRunOutput} for this run.
+     * This protocol application marks all the outputs of the run as a whole.
+     */
     @Nullable ExpProtocolApplication getOutputProtocolApplication();
 
     void deleteProtocolApplications(User user);

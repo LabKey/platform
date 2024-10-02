@@ -468,7 +468,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     }
 
     @Override
-    public @Nullable ExpProtocolApplication getCoreProtocolApplication()
+    public @Nullable ExpProtocolApplication getProtocolApplication()
     {
         return findProtocolApplication(ExpProtocol.ApplicationType.ProtocolApplication);
     }

@@ -43,7 +43,7 @@ public class AssaySampleLookupContext
     private final Map<FieldKey, Boolean> _sampleLookups;
 
     /** Structure representing a material and its designated role. */
-    public record MaterialInput(Integer materialRowId, String role) {}
+    public record MaterialInput(int materialRowId, String role) {}
 
     /** Structure containing the resolved metadata for an assay "sample lookup". */
     public record SampleLookup(
@@ -85,8 +85,12 @@ public class AssaySampleLookupContext
         if (_runIds.contains(run.getRowId()))
             return;
 
-        if (_sampleLookups.get(col.getFieldKey()) && AssayService.get().getProvider(run) != null)
-            _runIds.add(run.getRowId());
+        if (_sampleLookups.get(col.getFieldKey()))
+        {
+            AssayProvider provider = AssayService.get().getProvider(run);
+            if (provider != null && provider.supportsSampleLookupsAsMaterialInputs())
+                _runIds.add(run.getRowId());
+        }
     }
 
     /**
@@ -189,11 +193,8 @@ public class AssaySampleLookupContext
                 throw new UnauthorizedException("You do not have permissions to update run with rowId " + expRunRowId);
 
             var assayProvider = AssayService.get().getProvider(run);
-            if (assayProvider == null)
-            {
-                errors.addRowError(new ValidationException("Failed to resolve assay provider for run with rowId " + expRunRowId));
-                return;
-            }
+            if (assayProvider == null || !assayProvider.supportsSampleLookupsAsMaterialInputs())
+                continue;
 
             var sampleLookups = getSampleLookups(container, serviceUser, run, assayProvider);
 
@@ -204,21 +205,20 @@ public class AssaySampleLookupContext
             if (sampleLookups.isEmpty())
                 continue;
 
-            var coreProtocolApplication = run.getCoreProtocolApplication();
-            if (coreProtocolApplication == null)
-            {
-                errors.addRowError(new ValidationException("Failed to resolve core protocol application for run with rowId " + expRunRowId));
-                return;
-            }
+            var protocolApplications = new ArrayList<ExpProtocolApplication>();
+
+            var protocolApplication = run.getProtocolApplication();
+            if (protocolApplication != null)
+                protocolApplications.add(protocolApplication);
 
             var inputProtocolApplication = run.getInputProtocolApplication();
-            if (inputProtocolApplication == null)
-            {
-                errors.addRowError(new ValidationException("Failed to resolve input protocol application for run with rowId " + expRunRowId));
-                return;
-            }
+            if (inputProtocolApplication != null)
+                protocolApplications.add(inputProtocolApplication);
 
-            syncLineageForRun(serviceUser, expRunRowId, sampleLookups, coreProtocolApplication, inputProtocolApplication);
+            if (protocolApplications.isEmpty())
+                return;
+
+            syncLineageForRun(serviceUser, expRunRowId, sampleLookups, protocolApplications);
         }
     }
 
@@ -226,27 +226,26 @@ public class AssaySampleLookupContext
         User user,
         int expRunRowId,
         Map<TableInfoKey, List<SampleLookup>> sampleLookups,
-        @NotNull ExpProtocolApplication coreProtocolApplication,
-        @NotNull ExpProtocolApplication inputProtocolApplication
+        List<ExpProtocolApplication> protocolApplications
     )
     {
         var inputLineageRoles = getInputLineageRoles(sampleLookups);
         var computed = computeMaterialInputs(expRunRowId, sampleLookups, inputLineageRoles);
         var isSynced = computed.first;
-        var newInputs = computed.second;
+        var materialInputs = computed.second;
 
-        if (isSynced || newInputs.isEmpty())
+        if (isSynced || materialInputs.isEmpty())
             return;
 
         try (var tx = ExperimentService.get().ensureTransaction())
         {
-            coreProtocolApplication.removeAllMaterialInputs(user);
-            inputProtocolApplication.removeAllMaterialInputs(user);
+            for (var pa : protocolApplications)
+                pa.removeAllMaterialInputs(user);
 
-            for (var entry : getInputGroups(newInputs, inputLineageRoles).entrySet())
+            for (var entry : getInputGroups(materialInputs, inputLineageRoles).entrySet())
             {
-                coreProtocolApplication.addMaterialInputs(user, entry.getValue(), entry.getKey(), null);
-                inputProtocolApplication.addMaterialInputs(user, entry.getValue(), entry.getKey(), null);
+                for (var pa : protocolApplications)
+                    pa.addMaterialInputs(user, entry.getValue(), entry.getKey(), null);
             }
 
             tx.commit();
@@ -268,8 +267,7 @@ public class AssaySampleLookupContext
                 continue;
 
             seen.add(input.materialRowId);
-            groups.putIfAbsent(input.role, new HashSet<>());
-            groups.get(input.role).add(input.materialRowId);
+            groups.computeIfAbsent(input.role, r -> new HashSet<>()).add(input.materialRowId);
         }
 
         return groups;
@@ -306,10 +304,10 @@ public class AssaySampleLookupContext
                 continue;
 
             // Retain all non-"input lineage roles" inputs
-            if (current.materialRowId != null && !seen.contains(current.materialRowId))
+            if (!seen.contains(current.materialRowId))
             {
                 seen.add(current.materialRowId);
-                newInputs.removeIf(input -> current.materialRowId.equals(input.materialRowId));
+                newInputs.removeIf(input -> current.materialRowId == input.materialRowId);
             }
 
             newInputs.add(current);
@@ -318,7 +316,7 @@ public class AssaySampleLookupContext
         return Pair.of(currentInputs.equals(newInputs), newInputs);
     }
 
-    private Set<MaterialInput> getCurrentMaterialInputs(Integer expRunRowId)
+    private Set<MaterialInput> getCurrentMaterialInputs(int expRunRowId)
     {
         var sql = new SQLFragment("""
             SELECT MI.MaterialId AS MaterialRowId, MI.Role AS MaterialInputRole
@@ -330,7 +328,7 @@ public class AssaySampleLookupContext
         return getMaterialInputs(new SqlSelector(ExperimentService.get().getSchema(), sql));
     }
 
-    private Set<MaterialInput> getNewMaterialInputs(Map<TableInfoKey, List<SampleLookup>> sampleLookups, Integer expRunRowId)
+    private Set<MaterialInput> getNewMaterialInputs(Map<TableInfoKey, List<SampleLookup>> sampleLookups, int expRunRowId)
     {
         if (sampleLookups.isEmpty())
             return new HashSet<>();

@@ -5,7 +5,6 @@ import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentListener;
-import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.security.User;
 
 import java.util.List;
@@ -34,11 +33,5 @@ public class AssayExperimentListener implements ExperimentListener
     public void afterRunSaved(Container container, User user, ExpProtocol protocol, ExpRun run)
     {
         AssayManager.get().indexAssayRun(run.getRowId());
-    }
-
-    @Override
-    public void beforeRunSaved(Container container, User user, ExpProtocol protocol, ExpRun run) throws BatchValidationException
-    {
-
     }
 }

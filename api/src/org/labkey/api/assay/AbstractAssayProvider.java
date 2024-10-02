@@ -1181,7 +1181,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     /**
      * Adds the materials as inputs to the run as a whole, plus as inputs for the "work" node for the run.
-     * @param materialInputs Map of materials to roles.  If role is null, a generic role of "Sample N" will be used.
+     * @param materialInputs Map of materials to roles. If role is null, a generic role of "Sample" will be used.
      */
     public static void addInputMaterials(ExpRun expRun, User user, Map<ExpMaterial, String> materialInputs)
     {
@@ -1207,8 +1207,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                         role = st != null ? st.getName() : "Sample";
                     }
 
-                    inputGroups.putIfAbsent(role, new HashSet<>());
-                    inputGroups.get(role).add(newInput.getRowId());
+                    inputGroups.computeIfAbsent(role, r -> new HashSet<>()).add(newInput.getRowId());
                 }
 
                 for (var entry : inputGroups.entrySet())

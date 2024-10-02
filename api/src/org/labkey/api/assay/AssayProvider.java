@@ -376,4 +376,13 @@ public interface AssayProvider extends Handler<ExpProtocol>
     {
         return false;
     }
+
+    /**
+     * Declares if an assay provider type supports having sample lookups in
+     * run/result domains persisted as material inputs to runs.
+     */
+    default boolean supportsSampleLookupsAsMaterialInputs()
+    {
+        return false;
+    }
 }
