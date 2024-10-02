@@ -60,6 +60,7 @@ import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.*;
 import org.labkey.api.data.PropertyManager.PropertyMap;
+import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
@@ -847,7 +848,9 @@ public class QueryController extends SpringActionController
         @Override
         public boolean handlePost(TestDataSourceForm form, BindException errors) throws Exception
         {
-            PropertyManager.getWritableProperties(getCategory(form.getDataSource()), false).delete();
+            WritablePropertyMap map = PropertyManager.getWritableProperties(getCategory(form.getDataSource()), false);
+            if (map != null)
+                map.delete();
             return true;
         }
 
@@ -869,7 +872,7 @@ public class QueryController extends SpringActionController
 
     public static void saveTestDataSourceProperties(TestDataSourceConfirmForm form)
     {
-        PropertyMap map = PropertyManager.getWritableProperties(getCategory(form.getDataSource()), true);
+        WritablePropertyMap map = PropertyManager.getWritableProperties(getCategory(form.getDataSource()), true);
         // Save empty entries as empty string to distinguish from null (which results in default values)
         map.put(TEST_DATA_SOURCE_SCHEMAS_PROPERTY, StringUtils.trimToEmpty(form.getExcludeSchemas()));
         map.put(TEST_DATA_SOURCE_TABLES_PROPERTY, StringUtils.trimToEmpty(form.getExcludeTables()));

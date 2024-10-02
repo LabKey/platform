@@ -78,6 +78,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.ResultsFactory;
@@ -5351,7 +5352,7 @@ public class StudyController extends BaseStudyController
 
     private void setDefaultView(int datasetId, String view)
     {
-        PropertyManager.PropertyMap viewMap = PropertyManager.getWritableProperties(getUser(),
+        WritablePropertyMap viewMap = PropertyManager.getWritableProperties(getUser(),
                 getContainer(), DEFAULT_DATASET_VIEW, true);
 
         viewMap.put(Integer.toString(datasetId), view);
@@ -7417,7 +7418,7 @@ public class StudyController extends BaseStudyController
                     MasterPatientIndexService svc = MasterPatientIndexService.getProvider(form.getType());
                     if (svc != null)
                     {
-                        PropertyManager.PropertyMap map = PropertyManager.getNormalStore().getWritableProperties(MasterPatientProviderSettings.CATEGORY, true);
+                        WritablePropertyMap map = PropertyManager.getNormalStore().getWritableProperties(MasterPatientProviderSettings.CATEGORY, true);
 
                         map.put(MasterPatientProviderSettings.TYPE, form.getType());
                         map.save();

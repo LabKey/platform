@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.cache.Throttle;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.ApiKeyManager;
 import org.labkey.api.security.AuthenticationManager.AuthenticationValidator;
@@ -187,7 +188,7 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
             {
                 if (!map.isEmpty())
                 {
-                    PropertyManager.PropertyMap propertyMap = PropertyManager.getWritableProperties(DATABASE_AUTHENTICATION_CATEGORY_KEY, true);
+                    WritablePropertyMap propertyMap = PropertyManager.getWritableProperties(DATABASE_AUTHENTICATION_CATEGORY_KEY, true);
                     propertyMap.clear();
                     map.forEach((key, value)->propertyMap.put(key.getPropertyName(), value.getValue()));
                     propertyMap.save();

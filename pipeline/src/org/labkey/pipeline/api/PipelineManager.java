@@ -34,6 +34,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -257,7 +258,7 @@ public class PipelineManager
 
     static void setPipelineProperty(Container container, String name, String value)
     {
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(container, "pipelineRoots", true);
+        WritablePropertyMap props = PropertyManager.getWritableProperties(container, "pipelineRoots", true);
         if (value == null)
             props.remove(name);
         else

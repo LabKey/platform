@@ -39,6 +39,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Entity;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -610,8 +611,8 @@ public class IssueManager
 
     private static void deleteProperties(Container container, String issueDefName)
     {
-        PropertyManager.PropertyMap properties = PropertyManager.getProperties(container, getPropMapName(issueDefName));
-        if (!properties.isEmpty())
+        WritablePropertyMap properties = PropertyManager.getWritableProperties(container, getPropMapName(issueDefName), false);
+        if (properties != null)
         {
             properties.delete();
         }
@@ -631,7 +632,7 @@ public class IssueManager
 
     public static void saveEntryTypeNames(Container container, String issueDefName, String singularName, String pluralName)
     {
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(container, getPropMapName(issueDefName), true);
+        WritablePropertyMap props = PropertyManager.getWritableProperties(container, getPropMapName(issueDefName), true);
         props.put(PROP_ENTRY_TYPE_NAME_SINGULAR, singularName);
         props.put(PROP_ENTRY_TYPE_NAME_PLURAL, pluralName);
         props.save();
@@ -644,7 +645,7 @@ public class IssueManager
 
     private static void setPropertyValue(Container c, String issueDefName, String key, String value)
     {
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, getPropMapName(issueDefName), true);
+        WritablePropertyMap props = PropertyManager.getWritableProperties(c, getPropMapName(issueDefName), true);
         props.put(key, value);
         props.save();
     }

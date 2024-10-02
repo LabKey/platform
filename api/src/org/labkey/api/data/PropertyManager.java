@@ -83,7 +83,7 @@ public class PropertyManager
      * For global system properties that are attached to the root container
      * Returns an empty map if property set hasn't been created
      */
-    public static @NotNull PropertyManager.PropertyMap getProperties(String category)
+    public static @NotNull PropertyMap getProperties(String category)
     {
         return STORE.getProperties(category);
     }
@@ -92,7 +92,7 @@ public class PropertyManager
      * For shared properties that are attached to a specific container
      * Returns an empty map if property set hasn't been created
      */
-    public static @NotNull PropertyManager.PropertyMap getProperties(Container container, String category)
+    public static @NotNull PropertyMap getProperties(Container container, String category)
     {
         return STORE.getProperties(container, category);
     }
@@ -101,12 +101,12 @@ public class PropertyManager
      * For shared properties that are attached to a specific container and user
      * Returns an empty map if property set hasn't been created
      */
-    public static @NotNull PropertyManager.PropertyMap getProperties(User user, Container container, String category)
+    public static @NotNull PropertyMap getProperties(User user, Container container, String category)
     {
         return STORE.getProperties(user, container, category);
     }
 
-    private static boolean assertWritableProperties(@Nullable PropertyMap writableProps, boolean create)
+    private static boolean assertWritableProperties(@Nullable WritablePropertyMap writableProps, boolean create)
     {
         // getWritableProperties() will return null if an existing map is not found and create is false.
         if (writableProps == null)
@@ -282,8 +282,8 @@ public class PropertyManager
     }
 
     // Instances of this specific class are guaranteed to be immutable; all mutating Map methods (put(), remove(), etc.)
-    // will throw exceptions. keySet(), values(), entrySet(), and mapIterator() return immutable data structures.
-    // Instances of subclass WritablePropertyMap ARE mutable and can be saved, deleted, etc.
+    // throw exceptions. keySet(), values(), entrySet(), and mapIterator() return immutable data structures.
+    // Instances of subclass WritablePropertyMap, however, are mutable Maps and can be saved & deleted.
     public static class PropertyMap extends AbstractMapDecorator<String, String> implements InitializingBean
     {
         private int _set;
@@ -292,10 +292,6 @@ public class PropertyManager
         private final @NotNull String _category;
         private final PropertyEncryption _propertyEncryption;
         private final AbstractPropertyStore _store;
-
-        private boolean _modified = false;
-        private Set<Object> _removedKeys = null;
-        private boolean _locked = false;
 
         protected PropertyMap(int set, @NotNull User user, @NotNull String objectId, @NotNull String category, PropertyEncryption propertyEncryption, AbstractPropertyStore store, Map<String, String> map)
         {
@@ -344,6 +340,44 @@ public class PropertyManager
         }
 
         @Override
+        public String toString()
+        {
+            return getClass().getSimpleName() + ": " + _objectId + ", " + _category + ", " + _user.getDisplayName(null) + ": " + super.toString();
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            PropertyMap that = (PropertyMap) o;
+
+            if (!_user.equals(that._user)) return false;
+            if (!_category.equals(that._category)) return false;
+
+            return _objectId.equals(that._objectId);
+        }
+
+        @Override
+        public int hashCode()
+        {
+            int result = _user.hashCode();
+            result = 31 * result + _objectId.hashCode();
+            result = 31 * result + _category.hashCode();
+            return result;
+        }
+
+        // TODO: Once all repos are migrated to use WritablePropertyMaps, everything below will be moved to WritablePropertyMap.
+        // _locked handling will be removed and cache checking will simply forbid WritablePropertyMap.
+        // I believe that InitializingBean & afterPropertiesSet() can be removed, since we're now loading the map before
+        // constructing WritablePropertyMap.
+
+        private boolean _modified = false;
+        private Set<Object> _removedKeys = null;
+        private boolean _locked = false;
+
+        @Override
         public String remove(Object key)
         {
             checkLocked();
@@ -378,12 +412,6 @@ public class PropertyManager
         }
 
         @Override
-        public String toString()
-        {
-            return getClass().getSimpleName() + ": " + _objectId + ", " + _category + ", " + _user.getDisplayName(null) + ": " + super.toString();
-        }
-
-        @Override
         public void putAll(Map<? extends String, ? extends String> m)
         {
             checkLocked();
@@ -401,29 +429,6 @@ public class PropertyManager
             _removedKeys.addAll(keySet());
             _modified = true;
             super.clear();
-        }
-
-        @Override
-        public boolean equals(Object o)
-        {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            PropertyMap that = (PropertyMap) o;
-
-            if (!_user.equals(that._user)) return false;
-            if (!_category.equals(that._category)) return false;
-
-            return _objectId.equals(that._objectId);
-        }
-
-        @Override
-        public int hashCode()
-        {
-            int result = _user.hashCode();
-            result = 31 * result + _objectId.hashCode();
-            result = 31 * result + _category.hashCode();
-            return result;
         }
 
         public boolean isModified()
@@ -565,7 +570,7 @@ public class PropertyManager
     }
 
     /**
-     * This subclass is mutable and can be saved, deleted, etc.
+     * This subclass is a mutable Map and can be saved & deleted
      */
     public static class WritablePropertyMap extends PropertyMap
     {
@@ -836,7 +841,7 @@ public class PropertyManager
 
         private void testProperties(PropertyStore store, User user, Container test, String category)
         {
-            PropertyMap m = store.getWritableProperties(user, test, category, true);
+            WritablePropertyMap m = store.getWritableProperties(user, test, category, true);
             assertNotNull(m);
             m.clear();
             m.save();
@@ -884,7 +889,7 @@ public class PropertyManager
 
                 private void testProps()
                 {
-                    PropertyMap map = store.getWritableProperties(c, category, true);
+                    WritablePropertyMap map = store.getWritableProperties(c, category, true);
                     map.put("foo", "abc");
                     map.put("bar", "xyz");
                     map.save();

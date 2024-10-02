@@ -3,6 +3,7 @@ package org.labkey.specimen.settings;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.specimen.settings.DisplaySettings;
@@ -46,7 +47,7 @@ public class SettingsManager
 
     public void saveRequestNotificationSettings(Container container, RequestNotificationSettings settings)
     {
-        PropertyManager.PropertyMap settingsMap = PropertyManager.getWritableProperties(UserManager.getGuestUser(),
+        WritablePropertyMap settingsMap = PropertyManager.getWritableProperties(UserManager.getGuestUser(),
                 container, "SpecimenRequestNotifications", true);
         settings.populateMap(settingsMap);
         settingsMap.save();
@@ -54,7 +55,7 @@ public class SettingsManager
 
     public void saveDisplaySettings(Container container, DisplaySettings settings)
     {
-        PropertyManager.PropertyMap settingsMap = PropertyManager.getWritableProperties(UserManager.getGuestUser(),
+        WritablePropertyMap settingsMap = PropertyManager.getWritableProperties(UserManager.getGuestUser(),
                 container, "SpecimenRequestDisplay", true);
         settings.populateMap(settingsMap);
         settingsMap.save();
@@ -62,7 +63,7 @@ public class SettingsManager
 
     public void saveStatusSettings(Container container, StatusSettings settings)
     {
-        PropertyManager.PropertyMap settingsMap = PropertyManager.getWritableProperties(UserManager.getGuestUser(),
+        WritablePropertyMap settingsMap = PropertyManager.getWritableProperties(UserManager.getGuestUser(),
                 container, "SpecimenRequestStatus", true);
         settings.populateMap(settingsMap);
         settingsMap.save();
@@ -70,7 +71,7 @@ public class SettingsManager
 
     public void saveRepositorySettings(Container container, RepositorySettings settings)
     {
-        PropertyManager.PropertyMap settingsMap = PropertyManager.getWritableProperties(UserManager.getGuestUser(),
+        WritablePropertyMap settingsMap = PropertyManager.getWritableProperties(UserManager.getGuestUser(),
                 container, "SpecimenRepositorySettings", true);
         settings.populateMap(settingsMap);
         settingsMap.save();

@@ -60,6 +60,7 @@ import org.labkey.api.data.Filter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -913,7 +914,7 @@ public class StudyManager
             // update the override map
             Container c = datasetDefinition.getContainer();
             String category = "dataset-overrides:" + datasetDefinition.getDatasetId();
-            PropertyManager.PropertyMap map = null;
+            WritablePropertyMap map = null;
 
             if (!add.isEmpty())
             {

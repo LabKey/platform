@@ -19,6 +19,7 @@ package org.labkey.specimen.requirements;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
@@ -84,7 +85,7 @@ public abstract class DefaultRequirementProvider<R extends Requirement<R>, A ext
 
     private synchronized String getDefaultRequirementPlaceholder(final Container container, RequirementType type, boolean createIfMissing)
     {
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(container,
+        WritablePropertyMap props = PropertyManager.getWritableProperties(container,
                 "DefaultRequirement: " + getClass().getSimpleName(), true);
         String ownerEntityId = props.get(type.name());
         if (ownerEntityId == null && createIfMissing)
