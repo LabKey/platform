@@ -159,7 +159,7 @@ public enum LSIDRelativizer implements SafeToRenderEnum
             }
             else if ("Material".equals(prefix))
             {
-                if (lsid.getNamespaceSuffix().startsWith("Folder-"))
+                if (StringUtils.startsWith(lsid.getNamespaceSuffix(),"Folder-"))
                 {
                     return stripFolderSuffix(lsid, lsids);
                 }
@@ -170,7 +170,7 @@ public enum LSIDRelativizer implements SafeToRenderEnum
             }
             else if ("Data".equals(prefix))
             {
-                if (lsid.getNamespaceSuffix().startsWith("Folder-"))
+                if (StringUtils.startsWith(lsid.getNamespaceSuffix(),"Folder-"))
                 {
                     return stripFolderSuffix(lsid, lsids);
                 }
@@ -181,7 +181,7 @@ public enum LSIDRelativizer implements SafeToRenderEnum
             }
             else
             {
-                if (suffix != null && suffix.startsWith("Folder-"))
+                if (StringUtils.startsWith(suffix,"Folder-"))
                 {
                     return stripFolderSuffix(lsid, lsids);
                 }

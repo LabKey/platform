@@ -979,7 +979,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
      * @return null if the file is already linked to another run
      */
     @Nullable
-    public static Pair<ExpData, String> createdRelatedOutputData(AssayRunUploadContext context, String baseName, File relatedFile) throws ValidationException
+    public static Pair<ExpData, String> createdRelatedOutputData(AssayRunUploadContext<?> context, String baseName, File relatedFile) throws ValidationException
     {
         String roleName = null;
         DataType dataType = null;

@@ -365,7 +365,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
     /**
      * Called to write out uploaded run data that has been previously transformed.
      */
-    protected Set<FileLike> _writeTransformedRunData(AssayRunUploadContext context, TransformResult transformResult, ExpRun run, FileLike scriptDir, PrintWriter pw) throws Exception
+    protected Set<FileLike> _writeTransformedRunData(AssayRunUploadContext<?> context, TransformResult transformResult, ExpRun run, FileLike scriptDir, PrintWriter pw) throws Exception
     {
         assert (!transformResult.getTransformedData().isEmpty());
 
@@ -455,7 +455,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         return runProperties;
     }
 
-    private Map<String, String> getContextProperties(AssayRunUploadContext context, FileLike scriptDir)
+    private Map<String, String> getContextProperties(AssayRunUploadContext<?> context, FileLike scriptDir)
     {
         Map<String, String> map = new HashMap<>();
 
@@ -783,7 +783,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         return _filesToIgnore.contains(file);
     }
 
-    public static String directoryKey(AssayRunUploadContext context)
+    public static String directoryKey(AssayRunUploadContext<?> context)
     {
         if(context instanceof ProtocolIdForm && null != ((ProtocolIdForm) context).getUploadAttemptID())
             return ((ProtocolIdForm) context).getUploadAttemptID();
@@ -792,7 +792,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
     }
 
     @Nullable
-    public static FileLike getWorkingDirectory(AssayRunUploadContext context) {
+    public static FileLike getWorkingDirectory(AssayRunUploadContext<?> context) {
         Pair<Container, File> containerFilePair = workingDirectories.get(directoryKey(context));
         if(containerFilePair != null
                 && containerFilePair.first.hasPermission("TsvDataExchangeHandler.getWorkingDirectory()", context.getUser(), ReadPermission.class))
@@ -814,7 +814,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
     }
 
     @Nullable
-    public static File removeWorkingDirectory(AssayRunUploadContext context) {
+    public static File removeWorkingDirectory(AssayRunUploadContext<?> context) {
         Pair<Container, File> containerFilePair = workingDirectories.get(directoryKey(context));
         if(containerFilePair != null
                 && containerFilePair.first.hasPermission("TsvDataExchangeHandler.removeWorkingDirectory()", context.getUser(), ReadPermission.class))
@@ -837,7 +837,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         return null;
     }
 
-    public static void setWorkingDirectory(AssayRunUploadContext context, File dir) {
+    public static void setWorkingDirectory(AssayRunUploadContext<?> context, File dir) {
         if(context.getContainer().hasPermission("TsvDataExchangeHandler.setWorkingDirectory()", context.getUser(), ReadPermission.class))
         {
             workingDirectories.put(directoryKey(context), new Pair<>(context.getContainer(), dir));

@@ -1494,7 +1494,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     }
 
     @Override
-    public AssayRunAsyncContext createRunAsyncContext(AssayRunUploadContext context) throws IOException, ExperimentException
+    public AssayRunAsyncContext<?> createRunAsyncContext(AssayRunUploadContext<?> context) throws IOException, ExperimentException
     {
         return new AssayRunAsyncContext(context);
     }
