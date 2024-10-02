@@ -91,7 +91,7 @@
         {
             if (c == '/')
                 continue;
-            String s = "_" + c;
+            String s = "_" + c + "_";
             p = new Path(s,"%.txt");
             f = fs.resolveFile(p);
             assertEquals(s, f.getPath().get(0));
