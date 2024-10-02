@@ -22,7 +22,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
