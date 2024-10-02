@@ -25,6 +25,7 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.pipeline.PipelineJob;
@@ -290,7 +291,7 @@ public class PipelineEmailPreferences
 
     private synchronized void addNotifyTask(Container c, int intervalInHours, boolean isSuccessNotification, Date nextTime)
     {
-        PropertyManager.PropertyMap taskMap = PropertyManager.getWritableProperties(PIPELINE_NOTIFICATION_TASKS, true);
+        WritablePropertyMap taskMap = PropertyManager.getWritableProperties(PIPELINE_NOTIFICATION_TASKS, true);
         final String key = getKey(c, isSuccessNotification);
 
         taskMap.put(key, c.getId());
@@ -321,7 +322,7 @@ public class PipelineEmailPreferences
     
     private synchronized void removeNotifyTask(Container c, boolean isSuccessNotification)
     {
-        PropertyManager.PropertyMap taskMap = PropertyManager.getWritableProperties(PIPELINE_NOTIFICATION_TASKS, true);
+        WritablePropertyMap taskMap = PropertyManager.getWritableProperties(PIPELINE_NOTIFICATION_TASKS, true);
         final String key = getKey(c, isSuccessNotification);
 
         if (taskMap.containsKey(key))

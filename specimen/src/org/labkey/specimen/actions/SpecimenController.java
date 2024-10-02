@@ -50,6 +50,7 @@ import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
@@ -5277,7 +5278,7 @@ public class SpecimenController extends SpringActionController
         @Override
         public boolean handlePost(EnabledSpecimenImportForm form, BindException errors) throws Exception
         {
-            PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(getContainer(), "enabledSpecimenImporter", true);
+            WritablePropertyMap props = PropertyManager.getWritableProperties(getContainer(), "enabledSpecimenImporter", true);
             props.put("active", form.getActiveTransform());
             props.save();
             return true;

@@ -20,6 +20,8 @@ import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.PropertyManager.PropertyMap;
+import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.data.PropertySchema;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
@@ -37,9 +39,6 @@ import java.util.Set;
 
 /**
  * Manages admin-customized email templates by persisting in the property store.
- *
- * User: Karl Lum
- * Date: Jan 15, 2007
  */
 public class EmailTemplateService
 {
@@ -113,12 +112,14 @@ public class EmailTemplateService
         return templates;
     }
 
-    private PropertyManager.PropertyMap getProperties(Container c, boolean writable)
+    private PropertyMap getProperties(Container c)
     {
-        if (writable)
-            return PropertyManager.getWritableProperties(c, EMAIL_TEMPLATE_PROPERTIES_MAP_NAME, true);
-        else
-            return PropertyManager.getProperties(c, EMAIL_TEMPLATE_PROPERTIES_MAP_NAME);
+        return PropertyManager.getProperties(c, EMAIL_TEMPLATE_PROPERTIES_MAP_NAME);
+    }
+
+    private WritablePropertyMap getWritableProperties(Container c)
+    {
+        return PropertyManager.getWritableProperties(c, EMAIL_TEMPLATE_PROPERTIES_MAP_NAME, true);
     }
 
     private Map<Class<? extends EmailTemplate>, EmailTemplate> _getEmailTemplates(Container c)
@@ -143,7 +144,7 @@ public class EmailTemplateService
 
     private void addTemplates(Map<Class<? extends EmailTemplate>, EmailTemplate> templates, Container c)
     {
-        Map<String, String> map = getProperties(c, false);
+        Map<String, String> map = getProperties(c);
         for (Map.Entry<String, String> entry : map.entrySet())
         {
             final String key = entry.getKey();
@@ -226,7 +227,7 @@ public class EmailTemplateService
         {
             throw new NotFoundException("Cannot save template " + c + " in " + c);
         }
-        PropertyManager.PropertyMap map = getProperties(c, true);
+        WritablePropertyMap map = getWritableProperties(c);
 
         final String className = template.getClass().getName();
         map.put(className + EMAIL_TEMPLATE_DELIM + MESSAGE_SUBJECT_PART, template.getSubject());
@@ -238,7 +239,7 @@ public class EmailTemplateService
 
     public void deleteEmailTemplate(EmailTemplate template, Container c)
     {
-        PropertyManager.PropertyMap map = getProperties(c, true);
+        WritablePropertyMap map = getWritableProperties(c);
 
         final String className = template.getClass().getName();
         map.remove(className + EMAIL_TEMPLATE_DELIM + MESSAGE_SUBJECT_PART);

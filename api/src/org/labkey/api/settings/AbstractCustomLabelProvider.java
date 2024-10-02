@@ -7,6 +7,7 @@ import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.provider.SiteSettingsAuditProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.data.PropertyStore;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -104,7 +105,7 @@ public abstract class AbstractCustomLabelProvider implements CustomLabelProvider
         if (auditUser != null)
             event = getUpdateLabelEvent(labelContainer, sanitizedLabels);
 
-        PropertyManager.PropertyMap labelStore = labelContainer == null ? _normalStore.getWritableProperties(getLabelGroup(), true) : _normalStore.getWritableProperties(labelContainer, getLabelGroup(), true);
+        WritablePropertyMap labelStore = labelContainer == null ? _normalStore.getWritableProperties(getLabelGroup(), true) : _normalStore.getWritableProperties(labelContainer, getLabelGroup(), true);
         labelStore.putAll(sanitizedLabels);
         labelStore.save();
 

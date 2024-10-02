@@ -15,13 +15,14 @@
  */
 package org.labkey.core.login;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
-import org.labkey.api.data.PropertyManager.PropertyMap;
+import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.security.AuthenticationConfigurationCache;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationManager.AuthenticationResult;
@@ -42,7 +43,6 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.core.login.LoginController.SaveDbLoginPropertiesForm;
 import org.springframework.validation.BindException;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
@@ -154,7 +154,7 @@ public class DbLoginManager implements DbLoginService
     {
         Map<String, String> oldProperties = getProperties();
 
-        PropertyMap map = PropertyManager.getWritableProperties(DATABASE_AUTHENTICATION_CATEGORY_KEY, true);
+        WritablePropertyMap map = PropertyManager.getWritableProperties(DATABASE_AUTHENTICATION_CATEGORY_KEY, true);
         map.clear();
         map.put(Key.Strength.toString(), form.getStrength());
         map.put(Key.Expiration.toString(), form.getExpiration());

@@ -21,7 +21,7 @@ import org.labkey.api.audit.provider.SiteSettingsAuditProvider.SiteSettingsAudit
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
-import org.labkey.api.data.PropertyManager.PropertyMap;
+import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 
@@ -29,13 +29,11 @@ import java.util.Map;
 
 /**
  * Subclass of {@link AbstractSettingsGroup} that allows mutating the property values.
- * User: adam
- * Date: Aug 2, 2008
  */
 public abstract class AbstractWriteableSettingsGroup extends AbstractSettingsGroup
 {
-    private PropertyMap _properties = null;
-    private PropertyMap _oldProps = null;
+    private WritablePropertyMap _properties = null;
+    private WritablePropertyMap _oldProps = null;
 
     /** Human-readable description of these settings that's written to the audit log **/
     protected abstract String getType();
@@ -46,7 +44,7 @@ public abstract class AbstractWriteableSettingsGroup extends AbstractSettingsGro
         _oldProps = getWriteableProperties(c);
     }
 
-    protected PropertyMap getWriteableProperties(Container c)
+    protected WritablePropertyMap getWriteableProperties(Container c)
     {
         return PropertyManager.getWritableProperties(getPropertyConfigUser(), c, getGroupName(), true);
     }
