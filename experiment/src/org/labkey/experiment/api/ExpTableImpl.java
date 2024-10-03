@@ -343,7 +343,16 @@ abstract public class ExpTableImpl<C extends Enum>
         for (DomainProperty dp : domain.getProperties())
         {
             PropertyDescriptor pd = dp.getPropertyDescriptor();
-            PropertyColumn propColumn = new PropertyColumn(pd, getColumn("LSID"), getContainer(), _userSchema.getUser(), false, containerFilter);
+            PropertyColumn propColumn;
+            if (null != getExpObjectColumn())
+            {
+                propColumn = new PropertyColumn(pd, getExpObjectColumn(), getContainer(), _userSchema.getUser(), false, containerFilter);
+                propColumn.setParentIsObjectId(true);
+            }
+            else
+            {
+                propColumn = new PropertyColumn(pd, getColumn("LSID"), getContainer(), _userSchema.getUser(), false, containerFilter);
+            }
             if (getColumn(propColumn.getName()) == null)
             {
                 addColumn(propColumn);
