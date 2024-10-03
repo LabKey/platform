@@ -2794,43 +2794,33 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             }
         });
 
-        Set<ExpData> datas;
-        List<ExpDataImpl> expDatas = getExpDatas(dataIds);
-        if (user != null)
-            datas = expDatas.stream().filter(data -> data.getContainer().hasPermission(user, ReadPermission.class)).collect(toSet());
-        else
-            datas = new HashSet<>(expDatas);
-
-        Set<ExpMaterial> materials;
-        List<ExpMaterialImpl> expMaterials = getExpMaterials(materialIds);
-        if (user != null)
-            materials = expMaterials.stream().filter(material -> material.getContainer().hasPermission(user, ReadPermission.class)).collect(toSet());
-        else
-            materials = new HashSet<>(expMaterials);
-
-        Set<ExpRun> runs;
-        List<ExpRunImpl> expRuns = getExpRuns(runIds);
-        if (user != null)
-            runs = expRuns.stream().filter(run -> run.getContainer().hasPermission(user, ReadPermission.class)).collect(toSet());
-        else
-            runs = new HashSet<>(expRuns);
-
-        Set<Identifiable> otherObjects = new HashSet<>(objectLsids.size());
-        for (String lsid : objectLsids)
+        // Issue 48307: Respect application container filter settings
+        final Predicate<Identifiable> lineageItemFilter;
         {
-            Identifiable obj = LsidManager.get().getObject(lsid);
-            if (obj != null)
+            ContainerFilter cf = QueryService.get().getContainerFilterForLookups(c, user);
+            if (cf == null)
             {
-                if (user == null || obj.getContainer().hasPermission(user, ReadPermission.class))
-                    otherObjects.add(obj);
+                lineageItemFilter = (item) -> item.getContainer().hasPermission(user, ReadPermission.class);
             }
             else
             {
-                LOG.warn("Failed to get object for LSID '" + lsid + "' referenced in lineage for seed: " +  StringUtils.join(seedLsids, ", "));
+                Set<GUID> inScopeContainerIds = new HashSet<>();
+                var ids = cf.getIds();
+                if (ids != null)
+                    inScopeContainerIds.addAll(ids);
+
+                lineageItemFilter = (item) -> item.getContainer().hasPermission(user, ReadPermission.class) && inScopeContainerIds.contains(item.getContainer().getEntityId());
             }
         }
 
-        return new ExpLineage(seeds, datas, materials, runs, otherObjects, edges);
+        LsidManager lsidManager = LsidManager.get();
+
+        Set<ExpData> data = getExpDatas(dataIds).stream().filter(lineageItemFilter).collect(toSet());
+        Set<ExpMaterial> materials = getExpMaterials(materialIds).stream().filter(lineageItemFilter).collect(toSet());
+        Set<ExpRun> runs = getExpRuns(runIds).stream().filter(lineageItemFilter).collect(toSet());
+        Set<Identifiable> otherObjects = objectLsids.stream().map(lsidManager::getObject).filter(Objects::nonNull).filter(lineageItemFilter).collect(toSet());
+
+        return new ExpLineage(seeds, data, materials, runs, otherObjects, edges);
     }
 
     @Override
