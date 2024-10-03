@@ -2666,7 +2666,7 @@ public class ContainerManager
 
     public static int updateContainer(TableInfo dataTable, String idField, Collection<?> ids, Container targetContainer, User user, boolean withModified)
     {
-        try (DbScope.Transaction transaction = ensureTransaction())
+        try (DbScope.Transaction transaction = dataTable.getSchema().getScope().ensureTransaction())
         {
             SQLFragment dataUpdate = new SQLFragment("UPDATE ").append(dataTable)
                     .append(" SET container = ").appendValue(targetContainer.getEntityId());
