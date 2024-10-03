@@ -11,6 +11,7 @@ import org.labkey.api.assay.AssayProtocolSchema;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayResultDomainKind;
 import org.labkey.api.assay.AssaySchema;
+import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.SimpleAssayDataImportHelper;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.plate.ExcelPlateReader;
@@ -619,6 +620,143 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         return domain;
     }
 
+    /**
+     * Computes and inserts replicate statistics into the protocol schema table.
+     *
+     * @param run The run associated with the replicate values, only required in the insert case
+     * @param forInsert Boolean value to indicate insert or update of the table rows
+     * @param replicateRows The assay result rows grouped by replicate well lsid.
+     */
+    @Override
+    public void insertReplicateStats(
+            Container container,
+            User user,
+            ExpProtocol protocol,
+            @Nullable ExpRun run,
+            boolean forInsert,
+            Map<Lsid, List<Map<String, Object>>> replicateRows
+    ) throws ExperimentException
+    {
+        if (replicateRows.isEmpty())
+            return;
+
+        AssayProvider provider = AssayService.get().getProvider(protocol);
+        if (provider == null)
+            throw new ExperimentException(String.format("Unable to find the provider for protocol : %s", protocol.getName()));
+
+        if (run == null && forInsert)
+            throw new ExperimentException("Run is required when inserting into the replicate stats table");
+
+        Domain resultDomain = provider.getResultsDomain(protocol);
+        Map<String, List<Double>> measures = new CaseInsensitiveHashMap<>();
+        resultDomain.getProperties().forEach(dp -> {
+            if (dp.isMeasure() && dp.getJdbcType().isNumeric())
+                measures.put(dp.getName(), new ArrayList<>());
+        });
+
+        if (!measures.isEmpty())
+        {
+            List<Map<String, Object>> replicates = new ArrayList<>();
+            List<Map<String, Object>> keys = new ArrayList<>();
+
+            for (Map.Entry<Lsid, List<Map<String, Object>>> entry : replicateRows.entrySet())
+            {
+                if (!entry.getValue().isEmpty())
+                {
+                    // organize values for each replicate well group by measure
+                    for (Map<String, Object> row : entry.getValue())
+                    {
+                        for (Map.Entry<String, Object> col : row.entrySet())
+                        {
+                            if (measures.containsKey(col.getKey()) && col.getValue() != null)
+                                measures.get(col.getKey()).add(Double.valueOf(String.valueOf(col.getValue())));
+                        }
+                    }
+
+                    keys.add(Map.of(PlateReplicateStatsDomainKind.Column.Lsid.name(), entry.getKey().toString()));
+                    Map<String, Object> replicateRow = new HashMap<>();
+                    replicates.add(replicateRow);
+                    replicateRow.put(PlateReplicateStatsDomainKind.Column.Lsid.name(), entry.getKey());
+                    if (run != null)
+                        replicateRow.put(PlateReplicateStatsDomainKind.Column.Run.name(), run.getRowId());
+
+                    for (Map.Entry<String, List<Double>> measure : measures.entrySet())
+                    {
+                        MathStat stat = StatsService.get().getStats(measure.getValue());
+                        replicateRow.put(measure.getKey() + PlateReplicateStatsDomainKind.REPLICATE_MEAN_SUFFIX, stat.getMean());
+                        replicateRow.put(measure.getKey() + PlateReplicateStatsDomainKind.REPLICATE_STD_DEV_SUFFIX, stat.getStdDev());
+                    }
+                }
+            }
+
+            if (!replicates.isEmpty())
+            {
+                try
+                {
+                    // persist to the replicate stats table
+                    QueryUpdateService qus = getReplicateStatsUpdateService(container, user, provider, protocol);
+                    if (qus == null)
+                        throw new ExperimentException(String.format("There is no replicate stats update service available for assay : %s", protocol.getName()));
+
+                    BatchValidationException errors = new BatchValidationException();
+                    if (forInsert)
+                        qus.insertRows(user, container, replicates, errors, null, null);
+                    else
+                        qus.updateRows(user, container, replicates, keys, errors, null, null);
+
+                    if (errors.hasErrors())
+                    {
+                        throw new ExperimentException(errors.getLastRowError());
+                    }
+                }
+                catch (Exception e)
+                {
+                    throw UnexpectedException.wrap(e);
+                }
+            }
+        }
+    }
+
+    @Nullable
+    private QueryUpdateService getReplicateStatsUpdateService(Container container, User user, AssayProvider provider, ExpProtocol protocol)
+    {
+        AssayProtocolSchema schema = provider.createProtocolSchema(user, container, protocol, null);
+        TableInfo tableInfo = schema.createTable(TSVProtocolSchema.PLATE_REPLICATE_STATS_TABLE, null);
+        if (tableInfo != null)
+            return tableInfo.getUpdateService();
+
+        return null;
+    }
+
+    @Override
+    public void deleteReplicateStats(
+            Container container,
+            User user,
+            ExpProtocol protocol,
+            List<Map<String,Object>> keys
+    ) throws ExperimentException
+    {
+        if (keys.isEmpty())
+            return;
+
+        AssayProvider provider = AssayService.get().getProvider(protocol);
+        if (provider == null)
+            throw new ExperimentException(String.format("Unable to find the provider for protocol : %s", protocol.getName()));
+
+        try
+        {
+            QueryUpdateService qus = getReplicateStatsUpdateService(container, user, provider, protocol);
+            if (qus == null)
+                throw new ExperimentException(String.format("There is no replicate stats update service available for assay : %s", protocol.getName()));
+
+            qus.deleteRows(user, container, keys, null, null);
+        }
+        catch (Exception e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
+    }
+
     private static class PlateMetadataImportHelper extends SimpleAssayDataImportHelper
     {
         private final Map<Integer, Map<Position, Lsid>> _wellPositionMap;       // map of plate position to well table
@@ -725,68 +863,14 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         @Override
         public void afterBatchInsert(int rowCount)
         {
-            // compute replicate calculations and insert into the replicate stats table
-            Domain resultDomain = _provider.getResultsDomain(_protocol);
-            Map<String, List<Double>> measures = new CaseInsensitiveHashMap();
-            resultDomain.getProperties().forEach(dp -> {
-                if (dp.isMeasure() && dp.getJdbcType().isNumeric())
-                    measures.put(dp.getName(), new ArrayList<>());
-            });
-
-            if (!measures.isEmpty())
+            try
             {
-                List<Map<String, Object>> replicates = new ArrayList<>();
-                for (Map.Entry<Lsid, List<Map<String, Object>>> entry : _replicateRows.entrySet())
-                {
-                    if (!entry.getValue().isEmpty())
-                    {
-                        // organize values for each replicate well group by measure
-                        for (Map<String, Object> row : entry.getValue())
-                        {
-                            for (Map.Entry<String, Object> col : row.entrySet())
-                            {
-                                if (measures.containsKey(col.getKey()) && col.getValue() != null)
-                                    measures.get(col.getKey()).add(Double.valueOf(String.valueOf(col.getValue())));
-                            }
-                        }
-
-                        Map<String, Object> replicateRow = new HashMap<>();
-                        replicates.add(replicateRow);
-                        replicateRow.put(PlateReplicateStatsDomainKind.Column.Lsid.name(), entry.getKey());
-                        replicateRow.put(PlateReplicateStatsDomainKind.Column.Run.name(), _run.getRowId());
-
-                        for (Map.Entry<String, List<Double>> measure : measures.entrySet())
-                        {
-                            MathStat stat = StatsService.get().getStats(measure.getValue());
-                            replicateRow.put(measure.getKey() + PlateReplicateStatsDomainKind.REPLICATE_MEAN_SUFFIX, stat.getMean());
-                            replicateRow.put(measure.getKey() + PlateReplicateStatsDomainKind.REPLICATE_STD_DEV_SUFFIX, stat.getStdDev());
-                        }
-                    }
-                }
-
-                if (!replicates.isEmpty())
-                {
-                    try
-                    {
-                        // persist to replicate stats table
-                        AssayProtocolSchema schema = _provider.createProtocolSchema(_user, _container, _protocol, null);
-                        TableInfo tableInfo = schema.createTable(TSVProtocolSchema.PLATE_REPLICATE_STATS_TABLE, null);
-                        if (tableInfo != null)
-                        {
-                            QueryUpdateService qus = tableInfo.getUpdateService();
-                            BatchValidationException errors = new BatchValidationException();
-                            qus.insertRows(_user, _container, replicates, errors, null, null);
-                            if (errors.hasErrors())
-                            {
-                                throw new ExperimentException(errors.getLastRowError());
-                            }
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        throw UnexpectedException.wrap(e);
-                    }
-                }
+                // compute replicate calculations and insert into the replicate stats table
+                AssayPlateMetadataService.get().insertReplicateStats(_container, _user, _protocol, _run, true, _replicateRows);
+            }
+            catch (ExperimentException e)
+            {
+                throw UnexpectedException.wrap(e);
             }
         }
     }

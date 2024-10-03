@@ -51,6 +51,7 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.assay.plate.AssayPlateTriggerFactory;
 import org.labkey.assay.plate.PlateReplicateStatsDomainKind;
 import org.labkey.assay.plate.query.PlateSchema;
 import org.labkey.assay.plate.query.WellTable;
@@ -161,6 +162,9 @@ public class TSVProtocolSchema extends AssayProtocolSchema
             List<FieldKey> defaultColumns = new ArrayList<>(getDefaultVisibleColumns());
             if (getProvider().isPlateMetadataEnabled(getProtocol()))
             {
+                // plate related triggers
+                addTriggerFactory(new AssayPlateTriggerFactory(getProtocol()));
+
                 // join to the well table which may have plate metadata
                 ColumnInfo wellLsidCol = getColumn(AssayResultDomainKind.WELL_LSID_COLUMN_NAME);
                 if (wellLsidCol != null)

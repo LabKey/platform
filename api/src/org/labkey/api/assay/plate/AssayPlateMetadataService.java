@@ -7,6 +7,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -19,6 +20,8 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.OptionalFeatureService;
 
 import java.io.File;
+import java.util.List;
+import java.util.Map;
 
 public interface AssayPlateMetadataService
 {
@@ -105,5 +108,28 @@ public interface AssayPlateMetadataService
         ExpProtocol protocol,
         GWTDomain<GWTPropertyDescriptor> update,
         Domain resultsDomain
+    ) throws ExperimentException;
+
+    /**
+     * Computes and inserts replicate statistics into the protocol schema table.
+     *
+     * @param run The run associated with the replicate values, only required in the insert case
+     * @param forInsert Boolean value to indicate insert or update of the table rows
+     * @param replicateRows The assay result rows grouped by replicate well lsid.
+     */
+    void insertReplicateStats(
+            Container container,
+            User user,
+            ExpProtocol protocol,
+            @Nullable ExpRun run,
+            boolean forInsert,
+            Map<Lsid, List<Map<String, Object>>> replicateRows
+    ) throws ExperimentException;
+
+    void deleteReplicateStats(
+            Container container,
+            User user,
+            ExpProtocol protocol,
+            List<Map<String, Object>> keys
     ) throws ExperimentException;
 }

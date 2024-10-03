@@ -66,7 +66,7 @@ public class PlateReplicateStatsDomainKind extends AssayDomainKind
     public Set<PropertyStorageSpec> getBaseProperties(Domain domain)
     {
         return Set.of(
-            new PropertyStorageSpec(Column.Lsid.name(), JdbcType.VARCHAR, 300).setNullable(false),
+            new PropertyStorageSpec(Column.Lsid.name(), JdbcType.VARCHAR, 300).setNullable(false).setPrimaryKey(true),
             new PropertyStorageSpec(Column.Run.name(), JdbcType.INTEGER).setNullable(false)
         );
     }
