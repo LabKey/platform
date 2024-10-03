@@ -234,7 +234,7 @@ public class AssaySampleLookupContext
         var isSynced = computed.first;
         var materialInputs = computed.second;
 
-        if (isSynced || materialInputs.isEmpty())
+        if (isSynced)
             return;
 
         try (var tx = ExperimentService.get().ensureTransaction())
@@ -242,10 +242,13 @@ public class AssaySampleLookupContext
             for (var pa : protocolApplications)
                 pa.removeAllMaterialInputs(user);
 
-            for (var entry : getInputGroups(materialInputs, inputLineageRoles).entrySet())
+            if (!materialInputs.isEmpty())
             {
-                for (var pa : protocolApplications)
-                    pa.addMaterialInputs(user, entry.getValue(), entry.getKey(), null);
+                for (var entry : getInputGroups(materialInputs, inputLineageRoles).entrySet())
+                {
+                    for (var pa : protocolApplications)
+                        pa.addMaterialInputs(user, entry.getValue(), entry.getKey(), null);
+                }
             }
 
             tx.commit();
