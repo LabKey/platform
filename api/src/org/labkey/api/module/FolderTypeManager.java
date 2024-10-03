@@ -23,6 +23,7 @@ import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.settings.StandardStartupPropertyHandler;
 import org.labkey.api.settings.StartupProperty;
@@ -242,7 +243,7 @@ public class FolderTypeManager
      */
     public void setEnabledFolderTypes(Collection<FolderType> enabledFolderTypes, FolderType defaultFolderType)
     {
-        PropertyManager.PropertyMap enabledStates = PropertyManager.getWritableProperties(ContainerManager.getRoot(), FOLDER_TYPE_ENABLED_STATE, true);
+        WritablePropertyMap enabledStates = PropertyManager.getWritableProperties(ContainerManager.getRoot(), FOLDER_TYPE_ENABLED_STATE, true);
         // Reset completely based on the supplied config
         enabledStates.clear();
         for (FolderType folderType : getAllFolderTypes())
@@ -253,7 +254,7 @@ public class FolderTypeManager
 
         if (defaultFolderType != null && enabledFolderTypes.contains(defaultFolderType))
         {
-            PropertyManager.PropertyMap propDefaultFolderType = PropertyManager.getWritableProperties(ContainerManager.getRoot(), FOLDER_TYPE_DEFAULT, true);
+            WritablePropertyMap propDefaultFolderType = PropertyManager.getWritableProperties(ContainerManager.getRoot(), FOLDER_TYPE_DEFAULT, true);
             propDefaultFolderType.put(FOLDER_TYPE_DEFAULT, defaultFolderType.getName());
             propDefaultFolderType.save();
         }
@@ -349,7 +350,7 @@ public class FolderTypeManager
     {
         if (value != null)
         {
-            PropertyManager.PropertyMap enabledStates = PropertyManager.getWritableProperties(ContainerManager.getRoot(), FOLDER_TYPE_ENABLED_STATE, true);
+            WritablePropertyMap enabledStates = PropertyManager.getWritableProperties(ContainerManager.getRoot(), FOLDER_TYPE_ENABLED_STATE, true);
             for (String folderTypeName : StringUtils.split(value, ';'))
                 enabledStates.put(folderTypeName, Boolean.toString(false));
             enabledStates.save();

@@ -17,6 +17,7 @@ package org.labkey.pipeline.mule;
 
 import org.labkey.api.data.DbScope;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.query.QueryService;
 
 /**
@@ -35,11 +36,13 @@ public class PipelineJobRunner
             // Set centrally to avoid needing to set in each job. See PipelineQueueImpl for equivalent functionality
             // when running through Enterprise Pipeline
             QueryService.get().setEnvironment(job);
+            PipelineJobService.get().trackJobThread(job);
             job.run();
         }
         finally
         {
             QueryService.get().clearEnvironment();
+            PipelineJobService.get().clearJobThread(job);
             DbScope.finishedWithThread();
         }
     }

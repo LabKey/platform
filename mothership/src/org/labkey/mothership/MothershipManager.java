@@ -27,6 +27,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
@@ -440,7 +441,7 @@ public class MothershipManager
         return getSchema().getSqlDialect();
     }
 
-    private PropertyManager.PropertyMap getWritableProperties(Container c)
+    private WritablePropertyMap getWritableProperties(Container c)
     {
         return PropertyManager.getWritableProperties(c, UPGRADE_MESSAGE_PROPERTY_CATEGORY, true);
     }
@@ -480,7 +481,7 @@ public class MothershipManager
 
     private void saveProperty(Container c, String name, String value)
     {
-        PropertyManager.PropertyMap props = getWritableProperties(c);
+        WritablePropertyMap props = getWritableProperties(c);
         props.put(name, value);
         props.save();
     }

@@ -31,6 +31,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
@@ -626,8 +627,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
 
     private static void setProp(String prop, String value, String mapName)
     {
-        PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(mapName, true);
-
+        WritablePropertyMap map = PropertyManager.getWritableProperties(mapName, true);
         map.put(prop, value);
         map.save();
     }

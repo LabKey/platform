@@ -18,6 +18,7 @@ package org.labkey.search.model;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
@@ -115,7 +116,7 @@ public class SearchPropertyManager
 
     private static void setProperty(String key, String value)
     {
-        PropertyManager.PropertyMap m = PropertyManager.getWritableProperties(CATEGORY, true);
+        WritablePropertyMap m = PropertyManager.getWritableProperties(CATEGORY, true);
         m.put(key, value);
         m.save();
     }

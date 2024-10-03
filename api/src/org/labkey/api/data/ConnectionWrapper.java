@@ -30,7 +30,6 @@ import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.LoggerWriter;
 import org.labkey.api.util.MemTracker;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.SimpleLoggerWriter;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ViewServlet;
@@ -53,9 +52,10 @@ import java.sql.Savepoint;
 import java.sql.Statement;
 import java.sql.Struct;
 import java.text.DateFormat;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -75,7 +75,7 @@ public class ConnectionWrapper implements java.sql.Connection
     private static final Logger packageLogger = LogManager.getLogger(ConnectionWrapper.class.getPackageName());
     private static final Logger LOG = LogHelper.getLogger(ConnectionWrapper.class, "All JDBC metadata and SQL execution calls being made");
 
-    private static final Map<ConnectionWrapper, Pair<Thread, Throwable>> _openConnections = Collections.synchronizedMap(new IdentityHashMap<>());
+    private static final Set<ConnectionWrapper> _openConnections = Collections.synchronizedSet(new HashSet<>());
     private static final Set<ConnectionWrapper> _loggedLeaks = new HashSet<>();
     private static final boolean _explicitLogger = initializeExplicitLogger();
     private static final AtomicLong COUNTER = new AtomicLong(0);
@@ -85,7 +85,8 @@ public class ConnectionWrapper implements java.sql.Connection
     private final Integer _spid;
     private final ConnectionType _type;
     private final java.util.Date _allocationTime = new java.util.Date();
-    private final String _allocatingThreadName;
+    private final Thread _allocatingThread;
+    private final Throwable _allocation;
     private final Set<String> _referencingThreadNames = Collections.synchronizedSet(new TreeSet<>());
     private final @NotNull Logger _log;
     private final long _count;
@@ -120,10 +121,11 @@ public class ConnectionWrapper implements java.sql.Connection
         _count = COUNTER.incrementAndGet(); // For ease of tracking connections, assign each a unique, incrementing ID
 
         MemTracker.getInstance().put(this);
-        _allocatingThreadName = Thread.currentThread().getName();
-        _referencingThreadNames.add(_allocatingThreadName);
+        _allocatingThread = Thread.currentThread();
+        _allocation = new Throwable();
+        _referencingThreadNames.add(_allocatingThread.getName());
 
-        _openConnections.put(this, new Pair<>(Thread.currentThread(), new Throwable()));
+        _openConnections.add(this);
 
         _log = log != null ? log : getConnectionLogger();
     }
@@ -168,15 +170,39 @@ public class ConnectionWrapper implements java.sql.Connection
     {
         synchronized (_openConnections)
         {
-            for (Pair<Thread, Throwable> p : _openConnections.values())
+            for (ConnectionWrapper w : _openConnections)
             {
-                String thread = p.first.getName();
-                Throwable t = p.second;
-                logWriter.debug("Connection opened on thread: " + thread, t);
+                String thread = w._allocatingThread.getName();
+                logWriter.debug("Connection opened on thread: " + thread, w._allocation);
             }
         }
 
         return true;
+    }
+
+    public static void closeConnections(Thread thread)
+    {
+        List<ConnectionWrapper> toClose = new ArrayList<>();
+
+        synchronized (_openConnections)
+        {
+            for (ConnectionWrapper c : _openConnections)
+            {
+                if (c._allocatingThread == thread)
+                {
+                    toClose.add(c);
+                }
+            }
+        }
+
+        for (ConnectionWrapper connectionWrapper : toClose)
+        {
+            try
+            {
+                connectionWrapper.close(thread);
+            }
+            catch (SQLException ignored) {}
+        }
     }
 
     public static boolean dumpOpenConnections(@NotNull Logger log)
@@ -199,18 +225,15 @@ public class ConnectionWrapper implements java.sql.Connection
     public static boolean dumpLeaksForThread(Thread t, LoggerWriter log)
     {
         boolean leaks = false;
-        synchronized(_openConnections)
+        synchronized (_openConnections)
         {
-            for (Map.Entry<ConnectionWrapper, Pair<Thread, Throwable>> entry : _openConnections.entrySet())
+            for (ConnectionWrapper connection : _openConnections)
             {
-                ConnectionWrapper connection = entry.getKey();
-                Thread connectionThread = entry.getValue().getKey();
-                Throwable throwable = entry.getValue().second;
-                if (connectionThread == t)
+                if (connection._allocatingThread == t)
                 {
                     if (!_loggedLeaks.contains(connection))
                     {
-                        log.error("Probable connection leak for thread '" + t.getName() + "', connection was acquired at: ", throwable);
+                        log.error("Probable connection leak for thread '" + t.getName() + "', connection was acquired at: ", connection._allocation);
                         _loggedLeaks.add(connection);
                         leaks = true;
                     }
@@ -225,8 +248,8 @@ public class ConnectionWrapper implements java.sql.Connection
         synchronized(_openConnections)
         {
             HashSetValuedHashMap<Thread,Integer> result = new HashSetValuedHashMap<>();
-            for (Map.Entry<ConnectionWrapper, Pair<Thread, Throwable>> entry : _openConnections.entrySet())
-                    result.put(entry.getValue().getKey(), entry.getKey()._spid);
+            for (ConnectionWrapper c : _openConnections)
+                    result.put(c._allocatingThread, c._spid);
             return result;
         }
     }
@@ -236,11 +259,11 @@ public class ConnectionWrapper implements java.sql.Connection
         Set<Integer> result = new HashSet<>();
         synchronized(_openConnections)
         {
-            for (Map.Entry<ConnectionWrapper, Pair<Thread, Throwable>> entry : _openConnections.entrySet())
+            for (ConnectionWrapper c : _openConnections)
             {
-                if (entry.getValue().getKey() == t)
+                if (c._allocatingThread == t)
                 {
-                    result.add(entry.getKey()._spid);
+                    result.add(c._spid);
                 }
             }
         }
@@ -376,9 +399,14 @@ public class ConnectionWrapper implements java.sql.Connection
     @Override
     public void close() throws SQLException
     {
+        close(Thread.currentThread());
+    }
+
+    public void close(Thread thread) throws SQLException
+    {
         DbScope.Transaction t;
 
-        if (_type != ConnectionType.Pooled && null != (t = _scope.getCurrentTransaction()))
+        if (_type != ConnectionType.Pooled && null != (t = _scope.getTransactionImpl(thread)))
         {
             assert t.getConnection() == this : "Attempting to close a different connection from the one associated with this thread: " + this + " vs " + t.getConnection(); //Should release same conn we handed out
         }
@@ -890,7 +918,7 @@ public class ConnectionWrapper implements java.sql.Connection
     @Override
     public String toString()
     {
-        return "Connection wrapper " + _count + " for SPID " + _spid + ", originally allocated to thread " + _allocatingThreadName + " at " + DateFormat.getInstance().format(_allocationTime) + ", real connection: " + System.identityHashCode(_connection) + " - " + _connection.getClass() + (_referencingThreadNames.size() > 1 ? (", accessed by threads: " + _referencingThreadNames) : "");
+        return "Connection wrapper " + _count + " for SPID " + _spid + ", originally allocated to thread " + _allocatingThread.getName() + " at " + DateFormat.getInstance().format(_allocationTime) + ", real connection: " + System.identityHashCode(_connection) + " - " + _connection.getClass() + (_referencingThreadNames.size() > 1 ? (", accessed by threads: " + _referencingThreadNames) : "");
     }
 
 

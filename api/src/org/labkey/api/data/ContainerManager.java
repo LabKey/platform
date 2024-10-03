@@ -46,6 +46,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.data.Container.ContainerException;
 import org.labkey.api.data.Container.LockState;
+import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.data.SimpleFilter.InClause;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.validator.ColumnValidators;
@@ -427,7 +428,7 @@ public class ContainerManager
 
     public static void setRequireAuditComments(Container container, User user, @NotNull Boolean required)
     {
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(container, AUDIT_SETTINGS_PROPERTY_SET_NAME, true);
+        WritablePropertyMap props = PropertyManager.getWritableProperties(container, AUDIT_SETTINGS_PROPERTY_SET_NAME, true);
         String originalValue = props.get(REQUIRE_USER_COMMENTS_PROPERTY_NAME);
         props.put(REQUIRE_USER_COMMENTS_PROPERTY_NAME, required.toString());
         props.save();
@@ -488,7 +489,7 @@ public class ContainerManager
         if (errorStrings.isEmpty())
         {
             oldType.unconfigureContainer(c, user);
-            PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, FOLDER_TYPE_PROPERTY_SET_NAME, true);
+            WritablePropertyMap props = PropertyManager.getWritableProperties(c, FOLDER_TYPE_PROPERTY_SET_NAME, true);
             props.put(FOLDER_TYPE_PROPERTY_NAME, folderType.getName());
 
             if (c.isContainerTab())
@@ -703,14 +704,14 @@ public class ContainerManager
     private static void setContainerTabDeleted(Container c, String tabName, String folderTypeName)
     {
         // Add prop in this category <tabName, folderTypeName>
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, TABFOLDER_CHILDREN_DELETED, true);
+        WritablePropertyMap props = PropertyManager.getWritableProperties(c, TABFOLDER_CHILDREN_DELETED, true);
         props.put(getDeletedTabKey(tabName, folderTypeName), "true");
         props.save();
     }
 
     public static void clearContainerTabDeleted(Container c, String tabName, String folderTypeName)
     {
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, TABFOLDER_CHILDREN_DELETED, true);
+        WritablePropertyMap props = PropertyManager.getWritableProperties(c, TABFOLDER_CHILDREN_DELETED, true);
         String key = getDeletedTabKey(tabName, folderTypeName);
         if (props.containsKey(key))
         {
