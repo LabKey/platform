@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.LabKeyError;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.security.ValidEmail;
 import org.springframework.validation.BindException;
 
@@ -109,7 +110,7 @@ public class RemoteConnections
 
         // save the connection name in connectionMap
         String connectionsCategory = CONNECTION_KIND_QUERY.equals(connectionKind) ? REMOTE_QUERY_CONNECTIONS_CATEGORY : REMOTE_FILE_CONNECTIONS_CATEGORY;
-        PropertyManager.PropertyMap connectionMap = PropertyManager.getEncryptedStore().getWritableProperties(container, connectionsCategory, true);
+        WritablePropertyMap connectionMap = PropertyManager.getEncryptedStore().getWritableProperties(container, connectionsCategory, true);
         if ((!editing || changingName) && connectionMap.containsKey(makeRemoteConnectionKey(connectionsCategory, newName)))
         {
             errors.addError(new LabKeyError("There is already a remote connection with the name '" + newName + "'."));
@@ -128,7 +129,7 @@ public class RemoteConnections
         connectionMap.save();
 
         // save the properties for the individual connection in the encrypted property store
-        PropertyManager.PropertyMap singleConnectionMap = PropertyManager.getEncryptedStore().getWritableProperties(container, newNameKey, true);
+        WritablePropertyMap singleConnectionMap = PropertyManager.getEncryptedStore().getWritableProperties(container, newNameKey, true);
         singleConnectionMap.put(RemoteConnections.FIELD_URL, url);
         singleConnectionMap.put(RemoteConnections.FIELD_USER, user);
         singleConnectionMap.put(RemoteConnections.FIELD_PASSWORD, password);
@@ -144,7 +145,7 @@ public class RemoteConnections
 
         // delete the index
         String connectionsCategory = CONNECTION_KIND_QUERY.equals(remoteConnectionForm.getConnectionKind()) ? REMOTE_QUERY_CONNECTIONS_CATEGORY : REMOTE_FILE_CONNECTIONS_CATEGORY;
-        PropertyManager.PropertyMap connectionMap = PropertyManager.getEncryptedStore().getWritableProperties(container, connectionsCategory, false);
+        WritablePropertyMap connectionMap = PropertyManager.getEncryptedStore().getWritableProperties(container, connectionsCategory, false);
         connectionMap.remove(makeRemoteConnectionKey(connectionsCategory, name));
         connectionMap.save();
 

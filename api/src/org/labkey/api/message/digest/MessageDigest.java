@@ -18,6 +18,7 @@ package org.labkey.api.message.digest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.JobRunner;
 import org.quartz.Job;
@@ -132,7 +133,7 @@ public abstract class MessageDigest
 
     private void setLastSuccessful(Date last)
     {
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(getName(), true);
+        WritablePropertyMap props = PropertyManager.getWritableProperties(getName(), true);
         props.put(LAST_KEY, String.valueOf(last.getTime()));
         props.save();
     }

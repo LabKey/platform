@@ -16,6 +16,7 @@
 
 package org.labkey.wiki;
 
+import jakarta.servlet.ServletException;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
@@ -42,6 +43,7 @@ import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeManager;
@@ -98,7 +100,6 @@ import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
-import jakarta.servlet.ServletException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -2308,7 +2309,7 @@ public class WikiController extends SpringActionController
 
             //save the user's new page format so we can use it
             //as the default for the next new page
-            PropertyManager.PropertyMap properties = PropertyManager.getWritableProperties(
+            WritablePropertyMap properties = PropertyManager.getWritableProperties(
                     user, c, SetEditorPreferenceAction.CAT_EDITOR_PREFERENCE, true);
             properties.put(PROP_DEFAULT_FORMAT, wikiversion.getRendererTypeEnum().name());
             properties.save();
@@ -2659,7 +2660,7 @@ public class WikiController extends SpringActionController
         public ApiResponse execute(SetEditorPreferenceForm form, BindException errors)
         {
             //save user's editor preference
-            PropertyManager.PropertyMap properties = PropertyManager.getWritableProperties(
+            WritablePropertyMap properties = PropertyManager.getWritableProperties(
                     getUser(), getContainer(),
                     CAT_EDITOR_PREFERENCE, true);
             properties.put(PROP_USE_VISUAL_EDITOR, String.valueOf(form.isUseVisual()));
@@ -2694,7 +2695,7 @@ public class WikiController extends SpringActionController
         public ApiResponse execute(SetTocPreferenceForm form, BindException errors)
         {
             //use the same category as editor preference to save on storage
-            PropertyManager.PropertyMap properties = PropertyManager.getWritableProperties(
+            WritablePropertyMap properties = PropertyManager.getWritableProperties(
                     getUser(), getContainer(),
                     SetEditorPreferenceAction.CAT_EDITOR_PREFERENCE, true);
             properties.put(PROP_TOC_DISPLAYED, String.valueOf(form.isDisplayed()));

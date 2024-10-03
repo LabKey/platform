@@ -24,7 +24,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.PropertyManager;
-import org.labkey.api.data.PropertyManager.PropertyMap;
+import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FilteredTable;
@@ -148,7 +148,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<UserSchema>
         {
             synchronized (_container)
             {
-                PropertyMap typeNameIdMapWritable = PropertyManager.getWritableProperties(_container, CATEGORY_NAME, true);
+                WritablePropertyMap typeNameIdMapWritable = PropertyManager.getWritableProperties(_container, CATEGORY_NAME, true);
 
                 String keyWithId = getKeyWithId(key, rowId);
                 if (!typeNameIdMapWritable.containsKey(keyWithId))

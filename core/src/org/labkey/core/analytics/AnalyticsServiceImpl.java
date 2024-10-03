@@ -21,6 +21,7 @@ import org.labkey.api.analytics.AnalyticsService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AbstractWriteableSettingsGroup;
@@ -268,7 +269,7 @@ public class AnalyticsServiceImpl implements AnalyticsService
 
     public static void populateSettingsWithStartupProps()
     {
-        PropertyManager.PropertyMap properties = PropertyManager.getWritableProperties(PROP_CATEGORY, true);
+        WritablePropertyMap properties = PropertyManager.getWritableProperties(PROP_CATEGORY, true);
         ModuleLoader.getInstance().handleStartupProperties(new StandardStartupPropertyHandler<>(PROP_CATEGORY, AnalyticsProperty.class)
         {
             @Override
