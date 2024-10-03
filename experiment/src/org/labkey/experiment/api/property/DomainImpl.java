@@ -558,7 +558,10 @@ public class DomainImpl implements Domain
             {
                 DomainDescriptor ddCheck = OntologyManager.getDomainDescriptor(_dd.getDomainId());
                 if (saveOnlyIfNotExists && null != ddCheck)
+                {
+                    transaction.commit();
                     return;
+                }
                 if (!isDomainNew && !JdbcUtil.rowVersionEqual(ddCheck.get_Ts(), _dd.get_Ts()))
                     throw new OptimisticConflictException("Domain has been updated by another user or process.", Table.SQLSTATE_TRANSACTION_STATE, 0);
             }
