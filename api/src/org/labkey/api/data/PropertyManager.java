@@ -831,10 +831,10 @@ public class PropertyManager
             assertFalse(map.containsKey("zoo"));
 
             // Test immutability of PropertyMap
-            assertThrows(IllegalStateException.class, () -> map.put("bar", "blue"));
-            assertThrows(IllegalStateException.class, () -> map.putAll(Map.of("foo", "bar", "color", "red")));
-            assertThrows(IllegalStateException.class, () -> map.remove("foo"));
-            assertThrows(IllegalStateException.class, map::clear);
+            assertThrows(UnsupportedOperationException.class, () -> map.put("bar", "blue"));
+            assertThrows(UnsupportedOperationException.class, () -> map.putAll(Map.of("foo", "bar", "color", "red")));
+            assertThrows(UnsupportedOperationException.class, () -> map.remove("foo"));
+            assertThrows(UnsupportedOperationException.class, map::clear);
         }
 
         @Test
