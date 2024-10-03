@@ -944,7 +944,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         Lsid.LsidBuilder builder = new Lsid.LsidBuilder(ExpData.DEFAULT_CPAS_TYPE, "");
         for (FileLike dataFile : inputDataFiles)
         {
-            ExpData data = ExperimentService.get().getExpDataByURL(dataFile.toURI().toString(), context.getContainer());
+            ExpData data = ExperimentService.get().getExpDataByURL(dataFile.toNioPathForRead().toFile(), context.getContainer());
             if (data == null)
             {
                 data = ExperimentService.get().createData(context.getContainer(), dataType, dataFile.getName());
