@@ -224,6 +224,10 @@ public class SecurityManager
         };
     }
 
+    /**
+     * @param key short description of the purpose of the allowed connection. Mostly to make it possible to update
+     *            afterward in the case of dynamically configured sources.
+     */
     public static void registerAllowedConnectionSource(String key, String serviceURL)
     {
         if (StringUtils.trimToNull(serviceURL) == null)
