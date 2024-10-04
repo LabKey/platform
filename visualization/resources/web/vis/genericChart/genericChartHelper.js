@@ -1026,7 +1026,8 @@ LABKEY.vis.GenericChartHelper = new function(){
                 renderTo: renderTo,
                 rendererType: 'd3',
                 width: chartConfig.width,
-                height: chartConfig.height
+                height: chartConfig.height,
+                gridLinesVisible: chartConfig.gridLinesVisible,
             };
 
         if (renderType === 'pie_chart') {
@@ -1181,7 +1182,7 @@ LABKEY.vis.GenericChartHelper = new function(){
     var _willRotateXAxisTickText = function(scales, plotConfig, maxTickLength, data) {
         if (scales.x && scales.x.scaleType === 'discrete') {
             var tickCount = scales.x && scales.x.tickLabelMax ? Math.min(scales.x.tickLabelMax, data.length) : data.length;
-            return (tickCount * maxTickLength * 5) > (plotConfig.width - 150);
+            return (tickCount * maxTickLength * 4) > (plotConfig.width - 150);
         }
 
         return false;
@@ -1195,15 +1196,17 @@ LABKEY.vis.GenericChartHelper = new function(){
             var maxLen = 0;
             $.each(data, function(idx, d) {
                 var val = LABKEY.Utils.isFunction(aes.x) ? aes.x(d) : d[aes.x];
-                if (LABKEY.Utils.isString(val)) {
+                var subVal = LABKEY.Utils.isFunction(aes.xSub) ? aes.xSub(d) : d[aes.xSub];
+                if (LABKEY.Utils.isString(subVal)) {
+                    maxLen = Math.max(maxLen, subVal.length);
+                } else if (LABKEY.Utils.isString(val)) {
                     maxLen = Math.max(maxLen, val.length);
                 }
             });
 
             if (_willRotateXAxisTickText(scales, plotConfig, maxLen, data)) {
-                // min bottom margin: 50, max bottom margin: 275
-                var bottomMargin = Math.min(Math.max(50, maxLen*5), 275);
-                margins.bottom = bottomMargin;
+                // min bottom margin: 50, max bottom margin: 150
+                margins.bottom = Math.min(Math.max(50, maxLen*5), 175);
             }
         }
 

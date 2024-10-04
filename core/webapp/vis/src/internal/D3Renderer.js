@@ -15,7 +15,7 @@ LABKEY.vis.internal.Axis = function() {
         tickRectCls, tickRectHeightOffset = 12, tickRectWidthOffset = 8, tickClick, axisSel, tickSel, textSel, gridLineSel,
         borderSel, grid, scalesList = [], gridLinesVisible = 'both', tickDigits, tickValues, tickMax, tickLabelMax,
         tickColor = '#000000', tickTextColor = '#000000', gridLineColor = '#DDDDDD', borderColor = '#000000',
-        tickPadding = 0, tickLength = 8, tickWidth = 1, tickOverlapRotation = 15, gridLineWidth = 1, borderWidth = 1,
+        tickPadding = 0, tickLength = 8, tickWidth = 1, tickOverlapRotation = 25, gridLineWidth = 1, borderWidth = 1,
         fontFamily = 'Roboto, arial, helvetica, sans-serif', fontSize = 11, adjustedStarts, adjustedEnds, xLogGutterBorder = 0, yLogGutterBorder = 0,
         yGutterXOffset = 0, xGutterYOffset = 0, addLogGutterLabel = false, xGridExtension = 0, yGridExtension = 0, logGutterSel;
 
