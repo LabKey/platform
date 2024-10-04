@@ -15,6 +15,18 @@
  */
 package org.labkey.core.notification;
 
+import jakarta.activation.DataHandler;
+import jakarta.activation.DataSource;
+import jakarta.activation.FileDataSource;
+import jakarta.mail.BodyPart;
+import jakarta.mail.Message;
+import jakarta.mail.MessagingException;
+import jakarta.mail.Part;
+import jakarta.mail.internet.InternetAddress;
+import jakarta.mail.internet.MimeBodyPart;
+import jakarta.mail.internet.MimeMessage;
+import jakarta.mail.internet.MimeMultipart;
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -24,7 +36,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
-import org.labkey.api.data.PropertyManager.PropertyMap;
+import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.notification.EmailMessage;
@@ -40,18 +52,6 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.WebPartView;
 import org.springframework.mock.web.MockHttpServletResponse;
 
-import jakarta.activation.DataHandler;
-import jakarta.activation.DataSource;
-import jakarta.activation.FileDataSource;
-import jakarta.mail.BodyPart;
-import jakarta.mail.Message;
-import jakarta.mail.MessagingException;
-import jakarta.mail.Part;
-import jakarta.mail.internet.InternetAddress;
-import jakarta.mail.internet.MimeBodyPart;
-import jakarta.mail.internet.MimeMessage;
-import jakarta.mail.internet.MimeMultipart;
-import jakarta.servlet.http.HttpServletRequest;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -109,7 +109,7 @@ public class EmailServiceImpl implements EmailService
     @Override
     public void setEmailPref(User user, Container container, EmailPref pref, String value)
     {
-        PropertyMap props = PropertyManager.getWritableProperties(user, container, EMAIL_PREF_CATEGORY, true);
+        WritablePropertyMap props = PropertyManager.getWritableProperties(user, container, EMAIL_PREF_CATEGORY, true);
         props.put(pref.getId(), value);
 
         props.save();
@@ -160,9 +160,8 @@ public class EmailServiceImpl implements EmailService
     @Override
     public void setDefaultEmailPref(Container container, EmailPref pref, String value)
     {
-        PropertyMap props = PropertyManager.getWritableProperties(container, EMAIL_PREF_CATEGORY, true);
+        WritablePropertyMap props = PropertyManager.getWritableProperties(container, EMAIL_PREF_CATEGORY, true);
         props.put(pref.getId(), value);
-
         props.save();
     }
 

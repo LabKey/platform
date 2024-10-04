@@ -47,6 +47,7 @@ import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.Project;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.PropertyMap;
+import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
@@ -293,7 +294,7 @@ public class AuthenticationManager
 
     private static void saveAuthSetting(User user, String key, String value, String action)
     {
-        PropertyMap props = PropertyManager.getWritableProperties(AUTHENTICATION_CATEGORY, true);
+        WritablePropertyMap props = PropertyManager.getWritableProperties(AUTHENTICATION_CATEGORY, true);
         props.put(key, value);
         addAuthSettingAuditEvent(user, key, action);
         props.save();

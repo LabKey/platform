@@ -16,6 +16,7 @@
 package org.labkey.api.security;
 
 import com.google.common.primitives.Bytes;
+import jakarta.servlet.ServletContext;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -30,7 +31,7 @@ import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.EncryptedPropertyStore;
 import org.labkey.api.data.PropertyManager;
-import org.labkey.api.data.PropertyManager.PropertyMap;
+import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.data.PropertyStore;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.permissions.TroubleshooterPermission;
@@ -53,7 +54,6 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
-import jakarta.servlet.ServletContext;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -139,7 +139,7 @@ public class Encryption
                     PropertyManager.deleteSetDirectly(PropertyManager.SHARED_USER, ContainerManager.getRoot().getId(), TEST_ENCRYPTION_CATEGORY, (EncryptedPropertyStore)PropertyManager.getEncryptedStore());
 
                 // This will likely throw if the encryption key has changed
-                PropertyMap map = PropertyManager.getEncryptedStore().getWritableProperties(TEST_ENCRYPTION_CATEGORY, true);
+                WritablePropertyMap map = PropertyManager.getEncryptedStore().getWritableProperties(TEST_ENCRYPTION_CATEGORY, true);
 
                 if (map.isEmpty())
                 {
@@ -246,7 +246,7 @@ public class Encryption
         if (null != salt)
             return Base64.decodeBase64(salt);
 
-        PropertyMap map = store.getWritableProperties(CATEGORY, true);
+        WritablePropertyMap map = store.getWritableProperties(CATEGORY, true);
         byte[] bytes = generateRandomBytes(16);
         map.put(SALT_KEY, Base64.encodeBase64String(bytes));
 

@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
@@ -119,7 +120,7 @@ public interface TemplateProperties
 
     private void setProperty(String propName, String value)
     {
-        PropertyManager.PropertyMap map;
+        WritablePropertyMap map;
         Container container = getContainer();
 
         if (container != null)

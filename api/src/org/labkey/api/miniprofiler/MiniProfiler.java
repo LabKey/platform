@@ -23,6 +23,7 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.TroubleshooterPermission;
@@ -139,7 +140,7 @@ public class MiniProfiler
         // Troubleshooting stacktraces are site-wide only
         setCollectTroubleshootingStackTraces(settings._collectTroubleshootingStackTraces);
 
-        PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(user, ContainerManager.getRoot(), CATEGORY, true);
+        WritablePropertyMap map = PropertyManager.getWritableProperties(user, ContainerManager.getRoot(), CATEGORY, true);
         SETTINGS_FACTORY.toStringMap(settings, map);
         map.save();
         SETTINGS_CACHE.remove(user);

@@ -50,6 +50,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.data.PropertyStore;
 import org.labkey.api.data.QueryLogging;
 import org.labkey.api.data.RuntimeSQLException;
@@ -1274,7 +1275,7 @@ public class OlapController extends SpringActionController
 
     private void updateSinglePageAppContext(Container c, String contextName, JSONObject defaults, JSONObject values)
     {
-        PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(c, APP_CONTEXT_CATEGORY + ":" + contextName, true);
+        WritablePropertyMap map = PropertyManager.getWritableProperties(c, APP_CONTEXT_CATEGORY + ":" + contextName, true);
         if (defaults != null)
             map.put(APP_CONTEXT_DEFAULTS, defaults.toString(APP_CONTEXT_JSON_INDENT));
 
@@ -1283,12 +1284,11 @@ public class OlapController extends SpringActionController
 
         map.save();
 
-        PropertyManager.PropertyMap allContexts = PropertyManager.getWritableProperties(c, APP_CONTEXT_CATEGORY, true);
+        WritablePropertyMap allContexts = PropertyManager.getWritableProperties(c, APP_CONTEXT_CATEGORY, true);
         allContexts.put(contextName, contextName);
         allContexts.save();
     }
 
-    @NotNull
     private void deleteSinglePageAppContexts(Container c, String contextName)
     {
         // Delete the context settings
@@ -1522,7 +1522,7 @@ public class OlapController extends SpringActionController
         @Override
         public Object execute(AppForm form, BindException errors)
         {
-            PropertyManager.PropertyMap activeAppConfig = PropertyManager.getWritableProperties(getContainer(), APP_ACTIVE_CONFIG_CATEGORY, true);
+            WritablePropertyMap activeAppConfig = PropertyManager.getWritableProperties(getContainer(), APP_ACTIVE_CONFIG_CATEGORY, true);
             activeAppConfig.put("configId", form.getConfigId());
             activeAppConfig.put("name", form.getName());
             activeAppConfig.put("schemaName", form.getSchemaName());

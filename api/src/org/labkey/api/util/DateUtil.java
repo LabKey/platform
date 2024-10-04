@@ -1160,7 +1160,7 @@ validNum:       {
         return formatIsoDate(new Date());
     }
 
-    @Deprecated // Use formatIsoDate();
+    @Deprecated // Use formatIsoDate(Date);
     public static String formatDateISO8601(@Nullable Date date)
     {
         return formatIsoDate(date);
@@ -1175,7 +1175,7 @@ validNum:       {
         return formatDateTime(date, ISO_DATE_FORMAT_STRING);
     }
 
-    @Deprecated // Use formatIsoDateShortTime() instead
+    @Deprecated // Use formatIsoDateShortTime(Date) instead
     public static String formatDateTimeISO8601(Date date)
     {
         return formatIsoDateShortTime(date);

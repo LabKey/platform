@@ -31,7 +31,7 @@ import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.PropertyManager.PropertyMap;
+import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.Module;
@@ -1057,9 +1057,8 @@ public class Container implements Serializable, Comparable<Container>, Securable
     {
         if (module == null)
             return;
-        PropertyMap props = PropertyManager.getWritableProperties(this, "defaultModules", true);
+        WritablePropertyMap props = PropertyManager.getWritableProperties(this, "defaultModules", true);
         props.put("name", module.getName());
-
         props.save();
         ContainerManager.notifyContainerChange(getId(), ContainerManager.Property.Modules);
         _defaultModule = null;
@@ -1079,7 +1078,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         }
 
         boolean userHasEnableRestrictedModules = hasEnableRestrictedModules(user);
-        PropertyMap props = PropertyManager.getWritableProperties(this, "activeModules", true);
+        WritablePropertyMap props = PropertyManager.getWritableProperties(this, "activeModules", true);
         props.clear();
         for (Module module : modules)
         {
@@ -1199,7 +1198,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         if (props.isEmpty() && init && null != ContainerManager.getForId(getId()))
         {
             //initialize properties cache
-            PropertyMap propsWritable = PropertyManager.getWritableProperties(this, "activeModules", true);
+            WritablePropertyMap propsWritable = PropertyManager.getWritableProperties(this, "activeModules", true);
             props = propsWritable;
 
             if (isProject())
