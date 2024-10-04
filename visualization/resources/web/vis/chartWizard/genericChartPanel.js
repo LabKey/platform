@@ -921,7 +921,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 columns.push(this.autoColumnName.toString());
             }
 
-            Ext4.each(['color', 'shape', 'series'], function(name) {
+            Ext4.each(['ySub', 'xSub', 'color', 'shape', 'series'], function(name) {
                 if (measures[name]) {
                     this.addMeasureForColumnQuery(columns, measures[name]);
                 }
