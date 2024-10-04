@@ -311,7 +311,7 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
         }
 
         // don't attempt to add a notification if the Container has been deleted or is deleting
-        if (ContainerManager.getForId(job.getContainerId()) == null || ContainerManager.isMutating(job.getContainer()) == ContainerManager.MutatingOperation.delete)
+        if (!ContainerManager.exists(job.getContainer()))
         {
             job.getLogger().info("Job container has been deleted or is being deleted; skipping notification for '{}'", Objects.toString(job.getDescription(), job.toString()));
             return;

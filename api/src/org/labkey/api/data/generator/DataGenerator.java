@@ -177,7 +177,7 @@ public class DataGenerator<T extends DataGenerator.Config>
             throw new CancelledException();
         }
 
-        if (ContainerManager.isMutating(c) == ContainerManager.MutatingOperation.delete)
+        if (!ContainerManager.exists(c))
         {
             job.warn("Container is being deleted: " + c.getPath());
             throw new CancelledException();

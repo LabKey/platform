@@ -1838,11 +1838,6 @@ public class ContainerManager
         };
     }
 
-    public static MutatingOperation isMutating(final Container c)
-    {
-        return mutatingContainers.get(c.getRowId());
-    }
-
     // Delete containers from the database
     private static boolean delete(final Collection<Container> containers, User user, @Nullable String comment)
     {
@@ -1870,7 +1865,7 @@ public class ContainerManager
     private static boolean delete(final Container c, User user, @Nullable String comment)
     {
         // Verify method isn't called inappropriately
-        if (isMutating(c) != MutatingOperation.delete)
+        if (mutatingContainers.get(c.getRowId()) != MutatingOperation.delete)
         {
             throw new IllegalStateException("Container not flagged as being deleted: " + c.getPath());
         }
@@ -1972,10 +1967,10 @@ public class ContainerManager
          return c.equals(getRoot()) || c.equals(getHomeContainer()) || c.equals(getSharedContainer());
     }
 
-    // Has Container been deleted or is it in the process of being deleted?
-    public static boolean exists(Container c)
+    /** Has the container already been deleted or is it in the process of being deleted? */
+    public static boolean exists(@Nullable Container c)
     {
-        return null != getForId(c.getEntityId()) && isMutating(c) != MutatingOperation.delete;
+        return c != null && null != getForId(c.getEntityId()) && mutatingContainers.get(c.getRowId()) != MutatingOperation.delete;
     }
 
     public static void deleteAll(Container root, User user, @Nullable String comment) throws UnauthorizedException

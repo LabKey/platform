@@ -533,7 +533,7 @@ public class ListManager implements SearchService.DocumentProvider
             Runnable r = () ->
             {
                 Container c = def.lookupContainer();
-                if (c == null || ContainerManager.isMutating(c) == ContainerManager.MutatingOperation.delete)
+                if (!ContainerManager.exists(c))
                 {
                     LOG.info("List container has been deleted or is being deleted; not indexing list \"" + def.getName() + "\"");
                 }
