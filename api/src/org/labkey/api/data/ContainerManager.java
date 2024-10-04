@@ -30,6 +30,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.Constants;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderImportContext;
@@ -1817,12 +1818,12 @@ public class ContainerManager
                 {
                     if (!isDeletable(container))
                     {
-                        throw new IllegalArgumentException("Cannot delete container: " + container.getPath());
+                        throw new ApiUsageException("Cannot delete container: " + container.getPath());
                     }
 
                     if (deletingContainers.containsKey(container.getId()))
                     {
-                        throw new IllegalArgumentException("Container is already being deleted: " + container.getPath());
+                        throw new ApiUsageException("Container is already being deleted: " + container.getPath());
                     }
                 }
                 containerIds.forEach(id -> deletingContainers.put(id, user.getUserId()));
@@ -2666,7 +2667,7 @@ public class ContainerManager
 
     public static int updateContainer(TableInfo dataTable, String idField, Collection<?> ids, Container targetContainer, User user, boolean withModified)
     {
-        try (DbScope.Transaction transaction = ensureTransaction())
+        try (DbScope.Transaction transaction = dataTable.getSchema().getScope().ensureTransaction())
         {
             SQLFragment dataUpdate = new SQLFragment("UPDATE ").append(dataTable)
                     .append(" SET container = ").appendValue(targetContainer.getEntityId());

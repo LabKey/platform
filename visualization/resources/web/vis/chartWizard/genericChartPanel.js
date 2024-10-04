@@ -632,6 +632,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if (!this.savePanel)
         {
             this.savePanel = Ext4.create('LABKEY.vis.SaveOptionsPanel', {
+                allowInherit: this.allowInherit,
                 canEdit: this.canEdit,
                 canShare: this.canShare,
                 listeners: {
@@ -920,7 +921,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 columns.push(this.autoColumnName.toString());
             }
 
-            Ext4.each(['color', 'shape', 'series'], function(name) {
+            Ext4.each(['ySub', 'xSub', 'color', 'shape', 'series'], function(name) {
                 if (measures[name]) {
                     this.addMeasureForColumnQuery(columns, measures[name]);
                 }
@@ -1079,6 +1080,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         reportConfig.description = data.reportDescription;
 
         reportConfig["public"] = data.shared;
+        reportConfig.inheritable = data.inheritable;
         reportConfig.thumbnailType =  data.thumbnailType;
         reportConfig.svg = this.chartSVG;
 
@@ -1189,6 +1191,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             name: config.name,
             description: config.description,
             shared: config.shared,
+            inheritable: config.inheritable,
             reportProps: config.reportProps,
             thumbnailURL: config.thumbnailURL
         });

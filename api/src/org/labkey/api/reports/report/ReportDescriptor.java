@@ -288,6 +288,11 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
         _wasShared = true;
     }
 
+    public boolean isInheritable()
+    {
+        return (getFlags() & FLAG_INHERITABLE) != 0;
+    }
+
     @Nullable
     public Integer getAuthor()
     {
@@ -780,7 +785,7 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
             // if the report has been configured to be shared to child folders or is in the shared folder then
             // flag it as inherited.
             //
-            if (((getFlags() & ReportDescriptor.FLAG_INHERITABLE) != 0) || (ContainerManager.getSharedContainer().equals(srcContainer)))
+            if (isInheritable() || (ContainerManager.getSharedContainer().equals(srcContainer)))
             {
                 return !c.equals(srcContainer);
             }
