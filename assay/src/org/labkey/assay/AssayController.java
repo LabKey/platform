@@ -762,7 +762,7 @@ public class AssayController extends SpringActionController
                             duplicate = true;
                             FileLike newFile = AssayFileWriter.findUniqueFileName(fileName, targetDirectory);
                             newFileNames.add(i, newFile.getName());  // will infer duplication by whether an element exists at that position or not
-                            ExpData expData = ExperimentService.get().getExpDataByURL(f.toURI().toString(), null);
+                            ExpData expData = ExperimentService.get().getExpDataByURL(f.toNioPathForRead().toFile(), null);
                             List<String> runNames = new ArrayList<>();
                             if (expData != null)
                             {
