@@ -36,11 +36,15 @@ import org.labkey.test.util.PostgresOnlyTest;
 import org.labkey.test.util.mothership.MothershipHelper;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -97,15 +101,20 @@ public class MothershipReportTest extends BaseWebDriverTest implements PostgresO
         checker().screenShotIfNewError("usage_report_items");
     }
 
-    private String getDeployedDistributionName()
+    private String getDeployedDistributionName() throws IOException
     {
-        File distFile = new File(TestFileUtils.getDefaultWebAppRoot(), "WEB-INF/classes/distribution");
-        if (distFile.exists())
+        File propsFile = new File(TestFileUtils.getDefaultWebAppRoot(), "WEB-INF/classes/distribution.properties");
+        if (propsFile.exists())
         {
             // Deployed from distribution
-            return TestFileUtils.getFileContents(distFile).trim();
+            Properties props = new Properties();
+            try (InputStream in = new FileInputStream(propsFile))
+            {
+                props.load(in);
+            }
+            return props.getProperty("name");
         }
-        else if (distFile.getParentFile().isDirectory())
+        else if (propsFile.getParentFile().isDirectory())
         {
             // Local dev build
             return "localBuild";

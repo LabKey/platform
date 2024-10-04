@@ -42,6 +42,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
@@ -779,7 +780,7 @@ public class AnnouncementManager
 
     public static void saveDefaultEmailOption(Container c, int emailOption)
     {
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, "defaultEmailSettings", true);
+        WritablePropertyMap props = PropertyManager.getWritableProperties(c, "defaultEmailSettings", true);
         props.put("defaultEmailOption", Integer.toString(emailOption));
         props.save();
     }
@@ -815,7 +816,7 @@ public class AnnouncementManager
 
     public static void saveMessageBoardSettings(Container c, Settings settings)
     {
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, MESSAGE_BOARD_SETTINGS, true);
+        WritablePropertyMap props = PropertyManager.getWritableProperties(c, MESSAGE_BOARD_SETTINGS, true);
         props.clear();  // Get rid of old props (e.g., userList, see #13882)
         props.put("boardName", settings.getBoardName());
         props.put("conversationName", settings.getConversationName());

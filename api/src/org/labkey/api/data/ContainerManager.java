@@ -30,6 +30,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.Constants;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderImportContext;
@@ -46,6 +47,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.data.Container.ContainerException;
 import org.labkey.api.data.Container.LockState;
+import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.data.SimpleFilter.InClause;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.validator.ColumnValidators;
@@ -427,7 +429,7 @@ public class ContainerManager
 
     public static void setRequireAuditComments(Container container, User user, @NotNull Boolean required)
     {
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(container, AUDIT_SETTINGS_PROPERTY_SET_NAME, true);
+        WritablePropertyMap props = PropertyManager.getWritableProperties(container, AUDIT_SETTINGS_PROPERTY_SET_NAME, true);
         String originalValue = props.get(REQUIRE_USER_COMMENTS_PROPERTY_NAME);
         props.put(REQUIRE_USER_COMMENTS_PROPERTY_NAME, required.toString());
         props.save();
@@ -488,7 +490,7 @@ public class ContainerManager
         if (errorStrings.isEmpty())
         {
             oldType.unconfigureContainer(c, user);
-            PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, FOLDER_TYPE_PROPERTY_SET_NAME, true);
+            WritablePropertyMap props = PropertyManager.getWritableProperties(c, FOLDER_TYPE_PROPERTY_SET_NAME, true);
             props.put(FOLDER_TYPE_PROPERTY_NAME, folderType.getName());
 
             if (c.isContainerTab())
@@ -703,14 +705,14 @@ public class ContainerManager
     private static void setContainerTabDeleted(Container c, String tabName, String folderTypeName)
     {
         // Add prop in this category <tabName, folderTypeName>
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, TABFOLDER_CHILDREN_DELETED, true);
+        WritablePropertyMap props = PropertyManager.getWritableProperties(c, TABFOLDER_CHILDREN_DELETED, true);
         props.put(getDeletedTabKey(tabName, folderTypeName), "true");
         props.save();
     }
 
     public static void clearContainerTabDeleted(Container c, String tabName, String folderTypeName)
     {
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, TABFOLDER_CHILDREN_DELETED, true);
+        WritablePropertyMap props = PropertyManager.getWritableProperties(c, TABFOLDER_CHILDREN_DELETED, true);
         String key = getDeletedTabKey(tabName, folderTypeName);
         if (props.containsKey(key))
         {
@@ -1816,12 +1818,12 @@ public class ContainerManager
                 {
                     if (!isDeletable(container))
                     {
-                        throw new IllegalArgumentException("Cannot delete container: " + container.getPath());
+                        throw new ApiUsageException("Cannot delete container: " + container.getPath());
                     }
 
                     if (deletingContainers.containsKey(container.getId()))
                     {
-                        throw new IllegalArgumentException("Container is already being deleted: " + container.getPath());
+                        throw new ApiUsageException("Container is already being deleted: " + container.getPath());
                     }
                 }
                 containerIds.forEach(id -> deletingContainers.put(id, user.getUserId()));
@@ -2665,7 +2667,7 @@ public class ContainerManager
 
     public static int updateContainer(TableInfo dataTable, String idField, Collection<?> ids, Container targetContainer, User user, boolean withModified)
     {
-        try (DbScope.Transaction transaction = ensureTransaction())
+        try (DbScope.Transaction transaction = dataTable.getSchema().getScope().ensureTransaction())
         {
             SQLFragment dataUpdate = new SQLFragment("UPDATE ").append(dataTable)
                     .append(" SET container = ").appendValue(targetContainer.getEntityId());
