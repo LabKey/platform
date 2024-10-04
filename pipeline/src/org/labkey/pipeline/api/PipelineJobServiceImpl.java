@@ -72,6 +72,7 @@ import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MinorConfigurationException;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.QuietCloser;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.TestContext;
@@ -263,7 +264,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
     }
 
     @Override
-    public Closer trackForJobCancellation(String jobGuid, Process process)
+    public QuietCloser trackForJobCancellation(String jobGuid, Process process)
     {
         if (jobGuid == null)
         {

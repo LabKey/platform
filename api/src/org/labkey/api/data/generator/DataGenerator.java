@@ -15,8 +15,10 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.ListofMapsDataIterator;
+import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.DataClassDomainKindProperties;
 import org.labkey.api.exp.api.ExpDataClass;
@@ -175,7 +177,7 @@ public class DataGenerator<T extends DataGenerator.Config>
             throw new CancelledException();
         }
 
-        if (ContainerManager.isDeleting(c))
+        if (ContainerManager.isMutating(c) == ContainerManager.MutatingOperation.delete)
         {
             job.warn("Container is being deleted: " + c.getPath());
             throw new CancelledException();
@@ -760,7 +762,7 @@ public class DataGenerator<T extends DataGenerator.Config>
 
     protected int importRows(List<Map<String, Object>> rows, BatchValidationException errors, QueryUpdateService service, Container container) throws BatchValidationException, SQLException
     {
-        ListofMapsDataIterator rowsDI = new ListofMapsDataIterator(rows.get(0).keySet(), rows);
+        DataIteratorBuilder rowsDI = MapDataIterator.of(rows);
         var numImported = service.importRows(_user, container, rowsDI, errors, _config.getImportConfig(), null);
         if (errors.hasErrors())
             throw errors;
@@ -770,9 +772,7 @@ public class DataGenerator<T extends DataGenerator.Config>
     public void logTimes()
     {
         _log.info("===== Timing Summary ======");
-        _timers.forEach((timer) -> {
-            _log.info(String.format("%s\t%s", timer.getName(), timer.getDuration()));
-        });
+        _timers.forEach((timer) -> _log.info(String.format("%s\t%s", timer.getName(), timer.getDuration())));
     }
 
     public CPUTimer addTimer(String name)

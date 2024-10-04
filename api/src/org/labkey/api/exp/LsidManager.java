@@ -375,7 +375,7 @@ public class LsidManager
      */
     public boolean testResolveAll(Container c)
     {
-        if (ContainerManager.isDeleting(c))
+        if (ContainerManager.isMutating(c) != null)
             return true;
 
         List<String> objectURIs = new TableSelector(OntologyManager.getTinfoObject(), Set.of("ObjectURI"), SimpleFilter.createContainerFilter(c), new Sort("ObjectId")).getArrayList(String.class);

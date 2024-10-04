@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 abstract public class AppPipelineJobNotificationProvider implements PipelineJobNotificationProvider
 {
@@ -32,9 +33,8 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
 
         public static ImportType getImportType(PipelineJob job)
         {
-            if (job instanceof QueryImportPipelineJob)
+            if (job instanceof QueryImportPipelineJob queryImportPipelineJob)
             {
-                QueryImportPipelineJob queryImportPipelineJob = (QueryImportPipelineJob) job;
                 String schemaName = queryImportPipelineJob.getImportContextBuilder().getSchemaName();
                 if (schemaName.equalsIgnoreCase("samples"))
                     return samples;
@@ -117,7 +117,7 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
     @Override
     public URLHelper getPipelineStatusHref(PipelineJob job)
     {
-        if (job instanceof QueryImportPipelineJob)
+        if (job instanceof QueryImportPipelineJob queryImportPipelineJob)
         {
             ImportType importType = ImportType.getImportType(job);
             if (importType == null)
@@ -126,7 +126,6 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
             String urlFragment = "/" + importType.name();
 
             ActionURL appURL = getAppURL(job.getContainer());
-            QueryImportPipelineJob queryImportPipelineJob = (QueryImportPipelineJob) job;
 
             String type = queryImportPipelineJob.getImportContextBuilder().getQueryName();
             if (!"materials".equalsIgnoreCase(type) || !"exp".equalsIgnoreCase(queryImportPipelineJob.getImportContextBuilder().getSchemaName()))
@@ -201,10 +200,10 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
             {
                 String assayName = (String) info.get("assayName");
 
-                String fiename = ((AssayUploadPipelineJob) job).getPrimaryFile().getName();
-                if (!fiename.endsWith(".tmp"))
+                String filename = ((AssayUploadPipelineJob<?>) job).getPrimaryFile().getName();
+                if (!filename.endsWith(".tmp"))
                 {
-                    successMsg += " from " + fiename;
+                    successMsg += " from " + filename;
                 }
                 successMsg += " for " + assayName;
             }
@@ -216,9 +215,8 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
 
     private String getJobErrorMsg(PipelineJob job, String rawErrorMsg)
     {
-        if (job instanceof QueryImportPipelineJob)
+        if (job instanceof QueryImportPipelineJob queryImportPipelineJob)
         {
-            QueryImportPipelineJob queryImportPipelineJob = (QueryImportPipelineJob) job;
 
             String type = queryImportPipelineJob.getImportContextBuilder().getQueryName();
 
@@ -232,7 +230,7 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
         else if (job instanceof AssayUploadPipelineJob)
         {
             return "Failed to import assay run from " +
-                    ((AssayUploadPipelineJob) job).getPrimaryFile().getName() +
+                    ((AssayUploadPipelineJob<?>) job).getPrimaryFile().getName() +
                     "\n" +
                     rawErrorMsg;
         }
@@ -244,9 +242,8 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
     {
         ActionURL appURL = getAppURL(job.getContainer());
         String urlFragment = "/" + importType.name();
-        if (job instanceof QueryImportPipelineJob)
+        if (job instanceof QueryImportPipelineJob queryImportPipelineJob)
         {
-            QueryImportPipelineJob queryImportPipelineJob = (QueryImportPipelineJob) job;
             Boolean isCrossType = queryImportPipelineJob.getImportContextBuilder().getOptionParamsMap().get(AbstractQueryImportAction.Params.crossTypeImport);
             if (isCrossType)
                 urlFragment = "/crossType/" + importType.name() + "?";
@@ -314,9 +311,9 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
         }
 
         // don't attempt to add a notification if the Container has been deleted or is deleting
-        if (ContainerManager.getForId(job.getContainerId()) == null || ContainerManager.isDeleting(job.getContainer()))
+        if (ContainerManager.getForId(job.getContainerId()) == null || ContainerManager.isMutating(job.getContainer()) == ContainerManager.MutatingOperation.delete)
         {
-            job.getLogger().info("Job container has been deleted or is being deleted; skipping notification for '" + StringUtils.defaultString(job.getDescription(), job.toString()) + "'");
+            job.getLogger().info("Job container has been deleted or is being deleted; skipping notification for '{}'", Objects.toString(job.getDescription(), job.toString()));
             return;
         }
 
