@@ -1,5 +1,6 @@
-import React, { ChangeEvent, FC, memo, useCallback } from 'react';
-import { HelpLink, LabelHelpTip } from '@labkey/components';
+import React, { ChangeEvent, FC, memo, useCallback, useMemo } from 'react';
+import { HelpLink, LabelHelpTip, ServerContextProvider, withAppUser } from '@labkey/components';
+import { getServerContext } from '@labkey/api';
 
 import { GlobalSettingsOptions } from './models';
 
@@ -76,48 +77,52 @@ export const GlobalSettings: FC<Props> = memo(({ canEdit, authCount, onChange, g
         [onChange]
     );
 
+    const initialServerContext = useMemo(() => withAppUser(getServerContext()), []);
+
     return (
-        <div className="panel panel-default">
-            <div className="panel-heading">
-                Global Settings
-            </div>
+        <ServerContextProvider initialContext={initialServerContext}>
+            <div className="panel panel-default">
+                <div className="panel-heading">
+                    Global Settings
+                </div>
 
-            <div className="panel-body">
-                {fieldData.map(data => (
-                    <GlobalSetting
-                        key={data.id}
-                        canEdit={canEdit}
-                        id={data.id}
-                        onChange={onChange}
-                        value={globalSettings[data.id]}
-                        text={data.text}
-                        tip={data.tip}
-                    />
-                ))}
-
-                <div className="global-settings__default-domain">
-                    <span>System Default Domain</span>
-
-                    <LabelHelpTip title="Tip">
-                        <div>
-                            <div> Default domain for user sign in.</div>
-                            <HelpLink topic="authenticationModule#dom">More info</HelpLink>
-                        </div>
-                    </LabelHelpTip>
-
-                    <span className="global-settings__default-domain-field">
-                        <input
-                            disabled={!canEdit}
-                            name="DefaultDomain"
-                            type="text"
-                            value={globalSettings?.DefaultDomain ?? ''}
-                            onChange={onDefaultDomainChange}
-                            className="form-control global-settings__default-domain-form"
-                            placeholder="System default domain"
+                <div className="panel-body">
+                    {fieldData.map(data => (
+                        <GlobalSetting
+                            key={data.id}
+                            canEdit={canEdit}
+                            id={data.id}
+                            onChange={onChange}
+                            value={globalSettings[data.id]}
+                            text={data.text}
+                            tip={data.tip}
                         />
-                    </span>
+                    ))}
+
+                    <div className="global-settings__default-domain">
+                        <span>System Default Domain</span>
+
+                        <LabelHelpTip title="Tip">
+                            <div>
+                                <div> Default domain for user sign in.</div>
+                                <HelpLink topic="authenticationModule#dom">More info</HelpLink>
+                            </div>
+                        </LabelHelpTip>
+
+                        <span className="global-settings__default-domain-field">
+                            <input
+                                disabled={!canEdit}
+                                name="DefaultDomain"
+                                type="text"
+                                value={globalSettings?.DefaultDomain ?? ''}
+                                onChange={onDefaultDomainChange}
+                                className="form-control global-settings__default-domain-form"
+                                placeholder="System default domain"
+                            />
+                        </span>
+                    </div>
                 </div>
             </div>
-        </div>
+        </ServerContextProvider>
     );
 });
