@@ -30,9 +30,15 @@ public class FileSystemLocal extends AbstractFileSystemLike
     }
 
     @Override
+    public java.nio.file.Path getNioPath(FileLike fo)
+    {
+        return ((_FileLike)fo).file.toPath();
+    }
+
+    @Override
     public URI getURI(FileLike fo)
     {
-        return ((_FileLike)fo).file.toURI();
+        return ((_FileLike)fo).file.toPath().toUri();
     }
 
     @Override
@@ -182,6 +188,12 @@ public class FileSystemLocal extends AbstractFileSystemLike
             if (!(obj instanceof _FileLike other))
                 return false;
             return file.equals(other.file);
+        }
+
+        @Override
+        public String toString()
+        {
+            return file.toPath().toUri().toString();
         }
     }
 }
