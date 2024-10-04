@@ -152,15 +152,14 @@ public class ContainerManager
     private static final Logger LOG = LogHelper.getLogger(ContainerManager.class, "Container (projects, folders, and workbooks) retrieval and management");
     private static final CoreSchema CORE = CoreSchema.getInstance();
 
-    private static final String CONTAINER_PREFIX = ContainerManager.class.getName() + "/";
-    private static final String CONTAINER_CHILDREN_PREFIX = ContainerManager.class.getName() + "/children/";
-    private static final String CONTAINER_ALL_CHILDREN_PREFIX = ContainerManager.class.getName() + "/children/*/";
     private static final String PROJECT_LIST_ID = "Projects";
 
     public static final String HOME_PROJECT_PATH = "/home";
     public static final String DEFAULT_SUPPORT_PROJECT_PATH = HOME_PROJECT_PATH + "/support";
 
-    private static final Cache<String, Object> CACHE = CacheManager.getStringKeyCache(Constants.getMaxContainers(), CacheManager.DAY, "Containers");
+    private static final Cache<String, Container> CACHE = CacheManager.getStringKeyCache(Constants.getMaxContainers(), CacheManager.DAY, "Containers");
+    private static final Cache<String, List<String>> CACHE_CHILDREN = CacheManager.getStringKeyCache(Constants.getMaxContainers(), CacheManager.DAY, "Containers");
+    private static final Cache<String, Set<Container>> CACHE_ALL_CHILDREN = CacheManager.getStringKeyCache(Constants.getMaxContainers(), CacheManager.DAY, "Containers");
     private static final ReentrantLock DATABASE_QUERY_LOCK = new ReentrantLockWithName(ContainerManager.class, "DATABASE_QUERY_LOCK");
     public static final String FOLDER_TYPE_PROPERTY_SET_NAME = "folderType";
     public static final String FOLDER_TYPE_PROPERTY_NAME = "name";
@@ -1042,7 +1041,7 @@ public class ContainerManager
             return Collections.emptyMap();
         }
 
-        List<String> childIds = (List<String>) CACHE.get(CONTAINER_CHILDREN_PREFIX + parent.getId());
+        List<String> childIds = CACHE_CHILDREN.get(parent.getId());
         if (null == childIds)
         {
             try (DbScope.Transaction t = ensureTransaction())
@@ -1058,7 +1057,7 @@ public class ContainerManager
                     _addToCache(c);
                 }
                 childIds = Collections.unmodifiableList(childIds);
-                CACHE.put(CONTAINER_CHILDREN_PREFIX + parent.getId(), childIds);
+                CACHE_CHILDREN.put(parent.getId(), childIds);
                 // No database changes to commit, but need to decrement the transaction counter
                 t.commit();
             }
@@ -2001,22 +2000,22 @@ public class ContainerManager
 
     private static Set<Container> _getAllChildrenFromCache(Container c)
     {
-        return (Set<Container>) CACHE.get(CONTAINER_ALL_CHILDREN_PREFIX + c.getId());
+        return CACHE_ALL_CHILDREN.get(c.getId());
     }
 
     private static void _addAllChildrenToCache(Container c, Set<Container> children)
     {
-        CACHE.put(CONTAINER_ALL_CHILDREN_PREFIX + c.getId(), children);
+        CACHE_ALL_CHILDREN.put(c.getId(), children);
     }
 
     public static Container getFromCacheId(String id)
     {
-        return (Container) CACHE.get(CONTAINER_PREFIX + id);
+        return CACHE.get(id);
     }
 
     private static Container _getFromCachePath(Path path)
     {
-        return (Container) CACHE.get(CONTAINER_PREFIX + toString(path));
+        return CACHE.get(toString(path));
     }
 
     // UNDONE: use Path directly instead of toString()
@@ -2034,30 +2033,25 @@ public class ContainerManager
     {
         assert DATABASE_QUERY_LOCK.isHeldByCurrentThread() : "Any cache modifications must be synchronized at a " +
                 "higher level so that we ensure that the container to be inserted still exists and hasn't been deleted";
-        CACHE.put(CONTAINER_PREFIX + toString(c), c);
-        CACHE.put(CONTAINER_PREFIX + c.getId(), c);
+        CACHE.put(toString(c), c);
+        CACHE.put(c.getId(), c);
         return c;
     }
 
     private static void _clearChildrenFromCache(Container c)
     {
-        CACHE.remove(CONTAINER_CHILDREN_PREFIX + c.getId());
+        CACHE_CHILDREN.remove(c.getId());
         navTreeManageUncache(c);
     }
 
     private static void _removeFromCache(Container c)
     {
-        Container parent = c.getParent();
-
-        CACHE.remove(CONTAINER_PREFIX + toString(c));
-        CACHE.remove(CONTAINER_PREFIX + c.getId());
-        CACHE.remove(CONTAINER_CHILDREN_PREFIX + c.getId());
-
-        if (null != parent)
-            CACHE.remove(CONTAINER_CHILDREN_PREFIX + parent.getId());
+        CACHE.remove(toString(c));
+        CACHE.remove(c.getId());
 
         // blow away the all children caches
-        CACHE.removeUsingFilter(new Cache.StringPrefixFilter(CONTAINER_CHILDREN_PREFIX));
+        CACHE_CHILDREN.clear();
+        CACHE_ALL_CHILDREN.clear();
 
         navTreeManageUncache(c);
     }
@@ -2065,6 +2059,8 @@ public class ContainerManager
     public static void clearCache()
     {
         CACHE.clear();
+        CACHE_CHILDREN.clear();
+        CACHE_ALL_CHILDREN.clear();
 
         // UNDONE: NavTreeManager should register a ContainerListener
         NavTreeManager.uncacheAll();
