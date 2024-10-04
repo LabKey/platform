@@ -13,7 +13,7 @@
     "test-integration": "cross-env NODE_ENV=test jest --ci --runInBand -c test/js/jest.config.integration.js"
   },
   "dependencies": {
-    "@labkey/components": "5.10.0-fb-charts2410.1"
+    "@labkey/components": "5.11.0"
   },
   "devDependencies": {
     "@labkey/build": "7.7.1",
