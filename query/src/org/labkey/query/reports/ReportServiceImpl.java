@@ -29,6 +29,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderImportContext;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.MultiSetUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -309,18 +310,21 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
             report.beforeDelete(context);
 
             final ReportDescriptor descriptor = report.getDescriptor();
-            _deleteReport(context.getContainer(), reportId.getRowId());
+            _deleteReport(context.getContainer(), context.getUser(), reportId.getRowId(), descriptor);
             SecurityPolicyManager.deletePolicy(descriptor);
             tx.commit();
         }
     }
 
-    private void _deleteReport(Container c, int reportId)
+    private void _deleteReport(Container c, User u, int reportId, ReportDescriptor descriptor)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ContainerId"), c.getId());
         filter.addCondition(FieldKey.fromParts("RowId"), reportId);
         Table.delete(getTable(), filter);
         DatabaseReportCache.uncache(c);
+
+        ReportAuditProvider.ReportAuditEvent event = new ReportAuditProvider.ReportAuditEvent(reportId, descriptor, c, "Report deleted");
+        AuditLogService.get().addEvent(u, event);
     }
 
     @Override
@@ -432,13 +436,16 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         else
             throw new RuntimeException("Can't save a report that is not stored in the database!");
 
-
-        if (null != reportId && reportExists(reportId.getRowId()))
+        boolean reportExists = null != reportId && reportExists(reportId.getRowId());
+        if (reportExists)
             reportDB = Table.update(user, getTable(), reportDB, reportId.getRowId());
         else
             reportDB = Table.insert(user, getTable(), reportDB);
 
         DatabaseReportCache.uncache(c);
+
+        ReportAuditProvider.ReportAuditEvent event = new ReportAuditProvider.ReportAuditEvent(reportDB, descriptor, c, reportExists ? "Report updated" : "Report created");
+        AuditLogService.get().addEvent(user, event);
 
         return reportDB;
     }
@@ -606,7 +613,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
 
             if (null != report)
             {
-                if ((report.getDescriptor().getFlags() & ReportDescriptor.FLAG_INHERITABLE) != 0)
+                if (report.getDescriptor().isInheritable())
                     return report;
                 else
                     return null;

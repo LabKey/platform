@@ -30,6 +30,7 @@ import org.labkey.test.components.DomainDesignerPage;
 import org.labkey.test.components.domain.DomainFormPanel;
 import org.labkey.test.components.ext4.Window;
 import org.labkey.test.pages.ImportDataPage;
+import org.labkey.test.pages.files.FileContentPage;
 import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.pages.study.ManageDatasetQCStatesPage;
 import org.labkey.test.pages.study.ManageStudyPage;
@@ -40,6 +41,7 @@ import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.StudyHelper;
+import org.labkey.test.util.TextSearcher;
 import org.labkey.test.util.ext4cmp.Ext4GridRef;
 
 import java.io.File;
@@ -313,11 +315,20 @@ public class StudySimpleExportTest extends StudyBaseTest
         _containerHelper.createSubfolder(getProjectName(), getProjectName(), "Query Validation", "Collaboration", null, true);
         importFolderFromZip(TestFileUtils.getSampleData("studies/LabkeyDemoStudyWithCharts.folder.zip"), false, 1);
         goToModule("FileContent");
+        var filesPage = new FileContentPage(getDriver());
         Locator.XPathLocator fileLoc = Locator.tag("div").startsWith("folder_load_");
         waitForElement(fileLoc);
-        doubleClick(fileLoc);
+        doubleClick(fileLoc); // double-clicking should open the log in a separate tab, and select it in the current one
+
+        // download the file instead of trying to scrape its contents from the browser, which intermittently times the test out
+        File folder_load_log = filesPage.fileBrowserHelper().downloadSelectedFiles();
+        assertTextPresentInThisOrder(new TextSearcher(folder_load_log),
+                "Loading folder properties (folder type, settings and active modules)",
+                " queries imported",
+                "Skipping query validation.");
+
+        // verify clicking a file item in fileBrowserHelper pops a new tab to view it
         switchToWindow(1);
-        assertTextPresentInThisOrder("Loading folder properties (folder type, settings and active modules)", " queries imported", "Skipping query validation.");
         getDriver().close();
         switchToMainWindow();
     }

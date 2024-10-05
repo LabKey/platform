@@ -292,8 +292,8 @@ public class ReportDesignBean<R extends Report> extends ReportForm
         setCached(BooleanUtils.toBoolean(descriptor.getProperty(ReportDescriptor.Prop.cached)));
 
         setReportAccess(descriptor.getAccess());
-        setShareReport((descriptor.isShared()));
-        setInheritable((descriptor.getFlags() & ReportDescriptor.FLAG_INHERITABLE) != 0);
+        setShareReport(descriptor.isShared());
+        setInheritable(descriptor.isInheritable());
         setRedirectUrl(getViewContext().getActionURL().getParameter(ReportDescriptor.Prop.redirectUrl.name()));
     }
 }

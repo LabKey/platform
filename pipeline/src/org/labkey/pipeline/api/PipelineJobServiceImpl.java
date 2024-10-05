@@ -300,7 +300,11 @@ public class PipelineJobServiceImpl implements PipelineJobService
             Thread jobThread = _jobThreads.get(jobGuid);
             if (jobThread != null)
             {
-                DbScope.closeAllConnectionsForThread(jobThread);
+                // Piggyback on the job thread so we can shut down open connections on its behalf
+                try (DbScope.ConnectionSharingCloseable ignored = DbScope.shareConnections(jobThread, Thread.currentThread()))
+                {
+                    DbScope.closeAllConnectionsForCurrentThread();
+                }
             }
         }
     }
