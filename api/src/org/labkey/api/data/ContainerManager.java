@@ -157,7 +157,8 @@ public class ContainerManager
     public static final String HOME_PROJECT_PATH = "/home";
     public static final String DEFAULT_SUPPORT_PROJECT_PATH = HOME_PROJECT_PATH + "/support";
 
-    private static final Cache<String, Container> CACHE = CacheManager.getStringKeyCache(Constants.getMaxContainers(), CacheManager.DAY, "Containers");
+    // Use double the max count as the size since we cache by both EntityId and Path
+    private static final Cache<String, Container> CACHE = CacheManager.getStringKeyCache(Constants.getMaxContainers() * 2, CacheManager.DAY, "Containers");
     private static final Cache<String, List<String>> CACHE_CHILDREN = CacheManager.getStringKeyCache(Constants.getMaxContainers(), CacheManager.DAY, "Child EntityIds of Containers");
     private static final Cache<String, Set<Container>> CACHE_ALL_CHILDREN = CacheManager.getStringKeyCache(Constants.getMaxContainers(), CacheManager.DAY, "Child Container objects of Containers");
     private static final ReentrantLock DATABASE_QUERY_LOCK = new ReentrantLockWithName(ContainerManager.class, "DATABASE_QUERY_LOCK");
@@ -2049,7 +2050,7 @@ public class ContainerManager
         CACHE.remove(toString(c));
         CACHE.remove(c.getId());
 
-        // blow away the all children caches
+        // blow away the children caches
         CACHE_CHILDREN.clear();
         CACHE_ALL_CHILDREN.clear();
 
