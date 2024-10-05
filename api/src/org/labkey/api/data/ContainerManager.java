@@ -2809,9 +2809,9 @@ public class ContainerManager
         @Test
         public void testImproperFolderNamesBlocked()
         {
-            String[] badnames = {"", "f\\o", "f/o", "f\\\\o", "foo;", "@foo", "foo" + '\u001F', '\u0000' + "foo", "fo" + '\u007F' + "o", "" + '\u009F'};
+            String[] badNames = {"", "f\\o", "f/o", "f\\\\o", "foo;", "@foo", "foo" + '\u001F', '\u0000' + "foo", "fo" + '\u007F' + "o", "" + '\u009F'};
 
-            for (String name: badnames)
+            for (String name: badNames)
             {
                 try
                 {
@@ -2820,12 +2820,12 @@ public class ContainerManager
                     {
                         assertTrue(delete(c, TestContext.get().getUser()));
                     }
-                    catch(Exception ignored){}
-                    fail("Should have thrown illegal argument when trying to create container with name: " + name);
+                    catch (Exception ignored) {}
+                    fail("Should have thrown exception when trying to create container with name: " + name);
                 }
-                catch(IllegalArgumentException e)
+                catch (ApiUsageException e)
                 {
-                        //Do nothing, this is expected
+                    // Do nothing, this is expected
                 }
             }
         }
