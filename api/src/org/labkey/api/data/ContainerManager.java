@@ -1799,7 +1799,7 @@ public class ContainerManager
         }
     }
 
-    public enum MutatingOperation
+    private enum MutatingOperation
     {
         delete,
         rename,
