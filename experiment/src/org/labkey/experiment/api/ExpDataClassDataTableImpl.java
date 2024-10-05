@@ -922,13 +922,9 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             if (null != searchService)
             {
                 final var scope = propertiesTable.getSchema().getScope();
-                step0.setIndexFunction(lsidRowIds -> scope.addCommitTask(() ->
+                step0.setIndexFunction(searchIndexDataKeys -> scope.addCommitTask(() ->
                 {
-                    List<String> lsids = lsidRowIds.first;
-                    List<Integer> orderedRowIds = new ArrayList<>(lsidRowIds.second);
-                    if (orderedRowIds.isEmpty() && !lsids.isEmpty()) // either lsids or rowIds is empty
-                        orderedRowIds = experimentServiceImpl.getOrderedRowIdsFromLsids(experimentServiceImpl.getTinfoData(), lsids);
-
+                    List<Integer> orderedRowIds = searchIndexDataKeys.orderedRowIds();
                     // Issue 51263: order by RowId to reduce deadlock
                     ListUtils.partition(orderedRowIds, 100).forEach(sublist ->
                             searchService.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
@@ -938,6 +934,17 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                                         return (Void) null;
                                     }))
                     );
+
+                    List<String> lsids = searchIndexDataKeys.lsids();
+                    ListUtils.partition(lsids, 100).forEach(sublist ->
+                            searchService.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
+                                    scope.executeWithRetryReadOnly(tx -> {
+                                        for (ExpDataImpl expData : experimentServiceImpl.getExpDatasByLSID(sublist))
+                                            expData.index(searchService.defaultTask(), this);
+                                        return (Void) null;
+                                    }))
+                    );
+
                 }, DbScope.CommitTaskOption.POSTCOMMIT));
             }
             DataIteratorBuilder builder = LoggingDataIterator.wrap(step0);

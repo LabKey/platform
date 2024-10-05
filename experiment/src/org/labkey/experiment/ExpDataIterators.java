@@ -2050,9 +2050,9 @@ public class ExpDataIterators
     public static class SearchIndexIteratorBuilder implements DataIteratorBuilder
     {
         final DataIteratorBuilder _pre;
-        final Function<Pair<List<String>, List<Integer>>, Runnable> _indexFunction;
+        final Function<SearchIndexDataKeys, Runnable> _indexFunction;
 
-        public SearchIndexIteratorBuilder(DataIteratorBuilder pre, Function<Pair<List<String>, List<Integer>>, Runnable> indexFunction)
+        public SearchIndexIteratorBuilder(DataIteratorBuilder pre, Function<SearchIndexDataKeys, Runnable> indexFunction)
         {
             _pre = pre;
             _indexFunction = indexFunction;
@@ -2066,6 +2066,8 @@ public class ExpDataIterators
         }
     }
 
+    public record SearchIndexDataKeys(@NotNull List<Integer> orderedRowIds, @NotNull List<String> lsids) { }
+
     private static class SearchIndexIterator extends WrapperDataIterator
     {
         final DataIteratorContext _context;
@@ -2073,10 +2075,10 @@ public class ExpDataIterators
         final Integer _rowIdCol;
         final ArrayList<String> _lsids;
         final ArrayList<Integer> _rowIds;
-        final Function<Pair<List<String>, List<Integer>>, Runnable> _indexFunction;
-        final boolean _useExistingRecord;
+        final Function<SearchIndexDataKeys, Runnable> _indexFunction;
+        final boolean _isInsert;
 
-        protected SearchIndexIterator(DataIterator di, DataIteratorContext context, Function<Pair<List<String>, List<Integer>>, Runnable> indexFunction)
+        protected SearchIndexIterator(DataIterator di, DataIteratorContext context, Function<SearchIndexDataKeys, Runnable> indexFunction)
         {
             super(di);
             _context = context;
@@ -2089,7 +2091,7 @@ public class ExpDataIterators
             _lsids = new ArrayList<>(100);
             _rowIds = new ArrayList<>(100);
 
-            _useExistingRecord = context.getInsertOption().updateOnly && _lsidCol == null;
+            _isInsert = !context.getInsertOption().allowUpdate; // only useRowIdCol for INSERT. For UPDATE, rowId usually is not available. For MERGE, rowId is a new DBSequence value for existing data
         }
 
         @Override
@@ -2099,32 +2101,34 @@ public class ExpDataIterators
 
             if (hasNext)
             {
-                if (_useExistingRecord)
+                Integer rowId = null;
+                String lsid = null;
+                if (_isInsert)
+                {
+                    rowId = _rowIdCol == null ? null : (Integer) get(_rowIdCol);
+                    if (rowId == null)
+                        lsid = _lsidCol == null ? null : (String) get(_lsidCol);
+                }
+                else
                 {
                     Map<String, Object> map = getExistingRecord();
                     if (map != null)
                     {
                         if (map.containsKey("rowId")) // favor rowId over lsid to avoid additional query for indexing
-                        {
-                            Integer rowIdObj = (Integer) map.get("rowId");
-                            if (null != rowIdObj)
-                                _rowIds.add(rowIdObj);
-                        }
-                        else if (map.containsKey("lsid"))
-                        {
-                            String lsid = (String) map.get("lsid");
-                            if (null != lsid)
-                                _lsids.add(lsid);
-                        }
+                            rowId = (Integer) map.get("rowId");
+                        if (rowId == null && map.containsKey("lsid"))
+                            lsid = (String) map.get("lsid");
                     }
-                 }
-                else
-                {
-                    // don't use rowId from data since it's backed by DBSequence and might not be the same as the actual rowId
-                    String lsid = _lsidCol == null ? null : (String) get(_lsidCol);
-                    if (null != lsid)
-                        _lsids.add(lsid);
+
+                    // for UPDATE/MERGE, don't use _rowIdCol
+                    if (rowId == null && lsid == null)
+                        lsid = _lsidCol == null ? null : (String) get(_lsidCol);
                 }
+
+                if (rowId != null)
+                    _rowIds.add(rowId);
+                if (lsid != null)
+                    _lsids.add(lsid);
             }
             else
             {
@@ -2133,7 +2137,8 @@ public class ExpDataIterators
                 {
                     final ArrayList<String> lsids = new ArrayList<>(_lsids);
                     final ArrayList<Integer> rowIds = new ArrayList<>(_rowIds);
-                    final Runnable indexTask = _indexFunction.apply(new Pair<>(lsids, rowIds));
+                    Collections.sort(rowIds);
+                    final Runnable indexTask = _indexFunction.apply(new SearchIndexDataKeys(rowIds, lsids));
 
                     if (null != DbScope.getLabKeyScope())
                         DbScope.getLabKeyScope().addCommitTask(indexTask, DbScope.CommitTaskOption.POSTCOMMIT);
@@ -2241,7 +2246,7 @@ public class ExpDataIterators
         private final Set<String> _excludedColumns = new HashSet<>(List.of("generated","runId","sourceapplicationid")); // generated has database DEFAULT 0
 
         private String _fileLinkDirectory = null;
-        Function<Pair<List<String>, List<Integer>>, Runnable> _indexFunction;
+        Function<SearchIndexDataKeys, Runnable> _indexFunction;
         final Map<String, String> _importAliases;
 
         // expTable is the shared experiment table e.g. exp.Data or exp.Materials
@@ -2256,7 +2261,7 @@ public class ExpDataIterators
             _importAliases = importAliases != null ? new CaseInsensitiveHashMap<>(importAliases) : new CaseInsensitiveHashMap<>();
         }
 
-        public PersistDataIteratorBuilder setIndexFunction(Function<Pair<List<String>, List<Integer>>, Runnable> indexFunction)
+        public PersistDataIteratorBuilder setIndexFunction(Function<SearchIndexDataKeys, Runnable> indexFunction)
         {
             _indexFunction = indexFunction;
             return this;

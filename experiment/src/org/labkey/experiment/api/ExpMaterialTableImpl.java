@@ -1546,12 +1546,10 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
             if (null != searchService)
             {
-                persist.setIndexFunction(lsidRowIds -> propertiesTable.getSchema().getScope().addCommitTask(() ->
+                persist.setIndexFunction(searchIndexDataKeys -> propertiesTable.getSchema().getScope().addCommitTask(() ->
                     {
-                        List<String> lsids = lsidRowIds.first;
-                        List<Integer> orderedRowIds = new ArrayList<>(lsidRowIds.second);
-                        if (orderedRowIds.isEmpty() && !lsids.isEmpty()) // either lsids or rowIds is empty
-                            orderedRowIds = experimentServiceImpl.getOrderedRowIdsFromLsids(experimentServiceImpl.getTinfoMaterial(), lsids);
+                        List<String> lsids = searchIndexDataKeys.lsids();
+                        List<Integer> orderedRowIds = searchIndexDataKeys.orderedRowIds();
 
                         // Issue 51263: order by RowId to reduce deadlock
                         ListUtils.partition(orderedRowIds, 100).forEach(sublist ->
@@ -1560,6 +1558,14 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                                 for (ExpMaterialImpl expMaterial : experimentServiceImpl.getExpMaterials(sublist))
                                     expMaterial.index(searchService.defaultTask());
                             })
+                        );
+
+                        ListUtils.partition(lsids, 100).forEach(sublist ->
+                                searchService.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
+                                {
+                                    for (ExpMaterialImpl expMaterial : experimentServiceImpl.getExpMaterialsByLsid(sublist))
+                                        expMaterial.index(searchService.defaultTask());
+                                })
                         );
                     }, DbScope.CommitTaskOption.POSTCOMMIT)
                 );

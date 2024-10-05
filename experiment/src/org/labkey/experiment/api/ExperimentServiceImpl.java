@@ -687,27 +687,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return getExpDatas(new SimpleFilter(FieldKey.fromParts(ExpDataTable.Column.LSID.name()), lsids, IN));
     }
 
-
-    public List<Integer> getOrderedRowIdsFromLsids(TableInfo tableInfo, List<String> lsids)
-    {
-        List<Integer> allRowIds = new ArrayList<>();
-        ListUtils.partition(lsids, 100).forEach(sublist ->
-                {
-                    List<Integer> rowIds = new TableSelector(
-                            tableInfo,
-                            Collections.singleton("RowId"),
-                            new SimpleFilter(FieldKey.fromParts("LSID"), lsids, CompareType.IN),
-                            null
-                    ).getArrayList(Integer.class);
-                    allRowIds.addAll(rowIds);
-                }
-        );
-
-        Collections.sort(allRowIds);
-
-        return allRowIds;
-    }
-
     @Override
     public @NotNull List<ExpDataImpl> getExpDatas(Collection<Integer> rowIds)
     {
