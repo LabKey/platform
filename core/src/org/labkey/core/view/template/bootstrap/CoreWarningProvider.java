@@ -124,7 +124,7 @@ public class CoreWarningProvider implements WarningProvider
     @Override
     public void addDynamicWarnings(@NotNull Warnings warnings, @Nullable ViewContext context, boolean showAllWarnings)
     {
-        if (MothershipReport.shouldReceiveMarketingUpdates(MothershipReport.getDistributionName()))
+        if (MothershipReport.shouldReceiveMarketingUpdates())
         {
             if (UsageReportingLevel.getMarketingUpdate() != null)
                 warnings.add(UsageReportingLevel.getMarketingUpdate());
@@ -191,7 +191,7 @@ public class CoreWarningProvider implements WarningProvider
         schemaProblems.putAll(_dbSchemaWarnings);
         if (showAllWarnings)
         {
-            schemaProblems.put("WorstSchemaEver", List.of(SiteValidationResult.Level.ERROR.create("Your schema is very, very bad")));
+            schemaProblems.put("WorstSchemaEver", List.of(SiteValidationResult.Level.ERROR.create(HtmlString.of("Your schema is very, very bad"))));
         }
 
         int count = 0;
@@ -205,7 +205,7 @@ public class CoreWarningProvider implements WarningProvider
                 }
                 if (++count <= MAX_SCHEMA_PROBLEMS_TO_SHOW)
                 {
-                    warnings.add(HtmlString.of("Problem with '" + entry.getKey() + "' schema. " + result.getMessage()));
+                    warnings.add(HtmlStringBuilder.of("Problem with '" + entry.getKey() + "' schema. ").append(result.getMessage()));
                 }
             }
         }

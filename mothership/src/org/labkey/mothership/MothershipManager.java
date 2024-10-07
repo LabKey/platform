@@ -27,6 +27,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
@@ -280,6 +281,9 @@ public class MothershipManager
             ServerSession existingSession = getServerSession(session.getServerSessionGUID(), container);
             if (existingSession != null)
             {
+                // Issue 50876: Reparent mothership server session when the base URL changes mid-session
+                existingSession.setServerInstallationId(installation.getServerInstallationId());
+
                 Calendar existingCal = Calendar.getInstance();
                 existingCal.setTime(existingSession.getLastKnownTime());
                 Calendar nowCal = Calendar.getInstance();
@@ -394,14 +398,32 @@ public class MothershipManager
         {
             log.debug("Merging JSON. Old is " + currentValue.length() + " characters, new is " + newValue.length());
             Map<String, Object> currentMap = mapper.readValue(currentValue, Map.class);
-            ObjectReader updater = mapper.readerForUpdating(currentMap);
-            Map<String, Object> merged = updater.readValue(newValue);
-            return mapper.writeValueAsString(merged);
+            Map<String, Object> newMap = mapper.readValue(newValue, Map.class);
+            merge(currentMap, newMap);
+            return mapper.writeValueAsString(currentMap);
         }
         catch (IOException e)
         {
             logJsonError(newValue, serverSessionGUID, e);
             return currentValue;
+        }
+    }
+
+    /** Merges the values from newMap into currentMap, recursing through child maps. See issue 50665 */
+    private void merge(Map<String, Object> currentMap, Map<String, Object> newMap)
+    {
+        for (Map.Entry<String, Object> entry : newMap.entrySet())
+        {
+            String key = entry.getKey();
+            Object currentChild = currentMap.get(key);
+            if (currentChild instanceof Map currentChildMap && entry.getValue() instanceof Map newChildMap)
+            {
+                merge(currentChildMap, newChildMap);
+            }
+            else
+            {
+                currentMap.put(entry.getKey(), entry.getValue());
+            }
         }
     }
 
@@ -440,7 +462,7 @@ public class MothershipManager
         return getSchema().getSqlDialect();
     }
 
-    private PropertyManager.PropertyMap getWritableProperties(Container c)
+    private WritablePropertyMap getWritableProperties(Container c)
     {
         return PropertyManager.getWritableProperties(c, UPGRADE_MESSAGE_PROPERTY_CATEGORY, true);
     }
@@ -480,7 +502,7 @@ public class MothershipManager
 
     private void saveProperty(Container c, String name, String value)
     {
-        PropertyManager.PropertyMap props = getWritableProperties(c);
+        WritablePropertyMap props = getWritableProperties(c);
         props.put(name, value);
         props.save();
     }

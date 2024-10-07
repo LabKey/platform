@@ -68,12 +68,8 @@ public class ContextListener implements ServletContextListener
     @Override
     public void contextInitialized(ServletContextEvent servletContextEvent)
     {
-        boolean isEmbedded = "true".equals(servletContextEvent.getServletContext().getInitParameter("embeddedTomcat"));
-        if (isEmbedded)
-        {
-            // Hack... reload log4j2.xml now that LabKey classes are visible. Not sure if this is needed.
-            Configurator.reconfigure();
-        }
+        // Hack... reload log4j2.xml now that LabKey classes are visible. Not sure if this is needed.
+        Configurator.reconfigure();
 
         getSpringContextListener().contextInitialized(servletContextEvent);
 

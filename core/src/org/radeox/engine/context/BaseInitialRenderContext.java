@@ -38,7 +38,8 @@ import java.util.Locale;
  */
 
 public class BaseInitialRenderContext extends BaseRenderContext implements InitialRenderContext {
-  public BaseInitialRenderContext() {
+  public BaseInitialRenderContext(String sourceDescription) {
+    super(sourceDescription);
     Locale languageLocale = Locale.getDefault();
     Locale locale = new Locale("Basic", "basic");
     set(RenderContext.INPUT_LOCALE, locale);

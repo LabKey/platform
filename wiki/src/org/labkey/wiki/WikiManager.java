@@ -519,9 +519,9 @@ public class WikiManager implements WikiService
         Map<String, String> nameTitleMap = WikiSelectManager.getNameAndAliasTitleMap(c);
 
         //get formatter specified for this version
-        WikiRenderer w = wikiversion.getRenderer(hrefPrefix, attachPrefix, nameTitleMap, wiki.getAttachments());
+        WikiRenderer w = wikiversion.getRenderer(hrefPrefix, attachPrefix, nameTitleMap, wiki.getAttachments(), "Wiki '" + wiki.getName() + "' version " + wikiversion.getVersion() + " in " + wiki.getContainerPath());
 
-        return w.format(wikiversion.getBody(), "Wiki '" + wiki.getName() + "' version " + wikiversion.getVersion() + " in " + wiki.getContainerPath());
+        return w.format(wikiversion.getBody());
     }
 
 
@@ -854,7 +854,7 @@ public class WikiManager implements WikiService
                         documentName, searchCategory);
 
                 NavTree t = new NavTree("wiki page", wikiUrl);
-                String nav = NavTree.toJS(Collections.singleton(t), null, false).toString();
+                String nav = NavTree.toJS(Collections.singleton(t), null, false, true).toString();
                 attachmentRes.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
                 task.addResource(attachmentRes, SearchService.PRIORITY.item);
             }

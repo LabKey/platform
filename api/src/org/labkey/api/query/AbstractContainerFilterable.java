@@ -78,7 +78,7 @@ public abstract class AbstractContainerFilterable extends AbstractTableInfo
 
     protected ContainerFilter getLookupContainerFilter()
     {
-        if (QueryService.get().isProductProjectsAllFolderScopeEnabled())
+        if (QueryService.get().isProductFoldersAllFolderScopeEnabled())
         {
             assert null != getUserSchema();
             return getUserSchema().getDefaultLookupContainerFilter();

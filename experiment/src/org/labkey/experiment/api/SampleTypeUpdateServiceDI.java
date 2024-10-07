@@ -17,6 +17,7 @@ package org.labkey.experiment.api;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.converters.IntegerConverter;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
@@ -473,18 +474,43 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         useDib = useDib && hasUniformKeys(rows);
 
         List<Map<String, Object>> results;
+        DbScope scope = getSchema().getDbSchema().getScope();
         if (useDib)
         {
             Map<Enum, Object> finalConfigParameters = configParameters == null ? new HashMap<>() : configParameters;
             finalConfigParameters.put(ExperimentService.QueryOptions.UseLsidForUpdate, true);
 
-            DbScope scope = getSchema().getDbSchema().getScope();
             results = scope.executeWithRetry(transaction ->
                     super._updateRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.UPDATE, finalConfigParameters), extraScriptContext));
         }
         else
         {
             results = super.updateRows(user, container, rows, oldKeys, errors, configParameters, extraScriptContext);
+
+            SearchService searchService = SearchService.get();
+            if (searchService != null)
+            {
+                scope.addCommitTask(() ->
+                {
+                    List<Integer> orderedRowIds = new ArrayList<>();
+                    for (Map<String, Object> result : results)
+                    {
+                        Integer rowId = (Integer) result.get(RowId.name());
+                        if (rowId != null)
+                            orderedRowIds.add(rowId);
+                    }
+                    Collections.sort(orderedRowIds);
+
+                    // Issue 51263: order by RowId to reduce deadlock
+                    ListUtils.partition(orderedRowIds, 100).forEach(sublist ->
+                            searchService.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
+                            {
+                                for (ExpMaterialImpl expMaterial : ExperimentServiceImpl.get().getExpMaterials(sublist))
+                                    expMaterial.index(searchService.defaultTask());
+                            })
+                    );
+                }, DbScope.CommitTaskOption.POSTCOMMIT);
+            }
 
             /* setup mini dataiterator pipeline to process lineage */
             DataIterator di = _toDataIteratorBuilder("updateRows.lineage", results).getDataIterator(new DataIteratorContext());
@@ -798,18 +824,11 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (row.containsKey("Alias"))
             AliasInsertHelper.handleInsertUpdate(getContainer(), user, lsid, ExperimentService.get().getTinfoMaterialAliasMap(), row.get("Alias"));
 
-        // search index
-        SearchService ss = SearchService.get();
-        if (ss != null)
-        {
-            if (sample == null)
-                sample = ExperimentServiceImpl.get().getExpMaterial(lsid);
-            if (sample != null)
-                sample.index(null);
-        }
+        // search done in postcommit
 
         ret.put("lsid", lsid);
         ret.put(AliquotedFromLSID.name(), oldRow.get(AliquotedFromLSID.name()));
+        ret.put(RowId.name(), oldRow.get(RowId.name())); // add RowId for SearchService
         return ret;
     }
 
@@ -1073,7 +1092,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         {
             try
             {
-                Map<String, String> importAliases = _sampleType.getImportAliasMap();
+                Map<String, String> importAliases = _sampleType.getImportAliases();
                 for (String col : dataColumns)
                 {
                     if (!hasParentInput && ExperimentService.isInputOutputColumn(col) || equalsIgnoreCase("parent",col) || importAliases.containsKey(col))
@@ -1195,7 +1214,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (checkCrossFolderData && !allKeys.isEmpty())
         {
             ContainerFilter allCf = ContainerFilter.current(container); // use a relaxed CF to find existing data from cross containers
-            if (container.isProductProjectsEnabled())
+            if (container.isProductFoldersEnabled())
                 allCf = new ContainerFilter.AllInProjectPlusShared(container, user);
 
             SimpleFilter existingDataFilter = new SimpleFilter(FieldKey.fromParts("MaterialSourceId"), sampleTypeId);
@@ -1583,7 +1602,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             this.sampleType = sampleType;
             try
             {
-                this.importAliasMap = sampleType.getImportAliasMap();
+                this.importAliasMap = sampleType.getImportAliases();
                 _extraPropsFns.add(() -> {
                     if (this.importAliasMap != null)
                         return Map.of(PARENT_IMPORT_ALIAS_MAP_PROP, this.importAliasMap);

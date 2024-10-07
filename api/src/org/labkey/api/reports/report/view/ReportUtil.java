@@ -325,7 +325,7 @@ public class ReportUtil
                 return !ContainerManager.getSharedContainer().equals(c);
             }
 
-            if ((report.getDescriptor().getFlags() & ReportDescriptor.FLAG_INHERITABLE) != 0)
+            if (report.getDescriptor().isInheritable())
             {
                 Container reportContainer = ContainerManager.getForId(report.getDescriptor().getContainerId());
                 if (!c.equals(reportContainer))

@@ -149,7 +149,7 @@ import java.util.stream.Collectors;
 import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
 import static org.labkey.api.exp.query.ExpDataClassDataTable.Column.Name;
 import static org.labkey.api.exp.query.ExpDataClassDataTable.Column.QueryableInputs;
-import static org.labkey.api.exp.query.ExpMaterialTable.Column.RowId;
+import static org.labkey.api.exp.query.ExpDataClassDataTable.Column.RowId;
 import static org.labkey.experiment.ExpDataIterators.incrementCounts;
 
 /**
@@ -376,12 +376,9 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         LinkedHashSet<FieldKey> defaultVisible = new LinkedHashSet<>();
         defaultVisible.add(FieldKey.fromParts(Column.Name));
 
-        var folderCol = addContainerColumn(Column.Folder, null);
-        if (getContainer().hasProductProjects())
-        {
-            folderCol.setLabel("Project");
+        addContainerColumn(Column.Folder, null);
+        if (getContainer().hasProductFolders())
             defaultVisible.add(FieldKey.fromParts(Column.Folder));
-        }
 
         defaultVisible.add(FieldKey.fromParts(Column.Flag));
 
@@ -895,25 +892,60 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     }
 
     @Override
+    @NotNull
+    public Map<String, String> getAdditionalRequiredInsertColumns()
+    {
+        if (getDataClass() == null)
+            return Collections.emptyMap();
+
+        Map<String, String> required = new CaseInsensitiveHashMap<>();
+        try
+        {
+            required.putAll(getDataClass().getRequiredImportAliases());
+            return required;
+        }
+        catch (IOException e)
+        {
+            return Collections.emptyMap();
+        }
+    }
+
+    @Override
     public DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context)
     {
         TableInfo propertiesTable = _dataClassDataTableSupplier.get();
         try
         {
-            PersistDataIteratorBuilder step0 = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, _dataClass, getUserSchema().getContainer(), getUserSchema().getUser(), _dataClass.getImportAliasMap(), null);
+            PersistDataIteratorBuilder step0 = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, _dataClass, getUserSchema().getContainer(), getUserSchema().getUser(), _dataClass.getImportAliases(), null);
             SearchService searchService = SearchService.get();
+            ExperimentServiceImpl experimentServiceImpl = ExperimentServiceImpl.get();
             if (null != searchService)
             {
                 final var scope = propertiesTable.getSchema().getScope();
-                // Queue indexing after committing
-                step0.setIndexFunction(lsids -> scope.addCommitTask(() -> ListUtils.partition(lsids, 100).forEach(sublist ->
-                        searchService.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
-                                scope.executeWithRetryReadOnly(tx -> {
-                                            for (ExpDataImpl expData : ExperimentServiceImpl.get().getExpDatasByLSID(sublist))
-                                                expData.index(searchService.defaultTask(), this);
-                                            return (Void)null;
-                                }))
-                ), DbScope.CommitTaskOption.POSTCOMMIT));
+                step0.setIndexFunction(searchIndexDataKeys -> scope.addCommitTask(() ->
+                {
+                    List<Integer> orderedRowIds = searchIndexDataKeys.orderedRowIds();
+                    // Issue 51263: order by RowId to reduce deadlock
+                    ListUtils.partition(orderedRowIds, 100).forEach(sublist ->
+                            searchService.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
+                                    scope.executeWithRetryReadOnly(tx -> {
+                                        for (ExpDataImpl expData : experimentServiceImpl.getExpDatas(sublist))
+                                            expData.index(searchService.defaultTask(), this);
+                                        return (Void) null;
+                                    }))
+                    );
+
+                    List<String> lsids = searchIndexDataKeys.lsids();
+                    ListUtils.partition(lsids, 100).forEach(sublist ->
+                            searchService.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
+                                    scope.executeWithRetryReadOnly(tx -> {
+                                        for (ExpDataImpl expData : experimentServiceImpl.getExpDatasByLSID(sublist))
+                                            expData.index(searchService.defaultTask(), this);
+                                        return (Void) null;
+                                    }))
+                    );
+
+                }, DbScope.CommitTaskOption.POSTCOMMIT));
             }
             DataIteratorBuilder builder = LoggingDataIterator.wrap(step0);
             return LoggingDataIterator.wrap(new AliasDataIteratorBuilder(builder, getUserSchema().getContainer(), getUserSchema().getUser(), ExperimentService.get().getTinfoDataAliasMap()));
@@ -1042,7 +1074,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 di = LoggingDataIterator.wrap(new CoerceDataIterator(di, context, ExpDataClassDataTableImpl.this, false));
 
                 TableInfo dataClassTInfo = ExpDataClassDataTableImpl.this;
-                if (c.hasProductProjects() && !c.isProject())
+                if (c.hasProductFolders() && !c.isProject())
                 {
                     // Issue 46939: Naming Patterns for Not Working in Sub Projects
                     User user = getUserSchema().getUser();
@@ -1053,7 +1085,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 Map<String, String> importAliasMap = null;
                 try
                 {
-                    importAliasMap = _dataClass.getImportAliasMap();
+                    importAliasMap = _dataClass.getImportAliases();
                 }
                 catch (IOException e)
                 {
@@ -1090,10 +1122,12 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     class DataClassDataUpdateService extends DefaultQueryUpdateService
     {
         IntegerConverter _converter = new IntegerConverter();
+        final ExpDataClassDataTableImpl _expDataClassDataTableImpl;
 
         public DataClassDataUpdateService(ExpDataClassDataTableImpl table)
         {
             super(table, table.getRealTable());
+            _expDataClassDataTableImpl = table;
             // Note that this class actually overrides createImportDIB(), so currently we're not looking at this flag.
             _enableExistingRecordsDataIterator = false;
         }
@@ -1345,15 +1379,9 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             ret.putAll(attachments);
             addAttachments(user, c, ret, lsid);
 
-            // search index
-            SearchService ss = SearchService.get();
-            if (ss != null)
-            {
-                if (data == null)
-                    data = ExperimentServiceImpl.get().getExpData(lsid);
-                data.index(null, ExpDataClassDataTableImpl.this);
-            }
+            // search index done in postcommit
 
+            ret.put("RowId", oldRow.get("RowId")); // return rowId for SearchService
             ret.put("lsid", lsid);
             return ret;
         }
@@ -1377,6 +1405,32 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             else
             {
                 results = super.updateRows(user, container, rows, oldKeys, errors, configParameters, extraScriptContext);
+
+                SearchService searchService = SearchService.get();
+                if (searchService != null)
+                {
+                    DbScope scope = getUserSchema().getDbSchema().getScope();
+                    scope.addCommitTask(() ->
+                    {
+                        List<Integer> orderedRowIds = new ArrayList<>();
+                        for (Map<String, Object> result : results)
+                        {
+                            Integer rowId = (Integer) result.get(RowId.name());
+                            if (rowId != null)
+                                orderedRowIds.add(rowId);
+                        }
+                        Collections.sort(orderedRowIds);
+
+                        // Issue 51263: order by RowId to reduce deadlock
+                        ListUtils.partition(orderedRowIds, 100).forEach(sublist ->
+                                searchService.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
+                                {
+                                    for (ExpDataImpl expData : ExperimentServiceImpl.get().getExpDatas(sublist))
+                                        expData.index(null, _expDataClassDataTableImpl);
+                                })
+                        );
+                    }, DbScope.CommitTaskOption.POSTCOMMIT);
+                }
 
                 /* setup mini dataiterator pipeline to process lineage */
                 DataIterator di = _toDataIteratorBuilder("updateRows.lineage", results).getDataIterator(new DataIteratorContext());

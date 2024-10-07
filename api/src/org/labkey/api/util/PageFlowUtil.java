@@ -173,7 +173,7 @@ public class PageFlowUtil
     }
 
     private static final Logger _log = LogHelper.getLogger(PageFlowUtil.class, "HTML validation and file operation errors");
-    private static final String _newline = System.getProperty("line.separator");
+    private static final String _newline = System.lineSeparator();
 
     private static final Pattern urlPatternStart = Pattern.compile("((http|https|ftp|mailto)://\\S+).*");
 
@@ -376,7 +376,6 @@ public class PageFlowUtil
 
     /**
      * Creates a JavaScript string literal of an HTML escaped value.
-     *
      * Ext, for example, will use the 'id' config parameter as an attribute value in an XTemplate.
      * The string value is inserted directly into the dom and so should be HTML encoded.
      *
@@ -1246,7 +1245,7 @@ public class PageFlowUtil
 
     public static boolean empty(String str)
     {
-        return null == str || str.trim().length() == 0;
+        return null == str || str.trim().isEmpty();
     }
 
 
@@ -1556,7 +1555,7 @@ public class PageFlowUtil
         return convertNodeToString(node, TransformFormat.xml);
     }
 
-    public static String convertNodeToString(Node node, TransformFormat format) throws TransformerException, IOException
+    private static String convertNodeToString(Node node, TransformFormat format) throws TransformerException, IOException
     {
         try
         {
@@ -2175,6 +2174,10 @@ public class PageFlowUtil
         String numberFormat = Formats.getNumberFormatString(settingsContainer);
         if (null != numberFormat)
             json.put("extDefaultNumberFormat", ExtUtil.toExtNumberFormat(numberFormat));
+        json.put("standardDisplayFormats", Map.of(
+            "dateFormats", DateUtil.STANDARD_DATE_DISPLAY_FORMATS,
+            "timeFormats", DateUtil.STANDARD_TIME_DISPLAY_FORMATS
+        ));
 
         json.put("useMDYDateParsing", LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getDateParsingMode().getDayMonth() == DateUtil.MonthDayOption.MONTH_DAY);
 
@@ -2685,11 +2688,6 @@ public class PageFlowUtil
         }
 
         return urlProvider(inter);
-    }
-
-    static private String h(Object o)
-    {
-        return PageFlowUtil.filter(o);
     }
 
     /**

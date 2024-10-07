@@ -16,6 +16,7 @@
 
 package org.labkey.query;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -72,7 +73,6 @@ import org.labkey.query.view.CustomViewSetKey;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.BadSqlGrammarException;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -680,6 +680,12 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     public String getMetadataXml()
     {
         return _queryDef.getMetaData();
+    }
+
+    @Override
+    public TablesDocument getMetadataTablesDocument()
+    {
+        return _queryDef.getParsedMetadata().getTablesDocument(new ArrayList<>());
     }
 
     @Override

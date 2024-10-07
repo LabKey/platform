@@ -16,13 +16,14 @@
 
 package org.labkey.api.settings;
 
+import jakarta.servlet.http.HttpSession;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.security.User;
 import org.labkey.api.view.HttpView;
 
-import jakarta.servlet.http.HttpSession;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -80,7 +81,7 @@ public class PreferenceService
         Container c = initialScope;
         while (c != null)
         {
-            Map<String, String> p = getPreferences(c, false);
+            Map<String, String> p = getReadOnlyPreferences(c);
             if (p != null)
             {
                 if (p.containsKey(name))
@@ -104,7 +105,7 @@ public class PreferenceService
 
     public void setProperty(String name, String value, Container container)
     {
-        PropertyManager.PropertyMap prefs = getPreferences(container, true);
+        WritablePropertyMap prefs = getWritablePreferences(container);
         prefs.put(name, value);
 
         prefs.save();
@@ -121,7 +122,7 @@ public class PreferenceService
         }
         else
         {
-            PropertyManager.PropertyMap prefs = getPreferences(user, true);
+            WritablePropertyMap prefs = getWritablePreferences(user);
             prefs.put(name, value);
             prefs.save();
         }
@@ -129,7 +130,7 @@ public class PreferenceService
 
     public void deleteProperty(String name, Container container)
     {
-        PropertyManager.PropertyMap prefs = getPreferences(container, true);
+        WritablePropertyMap prefs = getWritablePreferences(container);
         prefs.remove(name);
 
         prefs.save();
@@ -145,7 +146,7 @@ public class PreferenceService
         }
         else
         {
-            PropertyManager.PropertyMap prefs = getPreferences(user, true);
+            WritablePropertyMap prefs = getWritablePreferences(user);
             prefs.remove(name);
             prefs.save();
         }
@@ -165,7 +166,7 @@ public class PreferenceService
         while (!stack.isEmpty())
         {
             Container c = stack.pop();
-            Map<String, String> p = getPreferences(c, false);
+            Map<String, String> p = getReadOnlyPreferences(c);
             if (p != null)
             {
                 prefs.putAll(p);
@@ -193,20 +194,14 @@ public class PreferenceService
         return PropertyManager.getProperties(user, ContainerManager.getRoot(), PREFERENCE_SERVICE_MAP_KEY);
     }
 
-    private PropertyManager.PropertyMap getPreferences(Container container, boolean writable)
+    private WritablePropertyMap getWritablePreferences(Container container)
     {
-        if (writable)
-            return PropertyManager.getWritableProperties(container, PREFERENCE_SERVICE_MAP_KEY, true);
-        else
-            return getReadOnlyPreferences(container);
+        return PropertyManager.getWritableProperties(container, PREFERENCE_SERVICE_MAP_KEY, true);
     }
 
-    private PropertyManager.PropertyMap getPreferences(User user, boolean writable)
+    private WritablePropertyMap getWritablePreferences(User user)
     {
-        if (writable)
-            return PropertyManager.getWritableProperties(user, ContainerManager.getRoot(), PREFERENCE_SERVICE_MAP_KEY, true);
-        else
-            return getPreferences(user);
+        return PropertyManager.getWritableProperties(user, ContainerManager.getRoot(), PREFERENCE_SERVICE_MAP_KEY, true);
     }
 
     private PropertyManager.PropertyMap getReadOnlyPreferences(Container container)

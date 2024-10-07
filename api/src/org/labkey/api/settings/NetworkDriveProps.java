@@ -18,6 +18,7 @@ package org.labkey.api.settings;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 
 public class NetworkDriveProps
 {
@@ -75,7 +76,7 @@ public class NetworkDriveProps
     {
         if (StringUtils.isNotBlank(value))
         {
-            PropertyManager.PropertyMap map = PropertyManager.getEncryptedStore().getWritableProperties(NETWORK_DRIVE_CATEGORY, true);
+            WritablePropertyMap map = PropertyManager.getEncryptedStore().getWritableProperties(NETWORK_DRIVE_CATEGORY, true);
             map.put(key, value);
             map.save();
         }

@@ -13,6 +13,7 @@ import org.labkey.api.util.URLHelper;
 
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public interface PipelineJobNotificationProvider
@@ -35,7 +36,6 @@ public interface PipelineJobNotificationProvider
     }
 
     /**
-     * @param job
      * @param info Allow passing results (such as imported rows, transaction id) of the run to provider
      */
     default void onJobSuccess(PipelineJob job, @Nullable Map<String, Object> info)
@@ -96,7 +96,7 @@ public interface PipelineJobNotificationProvider
             Notification n = new Notification(job.getJobGUID(), job.getNotificationType(status), user);
             if (StringUtils.isEmpty(msgContent))
             {
-                String description = StringUtils.defaultString(job.getDescription(), job.toString());
+                String description = Objects.toString(job.getDescription(), job.toString());
                 n.setContent(String.format("Background job %s\n%s", status.toString().toLowerCase(), description), "text/plain");
             }
             else
@@ -134,9 +134,9 @@ public interface PipelineJobNotificationProvider
                 return false;
 
             // don't attempt to add a notification if the Container has been deleted or is deleting
-            if (ContainerManager.getForId(job.getContainerId()) == null || ContainerManager.isDeleting(job.getContainer()))
+            if (!ContainerManager.exists(job.getContainer()))
             {
-                job.getLogger().info("Job container has been deleted or is being deleted; skipping notification for '" + StringUtils.defaultString(job.getDescription(), job.toString()) + "'");
+                job.getLogger().info("Job container has been deleted or is being deleted; skipping notification for '" + Objects.toString(job.getDescription(), job.toString()) + "'");
                 return false;
             }
 

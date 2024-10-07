@@ -18,7 +18,7 @@ describe('<SSOFields/>', () => {
             />
         );
 
-        expect(document.querySelectorAll('.sso-fields__null-image')).toHaveLength(2);
+        expect(document.querySelectorAll('.sso-fields__file-attachment')).toHaveLength(2);
         expect(document.querySelectorAll('.sso-fields__image')).toHaveLength(0);
         expect(document.querySelectorAll('.sso-fields__delete-img-icon')).toHaveLength(0);
     });
@@ -34,7 +34,7 @@ describe('<SSOFields/>', () => {
             />
         );
 
-        expect(document.querySelectorAll('.sso-fields__null-image')).toHaveLength(0);
+        expect(document.querySelectorAll('.sso-fields__file-attachment')).toHaveLength(0);
         expect(document.querySelectorAll('.sso-fields__image')).toHaveLength(2);
         expect(document.querySelectorAll('.sso-fields__delete-img-icon')).toHaveLength(2);
     });
@@ -49,7 +49,6 @@ describe('<SSOFields/>', () => {
                 handleDeleteLogo={jest.fn()}
             />
         );
-        expect(document.querySelectorAll('.sso-fields__image-holder')).toHaveLength(2);
         expect(document.querySelectorAll('.sso-fields__file-attachment')).toHaveLength(2);
         expect(document.querySelectorAll('.sso-fields__image-holder--view-only')).toHaveLength(0);
     });
@@ -82,9 +81,9 @@ describe('<ImageAndFileAttachmentForm/>', () => {
                 index={1}
             />
         );
-        expect(document.querySelectorAll('.sso-fields__null-image')).toHaveLength(0);
+        expect(document.querySelectorAll('.sso-fields__file-attachment')).toHaveLength(0);
 
         await userEvent.click(document.querySelector('.sso-fields__delete-img-icon'));
-        expect(document.querySelectorAll('.sso-fields__null-image')).toHaveLength(1);
+        expect(document.querySelectorAll('.sso-fields__file-attachment')).toHaveLength(1);
     });
 });

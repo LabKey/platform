@@ -32,7 +32,6 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Formats;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
-import org.labkey.api.util.MothershipReport;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 
@@ -70,7 +69,8 @@ public class AdminBean
     public static final String userName = System.getProperty("user.name");
     public static final String userHomeDir = System.getProperty("user.home");
     public static final String webappDir = ModuleLoader.getServletContext().getRealPath("");
-    public static final String distribution = MothershipReport.getDistributionName();
+    public static final String distributionName = AppProps.getInstance().getDistributionName();
+    public static final String distributionFilename = AppProps.getInstance().getDistributionFilename();
     public static final String workingDir = new File("file").getAbsoluteFile().getParent();
     public static final String osName = System.getProperty("os.name");
     public static final @Nullable String releaseVersion = ModuleLoader.getInstance().getCoreModule().getReleaseVersion();
@@ -78,7 +78,7 @@ public class AdminBean
     public static final String serverGuid = AppProps.getInstance().getServerGUID();
     public static final String serverSessionGuid = AppProps.getInstance().getServerSessionGUID();
     public static final String servletContainer = ModuleLoader.getServletContext().getServerInfo();
-    public static final String servletConfiguration = AppProps.getInstance().isEmbeddedTomcat() ? "Embedded" : "Standalone";
+    public static final String servletConfiguration = "Embedded";
     public static final String sessionTimeout = Formats.commaf0.format(ModuleLoader.getServletContext().getSessionTimeout());
     @SuppressWarnings("unused") // Available substitution property, not used directly in code
     public static final String buildTime = ModuleLoader.getInstance().getCoreModule().getBuildTime();

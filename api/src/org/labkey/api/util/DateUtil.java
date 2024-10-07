@@ -53,6 +53,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
@@ -81,6 +82,48 @@ public class DateUtil
     private static final String ISO_LONG_TIME_FORMAT_STRING = "HH:mm:ss.SSS";
     private static final String[] SIMPLE_TIME_FORMATS_WITH_AMPM = {"hh:mm:ss.SSS a", "hh:mm:ss a", "hh:mm a"};
     private static final String[] SIMPLE_TIME_FORMATS_NO_AMPM = {"HH:mm:ss.SSS", "HH:mm:ss", "HH:mm"};
+
+    public static final Set<String> STANDARD_DATE_DISPLAY_FORMATS = PageFlowUtil.set(
+        "yyyy-MM-dd",
+        "yyyy-MMM-dd",
+        "dd-MMM-yyyy",
+        "dd-MMM-yy",
+        "ddMMMyyyy",
+        "ddMMMyy"
+    );
+
+    public static final Set<String> STANDARD_TIME_DISPLAY_FORMATS = PageFlowUtil.set(
+        "HH:mm:ss",
+        "HH:mm",
+        "HH:mm:ss.SSS",
+        "hh:mm a"
+    );
+
+    public static boolean isStandardDateDisplayFormat(String dateFormat)
+    {
+        return STANDARD_DATE_DISPLAY_FORMATS.contains(dateFormat);
+    }
+
+    public static boolean isStandardDateTimeDisplayFormat(String dateTimeFormat)
+    {
+        // Tolerate any amount of whitespace between the parts
+        String[] parts = dateTimeFormat.split("\\s+");
+
+        // If one part, must be standard date format
+        // If two parts, must be standard date format followed by standard time format
+        // Otherwise, it's non-standard
+        return switch (parts.length)
+        {
+            case 1 -> isStandardDateDisplayFormat(parts[0]);
+            case 2 -> isStandardDateDisplayFormat(parts[0]) && isStandardTimeDisplayFormat(parts[1]);
+            default -> false;
+        };
+    }
+
+    public static boolean isStandardTimeDisplayFormat(String timeFormat)
+    {
+        return STANDARD_TIME_DISPLAY_FORMATS.contains(timeFormat);
+    }
 
     /**
      * GregorianCalendar is expensive because it calls computeTime() in setTimeInMillis()
@@ -1117,7 +1160,7 @@ validNum:       {
         return formatIsoDate(new Date());
     }
 
-    @Deprecated // Use formatIsoDate();
+    @Deprecated // Use formatIsoDate(Date);
     public static String formatDateISO8601(@Nullable Date date)
     {
         return formatIsoDate(date);
@@ -1132,7 +1175,7 @@ validNum:       {
         return formatDateTime(date, ISO_DATE_FORMAT_STRING);
     }
 
-    @Deprecated // Use formatIsoDateShortTime() instead
+    @Deprecated // Use formatIsoDateShortTime(Date) instead
     public static String formatDateTimeISO8601(Date date)
     {
         return formatIsoDateShortTime(date);
@@ -1246,9 +1289,10 @@ validNum:       {
     }
 
     /**
-     * Get the default date format string to use in this Container
+     * Get the default date display format string to use in this Container
      * Note: The display format is specified by an admin; it could contain any characters, hence, it may not be safe.
      * Any value formatted by this pattern must be HTML filtered, if rendered to an HTML page.
+     * THIS IS A DISPLAY FORMAT STRING; DO NOT USE IT FOR PARSING!
      */
     public static String getDateFormatString(Container c)
     {
@@ -1256,15 +1300,22 @@ validNum:       {
     }
 
     /**
-     * Get the default date/time format string set in this Container (or one of its parents)
+     * Get the default date/time display format string set in this Container (or one of its parents)
      * Note: The display format is specified by an admin; it could contain any characters, hence, it may not be safe.
      * Any value formatted by this pattern must be HTML filtered, if rendered to an HTML page.
+     * THIS IS A DISPLAY FORMAT STRING; DO NOT USE IT FOR PARSING!
      */
     public static String getDateTimeFormatString(Container c)
     {
         return FolderSettingsCache.getDefaultDateTimeFormat(c);
     }
 
+    /**
+     * Get the default time display format string set in this Container (or one of its parents)
+     * Note: The display format is specified by an admin; it could contain any characters, hence, it may not be safe.
+     * Any value formatted by this pattern must be HTML filtered, if rendered to an HTML page.
+     * THIS IS A DISPLAY FORMAT STRING; DO NOT USE IT FOR PARSING!
+     */
     public static String getTimeFormatString(Container c)
     {
         return FolderSettingsCache.getDefaultTimeFormat(c);

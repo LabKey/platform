@@ -44,7 +44,7 @@ public interface Macro extends Comparable {
    * in the input to the macro which should be called.
    * The method has to be implemented by subclassing classes.
    *
-   * @return name Name of the Macro
+   * @return Name of the Macro
    */
   public String getName();
 

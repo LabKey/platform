@@ -45,7 +45,7 @@ public interface RenderEngine {
    * Name of the RenderEngine. This is used to get a RenderEngine instance
    * with EngineManager.getInstance(name);
    *
-   * @return name Name of the engine
+   * @return Name of the engine
    */
   String getName();
 

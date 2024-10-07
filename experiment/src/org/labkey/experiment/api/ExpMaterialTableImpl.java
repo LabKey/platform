@@ -630,12 +630,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         typeColumnInfo.setShownInInsertView(false);
 
         addColumn(Column.MaterialExpDate);
-
-        var folderCol = addContainerColumn(Column.Folder, null);
-        boolean hasProductProjects = getContainer().hasProductProjects();
-        if (hasProductProjects)
-            folderCol.setLabel("Project");
-
+        addContainerColumn(Column.Folder, null);
         var runCol = addColumn(Column.Run);
         runCol.setFk(new ExpSchema(_userSchema.getUser(), getContainer()).getRunIdForeignKey(getContainerFilter()));
         runCol.setShownInInsertView(false);
@@ -674,7 +669,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         List<FieldKey> defaultCols = new ArrayList<>();
         defaultCols.add(FieldKey.fromParts(Column.Name));
         defaultCols.add(FieldKey.fromParts(Column.MaterialExpDate));
-        if (hasProductProjects)
+        boolean hasProductFolders = getContainer().hasProductFolders();
+        if (hasProductFolders)
             defaultCols.add(FieldKey.fromParts(Column.Folder));
         defaultCols.add(FieldKey.fromParts(Column.Run));
 
@@ -1515,6 +1511,25 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     }
 
     @Override
+    @NotNull
+    public Map<String, String> getAdditionalRequiredInsertColumns()
+    {
+        if (getSampleType() == null)
+            return Collections.emptyMap();
+
+        Map<String, String> required = new CaseInsensitiveHashMap<>();
+        try
+        {
+            required.putAll(getSampleType().getRequiredImportAliases());
+            return required;
+        }
+        catch (IOException e)
+        {
+            return Collections.emptyMap();
+        }
+    }
+
+    @Override
     public DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context)
     {
         TableInfo propertiesTable = _ss.getTinfo();
@@ -1524,20 +1539,35 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         // TODO: subclass PersistDataIteratorBuilder to index Materials! not DataClass!
         try
         {
-            var persist = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, _ss, getUserSchema().getContainer(), getUserSchema().getUser(), _ss.getImportAliasMap(), sampleTypeObjectId)
+            var persist = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, _ss, getUserSchema().getContainer(), getUserSchema().getUser(), _ss.getImportAliases(), sampleTypeObjectId)
                     .setFileLinkDirectory("sampletype");
             SearchService searchService = SearchService.get();
+            ExperimentServiceImpl experimentServiceImpl = ExperimentServiceImpl.get();
+
             if (null != searchService)
             {
-                persist.setIndexFunction(lsids -> propertiesTable.getSchema().getScope().addCommitTask(() -> {
-                    ListUtils.partition(lsids, 100).forEach(sublist ->
-                        searchService.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
-                        {
-                            for (ExpMaterialImpl expMaterial : ExperimentServiceImpl.get().getExpMaterialsByLsid(sublist))
-                                expMaterial.index(searchService.defaultTask());
-                        })
-                    );
-                }, DbScope.CommitTaskOption.POSTCOMMIT)
+                persist.setIndexFunction(searchIndexDataKeys -> propertiesTable.getSchema().getScope().addCommitTask(() ->
+                    {
+                        List<String> lsids = searchIndexDataKeys.lsids();
+                        List<Integer> orderedRowIds = searchIndexDataKeys.orderedRowIds();
+
+                        // Issue 51263: order by RowId to reduce deadlock
+                        ListUtils.partition(orderedRowIds, 100).forEach(sublist ->
+                            searchService.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
+                            {
+                                for (ExpMaterialImpl expMaterial : experimentServiceImpl.getExpMaterials(sublist))
+                                    expMaterial.index(searchService.defaultTask());
+                            })
+                        );
+
+                        ListUtils.partition(lsids, 100).forEach(sublist ->
+                                searchService.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
+                                {
+                                    for (ExpMaterialImpl expMaterial : experimentServiceImpl.getExpMaterialsByLsid(sublist))
+                                        expMaterial.index(searchService.defaultTask());
+                                })
+                        );
+                    }, DbScope.CommitTaskOption.POSTCOMMIT)
                 );
             }
 
@@ -1584,9 +1614,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         url.addParameter("headerType", ColumnHeaderType.DisplayFieldKey.name());
         try
         {
-            if (getSampleType() != null && !getSampleType().getImportAliasMap().isEmpty())
+            if (getSampleType() != null && !getSampleType().getImportAliases().isEmpty())
             {
-                for (String aliasKey : getSampleType().getImportAliasMap().keySet())
+                for (String aliasKey : getSampleType().getImportAliases().keySet())
                     url.addParameter("includeColumn", aliasKey);
             }
         }

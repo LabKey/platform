@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.formSchema.FormSchema;
 import org.labkey.api.pipeline.file.PathMapper;
+import org.labkey.api.util.QuietCloser;
 
 import java.io.FileNotFoundException;
 import java.util.List;
@@ -38,6 +39,12 @@ public interface PipelineJobService extends TaskPipelineRegistry
 {
     String VERSION_SUBSTITUTION = "${version}";
     String VERSION_PLAIN_SUBSTITUTION = "${versionPlain}";
+
+    /** Associates the current thread with the job so that if the job is canceled, we can close those resources to abort it */
+    void trackJobThread(PipelineJob job);
+
+    /** The job is done using the thread */
+    void clearJobThread(PipelineJob job);
 
     /**
      * We use Spring-based XML to register and wire up implementations, which breaks our standard ServiceRegistry
@@ -120,7 +127,7 @@ public interface PipelineJobService extends TaskPipelineRegistry
 
     @NotNull LocationType getLocationType();
 
-    /** @return all of the engines that are currently known to the pipeline module */
+    /** @return all the engines that are currently known to the pipeline module */
     List<? extends RemoteExecutionEngine<?>> getRemoteExecutionEngines();
 
     /** Registers a remote execution engine. Intended for calling during module startup */
@@ -131,6 +138,15 @@ public interface PipelineJobService extends TaskPipelineRegistry
      * @param installPath if non-null, use this as the path to the file instead of the standard tools directory
      */
     String getExecutablePath(String exeRel, @Nullable String installPath, String packageName, String ver, Logger jobLogger) throws FileNotFoundException;
+
+    /**
+     * Tracks processes launched by pipeline jobs so they can be killed if the pipeline job gets canceled.
+     * Callers should invoke the close() on the returned object when the process completes normally and no longer
+     * needs to be tracked
+     */
+    QuietCloser trackForJobCancellation(String jobGuid, Process process);
+
+    void cancelForJob(String jobGuid);
 
     /**
      * Similar to getExecutablePath(), but allows resolution of non-executable tool directory files

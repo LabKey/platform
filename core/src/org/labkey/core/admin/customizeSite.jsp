@@ -184,7 +184,7 @@ Click the Save button at any time to accept the current settings and continue.</
     <td>
         <table>
 <%
-        if (MothershipReport.shouldReceiveMarketingUpdates(MothershipReport.getDistributionName()))
+        if (MothershipReport.shouldReceiveMarketingUpdates())
         {
 %>
             <tr>

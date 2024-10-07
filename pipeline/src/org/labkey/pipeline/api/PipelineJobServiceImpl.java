@@ -29,7 +29,10 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.CopyOnWriteHashMap;
+import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.formSchema.CheckboxField;
 import org.labkey.api.formSchema.Field;
 import org.labkey.api.formSchema.FormSchema;
@@ -65,9 +68,11 @@ import org.labkey.api.pipeline.trigger.PipelineTriggerType;
 import org.labkey.api.reports.report.r.RReport;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MinorConfigurationException;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.QuietCloser;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.TestContext;
@@ -106,6 +111,20 @@ public class PipelineJobServiceImpl implements PipelineJobService
     private static final String MODULE_TASKS_DIR = "tasks";
     private static final String MODULE_PIPELINES_DIR = "pipelines";
 
+    private final Map<String, Thread> _jobThreads = new CopyOnWriteHashMap<>();
+
+    @Override
+    public void trackJobThread(PipelineJob job)
+    {
+        _jobThreads.put(job.getJobGUID(), Thread.currentThread());
+    }
+
+    @Override
+    public void clearJobThread(PipelineJob job)
+    {
+        _jobThreads.remove(job.getJobGUID());
+    }
+
     public static PipelineJobServiceImpl get()
     {
         return (PipelineJobServiceImpl) PipelineJobService.get();
@@ -113,6 +132,8 @@ public class PipelineJobServiceImpl implements PipelineJobService
 
     @NotNull
     private LocationType _locationType;
+
+    private final Map<String, List<Process>> _processesByJob = new CopyOnWriteHashMap<>();
 
     public static PipelineJobServiceImpl initDefaults(@NotNull LocationType locationType)
     {
@@ -240,6 +261,53 @@ public class PipelineJobServiceImpl implements PipelineJobService
         }
 
         return pipeline;
+    }
+
+    @Override
+    public QuietCloser trackForJobCancellation(String jobGuid, Process process)
+    {
+        if (jobGuid == null)
+        {
+            return () -> {};
+        }
+
+        MemTracker.getInstance().put(process);
+        List<Process> processes = _processesByJob.computeIfAbsent(jobGuid, (k) -> new CopyOnWriteArrayList<>());
+        processes.add(process);
+        return () -> processes.remove(process);
+    }
+
+    @Override
+    public void cancelForJob(String jobGuid)
+    {
+        List<Process> processes = _processesByJob.remove(jobGuid);
+        if (processes != null)
+        {
+            for (Process p : processes)
+            {
+                p.destroyForcibly();
+            }
+        }
+
+        if (PipelineSchema.getInstance().getSqlDialect().isPostgreSQL())
+        {
+            // Issue 50131
+            // Closing a Connection doesn't terminate all pending statements on SQL Server. Calling close
+            // and returning to the pool results in another thread getting a Connection that's still busy and
+            // blocks it.
+
+            // If we need to support query cancellation on SQL Server, we'd have to start tracking the Statements
+            // the Connection hands out and kill them individually.
+            Thread jobThread = _jobThreads.get(jobGuid);
+            if (jobThread != null)
+            {
+                // Piggyback on the job thread so we can shut down open connections on its behalf
+                try (DbScope.ConnectionSharingCloseable ignored = DbScope.shareConnections(jobThread, Thread.currentThread()))
+                {
+                    DbScope.closeAllConnectionsForCurrentThread();
+                }
+            }
+        }
     }
 
     @NotNull
@@ -419,10 +487,10 @@ public class PipelineJobServiceImpl implements PipelineJobService
     @NotNull
     private Collection<TaskFactory<?>> getTaskFactories(@NotNull Module module)
     {
-        Collection<TaskFactory<?>> factories = new ArrayList<>();
+        Collection<TaskFactory<?>> factories;
         synchronized (_taskFactoryStore)
         {
-            factories.addAll(_taskFactoryStore.values().stream()
+            factories = new ArrayList<>(_taskFactoryStore.values().stream()
                     .filter(factory -> module.equals(factory.getDeclaringModule())).toList());
         }
 
@@ -701,7 +769,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
     {
         // Add package path prefix, if it exists.
         String packagePath = getConfigProperties().getSoftwarePackagePath(packageName);
-        if (packagePath != null && packagePath.length() > 0)
+        if (packagePath != null && !packagePath.isEmpty())
         {
             path = packagePath + '/' + path;
         }
@@ -712,7 +780,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
         ver = ver.trim();
         if (path.contains(VERSION_PLAIN_SUBSTITUTION))
             return path.replace(VERSION_PLAIN_SUBSTITUTION, ver);
-        if (!"".equals(ver) && _prependVersionWithDot)
+        if (!ver.isEmpty() && _prependVersionWithDot)
             ver = "." + ver;
         return path.replace(VERSION_SUBSTITUTION, ver);
     }
@@ -846,7 +914,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
     public String getJarPath(String jarRel, String installPath, String packageName, String ver) throws FileNotFoundException
     {
         String toolsDir = installPath == null ? getAppProperties().getToolsDirectory() : installPath;
-        if (toolsDir == null || toolsDir.trim().equals(""))
+        if (toolsDir == null || toolsDir.trim().isEmpty())
         {
             throw new FileNotFoundException("Failed to locate " + jarRel + ".  " +
                 "Pipeline tools directory is not set.  " +
@@ -859,10 +927,10 @@ public class PipelineJobServiceImpl implements PipelineJobService
     public String getJavaPath() throws FileNotFoundException
     {
         String javaHome = System.getenv("JAVA_HOME");
-        if (javaHome == null || javaHome.trim().equals(""))
+        if (javaHome == null || javaHome.trim().isEmpty())
         {
             javaHome = System.getProperty("java.home");
-            if (javaHome == null || javaHome.trim().equals(""))
+            if (javaHome == null || javaHome.trim().isEmpty())
             {
                 throw new FileNotFoundException("Failed to locate Java.  " +
                     "Please set JAVA_HOME environment variable.\n" + System.getenv());

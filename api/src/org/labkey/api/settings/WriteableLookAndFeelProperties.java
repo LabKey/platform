@@ -34,12 +34,6 @@ import java.util.Map;
 
 import static org.labkey.api.settings.LookAndFeelProperties.Properties.*;
 
-/**
- * User: adam
- * Date: Aug 1, 2008
- * Time: 9:35:40 PM
- */
-
 // Handles all the properties that can be set at the project or site level
 public class WriteableLookAndFeelProperties extends WriteableFolderLookAndFeelProperties
 {

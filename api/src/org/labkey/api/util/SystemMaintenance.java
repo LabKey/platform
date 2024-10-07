@@ -21,6 +21,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.quartz.CronScheduleBuilder;
 import org.quartz.JobBuilder;
 import org.quartz.JobDetail;
@@ -171,7 +172,7 @@ public class SystemMaintenance
 
     public static void setProperties(Set<String> enabledTasks, String time)
     {
-        PropertyManager.PropertyMap writableProps = PropertyManager.getWritableProperties(SET_NAME, true);
+        WritablePropertyMap writableProps = PropertyManager.getWritableProperties(SET_NAME, true);
 
         Set<String> enabled = new HashSet<>(enabledTasks);
         Set<String> disabled = getTasks().stream()
@@ -189,7 +190,7 @@ public class SystemMaintenance
 
     public static void enableTask(String taskToEnable)
     {
-        PropertyManager.PropertyMap writableProps = PropertyManager.getWritableProperties(SET_NAME, true);
+        WritablePropertyMap writableProps = PropertyManager.getWritableProperties(SET_NAME, true);
         String disabled = writableProps.get(DISABLED_TASKS_PROPERTY_NAME);
         String enabled = writableProps.get(ENABLED_TASKS_PROPERTY_NAME);
 

@@ -70,7 +70,7 @@ public class BasicRegexTest {
     FilterContext context = new BaseFilterContext();
     context.setRenderContext(new BaseRenderContext());
     Filter filter = new HeadingFilter();
-    filter.setInitialContext(new BaseInitialRenderContext());
+    filter.setInitialContext(new BaseInitialRenderContext(null));
     assertEquals("Heading replaced", "<h3 class=\"heading-1\">test</h3>", filter.filter("1 test", context));
   }
 

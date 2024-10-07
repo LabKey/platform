@@ -36,6 +36,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.NormalContainerType;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -676,7 +677,7 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
     {
         if (user.isGuest())
             return;
-        PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(user, container, PipelineServiceImpl.KEY_PREFERENCES, true);
+        WritablePropertyMap map = PropertyManager.getWritableProperties(user, container, PipelineServiceImpl.KEY_PREFERENCES, true);
         map.put(getLastProtocolKey(factory), protocolName);
         map.save();
     }
@@ -708,7 +709,7 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
         if (sequenceDbPath == null || sequenceDbPath.equals("/"))
             sequenceDbPath = "";
         String fullPath = sequenceDbPath + sequenceDb;
-        PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(user, container,
+        WritablePropertyMap map = PropertyManager.getWritableProperties(user, container,
                 PipelineServiceImpl.KEY_PREFERENCES, true);
         map.put(PipelineServiceImpl.PREF_LASTSEQUENCEDB + "-" + factory.getName(), fullPath);
         map.save();
@@ -734,9 +735,9 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
         if (user.isGuest())
             return;
         String sequenceDbPathsString = list2String(sequenceDbPathsList);
-        PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(user, container,
+        WritablePropertyMap map = PropertyManager.getWritableProperties(user, container,
                 PipelineServiceImpl.KEY_PREFERENCES, true);
-        if(sequenceDbPathsString == null || sequenceDbPathsString.length() == 0 || sequenceDbPathsString.length() >= 2000)
+        if (sequenceDbPathsString == null || sequenceDbPathsString.isEmpty() || sequenceDbPathsString.length() >= 2000)
         {
             map.remove(PipelineServiceImpl.PREF_LASTSEQUENCEDBPATHS + "-" + factory.getName());
         }

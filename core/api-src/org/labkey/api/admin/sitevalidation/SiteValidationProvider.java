@@ -19,26 +19,9 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 
-public interface SiteValidationProvider extends SiteValidatorDescriptor
+public interface SiteValidationProvider
 {
-    /**
-     * Return false to indicate the validator shouldn't be run for that container.
-     * Useful if we know in advance the validator isn't applicable; e.g., the
-     * validator is module-dependent and that module isn't enabled in this container.
-     */
-    default boolean shouldRun(Container c, User u)
-    {
-        return true;
-    }
-
-    /**
-     * Return true to indicate this is a site-wide validator.
-     * False to indicate the validator should only run at container scope
-     */
-    default boolean isSiteScope()
-    {
-        return true;
-    }
+    SiteValidationProviderFactory getFactory();
 
     @Nullable
     SiteValidationResultList runValidation(Container c, User u);

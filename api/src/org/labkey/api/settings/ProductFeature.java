@@ -16,7 +16,7 @@ public enum ProductFeature
     FreezerManagement("inventory"),
     Media("recipe"),
     NonstandardAssay("nonstandardAssay"),
-    Projects("sampleManagement"),
+    Folders("sampleManagement"),
     SampleManagement("sampleManagement"),
     TransformScripts("core"),
     Workflow("sampleManagement");

@@ -19,7 +19,10 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.DateUtil;
 
-import static org.labkey.api.settings.LookAndFeelProperties.Properties.*;
+import static org.labkey.api.settings.LookAndFeelProperties.Properties.extraDateParsingPattern;
+import static org.labkey.api.settings.LookAndFeelProperties.Properties.extraDateTimeParsingPattern;
+import static org.labkey.api.settings.LookAndFeelProperties.Properties.extraTimeParsingPattern;
+import static org.labkey.api.settings.LookAndFeelProperties.Properties.restrictedColumnsEnabled;
 
 /**
  * Container-specific configuration settings, primarily related to look-and-feel or parsing options
@@ -27,7 +30,7 @@ import static org.labkey.api.settings.LookAndFeelProperties.Properties.*;
  */
 public class LookAndFeelFolderProperties extends AbstractWriteableSettingsGroup
 {
-    static final String LOOK_AND_FEEL_SET_NAME = "LookAndFeel";
+    public static final String LOOK_AND_FEEL_SET_NAME = "LookAndFeel";
 
     // These are the legacy property names for the format patterns
     protected static final String defaultDateFormatString = "defaultDateFormatString";

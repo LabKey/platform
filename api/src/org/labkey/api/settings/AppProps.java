@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.DefaultModule;
+import org.labkey.api.module.SupportedDatabase;
 import org.labkey.api.util.ExceptionReportingLevel;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.UsageReportingLevel;
@@ -28,6 +29,7 @@ import org.labkey.api.view.ActionURL;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Stores basic site-wide configuration.
@@ -127,8 +129,6 @@ public interface AppProps
     String getScheme();
 
     String getServerName();
-
-    boolean isEmbeddedTomcat();
 
     /**
      * Save the current request URL if the base server URL property is not set
@@ -238,5 +238,11 @@ public interface AppProps
     @NotNull
     List<String> getExternalRedirectHosts();
 
-    Map<StashedStartupProperties, StartupPropertyEntry> getStashedProperties();
+    Map<StashedStartupProperties, StartupPropertyEntry> getStashedStartupProperties();
+
+    @NotNull String getDistributionName();
+
+    @NotNull String getDistributionFilename();
+
+    @NotNull Set<SupportedDatabase> getDistributionSupportedDatabases();
 }

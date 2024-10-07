@@ -78,7 +78,7 @@ public interface SampleTypeService
         AddAssayData("addition of associated assay data", InsertPermission.class),
         LinkToStudy("linking to study", InsertPermission.class),
         RecallFromStudy("recalling from a study", DeletePermission.class),
-        Move("moving to a different project", MoveEntitiesPermission.class);
+        Move("moving to a different folder", MoveEntitiesPermission.class);
 
         private final String _description; // used as a suffix in messaging users about what is not allowed
         private final Class<? extends Permission> _permissionClass;
@@ -132,12 +132,12 @@ public interface SampleTypeService
 
     @NotNull
     ExpSampleType createSampleType(Container container, User user, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
-                                   String nameExpression, String aliquotNameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, String> importAliases, @Nullable String labelColor, @Nullable String metricUnit)
+                                   String nameExpression, String aliquotNameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, Map<String, Object>> importAliases, @Nullable String labelColor, @Nullable String metricUnit)
             throws ExperimentException, SQLException;
 
     @NotNull
     ExpSampleType createSampleType(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
-                                              String nameExpression, String aliquotNameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, String> importAliases, @Nullable String labelColor, @Nullable String metricUnit,
+                                              String nameExpression, String aliquotNameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, Map<String, Object>> importAliases, @Nullable String labelColor, @Nullable String metricUnit,
                                               @Nullable Container autoLinkTargetContainer, @Nullable String autoLinkCategory, @Nullable String category, @Nullable List<String> disabledSystemField,
                                               @Nullable List<String> excludedContainerIds, @Nullable List<String> excludedDashboardContainerIds)
             throws ExperimentException, SQLException;

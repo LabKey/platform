@@ -15,28 +15,22 @@
  */
 package org.labkey.api.reports.report;
 
-import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.query.xml.ReportDescriptorType;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 
-/**
- * User: dax
- * Date: 3/14/14
- */
 public class ModuleReportResource
 {
+    private static final Logger LOG = LogHelper.getLogger(ModuleReportResource.class, "Module report loading and parsing problems");
     protected final Resource _sourceFile;
     protected final ReportDescriptor _reportDescriptor;
     protected final Resource _metaDataFile;
@@ -61,7 +55,7 @@ public class ModuleReportResource
         }
         catch(IOException e)
         {
-            LogManager.getLogger(ModuleReportResource.class).warn("Unable to load report script from source file " + _sourceFile, e);
+            LOG.warn("Unable to load report script from source file {}", _sourceFile, e);
         }
     }
 
@@ -78,25 +72,24 @@ public class ModuleReportResource
 
                 if (createdDateStr != null)
                 {
-                    DateFormat format = new SimpleDateFormat(DateUtil.getDateFormatString(ContainerManager.getRoot()));
                     try
                     {
-                        Date createdDate = format.parse(createdDateStr);
+                        Date createdDate = new Date(DateUtil.parseISODateTime(createdDateStr));
                         _reportDescriptor.setCreated(createdDate);
                     }
-                    catch (ParseException e)
+                    catch (Exception e)
                     {
-                        LogManager.getLogger(ModuleReportResource.class).warn("Unable to parse moduleReportCreatedDate \"" + createdDateStr + "\" from file " + _sourceFile, e);
+                        LOG.warn("Unable to parse moduleReportCreatedDate \"{}\" from file {}", createdDateStr, _sourceFile, e);
                     }
                 }
             }
             catch(IOException e)
             {
-                LogManager.getLogger(ModuleReportResource.class).warn("Unable to load report metadata from file " + _metaDataFile, e);
+                LOG.warn("Unable to load report metadata from file {}", _metaDataFile, e);
             }
             catch(XmlException e)
             {
-                LogManager.getLogger(ModuleReportResource.class).warn("Unable to load query report metadata from file " + _sourceFile, e);
+                LOG.warn("Unable to load query report metadata from file {}", _sourceFile, e);
             }
         }
         return d;

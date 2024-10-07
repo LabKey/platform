@@ -4,8 +4,9 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.PropertyManager;
-import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.usageMetrics.UsageMetricsProvider;
@@ -162,7 +163,7 @@ public class SimpleMetricsServiceImpl implements SimpleMetricsService
             {
                 // This is the first time we've seen a module/area combination so save the new listing immediately,
                 // which is important so that we know to reload it after the server restarts
-                PropertyManager.PropertyMap updatedListing = PropertyManager.getWritableProperties(getRootScoping(), true);
+                WritablePropertyMap updatedListing = PropertyManager.getWritableProperties(getRootScoping(), true);
                 String existingAreas = updatedListing.get(moduleName);
                 String updatedAreas = existingAreas == null ? featureArea : existingAreas + "," + featureArea;
                 updatedListing.put(moduleName, updatedAreas);
@@ -223,7 +224,7 @@ public class SimpleMetricsServiceImpl implements SimpleMetricsService
                 Module module = ModuleLoader.getInstance().getModule(modules.getKey());
                 if (module != null)
                 {
-                    PropertyManager.PropertyMap storedProps = PropertyManager.getWritableProperties(getScoping(module, areas.getKey()), true);
+                    WritablePropertyMap storedProps = PropertyManager.getWritableProperties(getScoping(module, areas.getKey()), true);
                     for (Map.Entry<String, AtomicLong> metricCount : areas.getValue().entrySet())
                     {
                         storedProps.put(metricCount.getKey(), Long.toString(metricCount.getValue().longValue()));

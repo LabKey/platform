@@ -294,6 +294,8 @@ import static org.labkey.api.exp.XarContext.XAR_JOB_ID_NAME;
 import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ExperimentRun;
 import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ExperimentRunOutput;
 import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ProtocolApplication;
+import static org.labkey.api.exp.api.ExperimentJSONConverter.DATA_INPUTS_ALIAS_PREFIX;
+import static org.labkey.api.exp.api.ExperimentJSONConverter.MATERIAL_INPUTS_ALIAS_PREFIX;
 import static org.labkey.api.exp.api.NameExpressionOptionService.NAME_EXPRESSION_REQUIRED_MSG;
 import static org.labkey.api.exp.api.NameExpressionOptionService.NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS;
 import static org.labkey.api.exp.api.ProvenanceService.PROVENANCE_PROTOCOL_LSID;
@@ -1221,7 +1223,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             .append(" ON d.RowId = di.DataId")
             .append(" WHERE d.classId = ?").add(dataClass.getRowId())
             .append(" AND (di.lastIndexed IS NULL OR di.lastIndexed < ? OR (d.modified IS NOT NULL AND di.lastIndexed < d.modified))")
-            .add(dataClass.getModified());
+            .append(" ORDER BY d.RowId") // Issue 51263: order by RowId to reduce deadlock
+                .add(dataClass.getModified());
 
         var scope = table.getSchema().getScope();
         scope.executeWithRetryReadOnly(tx ->
@@ -6963,6 +6966,22 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             addDataInputs(inputDatas, protApp2._object, user);
             addMaterialInputs(inputMaterials, protApp2._object, user);
 
+            Set<String> inputDataTypes = new CaseInsensitiveHashSet();
+            for (ExpData expData : inputDatas.keySet())
+            {
+                ExpDataClass dataClass = expData.getDataClass(user);
+                if (dataClass != null)
+                    inputDataTypes.add(ExpData.DATA_INPUT_PARENT + "/" + dataClass.getName());
+            }
+
+            for (ExpMaterial expMaterial : inputMaterials.keySet())
+            {
+                ExpSampleType sampleType = expMaterial.getSampleType();
+                if (sampleType != null)
+                    inputDataTypes.add(ExpMaterial.MATERIAL_INPUT_PARENT + "/" + sampleType.getName());
+            }
+
+            Set<String> requiredDataTypes = new CaseInsensitiveHashSet();
             for (ExpMaterial outputMaterial : outputMaterials.keySet())
             {
                 if (outputMaterial.getSourceApplication() != null)
@@ -6973,6 +6992,18 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 {
                     throw new IllegalArgumentException("Output material " + outputMaterial.getName() + " is already marked as being created by another run");
                 }
+
+                try
+                {
+                    ExpSampleType sampleType = outputMaterial.getSampleType();
+                    if (sampleType != null)
+                        requiredDataTypes.addAll(sampleType.getRequiredImportAliases().values());
+                }
+                catch (IOException e)
+                {
+                    throw new RuntimeException(e);
+                }
+
                 outputMaterial.setSourceApplication(protApp2);
                 outputMaterial.setRun(run);
                 Table.update(user, getTinfoMaterial(), ((ExpMaterialImpl)outputMaterial)._object, outputMaterial.getRowId());
@@ -6990,10 +7021,34 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 {
                     throw new ExperimentException("Output data " + outputData.getName() + " (RowId " + outputData.getRowId() + ") is already marked as being created by another protocol application");
                 }
+
+                try
+                {
+                    ExpDataClass dataClass = outputData.getDataClass(user);
+                    if (dataClass != null)
+                        requiredDataTypes.addAll(dataClass.getRequiredImportAliases().values());
+                }
+                catch (IOException e)
+                {
+                    throw new RuntimeException(e);
+                }
+
                 outputData.setSourceApplication(protApp2);
                 outputData.setRun(run);
                 Table.update(user, getTinfoData(), ((ExpDataImpl)outputData).getDataObject(), outputData.getRowId());
             }
+
+            boolean hasMissingRequiredParent = false;
+            for (String required : requiredDataTypes)
+            {
+                if (!inputDataTypes.contains(required))
+                {
+                    hasMissingRequiredParent = true;
+                    break;
+                }
+            }
+            if (hasMissingRequiredParent)
+                throw new ExperimentException("Inputs are required: " + String.join(",", requiredDataTypes));
 
             initializeProtocolApplication(protApp3, date, action3, run, outputProtocol, context);
             protApp3.save(user);
@@ -7638,6 +7693,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     private ExpRunImpl createRun(Map<? extends ExpMaterial, String> inputMaterials, Map<? extends ExpData, String> inputDatas,
                          Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas, ViewBackgroundInfo info) throws ExperimentException, ValidationException
     {
+        User user = info.getUser();
         PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(info.getContainer());
         if (pipeRoot == null || !pipeRoot.isValid())
             throw new ValidationException("The child folder, " + info.getContainer().getPath() + ", must have a valid pipeline root.");
@@ -8007,7 +8063,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (!svc.allowUserSpecifiedNames(c))
             {
                 if (nameExpression == null)
-                    throw new ExperimentException(c.hasProductProjects() ? NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS : NAME_EXPRESSION_REQUIRED_MSG);
+                    throw new ExperimentException(c.hasProductFolders() ? NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS : NAME_EXPRESSION_REQUIRED_MSG);
             }
 
             if (svc.getExpressionPrefix(c) != null)
@@ -8074,25 +8130,31 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 dataClass.setName(newName);
                 ExpDataClass existing = getDataClass(c, u, newName);
                 if (existing != null)
-                {
-                    errors = new ValidationException();
-                    errors.addError(new SimpleValidationError("DataClass '" + newName + "' already exists."));
-                    return errors;
-                }
+                    throw new IllegalArgumentException("DataClass '" + newName + "' already exists.");
             }
             dataClass.setDescription(options.getDescription());
             dataClass.setNameExpression(options.getNameExpression());
             dataClass.setSampleType(options.getSampleType());
             dataClass.setCategory(options.getCategory());
-            dataClass.setImportAliasMap(options.getImportAliases());
+            Map<String, Map<String, Object>> newAliases = options.getImportAliases();
+            if (newAliases != null && !newAliases.isEmpty())
+            {
+                try
+                {
+                    Set<String> existingRequiredInputs = new HashSet<>(dataClass.getRequiredImportAliases().values());
+                    String invalidParentType = getInvalidRequiredImportAliasUpdate(dataClass.getLSID(), false, newAliases, existingRequiredInputs, c, u);
+                    if (invalidParentType != null)
+                        throw new IllegalArgumentException("'" + invalidParentType + "' cannot be required as a parent type when there are existing data without a parent of this type.");
+                }
+                catch (IOException e)
+                {
+                    throw new RuntimeException(e);
+                }
+            }
+            dataClass.setImportAliasMap(newAliases);
 
             if (!NameExpressionOptionService.get().allowUserSpecifiedNames(c) && options.getNameExpression() == null)
-            {
-                errors = new ValidationException();
-                errors.addError(new SimpleValidationError(c.hasProductProjects() ? NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS : NAME_EXPRESSION_REQUIRED_MSG));
-
-                return errors;
-            }
+                throw new IllegalArgumentException(c.hasProductFolders() ? NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS : NAME_EXPRESSION_REQUIRED_MSG);
         }
 
         try (DbScope.Transaction transaction = ensureTransaction())
@@ -9169,7 +9231,65 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public Map<String, Object> getNameExpressionMetrics()
+    public Map<String, Map<String, Object>> getDomainMetrics()
+    {
+        Map<String, Map<String, Object>> metrics = new HashMap<>();
+        metrics.put("nameexpression", getNameExpressionMetrics());
+        metrics.put("parentalias", getParentAliasMetrics());
+        return metrics;
+    }
+
+    private Pair<Long, Long> getParentAliasMetrics(TableInfo tableInfo, String aliasField)
+    {
+        SQLFragment sql = new SQLFragment("SELECT ")
+                .append(aliasField)
+                .append(" FROM ")
+                .append(tableInfo)
+                .append(" WHERE ")
+                .append(aliasField)
+                .append(" IS NOT NULL");
+        List<String> aliases = new SqlSelector(ExperimentService.get().getSchema(), sql).getArrayList(String.class);
+
+        Long requiredSampleParentCount = 0L;
+        Long requiredDataParentCount = 0L;
+        try
+        {
+            for (String aliasStr : aliases)
+            {
+                Map<String, Map<String, Object>> aliasMaps = ExperimentJSONConverter.parseImportAliases(aliasStr);
+                for (Map<String, Object> aliasMap : aliasMaps.values())
+                {
+                    if ((Boolean) aliasMap.get("required"))
+                    {
+                        String inputType = (String) aliasMap.get("inputType");
+                        if (inputType.startsWith(MATERIAL_INPUTS_ALIAS_PREFIX))
+                            requiredSampleParentCount++;
+                        else if (inputType.startsWith(DATA_INPUTS_ALIAS_PREFIX))
+                            requiredDataParentCount++;
+                    }
+                }
+            }
+        }
+        catch (IOException ignore)
+        {
+        }
+
+        return new Pair<>(requiredSampleParentCount, requiredDataParentCount);
+    }
+
+    private Map<String, Object> getParentAliasMetrics()
+    {
+        Map<String, Object> metrics = new HashMap<>();
+        Pair<Long, Long> samplesMetrics = getParentAliasMetrics(getTinfoSampleType(), "materialparentimportaliasmap");
+        metrics.put("RequiredSampleParentsForSampleTypes", samplesMetrics.first);
+        metrics.put("RequiredSourceParentsForSampleTypes", samplesMetrics.first);
+        Pair<Long, Long> dataMetrics = getParentAliasMetrics(getTinfoDataClass(), "dataparentimportaliasmap");
+        metrics.put("RequiredSampleParentsForDataClasses", dataMetrics.first);
+        metrics.put("RequiredSourceParentsForDataClasses", dataMetrics.second);
+        return metrics;
+    }
+
+    private Map<String, Object> getNameExpressionMetrics()
     {
         Map<String, Object> metrics = new HashMap<>();
 
@@ -9244,6 +9364,135 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
 
         return metrics;
+    }
+
+    public @NotNull Pair<Set<String>, Set<String>> getDataTypesWithRequiredLineage(Integer parentDataTypeRowId, boolean isSampleParent, Container container, User user)
+    {
+        Set<String> sampleTypes = new HashSet<>();
+        Set<String> dataClasses = new HashSet<>();
+
+        String parentDataTypeName = null;
+        if (isSampleParent)
+        {
+            ExpSampleType sampleType = SampleTypeService.get().getSampleType(parentDataTypeRowId);
+            if (sampleType != null)
+                parentDataTypeName = sampleType.getName();
+        }
+        else
+        {
+            ExpDataClass dataClass = getDataClass(container, user, parentDataTypeRowId, true);
+            if (dataClass != null)
+                parentDataTypeName = dataClass.getName();
+        }
+
+        if (StringUtils.isEmpty(parentDataTypeName))
+            return new Pair<>(sampleTypes, dataClasses);
+
+        String targetInputType = (isSampleParent ? MATERIAL_INPUTS_ALIAS_PREFIX : DATA_INPUTS_ALIAS_PREFIX) + parentDataTypeName;
+        for (ExpSampleType sampleType : SampleTypeService.get().getSampleTypes(container, user, true))
+        {
+            try
+            {
+                if (sampleType.getRequiredImportAliases().containsValue(targetInputType))
+                    sampleTypes.add(sampleType.getDomain().getLabel());
+            }
+            catch (IOException ignore)
+            {
+            }
+        }
+        for (ExpDataClassImpl dataClass : getDataClasses(container, user, true))
+        {
+            try
+            {
+                if (dataClass.getRequiredImportAliases().containsValue(targetInputType))
+                    dataClasses.add(dataClass.getDomain().getLabel());
+            }
+            catch (IOException ignore)
+            {
+            }
+        }
+
+        return new Pair<>(sampleTypes, dataClasses);
+    }
+
+    public boolean hasMissingRequiredParent(String parentCpasType, String childCpasType, boolean isSampleParent, boolean isSampleChild)
+    {
+        TableInfo protocolAppTableInfo = getTinfoProtocolApplication();
+        TableInfo dataTableInfo = isSampleChild ? getTinfoMaterial() : getTinfoData();
+        TableInfo parentDataTableInfo = isSampleParent ? getTinfoMaterial() : getTinfoData();
+        TableInfo parentInputTableInfo = isSampleParent ? getTinfoMaterialInput() : getTinfoDataInput();
+        String inputFieldName = isSampleParent ? "materialid" : "dataid";
+
+        SQLFragment totalSql = new SQLFragment("SELECT COUNT(cur.rowId) FROM ");
+        totalSql.append(dataTableInfo, "cur")
+                .append("\nWHERE cpastype = ? ")
+                .add(childCpasType);
+
+        if (isSampleChild)
+        {
+            totalSql.append(" AND cur.rowId = cur.rootmaterialrowid"); // exclude aliquots
+        }
+
+        Long totalCount = new SqlSelector(dataTableInfo.getSchema(), totalSql).getObject(Long.class);
+
+        if (totalCount == 0)
+            return false;
+
+        SQLFragment sql = new SQLFragment("SELECT COUNT(DISTINCT cur.rowId) FROM ");
+        sql.append(dataTableInfo, "cur")
+                .append(" LEFT OUTER JOIN ")
+                .append(protocolAppTableInfo, "pa")
+                .append(" ON cur.sourceapplicationid = pa.rowId\n")
+                .append("JOIN ")
+                .append(parentInputTableInfo, "ip")
+                .append(" ON pa.rowId = ip.targetapplicationid\n")
+                .append("JOIN ")
+                .append(parentDataTableInfo, "p")
+                .append(" ON p.rowId = ip.")
+                .append(inputFieldName)
+                .append("\nWHERE cur.cpastype = ? ")
+                .add(childCpasType)
+                .append(" AND p.cpastype = ? ")
+                .add(parentCpasType);
+        if (isSampleChild)
+        {
+            sql.append(" AND cur.rowId = cur.rootmaterialrowid"); // exclude aliquots
+        }
+
+        Long withParentCount = new SqlSelector(dataTableInfo.getSchema(), sql).getObject(Long.class);
+
+        return totalCount > withParentCount;
+    }
+
+    public String getInvalidRequiredImportAliasUpdate(String dataTypeLsid, boolean isSampleType, Map<String, Map<String, Object>> newAliases, Set<String> existingRequiredInputs, Container c, User u)
+    {
+        for (Map.Entry<String, Map<String, Object>> newEntry : newAliases.entrySet())
+        {
+            String dataType = (String) newEntry.getValue().get("inputType");
+            if ((Boolean) newEntry.getValue().get("required") && !existingRequiredInputs.contains(dataType))
+            {
+                boolean isParentSamples = dataType.startsWith(MATERIAL_INPUTS_ALIAS_PREFIX);
+                String dataTypeName = dataType.replace(isParentSamples ? MATERIAL_INPUTS_ALIAS_PREFIX : DATA_INPUTS_ALIAS_PREFIX, "");
+
+                String parentCpas = null;
+                if (isParentSamples)
+                {
+                    ExpSampleType sampleTypeParent = SampleTypeService.get().getSampleType(c, u, dataTypeName);
+                    if (sampleTypeParent != null)
+                        parentCpas = sampleTypeParent.getLSID();
+                }
+                else
+                {
+                    ExpDataClass dataClassParent = getDataClass(c, dataTypeName);
+                    if (dataClassParent != null)
+                        parentCpas = dataClassParent.getLSID();
+                }
+                if (hasMissingRequiredParent(parentCpas, dataTypeLsid, isParentSamples, isSampleType))
+                    return dataTypeName;
+            }
+        }
+
+        return null;
     }
 
     private static @Nullable TableInfo getTableInfo(String schemaName)

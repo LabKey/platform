@@ -31,7 +31,7 @@ import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.PropertyManager.PropertyMap;
+import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.Module;
@@ -1057,9 +1057,8 @@ public class Container implements Serializable, Comparable<Container>, Securable
     {
         if (module == null)
             return;
-        PropertyMap props = PropertyManager.getWritableProperties(this, "defaultModules", true);
+        WritablePropertyMap props = PropertyManager.getWritableProperties(this, "defaultModules", true);
         props.put("name", module.getName());
-
         props.save();
         ContainerManager.notifyContainerChange(getId(), ContainerManager.Property.Modules);
         _defaultModule = null;
@@ -1079,7 +1078,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         }
 
         boolean userHasEnableRestrictedModules = hasEnableRestrictedModules(user);
-        PropertyMap props = PropertyManager.getWritableProperties(this, "activeModules", true);
+        WritablePropertyMap props = PropertyManager.getWritableProperties(this, "activeModules", true);
         props.clear();
         for (Module module : modules)
         {
@@ -1199,7 +1198,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         if (props.isEmpty() && init && null != ContainerManager.getForId(getId()))
         {
             //initialize properties cache
-            PropertyMap propsWritable = PropertyManager.getWritableProperties(this, "activeModules", true);
+            WritablePropertyMap propsWritable = PropertyManager.getWritableProperties(this, "activeModules", true);
             props = propsWritable;
 
             if (isProject())
@@ -1673,16 +1672,16 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public boolean isFeatureEnabled(ProductFeature feature)
     {
-        if (ProductFeature.Projects == feature)
-            return isProductProjectsEnabled();
+        if (ProductFeature.Folders == feature)
+            return isProductFoldersEnabled();
 
         return isFeatureEnabledForContainerType(feature);
     }
 
     // Projects feature should be checked at Home Project only
-    public boolean isProductProjectsEnabled()
+    public boolean isProductFoldersEnabled()
     {
-        boolean enabled = isFeatureEnabledForContainerType(ProductFeature.Projects);
+        boolean enabled = isFeatureEnabledForContainerType(ProductFeature.Folders);
 
         if (!enabled) // feature is not enabled based on product choice
             return false;
@@ -1691,7 +1690,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         if (project == null) // true only for the root container, where no features should be enabled
             return false;
 
-        return ProductRegistry.get().supportsProductProjects(project);
+        return ProductRegistry.get().supportsProductFolders(project);
     }
 
     public boolean isAppHomeFolder()
@@ -1699,15 +1698,15 @@ public class Container implements Serializable, Comparable<Container>, Securable
         if (isProject()) // if it's a project
             return true;
 
-        return !isProductProjectsEnabled(); // if subfolder, then the folder shouldn't have Projects feature enabled
+        return !isProductFoldersEnabled(); // if subfolder, then the folder shouldn't have Projects feature enabled
     }
 
     /**
-     * Returns true if product projects feature is enabled and the subfolder count of the project container is > 0
+     * Returns true if product folders feature is enabled and the subfolder count of the project container is > 0
      */
-    public boolean hasProductProjects()
+    public boolean hasProductFolders()
     {
-        if (!isProductProjectsEnabled())
+        if (!isProductFoldersEnabled())
             return false;
 
         Container project = getProject();
@@ -1719,9 +1718,9 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return project.getChildren().stream().anyMatch(c -> c.getContainerType().isInFolderNav());
     }
 
-    public List<Container> getProductProjects()
+    public List<Container> getProductFolders()
     {
-        if (!isProductProjectsEnabled())
+        if (!isProductFoldersEnabled())
             return Collections.emptyList();
 
         Container project = getProject();
@@ -1731,12 +1730,12 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return project.getChildren().stream().filter(c -> c.getContainerType().isInFolderNav()).collect(Collectors.toList());
     }
 
-    public ContainerFilter getProductProjectsDataContainerFilter(User user)
+    public ContainerFilter getProductFoldersDataContainerFilter(User user)
     {
-        if (!isProductProjectsEnabled())
+        if (!isProductFoldersEnabled())
             return ContainerFilter.current(this);
 
-        if (QueryService.get().isProductProjectsAllFolderScopeEnabled())
+        if (QueryService.get().isProductFoldersAllFolderScopeEnabled())
         {
             if (isProject() || getProject() != null)
                 return new ContainerFilter.AllInProjectPlusShared(this, user);

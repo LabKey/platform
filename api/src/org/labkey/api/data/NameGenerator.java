@@ -2299,7 +2299,7 @@ public class NameGenerator
                         });
                     }
 
-                    if (value instanceof String) // convert "parent1,parent2" to [parent1, parent2]
+                    if (!parents.isEmpty()) // convert "parent1,parent2" to [parent1, parent2]
                         inputs.computeIfAbsent(parts[0] + "/" + parts[1],  (s) -> new LinkedHashSet<>()).addAll(parents);
                 }
             }
@@ -3204,20 +3204,20 @@ public class NameGenerator
         @Test
         public void testNameExpressionReservedTokenWarnings()
         {
-            validateNameResult("S-genId", withWarnings("S-genId", "The 'genId' substitution pattern starting at position 2 should be preceded by the string '${'."));
+            validateNameResult("S-genId", withWarnings("S-genId", "'genId' is recognized as a substitution token. Use ${genId} if you want to include the substitution token value in the naming pattern."));
 
-            validateNameResult("S-genId-now-001", withWarnings("S-genId-now-001", "The 'genId' substitution pattern starting at position 2 should be preceded by the string '${'.",
-                    "The 'now' substitution pattern starting at position 8 should be preceded by the string '${'."));
+            validateNameResult("S-genId-now-001", withWarnings("S-genId-now-001", "'genId' is recognized as a substitution token. Use ${genId} if you want to include the substitution token value in the naming pattern.",
+                    "'now' is recognized as a substitution token. Use ${now} if you want to include the substitution token value in the naming pattern."));
 
-            validateNameResult("S-Inputs", withWarnings("S-Inputs", "The 'Inputs' substitution pattern starting at position 2 should be preceded by the string '${'."));
+            validateNameResult("S-Inputs", withWarnings("S-Inputs", "'Inputs' is recognized as a substitution token. Use ${Inputs} if you want to include the substitution token value in the naming pattern."));
 
-            validateNameResult("S-MaterialInputs/lookupfield", withWarnings("S-MaterialInputs/lookupfield","The 'MaterialInputs' substitution pattern starting at position 2 should be preceded by the string '${'."));
+            validateNameResult("S-MaterialInputs/lookupfield", withWarnings("S-MaterialInputs/lookupfield","'MaterialInputs' is recognized as a substitution token. Use ${MaterialInputs} if you want to include the substitution token value in the naming pattern."));
 
-            validateNameResult("S-~DataInputs/lookupfield", withWarnings("S-~DataInputs/lookupfield","The '~DataInputs' substitution pattern starting at position 2 should be preceded by the string '${'.", "The 'DataInputs' substitution pattern starting at position 3 should be preceded by the string '${'."));
+            validateNameResult("S-~DataInputs/lookupfield", withWarnings("S-~DataInputs/lookupfield","'~DataInputs' is recognized as a substitution token. Use ${~DataInputs} if you want to include the substitution token value in the naming pattern.", "'DataInputs' is recognized as a substitution token. Use ${DataInputs} if you want to include the substitution token value in the naming pattern."));
 
-            validateNameResult("AliquotedFrom-001", withWarnings("AliquotedFrom-001", "The 'AliquotedFrom' substitution pattern starting at position 0 should be preceded by the string '${'."));
+            validateNameResult("AliquotedFrom-001", withWarnings("AliquotedFrom-001", "'AliquotedFrom' is recognized as a substitution token. Use ${AliquotedFrom} if you want to include the substitution token value in the naming pattern."));
 
-            validateNameResult("S-rootSampleCount", withWarnings("S-rootSampleCount", "The 'rootSampleCount' substitution pattern starting at position 2 should be preceded by the string '${'."));
+            validateNameResult("S-rootSampleCount", withWarnings("S-rootSampleCount", "'rootSampleCount' is recognized as a substitution token. Use ${rootSampleCount} if you want to include the substitution token value in the naming pattern."));
         }
 
         @Test
@@ -3231,11 +3231,11 @@ public class NameGenerator
 
             Map<String, String> importAliases = Collections.singletonMap("parentAlias", "MaterialInputs/SampleTypeA");
 
-            validateNameResult("S-FieldStr", new NameExpressionValidationResult(Collections.emptyList(), Collections.singletonList("The 'fieldstr' field starting at position 2 should be preceded by the string '${'."), Collections.singletonList("S-FieldStr")), null, fields);
+            validateNameResult("S-FieldStr", new NameExpressionValidationResult(Collections.emptyList(), Collections.singletonList("'fieldstr' is recognized as a field. Use ${fieldstr} if you want to include the field value in the naming pattern."), Collections.singletonList("S-FieldStr")), null, fields);
 
-            validateNameResult("S-${FieldStr}-FieldInt", new NameExpressionValidationResult(Collections.emptyList(), Collections.singletonList("The 'fieldint' field starting at position 14 should be preceded by the string '${'."), Collections.singletonList("S-FieldStrValue-FieldInt")), null, fields);
+            validateNameResult("S-${FieldStr}-FieldInt", new NameExpressionValidationResult(Collections.emptyList(), Collections.singletonList("'fieldint' is recognized as a field. Use ${fieldint} if you want to include the field value in the naming pattern."), Collections.singletonList("S-FieldStrValue-FieldInt")), null, fields);
 
-            validateNameResult("S-parentAlias", new NameExpressionValidationResult(Collections.emptyList(), Collections.singletonList("The 'parentalias' field starting at position 2 should be preceded by the string '${'."), Collections.singletonList("S-parentAlias")), importAliases, null);
+            validateNameResult("S-parentAlias", new NameExpressionValidationResult(Collections.emptyList(), Collections.singletonList("'parentalias' is recognized as a field. Use ${parentalias} if you want to include the field value in the naming pattern."), Collections.singletonList("S-parentAlias")), importAliases, null);
          }
 
         @Test

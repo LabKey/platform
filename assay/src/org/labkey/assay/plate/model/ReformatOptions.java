@@ -1,6 +1,9 @@
 package org.labkey.assay.plate.model;
 
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateSetType;
+import org.labkey.api.assay.plate.PlateType;
 
 import java.util.List;
 
@@ -8,6 +11,9 @@ public class ReformatOptions
 {
     public enum ReformatOperation
     {
+        arrayByColumn,
+        arrayByRow,
+        arrayFromTemplate,
         columnCompression,
         quadrant,
         reverseQuadrant,
@@ -79,13 +85,61 @@ public class ReformatOptions
         }
     }
 
+    public static class ReformatPlateSource
+    {
+        public enum SourceType
+        {
+            template,
+            type
+        }
+
+        private Integer _rowId;
+        private SourceType _sourceType;
+
+        public ReformatPlateSource()
+        {
+        }
+
+        public ReformatPlateSource(@NotNull PlateType plateType)
+        {
+            _sourceType = SourceType.type;
+            _rowId = plateType.getRowId();
+        }
+
+        public ReformatPlateSource(@NotNull Plate template)
+        {
+            _sourceType = SourceType.template;
+            _rowId = template.getRowId();
+        }
+
+        public Integer getRowId()
+        {
+            return _rowId;
+        }
+
+        public void setRowId(Integer rowId)
+        {
+            _rowId = rowId;
+        }
+
+        public SourceType getSourceType()
+        {
+            return _sourceType;
+        }
+
+        public void setSourceType(SourceType sourceType)
+        {
+            _sourceType = sourceType;
+        }
+    }
+
     private ReformatOperation _operation;
     private List<Integer> _plateRowIds;
     private String _plateSelectionKey;
     private Boolean _preview = false;
     private Boolean _previewData = true;
     private ReformatPlateSet _targetPlateSet;
-    private Integer _targetPlateTypeId;
+    private ReformatPlateSource _targetPlateSource;
 
     public ReformatOperation getOperation()
     {
@@ -152,14 +206,14 @@ public class ReformatOptions
         return this;
     }
 
-    public Integer getTargetPlateTypeId()
+    public ReformatPlateSource getTargetPlateSource()
     {
-        return _targetPlateTypeId;
+        return _targetPlateSource;
     }
 
-    public ReformatOptions setTargetPlateTypeId(Integer targetPlateTypeId)
+    public ReformatOptions setTargetPlateSource(ReformatPlateSource targetPlateSource)
     {
-        _targetPlateTypeId = targetPlateTypeId;
+        _targetPlateSource = targetPlateSource;
         return this;
     }
 }
