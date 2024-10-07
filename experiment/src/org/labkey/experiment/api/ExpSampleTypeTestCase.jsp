@@ -37,7 +37,6 @@
 <%@ page import="org.labkey.api.data.TableSelector" %>
 <%@ page import="org.labkey.api.dataiterator.DataIteratorContext" %>
 <%@ page import="org.labkey.api.dataiterator.DetailedAuditLogDataIterator" %>
-<%@ page import="org.labkey.api.dataiterator.ListofMapsDataIterator" %>
 <%@ page import="org.labkey.api.exp.ExperimentException" %>
 <%@ page import="org.labkey.api.exp.Lsid" %>
 <%@ page import="org.labkey.api.exp.OntologyManager" %>
@@ -141,9 +140,49 @@ public void nameNotNull() throws Exception
                 null, null, props, Collections.emptyList(),
                 -1, -1, -1, -1, null, null);
     }
-    catch (ExperimentException ee)
+    catch (IllegalArgumentException ee)
     {
-        assertEquals("SampleType name is required", ee.getMessage());
+        assertEquals("Sample Type name is required.", ee.getMessage());
+    }
+}
+
+@Test // Issue 51321
+public void reservedNameFirst() throws Exception
+{
+    final User user = TestContext.get().getUser();
+
+    try
+    {
+        List<GWTPropertyDescriptor> props = new ArrayList<>();
+        props.add(new GWTPropertyDescriptor("name", "string"));
+
+        final ExpSampleType st = SampleTypeService.get().createSampleType(c, user,
+                "First", null, props, Collections.emptyList(),
+                -1, -1, -1, -1, null, null);
+    }
+    catch (IllegalArgumentException ee)
+    {
+        assertEquals("Sample Type name 'First' is reserved.", ee.getMessage());
+    }
+}
+
+@Test // Issue 51321
+public void reservedNameAll() throws Exception
+{
+    final User user = TestContext.get().getUser();
+
+    try
+    {
+        List<GWTPropertyDescriptor> props = new ArrayList<>();
+        props.add(new GWTPropertyDescriptor("name", "string"));
+
+        final ExpSampleType st = SampleTypeService.get().createSampleType(c, user,
+                "All", null, props, Collections.emptyList(),
+                -1, -1, -1, -1, null, null);
+    }
+    catch (IllegalArgumentException ee)
+    {
+        assertEquals("Sample Type name 'All' is reserved.", ee.getMessage());
     }
 }
 
@@ -164,9 +203,9 @@ public void nameScale() throws Exception
                 name, null, props, Collections.emptyList(),
                 -1, -1, -1, -1, null, null);
     }
-    catch (ExperimentException ee)
+    catch (IllegalArgumentException ee)
     {
-        assertEquals("SampleType name may not exceed 100 characters.", ee.getMessage());
+        assertEquals("Sample Type name may not exceed 100 characters.", ee.getMessage());
     }
 }
 

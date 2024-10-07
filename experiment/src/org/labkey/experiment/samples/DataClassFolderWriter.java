@@ -13,6 +13,7 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
+import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.ExpSchema;
@@ -30,6 +31,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toList;
 
 public abstract class DataClassFolderWriter extends AbstractExpFolderWriter
 {
@@ -50,7 +53,6 @@ public abstract class DataClassFolderWriter extends AbstractExpFolderWriter
         XarExportSelection typesSelection = new XarExportSelection();
         XarExportSelection runsSelection = new XarExportSelection();
         Set<ExpDataClass> dataClasses = new HashSet<>();
-        List<ExpData> datasToExport = new ArrayList<>();
         _exportPhiLevel = ctx.getPhiLevel();
         boolean exportTypes = false;
         boolean exportRuns = false;
@@ -75,25 +77,28 @@ public abstract class DataClassFolderWriter extends AbstractExpFolderWriter
 
             dataClasses.add(dataClass);
             typesSelection.addDataClass(dataClass);
-            datasToExport.addAll(dataClass.getDatas());
             exportTypes = true;
-        }
 
-        // get the list of runs with the data we expect to export, these will be the sample derivation
-        // protocol runs to track the lineage
-        Set<ExpRun> exportedRuns = new HashSet<>();
-        if (!datasToExport.isEmpty() && exportDataClassData)
-            exportedRuns.addAll(ExperimentService.get().getRunsUsingDatas(datasToExport));
-        // only want the sample derivation runs; other runs will get included in the experiment xar.
-        exportedRuns = exportedRuns.stream().filter(run -> {
-            String lsid = run.getProtocol().getLSID();
-            return lsid.equals(ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID) && isValidRunType(ctx, run);
-        }).collect(Collectors.toSet());
+            // get the list of runs with the data we expect to export, these will be the sample derivation
+            // protocol runs to track the lineage
+            if (exportDataClassData)
+            {
+                List<Integer> dataIdsToExport = dataClass.getDatas().stream().map(ExpData::getRowId).collect(toList());
 
-        if (!exportedRuns.isEmpty())
-        {
-            runsSelection.addRuns(exportedRuns);
-            exportRuns = true;
+                // only want the sample derivation runs; other runs will get included in the experiment xar.
+                List<Integer> exportedRunIds = ExperimentService.get().getRunsUsingDataIds(dataIdsToExport).stream().filter(run -> {
+                    String lsid = run.getProtocol().getLSID();
+                    return lsid.equals(ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID) && isValidRunType(ctx, run);
+                })
+                    .collect(Collectors.toSet())
+                    .stream().map(ExpObject::getRowId).toList();
+
+                if (!exportedRunIds.isEmpty())
+                {
+                    runsSelection.addRunIds(exportedRunIds);
+                    exportRuns = true;
+                }
+            }
         }
 
         // UNDONE: The other exporters use FOLDER_RELATIVE, but it wants to use ${AutoFileLSID} replacements for DataClass LSIDs when exporting the TSV data.. see comment in ExportLsidDataColumn
