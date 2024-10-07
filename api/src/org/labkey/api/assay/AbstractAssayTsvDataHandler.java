@@ -193,45 +193,54 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     }
 
     @Override
-    public Map<DataType, DataIteratorBuilder> getValidationDataMap(ExpData data, File dataFile, ViewBackgroundInfo info, Logger log, XarContext context, DataLoaderSettings settings) throws ExperimentException
+    public Map<DataType, DataIteratorBuilder> getValidationDataMap(
+            ExpData data,
+            File dataFile,
+            ViewBackgroundInfo info,
+            Logger log,
+            XarContext context,
+            DataLoaderSettings settings) throws ExperimentException
     {
         ExpProtocol protocol = data.getRun().getProtocol();
         AssayProvider provider = AssayService.get().getProvider(protocol);
         Domain dataDomain = provider.getResultsDomain(protocol);
         boolean plateMetadataEnabled = provider.isPlateMetadataEnabled(protocol);
+        DataIteratorBuilder dataRows;
 
-        try (DataLoader loader = createLoaderForImport(dataFile, data.getRun(), dataDomain, settings, true))
+        if (plateMetadataEnabled && AssayPlateMetadataService.isExperimentalAppPlateEnabled())
         {
-            Map<DataType, DataIteratorBuilder> datas = new HashMap<>();
-            DataIteratorBuilder dataRows = (diContext) -> loader.getDataIterator(diContext);
-
-            if (plateMetadataEnabled && AssayPlateMetadataService.isExperimentalAppPlateEnabled())
-            {
-                Integer plateSetId = getPlateSetValueFromRunProps(context, provider, protocol);
-                dataRows = AssayPlateMetadataService.get().parsePlateData(context.getContainer(), context.getUser(), provider, protocol, plateSetId, dataFile, dataRows);
-            }
-
-            // assays with plate metadata support will merge the plate metadata with the data rows to make it easier for
-            // transform scripts to perform metadata related calculations
-            if (plateMetadataEnabled)
-                dataRows = mergePlateMetadata(context, provider, protocol, dataRows);
-
-            datas.put(getDataType(), dataRows);
-
-            return datas;
+            dataRows = parsePlateData(context.getContainer(), context.getUser(), protocol, data, dataFile, context, settings);
         }
+        else
+        {
+            try (DataLoader loader = createLoaderForImport(dataFile, data.getRun(), dataDomain, settings, true))
+            {
+                dataRows = (diContext) -> loader.getDataIterator(diContext);
+            }
+        }
+        return Map.of(getDataType(), dataRows);
     }
 
-    private DataIteratorBuilder mergePlateMetadata(XarContext context, AssayProvider provider, ExpProtocol protocol, DataIteratorBuilder dataRows)
-            throws ExperimentException
+    private DataIteratorBuilder parsePlateData(
+            Container container,
+            User user,
+            ExpProtocol protocol,
+            ExpData data,
+            File dataFile,
+            XarContext context,
+            DataLoaderSettings settings) throws ExperimentException
     {
+        AssayProvider provider = AssayService.get().getProvider(protocol);
+        Integer plateSetId = getPlateSetValueFromRunProps(context, provider, protocol);
+        DataIteratorBuilder dataRows = AssayPlateMetadataService.get().parsePlateData(container, user, ((AssayUploadXarContext)context).getContext(), data, provider,
+                protocol, plateSetId, dataFile, settings);
+
+        // assays with plate metadata support will merge the plate metadata with the data rows to make it easier for
+        // transform scripts to perform metadata related calculations
         Domain runDomain = provider.getRunDomain(protocol);
         DomainProperty propertyPlateSet = runDomain.getPropertyByName(AssayPlateMetadataService.PLATE_SET_COLUMN_NAME);
         if (propertyPlateSet != null)
-        {
-            Integer plateSetId = getPlateSetValueFromRunProps(context, provider, protocol);
-            return AssayPlateMetadataService.get().mergePlateMetadata(context.getContainer(), context.getUser(), plateSetId, dataRows, provider, protocol);
-        }
+            dataRows = AssayPlateMetadataService.get().mergePlateMetadata(container, user, plateSetId, dataRows, provider, protocol);
 
         return dataRows;
     }

@@ -3,16 +3,21 @@ package org.labkey.assay.plate;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.labkey.api.assay.AbstractAssayTsvDataHandler;
+import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.assay.AssayProtocolSchema;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayResultDomainKind;
+import org.labkey.api.assay.AssayRunUploadContext;
 import org.labkey.api.assay.AssaySchema;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.SimpleAssayDataImportHelper;
+import org.labkey.api.assay.TsvDataHandler;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.plate.ExcelPlateReader;
 import org.labkey.api.assay.plate.Plate;
@@ -35,6 +40,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.ParameterMapStatement;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TSVMapWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.statistics.MathStat;
@@ -58,22 +64,27 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.qc.DataLoaderSettings;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.User;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.assay.TSVProtocolSchema;
 import org.labkey.assay.plate.model.WellBean;
 import org.labkey.assay.query.AssayDbSchema;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -94,6 +105,8 @@ import static org.labkey.api.assay.AssayResultDomainKind.WELL_LSID_COLUMN_NAME;
 
 public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 {
+    private static final Logger LOG = LogHelper.getLogger(AssayPlateMetadataServiceImpl.class, "Plate Metadata Logger");
+
     @Override
     public DataIteratorBuilder mergePlateMetadata(
         Container container,
@@ -208,11 +221,13 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
     public DataIteratorBuilder parsePlateData(
         Container container,
         User user,
+        @NotNull AssayRunUploadContext<?> context,
+        ExpData data,
         AssayProvider provider,
         ExpProtocol protocol,
         Integer plateSetId,
         File dataFile,
-        DataIteratorBuilder data
+        DataLoaderSettings settings
     ) throws ExperimentException
     {
         // get the ordered list of plates for the plate set
@@ -227,24 +242,151 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         if (plates.isEmpty())
             throw new ExperimentException("No plates were found for the plate set (" + plateSetId + ").");
 
-        try (MapDataIterator i = DataIteratorUtil.wrapMap(data.getDataIterator(new DataIteratorContext()), false))
-        {
-            List<Map<String, Object>> rows = i.stream().toList();
+        List<Map<String, Object>> rows = _parsePlateData(container, user, data, provider, protocol, plateSet, plates, dataFile, settings);
 
-            if (isGridFormat(rows))
+        // check if we are merging the re-imported data
+        if (context.getReImportOption() == AssayRunUploadContext.ReImportOption.MERGE_DATA && context.getReRunId() != null)
+        {
+            rows = mergeReRunData(container, user, context, rows, plateSet, plates, provider, protocol, data, dataFile, settings);
+        }
+
+        return MapDataIterator.of(rows);
+    }
+
+    /**
+     * Parses the plate data file which can be either in the tabular or graphical format.
+     */
+    private List<Map<String, Object>> _parsePlateData(
+            Container container,
+            User user,
+            ExpData data,
+            AssayProvider provider,
+            ExpProtocol protocol,
+            PlateSet plateSet,
+            List<Plate> plates,
+            File dataFile,
+            DataLoaderSettings settings
+    ) throws ExperimentException
+    {
+        Domain dataDomain = provider.getResultsDomain(protocol);
+        try (DataLoader loader = AbstractAssayTsvDataHandler.createLoaderForImport(dataFile, data.getRun(), dataDomain, settings, true))
+        {
+            DataIteratorBuilder dataRows = (diContext) -> loader.getDataIterator(diContext);
+            // we can use the data loader to parse tabular plate data, if the data is in the graphical grid
+            // Excel format, we will need to parse the file directly.
+            try (MapDataIterator i = DataIteratorUtil.wrapMap(dataRows.getDataIterator(new DataIteratorContext()), false))
             {
-                List<Map<String, Object>> gridRows = parsePlateGrids(container, user, provider, protocol, plateSet, plates, dataFile);
+                List<Map<String, Object>> rawRows = i.stream().toList();
 
-                // best attempt at returning something we can import
-                return MapDataIterator.of(gridRows.isEmpty() && !rows.isEmpty() ? rows : gridRows);
+                if (isGridFormat(rawRows))
+                {
+                    List<Map<String, Object>> gridRows = parsePlateGrids(container, user, provider, protocol, plateSet, plates, dataFile);
+
+                    // best attempt at returning something we can import
+                    return gridRows.isEmpty() && !rawRows.isEmpty() ? rawRows : gridRows;
+                }
+                else
+                    return parsePlateRows(provider, protocol, plates, rawRows);
             }
+            catch (IOException e)
+            {
+                throw new ExperimentException(e);
+            }
+        }
+    }
 
-            return parsePlateRows(provider, protocol, plates, rows);
-        }
-        catch (IOException e)
+    /**
+     * Takes the current incoming data and combines it with any data uploaded in the previous run (re-run ID). Data
+     * can be combined for plates within a plate set, but only on a per plate boundary. If there is data for plates
+     * in both sets of data, the most recent data will take precedence.
+     *
+     * @param rows The incoming data rows
+     * @param plateSet The plate set the import is targeting
+     * @param plates The list of plates in this plate set
+     * @param data The ExpData object for this run
+     * @param dataFile The current uploaded file
+     * @return The new, combined data
+     */
+    private List<Map<String, Object>> mergeReRunData(
+            Container container,
+            User user,
+            @NotNull AssayRunUploadContext<?> context,
+            List<Map<String, Object>> rows,
+            PlateSet plateSet,
+            List<Plate> plates,
+            AssayProvider provider,
+            ExpProtocol protocol,
+            ExpData data,
+            File dataFile,
+            DataLoaderSettings settings
+    ) throws ExperimentException
+    {
+        ExpRun run = ExperimentService.get().getExpRun(context.getReRunId());
+        if (run != null)
         {
-            throw new ExperimentException(e);
+            for (ExpData prevData : run.getDataOutputs())
+            {
+                // find the data file for the replaced run
+                if (prevData.getDataType().getNamespacePrefix().equals(TsvDataHandler.NAMESPACE))
+                {
+                    File prevFile = prevData.getFile();
+                    if (prevFile != null && prevFile.exists())
+                    {
+                        // incoming plate data has precedence over any previous plate data.
+                        Set<String> existingPlates = new HashSet<>();
+                        rows.forEach(r -> existingPlates.add(r.get(AssayResultDomainKind.PLATE_COLUMN_NAME).toString()));
+                        List<Map<String, Object>> newRows = new ArrayList<>(rows);
+
+                        // parse the previous data and combine with any new data
+                        boolean dataMerged = false;
+                        for (Map<String, Object> row : _parsePlateData(container, user, prevData, provider, protocol, plateSet, plates, prevFile, settings))
+                        {
+                            String plate = String.valueOf(row.get(AssayResultDomainKind.PLATE_COLUMN_NAME));
+                            if (plate != null && !existingPlates.contains(plate))
+                            {
+                                newRows.add(row);
+                                dataMerged = true;
+                            }
+                        }
+
+                        if (dataMerged)
+                        {
+                            // replace the contents of the uploaded data file with the new combined data
+                            try (TSVMapWriter writer = new TSVMapWriter(newRows))
+                            {
+                                File dir = dataFile.getParentFile() != null ? dataFile.getParentFile() : AssayFileWriter.ensureUploadDirectory(container);
+                                String newName = FileUtil.getBaseName(dataFile) + ".tsv";
+                                Path newPath = AssayFileWriter.findUniqueFileName(newName, dir.toPath());
+                                writer.write(newPath.toFile());
+
+                                // Consider : should we delete the uploaded data file in this case?
+
+                                // update the ExpData file URI
+                                data.setDataFileURI(FileUtil.getAbsoluteCaseSensitiveFile(newPath.toFile()).toURI());
+                                data.setName(String.format("%s (merged with previous run)", newName));
+                                data.save(user);
+                            }
+                            catch (IOException e)
+                            {
+                                throw new ExperimentException(e);
+                            }
+                        }
+
+                        if (dataMerged)
+                            rows = newRows;
+                    }
+                    else
+                    {
+                        LOG.error(String.format("Unable to locate the data file for replaced run ID : %d", context.getReRunId()));
+                        return rows;
+                    }
+                }
+            }
         }
+        else
+            throw new ExperimentException(String.format("Unable to resolve the replaced run with ID : %d", context.getReRunId()));
+
+        return rows;
     }
 
     private boolean isGridFormat(List<Map<String, Object>> data)
@@ -257,7 +399,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         return !data.get(0).containsKey(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME) && !data.get(0).containsKey("Well Location");
     }
 
-    private DataIteratorBuilder parsePlateRows(
+    private List<Map<String, Object>> parsePlateRows(
         AssayProvider provider,
         ExpProtocol protocol,
         List<Plate> plates,
@@ -273,7 +415,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         boolean hasPlateIdentifiers = plateIdField != null && (data.stream().filter(row -> row.get(plateIdField) != null).findFirst().orElse(null) != null);
 
         if (hasPlateIdentifiers)
-            return MapDataIterator.of(data);
+            return data;
 
         final String ERROR_MESSAGE = "Unable to automatically assign plate identifiers to the data rows because %s. Please include plate identifiers for the data rows.";
 
@@ -301,7 +443,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             // well location field is required, return if not provided or it will fail downstream
             String well = String.valueOf(row.get(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME));
             if (well == null)
-                return MapDataIterator.of(data);
+                return data;
 
             Position position = new PositionImpl(null, well);
             if (positions.contains(position))
@@ -320,8 +462,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 positions.clear();
             }
         }
-
-        return MapDataIterator.of(newData);
+        return newData;
     }
 
     /**
@@ -683,8 +824,10 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                     for (Map.Entry<String, List<Double>> measure : measures.entrySet())
                     {
                         MathStat stat = StatsService.get().getStats(measure.getValue());
-                        replicateRow.put(measure.getKey() + PlateReplicateStatsDomainKind.REPLICATE_MEAN_SUFFIX, stat.getMean());
-                        replicateRow.put(measure.getKey() + PlateReplicateStatsDomainKind.REPLICATE_STD_DEV_SUFFIX, stat.getStdDev());
+                        if (!Double.isNaN(stat.getMean()))
+                            replicateRow.put(measure.getKey() + PlateReplicateStatsDomainKind.REPLICATE_MEAN_SUFFIX, stat.getMean());
+                        if (!Double.isNaN(stat.getStdDev()))
+                            replicateRow.put(measure.getKey() + PlateReplicateStatsDomainKind.REPLICATE_STD_DEV_SUFFIX, stat.getStdDev());
                     }
                 }
             }

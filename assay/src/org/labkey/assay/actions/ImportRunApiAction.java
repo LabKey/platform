@@ -96,6 +96,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         Map<String, Object> batchProperties = null;
         String targetStudy;
         Integer reRunId;
+        AssayRunUploadContext.ReImportOption reImportOption;
         String runFilePath;
         String moduleName;
         List<Map<String, Object>> rawData = null;
@@ -149,6 +150,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             // CONSIDER: Should we also look at the batch and run properties for the targetStudy?
             targetStudy = json.optString("targetStudy", null);
             reRunId = json.has("reRunId") ? json.optInt("reRunId") : null;
+            reImportOption = json.has("reImportOption") ? json.getEnum(AssayRunUploadContext.ReImportOption.class, "reImportOption") : AssayRunUploadContext.ReImportOption.REPLACE;
             runFilePath = json.optString("runFilePath", null);
             moduleName = json.optString("module", null);
             auditUserComment  = json.optString("auditUserComment", null);
@@ -170,6 +172,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             batchProperties = form.getBatchProperties();
             targetStudy = form.getTargetStudy();
             reRunId = form.getReRunId();
+            reImportOption = form.getReImportOption();
             runFilePath = form.getRunFilePath();
             moduleName = form.getModule();
             JSONArray dataRows = form.getDataRows();
@@ -231,6 +234,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
                 .setBatchProperties(batchProperties)
                 .setTargetStudy(targetStudy)
                 .setReRunId(reRunId)
+                .setReImportOption(reImportOption)
                 .setLogger(LOG)
                 .setAuditUserComment(auditUserComment)
                 .setJobDescription(jobDescription)
@@ -349,6 +353,8 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         private String _name;
         private Integer _workflowTask;
         private Integer _reRunId;
+        // TODO : default to REPLACE when debugging is no longer needed
+        private AssayRunUploadContext.ReImportOption _reImportOption = AssayRunUploadContext.ReImportOption.MERGE_DATA; //AssayRunUploadContext.ReImportOption.REPLACE;
         private String _targetStudy;
         private Map<String, Object> _properties = new HashMap<>();
         private Map<String, Object> _batchProperties = new HashMap<>();
@@ -442,6 +448,16 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         public void setReRunId(Integer reRunId)
         {
             _reRunId = reRunId;
+        }
+
+        public AssayRunUploadContext.ReImportOption getReImportOption()
+        {
+            return _reImportOption;
+        }
+
+        public void setReImportOption(AssayRunUploadContext.ReImportOption reImportOption)
+        {
+            _reImportOption = reImportOption;
         }
 
         public Map<String, Object> getProperties()

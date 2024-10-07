@@ -3,6 +3,7 @@ package org.labkey.api.assay.plate;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssayRunUploadContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
@@ -15,6 +16,7 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.qc.DataLoaderSettings;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.OptionalFeatureService;
@@ -72,11 +74,13 @@ public interface AssayPlateMetadataService
     DataIteratorBuilder parsePlateData(
         Container container,
         User user,
+        @NotNull AssayRunUploadContext<?> context,
+        ExpData data,
         AssayProvider provider,
         ExpProtocol protocol,
         Integer plateSetId,
         File dataFile,
-        DataIteratorBuilder data
+        DataLoaderSettings settings
     ) throws ExperimentException;
 
     /**
