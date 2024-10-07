@@ -30,7 +30,7 @@ public class WellData
         if (_position != null)
             data.put(WellTable.WELL_LOCATION, _position);
         if (_sampleId != null)
-            data.put(WellTable.Column.SampleId.name(), _sampleId);
+            data.put(WellTable.Column.SampleID.name(), _sampleId);
         if (_type != null)
             data.put(WellTable.Column.Type.name(), _type.name());
         if (_wellGroup != null)

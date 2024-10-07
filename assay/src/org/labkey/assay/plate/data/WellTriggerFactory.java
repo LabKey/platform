@@ -56,7 +56,7 @@ public class WellTriggerFactory implements TriggerFactory
                 return;
 
             // The "SampleID" is not being modified
-            if (newRow.get(WellTable.Column.SampleId.name()) == null)
+            if (newRow.get(WellTable.Column.SampleID.name()) == null)
                 return;
 
             // A "Type" is being explicitly provided
@@ -130,7 +130,7 @@ public class WellTriggerFactory implements TriggerFactory
             if (
                 newRow != null &&
                 newRow.containsKey(WellTable.Column.RowId.name()) &&
-                newRow.getOrDefault(WellTable.Column.SampleId.name(), null) != null
+                newRow.getOrDefault(WellTable.Column.SampleID.name(), null) != null
             )
             {
                 Integer wellRowId = (Integer) newRow.get(WellTable.Column.RowId.name());
@@ -271,7 +271,7 @@ public class WellTriggerFactory implements TriggerFactory
 
         private boolean hasSampleChange(@Nullable Map<String, Object> row)
         {
-            return row != null && row.containsKey(WellTable.Column.SampleId.name());
+            return row != null && row.containsKey(WellTable.Column.SampleID.name());
         }
 
         private boolean hasTypeGroupChange(@Nullable Map<String, Object> row)
