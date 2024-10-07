@@ -438,7 +438,7 @@ public interface ColumnInfo extends ColumnRenderProperties
             }
         }
 
-        return sb.toString() + " " + col.getPHI();
+        return sb.toString();
     }
 }
 
