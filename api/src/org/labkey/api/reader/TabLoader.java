@@ -720,7 +720,11 @@ public class TabLoader extends DataLoader
     {
         String malformedCsvData = """
                 "Header1","Header2", "Header3"
-                "test1a", "testb""";
+                "test1a", "testb, "a "b""";
+
+        String malformedTsvData = """
+                "Header1"\t"Header2"\t "Header3"
+                "test1a"\t "testb\t"a "b""";
 
         String csvData = """
                 # algorithm=org.fhcrc.cpas.viewer.feature.FeatureStrategyPeakClusters
@@ -785,14 +789,16 @@ public class TabLoader extends DataLoader
             return f;
         }
 
-        private void verifyMalformedCsv(File csv, boolean requireEnclosedQuotes, String expectedTestBResult) throws IOException
+        private void verifyMalformedData(File csv, boolean requireEnclosedQuotes, String expectedResult11, @Nullable String expectedTestBResult12) throws IOException
         {
             try (TabLoader l = new TabLoader(csv))
             {
                 if (requireEnclosedQuotes)
                     l.setParseEnclosedQuotes(true);
 
-                l.parseAsCSV();
+                if (csv.getName().endsWith("csv"))
+                    l.parseAsCSV();
+                
                 List<Map<String, Object>> maps = l.load();
                 assertEquals(3, l.getColumns().length);
                 assertEquals(String.class, l.getColumns()[0].clazz);
@@ -805,8 +811,12 @@ public class TabLoader extends DataLoader
                 assertEquals("Header3", maps.get(0).get("column2"));
 
                 assertEquals("test1a", maps.get(1).get("column0"));
-                assertEquals(expectedTestBResult, maps.get(1).get("column1"));
-                assertNull(maps.get(1).get("column2"));
+                assertEquals(expectedResult11, maps.get(1).get("column1"));
+
+                if (requireEnclosedQuotes)
+                    assertEquals(expectedTestBResult12, maps.get(1).get("column2"));
+                else
+                    assertNull(maps.get(1).get("column2"));
             }
         }
 
@@ -815,10 +825,21 @@ public class TabLoader extends DataLoader
         {
             File csv = _createTempFile(malformedCsvData, ".csv");
 
-            verifyMalformedCsv(csv, false, "testb");
-            verifyMalformedCsv(csv, true, "\"testb");
+            verifyMalformedData(csv, false, "testb, a \"b", null);
+            verifyMalformedData(csv, true, "\"testb", "\"a \"b");
 
             assertTrue(csv.delete());
+        }
+
+        @Test
+        public void testMalformedTsv() throws IOException
+        {
+            File tsv = _createTempFile(malformedTsvData, ".tsv");
+
+            verifyMalformedData(tsv, false, "testb\ta \"b", null);
+            verifyMalformedData(tsv, true, "\"testb", "\"a \"b");
+
+            assertTrue(tsv.delete());
         }
 
         @Test
