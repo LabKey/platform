@@ -594,12 +594,10 @@ public class ExperimentJSONConverter
             jsonObject.put(MODIFIED_BY, object.getModifiedBy().getEmail());
         }
         jsonObject.put(MODIFIED, object.getModified());
-        String comment = object.getComment();
-        if (comment != null)
-            jsonObject.put(COMMENT, object.getComment());
 
         if (settings.isIncludeProperties())
         {
+            jsonObject.put(COMMENT, object.getComment());
             JSONObject propertiesObject = serializeOntologyProperties(object, properties, settings);
             if (!propertiesObject.isEmpty())
                 jsonObject.put(PROPERTIES, propertiesObject);
