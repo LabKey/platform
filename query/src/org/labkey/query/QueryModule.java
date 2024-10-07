@@ -106,6 +106,7 @@ import org.labkey.query.reports.AttachmentReport;
 import org.labkey.query.reports.LinkReport;
 import org.labkey.query.reports.ModuleReportCache;
 import org.labkey.query.reports.ReportAndDatasetChangeDigestProviderImpl;
+import org.labkey.query.reports.ReportAuditProvider;
 import org.labkey.query.reports.ReportImporter;
 import org.labkey.query.reports.ReportNotificationInfoProvider;
 import org.labkey.query.reports.ReportServiceImpl;
@@ -288,6 +289,7 @@ public class QueryModule extends DefaultModule
             AuditLogService.get().registerAuditType(new QueryExportAuditProvider());
             AuditLogService.get().registerAuditType(new QueryUpdateAuditProvider());
         }
+        AuditLogService.get().registerAuditType(new ReportAuditProvider());
 
         ReportAndDatasetChangeDigestProvider.get().addNotificationInfoProvider(new ReportNotificationInfoProvider());
         DailyMessageDigest.getInstance().addProvider(ReportAndDatasetChangeDigestProvider.get());

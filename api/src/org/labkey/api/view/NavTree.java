@@ -545,11 +545,6 @@ public class NavTree implements Collapsible
         return _usePost;
     }
 
-    public String childrenToJS()
-    {
-        return toJS(_children, new StringBuilder(), false).toString();
-    }
-
     public String toJS()
     {
         return toJS(new StringBuilder(), true, false).toString();
@@ -670,12 +665,6 @@ public class NavTree implements Collapsible
             lb.nofollow();
 
         return lb;
-    }
-
-    @Deprecated
-    public static StringBuilder toJS(Collection<NavTree> list, @Nullable StringBuilder sb, boolean asMenu)
-    {
-        return toJS(list,sb,asMenu,!asMenu);
     }
 
     public static StringBuilder toJS(Collection<NavTree> list, @Nullable StringBuilder sb, boolean asMenu, boolean withIds)

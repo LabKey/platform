@@ -87,6 +87,7 @@ import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MinorConfigurationException;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.QuietCloser;
 import org.labkey.api.util.ReentrantLockWithName;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.logging.LogHelper;
@@ -152,15 +153,15 @@ public class ContainerManager
     private static final Logger LOG = LogHelper.getLogger(ContainerManager.class, "Container (projects, folders, and workbooks) retrieval and management");
     private static final CoreSchema CORE = CoreSchema.getInstance();
 
-    private static final String CONTAINER_PREFIX = ContainerManager.class.getName() + "/";
-    private static final String CONTAINER_CHILDREN_PREFIX = ContainerManager.class.getName() + "/children/";
-    private static final String CONTAINER_ALL_CHILDREN_PREFIX = ContainerManager.class.getName() + "/children/*/";
     private static final String PROJECT_LIST_ID = "Projects";
 
     public static final String HOME_PROJECT_PATH = "/home";
     public static final String DEFAULT_SUPPORT_PROJECT_PATH = HOME_PROJECT_PATH + "/support";
 
-    private static final Cache<String, Object> CACHE = CacheManager.getStringKeyCache(Constants.getMaxContainers(), CacheManager.DAY, "Containers");
+    // Use double the max count as the size since we cache by both EntityId and Path
+    private static final Cache<String, Container> CACHE = CacheManager.getStringKeyCache(Constants.getMaxContainers() * 2, CacheManager.DAY, "Containers");
+    private static final Cache<String, List<String>> CACHE_CHILDREN = CacheManager.getStringKeyCache(Constants.getMaxContainers(), CacheManager.DAY, "Child EntityIds of Containers");
+    private static final Cache<String, Set<Container>> CACHE_ALL_CHILDREN = CacheManager.getStringKeyCache(Constants.getMaxContainers(), CacheManager.DAY, "Child Container objects of Containers");
     private static final ReentrantLock DATABASE_QUERY_LOCK = new ReentrantLockWithName(ContainerManager.class, "DATABASE_QUERY_LOCK");
     public static final String FOLDER_TYPE_PROPERTY_SET_NAME = "folderType";
     public static final String FOLDER_TYPE_PROPERTY_NAME = "name";
@@ -294,10 +295,10 @@ public class ContainerManager
 
         StringBuilder error = new StringBuilder();
         if (!Container.isLegalName(name, parent.isRoot(), error))
-            throw new IllegalArgumentException(error.toString());
+            throw new ApiUsageException(error.toString());
 
         if (!Container.isLegalTitle(title, error))
-            throw new IllegalArgumentException(error.toString());
+            throw new ApiUsageException(error.toString());
 
         Path path = makePath(parent, name);
         SQLException sqlx = null;
@@ -666,11 +667,11 @@ public class ContainerManager
         {
             int low = counts.get(totalFolderTypeMatch/2 - 1);
             int high = counts.get(totalFolderTypeMatch/2);
-            median = Math.round((low + high) / 2);
+            median = Math.round((low + high) / 2.0f);
         }
         int maxProjectsCount = counts.get(totalFolderTypeMatch - 1);
         int totalProjectsCount = counts.stream().mapToInt(Integer::intValue).sum();
-        int averageProjectsCount = Math.round(totalProjectsCount/totalFolderTypeMatch);
+        int averageProjectsCount = Math.round((float) totalProjectsCount /totalFolderTypeMatch);
 
         metrics.put("totalSubProjectsCount", totalProjectsCount);
         metrics.put("averageSubProjectsPerHomeProject", averageProjectsCount);
@@ -742,10 +743,6 @@ public class ContainerManager
     @NotNull
     public static Container ensureContainer(@NotNull Path path, @NotNull User user)
     {
-        // NOTE: Running outside a tx doesn't seem to be necessary.
-//        if (CORE.getSchema().getScope().isTransactionActive())
-//            throw new IllegalStateException("Transaction should not be active");
-
         Container c = null;
 
         try
@@ -1042,7 +1039,7 @@ public class ContainerManager
             return Collections.emptyMap();
         }
 
-        List<String> childIds = (List<String>) CACHE.get(CONTAINER_CHILDREN_PREFIX + parent.getId());
+        List<String> childIds = CACHE_CHILDREN.get(parent.getId());
         if (null == childIds)
         {
             try (DbScope.Transaction t = ensureTransaction())
@@ -1058,7 +1055,7 @@ public class ContainerManager
                     _addToCache(c);
                 }
                 childIds = Collections.unmodifiableList(childIds);
-                CACHE.put(CONTAINER_CHILDREN_PREFIX + parent.getId(), childIds);
+                CACHE_CHILDREN.put(parent.getId(), childIds);
                 // No database changes to commit, but need to decrement the transaction counter
                 t.commit();
             }
@@ -1199,7 +1196,6 @@ public class ContainerManager
         }
     }
 
-    @SuppressWarnings({"serial"})
     public static class RootContainerException extends RuntimeException
     {
         private RootContainerException(String message, Throwable cause)
@@ -1613,83 +1609,87 @@ public class ContainerManager
     // @return true if project has changed (should probably redirect to security page)
     public static boolean move(Container c, final Container newParent, User user) throws ValidationException
     {
-        if (c.isRoot())
-            throw new IllegalArgumentException("can't move root container");
-
         if (!isRenameable(c))
         {
             throw new IllegalArgumentException("Can't move container " + c.getPath());
         }
 
-        List<String> errors = new ArrayList<>();
-        for (ContainerListener listener : getListeners())
+        try (QuietCloser ignored = lockForMutation(MutatingOperation.move, c))
         {
-            try
+            List<String> errors = new ArrayList<>();
+            for (ContainerListener listener : getListeners())
             {
-                errors.addAll(listener.canMove(c, newParent, user));
+                try
+                {
+                    errors.addAll(listener.canMove(c, newParent, user));
+                }
+                catch (Exception e)
+                {
+                    ExceptionUtil.logExceptionToMothership(null, new IllegalStateException(listener.getClass().getName() + ".canMove() threw an exception or violated @NotNull contract"));
+                }
             }
-            catch (Exception e)
+            if (!errors.isEmpty())
             {
-                ExceptionUtil.logExceptionToMothership(null, new IllegalStateException(listener.getClass().getName() + ".canMove() threw an exception or violated @NotNull contract"));
-            }
-        }
-        if (!errors.isEmpty())
-        {
-            ValidationException exception = new ValidationException();
-            for (String error : errors)
-            {
-                exception.addError(new SimpleValidationError(error));
-            }
-            throw exception;
-        }
-
-        if (c.getParent().getId().equals(newParent.getId()))
-            return false;
-
-        Container oldParent = c.getParent();
-        Container oldProject = c.getProject();
-        Container newProject = newParent.isRoot() ? c : newParent.getProject();
-
-        boolean changedProjects = !oldProject.getId().equals(newProject.getId());
-
-        // Synchronize the transaction, but not the listeners -- see #9901
-        try (DbScope.Transaction t = ensureTransaction())
-        {
-            new SqlExecutor(CORE.getSchema()).execute("UPDATE " + CORE.getTableInfoContainers() + " SET Parent = ? WHERE EntityId = ?", newParent.getId(), c.getId());
-
-            // Refresh the container directly from the database so the container reflects the new parent, isProject(), etc.
-            c = getForRowId(c.getRowId());
-
-            // this could be done in the trigger, but I prefer to put it in the transaction
-            if (changedProjects)
-                SecurityManager.changeProject(c, oldProject, newProject, user);
-
-            clearCache();
-
-            try
-            {
-                ExperimentService.get().moveContainer(c, oldParent, newParent);
-            }
-            catch (ExperimentException e)
-            {
-                throw new RuntimeException(e);
+                ValidationException exception = new ValidationException();
+                for (String error : errors)
+                {
+                    exception.addError(new SimpleValidationError(error));
+                }
+                throw exception;
             }
 
-            // Clear after the commit has propagated the state to other threads and transactions
-            // Do this in a commit task in case we've joined another existing DbScope.Transaction instead of starting our own
-            t.addCommitTask(() ->
+            if (c.getParent().getId().equals(newParent.getId()))
+                return false;
+
+            Container oldParent = c.getParent();
+            Container oldProject = c.getProject();
+            Container newProject = newParent.isRoot() ? c : newParent.getProject();
+
+            boolean changedProjects = !oldProject.getId().equals(newProject.getId());
+
+            // Synchronize the transaction, but not the listeners -- see #9901
+            try (DbScope.Transaction t = ensureTransaction())
             {
+                new SqlExecutor(CORE.getSchema()).execute("UPDATE " + CORE.getTableInfoContainers() + " SET Parent = ? WHERE EntityId = ?", newParent.getId(), c.getId());
+
+                // Refresh the container directly from the database so the container reflects the new parent, isProject(), etc.
+                c = getForRowId(c.getRowId());
+
+                // this could be done in the trigger, but I prefer to put it in the transaction
+                if (changedProjects)
+                    SecurityManager.changeProject(c, oldProject, newProject, user);
+
                 clearCache();
-                getChildrenMap(newParent); // reload the cache
-            }, DbScope.CommitTaskOption.POSTCOMMIT);
 
-            t.commit();
+                try
+                {
+                    ExperimentService.get().moveContainer(c, oldParent, newParent);
+                }
+                catch (ExperimentException e)
+                {
+                    throw new RuntimeException(e);
+                }
+
+                // Clear after the commit has propagated the state to other threads and transactions
+                // Do this in a commit task in case we've joined another existing DbScope.Transaction instead of starting our own
+                t.addCommitTask(() ->
+                {
+                    clearCache();
+                    getChildrenMap(newParent); // reload the cache
+                }, DbScope.CommitTaskOption.POSTCOMMIT);
+
+                t.commit();
+            }
+
+            Container newContainer = getForId(c.getId());
+            fireMoveContainer(newContainer, oldParent, user);
+
+            return changedProjects;
         }
-
-        Container newContainer = getForId(c.getId());
-        fireMoveContainer(newContainer, oldParent, user);
-
-        return changedProjects;
+        finally
+        {
+            mutatingContainers.remove(c.getRowId());
+        }
     }
 
     public static void rename(@NotNull Container c, User user, String name)
@@ -1703,7 +1703,8 @@ public class ContainerManager
      */
     public static Container rename(@NotNull Container c, User user, String name, @Nullable String title, boolean addAlias)
     {
-        try (DbScope.Transaction tx = ensureTransaction())
+        try (QuietCloser ignored = lockForMutation(MutatingOperation.rename, c);
+            DbScope.Transaction tx = ensureTransaction())
         {
             final String oldName = c.getName();
             final String newName = StringUtils.trimToNull(name);
@@ -1715,17 +1716,17 @@ public class ContainerManager
             {
                 // Issue 16221: Don't allow renaming of system reserved folders (e.g. /Shared, home, root, etc).
                 if (!isRenameable(c))
-                    throw new IllegalArgumentException("This folder may not be renamed as it is reserved by the system.");
+                    throw new ApiUsageException("This folder may not be renamed as it is reserved by the system.");
 
                 if (!Container.isLegalName(newName, c.isProject(), errors))
-                    throw new IllegalArgumentException(errors.toString());
+                    throw new ApiUsageException(errors.toString());
 
                 // Issue 19061: Unable to do case-only container rename
                 if (c.getParent().hasChild(newName) && !c.equals(c.getParent().getChild(newName)))
                 {
                     if (c.getParent().isRoot())
-                        throw new IllegalArgumentException("The server already has a project with this name.");
-                    throw new IllegalArgumentException("The " + (c.getParent().isProject() ? "project " : "folder ") + c.getParent().getPath() + " already has a folder with this name.");
+                        throw new ApiUsageException("The server already has a project with this name.");
+                    throw new ApiUsageException("The " + (c.getParent().isProject() ? "project " : "folder ") + c.getParent().getPath() + " already has a folder with this name.");
                 }
 
                 new SqlExecutor(CORE.getSchema()).execute("UPDATE " + CORE.getTableInfoContainers() + " SET Name=? WHERE EntityId=?", newName, c.getId());
@@ -1751,7 +1752,7 @@ public class ContainerManager
             if (!c.getTitle().equals(title))
             {
                 if (!Container.isLegalTitle(title, errors))
-                    throw new IllegalArgumentException(errors.toString());
+                    throw new ApiUsageException(errors.toString());
                 updateTitle(c, title, user);
             }
 
@@ -1798,36 +1799,59 @@ public class ContainerManager
         }
     }
 
-    private static final Map<String,Integer> deletingContainers = Collections.synchronizedMap(new HashMap<>());
-
-    public static boolean isDeleting(final Container c)
+    private enum MutatingOperation
     {
-        return deletingContainers.containsKey(c.getId());
+        delete,
+        rename,
+        move
+    }
+
+    private static final Map<Integer, MutatingOperation> mutatingContainers = Collections.synchronizedMap(new HashMap<>());
+
+    private static QuietCloser lockForMutation(MutatingOperation op, Container c)
+    {
+        return lockForMutation(op, Collections.singletonList(c));
+    }
+
+    private static QuietCloser lockForMutation(MutatingOperation op, Collection<Container> containers)
+    {
+        List<Integer> ids = new ArrayList<>(containers.size());
+        synchronized (mutatingContainers)
+        {
+            for (Container container : containers)
+            {
+                MutatingOperation currentOp = mutatingContainers.get(container.getRowId());
+                if (currentOp != null)
+                {
+                    throw new ApiUsageException("Cannot start a " + op + " operation on " + container.getPath() + ". It is currently undergoing a " + currentOp);
+                }
+                ids.add(container.getRowId());
+            }
+            ids.forEach(id -> mutatingContainers.put(id, op));
+        }
+        return () ->
+        {
+            synchronized (mutatingContainers)
+            {
+                ids.forEach(mutatingContainers::remove);
+            }
+        };
     }
 
     // Delete containers from the database
     private static boolean delete(final Collection<Container> containers, User user, @Nullable String comment)
     {
-        List<String> containerIds = containers.stream().map(Container::getId).toList();
-
-        try
+        // Do this check before we bother with any synchronization
+        for (Container container : containers)
         {
-            synchronized (deletingContainers)
+            if (!isDeletable(container))
             {
-                for (Container container : containers)
-                {
-                    if (!isDeletable(container))
-                    {
-                        throw new ApiUsageException("Cannot delete container: " + container.getPath());
-                    }
-
-                    if (deletingContainers.containsKey(container.getId()))
-                    {
-                        throw new ApiUsageException("Container is already being deleted: " + container.getPath());
-                    }
-                }
-                containerIds.forEach(id -> deletingContainers.put(id, user.getUserId()));
+                throw new ApiUsageException("Cannot delete container: " + container.getPath());
             }
+        }
+
+        try (QuietCloser ignored = lockForMutation(MutatingOperation.delete, containers))
+        {
             boolean deleted = true;
             for (Container c : containers)
             {
@@ -1835,17 +1859,13 @@ public class ContainerManager
             }
             return deleted;
         }
-        finally
-        {
-            containerIds.forEach(deletingContainers::remove);
-        }
     }
 
     // Delete a container from the database
     private static boolean delete(final Container c, User user, @Nullable String comment)
     {
         // Verify method isn't called inappropriately
-        if (!deletingContainers.containsKey(c.getId()))
+        if (mutatingContainers.get(c.getRowId()) != MutatingOperation.delete)
         {
             throw new IllegalStateException("Container not flagged as being deleted: " + c.getPath());
         }
@@ -1941,15 +1961,16 @@ public class ContainerManager
         return !isSystemContainer(c);
     }
 
+    /** System containers include the root container, /Home, and /Shared */
     public static boolean isSystemContainer(Container c)
     {
          return c.equals(getRoot()) || c.equals(getHomeContainer()) || c.equals(getSharedContainer());
     }
 
-    // Has Container been deleted or is it in the process of being deleted?
-    public static boolean exists(Container c)
+    /** Has the container already been deleted or is it in the process of being deleted? */
+    public static boolean exists(@Nullable Container c)
     {
-        return null != getForId(c.getEntityId()) && !isDeleting(c);
+        return c != null && null != getForId(c.getEntityId()) && mutatingContainers.get(c.getRowId()) != MutatingOperation.delete;
     }
 
     public static void deleteAll(Container root, User user, @Nullable String comment) throws UnauthorizedException
@@ -2001,22 +2022,22 @@ public class ContainerManager
 
     private static Set<Container> _getAllChildrenFromCache(Container c)
     {
-        return (Set<Container>) CACHE.get(CONTAINER_ALL_CHILDREN_PREFIX + c.getId());
+        return CACHE_ALL_CHILDREN.get(c.getId());
     }
 
     private static void _addAllChildrenToCache(Container c, Set<Container> children)
     {
-        CACHE.put(CONTAINER_ALL_CHILDREN_PREFIX + c.getId(), children);
+        CACHE_ALL_CHILDREN.put(c.getId(), children);
     }
 
     public static Container getFromCacheId(String id)
     {
-        return (Container) CACHE.get(CONTAINER_PREFIX + id);
+        return CACHE.get(id);
     }
 
     private static Container _getFromCachePath(Path path)
     {
-        return (Container) CACHE.get(CONTAINER_PREFIX + toString(path));
+        return CACHE.get(toString(path));
     }
 
     // UNDONE: use Path directly instead of toString()
@@ -2034,30 +2055,25 @@ public class ContainerManager
     {
         assert DATABASE_QUERY_LOCK.isHeldByCurrentThread() : "Any cache modifications must be synchronized at a " +
                 "higher level so that we ensure that the container to be inserted still exists and hasn't been deleted";
-        CACHE.put(CONTAINER_PREFIX + toString(c), c);
-        CACHE.put(CONTAINER_PREFIX + c.getId(), c);
+        CACHE.put(toString(c), c);
+        CACHE.put(c.getId(), c);
         return c;
     }
 
     private static void _clearChildrenFromCache(Container c)
     {
-        CACHE.remove(CONTAINER_CHILDREN_PREFIX + c.getId());
+        CACHE_CHILDREN.remove(c.getId());
         navTreeManageUncache(c);
     }
 
     private static void _removeFromCache(Container c)
     {
-        Container parent = c.getParent();
+        CACHE.remove(toString(c));
+        CACHE.remove(c.getId());
 
-        CACHE.remove(CONTAINER_PREFIX + toString(c));
-        CACHE.remove(CONTAINER_PREFIX + c.getId());
-        CACHE.remove(CONTAINER_CHILDREN_PREFIX + c.getId());
-
-        if (null != parent)
-            CACHE.remove(CONTAINER_CHILDREN_PREFIX + parent.getId());
-
-        // blow away the all children caches
-        CACHE.removeUsingFilter(new Cache.StringPrefixFilter(CONTAINER_CHILDREN_PREFIX));
+        // blow away the children caches
+        CACHE_CHILDREN.clear();
+        CACHE_ALL_CHILDREN.clear();
 
         navTreeManageUncache(c);
     }
@@ -2065,6 +2081,8 @@ public class ContainerManager
     public static void clearCache()
     {
         CACHE.clear();
+        CACHE_CHILDREN.clear();
+        CACHE_ALL_CHILDREN.clear();
 
         // UNDONE: NavTreeManager should register a ContainerListener
         NavTreeManager.uncacheAll();
@@ -2234,7 +2252,7 @@ public class ContainerManager
 
     public static SQLFragment getIdsAsCsvList(Set<Container> containers, SqlDialect d)
     {
-        if (0 == containers.size())
+        if (containers.isEmpty())
             return new SQLFragment("(NULL)");    // WHERE x IN (NULL) should match no rows
 
         SQLFragment csvList = new SQLFragment("(");
@@ -2585,7 +2603,7 @@ public class ContainerManager
         String subPath = "";
         for (int i=0; i < splits.size()-1; i++) // minus 1 due to leaving off last container
         {
-            if (splits.get(i).length() > 0)
+            if (!splits.get(i).isEmpty())
                 subPath += "/" + splits.get(i);
         }
 
@@ -2713,11 +2731,6 @@ public class ContainerManager
             c = ensureContainer(path, user);
         }
 
-        if (c == null)
-        {
-            throw new IllegalStateException("Unable to ensure container for path '" + path + "'");
-        }
-
         // Only set permissions if there are no explicit permissions
         // set for this object or we just created it
         Integer policyCount = null;
@@ -2793,9 +2806,9 @@ public class ContainerManager
         @Test
         public void testImproperFolderNamesBlocked()
         {
-            String[] badnames = {"", "f\\o", "f/o", "f\\\\o", "foo;", "@foo", "foo" + '\u001F', '\u0000' + "foo", "fo" + '\u007F' + "o", "" + '\u009F'};
+            String[] badNames = {"", "f\\o", "f/o", "f\\\\o", "foo;", "@foo", "foo" + '\u001F', '\u0000' + "foo", "fo" + '\u007F' + "o", "" + '\u009F'};
 
-            for (String name: badnames)
+            for (String name: badNames)
             {
                 try
                 {
@@ -2804,12 +2817,12 @@ public class ContainerManager
                     {
                         assertTrue(delete(c, TestContext.get().getUser()));
                     }
-                    catch(Exception ignored){}
-                    fail("Should have thrown illegal argument when trying to create container with name: " + name);
+                    catch (Exception ignored) {}
+                    fail("Should have thrown exception when trying to create container with name: " + name);
                 }
-                catch(IllegalArgumentException e)
+                catch (ApiUsageException e)
                 {
-                        //Do nothing, this is expected
+                    // Do nothing, this is expected
                 }
             }
         }

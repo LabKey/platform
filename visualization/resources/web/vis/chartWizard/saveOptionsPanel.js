@@ -33,7 +33,6 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
         this.thumbnailType = this.isSavedReport() && this.reportInfo.reportProps && this.reportInfo.reportProps.thumbnailType ? this.reportInfo.reportProps.thumbnailType : 'AUTO';
 
         // Note that Readers are allowed to save new charts (readers own new charts they're creating)- this is by design.
-        this.currentlyShared = (this.isSavedReport() && this.reportInfo.shared) || (!this.isSavedReport() && this.canSaveSharedCharts());
         this.createdBy = this.isSavedReport() ? this.reportInfo.createdBy : LABKEY.Security.currentUser.id;
 
         // generate unique id for the thumbnail preview div
@@ -61,6 +60,7 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
             this.saveForm = Ext4.create('Ext.form.Panel', {
                 region: 'center',
                 cls: 'region-panel save-form-panel',
+                bodyStyle: 'padding: 10px;',
                 border: false,
                 items: [
                     Ext4.create('Ext.form.field.Text', {
@@ -102,14 +102,23 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
                         value: Ext4.util.Format.htmlEncode(this.isSavedReport() ? this.reportInfo.description : null),
                         anchor: '100%'
                     }),
+                    Ext4.create('Ext.form.Checkbox', {
+                        itemId: 'reportInheritable',
+                        name: 'reportInheritable',
+                        fieldLabel: 'Inherit',
+                        boxLabel: 'Make this report available in child folders',
+                        hidden: !this.shouldAllowInherit(),
+                        labelWidth: 125,
+                        width: 400,
+                    }),
                     Ext4.create('Ext.form.RadioGroup', {
                         itemId: 'reportShared',
                         fieldLabel: 'Viewable By',
                         labelWidth: 125,
                         width: 350,
                         items : [
-                            { itemId: 'allReaders', name: 'reportShared', boxLabel: 'All readers', inputValue: 'true', disabled: !this.canSaveSharedCharts(), checked: this.currentlyShared, width: 140 },
-                            { itemId: 'onlyMe', name: 'reportShared', boxLabel: 'Only me', inputValue: 'false', disabled: !this.canSaveSharedCharts(), checked: !this.currentlyShared, width: 140 }
+                            { itemId: 'allReaders', name: 'reportShared', boxLabel: 'All readers', inputValue: 'true', disabled: !this.canSaveSharedCharts(), width: 140 },
+                            { itemId: 'onlyMe', name: 'reportShared', boxLabel: 'Only me', inputValue: 'false', disabled: !this.canSaveSharedCharts(), width: 140 }
                         ]
                     }),
                     Ext4.create('Ext.form.RadioGroup', {
@@ -197,11 +206,13 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
                     // the save button will not allow for replace if this is a new chart,
                     // but will force replace if this is a change to a saved chart
                     var shared = Ext4.isString(formVals.reportShared) ? 'true' == formVals.reportShared : (new Boolean(formVals.reportShared)).valueOf();
+                    var inheritable = Ext4.isString(formVals.reportInheritable) ? 'on' == formVals.reportInheritable : (new Boolean(formVals.reportInheritable)).valueOf();
                     this.fireEvent('saveChart', {
                         isSaveAs: this.isSaveAs,
                         replace: !this.isSaveAs ? this.isSavedReport() : false,
                         reportName: formVals.reportName,
                         reportDescription: formVals.reportDescription,
+                        inheritable: inheritable,
                         shared: shared,
                         thumbnailType: formVals.reportThumbnailType,
                         canSaveSharedCharts: this.canSaveSharedCharts(),
@@ -209,10 +220,11 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
                     });
 
                     // store the update report properties
-                    if(this.reportInfo){
+                    if (this.reportInfo){
                         this.reportInfo.name = formVals.reportName;
                         this.reportInfo.description = formVals.reportDescription;
-                        this.currentlyShared = shared;
+                        this.reportInfo.shared = shared;
+                        this.reportInfo.inheritable = inheritable;
                         this.thumbnailType = formVals.reportThumbnailType;
                     }
 
@@ -250,6 +262,11 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
         return Ext4.isObject(this.reportInfo);
     },
 
+    shouldAllowInherit : function()
+    {
+        return this.allowInherit;
+    },
+
     canSaveChanges : function()
     {
         return this.canEdit;
@@ -280,6 +297,7 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
                 this.down('#onlyMe').setValue(true);
             else
                 this.down('#allReaders').setValue(true);
+            this.down('#reportInheritable').setValue(false);
 
             this.down('#reportThumbnailType').setValue({reportThumbnailType: 'AUTO'});
             this.down('#keepCustom').hide();
@@ -299,10 +317,13 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
             this.down('#reportDescriptionDisplay').setVisible(!this.canSaveChanges());
             this.down('#reportDescriptionDisplay').setValue(Ext4.util.Format.htmlEncode(this.isSavedReport() ? this.reportInfo.description : null));
 
-            if (!this.currentlyShared)
+            if (this.isSavedReport() && !this.reportInfo.shared)
                 this.down('#onlyMe').setValue(true);
             else
                 this.down('#allReaders').setValue(true);
+
+            this.down('#reportInheritable').setVisible(this.shouldAllowInherit());
+            this.down('#reportInheritable').setValue(this.isSavedReport() ? this.reportInfo.inheritable : false);
 
             this.down('#reportThumbnailType').setValue({reportThumbnailType: this.thumbnailType});
             // hide the Keep existing option if there hasn't been a custom thumbnail saved for this report
@@ -368,6 +389,7 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
         this.down('#reportDescription').setValue(config.description);
         this.down('#reportDescriptionDisplay').setValue(config.description);
         this.down('#reportShared').setValue(config.shared);
+        this.down('#reportInheritable').setValue(config.inheritable);
 
         if(config.reportProps && config.reportProps.thumbnailType){
             this.thumbnailType = config.reportProps.thumbnailType;
