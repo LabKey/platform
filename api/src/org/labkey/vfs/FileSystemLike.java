@@ -98,8 +98,8 @@ public interface FileSystemLike
 
         public FileSystemLike build()
         {
-            var scheme = defaultIfBlank(uri.getScheme(), "file");
-            if (defaultVfs || !"file".equals(scheme))
+            var scheme = defaultIfBlank(uri.getScheme(), FileUtil.FILE_SCHEME);
+            if (defaultVfs || !FileUtil.FILE_SCHEME.equals(scheme))
                 return new FileSystemVFS(uri, canReadFiles, canWriteFiles, canDeleteRoot);
             else
                 return new FileSystemLocal(uri, canReadFiles, canWriteFiles, canDeleteRoot);
@@ -118,7 +118,7 @@ public interface FileSystemLike
 //    static java.nio.file.Path toNioPath(FileLike f)
 //    {
 //        var fs = f.getFileSystem();
-//        if (!"file".equals(fs.getScheme()))
+//        if (!FileUtil.FILE_SCHEME.equals(fs.getScheme()))
 //            throw new UnsupportedOperationException("Unsupported URI scheme: " + fs.getScheme());
 //        return f.getFileSystem().getNioPath(f);
 //    }

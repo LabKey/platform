@@ -105,7 +105,7 @@ public abstract class XarSource implements Serializable
             try
             {
                 URI uri = new URI(dataFileURL);
-                if ("file".equalsIgnoreCase(uri.getScheme()) || FileUtil.hasCloudScheme(uri))
+                if (FileUtil.FILE_SCHEME.equalsIgnoreCase(uri.getScheme()) || FileUtil.hasCloudScheme(uri))
                 {
                     urlToLookup = FileUtil.uriToString(uri);
                 }

@@ -243,7 +243,7 @@ public class FileSystemResource extends AbstractWebdavResource
         if (null == _files || !exists())
             return null;
         FileLike f = getFileInfo().getFileLike();
-        if ("file".equals(f.getFileSystem().getScheme()))
+        if (FileUtil.FILE_SCHEME.equals(f.getFileSystem().getScheme()))
             return new FileStream.FileFileStream(f.toNioPathForRead().toFile());
         FileObject fo = VFS.getManager().resolveFile(f.toURI());
         if (null == fo)

@@ -648,7 +648,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
                     continue;
 
                 URI uri = dataFile.getURI();
-                if (uri != null && "file".equals(uri.getScheme()))
+                if (uri != null && FileUtil.FILE_SCHEME.equals(uri.getScheme()))
                 {
                     File file = new File(uri);
                     if (NetworkDrive.exists(file))
@@ -689,7 +689,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
                 continue;
 
             URI uri = dataFile.getURI();
-            if (uri != null && "file".equals(uri.getScheme()))
+            if (uri != null && FileUtil.FILE_SCHEME.equals(uri.getScheme()))
             {
                 String role = dataFile.getRole();
                 File file = new File(uri);

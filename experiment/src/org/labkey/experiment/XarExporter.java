@@ -1393,7 +1393,7 @@ public class XarExporter
                             try
                             {
                                 URI uri = new URI(link);
-                                if (uri.getScheme().equals("file") || FileUtil.hasCloudScheme(uri))
+                                if (FileUtil.FILE_SCHEME.equals(uri.getScheme()) || FileUtil.hasCloudScheme(uri))
                                 {
                                     Path path = FileUtil.getPath(parentContainer, uri);
                                     if (Files.exists(path))

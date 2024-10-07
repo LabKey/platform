@@ -137,7 +137,7 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext<? e
         existingFiles.addAll(files);
     }
 
-    /* TODO File->FileObject convert FileQueue */
+    /* TODO File->FileLike convert FileQueue */
     public static List<Map<String, File>> getFileQueue(AssayRunUploadContext<?> context)
     {
         return getFileQueue(context.getRequest().getSession(true), context.getContainer(), context.getProtocol());

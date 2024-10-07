@@ -155,7 +155,7 @@ public class NetworkDrive
 
     public static void ensureDrive(FileLike f)
     {
-        if ("file".equals(f.getFileSystem().getScheme()))
+        if (FileUtil.FILE_SCHEME.equals(f.getFileSystem().getScheme()))
             ensureDrive(f.toNioPathForRead().toString());
     }
 

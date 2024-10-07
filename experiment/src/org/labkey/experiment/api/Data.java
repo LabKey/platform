@@ -62,7 +62,7 @@ public class Data extends RunItem
         }
         
         URI uri = FileUtil.createUri(getDataFileUrl());
-        if ("file".equals(uri.getScheme()))
+        if (FileUtil.FILE_SCHEME.equals(uri.getScheme()))
         {
             //consider try/catch on IllegalArgumentException
             return new File(uri);
@@ -89,7 +89,7 @@ public class Data extends RunItem
         if (null != getDataFileUrl())
         {
             URI uri = FileUtil.createUri(getDataFileUrl());
-            if ("file".equals(uri.getScheme()))
+            if (FileUtil.FILE_SCHEME.equals(uri.getScheme()))
                 return new File(uri).toPath();
 
             return FileUtil.stringToPath(getContainer(), getDataFileUrl());

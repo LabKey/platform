@@ -75,7 +75,6 @@ import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.exp.xar.XarReaderRegistry;
-import org.labkey.api.files.FileContentService;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
@@ -1799,7 +1798,7 @@ public class XarReader extends AbstractXarImporter
                 if (null != original)
                 {
                     URI uri = FileUtil.createUri(original);
-                    if ("file".equals(uri.getScheme()))
+                    if (FileUtil.FILE_SCHEME.equals(uri.getScheme()))
                     {
                         if (new File(uri).exists())
                             data.setDataFileUrl(original);

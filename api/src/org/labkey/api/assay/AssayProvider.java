@@ -108,7 +108,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
     AssayRunCreator getRunCreator();
 
     /** @return all the legal data collectors that the user can choose from for the current import attempt */
-    // TODO File->FileObject
+    // TODO File->FileLike
     List<AssayDataCollector> getDataCollectors(Map<String, File> uploadedFiles, AssayRunUploadForm context);
 
     default List<AssayDataCollector> getDataCollectorsFileObject(Map<String, FileLike> uploadedFileObjects, AssayRunUploadForm context)
@@ -237,11 +237,11 @@ public interface AssayProvider extends Handler<ExpProtocol>
      * File based QC and analysis scripts can be added to a protocol and invoked when the validate
      * method is called. Set to an empty list if no scripts exist.
      */
-    // TODO File->FileObject
+    // TODO File->FileLike
     ValidationException setValidationAndAnalysisScripts(ExpProtocol protocol, @NotNull List<File> scripts) throws ExperimentException;
 
     @NotNull
-    // TODO File->FileObject
+    // TODO File->FileLike
     List<File> getValidationAndAnalysisScripts(ExpProtocol protocol, Scope scope);
 
     void setSaveScriptFiles(ExpProtocol protocol, boolean save) throws ExperimentException;
