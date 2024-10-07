@@ -2734,11 +2734,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
                 // add edges for initial runs and roles up
                 for (Map.Entry<String, String> runAndRole : pair.first.entrySet())
-                    edges.add(new ExpLineage.Edge(runAndRole.getKey(), seed.getLSID(), "no role"));
+                    edges.add(new ExpLineage.Edge(runAndRole.getKey(), seed.getLSID(), null));
 
                 // add edges for initial runs and roles down
                 for (Map.Entry<String, String> runAndRole : pair.second.entrySet())
-                    edges.add(new ExpLineage.Edge(seed.getLSID(), runAndRole.getKey(), "no role"));
+                    edges.add(new ExpLineage.Edge(seed.getLSID(), runAndRole.getKey(), null));
             }
         }
 
@@ -2754,7 +2754,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             Integer parentRowId = (Integer)m.get("parent_rowid");
             Integer childRowId = (Integer)m.get("child_rowid");
 
-            String role = "no role";
             if (parentRowId == null || childRowId == null)
             {
                 LOG.error(String.format("Node not found for lineage: %s.\n  depth=%d, parentLsid=%s, parentType=%s, parentRowId=%d, childLsid=%s, childType=%s, childRowId=%d",
@@ -2762,7 +2761,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             }
             else
             {
-                edges.add(new ExpLineage.Edge(parentLSID, childLSID, role));
+                edges.add(new ExpLineage.Edge(parentLSID, childLSID, null));
 
                 // Don't include the seed in the lineage collections
                 if (!seedLsids.contains(parentLSID))

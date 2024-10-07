@@ -140,18 +140,15 @@ public class ExpLineage
 
             for (Edge edge : _edges)
             {
-                if (!_nodesAndEdges.containsKey(edge.parent))
-                    _nodesAndEdges.put(edge.parent, Pair.of(new HashSet<>(), new HashSet<>()));
-
-                if (!_nodesAndEdges.containsKey(edge.child))
-                    _nodesAndEdges.put(edge.child, Pair.of(new HashSet<>(), new HashSet<>()));
+                _nodesAndEdges.computeIfAbsent(edge.parent, (r) -> Pair.of(new HashSet<>(), new HashSet<>()));
+                _nodesAndEdges.computeIfAbsent(edge.child, (r) -> Pair.of(new HashSet<>(), new HashSet<>()));
 
                 // The edges parent now has a child of edge.second
-                if (!edge.parent.equals(edge.child)) // node cannot parent itself
+                if (!edge.parent.equals(edge.child)) // node cannot be a parent of itself
                     _nodesAndEdges.get(edge.parent).second.add(edge);
 
                 // The edges child now has a parent of edge.first
-                if (!edge.child.equals(edge.parent)) // node cannot child itself
+                if (!edge.child.equals(edge.parent)) // node cannot be a child of itself
                     _nodesAndEdges.get(edge.child).first.add(edge);
             }
         }
@@ -229,7 +226,7 @@ public class ExpLineage
 
     private Set<ExpMaterial> findRelatedChildSamples(ExpRunItem seed, Map<String, Identifiable> nodes, Map<String, Pair<Set<Edge>, Set<Edge>>> edges)
     {
-        if (edges.size() == 0)
+        if (edges.isEmpty())
             return Collections.emptySet();
 
         // walk from start through edges looking for all sample children, ignoring data children
@@ -247,24 +244,23 @@ public class ExpLineage
             Set<ExpLineage.Edge> childEdges = edges.containsKey(lsid) ? edges.get(lsid).second : Collections.emptySet();
             for (ExpLineage.Edge edge : childEdges)
             {
-                String childLsid = edge.child;
-                Identifiable child = nodes.get(childLsid);
-                if (child instanceof ExpRun)
+                Identifiable child = nodes.get(edge.child);
+                if (child instanceof ExpRun run)
                 {
-                    if (!seen.contains(child))
+                    if (!seen.contains(run))
                     {
-                        stack.add(child);
-                        seen.add(child);
+                        stack.add(run);
+                        seen.add(run);
                     }
                 }
-                else if (child instanceof ExpMaterial)
+                else if (child instanceof ExpMaterial material)
                 {
-                    if (!seen.contains(child))
+                    if (!seen.contains(material))
                     {
-                        stack.add(child);
-                        seen.add(child);
+                        stack.add(material);
+                        seen.add(material);
                     }
-                    materials.add((ExpMaterial)child);
+                    materials.add(material);
                 }
             }
         }
@@ -354,7 +350,7 @@ public class ExpLineage
         Map<String, Identifiable> nodes = processNodes();
         Map<String, Pair<Set<ExpLineage.Edge>, Set<ExpLineage.Edge>>> allEdges = processNodeEdges();
 
-        if (allEdges.size() == 0)
+        if (allEdges.isEmpty())
             return Collections.emptySet();
 
         // walk from start through edges looking for all nearest nodes, stopping at first ones found
@@ -367,7 +363,7 @@ public class ExpLineage
         {
             Identifiable curr = stack.poll();
             String lsid = curr.getLSID();
-            Set<ExpLineage.Edge> edges;
+            final Set<ExpLineage.Edge> edges;
 
             if (!allEdges.containsKey(lsid))
                 continue;
@@ -389,7 +385,7 @@ public class ExpLineage
                         seen.add(target);
                     }
                 }
-                else if (cpasType != null && target instanceof ExpRunItem && cpasType.equals(((ExpRunItem)target).getCpasType()))
+                else if (cpasType != null && target instanceof ExpRunItem item && cpasType.equals(item.getCpasType()))
                 {
                     nearest.add((T) target);
                 }
@@ -476,62 +472,35 @@ public class ExpLineage
         return json;
     }
 
-    public static class Edge
+    public record Edge(String parent, String child, @Nullable String role)
     {
-        public final String parent;
-        public final String child;
-        private final String _role;
-
-        public Edge(String parentLSID, String childLSID, String role)
-        {
-            parent = parentLSID;
-            child = childLSID;
-            _role = role;
-        }
-
         public JSONObject toParentJSON()
         {
-            JSONObject json = new JSONObject();
-            json.put("lsid", parent);
-            json.put("role", _role);
-            return json;
+            return toJSON(parent);
         }
 
         public JSONObject toChildJSON()
         {
+            return toJSON(child);
+        }
+
+        private JSONObject toJSON(String target)
+        {
             JSONObject json = new JSONObject();
-            json.put("lsid", child);
-            json.put("role", _role);
+            json.put("lsid", target);
+            json.put("role", roleWithDefault());
             return json;
         }
 
-        @Override
-        public int hashCode()
+        private String roleWithDefault()
         {
-            int result = parent.hashCode();
-            result = 31 * result + child.hashCode();
-            result = 31 * result + _role.hashCode();
-            return result;
-        }
-
-        @Override
-        public boolean equals(Object o)
-        {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            Edge edge = (Edge) o;
-
-            if (!parent.equals(edge.parent)) return false;
-            if (!child.equals(edge.child)) return false;
-            return _role.equals(edge._role);
-
+            return role == null ? "no role" : role;
         }
 
         @Override
         public String toString()
         {
-            return "[" + parent + "] -(" + _role + ")-> [" + child + "]";
+            return "[" + parent + "] -(" + roleWithDefault() + ")-> [" + child + "]";
         }
     }
 
