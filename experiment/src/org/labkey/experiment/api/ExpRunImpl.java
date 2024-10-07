@@ -986,7 +986,8 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
 
     private boolean inAssayData(File file) throws ExperimentException
     {
-        return file.getParentFile().equals(AssayFileWriter.ensureUploadDirectory(getContainer()));
+        var uploadDir = AssayFileWriter.ensureUploadDirectory(getContainer()).toNioPathForWrite().toFile();
+        return file.getParentFile().equals(uploadDir);
     }
 
     /**
