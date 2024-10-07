@@ -1542,17 +1542,32 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             var persist = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, _ss, getUserSchema().getContainer(), getUserSchema().getUser(), _ss.getImportAliases(), sampleTypeObjectId)
                     .setFileLinkDirectory("sampletype");
             SearchService searchService = SearchService.get();
+            ExperimentServiceImpl experimentServiceImpl = ExperimentServiceImpl.get();
+
             if (null != searchService)
             {
-                persist.setIndexFunction(lsids -> propertiesTable.getSchema().getScope().addCommitTask(() -> {
-                    ListUtils.partition(lsids, 100).forEach(sublist ->
-                        searchService.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
-                        {
-                            for (ExpMaterialImpl expMaterial : ExperimentServiceImpl.get().getExpMaterialsByLsid(sublist))
-                                expMaterial.index(searchService.defaultTask());
-                        })
-                    );
-                }, DbScope.CommitTaskOption.POSTCOMMIT)
+                persist.setIndexFunction(searchIndexDataKeys -> propertiesTable.getSchema().getScope().addCommitTask(() ->
+                    {
+                        List<String> lsids = searchIndexDataKeys.lsids();
+                        List<Integer> orderedRowIds = searchIndexDataKeys.orderedRowIds();
+
+                        // Issue 51263: order by RowId to reduce deadlock
+                        ListUtils.partition(orderedRowIds, 100).forEach(sublist ->
+                            searchService.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
+                            {
+                                for (ExpMaterialImpl expMaterial : experimentServiceImpl.getExpMaterials(sublist))
+                                    expMaterial.index(searchService.defaultTask());
+                            })
+                        );
+
+                        ListUtils.partition(lsids, 100).forEach(sublist ->
+                                searchService.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
+                                {
+                                    for (ExpMaterialImpl expMaterial : experimentServiceImpl.getExpMaterialsByLsid(sublist))
+                                        expMaterial.index(searchService.defaultTask());
+                                })
+                        );
+                    }, DbScope.CommitTaskOption.POSTCOMMIT)
                 );
             }
 
