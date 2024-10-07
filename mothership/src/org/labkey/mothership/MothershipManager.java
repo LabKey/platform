@@ -281,6 +281,9 @@ public class MothershipManager
             ServerSession existingSession = getServerSession(session.getServerSessionGUID(), container);
             if (existingSession != null)
             {
+                // Issue 50876: Reparent mothership server session when the base URL changes mid-session
+                existingSession.setServerInstallationId(installation.getServerInstallationId());
+
                 Calendar existingCal = Calendar.getInstance();
                 existingCal.setTime(existingSession.getLastKnownTime());
                 Calendar nowCal = Calendar.getInstance();
@@ -395,14 +398,32 @@ public class MothershipManager
         {
             log.debug("Merging JSON. Old is " + currentValue.length() + " characters, new is " + newValue.length());
             Map<String, Object> currentMap = mapper.readValue(currentValue, Map.class);
-            ObjectReader updater = mapper.readerForUpdating(currentMap);
-            Map<String, Object> merged = updater.readValue(newValue);
-            return mapper.writeValueAsString(merged);
+            Map<String, Object> newMap = mapper.readValue(newValue, Map.class);
+            merge(currentMap, newMap);
+            return mapper.writeValueAsString(currentMap);
         }
         catch (IOException e)
         {
             logJsonError(newValue, serverSessionGUID, e);
             return currentValue;
+        }
+    }
+
+    /** Merges the values from newMap into currentMap, recursing through child maps. See issue 50665 */
+    private void merge(Map<String, Object> currentMap, Map<String, Object> newMap)
+    {
+        for (Map.Entry<String, Object> entry : newMap.entrySet())
+        {
+            String key = entry.getKey();
+            Object currentChild = currentMap.get(key);
+            if (currentChild instanceof Map currentChildMap && entry.getValue() instanceof Map newChildMap)
+            {
+                merge(currentChildMap, newChildMap);
+            }
+            else
+            {
+                currentMap.put(entry.getKey(), entry.getValue());
+            }
         }
     }
 

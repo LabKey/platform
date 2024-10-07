@@ -52,6 +52,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.Job;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.NetworkDrive;
+import org.labkey.api.util.QuietCloser;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
@@ -1341,7 +1342,7 @@ abstract public class PipelineJob extends Job implements Serializable
         }
 
 
-        try (PipelineJobService.Closer ignored = PipelineJobService.get().trackForJobCancellation(_jobGUID, proc))
+        try (QuietCloser ignored = PipelineJobService.get().trackForJobCancellation(_jobGUID, proc))
         {
             // create thread pool for collecting the process output
             ExecutorService pool = Executors.newSingleThreadExecutor();
