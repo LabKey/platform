@@ -104,10 +104,15 @@ public class DateUtil
         return STANDARD_DATE_DISPLAY_FORMATS.contains(dateFormat);
     }
 
-    public static boolean isStandardDateTimeDisplayFormat(String dateTimeFormat)
+    public static String[] splitDateTimeFormat(String dateTimeFormat)
     {
         // Tolerate any amount of whitespace between the parts
-        String[] parts = dateTimeFormat.split("\\s+");
+        return dateTimeFormat.split("\\s+");
+    }
+
+    public static boolean isStandardDateTimeDisplayFormat(String dateTimeFormat)
+    {
+        String[] parts = splitDateTimeFormat(dateTimeFormat);
 
         // If one part, must be standard date format
         // If two parts, must be standard date format followed by standard time format

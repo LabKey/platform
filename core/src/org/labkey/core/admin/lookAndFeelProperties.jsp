@@ -31,10 +31,18 @@
 <%@ page import="org.labkey.api.util.Formats" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
+<%@ page import="org.labkey.api.util.element.Select.SelectBuilder" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.admin.AdminController.AdminUrlsImpl" %>
+<%@ page import="java.text.SimpleDateFormat" %>
+<%@ page import="java.util.Date" %>
+<%@ page import="java.util.LinkedHashMap" %>
+<%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="java.util.Set" %>
+<%@ page import="java.util.stream.Collectors" %>
 <%@ page import="static org.labkey.api.settings.LookAndFeelProperties.Properties.*" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -148,15 +156,15 @@
         <label><input id="menu_admin"  type="radio" name="<%=applicationMenuDisplayMode%>" value="<%=FolderDisplayMode.ADMIN%>"<%=checked(currentMenuDisplayMode == FolderDisplayMode.ADMIN)%>>
             <%=h(FolderDisplayMode.ADMIN.getDisplayString())%> <div id="app-menu-warning" class="labkey-error" style=<%=currentMenuDisplayMode == FolderDisplayMode.ADMIN ? q("display:block;"): q("display:none;")%>>Users will not be able to navigate between applications and LabKey Server when this menu is hidden.</div>
         </label><br>
-        <%
+<%
             addHandler("menu_always", "click", "document.getElementById('app-menu-warning').style.display='none';");
             addHandler("menu_admin", "click", "document.getElementById('app-menu-warning').style.display='block';");
-        %>
+%>
     </td>
 </tr>
-    <%
+<%
     }
-    %>
+%>
 <tr>
     <td class="labkey-form-label"><label for="<%=helpMenuEnabled%>">Show LabKey Help menu item</label></td>
     <td><input type="checkbox" id="<%=helpMenuEnabled%>" name="<%=helpMenuEnabled%>" size="50"<%=checked(laf.isHelpMenuEnabled())%>></td>
@@ -257,22 +265,24 @@
     String dateParsingHelp = sizingPrefix + "This pattern is attempted first when parsing text input for a column that is designated with a date-only data type or annotated with the \"Date\" meta type. Most standard LabKey date columns use date-time data type instead (see below)." + simpleDateFormatDocs + sizingSuffix;
     String dateTimeParsingHelp = sizingPrefix + "This pattern is attempted first when parsing text input for a column that is designated with a date-time data type or annotated with the \"DateTime\" meta type. Most standard LabKey date columns use this pattern." + simpleDateTimeFormatDocs + sizingSuffix;
     String timeParsingHelp = sizingPrefix + "This pattern is attempted first when parsing text input for a column that is designated with a time data type or annotated with the \"Time\" meta type. Most standard LabKey time columns use this pattern." + simpleTimeFormatDocs + sizingSuffix;
-
 %>
 <tr>
     <td colspan=2>Customize date, time, and number display formats (<%=bean.helpLink%>)</td>
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="<%=defaultDateFormat%>">Default display format for dates</label><%=helpPopup("Date format", dateFormatHelp, true)%></td>
-    <td><input type="text" id="<%=defaultDateFormat%>" name="<%=defaultDateFormat%>" size="50" value="<%= h(laf.getDefaultDateFormat()) %>"></td>
+    <td><%=select(defaultDateFormat.name(), DateUtil.STANDARD_DATE_DISPLAY_FORMATS, laf.getDefaultDateFormat(), false)%></td>
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="<%=defaultDateTimeFormat%>">Default display format for date-times</label><%=helpPopup("Date-time format", dateTimeFormatHelp, true)%></td>
-    <td><input type="text" id="<%=defaultDateTimeFormat%>" name="<%=defaultDateTimeFormat%>" size="50" value="<%= h(laf.getDefaultDateTimeFormat()) %>"></td>
+<%
+        String[] parts = DateUtil.splitDateTimeFormat(laf.getDefaultDateTimeFormat());
+%>
+    <td><%=select("part1", DateUtil.STANDARD_DATE_DISPLAY_FORMATS, parts.length > 0 ? parts[0] : null, false)%>&nbsp;&nbsp;<%=select("part2", DateUtil.STANDARD_TIME_DISPLAY_FORMATS, parts.length > 1 ? parts[1] : "<none>", true)%></td>
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="<%=defaultTimeFormat%>">Default display format for time-only values</label><%=helpPopup("Time format", timeFormatHelp, true)%></td>
-    <td><input type="text" id="<%=defaultTimeFormat%>" name="<%=defaultTimeFormat%>" size="50" value="<%= h(laf.getDefaultTimeFormat()) %>"></td>
+    <td><%=select(defaultTimeFormat.name(), DateUtil.STANDARD_TIME_DISPLAY_FORMATS, laf.getDefaultTimeFormat(), false)%></td>
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="<%=defaultNumberFormat%>">Default display format for numbers</label><%=helpPopup("Number format", decimalFormatHelp, true)%></td>
@@ -301,7 +311,8 @@
         <label><input type="radio" name="<%=dateParsingMode%>" value="<%=DateParsingMode.US%>"<%=checked(mode == DateParsingMode.US)%>> <%=h(DateParsingMode.US.getDisplayString())%> </label><br>
         <label><input type="radio" name="<%=dateParsingMode%>" value="<%=DateParsingMode.NON_US%>"<%=checked(mode == DateParsingMode.NON_US)%>> <%=h(DateParsingMode.NON_US.getDisplayString())%> </label><br>
     </td>
-</tr><%
+</tr>
+<%
     }
 %>
 <tr>
@@ -409,3 +420,32 @@
             return false;
     }
 </script>
+<%!
+    private SelectBuilder select(String id, Set<String> options, String current, boolean addNone)
+    {
+        if (!options.contains(current))
+        {
+            Set<String> set = new LinkedHashSet<>();
+            set.add(current);
+            set.addAll(options);
+            options = set;
+        }
+
+        Date now = new Date();
+        Map<String, String> map = options.stream()
+            .collect(Collectors.toMap(option -> option, option -> option + " (" + new SimpleDateFormat(option).format(now) + ")", (x, y) -> y, LinkedHashMap::new));
+
+        if (addNone)
+        {
+            map.put(null, "<none>");
+        }
+
+        return select()
+            .id(id)
+            .name(id)
+            .addOptions(map)
+            .selected(current)
+            .className(null)
+            .addStyle("width:225px");
+    }
+%>
