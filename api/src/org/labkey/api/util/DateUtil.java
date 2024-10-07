@@ -106,8 +106,9 @@ public class DateUtil
 
     public static String[] splitDateTimeFormat(String dateTimeFormat)
     {
-        // Tolerate any amount of whitespace between the parts
-        return dateTimeFormat.split("\\s+");
+        // Tolerate any amount of whitespace between the parts -- note that standard time portion could have
+        // a space ("hh:mm a"), hence the limit
+        return dateTimeFormat.split("\\s+", 2);
     }
 
     public static boolean isStandardDateTimeDisplayFormat(String dateTimeFormat)

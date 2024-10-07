@@ -1700,6 +1700,7 @@ public class AdminController extends SpringActionController
         }
     }
 
+    // TODO: Delete pointless interface
     public interface SettingsForm
     {
         String getDefaultDateFormat();
@@ -1770,7 +1771,7 @@ public class AdminController extends SpringActionController
         public abstract String description();
     }
 
-    public static class ProjectSettingsForm implements SettingsForm
+    public static class ProjectSettingsForm extends FolderSettingsForm
     {
         private boolean _shouldInherit; // new subfolders should inherit parent permissions
         private String _systemDescription;
@@ -5316,7 +5317,7 @@ public class AdminController extends SpringActionController
             );
         }
 
-        private class FolderImportConfig {
+        private static class FolderImportConfig {
             Path pipelineUnzipFile;
             String originalFileName;
             Path archiveFile;
@@ -5379,13 +5380,21 @@ public class AdminController extends SpringActionController
     public static class FolderSettingsForm implements SettingsForm
     {
         private String _defaultDateFormat;
+        private boolean _defaultDateFormatInherited;
         private String _defaultDateTimeFormat;
+        private boolean _defaultDateTimeFormatInherited;
         private String _defaultTimeFormat;
+        private boolean _defaultTimeFormatInherited;
         private String _defaultNumberFormat;
+        private boolean _defaultNumberFormatInherited;
         private String _extraDateParsingPattern;
+        private boolean _extraDateParsingPatternInherited;
         private String _extraDateTimeParsingPattern;
+        private boolean _extraDateTimeParsingPatternInherited;
         private String _extraTimeParsingPattern;
+        private boolean _extraTimeParsingPatternInherited;
         private boolean _restrictedColumnsEnabled;
+        private boolean _restrictedColumnsEnabledInherited;
 
         @Override
         public String getDefaultDateFormat()
@@ -5399,6 +5408,17 @@ public class AdminController extends SpringActionController
             _defaultDateFormat = defaultDateFormat;
         }
 
+        public boolean isDefaultDateFormatInherited()
+        {
+            return _defaultDateFormatInherited;
+        }
+
+        @SuppressWarnings("unused")
+        public void setDefaultDateFormatInherited(boolean defaultDateFormatInherited)
+        {
+            _defaultDateFormatInherited = defaultDateFormatInherited;
+        }
+
         @Override
         public String getDefaultDateTimeFormat()
         {
@@ -5406,9 +5426,21 @@ public class AdminController extends SpringActionController
         }
 
         @Override
+        @SuppressWarnings("unused")
         public void setDefaultDateTimeFormat(String defaultDateTimeFormat)
         {
             _defaultDateTimeFormat = defaultDateTimeFormat;
+        }
+
+        public boolean isDefaultDateTimeFormatInherited()
+        {
+            return _defaultDateTimeFormatInherited;
+        }
+
+        @SuppressWarnings("unused")
+        public void setDefaultDateTimeFormatInherited(boolean defaultDateTimeFormatInherited)
+        {
+            _defaultDateTimeFormatInherited = defaultDateTimeFormatInherited;
         }
 
         @Override
@@ -5424,6 +5456,17 @@ public class AdminController extends SpringActionController
             _defaultTimeFormat = defaultTimeFormat;
         }
 
+        public boolean isDefaultTimeFormatInherited()
+        {
+            return _defaultTimeFormatInherited;
+        }
+
+        @SuppressWarnings("unused")
+        public void setDefaultTimeFormatInherited(boolean defaultTimeFormatInherited)
+        {
+            _defaultTimeFormatInherited = defaultTimeFormatInherited;
+        }
+
         @Override
         public String getDefaultNumberFormat()
         {
@@ -5434,6 +5477,17 @@ public class AdminController extends SpringActionController
         public void setDefaultNumberFormat(String defaultNumberFormat)
         {
             _defaultNumberFormat = defaultNumberFormat;
+        }
+
+        public boolean isDefaultNumberFormatInherited()
+        {
+            return _defaultNumberFormatInherited;
+        }
+
+        @SuppressWarnings("unused")
+        public void setDefaultNumberFormatInherited(boolean defaultNumberFormatInherited)
+        {
+            _defaultNumberFormatInherited = defaultNumberFormatInherited;
         }
 
         @Override
@@ -5448,6 +5502,17 @@ public class AdminController extends SpringActionController
             _extraDateParsingPattern = extraDateParsingPattern;
         }
 
+        public boolean isExtraDateParsingPatternInherited()
+        {
+            return _extraDateParsingPatternInherited;
+        }
+
+        @SuppressWarnings("unused")
+        public void setExtraDateParsingPatternInherited(boolean extraDateParsingPatternInherited)
+        {
+            _extraDateParsingPatternInherited = extraDateParsingPatternInherited;
+        }
+
         @Override
         public String getExtraDateTimeParsingPattern()
         {
@@ -5458,6 +5523,17 @@ public class AdminController extends SpringActionController
         public void setExtraDateTimeParsingPattern(String extraDateTimeParsingPattern)
         {
             _extraDateTimeParsingPattern = extraDateTimeParsingPattern;
+        }
+
+        public boolean isExtraDateTimeParsingPatternInherited()
+        {
+            return _extraDateTimeParsingPatternInherited;
+        }
+
+        @SuppressWarnings("unused")
+        public void setExtraDateTimeParsingPatternInherited(boolean extraDateTimeParsingPatternInherited)
+        {
+            _extraDateTimeParsingPatternInherited = extraDateTimeParsingPatternInherited;
         }
 
         @Override
@@ -5473,6 +5549,17 @@ public class AdminController extends SpringActionController
             _extraTimeParsingPattern = extraTimeParsingPattern;
         }
 
+        public boolean isExtraTimeParsingPatternInherited()
+        {
+            return _extraTimeParsingPatternInherited;
+        }
+
+        @SuppressWarnings("unused")
+        public void setExtraTimeParsingPatternInherited(boolean extraTimeParsingPatternInherited)
+        {
+            _extraTimeParsingPatternInherited = extraTimeParsingPatternInherited;
+        }
+
         @Override
         public boolean areRestrictedColumnsEnabled()
         {
@@ -5480,9 +5567,22 @@ public class AdminController extends SpringActionController
         }
 
         @Override
+        @SuppressWarnings("unused")
         public void setRestrictedColumnsEnabled(boolean restrictedColumnsEnabled)
         {
             _restrictedColumnsEnabled = restrictedColumnsEnabled;
+        }
+
+        // TODO: Handle inheritance
+        public boolean isRestrictedColumnsEnabledInherited()
+        {
+            return _restrictedColumnsEnabledInherited;
+        }
+
+        @SuppressWarnings("unused")
+        public void setRestrictedColumnsEnabledInherited(boolean restrictedColumnsEnabledInherited)
+        {
+            _restrictedColumnsEnabledInherited = restrictedColumnsEnabledInherited;
         }
     }
 
@@ -11300,25 +11400,26 @@ public class AdminController extends SpringActionController
 
 
     // Validate and populate the folder settings; save & log all changes
-    private static boolean saveFolderSettings(Container c, SettingsForm form, WriteableFolderLookAndFeelProperties props, User user, BindException errors)
+    private static boolean saveFolderSettings(Container c, FolderSettingsForm form, WriteableFolderLookAndFeelProperties props, User user, BindException errors)
     {
-        if (!validateAndSaveFormat(form.getDefaultDateFormat(), props::clearDefaultDateFormat, props::setDefaultDateFormat, errors, "date"))
+        if (!validateAndSaveFormat(form.getDefaultDateFormat(), form.isDefaultDateFormatInherited(), props::clearDefaultDateFormat, props::setDefaultDateFormat, errors, "date"))
             return false;
-        if (!validateAndSaveFormat(form.getDefaultDateTimeFormat(), props::clearDefaultDateTimeFormat, props::setDefaultDateTimeFormat, errors, "date-time"))
+        if (!validateAndSaveFormat(form.getDefaultDateTimeFormat(), form.isDefaultDateTimeFormatInherited(), props::clearDefaultDateTimeFormat, props::setDefaultDateTimeFormat, errors, "date-time"))
             return false;
-        if (!validateAndSaveFormat(form.getDefaultTimeFormat(), props::clearDefaultTimeFormat, props::setDefaultTimeFormat, errors, "time"))
+        if (!validateAndSaveFormat(form.getDefaultTimeFormat(), form.isDefaultTimeFormatInherited(), props::clearDefaultTimeFormat, props::setDefaultTimeFormat, errors, "time"))
             return false;
-        if (!validateAndSaveFormat(form.getDefaultNumberFormat(), props::clearDefaultNumberFormat, props::setDefaultNumberFormat, errors, "number"))
+        if (!validateAndSaveFormat(form.getDefaultNumberFormat(), form.isDefaultNumberFormatInherited(), props::clearDefaultNumberFormat, props::setDefaultNumberFormat, errors, "number"))
             return false;
-        if (!validateAndSaveFormat(form.getExtraDateParsingPattern(), props::clearExtraDateParsingPattern, props::setExtraDateParsingPattern, errors, "date"))
+        if (!validateAndSaveFormat(form.getExtraDateParsingPattern(), form.isExtraDateParsingPatternInherited(), props::clearExtraDateParsingPattern, props::setExtraDateParsingPattern, errors, "date"))
             return false;
-        if (!validateAndSaveFormat(form.getExtraDateTimeParsingPattern(), props::clearExtraDateTimeParsingPattern, props::setExtraDateTimeParsingPattern, errors, "date-time"))
+        if (!validateAndSaveFormat(form.getExtraDateTimeParsingPattern(), form.isExtraDateTimeParsingPatternInherited(), props::clearExtraDateTimeParsingPattern, props::setExtraDateTimeParsingPattern, errors, "date-time"))
             return false;
-        if (!validateAndSaveFormat(form.getExtraTimeParsingPattern(), props::clearExtraTimeParsingPattern, props::setExtraTimeParsingPattern, errors, "time"))
+        if (!validateAndSaveFormat(form.getExtraTimeParsingPattern(), form.isExtraTimeParsingPatternInherited(), props::clearExtraTimeParsingPattern, props::setExtraTimeParsingPattern, errors, "time"))
             return false;
 
         try
         {
+            // TODO: Handle inheritance
             props.setRestrictedColumnsEnabled(form.areRestrictedColumnsEnabled());
         }
         catch (IllegalArgumentException e)
@@ -11340,10 +11441,35 @@ public class AdminController extends SpringActionController
         void save(String format) throws IllegalArgumentException;
     }
 
+    // TODO: Migrate callers and delete
     private static boolean validateAndSaveFormat(String format, Runnable clearer, FormatSaver saver, BindException errors, String what)
     {
         String defaultFormat = StringUtils.trimToNull(format);
         if (null == defaultFormat)
+        {
+            clearer.run();
+        }
+        else
+        {
+            try
+            {
+                saver.save(defaultFormat);
+            }
+            catch (IllegalArgumentException e)
+            {
+                errors.reject(ERROR_MSG, "Invalid " + what + " format: " + e.getMessage());
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    // TODO: Use this!
+    private static boolean validateAndSaveFormat(String format, boolean inherited, Runnable clearer, FormatSaver saver, BindException errors, String what)
+    {
+        String defaultFormat = StringUtils.trimToNull(format);
+        if (inherited)
         {
             clearer.run();
         }

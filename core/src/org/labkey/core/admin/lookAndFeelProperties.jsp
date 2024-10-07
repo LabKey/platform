@@ -471,14 +471,14 @@
 
         if (addNone)
         {
-            map.put(null, NONE);
+            map.put("", NONE);
         }
 
         return select()
             .id(id)
             .name(id)
             .addOptions(map)
-            .selected(current)
+            .selected(NONE.equals(current) ? "" : current)
             .className(null)
             .addStyle("width:225px");
     }
@@ -489,7 +489,7 @@
             return HtmlString.EMPTY_STRING;
 
         HtmlStringBuilder builder = HtmlStringBuilder.of(HtmlString.unsafe("<td style=\"text-align: center;\"><input type=\"checkbox\" name=\""))
-            .append(name + "Inherit")
+            .append(name + "Inherited")
             .unsafeAppend("\"");
 
         if (null == value)
