@@ -13,6 +13,7 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
+import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.ExpSchema;
@@ -30,6 +31,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toList;
 
 public abstract class DataClassFolderWriter extends AbstractExpFolderWriter
 {
@@ -78,19 +81,21 @@ public abstract class DataClassFolderWriter extends AbstractExpFolderWriter
 
             // get the list of runs with the data we expect to export, these will be the sample derivation
             // protocol runs to track the lineage
-            if (!dataClass.getDatas().isEmpty() && exportDataClassData)
+            if (exportDataClassData)
             {
-                List<ExpData> datasToExport = new ArrayList<>(dataClass.getDatas());
+                List<Integer> dataIdsToExport = dataClass.getDatas().stream().map(ExpData::getRowId).collect(toList());
 
                 // only want the sample derivation runs; other runs will get included in the experiment xar.
-                Set<ExpRun> exportedRuns = ExperimentService.get().getRunsUsingDatas(datasToExport).stream().filter(run -> {
+                List<Integer> exportedRunIds = ExperimentService.get().getRunsUsingDataIds(dataIdsToExport).stream().filter(run -> {
                     String lsid = run.getProtocol().getLSID();
                     return lsid.equals(ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID) && isValidRunType(ctx, run);
-                }).collect(Collectors.toSet());
+                })
+                    .collect(Collectors.toSet())
+                    .stream().map(ExpObject::getRowId).toList();
 
-                if (!exportedRuns.isEmpty())
+                if (!exportedRunIds.isEmpty())
                 {
-                    runsSelection.addRuns(exportedRuns);
+                    runsSelection.addRunIds(exportedRunIds);
                     exportRuns = true;
                 }
             }
