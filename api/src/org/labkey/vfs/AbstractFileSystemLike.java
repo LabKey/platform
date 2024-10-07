@@ -3,9 +3,6 @@ package org.labkey.vfs;
 import java.net.URI;
 import java.nio.file.Path;
 
-import static org.labkey.api.files.virtual.AuthorizedFileSystem.createReadOnly;
-import static org.labkey.api.files.virtual.AuthorizedFileSystem.toURIPath;
-
 abstract public class AbstractFileSystemLike implements FileSystemLike
 {
     final URI uri;
