@@ -859,7 +859,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         {
             ActionURL show = new ActionURL(ExperimentController.ShowDataClassAction.class, getContainer()).addParameter("rowId", dc.getRowId());
             NavTree t = new NavTree(dc.getName(), show);
-            String nav = NavTree.toJS(Collections.singleton(t), null, false).toString();
+            String nav = NavTree.toJS(Collections.singleton(t), null, false, true).toString();
             props.put(SearchService.PROPERTY.navtrail.toString(), nav);
 
             props.put(DataSearchResultTemplate.PROPERTY, dc.getName());

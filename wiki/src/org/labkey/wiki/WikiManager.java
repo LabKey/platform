@@ -854,7 +854,7 @@ public class WikiManager implements WikiService
                         documentName, searchCategory);
 
                 NavTree t = new NavTree("wiki page", wikiUrl);
-                String nav = NavTree.toJS(Collections.singleton(t), null, false).toString();
+                String nav = NavTree.toJS(Collections.singleton(t), null, false, true).toString();
                 attachmentRes.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
                 task.addResource(attachmentRes, SearchService.PRIORITY.item);
             }

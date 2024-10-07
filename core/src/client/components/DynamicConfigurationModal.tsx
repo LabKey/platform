@@ -202,18 +202,22 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Part
                     </div>
                 </div>
 
-                <div className="bold-text modal__settings-text"> Settings</div>
+                {authConfig.provider !== 'SAML' && (
+                    <>
+                        <div className="bold-text modal__settings-text"> Settings</div>
 
-                <TextInput
-                    onChange={this.onChange}
-                    value={fieldValues.description}
-                    type="text"
-                    canEdit={canEdit}
-                    requiredFieldEmpty={requiredFieldEmpty}
-                    required={true}
-                    name="description"
-                    caption="Description"
-                />
+                        <TextInput
+                            onChange={this.onChange}
+                            value={fieldValues.description}
+                            type="text"
+                            canEdit={canEdit}
+                            requiredFieldEmpty={requiredFieldEmpty}
+                            required={true}
+                            name="description"
+                            caption="Name/Description"
+                        />
+                    </>
+                )}
 
                 <DynamicFields
                     fields={modalType.settingsFields}

@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.formSchema.FormSchema;
 import org.labkey.api.pipeline.file.PathMapper;
+import org.labkey.api.util.QuietCloser;
 
 import java.io.FileNotFoundException;
 import java.util.List;
@@ -138,18 +139,12 @@ public interface PipelineJobService extends TaskPipelineRegistry
      */
     String getExecutablePath(String exeRel, @Nullable String installPath, String packageName, String ver, Logger jobLogger) throws FileNotFoundException;
 
-    interface Closer extends AutoCloseable
-    {
-        @Override
-        void close();
-    }
-
     /**
      * Tracks processes launched by pipeline jobs so they can be killed if the pipeline job gets canceled.
      * Callers should invoke the close() on the returned object when the process completes normally and no longer
      * needs to be tracked
      */
-    Closer trackForJobCancellation(String jobGuid, Process process);
+    QuietCloser trackForJobCancellation(String jobGuid, Process process);
 
     void cancelForJob(String jobGuid);
 

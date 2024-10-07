@@ -216,8 +216,7 @@ public class PipelineManager
         sql.append("UPDATE ").append(ExperimentService.get().getTinfoExperimentRun()).
                 append(" SET JobId = NULL WHERE JobId IN (SELECT RowId FROM ").
                 append(pipeline.getTableInfoStatusFiles(), "p").
-                append(" WHERE container = ? ) AND Container = ?");
-        sql.add(container.getId());
+                append(" WHERE container = ?)");
         sql.add(container.getId());
 
         try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())

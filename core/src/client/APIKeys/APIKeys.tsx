@@ -25,8 +25,8 @@ export const App: FC<any> = () => {
     return (
         <ServerContextProvider initialContext={serverContext}>
             <AppContextProvider>
-                <APIKeysPanel includeSessionKeys={true}/>
+                <APIKeysPanel includeSessionKeys={true} />
             </AppContextProvider>
         </ServerContextProvider>
     );
-}
+};

@@ -17,7 +17,6 @@
 package org.labkey.list.model;
 
 import org.apache.commons.collections4.MultiValuedMap;
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -534,7 +533,7 @@ public class ListManager implements SearchService.DocumentProvider
             Runnable r = () ->
             {
                 Container c = def.lookupContainer();
-                if (c == null || ContainerManager.isDeleting(c))
+                if (!ContainerManager.exists(c))
                 {
                     LOG.info("List container has been deleted or is being deleted; not indexing list \"" + def.getName() + "\"");
                 }
@@ -716,7 +715,7 @@ public class ListManager implements SearchService.DocumentProvider
                 ActionURL gridURL = list.urlShowData();
                 gridURL.setExtraPath(list.getContainer().getId()); // Use ID to guard against folder moves/renames
                 NavTree t = new NavTree("list", gridURL);
-                String nav = NavTree.toJS(Collections.singleton(t), null, false).toString();
+                String nav = NavTree.toJS(Collections.singleton(t), null, false, true).toString();
                 r.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
 
                 task.addResource(r, SearchService.PRIORITY.item);
@@ -1122,9 +1121,7 @@ public class ListManager implements SearchService.DocumentProvider
         String listSchemaName = ListSchema.getInstance().getSchemaName();
 
         // Now clear LastIndexed column of every underlying list table, which addresses the "index each list item as a separate document" case. See #28748.
-        new TableSelector(getListMetadataTable()).forEach(ListDef.class, listDef -> {
-            clearLastIndexed(scope, listSchemaName, listDef);
-        });
+        new TableSelector(getListMetadataTable()).forEach(ListDef.class, listDef -> clearLastIndexed(scope, listSchemaName, listDef));
     }
 
     private void clearLastIndexed(DbScope scope, String listSchemaName, ListDef listDef)
@@ -1225,7 +1222,7 @@ public class ListManager implements SearchService.DocumentProvider
                     continue;
 
                 ColumnInfo col = ti.getColumn(FieldKey.fromParts(baseKey));
-                String value = ObjectUtils.toString(entry.getValue());
+                String value = Objects.toString(entry.getValue(), "");
                 String key = null;
 
                 if (null != col)

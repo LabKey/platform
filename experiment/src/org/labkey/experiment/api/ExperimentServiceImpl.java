@@ -1223,7 +1223,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             .append(" ON d.RowId = di.DataId")
             .append(" WHERE d.classId = ?").add(dataClass.getRowId())
             .append(" AND (di.lastIndexed IS NULL OR di.lastIndexed < ? OR (d.modified IS NOT NULL AND di.lastIndexed < d.modified))")
-            .add(dataClass.getModified());
+            .append(" ORDER BY d.RowId") // Issue 51263: order by RowId to reduce deadlock
+                .add(dataClass.getModified());
 
         var scope = table.getSchema().getScope();
         scope.executeWithRetryReadOnly(tx ->
