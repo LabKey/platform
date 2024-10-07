@@ -413,19 +413,22 @@ public class TabLoader extends DataLoader
         while (start < buf.length())
         {
             boolean loadThisColumn = null==columns || colIndex >= columns.length || columns[colIndex].load;
-            int end;
+            int end = 0;
             char ch = buf.charAt(start);
             char chQuote = '"';
 
             colIndex++;
 
+            boolean isDelimiterOrQuote = false;
             if (ch == _chDelimiter)
             {
                 end = start;
                 field = _preserveEmptyString ? null : "";
+                isDelimiterOrQuote = true;
             }
             else if (ch == chQuote)
             {
+                isDelimiterOrQuote = true;
                 if (_strQuote == null)
                 {
                     _strQuote = String.valueOf(chQuote);
@@ -448,6 +451,7 @@ public class TabLoader extends DataLoader
                         if (nextLine == null)
                         {
                             // We've reached the end of the input, so there's nothing else to append
+                            isDelimiterOrQuote = false;
                             break;
                         }
 
@@ -457,33 +461,44 @@ public class TabLoader extends DataLoader
                     }
 
                     if (end == buf.length() - 1 || buf.charAt(end + 1) != chQuote)
+                    {
+                        // Issue 51056: pooling sample parents with single quote doesn't work
+                        // " a, " b should be parsed as [" a, " b], not [a,  b]
+                        if (end != buf.length() - 1 && buf.charAt(end + 1) != _chDelimiter)
+                            isDelimiterOrQuote = false;
                         break;
+                    }
                     hasQuotes = true;
                     end++; // skip double ""
                 }
 
-                field = buf.substring(start + 1, end);
-                if (hasQuotes && field.contains(_strQuoteQuote))
-                    field = _replaceDoubleQuotes.matcher(field).replaceAll("\"");
-
-                // eat final "
-                end++;
-
-                //FIX: 9727
-                //if not at end of line and next char is not a tab, append any chars to field up to the next tab/eol
-                //note that this is a surgical quick-fix due to the proximity of release.
-                //the better fix would be to parse the file character-by-character and support
-                //double quotes anywhere within the field to escape delimiters
-                if (end < buf.length() && buf.charAt(end) != _chDelimiter)
+                if (isDelimiterOrQuote)
                 {
-                    start = end;
-                    end = buf.indexOf(_strDelimiter, end);
-                    if (-1 == end)
-                        end = buf.length();
-                    field = field + buf.substring(start, end);
+                    field = buf.substring(start + 1, end);
+                    if (hasQuotes && field.contains(_strQuoteQuote))
+                        field = _replaceDoubleQuotes.matcher(field).replaceAll("\"");
+
+                    // eat final "
+                    end++;
+
+                    //FIX: 9727
+                    //if not at end of line and next char is not a tab, append any chars to field up to the next tab/eol
+                    //note that this is a surgical quick-fix due to the proximity of release.
+                    //the better fix would be to parse the file character-by-character and support
+                    //double quotes anywhere within the field to escape delimiters
+                    if (end < buf.length() && buf.charAt(end) != _chDelimiter)
+                    {
+                        start = end;
+                        end = buf.indexOf(_strDelimiter, end);
+                        if (-1 == end)
+                            end = buf.length();
+                        field = field + buf.substring(start, end);
+                    }
+
                 }
             }
-            else
+
+            if (!isDelimiterOrQuote)
             {
                 end = buf.indexOf(_strDelimiter, start);
                 if (end == -1)
@@ -711,7 +726,7 @@ public class TabLoader extends DataLoader
                 1/2/2006,96,1543.3401,858.3246,FALSE,1714.6346,2029.6295,2,1,0.19630894,26.471083,12.982442,4,92,100,9,20248.762,description
                 2/Jan/2006,100,1560.348,858.37555,FALSE,1714.7366,1168.3536,2,1,0.033085547,63.493385,8.771278,5,101,119,19,17977.979,"desc""ion"
                 ,25,1460.2411,745.39404,FALSE,744.3868,1114.4303,1,1,0.020280406,15.826528,12.413276,4,17,41,25,13456.231,"des,crip,tion"
-                2-Jan-06,89,1535.602,970.9579,FALSE,1939.9012,823.70984,2,1,0.0228055,10.497823,2.5962036,5,81,103,23,9500.36,
+                2-Jan-06,89,1535.602,970.9579,FALSE,1939.9012,823.70984,2,1,0.0228055,10.497823,2.5962036,5,81,103,23,9500.36,"des,"cri," p, "ti, " on
                 2 January 2006,164,1624.442,783.8968,FALSE,1565.779,771.20935,2,1,0.024676466,11.3547325,3.3645654,5,156,187,32,12656.351,
                 "January 2, 2006",224,1695.389,725.39404,FALSE,2173.1604,6.278867,3,1,0.2767084,1.6497655,1.2496755,3,221,229,9,55.546417
                 1/2/06,249,1724.5541,773.42175,FALSE,1544.829,5.9057474,2,1,0.5105971,0.67020833,1.4744527,2,246,250,5,29.369175
@@ -730,7 +745,7 @@ public class TabLoader extends DataLoader
                 1/2/2006\t96\t1543.3401\t858.3246\tFALSE\t1714.6346\t2029.6295\t2\t1\t0.19630894\t26.471083\t12.982442\t4\t92\t100\t9\t20248.762\tdescription
                 2/Jan/2006\t100\t1560.348\t858.37555\tFALSE\t1714.7366\t1168.3536\t2\t1\t0.033085547\t63.493385\t8.771278\t5\t101\t119\t19\t17977.979\tdesc"ion
                 \t25\t1460.2411\t745.39404\tFALSE\t744.3868\t1114.4303\t1\t1\t0.020280406\t15.826528\t12.413276\t4\t17\t41\t25\t13456.231\tdes,crip,tion
-                2-Jan-06\t89\t1535.602\t970.9579\tFALSE\t1939.9012\t823.70984\t2\t1\t0.0228055\t10.497823\t2.5962036\t5\t81\t103\t23\t9500.36\t
+                2-Jan-06\t89\t1535.602\t970.9579\tFALSE\t1939.9012\t823.70984\t2\t1\t0.0228055\t10.497823\t2.5962036\t5\t81\t103\t23\t9500.36\t"cri," p, "ti, " on
                 2 January 2006\t164\t1624.442\t783.8968\tFALSE\t1565.779\t771.20935\t2\t1\t0.024676466\t11.3547325\t3.3645654\t5\t156\t187\t32\t12656.351\t
                 January 2, 2006\t224\t1695.389\t725.39404\tFALSE\t2173.1604\t6.278867\t3\t1\t0.2767084\t1.6497655\t1.2496755\t3\t221\t229\t9\t55.546417\t
                 1/2/06\t249\t1724.5541\t773.42175\tFALSE\t1544.829\t5.9057474\t2\t1\t0.5105971\t0.67020833\t1.4744527\t2\t246\t250\t5\t29.369175\t

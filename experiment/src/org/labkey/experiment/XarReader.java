@@ -745,7 +745,13 @@ public class XarReader extends AbstractXarImporter
 
         DomainDescriptor existingDomainDescriptor = OntologyManager.getDomainDescriptor(lsid, getContainer());
         if (existingDomainDescriptor == null && useName)
+        {
             existingDomainDescriptor = OntologyManager.fetchDomainDescriptorFromDB(xDomain.getName(), getContainer(), true);
+            // Issue 50673 experiment run imports via folder archive from another server are failing
+            // exclude descriptor from Shared/
+            if (existingDomainDescriptor != null && existingDomainDescriptor.getContainer().getId().equals(ContainerManager.getSharedContainer().getId()) && !getContainer().getId().equals(ContainerManager.getSharedContainer().getId()))
+                existingDomainDescriptor = null;
+        }
         DomainImpl existingDomain = existingDomainDescriptor == null ? null : new DomainImpl(existingDomainDescriptor);
         if (existingDomain != null)
         {
