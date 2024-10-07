@@ -28,6 +28,7 @@
 <%@ page import="com.fasterxml.jackson.databind.ObjectMapper" %>
 <%@ page import="java.io.ByteArrayOutputStream" %>
 <%@ page import="java.io.ByteArrayInputStream" %>
+<%@ page import="org.apache.commons.lang3.StringUtils" %>
 
 
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
@@ -89,7 +90,7 @@
 
         for (char c = 32; c <= 127; c++)
         {
-            if (c == '/')
+            if (c == '/' || c == '\\')
                 continue;
             String s = "_" + c + "_";
             p = new Path(s,"%.txt");
@@ -102,12 +103,12 @@
                 s = "/" + c + ".txt";
                 var ioFile = new java.io.File(s);
                 f = new FileSystemLike.Builder(ioFile).root();
-                assertEquals(s, f.toNioPathForRead().toString());
-                URI uri = f.toURI();
+                assertTrue(StringUtils.replaceChars(f.toNioPathForRead().toString(),'\\','/').endsWith(s));
+                assertNotNull(f.toURI());
             }
             catch (Exception e)
             {
-                System.out.println("BAD CHAR " + c);
+                fail("BAD CHAR " + c);
             }
         }
 
