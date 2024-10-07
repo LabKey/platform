@@ -158,7 +158,7 @@ public interface FileSystemLike
     }
 
 
-    /* More efficent version of wrap when many files may be from the same directory */
+    /* More efficient version of wrap when many files may be from the same directory */
     static List<FileLike> wrapFiles(List<File> files)
     {
         Map<File, FileSystemLike> map = new HashMap<>();
