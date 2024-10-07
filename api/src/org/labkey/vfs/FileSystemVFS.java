@@ -20,6 +20,11 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 
+
+/**
+ * As of the initial commit of the FileSystemLike, this class is only used for testing out the interfaces.
+ * Eventually we may integrate this class as a wrapper for cloud resources or Folder export/import.
+ */
 public class FileSystemVFS extends AbstractFileSystemLike
 {
     final FileObject vfsRoot;

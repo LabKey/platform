@@ -16,14 +16,35 @@ import java.util.Map;
 import static org.apache.commons.lang3.StringUtils.defaultIfBlank;
 
 /**
- * This is meant to be a wrapper over java.nio.file.Path or java.io.File or org.apache.commons.vfs2.FileObject.
- * However, it is still lower level than Resource.  For instance, it does not know about Permissions or ContentType, etc.
+ * In LabKey most files are accessed withing a directory with a particular role.  For instance, a directory might be:
+ * <br>
+ *  - a pipeline root used for storing assay files
+ * <br>
+ *  - a temporary working directory used for assay import or a report
+ * <br>
+ *  - a directory with configuration files
+ * <p/>
+ * In any of these scenarios the code using that directory usually does not need access to files _outside_ that directory.
+ * Using java.io.File makes it difficult to enforce this.  Instead of this common pattern
+ * <pre>
+ *      File workingdir = new File("tempdir");
+ *      File file = new File(workingdir, anypath))
+ * </pre>
+ * We can now follow this pattern, which validates the scope of the resolved path.
+ * <pre>
+ *     FileLike workingdir = new FileSystemLike.Builder("tempdir").readwrite().root();
+ *     FileLike file = workingdir.resolveFile(anypath);
+ * </pre>
  *
+ * <p/>
+ * implementation notes:
+ * - This is meant to be a wrapper over java.nio.file.Path or java.io.File or org.apache.commons.vfs2.FileObject.
+ *   However, it is still lower level than Resource.  For instance, it does not know about Permissions or ContentType, etc.
  * <br>
- * FileLike objects always present String path and util.Path relative to the FileSystemLike root.
- * The containing FileSystemLike object just be used to translate to an "external" path.
+ * - FileLike objects always present String path and util.Path relative to the FileSystemLike root.
+ *   If the FileLike wraps a local path, toNioPath() can be used.
  * <br>
- * These classes should not cache, but the wrapped impl might.  This is why FileLike has a reset() method.
+ * - These classes should not cache, but the wrapped impl might.  This is why FileLike has a reset() method.
  */
 public interface FileSystemLike
 {
