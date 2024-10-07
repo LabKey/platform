@@ -258,34 +258,50 @@
     String simpleDateFormatDocs = simpleDateDocHeader + dateDocs + "</table>";
     String simpleDateTimeFormatDocs = simpleDateDocHeader + dateDocs + timeDocs + "</table>";
     String simpleTimeFormatDocs = simpleDateDocHeader + timeDocs + "</table>";
-    String dateFormatHelp = sizingPrefix + "This format is applied when displaying a column that is defined with a date-only data type or annotated with the \"Date\" meta type. Most standard LabKey date columns use date-time data type (see below)." + simpleDateFormatDocs + sizingSuffix;
-    String dateTimeFormatHelp = sizingPrefix + "This format is applied when displaying a column that is defined with a date-time data type or annotated with the \"DateTime\" meta type. Most standard LabKey date columns use this format." + simpleDateTimeFormatDocs + sizingSuffix;
-    String timeFormatHelp = sizingPrefix + "This format is applied when displaying a column that is defined with a time data type or annotated with the \"Time\" meta type. Most standard LabKey time columns use this format." + simpleTimeFormatDocs + sizingSuffix;
+    String dateFormatHelp = sizingPrefix + "This format is applied when displaying a column that is defined with a date-only data type or annotated with the \"Date\" meta type. Most standard LabKey date columns use date-time data type (see below)." + sizingSuffix;
+    String dateTimeFormatHelp = sizingPrefix + "This format is applied when displaying a column that is defined with a date-time data type or annotated with the \"DateTime\" meta type. Most standard LabKey date columns use this format." + sizingSuffix;
+    String timeFormatHelp = sizingPrefix + "This format is applied when displaying a column that is defined with a time data type or annotated with the \"Time\" meta type. Most standard LabKey time columns use this format." + sizingSuffix;
 
     String dateParsingHelp = sizingPrefix + "This pattern is attempted first when parsing text input for a column that is designated with a date-only data type or annotated with the \"Date\" meta type. Most standard LabKey date columns use date-time data type instead (see below)." + simpleDateFormatDocs + sizingSuffix;
     String dateTimeParsingHelp = sizingPrefix + "This pattern is attempted first when parsing text input for a column that is designated with a date-time data type or annotated with the \"DateTime\" meta type. Most standard LabKey date columns use this pattern." + simpleDateTimeFormatDocs + sizingSuffix;
     String timeParsingHelp = sizingPrefix + "This pattern is attempted first when parsing text input for a column that is designated with a time data type or annotated with the \"Time\" meta type. Most standard LabKey time columns use this pattern." + simpleTimeFormatDocs + sizingSuffix;
 %>
 <tr>
-    <td colspan=2>Customize date, time, and number display formats (<%=bean.helpLink%>)</td>
+    <td<%=h(!folder ? " colspan=3" : "")%>>Customize date, time, and number display formats (<%=bean.helpLink%>)</td>
+    <%
+        if (folder)
+        {
+    %>
+    <td style="padding-left: 5px; padding-right: 5px;">Inherit</td>
+    <%
+        }
+    %>
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="<%=defaultDateFormat%>">Default display format for dates</label><%=helpPopup("Date format", dateFormatHelp, true)%></td>
+    <%=inheritCheckbox(c, defaultDateFormat.name(), laf.getDefaultDateFormatStored())%>
     <td><%=select(defaultDateFormat.name(), DateUtil.STANDARD_DATE_DISPLAY_FORMATS, laf.getDefaultDateFormat(), false)%></td>
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="<%=defaultDateTimeFormat%>">Default display format for date-times</label><%=helpPopup("Date-time format", dateTimeFormatHelp, true)%></td>
+    <%=inheritCheckbox(c, defaultDateTimeFormat.name(), laf.getDefaultDateTimeFormatStored())%>
 <%
         String[] parts = DateUtil.splitDateTimeFormat(laf.getDefaultDateTimeFormat());
 %>
-    <td><%=select("part1", DateUtil.STANDARD_DATE_DISPLAY_FORMATS, parts.length > 0 ? parts[0] : null, false)%>&nbsp;&nbsp;<%=select("part2", DateUtil.STANDARD_TIME_DISPLAY_FORMATS, parts.length > 1 ? parts[1] : "<none>", true)%></td>
+    <td>
+        <%=select("dateSelect", DateUtil.STANDARD_DATE_DISPLAY_FORMATS, parts.length > 0 ? parts[0] : null, false)%>&nbsp;&nbsp;
+        <%=select("timeSelect", DateUtil.STANDARD_TIME_DISPLAY_FORMATS, parts.length > 1 ? parts[1] : NONE, true)%>
+        <input type="hidden" name="<%=defaultDateTimeFormat%>" id="<%=defaultDateTimeFormat%>">
+    </td>
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="<%=defaultTimeFormat%>">Default display format for time-only values</label><%=helpPopup("Time format", timeFormatHelp, true)%></td>
+    <%=inheritCheckbox(c, defaultTimeFormat.name(), laf.getDefaultTimeFormatStored())%>
     <td><%=select(defaultTimeFormat.name(), DateUtil.STANDARD_TIME_DISPLAY_FORMATS, laf.getDefaultTimeFormat(), false)%></td>
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="<%=defaultNumberFormat%>">Default display format for numbers</label><%=helpPopup("Number format", decimalFormatHelp, true)%></td>
+    <%=inheritCheckbox(c, defaultNumberFormat.name(), laf.getDefaultNumberFormatStored())%>
     <td><input type="text" id="<%=defaultNumberFormat%>" name="<%=defaultNumberFormat%>" size="50" value="<%= h(laf.getDefaultNumberFormat()) %>"></td>
 </tr>
 <tr>
@@ -293,7 +309,7 @@
 </tr>
 
 <tr>
-    <td colspan=2>Customize date and time parsing behavior (<%=bean.helpLink%>)</td>
+    <td colspan=3>Customize date and time parsing behavior (<%=bean.helpLink%>)</td>
 </tr>
 <%
     // TODO: This check is temporary and should switch to "if (!folder) {}" once the date parsing methods pass Container consistently
@@ -317,14 +333,17 @@
 %>
 <tr>
     <td class="labkey-form-label"><label for="<%=extraDateParsingPattern%>">Additional parsing pattern for dates</label><%=helpPopup("Extra date parsing pattern", dateParsingHelp, true)%></td>
+    <%=inheritCheckbox(c, extraDateParsingPattern.name(), laf.getExtraDateParsingPatternStored())%>
     <td><input type="text" id="<%=extraDateParsingPattern%>" name="<%=extraDateParsingPattern%>" size="50" value="<%= h(laf.getExtraDateParsingPattern()) %>"></td>
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="<%=extraDateTimeParsingPattern%>">Additional parsing pattern for date-times</label><%=helpPopup("Extra date-time parsing pattern", dateTimeParsingHelp, true, 300)%></td>
+    <%=inheritCheckbox(c, extraDateTimeParsingPattern.name(), laf.getExtraDateTimeParsingPatternStored())%>
     <td><input type="text" id="<%=extraDateTimeParsingPattern%>"  name="<%=extraDateTimeParsingPattern%>" size="50" value="<%= h(laf.getExtraDateTimeParsingPattern()) %>"></td>
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="<%=extraTimeParsingPattern%>">Additional parsing pattern for times</label><%=helpPopup("Extra time parsing pattern", timeParsingHelp, true)%></td>
+    <%=inheritCheckbox(c, extraTimeParsingPattern.name(), laf.getExtraTimeParsingPatternStored())%>
     <td><input type="text" id="<%=extraTimeParsingPattern%>" name="<%=extraTimeParsingPattern%>" size="50" value="<%= h(laf.getExtraTimeParsingPattern()) %>"></td>
 </tr>
 <tr>
@@ -332,10 +351,11 @@
 </tr>
 
 <tr>
-    <td colspan=2>Customize column restrictions (<%=bean.customColumnRestrictionHelpLink%>)</td>
+    <td colspan=3>Customize column restrictions (<%=bean.customColumnRestrictionHelpLink%>)</td>
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="<%=restrictedColumnsEnabled%>">Restrict charting columns by measure and dimension flags</label></td>
+    <%=inheritCheckbox(c, restrictedColumnsEnabled.name(), laf.areRestrictedColumnsEnabledStored())%>
     <td><input type="checkbox" id="<%=restrictedColumnsEnabled%>" name="<%=restrictedColumnsEnabled%>" size="50"<%=checked(laf.areRestrictedColumnsEnabled())%>></td>
 </tr>
 <tr>
@@ -385,7 +405,7 @@
     {
 %>
 <tr>
-    <td><%=button("Save").submit(true).onClick("_form.setClean();") %>&nbsp;
+    <td><%=button("Save").submit(true).onClick("save();") %>&nbsp;
         <%=button("Reset").onClick("return confirmReset();") %>
     </td>
 </tr>
@@ -406,7 +426,7 @@
 </table>
 </labkey:form>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
-    var _form = new LABKEY.Form({ formElement: 'form-preferences'});
+    const _form = new LABKEY.Form({ formElement: 'form-preferences'});
 
     function confirmReset()
     {
@@ -419,14 +439,28 @@
         else
             return false;
     }
+
+    function save()
+    {
+        // Concatenate the date and time parts for defaultDateTimeFormat
+        const datePart = document.getElementById("dateSelect").value;
+        const timePart = document.getElementById("timeSelect").value;
+        const dateTimeElement = document.getElementById("defaultDateTimeFormat");
+        dateTimeElement.value = datePart + " " + timePart;
+        _form.setClean();
+        return true;
+    }
 </script>
 <%!
+    private static final String NONE = "<none>";
+
     private SelectBuilder select(String id, Set<String> options, String current, boolean addNone)
     {
         if (!options.contains(current))
         {
             Set<String> set = new LinkedHashSet<>();
-            set.add(current);
+            if (!NONE.equals(current))
+                set.add(current);
             set.addAll(options);
             options = set;
         }
@@ -437,7 +471,7 @@
 
         if (addNone)
         {
-            map.put(null, "<none>");
+            map.put(null, NONE);
         }
 
         return select()
@@ -447,5 +481,20 @@
             .selected(current)
             .className(null)
             .addStyle("width:225px");
+    }
+
+    private HtmlString inheritCheckbox(Container c, String name, Object value)
+    {
+        if (c.isRoot())
+            return HtmlString.EMPTY_STRING;
+
+        HtmlStringBuilder builder = HtmlStringBuilder.of(HtmlString.unsafe("<td style=\"text-align: center;\"><input type=\"checkbox\" name=\""))
+            .append(name + "Inherit")
+            .unsafeAppend("\"");
+
+        if (null == value)
+            builder.append(" checked");
+
+        return builder.append(HtmlString.unsafe("></td>")).getHtmlString();
     }
 %>

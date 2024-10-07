@@ -138,46 +138,58 @@ public class LookAndFeelFolderProperties extends AbstractWriteableSettingsGroup
         return lookupBooleanValue(_c, restrictedColumnsEnabled, false);
     }
 
-    // Get the value that's actually stored in this container; don't look up the hierarchy. This is useful only for export.
+    // Get the value that's actually stored in this container or null if inherited; don't look up the hierarchy. This is useful for export and showing inheritance status in the UI.
     public String getDefaultDateFormatStored()
     {
         return super.lookupStringValue(_c, defaultDateFormatString, null);
     }
 
-    // Get the value that's actually stored in this container; don't look up the hierarchy. This is useful only for export.
+    // Get the value that's actually stored in this container or null if inherited; don't look up the hierarchy. This is useful for export and showing inheritance status in the UI.
     public String getDefaultDateTimeFormatStored()
     {
         return super.lookupStringValue(_c, defaultDateTimeFormatString, null);
     }
 
-    // Get the value that's actually stored in this container; don't look up the hierarchy. This is useful only for export.
+    // Get the value that's actually stored in this container or null if inherited; don't look up the hierarchy.
+    // This is useful for export and showing inheritance status in the UI.
     public String getDefaultNumberFormatStored()
     {
         return super.lookupStringValue(_c, defaultNumberFormatString, null);
     }
 
-    // Get the value that's actually stored in this container; don't look up the hierarchy. This is useful only for export.
+    // Get the value that's actually stored in this container or null if inherited; don't look up the hierarchy.
+    // This is useful for export and showing inheritance status in the UI.
     public String getDefaultTimeFormatStored()
     {
         return super.lookupStringValue(_c, defaultTimeFormatString, null);
     }
 
-
-    // Get the value that's actually stored in this container; don't look up the hierarchy. This is useful only for export.
+    // Get the value that's actually stored in this container or null if inherited; don't look up the hierarchy.
+    // This is useful for export and showing inheritance status in the UI.
     public String getExtraDateParsingPatternStored()
     {
-        return super.lookupStringValue(_c, extraDateParsingPattern, null);
+        return super.lookupStringValue(_c, extraDateParsingPattern.name(), null);
     }
 
-    // Get the value that's actually stored in this container; don't look up the hierarchy. This is useful only for export.
+    // Get the value that's actually stored in this container or null if inherited; don't look up the hierarchy.
+    // This is useful for export and showing inheritance status in the UI.
     public String getExtraDateTimeParsingPatternStored()
     {
-        return super.lookupStringValue(_c, extraDateTimeParsingPattern, null);
+        return super.lookupStringValue(_c, extraDateTimeParsingPattern.name(), null);
     }
 
-    // Get the value that's actually stored in this container; don't look up the hierarchy. This is useful only for export.
+    // Get the value that's actually stored in this container or null if inherited; don't look up the hierarchy.
+    // This is useful for export and showing inheritance status in the UI.
     public String getExtraTimeParsingPatternStored()
     {
-        return super.lookupStringValue(_c, extraTimeParsingPattern, null);
+        return super.lookupStringValue(_c, extraTimeParsingPattern.name(), null);
+    }
+
+    // Get the value that's actually stored in this container or null if inherited; don't look up the hierarchy.
+    // This is useful for export and showing inheritance status in the UI.
+    public Boolean areRestrictedColumnsEnabledStored()
+    {
+        String stored = super.lookupStringValue(_c, restrictedColumnsEnabled.name(), null);
+        return null == stored ? null : "TRUE".equals(stored);
     }
 }

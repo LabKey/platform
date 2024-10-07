@@ -143,8 +143,9 @@ public class FolderWriterImpl extends BaseFolderWriter
         if (null != extraTimeParsingPattern)
             folderXml.setExtraTimeParsingPattern(extraTimeParsingPattern);
 
-        if (props.areRestrictedColumnsEnabled())
-            folderXml.setRestrictedColumnsEnabled(true);
+        Boolean areRestricted = props.areRestrictedColumnsEnabledStored();
+        if (null != areRestricted)
+            folderXml.setRestrictedColumnsEnabled(areRestricted);
 
         // Save the folder.xml file. This gets called last, after all other writers have populated the other sections.
         vf.saveXmlBean("folder.xml", ctx.getDocument());
