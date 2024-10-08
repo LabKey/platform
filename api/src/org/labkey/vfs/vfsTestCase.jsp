@@ -129,6 +129,7 @@
 
     void testChars(FileSystemLike fs)
     {
+        boolean isWindows = System.getProperty("os.name").toLowerCase().startsWith("windows");
         //noinspection UnnecessaryUnicodeEscape
         String TRICKY_CHARACTERS = "\u2603 ~!@$&()_+{}-=[],.#\u00E4\u00F6\u00FC\u00C5";
         Path p;
@@ -146,6 +147,8 @@
 
             try
             {
+                if (isWindows && (c == '"' || c == ':'))
+                    continue;
                 s = "/" + c + ".txt";
                 var ioFile = new java.io.File(s);
                 f = new FileSystemLike.Builder(ioFile).root();
