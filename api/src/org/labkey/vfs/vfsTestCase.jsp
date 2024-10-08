@@ -49,6 +49,52 @@
         FileUtil.deleteDir(tempPath);
     }
 
+    @Test
+    public void testWindowsFilePaths() throws Exception
+    {
+        String osName = System.getProperty("os.name").toLowerCase();
+        if (osName.startsWith("windows"))
+        {
+            // same file from different roots, and different files same root
+            FileLike a = new FileSystemLike.Builder(new File("\\a\\")).root();
+            FileLike c1 = a.resolveFile(Path.parse("b/c.txt"));
+            assertNotNull(c1);
+            FileLike b = new FileSystemLike.Builder(new File("\\a\\b\\")).root();
+            FileLike c2 = b.resolveChild("c.txt");
+            assertNotNull(c2);
+            FileLike d1 =  b.resolveChild("d.txt");
+            assertNotNull(d1);
+            FileLike d2 =  b.resolveFile(Path.parse("c/d.txt"));
+            assertNotNull(d2);
+
+            FileLike tempDir = new FileSystemLike.Builder(tempPath.toFile()).root();
+            assertNotNull(tempDir);
+            FileLike t1 = tempDir.resolveFile(Path.parse(tempPath + "\\b\\t1.txt"));
+            assertNotNull(t1);
+            FileLike td1 = tempDir.resolveFile(Path.parse(tempPath + "\\b\\"));
+            assertNotNull(td1);
+            FileLike tc1 = td1.resolveChild("t1.txt");
+            assertNotNull(tc1);
+            assertEquals(t1, tc1);
+
+            FileLike root = new FileSystemLike.Builder(new File("C:\\")).root();
+            assertNotNull(root);
+            FileLike r1 = root.resolveFile(Path.parse("r1.txt"));
+            assertNotNull(r1);
+
+            assertEquals(c1, c2);
+            assertEquals(0, c1.compareTo(c2));
+            assertEquals(c1.hashCode(), c2.hashCode());
+            assertNotEquals(d1, d2);
+
+            HashSet<FileLike> s = new HashSet<>();
+            s.add(c1);
+            assertTrue(s.contains(c2));
+            s.add(d1);
+            assertTrue(s.contains(d1));
+            assertFalse(s.contains(d2));
+        }
+    }
 
     @Test
     public void testSet() throws Exception
