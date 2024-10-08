@@ -143,6 +143,42 @@ public void nameNotNull() throws Exception
     }
 }
 
+    @Test // Issue 51321
+public void reservedNameFirst() throws Exception
+{
+    final User user = TestContext.get().getUser();
+
+    try
+    {
+        List<GWTPropertyDescriptor> props = new ArrayList<>();
+        props.add(new GWTPropertyDescriptor("foo", "string"));
+
+        ExperimentServiceImpl.get().createDataClass(c, user, "First", null, props, emptyList(), null, null);
+    }
+    catch (IllegalArgumentException e)
+    {
+        assertEquals("DataClass name 'First' is reserved.", e.getMessage());
+    }
+}
+
+@Test // Issue 51321
+public void reservedNameAll() throws Exception
+{
+    final User user = TestContext.get().getUser();
+
+    try
+    {
+        List<GWTPropertyDescriptor> props = new ArrayList<>();
+        props.add(new GWTPropertyDescriptor("foo", "string"));
+
+        ExperimentServiceImpl.get().createDataClass(c, user, "All", null, props, emptyList(), null, null);
+    }
+    catch (IllegalArgumentException e)
+    {
+        assertEquals("DataClass name 'All' is reserved.", e.getMessage());
+    }
+}
+
 // validate name scale
 @Test
 public void nameScale() throws Exception

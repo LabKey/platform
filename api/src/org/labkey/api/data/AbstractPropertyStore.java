@@ -140,7 +140,7 @@ public abstract class AbstractPropertyStore implements PropertyStore
     {
         try
         {
-            PropertyMap propertyMap = getWritableProperties(user, container, category, false);
+            WritablePropertyMap propertyMap = getWritableProperties(user, container, category, false);
             if (propertyMap != null)
             {
                 propertyMap.delete();
@@ -206,12 +206,8 @@ public abstract class AbstractPropertyStore implements PropertyStore
             String category = (String)params[2];
 
             validateStore();
-            PropertyMap m = getPropertyMapFromDatabase(user, container, category);
-            if (m == null) return null;
-            m.afterPropertiesSet(); // clear modified flag
 
-            m.lock();
-            return m;
+            return getPropertyMapFromDatabase(user, container, category);
         }
     }
 

@@ -1223,7 +1223,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             .append(" ON d.RowId = di.DataId")
             .append(" WHERE d.classId = ?").add(dataClass.getRowId())
             .append(" AND (di.lastIndexed IS NULL OR di.lastIndexed < ? OR (d.modified IS NOT NULL AND di.lastIndexed < d.modified))")
-            .add(dataClass.getModified());
+            .append(" ORDER BY d.RowId") // Issue 51263: order by RowId to reduce deadlock
+                .add(dataClass.getModified());
 
         var scope = table.getSchema().getScope();
         scope.executeWithRetryReadOnly(tx ->
@@ -8123,13 +8124,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             validateDataClassOptions(c, u, options);
             newName = StringUtils.trimToNull(options.getName());
-            if (newName != null && !oldDataClassName.equals(newName))
+            if (!oldDataClassName.equals(newName))
             {
+                validateDataClassName(c, u, newName);
                 hasNameChange = true;
                 dataClass.setName(newName);
-                ExpDataClass existing = getDataClass(c, u, newName);
-                if (existing != null)
-                    throw new IllegalArgumentException("DataClass '" + newName + "' already exists.");
             }
             dataClass.setDescription(options.getDescription());
             dataClass.setNameExpression(options.getNameExpression());
@@ -8207,6 +8206,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         ExpDataClass existing = getDataClass(c, u, name);
         if (existing != null)
             throw new IllegalArgumentException("DataClass '" + existing.getName() + "' already exists.");
+
+        // Issue 51321: check reserved data class name: First, All
+        if ("First".equalsIgnoreCase(name) || "All".equalsIgnoreCase(name))
+            throw new IllegalArgumentException("DataClass name '" + name + "' is reserved.");
     }
 
     private void validateDataClassOptions(@NotNull Container c, @NotNull User u, @Nullable DataClassDomainKindProperties options)
