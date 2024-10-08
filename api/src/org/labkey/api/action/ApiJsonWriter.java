@@ -465,10 +465,9 @@ public class ApiJsonWriter extends ApiResponseWriter
             }
             var responseText = ((MockHttpServletResponse)writer.getResponse()).getContentAsString();
             var json = new JSONObject(responseText);
-            assertEquals( "throwing up", json.getString("exception") );
-            assertTrue( json.has("stackTrace") );
-            assertFalse( json.has("schemaName"));
-            System.out.println(json);
+            assertEquals("throwing up", json.getString("exception"));
+            assertTrue(json.has("stackTrace"));
+            assertFalse(json.has("schemaName"));
         }
 
         @Test
@@ -502,10 +501,9 @@ public class ApiJsonWriter extends ApiResponseWriter
             }
             var responseText = ((MockHttpServletResponse)writer.getResponse()).getContentAsString();
             var json = new JSONObject(responseText);
-            assertEquals( "throwing up", json.getString("excception") );
-            assertTrue( json.has("stackTrace") );
-            assertTrue( json.has("schemaName"));
-            System.out.println(json);
+            assertEquals("throwing up", json.getString("exception"));
+            assertTrue(json.has("stackTrace"));
+            assertTrue(json.has("schemaName"));
         }
     }
 }

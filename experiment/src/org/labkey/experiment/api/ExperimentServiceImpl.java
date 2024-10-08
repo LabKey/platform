@@ -36,6 +36,7 @@ import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
+import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.assay.AssayProvider;
@@ -125,7 +126,6 @@ import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpLineage;
 import org.labkey.api.exp.api.ExpLineageEdge;
 import org.labkey.api.exp.api.ExpLineageOptions;
-import org.labkey.api.exp.api.ExpLineageStream;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpMaterialProtocolInput;
 import org.labkey.api.exp.api.ExpMaterialRunInput;
@@ -2747,16 +2747,32 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return new SeedIdentifiers(seedObjectIds, seedLsids);
     }
 
-    public record LineageResult(Set<ExpLineage.Edge> edges, Set<Integer> dataIds, Set<Integer> materialIds, Set<Integer> runIds, Set<String> objectLsids) {}
-
-    private LineageResult getLineageResult(@NotNull Set<Identifiable> seeds, SeedIdentifiers seedIdentifiers, @NotNull ExpLineageOptions options)
+    public record LineageResult(
+        Set<Identifiable> seeds, 
+        Set<ExpLineage.Edge> edges, 
+        Set<Integer> dataIds,
+        Set<Integer> materialIds, 
+        Set<Integer> runIds, 
+        Set<String> objectLsids
+    )
     {
-        Set<ExpLineage.Edge> edges = new HashSet<>();
-        Set<Integer> dataIds = new HashSet<>();
-        Set<Integer> materialIds = new HashSet<>();
-        Set<Integer> runIds = new HashSet<>();
-        Set<String> objectLsids = new HashSet<>();
+        public boolean isEmpty()
+        {
+            return edges.isEmpty();
+        }
+    }
 
+    public LineageResult getLineageResult(Container container, User user, @NotNull Set<Identifiable> seeds, @NotNull ExpLineageOptions options)
+    {
+        SeedIdentifiers seedIdentifiers = getLineageSeedIdentifiers(container, user, seeds);
+
+        if (seedIdentifiers.isEmpty())
+            return new LineageResult(seeds, emptySet(), emptySet(), emptySet(), emptySet(), emptySet());
+
+        // Side-effect
+        options.setUseObjectIds(true);
+
+        Set<ExpLineage.Edge> edges = new HashSet<>();
         for (Identifiable seed : seeds)
         {
             // create additional edges from the run for each ExpMaterial or ExpData seed
@@ -2773,6 +2789,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     edges.add(new ExpLineage.Edge(seed.getLSID(), runAndRole.getKey(), null));
             }
         }
+
+        Set<Integer> dataIds = new HashSet<>();
+        Set<Integer> materialIds = new HashSet<>();
+        Set<Integer> runIds = new HashSet<>();
+        Set<String> objectLsids = new HashSet<>();
 
         SQLFragment sql = generateExperimentTreeSQLObjectIdsSeeds(seedIdentifiers.objectIds(), options);
         new SqlSelector(getExpSchema(), sql).forEachMap((m)->
@@ -2826,7 +2847,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             }
         });
 
-        return new LineageResult(edges, dataIds, materialIds, runIds, objectLsids);
+        return new LineageResult(seeds, edges, dataIds, materialIds, runIds, objectLsids);
     }
 
     @Override
@@ -2839,19 +2860,19 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @NotNull
     public ExpLineage getLineage(Container c, User user, @NotNull Set<Identifiable> seeds, @NotNull ExpLineageOptions options)
     {
-        SeedIdentifiers seedIdentifiers = getLineageSeedIdentifiers(c, user, seeds);
+        LineageResult result = getLineageResult(c, user, seeds, options);
+        if (result.isEmpty())
+            return new ExpLineage(result.seeds(), emptySet(), emptySet(), emptySet(), emptySet(), emptySet());
 
-        if (seedIdentifiers.isEmpty())
-            return new ExpLineage(seeds, emptySet(), emptySet(), emptySet(), emptySet(), emptySet());
+        Map<GUID, Boolean> hasPermission = new HashMap<>();
+        final Predicate<Identifiable> lineageItemFilter = (item) -> {
+            if (item == null)
+                return false;
 
-        // Side-effect
-        options.setUseObjectIds(true);
-
-        LineageResult result = getLineageResult(seeds, seedIdentifiers, options);
+            return hasPermission.computeIfAbsent(item.getContainer().getEntityId(), (id) -> item.getContainer().hasPermission(user, ReadPermission.class));
+        };
 
         LsidManager lsidManager = LsidManager.get();
-        final Predicate<Identifiable> lineageItemFilter = (item) -> item != null && item.getContainer().hasPermission(user, ReadPermission.class);
-
         Set<ExpData> data = getExpDatas(result.dataIds).stream().filter(lineageItemFilter).collect(toSet());
         Set<ExpMaterial> materials = getExpMaterials(result.materialIds).stream().filter(lineageItemFilter).collect(toSet());
         Set<ExpRun> runs = getExpRuns(result.runIds).stream().filter(lineageItemFilter).collect(toSet());
@@ -2860,26 +2881,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return new ExpLineage(seeds, data, materials, runs, otherObjects, result.edges);
     }
 
-    public ExpLineageStream getLineageStream(Container c, User user, @NotNull Set<Identifiable> seeds, @NotNull ExpLineageOptions options)
-    {
-        SeedIdentifiers seedIdentifiers = getLineageSeedIdentifiers(c, user, seeds);
-
-        if (seedIdentifiers.isEmpty())
-            return new ExpLineageStream(seeds, emptySet(), emptySet(), emptySet(), emptySet(), emptySet());
-
-        // Side-effect
-        options.setUseObjectIds(true);
-
-        LineageResult result = getLineageResult(seeds, seedIdentifiers, options);
-
-        return new ExpLineageStream(seeds, result.edges, result.dataIds, result.materialIds, result.runIds, result.objectLsids);
-    }
-
     @Override
     public SQLFragment generateExperimentTreeSQLLsidSeeds(List<String> lsids, ExpLineageOptions options)
     {
         assert !options.isUseObjectIds();
-        String comma="";
+        String comma = "";
         SQLFragment sqlf = new SQLFragment();
         for (String lsid : lsids)
         {
@@ -2892,7 +2898,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     private SQLFragment generateExperimentTreeSQLObjectIdsSeeds(Collection<Integer> objectIds, ExpLineageOptions options)
     {
         assert options.isUseObjectIds();
-        String comma="";
+        String comma = "";
         SQLFragment sqlf = new SQLFragment("VALUES ");
         for (Integer objectId : objectIds)
         {
@@ -3135,7 +3141,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         return sqlf;
     }
-
 
     private void removeEdgesForRun(int runId)
     {

@@ -18,7 +18,6 @@ package org.labkey.api.exp.api;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.exp.Identifiable;
 import org.labkey.api.security.User;
@@ -44,9 +43,7 @@ public class ExpLineage
     private final Set<ExpMaterial> _materials;
     private final Set<ExpRun> _runs;
     private final Set<Identifiable> _objects;
-
-    // constructed in processNodes
-    private Map<String, Identifiable> _nodes;
+    private final Map<String, Identifiable> _nodes;
     private final Map<String, Edges> _nodesAndEdges;
 
     public ExpLineage(Set<Identifiable> seeds, Set<ExpData> data, Set<ExpMaterial> materials, Set<ExpRun> runs, Set<Identifiable> objects, Set<Edge> edges)
@@ -56,6 +53,7 @@ public class ExpLineage
         _materials = materials;
         _runs = runs;
         _objects = objects;
+        _nodes = processNodes();
         _nodesAndEdges = processEdges(edges);
     }
 
@@ -104,31 +102,30 @@ public class ExpLineage
      */
     private Map<String, Identifiable> processNodes()
     {
-        if (_nodes == null)
-        {
-            _nodes = new HashMap<>();
+        var nodes = new HashMap<String, Identifiable>();
 
-            for (Identifiable seed : _seeds)
-                _nodes.put(seed.getLSID(), seed);
+        for (Identifiable seed : _seeds)
+            nodes.put(seed.getLSID(), seed);
 
-            for (ExpData node : _datas)
-                _nodes.put(node.getLSID(), node);
+        for (ExpData node : _datas)
+            nodes.put(node.getLSID(), node);
 
-            for (ExpMaterial node : _materials)
-                _nodes.put(node.getLSID(), node);
+        for (ExpMaterial node : _materials)
+            nodes.put(node.getLSID(), node);
 
-            for (ExpRun node : _runs)
-                _nodes.put(node.getLSID(), node);
+        for (ExpRun node : _runs)
+            nodes.put(node.getLSID(), node);
 
-            for (Identifiable node : _objects)
-                _nodes.put(node.getLSID(), node);
-        }
+        for (Identifiable node : _objects)
+            nodes.put(node.getLSID(), node);
 
-        return _nodes;
+        return nodes;
     }
 
     public record Edges(Set<Edge> parents, Set<Edge> children)
     {
+        public static Edges emptyEdges = new Edges(Collections.emptySet(), Collections.emptySet());
+
         public Edges()
         {
             this(new HashSet<>(), new HashSet<>());
@@ -162,9 +159,8 @@ public class ExpLineage
     @Nullable
     private Edges nodeEdges(@NotNull Identifiable node)
     {
-        Map<String, Identifiable> nodes = processNodes();
         String nodeLsid = node.getLSID();
-        if (!nodes.containsKey(nodeLsid))
+        if (!_nodes.containsKey(nodeLsid))
             throw new IllegalArgumentException("node not in lineage");
 
         return _nodesAndEdges.get(nodeLsid);
@@ -177,8 +173,7 @@ public class ExpLineage
         if (nodeEdges == null)
             return Collections.emptySet();
 
-        Map<String, Identifiable> nodes = processNodes();
-        return nodeEdges.parents.stream().map(e -> nodes.get(e.parent)).collect(Collectors.toSet());
+        return nodeEdges.parents.stream().map(e -> _nodes.get(e.parent)).collect(Collectors.toSet());
     }
 
     /** Get the set of directly connected children for the node. */
@@ -188,8 +183,7 @@ public class ExpLineage
         if (nodeEdges == null)
             return Collections.emptySet();
 
-        Map<String, Identifiable> nodes = processNodes();
-        return nodeEdges.children.stream().map(e -> nodes.get(e.child)).collect(Collectors.toSet());
+        return nodeEdges.children.stream().map(e -> _nodes.get(e.child)).collect(Collectors.toSet());
     }
 
     public Set<Identifiable> findAncestorObjects(ExpRunItem seed, List<Pair<ExpLineageOptions.LineageExpType, String>> ancestorPaths, User user)
@@ -219,8 +213,7 @@ public class ExpLineage
         if (!_seeds.contains(seed))
             throw new UnsupportedOperationException();
 
-        Map<String, Identifiable> nodes = processNodes();
-        return findRelatedChildSamples(seed, nodes);
+        return findRelatedChildSamples(seed, _nodes);
     }
 
     private Set<ExpMaterial> findRelatedChildSamples(ExpRunItem seed, Map<String, Identifiable> nodes)
@@ -346,8 +339,6 @@ public class ExpLineage
     {
         assert cpasType != null || clazz == ExpMaterial.class || clazz == ExpData.class || findBothMaterialAndData;
 
-        Map<String, Identifiable> nodes = processNodes();
-
         if (_nodesAndEdges.isEmpty())
             return Collections.emptySet();
 
@@ -361,11 +352,11 @@ public class ExpLineage
         {
             Identifiable curr = stack.poll();
             String lsid = curr.getLSID();
-            final Set<ExpLineage.Edge> edges;
 
             if (!_nodesAndEdges.containsKey(lsid))
                 continue;
 
+            Set<ExpLineage.Edge> edges;
             if (findParents)
                 edges = _nodesAndEdges.get(lsid).parents;
             else
@@ -374,7 +365,7 @@ public class ExpLineage
             for (ExpLineage.Edge edge : edges)
             {
                 String targetLsid = findParents ? edge.parent : edge.child;
-                Identifiable target = nodes.get(targetLsid);
+                Identifiable target = _nodes.get(targetLsid);
                 if (target instanceof ExpRun)
                 {
                     if (!seen.contains(target))
@@ -409,7 +400,6 @@ public class ExpLineage
 
     public JSONObject toJSON(User user, boolean requestedWithSingleSeed, ExperimentJSONConverter.Settings settings)
     {
-        Map<String, Identifiable> nodeMeta = processNodes();
         Map<String, Object> values = new HashMap<>();
         JSONObject nodes = new JSONObject();
 
@@ -417,23 +407,15 @@ public class ExpLineage
         {
             for (Identifiable seed : _seeds)
             {
-                nodes.put(seed.getLSID(), nodeToJSON(seed, user, new JSONArray(), new JSONArray(), settings));
+                nodes.put(seed.getLSID(), nodeToJSON(seed, user, Edges.emptyEdges, settings));
             }
         }
         else
         {
             for (Map.Entry<String, Edges> node : _nodesAndEdges.entrySet())
             {
-                JSONArray parents = new JSONArray();
-                for (Edge edge : node.getValue().parents)
-                    parents.put(edge.toParentJSON());
-
-                JSONArray children = new JSONArray();
-                for (Edge edge : node.getValue().children)
-                    children.put(edge.toChildJSON());
-
-                Identifiable obj = nodeMeta.get(node.getKey());
-                nodes.put(node.getKey(), nodeToJSON(obj, user, parents, children, settings));
+                String key = node.getKey();
+                nodes.put(key, nodeToJSON(_nodes.get(key), user, node.getValue(), settings));
             }
         }
 
@@ -453,18 +435,27 @@ public class ExpLineage
         return new JSONObject(values);
     }
 
-    private JSONObject nodeToJSON(Identifiable node, User user, JSONArray parents, JSONArray children, ExperimentJSONConverter.Settings settings)
+    public static JSONObject nodeToJSON(
+        @Nullable Identifiable node,
+        User user,
+        ExpLineage.Edges edges,
+        ExperimentJSONConverter.Settings settings
+    )
     {
-        JSONObject json = new JSONObject();
+        JSONObject json;
 
-        if (node != null)
+        if (node == null)
+        {
+            json = new JSONObject();
+        }
+        else
         {
             json = ExperimentJSONConverter.serialize(node, user, settings);
             json.put("type", node.getLSIDNamespacePrefix());
         }
 
-        json.put("parents", parents);
-        json.put("children", children);
+        json.put("parents", edges.parents().stream().map(ExpLineage.Edge::toParentJSON).toList());
+        json.put("children", edges.children().stream().map(ExpLineage.Edge::toChildJSON).toList());
 
         return json;
     }

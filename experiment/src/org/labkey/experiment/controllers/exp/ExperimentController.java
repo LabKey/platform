@@ -29,7 +29,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiResponse;
-import org.labkey.api.action.ApiResponseWriter;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.action.ExportAction;
@@ -266,7 +265,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
-import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
 import static org.labkey.api.exp.query.ExpSchema.TableType.DataInputs;
@@ -7023,7 +7021,6 @@ public class ExperimentController extends SpringActionController
     public static class LineageAction extends BaseResolveLsidApiAction<ExpLineageOptions>
     {
         private static final int BATCH_SIZE = 5_000;
-        private static final ExpLineage.Edges emptyEdges = new ExpLineage.Edges();
 
         private record Context(
             User user,
@@ -7042,14 +7039,14 @@ public class ExperimentController extends SpringActionController
             {
                 var edges = this.nodesAndEdges.get(lsid);
                 this.nodesAndEdges.remove(lsid);
-                return edges == null ? emptyEdges : edges;
+                return edges == null ? ExpLineage.Edges.emptyEdges : edges;
             }
         }
 
         @Override
         public Object execute(ExpLineageOptions options, BindException errors) throws Exception
         {
-            ExpLineageStream lineage = ExperimentServiceImpl.get().getLineageStream(getContainer(), getUser(), _seeds, options);
+            var lineage = ExperimentServiceImpl.get().getLineageResult(getContainer(), getUser(), _seeds, options);
 
             var context = new Context(
                 getUser(),
@@ -7069,7 +7066,7 @@ public class ExperimentController extends SpringActionController
             return null;
         }
 
-        private static void writeNodes(ExpLineageStream lineage, Context context) throws IOException
+        private static void writeNodes(ExperimentServiceImpl.LineageResult lineage, Context context) throws IOException
         {
             context.writer.startObject("nodes");
 
@@ -7096,8 +7093,10 @@ public class ExperimentController extends SpringActionController
             context.writer.endObject();
         }
 
-        private static void writeSeed(ExpLineageStream lineage, Context context, ExpLineageOptions options) throws IOException
+        private static void writeSeed(ExperimentServiceImpl.LineageResult lineage, Context context, ExpLineageOptions options) throws IOException
         {
+            // If the request was made with a single 'seed' property, use single 'seed' property in the response
+            // otherwise, include an array of 'seed' regardless of the number of seed items.
             if (options.isSingleSeedRequested())
                 context.writer.writeProperty("seed", lineage.seeds().stream().findFirst().orElseThrow().getLSID());
             else
@@ -7129,20 +7128,7 @@ public class ExperimentController extends SpringActionController
 
         private static JSONObject nodeToJson(@Nullable Identifiable node, ExpLineage.Edges edges, Context context)
         {
-            JSONObject json;
-
-            if (node == null)
-                json = new JSONObject();
-            else
-            {
-                json = ExperimentJSONConverter.serialize(node, context.user, context.settings);
-                json.put("type", node.getLSIDNamespacePrefix());
-            }
-
-            json.put("parents", edges.parents().stream().map(ExpLineage.Edge::toParentJSON).toList());
-            json.put("children", edges.children().stream().map(ExpLineage.Edge::toChildJSON).toList());
-
-            return json;
+            return ExpLineage.nodeToJSON(node, context.user, edges, context.settings);
         }
     }
 
