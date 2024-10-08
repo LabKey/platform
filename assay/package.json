@@ -12,7 +12,7 @@
     "clean": "rimraf resources/web/assay/gen && rimraf resources/views/gen && rimraf resources/web/gen"
   },
   "dependencies": {
-    "@labkey/components": "5.13.0-fb-calcFieldsQueryRetry.1"
+    "@labkey/components": "5.13.0-fb-calcFieldsQueryRetry.2"
   },
   "devDependencies": {
     "@labkey/build": "7.7.1",
