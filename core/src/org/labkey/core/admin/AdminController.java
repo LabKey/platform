@@ -1771,6 +1771,7 @@ public class AdminController extends SpringActionController
         public abstract String description();
     }
 
+    // TODO: Remove the folder-specific properties
     public static class ProjectSettingsForm extends FolderSettingsForm
     {
         private boolean _shouldInherit; // new subfolders should inherit parent permissions
@@ -11014,7 +11015,7 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    // TODO Should this be renamed UpdateContainerSettingsAction? There's nothing that explicity checks for this being a project vs. a folder
+    // TODO Should this be renamed UpdateContainerSettingsAction? There's nothing that explicitly checks for this being a project vs. a folder
     public static class UpdateProjectSettingsAction extends MutatingApiAction<SimpleApiJsonForm>
     {
         @Override
@@ -11037,6 +11038,9 @@ public class AdminController extends SpringActionController
         }
     }
 
+    // TODO: Before updating this to handle the new-style inheritance parameters getting posted, we should seriously
+    // consider flipping the approach to where both callers pass in a ProjectSettingsForm and then change this method
+    // to call saveFolderSettings() instead of duplicating all the folder settings
     private static boolean saveProjectSettings(JSONObject json, User user, Container c, BindException errors)
     {
         WriteableLookAndFeelProperties props = LookAndFeelProperties.getWriteableInstance(c);
@@ -11070,7 +11074,6 @@ public class AdminController extends SpringActionController
                 SecurityManager.setNewSubfoldersInheritPermissions(c, user, shouldInherit);
             }
         }
-
 
         // a few properties on this page should be restricted to operational permissions (i.e. site admin)
         if (hasAdminOpsPerm)
@@ -11114,7 +11117,6 @@ public class AdminController extends SpringActionController
                 }
                 props.setCustomWelcome(welcomeUrl);
             }
-
         }
 
         if (json.has("companyName"))
@@ -11165,7 +11167,6 @@ public class AdminController extends SpringActionController
         {
             DateParsingMode dateParsingMode = DateParsingMode.fromString(json.optString("dateParsingMode"));
             props.setDateParsingMode(dateParsingMode);
-
         }
 
         if (json.has("defaultDateFormat") && !validateAndSaveFormat(json.optString("defaultDateFormat"), props::clearDefaultDateFormat, props::setDefaultDateFormat, errors, "date"))
