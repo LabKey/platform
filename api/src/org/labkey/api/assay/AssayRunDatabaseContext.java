@@ -19,6 +19,7 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CollectionUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.ObjectProperty;
@@ -173,7 +174,7 @@ public class AssayRunDatabaseContext<ProviderType extends AssayProvider> impleme
             list.add(f);
         }
         List<FileLike> files = FileSystemLike.wrapFiles(list);
-        Map<String, FileLike> result = new HashMap<>();
+        Map<String, FileLike> result = CollectionUtils.enforceValueClass(new HashMap<>(), FileLike.class);
         for (FileLike file : files)
             result.put(file.getName(), file);
         return result;

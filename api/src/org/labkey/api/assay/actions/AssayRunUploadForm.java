@@ -29,6 +29,7 @@ import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayRunUploadContext;
 import org.labkey.api.assay.AssayService;
+import org.labkey.api.collections.CollectionUtils;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -288,7 +289,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
             {
                 try
                 {
-                    _uploadedData = new HashMap<>();
+                    _uploadedData = CollectionUtils.enforceValueClass(new HashMap<>(), FileLike.class);
                     _uploadedData.putAll(collector.createData(this));
                 }
                 catch (IOException e)
