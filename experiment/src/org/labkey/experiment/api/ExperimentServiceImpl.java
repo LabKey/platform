@@ -79,6 +79,7 @@ import org.labkey.api.data.ParameterMapStatement;
 import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
@@ -124,6 +125,7 @@ import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpLineage;
 import org.labkey.api.exp.api.ExpLineageEdge;
 import org.labkey.api.exp.api.ExpLineageOptions;
+import org.labkey.api.exp.api.ExpLineageStream;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpMaterialProtocolInput;
 import org.labkey.api.exp.api.ExpMaterialRunInput;
@@ -378,6 +380,15 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (rowIds == null || rowIds.isEmpty())
             return emptyList();
         return getExpRuns(new SimpleFilter().addInClause(FieldKey.fromParts(ExpRunTable.Column.RowId.name()), rowIds));
+    }
+
+    public int forEachBatchExpRun(Collection<Integer> rowIds, int batchSize, final Selector.ForEachBatchBlock<ExpRunImpl> block)
+    {
+        if (rowIds == null || rowIds.isEmpty())
+            return 0;
+
+        SimpleFilter filter = new SimpleFilter().addInClause(FieldKey.fromParts(ExpRunTable.Column.RowId.name()), rowIds);
+        return new TableSelector(getTinfoExperimentRun(), filter, null).forEachBatch(ExperimentRun.class, batchSize, (batch) -> block.exec(ExpRunImpl.fromRuns(batch)));
     }
 
     @Override
@@ -696,6 +707,15 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return getExpDatas(new SimpleFilter(FieldKey.fromParts(ExpDataTable.Column.RowId.name()), rowIds, IN));
     }
 
+    public int forEachBatchExpData(Collection<Integer> rowIds, int batchSize, final Selector.ForEachBatchBlock<ExpDataImpl> block)
+    {
+        if (rowIds.isEmpty())
+            return 0;
+
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(ExpDataTable.Column.RowId.name()), rowIds, IN);
+        return new TableSelector(getTinfoData(), filter, null).forEachBatch(Data.class, batchSize, (batch) -> block.exec(ExpDataImpl.fromDatas(batch)));
+    }
+
     @Override
     public @NotNull List<? extends ExpData> getExpDatas(@NotNull ExpDataClass dataClass, Collection<Integer> rowIds)
     {
@@ -901,6 +921,15 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             return emptyList();
 
         return getExpMaterials(new SimpleFilter().addInClause(FieldKey.fromParts(ExpMaterialTable.Column.RowId.name()), rowIds));
+    }
+
+    public int forEachBatchExpMaterial(Collection<Integer> rowIds, int batchSize, final Selector.ForEachBatchBlock<ExpMaterialImpl> block)
+    {
+        if (rowIds.isEmpty())
+            return 0;
+
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.RowId.name()), rowIds, IN);
+        return new TableSelector(getTinfoMaterial(), filter, null).forEachBatch(Material.class, batchSize, (batch) -> block.exec(ExpMaterialImpl.fromMaterials(batch)));
     }
 
     @Override
@@ -2666,19 +2695,20 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return true;
     }
 
-    @Override
-    @NotNull
-    public ExpLineage getLineage(Container c, User user, @NotNull Identifiable start, @NotNull ExpLineageOptions options)
+    private record SeedIdentifiers(Set<Integer> objectIds, Set<String> lsids)
     {
-        return getLineage(c, user, Set.of(start), options);
+        public boolean isEmpty()
+        {
+            return objectIds.isEmpty();
+        }
     }
 
-    @NotNull
-    public ExpLineage getLineage(Container c, User user, @NotNull Set<Identifiable> seeds, @NotNull ExpLineageOptions options)
+    private SeedIdentifiers getLineageSeedIdentifiers(Container c, User user, @NotNull Set<Identifiable> seeds)
     {
         // validate seeds
         Set<Integer> seedObjectIds = new HashSet<>(seeds.size());
         Set<String> seedLsids = new HashSet<>(seeds.size());
+
         for (Identifiable seed : seeds)
         {
             if (seed.getLSID() == null)
@@ -2714,16 +2744,18 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 throw new RuntimeException("Requested lineage for duplicate objectId seed: " + objectId);
         }
 
-        if (seedObjectIds.isEmpty())
-            return new ExpLineage(seeds, emptySet(), emptySet(), emptySet(), emptySet(), emptySet());
+        return new SeedIdentifiers(seedObjectIds, seedLsids);
+    }
 
-        options.setUseObjectIds(true);
-        SQLFragment sqlf = generateExperimentTreeSQLObjectIdsSeeds(seedObjectIds, options);
+    public record LineageResult(Set<ExpLineage.Edge> edges, Set<Integer> dataIds, Set<Integer> materialIds, Set<Integer> runIds, Set<String> objectLsids) {}
+
+    private LineageResult getLineageResult(@NotNull Set<Identifiable> seeds, SeedIdentifiers seedIdentifiers, @NotNull ExpLineageOptions options)
+    {
+        Set<ExpLineage.Edge> edges = new HashSet<>();
         Set<Integer> dataIds = new HashSet<>();
         Set<Integer> materialIds = new HashSet<>();
         Set<Integer> runIds = new HashSet<>();
         Set<String> objectLsids = new HashSet<>();
-        Set<ExpLineage.Edge> edges = new HashSet<>();
 
         for (Identifiable seed : seeds)
         {
@@ -2742,7 +2774,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             }
         }
 
-        new SqlSelector(getExpSchema(), sqlf).forEachMap((m)->
+        SQLFragment sql = generateExperimentTreeSQLObjectIdsSeeds(seedIdentifiers.objectIds(), options);
+        new SqlSelector(getExpSchema(), sql).forEachMap((m)->
         {
             Integer depth = (Integer)m.get("depth");
             String parentLSID = (String)m.get("parent_lsid");
@@ -2757,14 +2790,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (parentRowId == null || childRowId == null)
             {
                 LOG.error(String.format("Node not found for lineage: %s.\n  depth=%d, parentLsid=%s, parentType=%s, parentRowId=%d, childLsid=%s, childType=%s, childRowId=%d",
-                        StringUtils.join(seedLsids, ", "), depth, parentLSID, parentExpType, parentRowId, childLSID, childExpType, childRowId));
+                        StringUtils.join(seedIdentifiers.lsids(), ", "), depth, parentLSID, parentExpType, parentRowId, childLSID, childExpType, childRowId));
             }
             else
             {
                 edges.add(new ExpLineage.Edge(parentLSID, childLSID, null));
 
                 // Don't include the seed in the lineage collections
-                if (!seedLsids.contains(parentLSID))
+                if (!seedIdentifiers.lsids().contains(parentLSID))
                 {
                     // process parents
                     if ("Data".equals(parentExpType))
@@ -2778,7 +2811,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 }
 
                 // Don't include the seed in the lineage collections
-                if (!seedLsids.contains(childLSID))
+                if (!seedIdentifiers.lsids().contains(childLSID))
                 {
                     // process children
                     if ("Data".equals(childExpType))
@@ -2793,15 +2826,53 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             }
         });
 
+        return new LineageResult(edges, dataIds, materialIds, runIds, objectLsids);
+    }
+
+    @Override
+    @NotNull
+    public ExpLineage getLineage(Container c, User user, @NotNull Identifiable start, @NotNull ExpLineageOptions options)
+    {
+        return getLineage(c, user, Set.of(start), options);
+    }
+
+    @NotNull
+    public ExpLineage getLineage(Container c, User user, @NotNull Set<Identifiable> seeds, @NotNull ExpLineageOptions options)
+    {
+        SeedIdentifiers seedIdentifiers = getLineageSeedIdentifiers(c, user, seeds);
+
+        if (seedIdentifiers.isEmpty())
+            return new ExpLineage(seeds, emptySet(), emptySet(), emptySet(), emptySet(), emptySet());
+
+        // Side-effect
+        options.setUseObjectIds(true);
+
+        LineageResult result = getLineageResult(seeds, seedIdentifiers, options);
+
         LsidManager lsidManager = LsidManager.get();
         final Predicate<Identifiable> lineageItemFilter = (item) -> item != null && item.getContainer().hasPermission(user, ReadPermission.class);
 
-        Set<ExpData> data = getExpDatas(dataIds).stream().filter(lineageItemFilter).collect(toSet());
-        Set<ExpMaterial> materials = getExpMaterials(materialIds).stream().filter(lineageItemFilter).collect(toSet());
-        Set<ExpRun> runs = getExpRuns(runIds).stream().filter(lineageItemFilter).collect(toSet());
-        Set<Identifiable> otherObjects = objectLsids.stream().map(lsidManager::getObject).filter(lineageItemFilter).collect(toSet());
+        Set<ExpData> data = getExpDatas(result.dataIds).stream().filter(lineageItemFilter).collect(toSet());
+        Set<ExpMaterial> materials = getExpMaterials(result.materialIds).stream().filter(lineageItemFilter).collect(toSet());
+        Set<ExpRun> runs = getExpRuns(result.runIds).stream().filter(lineageItemFilter).collect(toSet());
+        Set<Identifiable> otherObjects = result.objectLsids.stream().map(lsidManager::getObject).filter(lineageItemFilter).collect(toSet());
 
-        return new ExpLineage(seeds, data, materials, runs, otherObjects, edges);
+        return new ExpLineage(seeds, data, materials, runs, otherObjects, result.edges);
+    }
+
+    public ExpLineageStream getLineageStream(Container c, User user, @NotNull Set<Identifiable> seeds, @NotNull ExpLineageOptions options)
+    {
+        SeedIdentifiers seedIdentifiers = getLineageSeedIdentifiers(c, user, seeds);
+
+        if (seedIdentifiers.isEmpty())
+            return new ExpLineageStream(seeds, emptySet(), emptySet(), emptySet(), emptySet(), emptySet());
+
+        // Side-effect
+        options.setUseObjectIds(true);
+
+        LineageResult result = getLineageResult(seeds, seedIdentifiers, options);
+
+        return new ExpLineageStream(seeds, result.edges, result.dataIds, result.materialIds, result.runIds, result.objectLsids);
     }
 
     @Override
@@ -2818,7 +2889,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return generateExperimentTreeSQL(sqlf, options);
     }
 
-    public SQLFragment generateExperimentTreeSQLObjectIdsSeeds(Collection<Integer> objectIds, ExpLineageOptions options)
+    private SQLFragment generateExperimentTreeSQLObjectIdsSeeds(Collection<Integer> objectIds, ExpLineageOptions options)
     {
         assert options.isUseObjectIds();
         String comma="";

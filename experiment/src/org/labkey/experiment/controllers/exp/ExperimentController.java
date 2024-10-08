@@ -29,6 +29,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiResponseWriter;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.action.ExportAction;
@@ -159,6 +160,7 @@ import org.labkey.api.util.ErrorRenderer;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.ImageUtil;
@@ -264,6 +266,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
 import static org.labkey.api.exp.query.ExpSchema.TableType.DataInputs;
@@ -7005,7 +7008,7 @@ public class ExperimentController extends SpringActionController
 
 
     @RequiresPermission(ReadPermission.class)
-    public static class LineageAction extends BaseResolveLsidApiAction<ExpLineageOptions>
+    public static class LineageOldAction extends BaseResolveLsidApiAction<ExpLineageOptions>
     {
         @Override
         public Object execute(ExpLineageOptions options, BindException errors)
@@ -7013,6 +7016,133 @@ public class ExperimentController extends SpringActionController
             ExpLineage lineage = ExperimentServiceImpl.get().getLineage(getContainer(), getUser(), _seeds, options);
             var settings = new ExperimentJSONConverter.Settings(options.isIncludeProperties(), options.isIncludeInputsAndOutputs(), options.isIncludeRunSteps());
             return new ApiSimpleResponse(lineage.toJSON(getUser(), options.isSingleSeedRequested(), settings));
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public static class LineageAction extends BaseResolveLsidApiAction<ExpLineageOptions>
+    {
+        private static final int BATCH_SIZE = 5_000;
+        private static final ExpLineage.Edges emptyEdges = new ExpLineage.Edges();
+
+        private record Context(
+            User user,
+            ApiJsonWriter writer,
+            ExperimentJSONConverter.Settings settings,
+            Map<String, ExpLineage.Edges> nodesAndEdges,
+            Map<GUID, Boolean> hasPermission
+        )
+        {
+            boolean hasPermission(Container container, User user)
+            {
+                return this.hasPermission.computeIfAbsent(container.getEntityId(), (id) -> container.hasPermission(user, ReadPermission.class));
+            }
+
+            @NotNull ExpLineage.Edges popEdges(String lsid)
+            {
+                var edges = this.nodesAndEdges.get(lsid);
+                this.nodesAndEdges.remove(lsid);
+                return edges == null ? emptyEdges : edges;
+            }
+        }
+
+        @Override
+        public Object execute(ExpLineageOptions options, BindException errors) throws Exception
+        {
+            ExpLineageStream lineage = ExperimentServiceImpl.get().getLineageStream(getContainer(), getUser(), _seeds, options);
+
+            var context = new Context(
+                getUser(),
+                new ApiJsonWriter(getViewContext().getResponse()),
+                new ExperimentJSONConverter.Settings(options.isIncludeProperties(), options.isIncludeInputsAndOutputs(), options.isIncludeRunSteps()),
+                ExpLineage.processEdges(lineage.edges()),
+                new HashMap<>()
+            );
+
+            context.writer.startResponse();
+
+            writeNodes(lineage, context);
+            writeSeed(lineage, context, options);
+
+            context.writer.endResponse();
+
+            return null;
+        }
+
+        private static void writeNodes(ExpLineageStream lineage, Context context) throws IOException
+        {
+            context.writer.startObject("nodes");
+
+            if (!context.nodesAndEdges.isEmpty())
+            {
+                if (!lineage.dataIds().isEmpty())
+                    ExperimentServiceImpl.get().forEachBatchExpData(lineage.dataIds(), BATCH_SIZE, writeBatch(context));
+                if (!lineage.materialIds().isEmpty())
+                    ExperimentServiceImpl.get().forEachBatchExpMaterial(lineage.materialIds(), BATCH_SIZE, writeBatch(context));
+                if (!lineage.runIds().isEmpty())
+                    ExperimentServiceImpl.get().forEachBatchExpRun(lineage.runIds(), BATCH_SIZE, writeBatch(context));
+                if (!lineage.objectLsids().isEmpty())
+                {
+                    var lsidManager = LsidManager.get();
+                    writeBatchList(lineage.objectLsids().stream().map(lsidManager::getObject).toList(), context);
+                }
+            }
+
+            writeBatchList(lineage.seeds().stream().toList(), context);
+
+            for (var entry : context.nodesAndEdges.entrySet())
+                context.writer.writeProperty(entry.getKey(), nodeToJson(null, entry.getValue(), context));
+
+            context.writer.endObject();
+        }
+
+        private static void writeSeed(ExpLineageStream lineage, Context context, ExpLineageOptions options) throws IOException
+        {
+            if (options.isSingleSeedRequested())
+                context.writer.writeProperty("seed", lineage.seeds().stream().findFirst().orElseThrow().getLSID());
+            else
+                context.writer.writeProperty("seeds", lineage.seeds().stream().map(Identifiable::getLSID).toList());
+        }
+
+        private static Selector.ForEachBatchBlock writeBatch(Context context)
+        {
+            return (batch) -> {
+                try
+                {
+                    writeBatchList(batch, context);
+                }
+                catch (IOException e)
+                {
+                    throw new RuntimeException(e);
+                }
+            };
+        }
+
+        private static void writeBatchList(List<? extends Identifiable> batch, Context context) throws IOException
+        {
+            for (var node : batch)
+            {
+                if (context.hasPermission(node.getContainer(), context.user))
+                    context.writer.writeProperty(node.getLSID(), nodeToJson(node, context.popEdges(node.getLSID()), context));
+            }
+        }
+
+        private static JSONObject nodeToJson(@Nullable Identifiable node, ExpLineage.Edges edges, Context context)
+        {
+            JSONObject json;
+
+            if (node == null)
+                json = new JSONObject();
+            else
+            {
+                json = ExperimentJSONConverter.serialize(node, context.user, context.settings);
+                json.put("type", node.getLSIDNamespacePrefix());
+            }
+
+            json.put("parents", edges.parents().stream().map(ExpLineage.Edge::toParentJSON).toList());
+            json.put("children", edges.children().stream().map(ExpLineage.Edge::toChildJSON).toList());
+
+            return json;
         }
     }
 

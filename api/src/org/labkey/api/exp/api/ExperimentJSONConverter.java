@@ -526,8 +526,9 @@ public class ExperimentJSONConverter
         if (url != null)
             json.put(URL, url);
 
-        json.put(CONTAINER, obj.getContainer().getId());
-        json.put(CONTAINER_PATH, obj.getContainer().getId());
+        final String containerId = obj.getContainer().getId();
+        json.put(CONTAINER, containerId);
+        json.put(CONTAINER_PATH, containerId); // TODO: Should probably add a comment here about why not getPath()
 
         QueryRowReference rowRef = obj.getQueryRowReference(user);
         if (rowRef != null)
@@ -581,18 +582,16 @@ public class ExperimentJSONConverter
 
         int rowId = object.getRowId();
         if (rowId != 0)
-        {
             jsonObject.put(ID, rowId);
-        }
-        if (object.getCreatedBy() != null)
-        {
-            jsonObject.put(CREATED_BY, object.getCreatedBy().getEmail());
-        }
+
+        var createdBy = object.getCreatedBy();
+        if (createdBy != null)
+            jsonObject.put(CREATED_BY, createdBy.getEmail());
         jsonObject.put(CREATED, object.getCreated());
-        if (object.getModifiedBy() != null)
-        {
-            jsonObject.put(MODIFIED_BY, object.getModifiedBy().getEmail());
-        }
+
+        var modifiedBy = object.getModifiedBy();
+        if (modifiedBy != null)
+            jsonObject.put(MODIFIED_BY, modifiedBy.getEmail());
         jsonObject.put(MODIFIED, object.getModified());
 
         if (settings.isIncludeProperties())

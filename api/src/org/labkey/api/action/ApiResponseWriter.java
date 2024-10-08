@@ -238,7 +238,7 @@ public abstract class ApiResponseWriter implements AutoCloseable
 
     /**
      * Entry-point for writing a response back to the client in the desired format.
-     * The object argument may be an response object to be serialized or an {@link ApiResponse} instance.
+     * The object argument may be a response object to be serialized or an {@link ApiResponse} instance.
      */
     public final void writeResponse(Object obj) throws IOException
     {
@@ -410,10 +410,10 @@ public abstract class ApiResponseWriter implements AutoCloseable
     {
         if (null == getResponse())
         {
-            if (e instanceof IOException)
-                throw (IOException) e;
-            if (e instanceof RuntimeException)
-                throw (RuntimeException) e;
+            if (e instanceof IOException ioException)
+                throw ioException;
+            if (e instanceof RuntimeException runtimeException)
+                throw runtimeException;
             throw new RuntimeException(e);
         }
 
@@ -425,12 +425,11 @@ public abstract class ApiResponseWriter implements AutoCloseable
     {
         //noinspection ConstantConditions
         if (e instanceof ValidationException ve)
-        {
             return toJSON(ve);
-        }
-        else if (e instanceof BatchValidationException bve)
+
+        if (e instanceof BatchValidationException bve)
         {
-            JSONObject obj = new JSONObject();
+            JSONObject json = new JSONObject();
             JSONArray arr = new JSONArray();
             String message = null;
             for (ValidationException vex : bve.getRowErrors())
@@ -440,21 +439,19 @@ public abstract class ApiResponseWriter implements AutoCloseable
                     message = child.optString("exception", "(No error message)");
                 arr.put(child);
             }
-            obj.put("errors", arr);
-            obj.put("errorCount", arr.length());
-            obj.put("exception", message);
-            obj.put("extraContext", bve.getExtraContext());
+            json.put("errors", arr);
+            json.put("errorCount", arr.length());
+            json.put("exception", message);
+            json.put("extraContext", bve.getExtraContext());
 
-            return obj;
+            return json;
         }
-        else
-        {
-            JSONObject jsonObj = new JSONObject();
-            jsonObj.put("exception", e.getMessage() != null ? e.getMessage() : e.getClass().getName());
-            jsonObj.put("exceptionClass", e.getClass().getName());
-            jsonObj.put("stackTrace", e.getStackTrace());
-            return jsonObj;
-        }
+
+        JSONObject json = new JSONObject();
+        json.put("exception", e.getMessage() != null ? e.getMessage() : e.getClass().getName());
+        json.put("exceptionClass", e.getClass().getName());
+        json.put("stackTrace", e.getStackTrace());
+        return json;
     }
 
 
@@ -508,8 +505,6 @@ public abstract class ApiResponseWriter implements AutoCloseable
 
         parent.put(jsonError);
     }
-
-
 
     /**
      * Converts the errors to JSON-friendly client responses. Starts at the specified index, skipping any prior
