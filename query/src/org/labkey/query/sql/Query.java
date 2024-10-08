@@ -906,7 +906,7 @@ public class Query
             {
                 TableType tableType = lookupMetadataTable(key.getName());
                 boolean forWrite = tableType != null;
-                t = userSchema._getTableOrQuery(key.getName(), cf, true, forWrite, resolveExceptions);
+                t = userSchema._getTableOrQuery(key.getName(), cf, true, forWrite, true, resolveExceptions);
             }
             else
             {

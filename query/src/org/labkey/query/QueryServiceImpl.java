@@ -3357,7 +3357,7 @@ public class QueryServiceImpl implements QueryService
         @NotNull List<QueryException> errors, @NotNull List<QueryParseException> warnings)
     {
         SchemaKey schemaKey = userSchema.getSchemaPath();
-        Object qort = userSchema._getTableOrQuery(queryName, null, true, false, errors);
+        Object qort = userSchema._getTableOrQuery(queryName, null, true, false, false, errors);
         TableInfo t = (qort instanceof TableInfo) ? (TableInfo)qort : null;
         QueryDefinitionImpl qdef = (qort instanceof QueryDefinitionImpl) ? (QueryDefinitionImpl)qort : null;
 
