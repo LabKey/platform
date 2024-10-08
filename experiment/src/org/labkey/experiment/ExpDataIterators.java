@@ -2116,7 +2116,7 @@ public class ExpDataIterators
                     Map<String, Object> map = getExistingRecord();
                     if (map != null)
                     {
-                        if (map.containsKey("rowId")) // favor rowId over lsid to avoid additional query for indexing
+                        if (map.containsKey("rowId")) // favor rowId over lsid to reduce deadlock during indexing
                             rowId = (Integer) map.get("rowId");
                         if (rowId == null && map.containsKey("lsid"))
                             lsid = (String) map.get("lsid");
