@@ -11418,16 +11418,10 @@ public class AdminController extends SpringActionController
         if (!validateAndSaveFormat(form.getExtraTimeParsingPattern(), form.isExtraTimeParsingPatternInherited(), props::clearExtraTimeParsingPattern, props::setExtraTimeParsingPattern, errors, "time"))
             return false;
 
-        try
-        {
-            // TODO: Handle inheritance
+        if (form.isRestrictedColumnsEnabledInherited())
+            props.clearRestrictedColumnsEnabled();
+        else
             props.setRestrictedColumnsEnabled(form.areRestrictedColumnsEnabled());
-        }
-        catch (IllegalArgumentException e)
-        {
-            errors.reject(ERROR_MSG, "Invalid restricted columns flag: " + e.getMessage());
-            return false;
-        }
 
         props.save();
 
