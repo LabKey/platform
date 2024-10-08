@@ -706,17 +706,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                                               @Nullable List<String> excludedContainerIds, @Nullable List<String> excludedDashboardContainerIds)
         throws ExperimentException
     {
-        if (name == null)
-            throw new ExperimentException("SampleType name is required");
-
-        TableInfo materialSourceTable = ExperimentService.get().getTinfoSampleType();
-        int nameMax = materialSourceTable.getColumn("Name").getScale();
-        if (name.length() > nameMax)
-            throw new ExperimentException("SampleType name may not exceed " + nameMax + " characters.");
-
-        ExpSampleType existing = getSampleType(c, name);
-        if (existing != null)
-            throw new IllegalArgumentException("SampleType '" + existing.getName() + "' already exists");
+        validateSampleTypeName(c, u, name);
 
         if (properties == null || properties.isEmpty())
             throw new ExperimentException("At least one property is required");
@@ -752,6 +742,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         }
 
         // Validate the name expression length
+        TableInfo materialSourceTable = ExperimentService.get().getTinfoSampleType();
         int nameExpMax = materialSourceTable.getColumn("NameExpression").getScale();
         if (nameExpression != null && nameExpression.length() > nameExpMax)
             throw new ExperimentException("Name expression may not exceed " + nameExpMax + " characters.");
@@ -974,6 +965,24 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         };
     }
 
+    private void validateSampleTypeName(Container container, User user, String name)
+    {
+        if (name == null || StringUtils.isBlank(name))
+            throw new IllegalArgumentException("Sample Type name is required.");
+
+        TableInfo materialSourceTable = ExperimentService.get().getTinfoSampleType();
+        int nameMax = materialSourceTable.getColumn("Name").getScale();
+        if (name.length() > nameMax)
+            throw new IllegalArgumentException("Sample Type name may not exceed " + nameMax + " characters.");
+
+        if (getSampleType(container, user, name) != null)
+            throw new IllegalArgumentException("A Sample Type with name '" + name + "' already exists.");
+
+        // Issue 51321: check reserved sample type name: First
+        if ("First".equalsIgnoreCase(name) || "All".equalsIgnoreCase(name))
+            throw new IllegalArgumentException("Sample Type name '" + name + "' is reserved.");
+    }
+
     @Override
     public ValidationException updateSampleType(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, SampleTypeDomainKindProperties options, Container container, User user, boolean includeWarnings)
     {
@@ -984,12 +993,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         String newName = StringUtils.trimToNull(update.getName());
         String oldSampleTypeName = st.getName();
         boolean hasNameChange = false;
-        if (newName != null && !oldSampleTypeName.equals(newName))
+        if (!oldSampleTypeName.equals(newName))
         {
-            ExpSampleType duplicateType = SampleTypeService.get().getSampleType(container, user, newName);
-            if (duplicateType != null)
-                throw new IllegalArgumentException("A Sample Type with name '" + newName + "' already exists.");
-
+            validateSampleTypeName(container, user, newName);
             hasNameChange = true;
             st.setName(newName);
         }
