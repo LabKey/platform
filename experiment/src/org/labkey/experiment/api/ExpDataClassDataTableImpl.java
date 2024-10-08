@@ -128,6 +128,7 @@ import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.ExpDataIterators.AliasDataIteratorBuilder;
 import org.labkey.experiment.ExpDataIterators.PersistDataIteratorBuilder;
 import org.labkey.experiment.controllers.exp.ExperimentController;
+import org.labkey.experiment.lineage.LineageMethod;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;

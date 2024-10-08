@@ -62,6 +62,7 @@ import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpDataRunInput;
 import org.labkey.api.exp.api.ExpLineage;
 import org.labkey.api.exp.api.ExpLineageOptions;
+import org.labkey.api.exp.api.ExpLineageService;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -1969,7 +1970,7 @@ public class ExpDataIterators
             options.setChildren(false);
             options.setDepth(2); // use 2 to get the first generation of parents because the first "parent" is the run
 
-            ExpLineage lineage = ExperimentService.get().getLineage(c, user, runItem, options);
+            ExpLineage lineage = ExpLineageService.get().getLineage(c, user, runItem, options);
             Pair<Set<ExpData>, Set<ExpMaterial>> currentParents = Pair.of(lineage.getDatas(), lineage.getMaterials());
             if (currentParents.first != null)
             {

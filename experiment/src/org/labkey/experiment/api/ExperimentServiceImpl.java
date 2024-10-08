@@ -36,7 +36,6 @@ import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
-import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.assay.AssayProvider;
@@ -80,7 +79,6 @@ import org.labkey.api.data.ParameterMapStatement;
 import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
@@ -238,6 +236,7 @@ import org.labkey.experiment.XarExporter;
 import org.labkey.experiment.XarReader;
 import org.labkey.experiment.api.property.DomainPropertyManager;
 import org.labkey.experiment.controllers.exp.ExperimentController;
+import org.labkey.experiment.lineage.ExpLineageServiceImpl;
 import org.labkey.experiment.pipeline.ExpGeneratorHelper;
 import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 import org.labkey.experiment.pipeline.MoveRunsPipelineJob;
@@ -380,15 +379,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (rowIds == null || rowIds.isEmpty())
             return emptyList();
         return getExpRuns(new SimpleFilter().addInClause(FieldKey.fromParts(ExpRunTable.Column.RowId.name()), rowIds));
-    }
-
-    public int forEachBatchExpRun(Collection<Integer> rowIds, int batchSize, final Selector.ForEachBatchBlock<ExpRunImpl> block)
-    {
-        if (rowIds == null || rowIds.isEmpty())
-            return 0;
-
-        SimpleFilter filter = new SimpleFilter().addInClause(FieldKey.fromParts(ExpRunTable.Column.RowId.name()), rowIds);
-        return new TableSelector(getTinfoExperimentRun(), filter, null).forEachBatch(ExperimentRun.class, batchSize, (batch) -> block.exec(ExpRunImpl.fromRuns(batch)));
     }
 
     @Override
@@ -707,15 +697,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return getExpDatas(new SimpleFilter(FieldKey.fromParts(ExpDataTable.Column.RowId.name()), rowIds, IN));
     }
 
-    public int forEachBatchExpData(Collection<Integer> rowIds, int batchSize, final Selector.ForEachBatchBlock<ExpDataImpl> block)
-    {
-        if (rowIds.isEmpty())
-            return 0;
-
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(ExpDataTable.Column.RowId.name()), rowIds, IN);
-        return new TableSelector(getTinfoData(), filter, null).forEachBatch(Data.class, batchSize, (batch) -> block.exec(ExpDataImpl.fromDatas(batch)));
-    }
-
     @Override
     public @NotNull List<? extends ExpData> getExpDatas(@NotNull ExpDataClass dataClass, Collection<Integer> rowIds)
     {
@@ -921,15 +902,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             return emptyList();
 
         return getExpMaterials(new SimpleFilter().addInClause(FieldKey.fromParts(ExpMaterialTable.Column.RowId.name()), rowIds));
-    }
-
-    public int forEachBatchExpMaterial(Collection<Integer> rowIds, int batchSize, final Selector.ForEachBatchBlock<ExpMaterialImpl> block)
-    {
-        if (rowIds.isEmpty())
-            return 0;
-
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.RowId.name()), rowIds, IN);
-        return new TableSelector(getTinfoMaterial(), filter, null).forEachBatch(Material.class, batchSize, (batch) -> block.exec(ExpMaterialImpl.fromMaterials(batch)));
     }
 
     @Override
@@ -2478,25 +2450,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 .toList();
     }
 
-
-    /**
-     * walk experiment graph with one tricky recursive query
-     * <p>
-     * <p>
-     * TWO BIG PROBLEMS
-     * <p>
-     * A) Can't mutually recurse between CTE (urg)
-     * 2) Can only reference the recursive CTE exactly once (urg)
-     * <p>
-     * NOTE: when recursing UP:      INNER M.rowid=MI.materialid AND INNER MI.targetapplicationid=PA.rowid\
-     * NOTE: when recursing DOWN:    INNER PA.rowid=D.sourceapplicationid AND OUTER M.rowid=MI.materialid
-     * <p>
-     * NOTE: it is very unfortunately that experiment objects do not have globally unique objectids
-     * NOTE: this requires that we join internally on rowid, but globally on lsid...
-     * <p>
-     * each row in the result represents one 'edge' or 'leaf/root' in the experiment graph, that is to say
-     * nodes (material,data,protocolapplication) may appear more than once, but edges shouldn't
-     **/
     @Override
     public Pair<Set<ExpData>, Set<ExpMaterial>> getParents(Container c, User user, ExpRunItem start)
     {
@@ -2507,9 +2460,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return Pair.of(lineage.getDatas(), lineage.getMaterials());
     }
 
-    /**
-     * walk experiment graph with one tricky recursive query
-     **/
     @Override
     public Pair<Set<ExpData>, Set<ExpMaterial>> getChildren(Container c, User user, ExpRunItem start)
     {
@@ -2605,30 +2555,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return lineage.findNearestParentMaterials(start);
     }
 
-    public List<ExpRun> oldCollectRunsToInvestigate(ExpRunItem start, ExpLineageOptions options)
-    {
-        List<ExpRun> runsToInvestigate = new ArrayList<>();
-        boolean up = options.isParents();
-        boolean down = options.isChildren();
-
-        if (up)
-        {
-            ExpRun parentRun = start.getRun();
-            if (parentRun != null)
-                runsToInvestigate.add(parentRun);
-        }
-
-        if (down)
-        {
-            if (start instanceof ExpData)
-                runsToInvestigate.addAll(getRunsUsingDataIds(Arrays.asList(start.getRowId())));
-            else if (start instanceof ExpMaterial)
-                runsToInvestigate.addAll(getRunsUsingMaterials(start.getRowId()));
-            runsToInvestigate.remove(start.getRun());
-        }
-        return runsToInvestigate;
-    }
-
     // Get list of ExpRun LSIDs for the start Data or Material
     @Override
     public List<String> collectRunsToInvestigate(ExpRunItem start, ExpLineageOptions options)
@@ -2642,7 +2568,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     // Get up and down maps of ExpRun LSID to Role
-    private Pair<Map<String, String>, Map<String, String>> collectRunsAndRolesToInvestigate(ExpRunItem start, ExpLineageOptions options)
+    public Pair<Map<String, String>, Map<String, String>> collectRunsAndRolesToInvestigate(ExpRunItem start, ExpLineageOptions options)
     {
         Map<String, String> runsUp = new HashMap<>();
         Map<String, String> runsDown = new HashMap<>();
@@ -2666,8 +2592,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 runsDown.remove(parentRun.getLSID());
         }
 
-        assert checkRunsAndRoles(start, options, runsUp, runsDown);
-
         return Pair.of(runsUp, runsDown);
     }
 
@@ -2680,176 +2604,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return runLsidToRoleMap;
     }
 
-    private boolean checkRunsAndRoles(ExpRunItem start, ExpLineageOptions options, Map<String, String> runsUp, Map<String, String> runsDown)
-    {
-        Set<ExpRun> runs = new HashSet<>();
-        runsUp.keySet().stream().map(this::getExpRun).forEach(runs::add);
-        runsDown.keySet().stream().map(this::getExpRun).forEach(runs::add);
-
-        Set<ExpRun> oldRuns = new HashSet<>(oldCollectRunsToInvestigate(start, options));
-        if (!runs.equals(oldRuns))
-        {
-            LOG.warn("Mismatch between collectRunsAndRolesToInvestigate and oldCollectRunsToInvestigate. start: " + start + "\nruns: " + runs + "\nold runs:" + oldRuns);
-            return false;
-        }
-        return true;
-    }
-
-    private record SeedIdentifiers(Set<Integer> objectIds, Set<String> lsids)
-    {
-        public boolean isEmpty()
-        {
-            return objectIds.isEmpty();
-        }
-    }
-
-    private SeedIdentifiers getLineageSeedIdentifiers(Container c, User user, @NotNull Set<Identifiable> seeds)
-    {
-        // validate seeds
-        Set<Integer> seedObjectIds = new HashSet<>(seeds.size());
-        Set<String> seedLsids = new HashSet<>(seeds.size());
-
-        for (Identifiable seed : seeds)
-        {
-            if (seed.getLSID() == null)
-                throw new RuntimeException("Lineage not available for unknown object");
-
-            // CONSIDER: add objectId to Identifiable?
-            int objectId = -1;
-            if (seed instanceof ExpObject expObjectSeed)
-                objectId = expObjectSeed.getObjectId();
-            else if (seed instanceof IdentifiableBase identifiableSeed)
-                objectId = identifiableSeed.getObjectId();
-
-            if (objectId == -1)
-                throw new RuntimeException("Lineage not available for unknown object: " + seed.getLSID());
-
-            if (seed instanceof ExpRunItem && isUnknownMaterial((ExpRunItem) seed))
-            {
-                LOG.warn("Lineage not available for unknown material: " + seed.getLSID());
-                continue;
-            }
-
-            // ensure the user has read permission in the seed container
-            if (c != null && !c.equals(seed.getContainer()))
-            {
-                if (!seed.getContainer().hasPermission(user, ReadPermission.class))
-                    throw new UnauthorizedException("Lineage not available. User does not have permission to view " + seed.getName() + ".");
-            }
-
-            if (!seedLsids.add(seed.getLSID()))
-                throw new RuntimeException("Requested lineage for duplicate LSID seed: " + seed.getLSID());
-
-            if (!seedObjectIds.add(objectId))
-                throw new RuntimeException("Requested lineage for duplicate objectId seed: " + objectId);
-        }
-
-        return new SeedIdentifiers(seedObjectIds, seedLsids);
-    }
-
-    public record LineageResult(
-        Set<Identifiable> seeds, 
-        Set<ExpLineage.Edge> edges, 
-        Set<Integer> dataIds,
-        Set<Integer> materialIds, 
-        Set<Integer> runIds, 
-        Set<String> objectLsids
-    )
-    {
-        public boolean isEmpty()
-        {
-            return edges.isEmpty();
-        }
-    }
-
-    public LineageResult getLineageResult(Container container, User user, @NotNull Set<Identifiable> seeds, @NotNull ExpLineageOptions options)
-    {
-        SeedIdentifiers seedIdentifiers = getLineageSeedIdentifiers(container, user, seeds);
-
-        if (seedIdentifiers.isEmpty())
-            return new LineageResult(seeds, emptySet(), emptySet(), emptySet(), emptySet(), emptySet());
-
-        // Side-effect
-        options.setUseObjectIds(true);
-
-        Set<ExpLineage.Edge> edges = new HashSet<>();
-        for (Identifiable seed : seeds)
-        {
-            // create additional edges from the run for each ExpMaterial or ExpData seed
-            if (seed instanceof ExpRunItem runSeed && !isUnknownMaterial(runSeed))
-            {
-                Pair<Map<String, String>, Map<String, String>> pair = collectRunsAndRolesToInvestigate(runSeed, options);
-
-                // add edges for initial runs and roles up
-                for (Map.Entry<String, String> runAndRole : pair.first.entrySet())
-                    edges.add(new ExpLineage.Edge(runAndRole.getKey(), seed.getLSID(), null));
-
-                // add edges for initial runs and roles down
-                for (Map.Entry<String, String> runAndRole : pair.second.entrySet())
-                    edges.add(new ExpLineage.Edge(seed.getLSID(), runAndRole.getKey(), null));
-            }
-        }
-
-        Set<Integer> dataIds = new HashSet<>();
-        Set<Integer> materialIds = new HashSet<>();
-        Set<Integer> runIds = new HashSet<>();
-        Set<String> objectLsids = new HashSet<>();
-
-        SQLFragment sql = generateExperimentTreeSQLObjectIdsSeeds(seedIdentifiers.objectIds(), options);
-        new SqlSelector(getExpSchema(), sql).forEachMap((m)->
-        {
-            Integer depth = (Integer)m.get("depth");
-            String parentLSID = (String)m.get("parent_lsid");
-            String childLSID = (String)m.get("child_lsid");
-
-            String parentExpType = (String)m.get("parent_exptype");
-            String childExpType = (String)m.get("child_exptype");
-
-            Integer parentRowId = (Integer)m.get("parent_rowid");
-            Integer childRowId = (Integer)m.get("child_rowid");
-
-            if (parentRowId == null || childRowId == null)
-            {
-                LOG.error(String.format("Node not found for lineage: %s.\n  depth=%d, parentLsid=%s, parentType=%s, parentRowId=%d, childLsid=%s, childType=%s, childRowId=%d",
-                        StringUtils.join(seedIdentifiers.lsids(), ", "), depth, parentLSID, parentExpType, parentRowId, childLSID, childExpType, childRowId));
-            }
-            else
-            {
-                edges.add(new ExpLineage.Edge(parentLSID, childLSID, null));
-
-                // Don't include the seed in the lineage collections
-                if (!seedIdentifiers.lsids().contains(parentLSID))
-                {
-                    // process parents
-                    if ("Data".equals(parentExpType))
-                        dataIds.add(parentRowId);
-                    else if ("Material".equals(parentExpType))
-                        materialIds.add(parentRowId);
-                    else if ("ExperimentRun".equals(parentExpType))
-                        runIds.add(parentRowId);
-                    else if ("Object".equals(parentExpType))
-                        objectLsids.add(parentLSID);
-                }
-
-                // Don't include the seed in the lineage collections
-                if (!seedIdentifiers.lsids().contains(childLSID))
-                {
-                    // process children
-                    if ("Data".equals(childExpType))
-                        dataIds.add(childRowId);
-                    else if ("Material".equals(childExpType))
-                        materialIds.add(childRowId);
-                    else if ("ExperimentRun".equals(childExpType))
-                        runIds.add(childRowId);
-                    else if ("Object".equals(childExpType))
-                        objectLsids.add(childLSID);
-                }
-            }
-        });
-
-        return new LineageResult(seeds, edges, dataIds, materialIds, runIds, objectLsids);
-    }
-
     @Override
     @NotNull
     public ExpLineage getLineage(Container c, User user, @NotNull Identifiable start, @NotNull ExpLineageOptions options)
@@ -2860,25 +2614,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @NotNull
     public ExpLineage getLineage(Container c, User user, @NotNull Set<Identifiable> seeds, @NotNull ExpLineageOptions options)
     {
-        LineageResult result = getLineageResult(c, user, seeds, options);
-        if (result.isEmpty())
-            return new ExpLineage(result.seeds(), emptySet(), emptySet(), emptySet(), emptySet(), emptySet());
-
-        Map<GUID, Boolean> hasPermission = new HashMap<>();
-        final Predicate<Identifiable> lineageItemFilter = (item) -> {
-            if (item == null)
-                return false;
-
-            return hasPermission.computeIfAbsent(item.getContainer().getEntityId(), (id) -> item.getContainer().hasPermission(user, ReadPermission.class));
-        };
-
-        LsidManager lsidManager = LsidManager.get();
-        Set<ExpData> data = getExpDatas(result.dataIds).stream().filter(lineageItemFilter).collect(toSet());
-        Set<ExpMaterial> materials = getExpMaterials(result.materialIds).stream().filter(lineageItemFilter).collect(toSet());
-        Set<ExpRun> runs = getExpRuns(result.runIds).stream().filter(lineageItemFilter).collect(toSet());
-        Set<Identifiable> otherObjects = result.objectLsids.stream().map(lsidManager::getObject).filter(lineageItemFilter).collect(toSet());
-
-        return new ExpLineage(seeds, data, materials, runs, otherObjects, result.edges);
+        return ExpLineageServiceImpl.get().getLineage(c, user, seeds, options);
     }
 
     @Override
@@ -2895,7 +2631,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return generateExperimentTreeSQL(sqlf, options);
     }
 
-    private SQLFragment generateExperimentTreeSQLObjectIdsSeeds(Collection<Integer> objectIds, ExpLineageOptions options)
+    public SQLFragment generateExperimentTreeSQLObjectIdsSeeds(Collection<Integer> objectIds, ExpLineageOptions options)
     {
         assert options.isUseObjectIds();
         String comma = "";
@@ -2984,6 +2720,24 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return new Pair<>(parentsToken,childrenToken);
     }
 
+    /**
+     * Walk experiment graph with one tricky recursive query.
+     * <p>
+     * <p>
+     * TWO BIG PROBLEMS
+     * <p>
+     * A) Can't mutually recurse between CTE (urg)
+     * 2) Can only reference the recursive CTE exactly once (urg)
+     * <p>
+     * NOTE: when recursing UP:      INNER M.rowid=MI.materialid AND INNER MI.targetapplicationid=PA.rowid\
+     * NOTE: when recursing DOWN:    INNER PA.rowid=D.sourceapplicationid AND OUTER M.rowid=MI.materialid
+     * <p>
+     * NOTE: it is very unfortunately that experiment objects do not have globally unique objectids
+     * NOTE: this requires that we join internally on rowid, but globally on lsid...
+     * <p>
+     * Each row in the result represents one 'edge' or 'leaf/root' in the experiment graph, that is to say
+     * nodes (material,data,protocolapplication) may appear more than once, but edges should not.
+     **/
     @Override
     public @NotNull SQLFragment generateExperimentTreeSQL(SQLFragment lsidsFrag, ExpLineageOptions options)
     {
@@ -3266,7 +3020,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             edges.add(List.of(fromObjectId, toObjectId, edgeRunId));
         });
 
-        // quick check
         if (params.size() == 0 && edges.size() == 0)
             return true;
 

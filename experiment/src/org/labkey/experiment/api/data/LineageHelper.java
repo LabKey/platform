@@ -11,7 +11,7 @@ import java.util.List;
 
 public class LineageHelper
 {
-    static ExpRunItem getStart(String lsid)
+    static @Nullable ExpRunItem getStart(String lsid)
     {
         if (lsid == null)
             return null;

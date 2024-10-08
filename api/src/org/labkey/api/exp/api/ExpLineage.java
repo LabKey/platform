@@ -34,8 +34,6 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static java.util.stream.Collectors.toList;
-
 public class ExpLineage
 {
     private final Set<Identifiable> _seeds;
@@ -398,70 +396,10 @@ public class ExpLineage
         return nearest;
     }
 
-    public JSONObject toJSON(User user, boolean requestedWithSingleSeed, ExperimentJSONConverter.Settings settings)
+    public record Edge(String parent, String child)
     {
-        Map<String, Object> values = new HashMap<>();
-        JSONObject nodes = new JSONObject();
+        private static final String NO_ROLE = "no role";
 
-        if (_nodesAndEdges.isEmpty())
-        {
-            for (Identifiable seed : _seeds)
-            {
-                nodes.put(seed.getLSID(), nodeToJSON(seed, user, Edges.emptyEdges, settings));
-            }
-        }
-        else
-        {
-            for (Map.Entry<String, Edges> node : _nodesAndEdges.entrySet())
-            {
-                String key = node.getKey();
-                nodes.put(key, nodeToJSON(_nodes.get(key), user, node.getValue(), settings));
-            }
-        }
-
-        // If the request was made with a single 'seed' property, use single 'seed' property in the response
-        // otherwise, include an array of 'seed' regardless of the number of seed items.
-        if (requestedWithSingleSeed)
-        {
-            assert _seeds.size() == 1;
-            values.put("seed", _seeds.stream().findFirst().orElseThrow().getLSID());
-        }
-        else
-        {
-            values.put("seeds", _seeds.stream().map(Identifiable::getLSID).collect(toList()));
-        }
-        values.put("nodes", nodes);
-
-        return new JSONObject(values);
-    }
-
-    public static JSONObject nodeToJSON(
-        @Nullable Identifiable node,
-        User user,
-        ExpLineage.Edges edges,
-        ExperimentJSONConverter.Settings settings
-    )
-    {
-        JSONObject json;
-
-        if (node == null)
-        {
-            json = new JSONObject();
-        }
-        else
-        {
-            json = ExperimentJSONConverter.serialize(node, user, settings);
-            json.put("type", node.getLSIDNamespacePrefix());
-        }
-
-        json.put("parents", edges.parents().stream().map(ExpLineage.Edge::toParentJSON).toList());
-        json.put("children", edges.children().stream().map(ExpLineage.Edge::toChildJSON).toList());
-
-        return json;
-    }
-
-    public record Edge(String parent, String child, @Nullable String role)
-    {
         public JSONObject toParentJSON()
         {
             return toJSON(parent);
@@ -476,19 +414,14 @@ public class ExpLineage
         {
             JSONObject json = new JSONObject();
             json.put("lsid", target);
-            json.put("role", roleWithDefault());
+            json.put("role", NO_ROLE);
             return json;
-        }
-
-        private String roleWithDefault()
-        {
-            return role == null ? "no role" : role;
         }
 
         @Override
         public String toString()
         {
-            return "[" + parent + "] -(" + roleWithDefault() + ")-> [" + child + "]";
+            return "[" + parent + "] -(" + NO_ROLE + ")-> [" + child + "]";
         }
     }
 
