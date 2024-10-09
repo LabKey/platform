@@ -187,7 +187,7 @@ public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> ext
 
             final List<String> nameSuffixes = new ArrayList<>();
             int prefixLength = namePrefix.length();
-            for(String fullName : names)
+            for (String fullName : names)
                 nameSuffixes.add(fullName.substring(prefixLength));
 
             for (String nameSuffix : nameSuffixes)

@@ -69,7 +69,7 @@ public interface ExpRun extends ExpObject, Identifiable
     @NotNull Map<? extends ExpMaterial, String> getMaterialInputs();
 
     /** @return map from data object to role name. Multiple inputs might use the same role name, hence the direction of the map */
-    Map<? extends ExpData, String> getDataInputs();
+    @NotNull Map<? extends ExpData, String> getDataInputs();
 
     /**
      * @return all the materials objects marked as outputs of this run.
@@ -92,10 +92,21 @@ public interface ExpRun extends ExpObject, Identifiable
 
     List<? extends ExpProtocolApplication> getProtocolApplications();
 
-    /** Get the protocol application that marks all the inputs to the run as a whole */
+    /**
+     * Get the first protocol application of type {@link ExpProtocol.ApplicationType#ProtocolApplication} for this run.
+     */
+    @Nullable ExpProtocolApplication getProtocolApplication();
+
+    /**
+     * Get the first protocol application of type {@link ExpProtocol.ApplicationType#ExperimentRun} for this run.
+     * This protocol application marks all the inputs to the run as a whole.
+     */
     @Nullable ExpProtocolApplication getInputProtocolApplication();
 
-    /** Get the protocol application that marks all the outputs to the run as a whole */
+    /**
+     * Get the first protocol application of type {@link ExpProtocol.ApplicationType#ExperimentRunOutput} for this run.
+     * This protocol application marks all the outputs of the run as a whole.
+     */
     @Nullable ExpProtocolApplication getOutputProtocolApplication();
 
     void deleteProtocolApplications(User user);

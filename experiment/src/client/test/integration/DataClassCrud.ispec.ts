@@ -226,7 +226,7 @@ describe('Data Class Designer - Permissions', () => {
 
 describe('Data Class - Required Lineage', () => {
     it('Test dataclass with required dataclass parents', async () => {
-        await verifyRequiredLineageInsertUpdate(server, false, false, topFolderOptions, subfolder1Options, designerReaderOptions, readerUserOptions, editorUserOptions);
+        await verifyRequiredLineageInsertUpdate(server, false, false, topFolderOptions, subfolder1Options, designerReaderOptions, readerUserOptions, editorUserOptions, adminOptions);
     });
 
 });

@@ -60,6 +60,7 @@ import org.labkey.api.assay.actions.ProtocolIdForm;
 import org.labkey.api.assay.actions.ReimportRedirectAction;
 import org.labkey.api.assay.actions.UploadWizardAction;
 import org.labkey.api.assay.plate.PlateBasedAssayProvider;
+import org.labkey.api.assay.sample.AssaySampleLookupContext;
 import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.ColumnInfo;
@@ -96,6 +97,7 @@ import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.DataStateManager;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
@@ -176,11 +178,6 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-/**
- * User: brittp
- * Date: Jun 20, 2007
- * Time: 11:09:51 AM
- */
 public class AssayController extends SpringActionController
 {
     private static final DefaultActionResolver _resolver = new DefaultActionResolver(AssayController.class,
@@ -1795,7 +1792,8 @@ public class AssayController extends SpringActionController
         }
     }
 
-    public enum AssayRunOperations {
+    public enum AssayRunOperations
+    {
         Delete("deleting", DeletePermission.class),
         Edit("editing", UpdatePermission.class),
         Move("moving", MoveEntitiesPermission.class);
@@ -1843,6 +1841,38 @@ public class AssayController extends SpringActionController
         public void setProtocolId(Integer protocolId)
         {
             _protocolId = protocolId;
+        }
+    }
+
+    public static class SyncRunLineageForm
+    {
+        private List<Integer> _runIds = new ArrayList<>();
+
+        public List<Integer> getRunIds()
+        {
+            return _runIds;
+        }
+
+        public void setRunIds(List<Integer> runIds)
+        {
+            _runIds = runIds;
+        }
+    }
+
+    @RequiresPermission(UpdatePermission.class)
+    public static class SyncRunLineageAction extends MutatingApiAction<SyncRunLineageForm>
+    {
+        @Override
+        public Object execute(SyncRunLineageForm form, BindException errors) throws Exception
+        {
+            var batchErrors = new BatchValidationException();
+            var context = new AssaySampleLookupContext(form.getRunIds());
+
+            context.syncLineage(getContainer(), getUser(), batchErrors);
+            if (batchErrors.hasErrors())
+                throw batchErrors;
+
+            return success();
         }
     }
 }
