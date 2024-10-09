@@ -139,6 +139,8 @@
         {
             if (c == '/' || c == '\\')
                 continue;
+            if (isWindows && (c == '"' || c == ':'))
+                continue;
             String s = "_" + c + "_";
             p = new Path(s,"%.txt");
             f = fs.resolveFile(p);
@@ -147,8 +149,6 @@
 
             try
             {
-                if (isWindows && (c == '"' || c == ':'))
-                    continue;
                 s = "/" + c + ".txt";
                 var ioFile = new java.io.File(s);
                 f = new FileSystemLike.Builder(ioFile).root();
