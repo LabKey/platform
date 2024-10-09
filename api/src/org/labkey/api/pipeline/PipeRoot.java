@@ -45,15 +45,18 @@ public interface PipeRoot extends SecurableResource
     @NotNull
     URI getUri();
 
+    @Deprecated // prefer getRootFileLike()
     @NotNull
     File getRootPath();
 
+    @Deprecated // prefer getRootFileLike()
     @NotNull
     Path getRootNioPath();
 
     @NotNull
     FileLike getRootFileLike();
 
+    @Deprecated // prefer getRootFileLike()
     @NotNull
     File getLogDirectory();
 
@@ -72,9 +75,16 @@ public interface PipeRoot extends SecurableResource
      * is configured with an alternative file path, we'll check to see if the file exists there. If not, we'll return
      * a path relative to the root's primary path.
      */
+    @Deprecated // prefer resolvePathToFileLike()
     @Nullable
     File resolvePath(String relativePath);
 
+    /**
+     * @return the file that's at the given relativePath from the pipeline root. Will be null if the relative path
+     * attempts to reference something that's not under the root (such as "../../etc/passwd". When the root
+     * is configured with an alternative file path, we'll check to see if the file exists there. If not, we'll return
+     * a path relative to the root's primary path.
+     */
     @Nullable
     FileLike resolvePathToFileLike(String relativePath);
 

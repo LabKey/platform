@@ -1547,6 +1547,8 @@ quickScan:
     }
 
 
+    // use FileLike createTempDirectoryFileLike()
+    @Deprecated
     public static Path createTempDirectory(@Nullable String prefix) throws IOException
     {
         if (null != prefix)
@@ -1557,6 +1559,8 @@ quickScan:
 
     public static FileLike createTempDirectoryFileLike(@Nullable String prefix) throws IOException
     {
+        if (null != prefix)
+            legalPathPartThrow(prefix);
         return new FileSystemLike.Builder(Files.createTempDirectory(prefix).toAbsolutePath()).readwrite().root();
     }
 
