@@ -1330,18 +1330,17 @@ validNum:       {
 
     public static String formatJsonDateTime(Date date)
     {
-        if (HttpView.hasCurrentView())
+        if (date instanceof Time)
         {
-            ViewContext context = HttpView.currentContext();
-            if (context != null && context.getRequest() != null)
+            if (HttpView.hasCurrentView())
             {
-                if (date instanceof Time && context.getContainer() != null)
+                ViewContext context = HttpView.currentContext();
+                if (context != null && context.getContainer() != null)
                     return FastDateFormat.getInstance(FolderSettingsCache.getDefaultTimeFormat(context.getContainer())).format(date);
             }
-        }
 
-        if (date instanceof Time)
             return jsonTimeFormat.format(date);
+        }
 
         return jsonDateFormat.format(date);
     }
