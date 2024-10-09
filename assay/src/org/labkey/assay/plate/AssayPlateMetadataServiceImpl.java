@@ -843,6 +843,9 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             {
                 if (!entry.getValue().isEmpty())
                 {
+                    // reset measure values for each replicate well group
+                    measures.forEach((k, v) -> v.clear());
+
                     // organize values for each replicate well group by measure
                     for (Map<String, Object> row : entry.getValue())
                     {
