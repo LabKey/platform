@@ -372,13 +372,12 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                                 try (TSVMapWriter writer = new TSVMapWriter(newRows))
                                 {
                                     writer.write(newPath.toFile());
+                                    dataFile.delete();
                                 }
                                 catch (IOException e)
                                 {
                                     throw new ExperimentException(e);
                                 }
-
-                                // Consider : should we delete the uploaded data file in this case?
 
                                 // update the ExpData file URI
                                 data.setDataFileURI(FileUtil.getAbsoluteCaseSensitiveFile(newPath.toFile()).toURI());
