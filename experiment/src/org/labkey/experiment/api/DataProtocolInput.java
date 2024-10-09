@@ -16,7 +16,7 @@
 package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.exp.api.ExpObject;
+import org.labkey.api.exp.api.ExpData;
 
 public class DataProtocolInput extends AbstractProtocolInput
 {
@@ -35,7 +35,7 @@ public class DataProtocolInput extends AbstractProtocolInput
     @Override
     public String getObjectType()
     {
-        return ExpDataImpl.DEFAULT_CPAS_TYPE;
+        return ExpData.DEFAULT_CPAS_TYPE;
     }
 
     @Override

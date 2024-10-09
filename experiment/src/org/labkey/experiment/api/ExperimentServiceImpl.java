@@ -1363,7 +1363,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         protocol.setContainer(container);
         protocol.setApplicationType(type.toString());
         protocol.setOutputDataType(ExpData.DEFAULT_CPAS_TYPE);
-        protocol.setOutputMaterialType("Material");
+        protocol.setOutputMaterialType(ExpMaterial.DEFAULT_CPAS_TYPE);
         // the default for runs
         if (ExperimentRun.equals(type))
             protocol.setStatus(ExpProtocol.Status.Active);
@@ -1576,21 +1576,21 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     public static String getNamespacePrefix(Class<? extends ExpObject> clazz)
     {
         if (clazz == ExpData.class)
-            return "Data";
+            return ExpData.DEFAULT_CPAS_TYPE;
         if (clazz == ExpMaterial.class)
-            return "Material";
+            return ExpMaterial.DEFAULT_CPAS_TYPE;
         if (clazz == ExpProtocol.class)
-            return "Protocol";
+            return ExpProtocol.DEFAULT_CPAS_TYPE;
         if (clazz == ExpRun.class)
-            return "Run";
+            return ExpRunImpl.NAMESPACE_PREFIX;
         if (clazz == ExpExperiment.class)
-            return "Experiment";
+            return ExpExperiment.DEFAULT_CPAS_TYPE;
         if (clazz == ExpSampleType.class)
             return "SampleSet";
         if (clazz == ExpDataClass.class)
             return ExpDataClassImpl.NAMESPACE_PREFIX;
         if (clazz == ExpProtocolApplication.class)
-            return "ProtocolApplication";
+            return ExpProtocolApplication.DEFAULT_CPAS_TYPE;
         if (clazz == ExpProtocolInput.class)
             return AbstractProtocolInput.NAMESPACE;
         throw new IllegalArgumentException("Invalid class " + clazz.getName());
@@ -2579,7 +2579,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (up)
         {
             if (parentRun != null)
-                runsUp.put(parentRun.getLSID(), start instanceof Data ? "Data" : "Material");
+                runsUp.put(parentRun.getLSID(), start instanceof Data ? ExpData.DEFAULT_CPAS_TYPE : ExpMaterial.DEFAULT_CPAS_TYPE);
         }
         if (down)
         {
@@ -3810,11 +3810,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     {
         return getExpSchema().getTable("Data");
     }
+
     public TableInfo getTinfoDataIndexed()
     {
         return getExpSchema().getTable("DataIndexed");
     }
-
 
     @Override
     public TableInfo getTinfoDataClass()
@@ -3829,7 +3829,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public TableInfo getTinfoDataAncestors() { return getExpSchema().getTable("DataAncestors"); }
+    public TableInfo getTinfoDataAncestors()
+    {
+        return getExpSchema().getTable("DataAncestors");
+    }
 
     @Override
     public TableInfo getTinfoProtocolInput()
@@ -4795,7 +4798,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         {
                             // verify the material doesn't belong to a SampleType
                             if (!ExpMaterial.DEFAULT_CPAS_TYPE.equals(material.getCpasType()))
-                                throw new IllegalArgumentException("Error deleting sample of default '" + ExpMaterialImpl.DEFAULT_CPAS_TYPE + "' type: '" + material.getName() + "' is in the sample type '" + material.getCpasType() + "'");
+                                throw new IllegalArgumentException("Error deleting sample of default '" + ExpMaterial.DEFAULT_CPAS_TYPE + "' type: '" + material.getName() + "' is in the sample type '" + material.getCpasType() + "'");
                         }
                     }
                     else
@@ -6901,7 +6904,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         ProtocolParameter parentNameTemplateParam = parentParams.get(XarConstants.APPLICATION_NAME_TEMPLATE_URI);
         assert parentLSIDTemplateParam != null : "Parent LSID Template was null";
         assert parentNameTemplateParam != null : "Parent Name Template was null";
-        protApp.setLSID(LsidUtils.resolveLsidFromTemplate(parentLSIDTemplateParam.getStringValue(), context, "ProtocolApplication"));
+        protApp.setLSID(LsidUtils.resolveLsidFromTemplate(parentLSIDTemplateParam.getStringValue(), context, ExpProtocolApplication.DEFAULT_CPAS_TYPE));
         protApp.setName(parentNameTemplateParam.getStringValue());
     }
 
@@ -8885,7 +8888,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         TableInfo tableInfo = getTinfoObjectLegacyNames();
 
-        String objecIdSql = dataType.equals("Protocol") ? "RowId FROM exp.Protocol" : "ObjectId FROM exp.Object";
+        String objecIdSql = ExpProtocol.DEFAULT_CPAS_TYPE.equals(dataType) ? "RowId FROM exp.Protocol" : "ObjectId FROM exp.Object";
 
         // find the last ObjectLegacyNames record with matched name and timestamp
         SQLFragment sql = new SQLFragment("SELECT ObjectId, Created FROM exp.ObjectLegacyNames " +

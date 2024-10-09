@@ -124,6 +124,7 @@ import org.labkey.api.data.dialect.SqlDialect.ExecutionPlanType;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.data.queryprofiler.QueryProfiler.QueryStatTsvWriter;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.files.FileContentService;
@@ -486,7 +487,7 @@ public class AdminController extends SpringActionController
         }, ModulePropertiesAction.class);
         addTab(TYPE.FolderManagement,"Concepts", "concepts", c -> {
             // Show Concepts tab only if the experiment module is enabled in this container
-            return c.getActiveModules().contains(ModuleLoader.getInstance().getModule("Experiment"));
+            return c.getActiveModules().contains(ModuleLoader.getInstance().getModule(ExperimentService.MODULE_NAME));
         }, AdminController.ConceptsAction.class);
         // Show Notifications tab only if we have registered notification providers
         addTab(TYPE.FolderManagement,"Notifications", "notifications", c->NOT_ROOT.test(c) && !MessageConfigService.get().getConfigTypes().isEmpty(), NotificationsAction.class);

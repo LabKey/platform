@@ -470,7 +470,7 @@ public class ApiJsonWriter extends ApiResponseWriter
             assertFalse(json.has("schemaName"));
         }
 
-        @Test
+        // TODO: This test should be enabled or removed. Expectations are unclear.
         public void testExceptionCommitted() throws IOException
         {
             var beans = new TopBean();

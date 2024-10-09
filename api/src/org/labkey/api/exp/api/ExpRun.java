@@ -30,6 +30,8 @@ import java.util.Map;
 /** An instance of an {@link ExpProtocol}, with actual inputs and outputs */
 public interface ExpRun extends ExpObject, Identifiable
 {
+    String DEFAULT_CPAS_TYPE = "ExperimentRun";
+
     /** @return the experiments (AKA run groups in the UI) of which this run is a member */
     List<? extends ExpExperiment> getExperiments();
 

@@ -19,8 +19,8 @@ public interface ExpLineageService
     }
 
     /**
-     * Get the lineage for the seed Identifiable object. Typically, the seed object is a ExpMaterial,
-     * a ExpData (in a DataClass), or an ExpRun.
+     * Get the lineage for the seed Identifiable object. Typically, the seed object is an ExpMaterial,
+     * an ExpData (in a DataClass), or an ExpRun.
      */
     @NotNull
     ExpLineage getLineage(Container c, User user, @NotNull Identifiable start, @NotNull ExpLineageOptions options);

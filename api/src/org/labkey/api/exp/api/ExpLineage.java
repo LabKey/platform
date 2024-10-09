@@ -396,10 +396,11 @@ public class ExpLineage
         return nearest;
     }
 
+    // NK: Originally, we included the "role" for each edge, however, in practice it was always a null
+    // value as we do not populate its value from the database. As such, we defaulted to serializing the
+    // string "no role" for the value of each edge. This is not useful information so it has been removed.
     public record Edge(String parent, String child)
     {
-        private static final String NO_ROLE = "no role";
-
         public JSONObject toParentJSON()
         {
             return toJSON(parent);
@@ -414,14 +415,13 @@ public class ExpLineage
         {
             JSONObject json = new JSONObject();
             json.put("lsid", target);
-            json.put("role", NO_ROLE);
             return json;
         }
 
         @Override
         public String toString()
         {
-            return "[" + parent + "] -(" + NO_ROLE + ")-> [" + child + "]";
+            return "[" + parent + "] -> [" + child + "]";
         }
     }
 

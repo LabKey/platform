@@ -86,7 +86,7 @@ public class ExpLineageServiceImpl implements ExpLineageService
 
     private static void forEachBatchExpRun(Collection<Integer> rowIds, int batchSize, final Selector.ForEachBatchBlock<ExpRunImpl> block)
     {
-        if (rowIds == null || rowIds.isEmpty())
+        if (rowIds.isEmpty())
             return;
 
         SimpleFilter filter = new SimpleFilter().addInClause(FieldKey.fromParts(ExpRunTable.Column.RowId.name()), rowIds);
@@ -148,7 +148,7 @@ public class ExpLineageServiceImpl implements ExpLineageService
             if (c != null && !c.equals(seed.getContainer()))
             {
                 if (!seed.getContainer().hasPermission(user, ReadPermission.class))
-                    throw new UnauthorizedException("Lineage not available. User does not have permission to view " + seed.getName() + ".");
+                    throw new UnauthorizedException("Lineage not available. User does not have permission to view seed \"" + seed.getLSID() + "\".");
             }
 
             if (!seedLsids.add(seed.getLSID()))
@@ -220,13 +220,13 @@ public class ExpLineageServiceImpl implements ExpLineageService
                 if (!seedIdentifiers.lsids().contains(parentLSID))
                 {
                     // process parents
-                    if ("Data".equals(parentExpType))
+                    if (ExpData.DEFAULT_CPAS_TYPE.equals(parentExpType))
                         dataIds.add(parentRowId);
-                    else if ("Material".equals(parentExpType))
+                    else if (ExpMaterial.DEFAULT_CPAS_TYPE.equals(parentExpType))
                         materialIds.add(parentRowId);
-                    else if ("ExperimentRun".equals(parentExpType))
+                    else if (ExpRun.DEFAULT_CPAS_TYPE.equals(parentExpType))
                         runIds.add(parentRowId);
-                    else if ("Object".equals(parentExpType))
+                    else if (ExpObject.DEFAULT_CPAS_TYPE.equals(parentExpType))
                         objectLsids.add(parentLSID);
                 }
 
@@ -234,13 +234,13 @@ public class ExpLineageServiceImpl implements ExpLineageService
                 if (!seedIdentifiers.lsids().contains(childLSID))
                 {
                     // process children
-                    if ("Data".equals(childExpType))
+                    if (ExpData.DEFAULT_CPAS_TYPE.equals(childExpType))
                         dataIds.add(childRowId);
-                    else if ("Material".equals(childExpType))
+                    else if (ExpMaterial.DEFAULT_CPAS_TYPE.equals(childExpType))
                         materialIds.add(childRowId);
-                    else if ("ExperimentRun".equals(childExpType))
+                    else if (ExpRun.DEFAULT_CPAS_TYPE.equals(childExpType))
                         runIds.add(childRowId);
-                    else if ("Object".equals(childExpType))
+                    else if (ExpObject.DEFAULT_CPAS_TYPE.equals(childExpType))
                         objectLsids.add(childLSID);
                 }
             }

@@ -146,11 +146,11 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
             return new QueryRowReference(getContainer(), ExpSchema.SCHEMA_EXP, ExpSchema.TableType.Materials.name(), FieldKey.fromParts(ExpDataTable.Column.RowId), getRowId());
     }
 
-    @Nullable @Override
-    public ExpSampleTypeImpl getSampleType()
+    @Override
+    public @Nullable ExpSampleTypeImpl getSampleType()
     {
         String type = _object.getCpasType();
-        if (!ExpMaterialImpl.DEFAULT_CPAS_TYPE.equals(type) && !"Sample".equals(type))
+        if (!ExpMaterial.DEFAULT_CPAS_TYPE.equals(type) && !"Sample".equals(type))
         {
             // try current container first (uses cache)
             return SampleTypeServiceImpl.get().getSampleTypeByType(type, getContainer());
@@ -169,7 +169,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     public String getCpasType()
     {
         String result = _object.getCpasType();
-        return result == null ? ExpMaterialImpl.DEFAULT_CPAS_TYPE : result;
+        return result == null ? ExpMaterial.DEFAULT_CPAS_TYPE : result;
     }
 
     @Override
@@ -215,7 +215,6 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
 
         return SampleStatusService.get().getStateForRowId(getContainer(), getSampleStateId());
     }
-
 
     @Override
     public String getStateLabel()
@@ -304,8 +303,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
 
     /** Get the ObjectId of the ExpSampleType that this ExpMaterial belongs to. */
     @Override
-    @Nullable
-    public Integer getParentObjectId()
+    public @Nullable Integer getParentObjectId()
     {
         ExpSampleType st = getSampleType();
         if (st == null)
@@ -406,7 +404,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     {
         // Big hack to prevent study specimens and bogus samples created from some plate assays (Issue 46037)
         // from being indexed as samples
-        if (StudyService.SPECIMEN_NAMESPACE_PREFIX.equals(getLSIDNamespacePrefix()) || "Material".equals(getCpasType()))
+        if (StudyService.SPECIMEN_NAMESPACE_PREFIX.equals(getLSIDNamespacePrefix()) || ExpMaterial.DEFAULT_CPAS_TYPE.equals(getCpasType()))
         {
             return;
         }
@@ -627,11 +625,11 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
                     value = values.get(key = dp.getPropertyURI());
                 else
                     continue;
-                if (value instanceof ObjectProperty)
+                if (value instanceof ObjectProperty property)
                 {
                     // NOTE: ExpObjectImpl.setProperty() does not support MvIndicator and neither does Table.update().
                     // we could handle it here if we need to
-                    value = ((ObjectProperty) value).value();
+                    value = property.value();
                 }
                 try
                 {

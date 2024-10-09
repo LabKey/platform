@@ -34,6 +34,8 @@ import java.util.Map;
 /** Base interface for various experiment data model objects */
 public interface ExpObject extends Identifiable, Comparable<ExpObject>
 {
+    String DEFAULT_CPAS_TYPE = "Object";
+
     /** Prevent edits to this object. Subsequent calls to setters will throw an IllegalStateException */
     void lock();
 

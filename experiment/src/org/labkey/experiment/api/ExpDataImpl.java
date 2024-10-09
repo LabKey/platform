@@ -263,7 +263,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     {
         // Replace the default "Data" cpastype if the Data belongs to a DataClass
         ExpDataClassImpl dataClass = getDataClass(null);
-        if (dataClass != null && DEFAULT_CPAS_TYPE.equals(getCpasType()))
+        if (dataClass != null && ExpData.DEFAULT_CPAS_TYPE.equals(getCpasType()))
            setCpasType(dataClass.getLSID());
 
         boolean isNew = getRowId() == 0;
