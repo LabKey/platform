@@ -22,6 +22,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.collections.CollectionUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -244,7 +245,7 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
     /* TODO: this is a really awkward transition between File->FileLike (files come from FileQueue) */
     public Map<String, FileLike> savePipelineFiles(ContextType context, Map<String, File> files) throws ExperimentException, IOException
     {
-        Map<String, FileLike> savedFiles = new TreeMap<>();
+        Map<String, FileLike> savedFiles = CollectionUtils.enforceValueClass(new TreeMap<>(), FileLike.class);
         if (context.getRequest() instanceof MultipartHttpServletRequest)
         {
             PipeRoot root = getPipelineRoot(context.getContainer());
@@ -286,7 +287,7 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
 
     public Map<String, FileLike> savePostedFiles(ContextType context, Set<String> parameterNames, boolean allowMultiple, boolean ensureExpData) throws ExperimentException, IOException
     {
-        Map<String, FileLike> files = new TreeMap<>();
+        Map<String, FileLike> files = CollectionUtils.enforceValueClass(new TreeMap<>(), FileLike.class);
         Set<String> originalFileNames = new HashSet<>();
         if (context.getRequest() instanceof MultipartHttpServletRequest multipartRequest)
         {

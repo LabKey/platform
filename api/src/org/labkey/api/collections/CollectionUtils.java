@@ -158,52 +158,12 @@ public class CollectionUtils
      * The compiler does not 100% guarantee that classes are consistent, due to casts or type erasure.
      * This wrapper allows for a runtime check.
      */
-    public static <K,V> Map<K,V> enforceValueClass(Map<K,V> map, final Class<V> valueClass)
+    public static <V> Map<String,V> enforceValueClass(Map<String,V> map, final Class<V> valueClass)
     {
-        Map<K,V> ret = map;
+        Map<String,V> ret = map;
         //noinspection ConstantValue,AssertWithSideEffects
-        assert null != (ret = new EnforceValueClassMap<>(map,valueClass));
+        assert null != (ret = Collections.checkedMap(map,String.class,valueClass));
         return ret;
-    }
-
-    private static class EnforceValueClassMap<K, V> extends MapWrapper<K, V>
-    {
-        final Map<K,V> map;
-        final Class<V> valueClass;
-        EnforceValueClassMap(Map<K,V> map, Class<V> valueClass)
-        {
-            super(map);
-            this.map = map;
-            this.valueClass = valueClass;
-        }
-
-        Map<K,V> unwrap()
-        {
-            return map;
-        }
-
-        @Override
-        public V put(K key, V value)
-        {
-            assert null == value || valueClass.isInstance(value);
-            return super.put(key, value);
-        }
-
-        @Override
-        public void putAll(Map<? extends K, ? extends V> m)
-        {
-            for (var v : m.values())
-                assert null == v || valueClass.isInstance(v);
-            super.putAll(m);
-        }
-
-        @Override
-        public V get(Object key)
-        {
-            var v = super.get(key);
-            assert null == v || valueClass.isInstance(v);
-            return v;
-        }
     }
 
     public static class TestCase extends Assert

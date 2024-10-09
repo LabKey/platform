@@ -17,6 +17,7 @@
 package org.labkey.api.assay;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.collections.CollectionUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.util.HtmlString;
@@ -138,7 +139,7 @@ public class PreviouslyUploadedDataCollector<ContextType extends AssayRunUploadC
         if (_uploadComplete)
             return Collections.emptyMap();
 
-        Map<String, FileLike> result = new LinkedHashMap<>();
+        Map<String, FileLike> result = CollectionUtils.enforceValueClass(new LinkedHashMap<>(), FileLike.class);
         // Add the files for the specific flavor we're expecting
         result.putAll(getFilesFromRequest(context, _type));
         if (_type != Type.PassThrough)
@@ -169,7 +170,7 @@ public class PreviouslyUploadedDataCollector<ContextType extends AssayRunUploadC
 
         PipeRoot pipelineRoot = getPipelineRoot(context.getContainer());
 
-        Map<String, FileLike> result = new LinkedHashMap<>();
+        Map<String, FileLike> result = CollectionUtils.enforceValueClass(new LinkedHashMap<>(), FileLike.class);
         for (int i = 0; i < paths.length; i++)
         {
             result.put(names[i], pipelineRoot.resolvePathToFileLike(paths[i]));
