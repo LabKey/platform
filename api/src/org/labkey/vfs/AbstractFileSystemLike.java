@@ -15,7 +15,7 @@ abstract public class AbstractFileSystemLike implements FileSystemLike
 
     AbstractFileSystemLike(URI uri, boolean canRead, boolean canWrite, boolean canDeleteRoot)
     {
-        // Is there value id re-encoding the URI so that it is consistently encoded?
+        // Is there value in re-encoding the URI so that it is consistently encoded?
         this.uri = uri;
         this.strUri = uri.toString();
         this.scheme = uri.getScheme();
