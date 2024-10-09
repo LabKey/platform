@@ -47,7 +47,7 @@ public interface ExpProtocol extends ExpObject
     {
         Batch("Batch"), Run("Run"), Result("Data");
 
-        private String prefix;
+        private final String prefix;
 
         AssayDomainTypes(String prefixName)
         {
