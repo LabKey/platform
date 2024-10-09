@@ -17,7 +17,7 @@ import java.util.Map;
 import static org.apache.commons.lang3.StringUtils.defaultIfBlank;
 
 /**
- * In LabKey most files are accessed withing a directory with a particular role.  For instance, a directory might be:
+ * In LabKey most files are accessed within a directory with a particular role.  For instance, a directory might be:
  * <br>
  *  - a pipeline root used for storing assay files
  * <br>
