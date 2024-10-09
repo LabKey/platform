@@ -139,7 +139,7 @@
         {
             if (c == '/' || c == '\\')
                 continue;
-            if (isWindows && (c == '"' || c == ':'))
+            if (isWindows && -1 != "<>:\"|?*".indexOf(c))
                 continue;
             String s = "_" + c + "_";
             p = new Path(s,"%.txt");
