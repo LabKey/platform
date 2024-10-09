@@ -749,6 +749,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     List<? extends ExpRun> getRunsUsingDatas(List<ExpData> datas);
 
+    List<? extends ExpRun> getRunsUsingDataIds(List<Integer> ids);
+
     ExpRun getCreatingRun(File file, Container c);
 
     List<? extends ExpRun> getExpRunsForProtocolIds(boolean includeRelated, int... rowIds);

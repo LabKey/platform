@@ -4377,7 +4377,7 @@ public class StudyManager
         if (null == study)
             return;
 
-        final String nav = NavTree.toJS(Collections.singleton(new NavTree("study", PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(c))), null, false).toString();
+        final String nav = NavTree.toJS(Collections.singleton(new NavTree("study", PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(c))), null, false, true).toString();
 
         SQLFragment baseFragment = new SQLFragment();
         baseFragment.append("SELECT Container, ParticipantId FROM ");
@@ -4547,7 +4547,7 @@ public class StudyManager
             return;
 
         ActionURL begin = PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(study.getContainer());
-        String nav = NavTree.toJS(Collections.singleton(new NavTree("study", begin)), null, false).toString();
+        String nav = NavTree.toJS(Collections.singleton(new NavTree("study", begin)), null, false, true).toString();
         AttachmentService serv = AttachmentService.get();
         Path p = study.getContainer().getParsedPath().append("@study");
 

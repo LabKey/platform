@@ -26,6 +26,7 @@ import org.labkey.api.reader.Readers;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.QuietCloser;
 import org.labkey.api.util.URIUtil;
 
 import javax.script.AbstractScriptEngine;
@@ -342,7 +343,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
             throw new RuntimeException(message, eio);
         }
 
-        try (PipelineJobService.Closer ignored = PipelineJobService.get().trackForJobCancellation(jobGuid, proc))
+        try (QuietCloser ignored = PipelineJobService.get().trackForJobCancellation(jobGuid, proc))
         {
             // Write script process output to the provided writer
             // if the writer isn't the original writer (a PrintWriter over the tomcat console).

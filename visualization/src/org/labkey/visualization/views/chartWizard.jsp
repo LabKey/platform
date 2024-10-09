@@ -32,6 +32,7 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.visualization.VisualizationController" %>
+<%@ page import="org.labkey.api.security.roles.ProjectAdminRole" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -58,6 +59,7 @@
     boolean canShare = ctx.hasPermission(ShareReportPermission.class);
     boolean isDeveloper = user.isBrowserDev();
     boolean allowEditMode = !user.isGuest() && form.allowToggleMode();
+    boolean allowInherit = user.hasRootAdminPermission() || ReportUtil.isInRole(user, c, ProjectAdminRole.class);
     boolean canEdit = false;
     ActionURL editUrl = null;
 
@@ -126,6 +128,7 @@
             canShare: <%=canShare%>,
             isDeveloper: <%=isDeveloper%>,
             defaultNumberFormat: eval(<%=q(numberFormatFn)%>),
+            allowInherit: <%=allowInherit%>,
             allowEditMode: <%=allowEditMode%>,
             editModeURL: editUrl,
 
