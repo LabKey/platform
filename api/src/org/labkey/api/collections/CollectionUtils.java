@@ -26,7 +26,8 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.PropertyManager.PropertyMap;
+import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.util.ArrayList;
@@ -90,12 +91,7 @@ public class CollectionUtils
         if (value instanceof CacheManager.Sealable sealable && sealable.isSealed())
             return null;
 
-        if (value instanceof PropertyManager.PropertyMap)
-        {
-            if (!((PropertyManager.PropertyMap)value).isLocked())
-                return "a modifiable PropertyMap";
-        }
-        else if (value instanceof Collection)
+        if (value instanceof Collection)
         {
             if (!UNMODIFIABLE_COLLECTION_CLASS.isInstance(value))
             {
@@ -114,6 +110,11 @@ public class CollectionUtils
                     return "a modifiable collection (" + value.getClass() + ")";
                 }
             }
+        }
+        else if (value instanceof PropertyMap pm)
+        {
+            if (pm instanceof WritablePropertyMap)
+                return "a WritablePropertyMap";
         }
         else if (value instanceof Map)
         {

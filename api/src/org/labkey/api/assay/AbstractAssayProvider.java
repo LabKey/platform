@@ -36,7 +36,6 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DetailsColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.ImportAliasable;
-import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -52,7 +51,6 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.XarContext;
@@ -140,6 +138,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import static java.util.Collections.emptyList;
 import static org.labkey.api.data.CompareType.IN;
 import static org.labkey.api.util.PageFlowUtil.jsString;
 
@@ -1185,17 +1184,22 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     /**
      * Adds the materials as inputs to the run as a whole, plus as inputs for the "work" node for the run.
-     * @param materialInputs Map of materials to roles.  If role is null, a generic role of "Sample N" will be used.
+     * @param materialInputs Map of materials to roles. If role is null, a generic role of "Sample" will be used.
      */
     public static void addInputMaterials(ExpRun expRun, User user, Map<ExpMaterial, String> materialInputs)
     {
+        if (materialInputs.isEmpty())
+            return;
+
         for (ExpProtocolApplication protApp : expRun.getProtocolApplications())
         {
-            if (!protApp.getApplicationType().equals(ExpProtocol.ApplicationType.ExperimentRunOutput))
+            if (!ExpProtocol.ApplicationType.ExperimentRunOutput.equals(protApp.getApplicationType()))
             {
                 Map<ExpMaterial, String> newInputs = new LinkedHashMap<>(materialInputs);
                 for (ExpMaterial material : protApp.getInputMaterials())
                     newInputs.remove(material);
+
+                Map<String, Set<Integer>> inputGroups = new HashMap<>();
                 for (Map.Entry<ExpMaterial, String> entry : newInputs.entrySet())
                 {
                     ExpMaterial newInput = entry.getKey();
@@ -1205,8 +1209,12 @@ public abstract class AbstractAssayProvider implements AssayProvider
                         ExpSampleType st = newInput.getSampleType();
                         role = st != null ? st.getName() : "Sample";
                     }
-                    protApp.addMaterialInput(user, newInput, role);
+
+                    inputGroups.computeIfAbsent(role, r -> new HashSet<>()).add(newInput.getRowId());
                 }
+
+                for (var entry : inputGroups.entrySet())
+                    protApp.addMaterialInputs(user, entry.getValue(), entry.getKey(), null);
             }
         }
     }
@@ -1465,7 +1473,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     @Override
     public List<AssayDataType> getRelatedDataTypes()
     {
-        return Collections.emptyList();
+        return emptyList();
     }
 
     public void setMaxFileInputs(int maxFileInputs)
@@ -2110,106 +2118,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
                             .append(" WHERE rowId = ").appendValue(resultRowId);
                     new SqlExecutor(assayResultTable.getSchema()).execute(updateSql);
                 }
-            }
-        }
-    }
-
-    // Issue 51316: While this issue is being addressed this feature has been disabled.
-    private final static boolean ENABLE_UPDATE_PROPERTY_LINEAGE = false;
-
-    @Override
-    public void updatePropertyLineage(
-        Container container,
-        User user,
-        TableInfo table,
-        ExpRun run,
-        Map<String, Object> newRow,
-        Map<String, Object> oldRow,
-        boolean isRunProperties,
-        @NotNull RemapCache cache,
-        @NotNull Map<Integer, ExpMaterial> materialsCache
-    ) throws ValidationException
-    {
-        if (!ENABLE_UPDATE_PROPERTY_LINEAGE)
-            return;
-
-        Domain domain = table.getDomain();
-        if (domain == null || newRow == null || oldRow == null)
-            return;
-
-        Set<Integer> removedMaterialInputs = new HashSet<>();
-        Map<ExpMaterial, String> addedMaterialInputs = new HashMap<>();
-
-        // There can be multiple columns within a row that are lineage-backed material lookups.
-        // Coalesce these material input updates across columns.
-        for (var entry : newRow.entrySet())
-        {
-            Object newValue = entry.getValue();
-            Object oldValue = oldRow.get(entry.getKey());
-            if (newValue == oldValue)
-                continue;
-
-            ColumnInfo column = table.getColumn(entry.getKey());
-
-            if (column != null && (!isRunProperties || column instanceof PropertyColumn))
-            {
-                DomainProperty dp = domain.getPropertyByURI(column.getPropertyURI());
-                if (dp == null)
-                    continue;
-
-                ExpSampleType sampleType = ExperimentService.get().getLookupSampleType(dp, container, user);
-                if (sampleType != null || ExperimentService.get().isLookupToMaterials(dp))
-                {
-                    String inputRole = AssayService.get().getPropertyInputLineageRole(dp);
-
-                    // Remove material inputs with the same role
-                    for (var materialEntry : run.getMaterialInputs().entrySet())
-                    {
-                        if (inputRole.equalsIgnoreCase(materialEntry.getValue()))
-                        {
-                            // Issue 51316: Resolve the original material input rowId for this column
-                            Integer originalRowId = null;
-                            if (oldValue instanceof Integer _originalRowId)
-                                originalRowId = _originalRowId;
-                            else if (oldValue != null)
-                            {
-                                ExpMaterial originalMaterial = ExperimentService.get().findExpMaterial(container, user, oldValue, sampleType, cache, materialsCache);
-                                if (originalMaterial != null)
-                                    originalRowId = originalMaterial.getRowId();
-                            }
-
-                            if (originalRowId != null && originalRowId == materialEntry.getKey().getRowId())
-                                removedMaterialInputs.add(originalRowId);
-                        }
-                    }
-
-                    ExpMaterial newInputMaterial = ExperimentService.get().findExpMaterial(container, user, newValue, sampleType, cache, materialsCache);
-                    if (newInputMaterial != null)
-                    {
-                        // Prevent direct cycles
-                        if (run.getMaterialOutputs().contains(newInputMaterial))
-                            throw new ValidationException(String.format("Material \"%s\" is already marked as an output of this run and cannot be used as an input.", newInputMaterial.getName()));
-
-                        addedMaterialInputs.put(newInputMaterial, inputRole);
-                    }
-                }
-            }
-        }
-
-        if (!removedMaterialInputs.isEmpty())
-        {
-            var pa = run.getInputProtocolApplication();
-            if (pa != null)
-                pa.removeMaterialInputs(user, removedMaterialInputs);
-        }
-
-        if (!addedMaterialInputs.isEmpty())
-        {
-            var pa = run.getInputProtocolApplication();
-            if (pa != null)
-            {
-                for (var entry : addedMaterialInputs.entrySet())
-                    pa.addMaterialInput(user, entry.getKey(), entry.getValue());
             }
         }
     }

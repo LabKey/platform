@@ -1193,6 +1193,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             // Report the total number of login entries in the audit log
             results.put("totalLogins", UserManager.getAuthCount(null, false, false, false));
             results.put("apiKeyLogins", UserManager.getAuthCount(null, false, true, false));
+            results.put("sessionTimeout", ModuleLoader.getServletContext().getSessionTimeout());
             results.put("userLimits", new LimitActiveUsersSettings().getMetricsMap());
             results.put("systemUserCount", UserManager.getSystemUserCount());
             results.put("workbookCount", ContainerManager.getWorkbookCount());

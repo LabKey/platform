@@ -77,7 +77,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 
 import static org.labkey.experiment.api.ExperimentServiceImpl.getExpSchema;
 
@@ -441,7 +440,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     }
 
     @Override
-    public Map<ExpDataImpl, String> getDataInputs()
+    public @NotNull Map<ExpDataImpl, String> getDataInputs()
     {
         ensureFullyPopulated();
         return _dataInputs;
@@ -466,6 +465,12 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     {
         ensureFullyPopulated();
         return _protocolSteps;
+    }
+
+    @Override
+    public @Nullable ExpProtocolApplication getProtocolApplication()
+    {
+        return findProtocolApplication(ExpProtocol.ApplicationType.ProtocolApplication);
     }
 
     @Override
