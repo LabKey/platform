@@ -528,7 +528,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             {
                 TsvDataHandler dataHandler = new TsvDataHandler();
                 dataHandler.setAllowEmptyData(true);
-                dataHandler.importRows(primaryData, context.getUser(), run, context.getProtocol(), getProvider(), rawData, null, context.shouldAutoFillDefaultResultColumns());
+                dataHandler.importRows(primaryData, context.getUser(), run, context.getProtocol(), getProvider(), rawData, null, context.shouldAutoFillDefaultResultColumns(), context);
             }
         }
         else

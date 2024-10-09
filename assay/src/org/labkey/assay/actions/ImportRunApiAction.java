@@ -353,8 +353,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         private String _name;
         private Integer _workflowTask;
         private Integer _reRunId;
-        // TODO : default to REPLACE when debugging is no longer needed
-        private AssayRunUploadContext.ReImportOption _reImportOption = AssayRunUploadContext.ReImportOption.MERGE_DATA; //AssayRunUploadContext.ReImportOption.REPLACE;
+        private AssayRunUploadContext.ReImportOption _reImportOption = AssayRunUploadContext.ReImportOption.REPLACE;
         private String _targetStudy;
         private Map<String, Object> _properties = new HashMap<>();
         private Map<String, Object> _batchProperties = new HashMap<>();

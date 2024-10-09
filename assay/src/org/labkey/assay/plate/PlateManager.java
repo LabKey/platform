@@ -2984,7 +2984,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         Table.delete(AssayDbSchema.getInstance().getTableInfoHit(), filter);
     }
 
-    private void deleteHits(FieldKey fieldKey, Collection<? extends ExpObject> objects)
+    public void deleteHits(FieldKey fieldKey, Collection<? extends ExpObject> objects)
     {
         if (objects == null || objects.isEmpty())
             return;
@@ -2992,7 +2992,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         deleteHits(new SimpleFilter(fieldKey, objects.stream().map(ExpObject::getRowId).toList(), CompareType.IN));
     }
 
-    private void deleteHits(int protocolId, Collection<Integer> resultIds)
+    public void deleteHits(int protocolId, Collection<Integer> resultIds)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ProtocolId"), protocolId);
         filter.addCondition(FieldKey.fromParts("ResultId"), resultIds, CompareType.IN);
@@ -3039,8 +3039,6 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             return;
 
         deleteHits(run.getProtocol().getRowId(), List.of((Integer) resultRow.get("RowId")));
-
-        // need to recalculate replicate stats for the run
     }
 
     /**

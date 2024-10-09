@@ -94,7 +94,8 @@ public interface AssayPlateMetadataService
         ExpRun run,
         ExpData data,
         ExpProtocol protocol,
-        AssayProvider provider
+        AssayProvider provider,
+        @Nullable AssayRunUploadContext<?> context
     ) throws ExperimentException;
 
     /**
