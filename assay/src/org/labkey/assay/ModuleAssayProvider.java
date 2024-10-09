@@ -56,7 +56,6 @@ import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.resource.FileResource;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileType;
@@ -88,10 +87,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * User: kevink
- * Date: Dec 10, 2008 2:20:38 PM
- */
 public class ModuleAssayProvider extends TsvAssayProvider
 {
     private static final Logger LOG = LogManager.getLogger(ModuleAssayProvider.class);
@@ -126,11 +121,9 @@ public class ModuleAssayProvider extends TsvAssayProvider
     private FieldKey dateKey;
     private FieldKey specimenIdKey;
 
-    private List<ScriptMetadata> _scriptMetadata = new ArrayList<>();
-
-    private List<AssayDataType> _relatedDataTypes = new ArrayList<>();
-
-    private Set<String> _missingScriptWarnings = new HashSet<>();
+    private final List<ScriptMetadata> _scriptMetadata = new ArrayList<>();
+    private final List<AssayDataType> _relatedDataTypes = new ArrayList<>();
+    private final Set<String> _missingScriptWarnings = new HashSet<>();
 
     public ModuleAssayProvider(String name, Module module, Resource basePath, ProviderType providerConfig)
     {
