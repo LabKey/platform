@@ -16,11 +16,14 @@
 
 package org.labkey.experiment.api;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
@@ -32,6 +35,7 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataProtocolInput;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpMaterialProtocolInput;
+import org.labkey.api.exp.api.ExpMaterialRunInput;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
@@ -46,7 +50,9 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -354,44 +360,62 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
     @Override
     public void delete(User user)
     {
-        if (getRowId() != 0)
-        {
-            final ExperimentServiceImpl svc = ExperimentServiceImpl.get();
-            final SqlDialect dialect = svc.getSchema().getSqlDialect();
+        if (getRowId() == 0)
+            return;
 
-            // Clean up DataInput and MaterialInput exp.object and properties
-            OntologyManager.deleteOntologyObjects(svc.getSchema(), new SQLFragment("SELECT " +
-                    dialect.concatenate("'" + DataInput.lsidPrefix() + "'",
-                            "CAST(dataId AS VARCHAR)", "'.'", "CAST(targetApplicationId AS VARCHAR)") +
-                    " FROM " + svc.getTinfoDataInput() + " WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = " + getRowId() + ")"), getContainer());
+        // Clean up DataInput and MaterialInput exp.object and properties
+        long countInputs = deleteDataInputs();
+        countInputs += deleteMaterialInputs();
+        if (countInputs > 0)
+            ExperimentServiceImpl.get().queueSyncRunEdges(_object.getRunId());
+        Table.delete(ExperimentServiceImpl.get().getTinfoProtocolApplicationParameter(), new SimpleFilter(FieldKey.fromParts("ProtocolApplicationId"), getRowId()));
 
-            OntologyManager.deleteOntologyObjects(svc.getSchema(), new SQLFragment("SELECT " +
-                    dialect.concatenate("'" + MaterialInput.lsidPrefix() + "'",
-                            "CAST(materialId AS VARCHAR)", "'.'", "CAST(targetApplicationId AS VARCHAR)") +
-                    " FROM " + svc.getTinfoMaterialInput() + " WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = " + getRowId() + ")"), getContainer());
+        SQLFragment commonSQL = new SQLFragment(" SET SourceApplicationId = NULL, RunId = NULL WHERE SourceApplicationId = ?", getRowId());
 
-            long countInputs = 0;
-            countInputs += Table.delete(ExperimentServiceImpl.get().getTinfoDataInput(), new SimpleFilter(FieldKey.fromParts("TargetApplicationId"), getRowId()));
-            countInputs += Table.delete(ExperimentServiceImpl.get().getTinfoMaterialInput(), new SimpleFilter(FieldKey.fromParts("TargetApplicationId"), getRowId()));
-            if (countInputs > 0)
-                ExperimentServiceImpl.get().queueSyncRunEdges(_object.getRunId());
-            Table.delete(ExperimentServiceImpl.get().getTinfoProtocolApplicationParameter(), new SimpleFilter(FieldKey.fromParts("ProtocolApplicationId"), getRowId()));
+        SQLFragment materialSQL = new SQLFragment("UPDATE " + ExperimentServiceImpl.get().getTinfoMaterial());
+        materialSQL.append(commonSQL);
+        new SqlExecutor(ExperimentServiceImpl.get().getSchema()).execute(materialSQL);
 
-            SQLFragment commonSQL = new SQLFragment(" SET SourceApplicationId = NULL, RunId = NULL WHERE SourceApplicationId = ?", getRowId());
+        SQLFragment dataSQL = new SQLFragment("UPDATE " + ExperimentServiceImpl.get().getTinfoData());
+        dataSQL.append(commonSQL);
+        new SqlExecutor(ExperimentServiceImpl.get().getSchema()).execute(dataSQL);
 
-            SQLFragment materialSQL = new SQLFragment("UPDATE " + ExperimentServiceImpl.get().getTinfoMaterial());
-            materialSQL.append(commonSQL);
-            new SqlExecutor(ExperimentServiceImpl.get().getSchema()).execute(materialSQL);
+        ProvenanceService pvs = ProvenanceService.get();
+        pvs.deleteProvenance(getRowId());
 
-            SQLFragment dataSQL = new SQLFragment("UPDATE " + ExperimentServiceImpl.get().getTinfoData());
-            dataSQL.append(commonSQL);
-            new SqlExecutor(ExperimentServiceImpl.get().getSchema()).execute(dataSQL);
+        Table.delete(ExperimentServiceImpl.get().getTinfoProtocolApplication(), getRowId());
+    }
 
-            ProvenanceService pvs = ProvenanceService.get();
-            pvs.deleteProvenance(getRowId());
+    private long deleteDataInputs()
+    {
+        if (getRowId() == 0)
+            return 0;
 
-            Table.delete(ExperimentServiceImpl.get().getTinfoProtocolApplication(), getRowId());
-        }
+        final ExperimentServiceImpl svc = ExperimentServiceImpl.get();
+        final SqlDialect dialect = svc.getSchema().getSqlDialect();
+
+        OntologyManager.deleteOntologyObjects(svc.getSchema(), new SQLFragment("SELECT " +
+            dialect.concatenate("'" + DataInput.lsidPrefix() + "'",
+                    "CAST(dataId AS VARCHAR)", "'.'", "CAST(targetApplicationId AS VARCHAR)") +
+            " FROM " + svc.getTinfoDataInput() + " WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = " + getRowId() + ")"), getContainer());
+
+        return Table.delete(ExperimentServiceImpl.get().getTinfoDataInput(), new SimpleFilter(FieldKey.fromParts("TargetApplicationId"), getRowId()));
+    }
+
+    private long deleteMaterialInputs()
+    {
+        if (getRowId() == 0)
+            return 0;
+
+        final ExperimentServiceImpl svc = ExperimentServiceImpl.get();
+        final SqlDialect dialect = svc.getSchema().getSqlDialect();
+
+        OntologyManager.deleteOntologyObjects(svc.getSchema(), new SQLFragment("SELECT " +
+            dialect.concatenate("'" + MaterialInput.lsidPrefix() + "'",
+                    "CAST(materialId AS VARCHAR)", "'.'", "CAST(targetApplicationId AS VARCHAR)") +
+            " FROM " + svc.getTinfoMaterialInput() + " WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = " + getRowId() + ")"), getContainer());
+
+        return Table.delete(ExperimentServiceImpl.get().getTinfoMaterialInput(), new SimpleFilter(FieldKey.fromParts("TargetApplicationId"), getRowId()));
     }
 
     public void setInputMaterials(List<ExpMaterialImpl> inputMaterialList)
@@ -442,24 +466,26 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
 
         obj = Table.insert(user, ExperimentServiceImpl.get().getTinfoDataInput(), obj);
         ExperimentServiceImpl.get().queueSyncRunEdges(_object.getRunId());
+        _inputDatas = null;
+
         return new ExpDataRunInputImpl(obj);
     }
 
     @Override
     @NotNull
-    public ExpMaterialRunInputImpl addMaterialInput(User user, ExpMaterial material, @Nullable String roleName)
+    public ExpMaterialRunInput addMaterialInput(User user, ExpMaterial material, @Nullable String role)
     {
-        return addMaterialInput(user, material, roleName, null);
+        return addMaterialInput(user, material, role, null);
     }
 
     @Override
     @NotNull
-    public ExpMaterialRunInputImpl addMaterialInput(User user, ExpMaterial material, @Nullable String roleName, @Nullable ExpMaterialProtocolInput protocolInput)
+    public ExpMaterialRunInput addMaterialInput(User user, ExpMaterial material, @Nullable String role, @Nullable ExpMaterialProtocolInput protocolInput)
     {
         MaterialInput obj = new MaterialInput();
         obj.setMaterialId(material.getRowId());
         obj.setTargetApplicationId(getRowId());
-        obj.setRole(roleName);
+        obj.setRole(role);
         if (protocolInput != null)
         {
             if (!getProtocol().equals(protocolInput.getProtocol()))
@@ -469,11 +495,65 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
 
         obj = Table.insert(user, ExperimentServiceImpl.get().getTinfoMaterialInput(), obj);
         ExperimentServiceImpl.get().queueSyncRunEdges(_object.getRunId());
+        _inputMaterials = null;
+
         return new ExpMaterialRunInputImpl(obj);
     }
 
-    private void removeInputs(TableInfo tableInfo, String idColName, Collection<Integer> rowIds)
+    @Override
+    public void addMaterialInputs(User user, Collection<Integer> materialRowIds, @Nullable String role, @Nullable ExpMaterialProtocolInput protocolInput)
     {
+        Integer protocolInputRowId = null;
+        if (protocolInput != null)
+        {
+            if (!getProtocol().equals(protocolInput.getProtocol()))
+                throw new IllegalArgumentException("protocol input must be associated with the same protocol as this protocol application");
+            protocolInputRowId = protocolInput.getRowId();
+        }
+
+        if (materialRowIds.isEmpty())
+            return;
+
+        List<List<?>> params = new ArrayList<>();
+
+        if (StringUtils.trimToNull(role) == null)
+            role = ExpMaterialRunInput.DEFAULT_ROLE;
+
+        for (Integer materialRowId : materialRowIds)
+            params.add(Arrays.asList(materialRowId, getRowId(), role, protocolInputRowId));
+
+        TableInfo table = ExperimentServiceImpl.get().getTinfoMaterialInput();
+
+        String sql = "INSERT INTO " + table.getSelectName() +
+                " (MaterialId, TargetApplicationId, Role, ProtocolInputId)" +
+                " VALUES (?, ?, ?, CAST(? AS " + table.getSqlDialect().getSqlCastTypeName(JdbcType.INTEGER) + "))";
+
+        try
+        {
+            Table.batchExecute(ExperimentServiceImpl.getExpSchema(), sql, params);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+
+        ExperimentServiceImpl.get().queueSyncRunEdges(_object.getRunId());
+        _inputMaterials = null;
+    }
+
+    private void removeInputs(TableInfo tableInfo, String idColName, Collection<String> inputLsids, Collection<Integer> rowIds)
+    {
+        if (inputLsids.size() != rowIds.size())
+            throw new IllegalArgumentException(String.format("Unable to remove inputs. Mismatch between provided number of lsids (%d) and rowIds (%d).", inputLsids.size(), rowIds.size()));
+
+        if (rowIds.isEmpty())
+            return;
+
+        DbSchema expSchema = ExperimentService.get().getSchema();
+        SQLFragment lsidsSql = new SQLFragment().append("SELECT ObjectUri FROM exp.Object WHERE Container = ").appendValue(getContainer())
+                .append(" AND ObjectURI ").appendInClause(inputLsids, expSchema.getSqlDialect());
+        OntologyManager.deleteOntologyObjects(expSchema, lsidsSql, getContainer());
+
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(FieldKey.fromParts("TargetApplicationId"), getRowId());
         filter.addCondition(FieldKey.fromParts(idColName), rowIds, CompareType.IN);
@@ -482,60 +562,50 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
     }
 
     @Override
+    public void removeAllDataInputs(User user)
+    {
+        long count = deleteDataInputs();
+        if (count > 0)
+            ExperimentServiceImpl.get().queueSyncRunEdges(_object.getRunId());
+        _inputDatas = null;
+    }
+
+    @Override
     public void removeDataInput(User user, ExpData data)
     {
-        // Clean up DataInput exp.object and properties
-        String lsid = DataInput.lsid(data.getRowId(), getRowId());
-        OntologyManager.deleteOntologyObjects(getContainer(), lsid);
-
-        removeInputs(ExperimentServiceImpl.get().getTinfoDataInput(), "DataId", List.of(data.getRowId()));
-        _inputDatas = null;
+        removeDataInputs(user, List.of(data.getRowId()));
     }
 
     @Override
     public void removeDataInputs(User user, Collection<Integer> rowIds)
     {
         // Clean up DataInput exp.object and properties
-        List<String> inputLsids = new ArrayList<>();
-        rowIds.forEach(rowId -> {
-            inputLsids.add(DataInput.lsid(rowId, getRowId()));
-        });
-        DbSchema expSchema = ExperimentService.get().getSchema();
-        SQLFragment lsidsSql = new SQLFragment().append("SELECT ObjectUri FROM exp.Object WHERE Container = ").appendValue(getContainer())
-                .append(" AND ObjectURI ");
-        expSchema.getSqlDialect().appendInClauseSql(lsidsSql, inputLsids);
-        OntologyManager.deleteOntologyObjects(expSchema, lsidsSql, getContainer());
-
-        removeInputs(ExperimentServiceImpl.get().getTinfoDataInput(), "DataId", rowIds);
+        List<String> inputLsids = rowIds.stream().map(rowId -> DataInput.lsid(rowId, getRowId())).toList();
+        removeInputs(ExperimentServiceImpl.get().getTinfoDataInput(), "DataId", inputLsids, rowIds);
         _inputDatas = null;
+    }
+
+    @Override
+    public void removeAllMaterialInputs(User user)
+    {
+        long count = deleteMaterialInputs();
+        if (count > 0)
+            ExperimentServiceImpl.get().queueSyncRunEdges(_object.getRunId());
+        _inputMaterials = null;
     }
 
     @Override
     public void removeMaterialInput(User user, ExpMaterial material)
     {
-        // Clean up MaterialInput exp.object and properties
-        String lsid = MaterialInput.lsid(material.getRowId(), getRowId());
-        OntologyManager.deleteOntologyObjects(getContainer(), lsid);
-
-        removeInputs(ExperimentServiceImpl.get().getTinfoMaterialInput(), "MaterialId", List.of(material.getRowId()));
-        _inputMaterials = null;
+        removeMaterialInputs(user, List.of(material.getRowId()));
     }
 
     @Override
     public void removeMaterialInputs(User user, Collection<Integer> rowIds)
     {
         // Clean up MaterialInput exp.object and properties
-        List<String> inputLsids = new ArrayList<>();
-        rowIds.forEach(rowId -> {
-            inputLsids.add(MaterialInput.lsid(rowId, getRowId()));
-        });
-        DbSchema expSchema = ExperimentService.get().getSchema();
-        SQLFragment lsidsSql = new SQLFragment().append("SELECT ObjectUri FROM exp.Object WHERE Container = ").appendValue(getContainer())
-                .append(" AND ObjectURI ");
-        expSchema.getSqlDialect().appendInClauseSql(lsidsSql, inputLsids);
-        OntologyManager.deleteOntologyObjects(expSchema, lsidsSql, getContainer());
-
-        removeInputs(ExperimentServiceImpl.get().getTinfoMaterialInput(), "MaterialId", rowIds);
+        List<String> inputLsids = rowIds.stream().map(rowId -> MaterialInput.lsid(rowId, getRowId())).toList();
+        removeInputs(ExperimentServiceImpl.get().getTinfoMaterialInput(), "MaterialId", inputLsids, rowIds);
         _inputMaterials = null;
     }
 

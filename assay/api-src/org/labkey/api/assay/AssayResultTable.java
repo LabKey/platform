@@ -16,6 +16,7 @@
 package org.labkey.api.assay;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.assay.sample.AssaySampleLookupContext;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.BaseColumnInfo;
@@ -43,7 +44,6 @@ import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.RawValueColumn;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
@@ -158,9 +158,9 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
                         FieldKey pkFieldKey = new FieldKey(null, AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME);
                         PropertyColumn.copyAttributes(_userSchema.getUser(), col, pd, schema.getContainer(), _userSchema.getSchemaPath(), getPublicName(), pkFieldKey, null, cf);
 
-                        ExpSampleType st = ExperimentService.get().getLookupSampleType(domainProperty, getContainer(), getUserSchema().getUser());
-                        if (st != null || ExperimentService.get().isLookupToMaterials(domainProperty))
-                            col.setFk(new ExpSchema(_userSchema.getUser(), _userSchema.getContainer()).getMaterialIdForeignKey(st, domainProperty, getLookupContainerFilter()));
+                        var sampleLookup = AssaySampleLookupContext.checkSampleLookup(getContainer(), getUserSchema().getUser(), domainProperty);
+                        if (sampleLookup.isLookup())
+                            col.setFk(new ExpSchema(_userSchema.getUser(), _userSchema.getContainer()).getMaterialIdForeignKey(sampleLookup.expSampleType(), domainProperty, getLookupContainerFilter()));
                     }
                     addColumn(col);
 

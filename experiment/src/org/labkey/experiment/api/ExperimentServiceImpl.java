@@ -8239,12 +8239,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
     }
 
-    private @NotNull List<ExpProtocolImpl> getExpProtocols(SimpleFilter filter)
+    private @NotNull List<ExpProtocolImpl> getExpProtocols(@Nullable SimpleFilter filter)
     {
         return getExpProtocols(filter, null, null);
     }
 
-    private @NotNull List<ExpProtocolImpl> getExpProtocols(SimpleFilter filter, @Nullable Sort sort, @Nullable Integer maxRows)
+    private @NotNull List<ExpProtocolImpl> getExpProtocols(@Nullable SimpleFilter filter, @Nullable Sort sort, @Nullable Integer maxRows)
     {
         TableSelector selector = new TableSelector(getTinfoProtocol(), filter, sort);
         if (maxRows != null)
@@ -8273,7 +8273,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public List<ExpProtocolImpl> getAllExpProtocols()
     {
-        return getExpProtocols(null, null);
+        return getExpProtocols((SimpleFilter) null, null, null);
     }
 
     @Override
@@ -8768,7 +8768,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     {
         for (ExperimentListener listener : _listeners)
         {
-            listener.beforeRunCreated(container, user, protocol, run);
+            listener.beforeRunSaved(container, user, protocol, run);
         }
     }
 
@@ -9395,7 +9395,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             try
             {
-                if (sampleType.getRequiredImportAliases().containsValue(targetInputType))
+                if (new CaseInsensitiveHashSet(sampleType.getRequiredImportAliases().values()).contains(targetInputType))
                     sampleTypes.add(sampleType.getDomain().getLabel());
             }
             catch (IOException ignore)
@@ -9406,7 +9406,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             try
             {
-                if (dataClass.getRequiredImportAliases().containsValue(targetInputType))
+                if (new CaseInsensitiveHashSet(dataClass.getRequiredImportAliases().values()).contains(targetInputType))
                     dataClasses.add(dataClass.getDomain().getLabel());
             }
             catch (IOException ignore)
@@ -9473,8 +9473,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             String dataType = (String) newEntry.getValue().get("inputType");
             if ((Boolean) newEntry.getValue().get("required") && !existingRequiredInputs.contains(dataType))
             {
-                boolean isParentSamples = dataType.startsWith(MATERIAL_INPUTS_ALIAS_PREFIX);
-                String dataTypeName = dataType.replace(isParentSamples ? MATERIAL_INPUTS_ALIAS_PREFIX : DATA_INPUTS_ALIAS_PREFIX, "");
+                boolean isParentSamples = dataType.toLowerCase().startsWith(MATERIAL_INPUTS_ALIAS_PREFIX.toLowerCase());
+                String dataTypeName = dataType.substring(isParentSamples ? MATERIAL_INPUTS_ALIAS_PREFIX.length() : DATA_INPUTS_ALIAS_PREFIX.length());
 
                 String parentCpas = null;
                 if (isParentSamples)

@@ -524,6 +524,12 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
         return true;
     }
 
+    @Override
+    public boolean supportsSampleLookupsAsMaterialInputs()
+    {
+        return true;
+    }
+
     public static class TestCase extends Assert
     {
         private Mockery _context;

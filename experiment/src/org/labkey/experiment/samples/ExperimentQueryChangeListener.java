@@ -27,7 +27,9 @@ import java.util.List;
 import java.util.Map;
 
 import static org.labkey.api.exp.api.ExperimentJSONConverter.DATA_INPUTS;
+import static org.labkey.api.exp.api.ExperimentJSONConverter.DATA_INPUTS_ALIAS_PREFIX;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.MATERIAL_INPUTS;
+import static org.labkey.api.exp.api.ExperimentJSONConverter.MATERIAL_INPUTS_ALIAS_PREFIX;
 
 public class ExperimentQueryChangeListener implements QueryChangeListener
 {
@@ -115,11 +117,12 @@ public class ExperimentQueryChangeListener implements QueryChangeListener
             return;
 
         String prefix = (isSamples ? MATERIAL_INPUTS : DATA_INPUTS) + "\\/";
+        String parsedPrefix = isSamples ? MATERIAL_INPUTS_ALIAS_PREFIX : DATA_INPUTS_ALIAS_PREFIX;
 
         for (String removed : queries)
         {
-            String inputType = prefix + removed;
-            String searchStr = "\"" + inputType + "\"";
+            String inputType = parsedPrefix + removed;
+            String searchStr = "\"" + prefix + removed + "\"";
 
             for (ExpSampleTypeImpl sampleType : getRenamedSampleTypes(container, searchStr))
             {
@@ -130,7 +133,7 @@ public class ExperimentQueryChangeListener implements QueryChangeListener
                     for (String alias : originalMap.keySet())
                     {
                         String dataType = (String) originalMap.get(alias).get("inputType");
-                        if (!dataType.equals(inputType))
+                        if (!dataType.equalsIgnoreCase(inputType))
                             updatedMap.put(alias, originalMap.get(alias));
                     }
                     sampleType.setImportAliasMap(updatedMap);
@@ -151,7 +154,7 @@ public class ExperimentQueryChangeListener implements QueryChangeListener
                     for (String alias : originalMap.keySet())
                     {
                         String dataType = (String) originalMap.get(alias).get("inputType");
-                        if (!dataType.equals(inputType))
+                        if (!dataType.equalsIgnoreCase(inputType))
                             updatedMap.put(alias, originalMap.get(alias));
                     }
                     dataClass.setImportAliasMap(updatedMap);
