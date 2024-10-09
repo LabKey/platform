@@ -19,6 +19,7 @@
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.jsp.JspBase" %>
 <%@ page import="org.labkey.api.module.ModuleLoader" %>
 <%@ page import="org.labkey.api.security.SecurityManager" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
@@ -38,6 +39,7 @@
 <%@ page import="org.labkey.core.admin.DateDisplayFormatType" %>
 <%@ page import="java.io.IOException" %>
 <%@ page import="java.text.SimpleDateFormat" %>
+<%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.Date" %>
 <%@ page import="java.util.LinkedHashMap" %>
 <%@ page import="java.util.LinkedHashSet" %>
@@ -284,13 +286,13 @@
 <tr>
     <td class="labkey-form-label"><label for="<%=defaultDateFormat%>">Default display format for dates</label><%=helpPopup("Date format", dateFormatHelp, true)%></td>
     <% boolean inherited = null == laf.getDefaultDateFormatStored(); %>
-    <%=inheritCheckbox(c, inherited, defaultDateFormat.name())%>
+    <%=inheritCheckbox(c, inherited, this, defaultDateFormat.name())%>
     <td><% select(out, DateDisplayFormatType.Date, defaultDateFormat.name(), DateUtil.STANDARD_DATE_DISPLAY_FORMATS, laf.getDefaultDateFormat(), false, inherited); %></td>
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="<%=defaultDateTimeFormat%>">Default display format for date-times</label><%=helpPopup("Date-time format", dateTimeFormatHelp, true)%></td>
     <% inherited = null == laf.getDefaultDateTimeFormatStored(); %>
-    <%=inheritCheckbox(c, inherited, defaultDateTimeFormat.name(), "dateSelect", "timeSelect")%>
+    <%=inheritCheckbox(c, inherited, defaultDateTimeFormat.name(), this, "dateSelect", "timeSelect")%>
 <%
         String[] parts = DateUtil.splitDateTimeFormat(laf.getDefaultDateTimeFormat());
 %>
@@ -303,13 +305,14 @@
 <tr>
     <td class="labkey-form-label"><label for="<%=defaultTimeFormat%>">Default display format for time-only values</label><%=helpPopup("Time format", timeFormatHelp, true)%></td>
     <% inherited = null == laf.getDefaultTimeFormatStored(); %>
-    <%=inheritCheckbox(c, inherited, defaultTimeFormat.name())%>
+    <%=inheritCheckbox(c, inherited, this, defaultTimeFormat.name())%>
     <td><% select(out, DateDisplayFormatType.Time, defaultTimeFormat.name(), DateUtil.STANDARD_TIME_DISPLAY_FORMATS, laf.getDefaultTimeFormat(), false, inherited); %></td>
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="<%=defaultNumberFormat%>">Default display format for numbers</label><%=helpPopup("Number format", decimalFormatHelp, true)%></td>
-    <%=inheritCheckbox(c, null == laf.getDefaultNumberFormatStored(), defaultNumberFormat.name())%>
-    <td><input type="text" id="<%=defaultNumberFormat%>" name="<%=defaultNumberFormat%>" size="50" value="<%= h(laf.getDefaultNumberFormat()) %>"></td>
+    <% inherited = null == laf.getDefaultNumberFormatStored(); %>
+    <%=inheritCheckbox(c, inherited, this, defaultNumberFormat.name())%>
+    <td><input type="text" id="<%=defaultNumberFormat%>" name="<%=defaultNumberFormat%>" size="50" value="<%= h(laf.getDefaultNumberFormat()) %>"<%=disabled(inherited)%>></td>
 </tr>
 <tr>
     <td>&nbsp;</td>
@@ -340,18 +343,21 @@
 %>
 <tr>
     <td class="labkey-form-label"><label for="<%=extraDateParsingPattern%>">Additional parsing pattern for dates</label><%=helpPopup("Extra date parsing pattern", dateParsingHelp, true)%></td>
-    <%=inheritCheckbox(c, null == laf.getExtraDateParsingPatternStored(), extraDateParsingPattern.name())%>
-    <td><input type="text" id="<%=extraDateParsingPattern%>" name="<%=extraDateParsingPattern%>" size="50" value="<%= h(laf.getExtraDateParsingPattern()) %>"></td>
+    <% inherited = null == laf.getExtraDateParsingPatternStored(); %>
+    <%=inheritCheckbox(c, inherited, this, extraDateParsingPattern.name())%>
+    <td><input type="text" id="<%=extraDateParsingPattern%>" name="<%=extraDateParsingPattern%>" size="50" value="<%= h(laf.getExtraDateParsingPattern()) %>"<%=disabled(inherited)%>></td>
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="<%=extraDateTimeParsingPattern%>">Additional parsing pattern for date-times</label><%=helpPopup("Extra date-time parsing pattern", dateTimeParsingHelp, true, 300)%></td>
-    <%=inheritCheckbox(c, null == laf.getExtraDateTimeParsingPatternStored(), extraDateTimeParsingPattern.name())%>
-    <td><input type="text" id="<%=extraDateTimeParsingPattern%>"  name="<%=extraDateTimeParsingPattern%>" size="50" value="<%= h(laf.getExtraDateTimeParsingPattern()) %>"></td>
+    <% inherited = null == laf.getExtraDateTimeParsingPatternStored(); %>
+    <%=inheritCheckbox(c, inherited, this, extraDateTimeParsingPattern.name())%>
+    <td><input type="text" id="<%=extraDateTimeParsingPattern%>"  name="<%=extraDateTimeParsingPattern%>" size="50" value="<%= h(laf.getExtraDateTimeParsingPattern()) %>"<%=disabled(inherited)%>></td>
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="<%=extraTimeParsingPattern%>">Additional parsing pattern for times</label><%=helpPopup("Extra time parsing pattern", timeParsingHelp, true)%></td>
-    <%=inheritCheckbox(c, null == laf.getExtraTimeParsingPatternStored(), extraTimeParsingPattern.name())%>
-    <td><input type="text" id="<%=extraTimeParsingPattern%>" name="<%=extraTimeParsingPattern%>" size="50" value="<%= h(laf.getExtraTimeParsingPattern()) %>"></td>
+    <% inherited = null == laf.getExtraTimeParsingPatternStored(); %>
+    <%=inheritCheckbox(c, inherited, this, extraTimeParsingPattern.name())%>
+    <td><input type="text" id="<%=extraTimeParsingPattern%>" name="<%=extraTimeParsingPattern%>" size="50" value="<%= h(laf.getExtraTimeParsingPattern()) %>"<%=disabled(inherited)%>></td>
 </tr>
 <tr>
     <td>&nbsp;</td>
@@ -362,8 +368,9 @@
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="<%=restrictedColumnsEnabled%>">Restrict charting columns by measure and dimension flags</label></td>
-    <%=inheritCheckbox(c, null == laf.areRestrictedColumnsEnabledStored(), restrictedColumnsEnabled.name())%>
-    <td><input type="checkbox" id="<%=restrictedColumnsEnabled%>" name="<%=restrictedColumnsEnabled%>" size="50"<%=checked(laf.areRestrictedColumnsEnabled())%>></td>
+    <% inherited = null == laf.areRestrictedColumnsEnabledStored(); %>
+    <%=inheritCheckbox(c, inherited, this, restrictedColumnsEnabled.name())%>
+    <td><input type="checkbox" id="<%=restrictedColumnsEnabled%>" name="<%=restrictedColumnsEnabled%>" size="50"<%=checked(laf.areRestrictedColumnsEnabled())%><%=disabled(inherited)%>></td>
 </tr>
 <tr>
     <td>&nbsp;</td>
@@ -437,7 +444,7 @@
         if (<%=hasBadFormats%>)
         {
             // Show the date-time display format warning
-            document.getElementById("dateFormatWarning").style.display='block';
+            document.getElementById("dateFormatWarning").style.display='';
         }
     });
 
@@ -510,6 +517,7 @@
         }
 
         select()
+            .disabled(inherited)
             .id(id)
             .name(id)
             .addOptions(map)
@@ -525,18 +533,27 @@
         }
     }
 
-    private HtmlString inheritCheckbox(Container c, boolean inherited, String name)
+    private HtmlString inheritCheckbox(Container c, boolean inherited, JspBase base, String name)
     {
-        return inheritCheckbox(c, inherited, name, name);
+        return inheritCheckbox(c, inherited, name, base, name);
     }
 
-    private HtmlString inheritCheckbox(Container c, boolean inherited, String name, String... ids)
+    private HtmlString inheritCheckbox(Container c, boolean inherited, String name, JspBase base, String... ids)
     {
         if (c.isRoot())
             return HtmlString.EMPTY_STRING;
 
+        String checkBoxName = name + "Inherited";
+
+        StringBuilder js = new StringBuilder("LABKEY.setDirty(true); ");
+        Arrays.stream(ids)
+            .forEach(id -> js.append("document.getElementById(\"").append(id).append("\").disabled = this.checked; "));
+        base.addHandler(checkBoxName, "change", js.toString());
+
         HtmlStringBuilder builder = HtmlStringBuilder.of(HtmlString.unsafe("<td style=\"text-align: center;\"><input type=\"checkbox\" name=\""))
-            .append(name + "Inherited")
+            .append(checkBoxName)
+            .unsafeAppend("\" id=\"")
+            .append(checkBoxName)
             .unsafeAppend("\"");
 
         if (inherited)

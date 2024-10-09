@@ -137,7 +137,8 @@ public class WriteableFolderLookAndFeelProperties extends AbstractWriteableSetti
     // Validate inside the set method, since this is called from multiple places
     public void setDefaultNumberFormat(String defaultNumberFormat) throws IllegalArgumentException
     {
-        new DecimalFormat(defaultNumberFormat);
+        if (null != defaultNumberFormat)
+            new DecimalFormat(defaultNumberFormat);
         storeStringValue(defaultNumberFormatString, defaultNumberFormat);
     }
 
