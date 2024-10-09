@@ -2,6 +2,7 @@ package org.labkey.vfs;
 
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.Path;
 
 import java.io.File;
@@ -75,6 +76,7 @@ public interface FileSystemLike
         boolean canReadFiles = true;
         boolean canWriteFiles = true;
         boolean canDeleteRoot = false;
+        boolean memCheck = true;
 
         public Builder(URI uri)
         {
@@ -117,13 +119,26 @@ public interface FileSystemLike
             return this;
         }
 
+        public Builder noMemCheck()
+        {
+            memCheck = false;
+            return this;
+        }
+
         public FileSystemLike build()
         {
             var scheme = defaultIfBlank(uri.getScheme(), FileUtil.FILE_SCHEME);
+            FileSystemLike ret;
             if (defaultVfs || !FileUtil.FILE_SCHEME.equals(scheme))
-                return new FileSystemVFS(uri, canReadFiles, canWriteFiles, canDeleteRoot);
+                ret = new FileSystemVFS(uri, canReadFiles, canWriteFiles, canDeleteRoot);
             else
-                return new FileSystemLocal(uri, canReadFiles, canWriteFiles, canDeleteRoot);
+                ret = new FileSystemLocal(uri, canReadFiles, canWriteFiles, canDeleteRoot);
+            if (!memCheck)
+            {
+                MemTracker.get().remove(ret);
+                MemTracker.get().remove(ret.getRoot());
+            }
+            return ret;
         }
         public FileLike root()
         {

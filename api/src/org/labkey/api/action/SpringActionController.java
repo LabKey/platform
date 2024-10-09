@@ -559,7 +559,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
             httpUploads.mkdirs();
             if (!httpUploads.isDirectory())
                 throw new ConfigurationException("Can't create temp upload directory: " + httpUploads);
-            TEMP_UPLOAD_DIR = new FileSystemLike.Builder(httpUploads).readwrite().root();
+            TEMP_UPLOAD_DIR = new FileSystemLike.Builder(httpUploads).readwrite().noMemCheck().root();
         }
         return TEMP_UPLOAD_DIR;
     }

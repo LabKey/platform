@@ -1601,7 +1601,7 @@ quickScan:
     {
         if (null == _tempDirFileLike)
         {
-            _tempDirFileLike = new FileSystemLike.Builder(getTempDirectory()).readwrite().root();
+            _tempDirFileLike = new FileSystemLike.Builder(getTempDirectory()).readwrite().noMemCheck().root();
         }
         return _tempDirFileLike;
     }

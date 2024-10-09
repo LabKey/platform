@@ -1192,7 +1192,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
             if (f.isDirectory())
                 l.add(f);
         }
-        return l.stream().map(f -> new FileSystemLike.Builder(f).readonly().root()).toList();
+        return l.stream().map(f -> new FileSystemLike.Builder(f).readonly().noMemCheck().root()).toList();
     }
 
     File _resourceDirectory;
