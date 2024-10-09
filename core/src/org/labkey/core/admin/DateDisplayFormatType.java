@@ -16,7 +16,7 @@ public enum DateDisplayFormatType
     Date(JdbcType.DATE, PropertyType.DATE)
     {
         @Override
-        boolean isStandardFormat(String formatPattern)
+        public boolean isStandardFormat(String formatPattern)
         {
             return DateUtil.isStandardDateDisplayFormat(formatPattern);
         }
@@ -30,7 +30,7 @@ public enum DateDisplayFormatType
     DateTime(JdbcType.TIMESTAMP, PropertyType.DATE_TIME)
     {
         @Override
-        boolean isStandardFormat(String formatPattern)
+        public boolean isStandardFormat(String formatPattern)
         {
             return DateUtil.isStandardDateTimeDisplayFormat(formatPattern);
         }
@@ -44,7 +44,7 @@ public enum DateDisplayFormatType
     Time(JdbcType.TIME, PropertyType.TIME)
     {
         @Override
-        boolean isStandardFormat(String formatPattern)
+        public boolean isStandardFormat(String formatPattern)
         {
             return DateUtil.isStandardTimeDisplayFormat(formatPattern);
         }
@@ -102,7 +102,7 @@ public enum DateDisplayFormatType
     }
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    abstract boolean isStandardFormat(String formatPattern);
+    public abstract boolean isStandardFormat(String formatPattern);
 
     abstract String getStoredFormat(LookAndFeelProperties laf);
 }
