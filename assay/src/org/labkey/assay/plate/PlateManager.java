@@ -345,11 +345,11 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             {
                 fields.add(new PlateCustomField(WellTable.Column.Type.fieldKey()));
                 fields.add(new PlateCustomField(WellTable.Column.WellGroup.fieldKey()));
-                fields.add(new PlateCustomField(WellTable.Column.SampleId.fieldKey()));
+                fields.add(new PlateCustomField(WellTable.Column.SampleID.fieldKey()));
             }
         }
         else if (plateSet.isPrimary())
-            fields.add(new PlateCustomField(WellTable.Column.SampleId.fieldKey()));
+            fields.add(new PlateCustomField(WellTable.Column.SampleID.fieldKey()));
         else if (plateSet.isTemplate())
             fields = templateFields;
 
@@ -442,7 +442,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
             for (PlateCustomField field : plate.getCustomFields())
             {
-                if (WellTable.Column.SampleId.fieldKey().equals(field.getFieldKey()))
+                if (WellTable.Column.SampleID.fieldKey().equals(field.getFieldKey()))
                     continue;
                 FieldKey lookupFk = displayColumns.get(field.getPropertyURI());
                 if (lookupFk != null)
@@ -2205,7 +2205,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             TableInfo wellTable = getWellTable(container, user);
             fields.add(new PlateCustomField(wellTable.getColumn(WellTable.Column.Type.fieldKey())));
             fields.add(new PlateCustomField(wellTable.getColumn(WellTable.Column.WellGroup.fieldKey())));
-            fields.add(new PlateCustomField(wellTable.getColumn(WellTable.Column.SampleId.fieldKey())));
+            fields.add(new PlateCustomField(wellTable.getColumn(WellTable.Column.SampleID.fieldKey())));
         }
 
         Domain metadataDomain = getPlateMetadataDomain(container, user);
@@ -2347,7 +2347,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         Map<FieldKey, Integer> order = new HashMap<>();
         order.put(WellTable.Column.Type.fieldKey(), 0);
         order.put(WellTable.Column.WellGroup.fieldKey(), 1);
-        order.put(WellTable.Column.SampleId.fieldKey(), 2);
+        order.put(WellTable.Column.SampleID.fieldKey(), 2);
         Comparator<PlateCustomField> nameComparator = Comparator.comparing(PlateCustomField::getName, Comparator.nullsLast(String::compareTo));
 
         fields.sort((f1, f2) -> {
@@ -3129,7 +3129,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                     return Pair.of(sampleIdsCounter, wellSampleDataForPlate);
 
                 wellSampleDataForPlate.add(CaseInsensitiveHashMap.of(
-                    WellTable.Column.SampleId.name(), sampleIds.get(sampleIdsCounter),
+                    WellTable.Column.SampleID.name(), sampleIds.get(sampleIdsCounter),
                     WellTable.Column.Type.name(), WellGroup.Type.SAMPLE.name(),
                     WELL_LOCATION, createPosition(c, rowIdx, colIdx).getDescription()
                 ));
@@ -3456,7 +3456,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         columns.add(WellTable.Column.Type.name());
         columns.add(WellTable.Column.WellGroup.name());
         if (includeSamples)
-            columns.add(WellTable.Column.SampleId.name());
+            columns.add(WellTable.Column.SampleID.name());
 
         var wellTable = getWellTable(container, user);
         var filter = new SimpleFilter(FieldKey.fromParts(WellTable.Column.PlateId.name()), plateRowId);
@@ -3676,7 +3676,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                     "Well %s must specify a \"%s\" when a \"%s\" is specified on plate \"%s\".",
                     position.getDescription(),
                     WellTable.Column.Type.name(),
-                    WellTable.Column.SampleId.name(),
+                    WellTable.Column.SampleID.name(),
                     plate.getName()
                 ));
             }

@@ -267,7 +267,7 @@ public class PlateSetDataGenerator extends DataGenerator<PlateSetDataGenerator.C
 
                     rowMap.put(WellTable.WELL_LOCATION, position.getDescription());
                     rowMap.put(WellTable.Column.Type.name(), WellGroup.Type.SAMPLE.name());
-                    rowMap.put(WellTable.Column.SampleId.name(), ids.get(sampleIdx++));
+                    rowMap.put(WellTable.Column.SampleID.name(), ids.get(sampleIdx++));
 
                     for (String name : wellProperties)
                     {
