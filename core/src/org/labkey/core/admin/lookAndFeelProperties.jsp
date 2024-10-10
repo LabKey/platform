@@ -32,6 +32,7 @@
 <%@ page import="org.labkey.api.util.Formats" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil.HelpPopupBuilder" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
@@ -58,8 +59,16 @@
     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
     String themeName = laf.getThemeName();
     String siteThemeName = themeName;
+    HelpPopupBuilder inheritHelp = null;
     if (!c.isRoot())
+    {
         siteThemeName = LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getThemeName();
+        Container parent = c.getParent();
+        String parentName = parent.isRoot() ? "the site root" : (parent.isProject() ? "project" : "folder") + " " + parent.getPath();
+        String helpText = "Settings where the \"Inherited\" box is checked inherit their values from " + parentName +
+            ". Settings where \"Inherited\" is unchecked override their values in this " + (c.isProject() ? "project": "folder") + ".";
+        inheritHelp = helpPopup("Inherited", helpText, false);
+    }
     boolean themeNameInherited = !c.isRoot() && laf.isThemeNameInherited();
     boolean canUpdate = !c.isRoot() || c.hasPermission(getUser(), ApplicationAdminPermission.class);
     boolean hasPremiumModule = ModuleLoader.getInstance().hasModule("Premium");
@@ -79,7 +88,8 @@
     {
 %>
 <tr>
-    <td colspan=2>Security defaults</td>
+    <td>Security defaults</td>
+    <td style="padding-left: 5px; padding-right: 5px;">Inherited<%=inheritHelp%></td>
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="shouldInherit">New folders should inherit permissions by default</label></td>
@@ -278,7 +288,7 @@
         if (folder)
         {
     %>
-    <td style="padding-left: 5px; padding-right: 5px;">Inherit</td>
+    <td style="padding-left: 5px; padding-right: 5px;">Inherited<%=inheritHelp%></td>
     <%
         }
     %>
