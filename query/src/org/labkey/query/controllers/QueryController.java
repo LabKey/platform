@@ -8076,6 +8076,7 @@ public class QueryController extends SpringActionController
     {
         String expression = "";
         Map<FieldKey,JdbcType> columnMap = new HashMap<>();
+        List<FieldKey> phiColumns = new ArrayList<>();
 
         Map<FieldKey, JdbcType> getColumnMap()
         {
@@ -8092,11 +8093,23 @@ public class QueryController extends SpringActionController
             this.expression = expression;
         }
 
+        public List<FieldKey> getPhiColumns()
+        {
+            return phiColumns;
+        }
+
+        public void setPhiColumns(List<FieldKey> phiColumns)
+        {
+            this.phiColumns = phiColumns;
+        }
+
         @Override
         public void bindJson(JSONObject json)
         {
             if (json.has("expression"))
                 setExpression(json.getString("expression"));
+            if (json.has("phiColumns"))
+                setPhiColumns(json.getJSONArray("phiColumns").toList().stream().map(s -> FieldKey.fromString(s.toString())).collect(Collectors.toList()));
             if (json.has("columnMap"))
             {
                 JSONObject columnMap = json.getJSONObject("columnMap");
@@ -8169,6 +8182,8 @@ public class QueryController extends SpringActionController
                 for (var entry : form.getColumnMap().entrySet())
                 {
                     BaseColumnInfo entryCol = new BaseColumnInfo(entry.getKey(), entry.getValue());
+                    if (form.getPhiColumns().contains(entry.getKey()))
+                        entryCol.setPHI(PHI.PHI); // the specific PHI level to set doesn't matter as long as it is > NotPHI
                     columns.put(entry.getKey(), entryCol);
                     table.addColumn(entryCol);
                 }
