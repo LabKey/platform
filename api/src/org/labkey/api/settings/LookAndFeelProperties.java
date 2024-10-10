@@ -186,6 +186,11 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
         return lookupStringValue(systemShortName, "LabKey Server");
     }
 
+    public String getUnsubstitutedShortNameStored()
+    {
+        return getStoredValue(_settingsContainer, systemShortName);
+    }
+
     public String getShortName()
     {
         return SHORT_NAME_CACHE.get(_settingsContainer, null,
@@ -200,6 +205,11 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
     public boolean isThemeNameInherited()
     {
         return isPropertyInherited(_settingsContainer, themeName.name());
+    }
+
+    public String getThemeNameStored()
+    {
+        return getStoredValue(_settingsContainer, themeName);
     }
 
     public FolderDisplayMode getFolderDisplayMode()

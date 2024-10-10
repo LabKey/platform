@@ -57,12 +57,10 @@
     boolean hasAdminOpsPerm = c.hasPermission(getUser(), AdminOperationsPermission.class);
     HtmlString clearMessage = HtmlString.unsafe(folder ? "the default format properties" : "all look & feel properties");
     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
-    String themeName = laf.getThemeName();
-    String siteThemeName = themeName;
+    String currentThemeName = laf.getThemeName();
     HelpPopupBuilder inheritHelp = null;
     if (!c.isRoot())
     {
-        siteThemeName = LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getThemeName();
         Container parent = c.getParent();
         String parentName = parent.isRoot() ? "the site root" : (parent.isProject() ? "project" : "folder") + " " + parent.getPath();
         String helpText = "Settings where the \"Inherited\" box is checked inherit their values from " + parentName +
@@ -72,6 +70,7 @@
     boolean themeNameInherited = !c.isRoot() && laf.isThemeNameInherited();
     boolean canUpdate = !c.isRoot() || c.hasPermission(getUser(), ApplicationAdminPermission.class);
     boolean hasPremiumModule = ModuleLoader.getInstance().hasModule("Premium");
+    int standardInputWidth = 60;
 %>
 <%=formatMissedErrors("form")%>
 <div id="dateFormatWarning" style="display: none;" class="alert alert-warning alert-dismissable">
@@ -92,7 +91,7 @@
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="shouldInherit">New folders should inherit permissions by default</label></td>
-    <td><input type="checkbox" id="shouldInherit" name="shouldInherit" size="50"<%=checked(SecurityManager.shouldNewSubfoldersInheritPermissions(c))%>></td>
+    <td><input type="checkbox" id="shouldInherit" name="shouldInherit" size="<%=standardInputWidth%>"<%=checked(SecurityManager.shouldNewSubfoldersInheritPermissions(c))%>></td>
 </tr>
 <tr>
     <td colspan=3>&nbsp;</td>
@@ -132,25 +131,25 @@
     <td class="labkey-form-label"><label for="<%=systemDescription%>">System description (used in emails)</label></td>
     <% boolean inherited = null == laf.getDescriptionStored(); %>
     <%=inheritCheckbox(c, inherited, this, systemDescription.name())%>
-    <td><input type="text" id="<%=systemDescription%>" name="<%=systemDescription%>" size="50" value="<%= h(laf.getDescription()) %>"<%=disabled(inherited)%>></td>
+    <td><input type="text" id="<%=systemDescription%>" name="<%=systemDescription%>" size="<%=standardInputWidth%>" value="<%= h(laf.getDescription()) %>"<%=disabled(inherited)%>></td>
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="<%=systemShortName%>">Header short name (appears in every page header and in emails)</label><%=helpPopup("Header short name", shortNameHelp, 350)%></td>
-    <td><input type="text" id="<%=systemShortName%>" name="<%=systemShortName%>" size="50" value="<%= h(laf.getUnsubstitutedShortName()) %>"></td>
+    <% inherited = null == laf.getUnsubstitutedShortNameStored(); %>
+    <%=inheritCheckbox(c, inherited, this, systemShortName.name())%>
+    <td><input type="text" id="<%=systemShortName%>" name="<%=systemShortName%>" size="<%=standardInputWidth%>" value="<%= h(laf.getUnsubstitutedShortName()) %>"<%=disabled(inherited)%>></td>
 </tr>
 <tr>
-    <td class="labkey-form-label"><label for="themeName">Theme</label></td>
+    <td class="labkey-form-label"><label for="<%=themeName%>">Theme</label></td>
+    <% inherited = null == laf.getThemeNameStored(); %>
+    <%=inheritCheckbox(c, inherited, this, themeName.name())%>
     <td>
-        <select id="themeName" name="themeName">
+        <select id="<%=themeName%>" name="<%=themeName%>"<%=disabled(inherited)%>>
         <%
-            if (!c.isRoot())
-            {
-                %><option value="" <%=selected(themeNameInherited)%>>Site Default (<%=h(siteThemeName)%>)</option><%
-            }
             for (Theme theme : Theme.values())
             {
                 String name = theme.name();
-                %><option value="<%=h(name)%>" <%=selected(!themeNameInherited && name.equalsIgnoreCase(themeName))%>><%=h(name)%></option><%
+                %><option value="<%=h(name)%>" <%=selected(name.equalsIgnoreCase(currentThemeName))%>><%=h(name)%></option><%
             }
         %>
         </select>
@@ -192,7 +191,7 @@
 %>
 <tr>
     <td class="labkey-form-label"><label for="<%=helpMenuEnabled%>">Show LabKey Help menu item</label></td>
-    <td><input type="checkbox" id="<%=helpMenuEnabled%>" name="<%=helpMenuEnabled%>" size="50"<%=checked(laf.isHelpMenuEnabled())%>></td>
+    <td><input type="checkbox" id="<%=helpMenuEnabled%>" name="<%=helpMenuEnabled%>" size="<%=standardInputWidth%>"<%=checked(laf.isHelpMenuEnabled())%>></td>
 </tr>
 <%
     String enableDiscussionHelp = "Some items within LabKey Server, like reports and wiki pages, support discussions " +
@@ -200,19 +199,19 @@
 %>
 <tr>
     <td class="labkey-form-label"><label for="<%=discussionEnabled%>">Enable Object-Level Discussions</label><%=helpPopup("Enable Discussion", enableDiscussionHelp, true)%></td>
-    <td><input type="checkbox" id="<%=discussionEnabled%>" name="<%=discussionEnabled%>" size="50"<%=checked(laf.isDiscussionEnabled())%>></td>
+    <td><input type="checkbox" id="<%=discussionEnabled%>" name="<%=discussionEnabled%>" size="<%=standardInputWidth%>"<%=checked(laf.isDiscussionEnabled())%>></td>
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="<%=logoHref%>">Logo link (specifies page that header logo links to)</label></td>
-    <td><input type="text" id="<%=logoHref%>" name="<%=logoHref%>" size="50" value="<%=h(laf.getUnsubstitutedLogoHref())%>"></td>
+    <td><input type="text" id="<%=logoHref%>" name="<%=logoHref%>" size="<%=standardInputWidth%>" value="<%=h(laf.getUnsubstitutedLogoHref())%>"></td>
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="<%=reportAProblemPath%>">Support link (specifies page where users can request support)</label></td>
-    <td><input type="text" id="<%=reportAProblemPath%>" name="<%=reportAProblemPath%>" size="50" value="<%=h(laf.getUnsubstitutedReportAProblemPath())%>"></td>
+    <td><input type="text" id="<%=reportAProblemPath%>" name="<%=reportAProblemPath%>" size="<%=standardInputWidth%>" value="<%=h(laf.getUnsubstitutedReportAProblemPath())%>"></td>
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="<%=supportEmail%>">Support email (shown to users if they don't have permission<br/>to see a page, or are having trouble logging in)</label></td>
-    <td style="vertical-align: top;"><input type="text" id="<%=supportEmail%>" name="<%=supportEmail%>" size="50" value="<%=h(laf.getSupportEmail())%>"></td>
+    <td style="vertical-align: top;"><input type="text" id="<%=supportEmail%>" name="<%=supportEmail%>" size="<%=standardInputWidth%>" value="<%=h(laf.getSupportEmail())%>"></td>
 </tr>
 <tr>
     <td>&nbsp;</td>
@@ -224,11 +223,11 @@
     <td class="labkey-form-label">
         <label for="<%=systemEmailAddress%>">System email address (<i>from</i> address for system notification emails)</label><%=helpPopup("System email address", "Requires AdminOperationsPermission to update.", false)%>
     </td>
-    <td><input type="text" id="<%=systemEmailAddress%>" name="<%=systemEmailAddress%>" size="50" value="<%= h(laf.getSystemEmailAddress()) %>"<%=disabled(!hasAdminOpsPerm)%>></td>
+    <td><input type="text" id="<%=systemEmailAddress%>" name="<%=systemEmailAddress%>" size="<%=standardInputWidth%>" value="<%= h(laf.getSystemEmailAddress()) %>"<%=disabled(!hasAdminOpsPerm)%>></td>
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="<%=companyName%>">Organization name (appears in notification emails sent by system)</label></td>
-    <td><input type="text" id="<%=companyName%>" name="<%=companyName%>" size="50" value="<%= h(laf.getCompanyName()) %>"></td>
+    <td><input type="text" id="<%=companyName%>" name="<%=companyName%>" size="<%=standardInputWidth%>" value="<%= h(laf.getCompanyName()) %>"></td>
 </tr>
 <tr>
     <td>&nbsp;</td>
@@ -331,7 +330,7 @@
     <td class="labkey-form-label"><label for="<%=defaultNumberFormat%>">Default display format for numbers</label><%=helpPopup("Number format", decimalFormatHelp, true)%></td>
     <% inherited = null == laf.getDefaultNumberFormatStored(); %>
     <%=inheritCheckbox(c, inherited, this, defaultNumberFormat.name())%>
-    <td><input type="text" id="<%=defaultNumberFormat%>" name="<%=defaultNumberFormat%>" size="50" value="<%= h(laf.getDefaultNumberFormat()) %>"<%=disabled(inherited)%>></td>
+    <td><input type="text" id="<%=defaultNumberFormat%>" name="<%=defaultNumberFormat%>" size="<%=standardInputWidth%>" value="<%= h(laf.getDefaultNumberFormat()) %>"<%=disabled(inherited)%>></td>
 </tr>
 <tr>
     <td>&nbsp;</td>
@@ -364,19 +363,19 @@
     <td class="labkey-form-label"><label for="<%=extraDateParsingPattern%>">Additional parsing pattern for dates</label><%=helpPopup("Extra date parsing pattern", dateParsingHelp, true)%></td>
     <% inherited = null == laf.getExtraDateParsingPatternStored(); %>
     <%=inheritCheckbox(c, inherited, this, extraDateParsingPattern.name())%>
-    <td><input type="text" id="<%=extraDateParsingPattern%>" name="<%=extraDateParsingPattern%>" size="50" value="<%= h(laf.getExtraDateParsingPattern()) %>"<%=disabled(inherited)%>></td>
+    <td><input type="text" id="<%=extraDateParsingPattern%>" name="<%=extraDateParsingPattern%>" size="<%=standardInputWidth%>" value="<%= h(laf.getExtraDateParsingPattern()) %>"<%=disabled(inherited)%>></td>
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="<%=extraDateTimeParsingPattern%>">Additional parsing pattern for date-times</label><%=helpPopup("Extra date-time parsing pattern", dateTimeParsingHelp, true, 300)%></td>
     <% inherited = null == laf.getExtraDateTimeParsingPatternStored(); %>
     <%=inheritCheckbox(c, inherited, this, extraDateTimeParsingPattern.name())%>
-    <td><input type="text" id="<%=extraDateTimeParsingPattern%>"  name="<%=extraDateTimeParsingPattern%>" size="50" value="<%= h(laf.getExtraDateTimeParsingPattern()) %>"<%=disabled(inherited)%>></td>
+    <td><input type="text" id="<%=extraDateTimeParsingPattern%>"  name="<%=extraDateTimeParsingPattern%>" size="<%=standardInputWidth%>" value="<%= h(laf.getExtraDateTimeParsingPattern()) %>"<%=disabled(inherited)%>></td>
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="<%=extraTimeParsingPattern%>">Additional parsing pattern for times</label><%=helpPopup("Extra time parsing pattern", timeParsingHelp, true)%></td>
     <% inherited = null == laf.getExtraTimeParsingPatternStored(); %>
     <%=inheritCheckbox(c, inherited, this, extraTimeParsingPattern.name())%>
-    <td><input type="text" id="<%=extraTimeParsingPattern%>" name="<%=extraTimeParsingPattern%>" size="50" value="<%= h(laf.getExtraTimeParsingPattern()) %>"<%=disabled(inherited)%>></td>
+    <td><input type="text" id="<%=extraTimeParsingPattern%>" name="<%=extraTimeParsingPattern%>" size="<%=standardInputWidth%>" value="<%= h(laf.getExtraTimeParsingPattern()) %>"<%=disabled(inherited)%>></td>
 </tr>
 <tr>
     <td>&nbsp;</td>
@@ -389,7 +388,7 @@
     <td class="labkey-form-label"><label for="<%=restrictedColumnsEnabled%>">Restrict charting columns by measure and dimension flags</label></td>
     <% inherited = null == laf.areRestrictedColumnsEnabledStored(); %>
     <%=inheritCheckbox(c, inherited, this, restrictedColumnsEnabled.name())%>
-    <td><input type="checkbox" id="<%=restrictedColumnsEnabled%>" name="<%=restrictedColumnsEnabled%>" size="50"<%=checked(laf.areRestrictedColumnsEnabled())%><%=disabled(inherited)%>></td>
+    <td><input type="checkbox" id="<%=restrictedColumnsEnabled%>" name="<%=restrictedColumnsEnabled%>" size="<%=standardInputWidth%>"<%=checked(laf.areRestrictedColumnsEnabled())%><%=disabled(inherited)%>></td>
 </tr>
 <tr>
     <td>&nbsp;</td>
@@ -408,7 +407,7 @@
     <td class="labkey-form-label"><label for="<%=customLogin%>">Alternative login page</label><%=helpPopup("Custom Login Page", customLoginHelp, true)%></td>
     <% inherited = null == laf.getCustomLoginStored(); %>
     <%=inheritCheckbox(c, inherited, this, customLogin.name())%>
-    <td><input type="text" id="<%=customLogin%>" name="<%=customLogin%>" size="50" value="<%= h(laf.getCustomLogin()) %>"<%=disabled(inherited || !hasAdminOpsPerm)%>></td>
+    <td><input type="text" id="<%=customLogin%>" name="<%=customLogin%>" size="<%=standardInputWidth%>" value="<%= h(laf.getCustomLogin()) %>"<%=disabled(inherited || !hasAdminOpsPerm)%>></td>
 </tr>
 <tr>
     <td>&nbsp;</td>
@@ -428,7 +427,7 @@
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="<%=customWelcome%>">Alternative site welcome page</label><%=helpPopup("Custom Welcome Page", customWelcomeHelp, false)%></td>
-    <td><input type="text" id="<%=customWelcome%>" name="<%=customWelcome%>" size="50" value="<%= h(laf.getCustomWelcome()) %>"></td>
+    <td><input type="text" id="<%=customWelcome%>" name="<%=customWelcome%>" size="<%=standardInputWidth%>" value="<%= h(laf.getCustomWelcome()) %>"></td>
 </tr>
 <tr>
     <td>&nbsp;</td>

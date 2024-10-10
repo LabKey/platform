@@ -62,6 +62,36 @@ public class WriteableLookAndFeelProperties extends WriteableFolderLookAndFeelPr
             getProperties().put(customLogin.name(), login);
     }
 
+    public void setSystemDescription(String description)
+    {
+        storeStringValue(systemDescription, description);
+    }
+
+    public void clearSystemDescription()
+    {
+        remove(systemDescription);
+    }
+
+    public void setSystemShortName(String shortName)
+    {
+        storeStringValue(systemShortName, shortName);
+    }
+
+    public void clearSystemShortName()
+    {
+        remove(systemShortName);
+    }
+
+    public void setThemeName(String name)
+    {
+        storeStringValue(themeName, name);
+    }
+
+    public void clearThemeName()
+    {
+        remove(themeName);
+    }
+
     public void setFolderDisplayMode(FolderDisplayMode mode)
     {
         storeStringValue(folderDisplayMode, mode.toString());
@@ -92,34 +122,9 @@ public class WriteableLookAndFeelProperties extends WriteableFolderLookAndFeelPr
         storeStringValue(supportEmail, email);
     }
 
-    public void setThemeName(String name)
-    {
-        storeStringValue(themeName, name);
-    }
-
-    public void clearThemeName()
-    {
-        remove(themeName);
-    }
-
     public void setLogoHref(String href)
     {
         storeStringValue(logoHref, href);
-    }
-
-    public void setSystemDescription(String description)
-    {
-        storeStringValue(systemDescription, description);
-    }
-
-    public void clearSystemDescription()
-    {
-        remove(systemDescription);
-    }
-
-    public void setSystemShortName(String shortName)
-    {
-        storeStringValue(systemShortName, shortName);
     }
 
     public void setCompanyName(String name)

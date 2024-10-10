@@ -1733,7 +1733,9 @@ public class AdminController extends SpringActionController
         private String _systemDescription;
         private boolean _systemDescriptionInherited;
         private String _systemShortName;
+        private boolean _systemShortNameInherited;
         private String _themeName;
+        private boolean _themeNameInherited;
         private String _themeFont;
         private String _folderDisplayMode;
         private String _applicationMenuDisplayMode;
@@ -1793,6 +1795,17 @@ public class AdminController extends SpringActionController
             _systemShortName = systemShortName;
         }
 
+        public boolean isSystemShortNameInherited()
+        {
+            return _systemShortNameInherited;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setSystemShortNameInherited(boolean systemShortNameInherited)
+        {
+            _systemShortNameInherited = systemShortNameInherited;
+        }
+
         public String getThemeName()
         {
             return _themeName;
@@ -1802,6 +1815,17 @@ public class AdminController extends SpringActionController
         public void setThemeName(String themeName)
         {
             _themeName = themeName;
+        }
+
+        public boolean isThemeNameInherited()
+        {
+            return _themeNameInherited;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setThemeNameInherited(boolean themeNameInherited)
+        {
+            _themeNameInherited = themeNameInherited;
         }
 
         public String getThemeFont()
@@ -10910,26 +10934,7 @@ public class AdminController extends SpringActionController
         WriteableLookAndFeelProperties props = LookAndFeelProperties.getWriteableInstance(c);
         boolean hasAdminOpsPerm = c.hasPermission(user, AdminOperationsPermission.class);
 
-//        if (json.has("themeName"))
-//        {
-//            String themName = json.optString("themeName");
-//            try
-//            {
-//                if (themName.isBlank())
-//                {
-//                    if (!c.isRoot())
-//                        props.clearThemeName();
-//                }
-//                else
-//                {
-//                    props.setThemeName(themName);
-//                }
-//            }
-//            catch (IllegalArgumentException ignored)
-//            {
-//            }
-//        }
-//
+
 //        if (json.has("shouldInherit"))
 //        {
 //            boolean shouldInherit = json.optBoolean("shouldInherit");
@@ -10939,6 +10944,33 @@ public class AdminController extends SpringActionController
 //            }
 //        }
 //
+        if (form.isSystemDescriptionInherited())
+        {
+            props.clearSystemDescription();
+        }
+        else
+        {
+            props.setSystemDescription(form.getSystemDescription());
+        }
+
+        if (form.isSystemShortNameInherited())
+        {
+            props.clearSystemShortName();
+        }
+        else
+        {
+            props.setSystemShortName(form.getSystemShortName());
+        }
+
+        if (form.isThemeNameInherited())
+        {
+            props.clearThemeName();
+        }
+        else
+        {
+            props.setThemeName(form.getThemeName());
+        }
+
         // a few properties on this page should be restricted to operational permissions (i.e. site admin)
         if (hasAdminOpsPerm)
         {
@@ -10989,18 +11021,8 @@ public class AdminController extends SpringActionController
 //
 //        if (json.has("companyName"))
 //            props.setCompanyName(json.optString("companyName"));
-        if (form.isSystemDescriptionInherited())
-        {
-            props.clearSystemDescription();
-        }
-        else
-        {
-            props.setSystemDescription(form.getSystemDescription());
-        }
 //        if (json.has("logoHref"))
 //            props.setLogoHref(json.optString("logoHref"));
-//        if (json.has("systemShortName"))
-//            props.setSystemShortName(json.optString("systemShortName"));
 //        if (json.has("reportAProblemPath"))
 //            props.setReportAProblemPath(json.optString("reportAProblemPath"));
 //
