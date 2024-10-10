@@ -94,21 +94,21 @@ public class AssayProgressReport extends AbstractReport
         EXPECTED(SPECIMEN_EXPECTED, "Expected", "Expected", "fa fa-circle-o"),
         COLLECTED(SPECIMEN_COLLECTED, "Collected", "Collected", "fa fa-flask"),
         NOT_COLLECTED(SPECIMEN_NOT_COLLECTED, "Not collected", "Specimen not collected", "fa fa-ban"),
-        NOT_RECIEVED(SPECIMEN_NOT_RECEIVED, "Not received", "Specimen collected but not received", "fa fa-exclamation"),
+        NOT_RECEIVED(SPECIMEN_NOT_RECEIVED, "Not received", "Specimen collected but not received", "fa fa-exclamation"),
         AVAILABLE(SPECIMEN_AVAILABLE, "Results available", "Results available", "fa fa-check-circle"),
         INVALID(SPECIMEN_NOT_AVAILABLE, "Results unavailable", "Collected and received but no data", "fa fa-warning"),
         UNUSABLE(SPECIMEN_UNUSABLE, "Unusable", "Unusable", "fa fa-trash-o"),
         UNEXPECTED(SPECIMEN_RESULTS_UNEXPECTED, "Unexpected results", "Needs QC Check", "fa fa-flag");
 
         private final String _name;
-        private final String _lable;
+        private final String _label;
         private final String _iconClass;
         private final String _description;
 
         SpecimenStatus(String name, String label, String description, String iconClass)
         {
             _name = name;
-            _lable = label;
+            _label = label;
             _description = description;
             _iconClass = iconClass;
         }
@@ -120,7 +120,7 @@ public class AssayProgressReport extends AbstractReport
 
         public String getLabel()
         {
-            return _lable;
+            return _label;
         }
 
         public String getIconClass()

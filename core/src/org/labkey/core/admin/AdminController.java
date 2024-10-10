@@ -1700,50 +1700,6 @@ public class AdminController extends SpringActionController
         }
     }
 
-    // TODO: Delete pointless interface
-    public interface SettingsForm
-    {
-        String getDefaultDateFormat();
-
-        @SuppressWarnings("UnusedDeclaration")
-        void setDefaultDateFormat(String defaultDateFormat);
-
-        String getDefaultDateTimeFormat();
-
-        @SuppressWarnings("UnusedDeclaration")
-        void setDefaultDateTimeFormat(String defaultDateTimeFormat);
-
-        String getDefaultTimeFormat();
-
-        @SuppressWarnings("UnusedDeclaration")
-        void setDefaultTimeFormat(String defaultTimeFormat);
-
-        String getDefaultNumberFormat();
-
-        @SuppressWarnings("UnusedDeclaration")
-        void setDefaultNumberFormat(String defaultNumberFormat);
-
-        String getExtraDateParsingPattern();
-
-        @SuppressWarnings("UnusedDeclaration")
-        void setExtraDateParsingPattern(String extraDateParsingPattern);
-
-        String getExtraDateTimeParsingPattern();
-
-        @SuppressWarnings("UnusedDeclaration")
-        void setExtraDateTimeParsingPattern(String extraDateTimeParsingPattern);
-
-        String getExtraTimeParsingPattern();
-
-        @SuppressWarnings("UnusedDeclaration")
-        void setExtraTimeParsingPattern(String extraTimeParsingPattern);
-
-        boolean areRestrictedColumnsEnabled();
-
-        @SuppressWarnings("UnusedDeclaration")
-        void setRestrictedColumnsEnabled(boolean restrictedColumnsEnabled);
-    }
-
     public enum MigrateFilesOption implements SafeToRenderEnum
     {
         leave {
@@ -1771,7 +1727,6 @@ public class AdminController extends SpringActionController
         public abstract String description();
     }
 
-    // TODO: Remove the folder-specific properties
     public static class ProjectSettingsForm extends FolderSettingsForm
     {
         private boolean _shouldInherit; // new subfolders should inherit parent permissions
@@ -1789,16 +1744,8 @@ public class AdminController extends SpringActionController
         private String _reportAProblemPath;
         private String _supportEmail;
         private String _dateParsingMode;
-        private String _defaultDateFormat;
-        private String _defaultDateTimeFormat;
-        private String _defaultNumberFormat;
-        private String _extraDateParsingPattern;
-        private String _extraDateTimeParsingPattern;
-        private boolean _restrictedColumnsEnabled;
         private String _customLogin;
         private String _customWelcome;
-        private String _defaultTimeFormat;
-        private String _extraTimeParsingPattern;
 
         public boolean getShouldInherit()
         {
@@ -1987,105 +1934,6 @@ public class AdminController extends SpringActionController
         public String getSupportEmail()
         {
             return _supportEmail;
-        }
-
-        @Override
-        public String getDefaultDateFormat()
-        {
-            return _defaultDateFormat;
-        }
-
-        @Override
-        @SuppressWarnings("UnusedDeclaration")
-        public void setDefaultDateFormat(String defaultDateFormat)
-        {
-            _defaultDateFormat = defaultDateFormat;
-        }
-
-        @Override
-        public String getDefaultDateTimeFormat()
-        {
-            return _defaultDateTimeFormat;
-        }
-
-        @Override
-        @SuppressWarnings("UnusedDeclaration")
-        public void setDefaultDateTimeFormat(String defaultDateTimeFormat)
-        {
-            _defaultDateTimeFormat = defaultDateTimeFormat;
-        }
-
-        @Override
-        public String getDefaultTimeFormat()
-        {
-            return _defaultTimeFormat;
-        }
-
-        @Override
-        public void setDefaultTimeFormat(String defaultTimeFormat)
-        {
-            _defaultTimeFormat = defaultTimeFormat;
-        }
-
-        @Override
-        public String getDefaultNumberFormat()
-        {
-            return _defaultNumberFormat;
-        }
-
-        @Override
-        @SuppressWarnings("UnusedDeclaration")
-        public void setDefaultNumberFormat(String defaultNumberFormat)
-        {
-            _defaultNumberFormat = defaultNumberFormat;
-        }
-
-        @Override
-        public String getExtraDateParsingPattern()
-        {
-            return _extraDateParsingPattern;
-        }
-
-        @Override
-        public void setExtraDateParsingPattern(String extraDateParsingPattern)
-        {
-            _extraDateParsingPattern = extraDateParsingPattern;
-        }
-
-        @Override
-        public String getExtraDateTimeParsingPattern()
-        {
-            return _extraDateTimeParsingPattern;
-        }
-
-        @Override
-        public void setExtraDateTimeParsingPattern(String extraDateTimeParsingPattern)
-        {
-            _extraDateTimeParsingPattern = extraDateTimeParsingPattern;
-        }
-
-        @Override
-        public String getExtraTimeParsingPattern()
-        {
-            return _extraTimeParsingPattern;
-        }
-
-        @Override
-        public void setExtraTimeParsingPattern(String extraTimeParsingPattern)
-        {
-            _extraTimeParsingPattern = extraTimeParsingPattern;
-        }
-
-        @Override
-        public boolean areRestrictedColumnsEnabled()
-        {
-            return _restrictedColumnsEnabled;
-        }
-
-        @Override
-        public void setRestrictedColumnsEnabled(boolean restrictedColumnsEnabled)
-        {
-            _restrictedColumnsEnabled = restrictedColumnsEnabled;
         }
 
         public JSONObject toJSON()
@@ -5378,7 +5226,7 @@ public class AdminController extends SpringActionController
         return registeredFolderWriters;
     }
 
-    public static class FolderSettingsForm implements SettingsForm
+    public static class FolderSettingsForm
     {
         private String _defaultDateFormat;
         private boolean _defaultDateFormatInherited;
@@ -5397,13 +5245,12 @@ public class AdminController extends SpringActionController
         private boolean _restrictedColumnsEnabled;
         private boolean _restrictedColumnsEnabledInherited;
 
-        @Override
         public String getDefaultDateFormat()
         {
             return _defaultDateFormat;
         }
 
-        @Override
+        @SuppressWarnings("unused")
         public void setDefaultDateFormat(String defaultDateFormat)
         {
             _defaultDateFormat = defaultDateFormat;
@@ -5420,13 +5267,11 @@ public class AdminController extends SpringActionController
             _defaultDateFormatInherited = defaultDateFormatInherited;
         }
 
-        @Override
         public String getDefaultDateTimeFormat()
         {
             return _defaultDateTimeFormat;
         }
 
-        @Override
         @SuppressWarnings("unused")
         public void setDefaultDateTimeFormat(String defaultDateTimeFormat)
         {
@@ -5444,14 +5289,12 @@ public class AdminController extends SpringActionController
             _defaultDateTimeFormatInherited = defaultDateTimeFormatInherited;
         }
 
-        @Override
         public String getDefaultTimeFormat()
         {
             return _defaultTimeFormat;
         }
 
         @SuppressWarnings("UnusedDeclaration")
-        @Override
         public void setDefaultTimeFormat(String defaultTimeFormat)
         {
             _defaultTimeFormat = defaultTimeFormat;
@@ -5468,13 +5311,12 @@ public class AdminController extends SpringActionController
             _defaultTimeFormatInherited = defaultTimeFormatInherited;
         }
 
-        @Override
         public String getDefaultNumberFormat()
         {
             return _defaultNumberFormat;
         }
 
-        @Override
+        @SuppressWarnings("unused")
         public void setDefaultNumberFormat(String defaultNumberFormat)
         {
             _defaultNumberFormat = defaultNumberFormat;
@@ -5491,13 +5333,12 @@ public class AdminController extends SpringActionController
             _defaultNumberFormatInherited = defaultNumberFormatInherited;
         }
 
-        @Override
         public String getExtraDateParsingPattern()
         {
             return _extraDateParsingPattern;
         }
 
-        @Override
+        @SuppressWarnings("unused")
         public void setExtraDateParsingPattern(String extraDateParsingPattern)
         {
             _extraDateParsingPattern = extraDateParsingPattern;
@@ -5514,13 +5355,12 @@ public class AdminController extends SpringActionController
             _extraDateParsingPatternInherited = extraDateParsingPatternInherited;
         }
 
-        @Override
         public String getExtraDateTimeParsingPattern()
         {
             return _extraDateTimeParsingPattern;
         }
 
-        @Override
+        @SuppressWarnings("unused")
         public void setExtraDateTimeParsingPattern(String extraDateTimeParsingPattern)
         {
             _extraDateTimeParsingPattern = extraDateTimeParsingPattern;
@@ -5537,14 +5377,12 @@ public class AdminController extends SpringActionController
             _extraDateTimeParsingPatternInherited = extraDateTimeParsingPatternInherited;
         }
 
-        @Override
         public String getExtraTimeParsingPattern()
         {
             return _extraTimeParsingPattern;
         }
 
         @SuppressWarnings("UnusedDeclaration")
-        @Override
         public void setExtraTimeParsingPattern(String extraTimeParsingPattern)
         {
             _extraTimeParsingPattern = extraTimeParsingPattern;
@@ -5561,20 +5399,17 @@ public class AdminController extends SpringActionController
             _extraTimeParsingPatternInherited = extraTimeParsingPatternInherited;
         }
 
-        @Override
         public boolean areRestrictedColumnsEnabled()
         {
             return _restrictedColumnsEnabled;
         }
 
-        @Override
         @SuppressWarnings("unused")
         public void setRestrictedColumnsEnabled(boolean restrictedColumnsEnabled)
         {
             _restrictedColumnsEnabled = restrictedColumnsEnabled;
         }
 
-        // TODO: Handle inheritance
         public boolean isRestrictedColumnsEnabledInherited()
         {
             return _restrictedColumnsEnabledInherited;
