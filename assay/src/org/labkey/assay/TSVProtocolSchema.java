@@ -75,16 +75,6 @@ public class TSVProtocolSchema extends AssayProtocolSchema
     }
 
     @Override
-    public Set<String> getTableNames()
-    {
-        Set<String> names = super.getTableNames();
-
-        if (getProvider().isPlateMetadataEnabled(getProtocol()))
-            names.add(PLATE_REPLICATE_STATS_TABLE);
-        return names;
-    }
-
-    @Override
     public FilteredTable createDataTable(ContainerFilter cf, boolean includeLinkedToStudyColumns)
     {
         return new _AssayResultTable(this, cf, includeLinkedToStudyColumns);

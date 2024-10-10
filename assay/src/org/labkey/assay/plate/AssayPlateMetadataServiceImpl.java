@@ -346,7 +346,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                         // incoming plate data has precedence over any previous plate data.
                         Map<String, Plate> plateMap = plates.stream().collect(Collectors.toMap(Plate::getName, p -> p));
                         Set<String> existingPlates = new HashSet<>();
-                        Set<Integer> prevPlates = new HashSet<>();
+                        Set<String> prevPlates = new HashSet<>();
                         rows.forEach(r -> existingPlates.add(r.get(AssayResultDomainKind.PLATE_COLUMN_NAME).toString()));
                         List<Map<String, Object>> newRows = new ArrayList<>(rows);
 
@@ -357,7 +357,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                             if (plateMap.containsKey(plate) && !existingPlates.contains(plate))
                             {
                                 newRows.add(row);
-                                prevPlates.add(plateMap.get(plate).getRowId());
+                                prevPlates.add(plateMap.get(plate).getRowId().toString());
                             }
                         }
 
@@ -395,7 +395,8 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                                         .append(" JOIN ").append(ExperimentService.get().getTinfoData(), "ED")
                                         .append(" ON AR.dataid = ED.rowid")
                                         .append(" WHERE ED.runId = ? ").add(run.getRowId())
-                                        .append(" AND AR.plate NOT ").appendInClause(prevPlates, scope.getSqlDialect());
+                                        .append(" AND AR.plate NOT IN (")
+                                        .append(String.join(",", prevPlates)).append(")");
                                 List<Integer> rowIds = new SqlSelector(scope, sql).getArrayList(Integer.class);
                                 if (!rowIds.isEmpty())
                                     PlateManager.get().deleteHits(protocol.getRowId(), rowIds);
@@ -867,8 +868,13 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                         MathStat stat = StatsService.get().getStats(measure.getValue());
                         if (!Double.isNaN(stat.getMean()))
                             replicateRow.put(measure.getKey() + PlateReplicateStatsDomainKind.REPLICATE_MEAN_SUFFIX, stat.getMean());
+                        else
+                            replicateRow.put(measure.getKey() + PlateReplicateStatsDomainKind.REPLICATE_MEAN_SUFFIX, null);
+
                         if (!Double.isNaN(stat.getStdDev()))
                             replicateRow.put(measure.getKey() + PlateReplicateStatsDomainKind.REPLICATE_STD_DEV_SUFFIX, stat.getStdDev());
+                        else
+                            replicateRow.put(measure.getKey() + PlateReplicateStatsDomainKind.REPLICATE_STD_DEV_SUFFIX, null);
                     }
                 }
             }
