@@ -28,7 +28,7 @@ public class FileSystemLocal extends AbstractFileSystemLike
         super(uri, canRead, canWrite, canDeleteRoot);
         nioRoot = java.nio.file.Path.of(uri);
         root = new _FileLike(Path.rootPath, nioRoot);
-//        assert MemTracker.get().put(this);
+        assert MemTracker.get().put(this);
     }
 
     @Override
@@ -74,7 +74,7 @@ public class FileSystemLocal extends AbstractFileSystemLike
             if (!nioPath.startsWith(nioRoot))
                 throw new IllegalArgumentException("Path can not be resolved");
             this.file = nioPath.toFile();
-//            assert MemTracker.get().put(this);
+            assert MemTracker.get().put(this);
         }
 
         _FileLike(Path path, File file)
@@ -84,7 +84,7 @@ public class FileSystemLocal extends AbstractFileSystemLike
             if (!nioPath.startsWith(nioRoot))
                 throw new IllegalArgumentException("Path can not be resolved");
             this.file = file;
-//            assert MemTracker.get().put(this);
+            assert MemTracker.get().put(this);
         }
 
         @Override
