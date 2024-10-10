@@ -33,6 +33,7 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpLineage;
 import org.labkey.api.exp.api.ExpLineageOptions;
+import org.labkey.api.exp.api.ExpLineageService;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpRunItem;
@@ -1953,7 +1954,7 @@ public class NameGenerator
                             ancestorLookupValues = _ancestorSearchCache.get(ancestorKey);
                         else
                         {
-                            ExpLineage lineage = ExperimentService.get().getLineage(_container, _user, seed, options);
+                            ExpLineage lineage = ExpLineageService.get().getLineage(_container, _user, seed, options);
                             List<ExpRunItem> candidateAncestors = lineage.findAncestorByType(parentObject, ancestorOptions.ancestorSearchType(), _user);
                             candidateAncestors.sort(Comparator.comparing(Identifiable::getName));
                             for (ExpRunItem candidate : candidateAncestors)
@@ -1971,7 +1972,7 @@ public class NameGenerator
                             ancestorLookupValues = _ancestorCache.get(ancestorKey);
                         else
                         {
-                            ExpLineage lineage = ExperimentService.get().getLineage(_container, _user, seed, options);
+                            ExpLineage lineage = ExpLineageService.get().getLineage(_container, _user, seed, options);
                             List<Pair<ExpLineageOptions.LineageExpType, String>> ancestorPaths = ancestorOptions.ancestorPaths();
                             Set<Identifiable> ancestorObjects = lineage.findAncestorObjects(parentObject, ancestorPaths, _user);
 

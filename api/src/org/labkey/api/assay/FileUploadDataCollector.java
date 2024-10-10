@@ -21,6 +21,7 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.io.IOException;
@@ -92,7 +93,7 @@ public class FileUploadDataCollector<ContextType extends AssayRunUploadContext<?
 
     @Override
     @NotNull
-    public Map<String, File> createData(ContextType context) throws IOException, IllegalArgumentException, ExperimentException
+    public Map<String, FileLike> createData(ContextType context) throws IOException, IllegalArgumentException, ExperimentException
     {
         if (_uploadComplete)
             return Collections.emptyMap();
@@ -108,7 +109,7 @@ public class FileUploadDataCollector<ContextType extends AssayRunUploadContext<?
             fileInputIndex++;
         }
 
-        Map<String, File> files = savePostedFiles(context, fileInputs, false, false);
+        Map<String, FileLike> files = savePostedFiles(context, fileInputs, false, false);
 
         // Figure out if we have any data files to work with -
         boolean foundFiles = files.containsKey(_fileInputName);
@@ -118,18 +119,18 @@ public class FileUploadDataCollector<ContextType extends AssayRunUploadContext<?
             // In the case that we're allowing reuse through this codepath
             // use any previously uploaded files that are still selected
             PreviouslyUploadedDataCollector<ContextType> previousCollector = new PreviouslyUploadedDataCollector<>(Collections.emptyMap(), PreviouslyUploadedDataCollector.Type.ReRun);
-            Map<String, File> reusedFiles = previousCollector.createData(context);
+            Map<String, FileLike> reusedFiles = previousCollector.createData(context);
 
             // Merge the two sets of files
-            Map<String, File> mergedFiles = new HashMap<>();
+            Map<String, FileLike> mergedFiles = new HashMap<>();
             int index = 0;
             // Start with the reused ones so we preserve the original "primary" file if possible
-            for (Map.Entry<String, File> entry : reusedFiles.entrySet())
+            for (Map.Entry<String, FileLike> entry : reusedFiles.entrySet())
             {
                 mergedFiles.put(PRIMARY_FILE + (index++ == 0 ? "" : Integer.toString(index)), entry.getValue());
             }
             // Add in any newly uploaded files
-            for (Map.Entry<String, File> entry : files.entrySet())
+            for (Map.Entry<String, FileLike> entry : files.entrySet())
             {
                 mergedFiles.put(PRIMARY_FILE + (index++ == 0 ? "" : Integer.toString(index)), entry.getValue());
             }
@@ -144,6 +145,7 @@ public class FileUploadDataCollector<ContextType extends AssayRunUploadContext<?
             ExceptionUtil.decorateException(x, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
             throw x;
         }
+
         return files;
     }
 

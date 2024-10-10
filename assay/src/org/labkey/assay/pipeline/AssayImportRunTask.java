@@ -64,6 +64,8 @@ import org.labkey.api.util.Path;
 import org.labkey.api.writer.ZipUtil;
 import org.labkey.pipeline.xml.AssayImportRunTaskType;
 import org.labkey.pipeline.xml.TaskType;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 
 import java.io.File;
 import java.io.IOException;
@@ -432,7 +434,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
         private File getExplodedZipDir(PipelineJob job, File dataFile)
         {
             File analysisDir = ((AbstractFileAnalysisJob)job).getAnalysisDirectory();
-            return new File(analysisDir, String.format("%s-expanded", dataFile.getName()));
+            return FileUtil.appendName(analysisDir, String.format("%s-expanded", dataFile.getName()));
         }
     }
 
@@ -646,7 +648,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
                     continue;
 
                 URI uri = dataFile.getURI();
-                if (uri != null && "file".equals(uri.getScheme()))
+                if (uri != null && FileUtil.FILE_SCHEME.equals(uri.getScheme()))
                 {
                     File file = new File(uri);
                     if (NetworkDrive.exists(file))
@@ -687,7 +689,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
                 continue;
 
             URI uri = dataFile.getURI();
-            if (uri != null && "file".equals(uri.getScheme()))
+            if (uri != null && FileUtil.FILE_SCHEME.equals(uri.getScheme()))
             {
                 String role = dataFile.getRole();
                 File file = new File(uri);
@@ -817,7 +819,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             // Add the job inputs as the assay run's inputs
             factory.setInputDatas(getInputs(getJob()));
 
-            File uploadedData = new File(matchedFile.getURI());
+            FileLike uploadedData = FileSystemLike.wrapFile(new File(matchedFile.getURI()));
             factory.setUploadedData(Collections.singletonMap(AssayDataCollector.PRIMARY_FILE, uploadedData));
 
             // Add raw data if specified, either raw data or uploaded file can be used but not both

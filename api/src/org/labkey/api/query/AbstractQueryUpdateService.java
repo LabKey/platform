@@ -95,6 +95,7 @@ import org.labkey.api.util.URIUtil;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.vfs.FileLike;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -115,6 +116,8 @@ import static org.labkey.api.audit.TransactionAuditProvider.DB_SEQUENCE_NAME;
 import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior;
 import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment;
 import static org.labkey.api.files.FileContentService.UPLOADED_FILE;
+import static org.labkey.api.util.FileUtil.toFileForRead;
+import static org.labkey.api.util.FileUtil.toFileForWrite;
 
 public abstract class AbstractQueryUpdateService implements QueryUpdateService
 {
@@ -148,7 +151,12 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     @Override
     public boolean hasPermission(@NotNull UserPrincipal user, Class<? extends Permission> acl)
     {
-        return getQueryTable().hasPermission(user, acl);
+        var ret = getQueryTable().hasPermission(user, acl);
+        {
+            if (!ret)
+                return  getQueryTable().hasPermission(user, acl);
+        }
+        return ret;
     }
 
     protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys, boolean allowCrossContainer)
@@ -327,7 +335,10 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     protected int _importRowsUsingDIB(User user, Container container, DataIteratorBuilder in, @Nullable final ArrayList<Map<String, Object>> outputRows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
     {
         if (!hasImportRowsPermission(user, container, context))
-            throw new UnauthorizedException("You do not have permission to " + (context.getInsertOption().updateOnly ? "update data in this table." : "insert data into this table."));
+        {
+            if (!hasImportRowsPermission(user, container, context))
+                throw new UnauthorizedException("You do not have permission to " + (context.getInsertOption().updateOnly ? "update data in this table." : "insert data into this table."));
+        }
 
         if (!context.getConfigParameterBoolean(ConfigParameters.SkipInsertOptionValidation))
             assert(getQueryTable().supportsInsertOption(context.getInsertOption()));
@@ -936,19 +947,19 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
     public static Object saveFile(User user, Container container, String name, Object value, @Nullable String dirName) throws ValidationException, QueryUpdateServiceException
     {
-        Path path = AssayFileWriter.getUploadDirectoryPath(container, dirName);
-        return saveFile(user, container, name, value, path);
+        FileLike dirPath = AssayFileWriter.getUploadDirectoryPath(container, dirName);
+        return saveFile(user, container, name, value, dirPath);
     }
 
     /**
      * Save uploaded file to dirName directory under file or pipeline root.
      */
-    public static Object saveFile(User user, Container container, String name, Object value, @Nullable Path dirPath) throws ValidationException, QueryUpdateServiceException
+    public static Object saveFile(User user, Container container, String name, Object value, @Nullable FileLike dirPath) throws ValidationException, QueryUpdateServiceException
     {
-        File file = null;
+        FileLike file = null;
         try
         {
-            File dir = AssayFileWriter.ensureUploadDirectory(dirPath);
+            FileLike dir = AssayFileWriter.ensureUploadDirectory(dirPath);
 
             if (value instanceof MultipartFile)
             {
@@ -960,7 +971,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                 }
                 file = AssayFileWriter.findUniqueFileName(multipartFile.getOriginalFilename(), dir);
                 file = checkFileUnderRoot(container, file);
-                multipartFile.transferTo(file);
+                multipartFile.transferTo(toFileForWrite(file));
             }
             else if (value instanceof SpringAttachmentFile)
             {
@@ -978,7 +989,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         if (file == null)
             return value;
 
-        ensureExpData(user, container, file);
+        ensureExpData(user, container, file.toNioPathForRead().toFile());
         return file;
     }
 
@@ -1006,7 +1017,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
     // For security reasons, make sure the user hasn't tried to reference a file that's not under
     // the pipeline root or @assayfiles root. Otherwise, they could get access to any file on the server
-    static File checkFileUnderRoot(Container container, File file) throws ExperimentException
+    static FileLike checkFileUnderRoot(Container container, FileLike file) throws ExperimentException
     {
         Path assayFilesRoot = FileContentService.get().getFileRootPath(container, FileContentService.ContentType.assayfiles);
         if (assayFilesRoot != null && URIUtil.isDescendant(assayFilesRoot.toUri(), file.toURI()))
@@ -1016,14 +1027,9 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         if (root == null)
             throw new ExperimentException("Pipeline root not available in container " + container.getPath());
 
-        if (!root.isUnderRoot(file))
+        if (!root.isUnderRoot(toFileForRead(file)))
         {
-            File resolved = root.resolvePath(file.toString());
-            if (resolved == null)
-                throw new ExperimentException("Cannot reference file '" + file + "' from " + container.getPath());
-
-            // File column values are stored as the absolute resolved path.
-            file = resolved;
+            throw new ExperimentException("Cannot reference file '" + file + "' from " + container.getPath());
         }
 
         return file;

@@ -48,25 +48,16 @@ public class ExpDataProtocolInputTableImpl extends ExpProtocolInputTableImpl<Exp
     @Override
     public MutableColumnInfo createColumn(String alias, Column column)
     {
-        switch (column)
+        return switch (column)
         {
-            case RowId:
-                return createRowIdColumn(alias);
-            case Name:
-                return createNameColumn(alias);
-            case LSID:
-                return createLsidColumn(alias);
-            case Protocol:
-                return createProtocolColumn(alias);
-            case Input:
-                return createInputColumn(alias);
-            case DataClass:
-                return createDataClassColumn(alias);
-            case MinOccurs:
-                return createMinOccursColumn(alias);
-            case MaxOccurs:
-                return createMaxOccursColumn(alias);
-        }
-        throw new IllegalArgumentException("Unknown column " + column);
+            case RowId -> createRowIdColumn(alias);
+            case Name -> createNameColumn(alias);
+            case LSID -> createLsidColumn(alias);
+            case Protocol -> createProtocolColumn(alias);
+            case Input -> createInputColumn(alias);
+            case DataClass -> createDataClassColumn(alias);
+            case MinOccurs -> createMinOccursColumn(alias);
+            case MaxOccurs -> createMaxOccursColumn(alias);
+        };
     }
 }

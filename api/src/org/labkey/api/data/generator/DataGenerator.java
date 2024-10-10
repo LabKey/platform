@@ -502,7 +502,9 @@ public class DataGenerator<T extends DataGenerator.Config>
         // for some of the aliquots, possibly generate further aliquot generations
         if (generatedCount < quantity && generation < maxGenerations)
         {
-            generatedCount += generateAliquotsForParents(aliquots.subList(randomInt(0, aliquots.size() / 2), randomInt(aliquots.size() / 2, aliquots.size())), svc, quantity - generatedCount, numGenerated + generatedCount, generation + 1, maxGenerations, sampleStatuses);
+            List<Map<String, Object>> nextParents = aliquots.isEmpty() ? parents : aliquots;
+            if (!nextParents.isEmpty())
+                generatedCount += generateAliquotsForParents(nextParents.subList(randomInt(0, nextParents.size() / 2), randomInt(nextParents.size() / 2, nextParents.size())), svc, quantity - generatedCount, numGenerated + generatedCount, generation + 1, maxGenerations, sampleStatuses);
         }
         return generatedCount;
     }

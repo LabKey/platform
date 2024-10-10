@@ -66,6 +66,8 @@ import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -1155,7 +1157,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     @Override
     @NotNull
-    public List<File> getStaticFileDirectories()
+    public List<FileLike> getStaticFileDirectories()
     {
         List<File> l = new ArrayList<>(3);
         String build = getBuildPath();
@@ -1166,30 +1168,31 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         {
             if (null != source)
             {
-                File f = new File(new File(source), "web");
+                var sourceFile = FileUtil.getAbsoluteCaseSensitiveFile(new File(source));
+                File f = FileUtil.appendName(sourceFile, "web");
                 if (f.isDirectory())
                     l.add(f);
-                f = new File(new File(source), "resources/web");
+                f = FileUtil.appendPath(sourceFile, Path.parse("resources/web"));
                 if (f.isDirectory())
                     l.add(f);
-                f = new File(new File(source), "webapp");
+                f = FileUtil.appendName(sourceFile, "webapp");
                 if (f.isDirectory())
                     l.add(f);
             }
             if (null != build)
             {
-                File f = new File(new File(build), "explodedModule/web");
+                File f = FileUtil.appendPath(new File(build), Path.parse("explodedModule/web"));
                 if (f.isDirectory())
                     l.add(f);
             }
         }
         if (exploded != null && exploded.isDirectory())
         {
-            File f = new File(exploded, "web");
+            File f = FileUtil.appendName(exploded, "web");
             if (f.isDirectory())
                 l.add(f);
         }
-        return l;
+        return l.stream().map(f -> new FileSystemLike.Builder(f).readonly().noMemCheck().root()).toList();
     }
 
     File _resourceDirectory;

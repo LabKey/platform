@@ -527,7 +527,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         try
         {
             // Issue 46598 - clean up previously created temp files from file uploads
-            FileUtil.deleteDirectoryContents(SpringActionController.getTempUploadDir().toPath());
+            FileUtil.deleteDirectoryContents(SpringActionController.getTempUploadDir());
         }
         catch (IOException e)
         {
@@ -1190,6 +1190,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             // Report the total number of login entries in the audit log
             results.put("totalLogins", UserManager.getAuthCount(null, false, false, false));
             results.put("apiKeyLogins", UserManager.getAuthCount(null, false, true, false));
+            results.put("sessionTimeout", ModuleLoader.getServletContext().getSessionTimeout());
             results.put("userLimits", new LimitActiveUsersSettings().getMetricsMap());
             results.put("systemUserCount", UserManager.getSystemUserCount());
             results.put("workbookCount", ContainerManager.getWorkbookCount());
@@ -1273,7 +1274,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 //        This is because we want /_webdav/* to be resolved BEFORE all other servlet-mappings
 //        and /* to resolve AFTER all other servlet-mappings
         _webdavServletDynamic = servletCtx.addServlet("static", new WebdavServlet(true));
-        _webdavServletDynamic.setMultipartConfig(new MultipartConfigElement(SpringActionController.getTempUploadDir().getPath()));
+        _webdavServletDynamic.setMultipartConfig(SpringActionController.getMultiPartConfigElement());
         _webdavServletDynamic.addMapping("/_webdav/*");
     }
 

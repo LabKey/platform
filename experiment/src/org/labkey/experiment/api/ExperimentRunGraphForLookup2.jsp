@@ -23,6 +23,9 @@
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="static org.labkey.api.util.HtmlString.unsafe" %>
+<%@ page import="org.labkey.api.exp.api.ExpRun" %>
+<%@ page import="org.labkey.api.exp.api.ExpMaterial" %>
+<%@ page import="org.labkey.api.exp.api.ExpData" %>
 <%@ page extends="org.labkey.api.jsp.JspContext" %>
 -- CTE comments are used as a marker to split up this file
 -- we could have multiple files, or multiple multi-line string constants, but it's easier to develop this way.
@@ -37,23 +40,19 @@
 
     String varcharType = dialect.getSqlTypeName(JdbcType.VARCHAR);
 
-    assert "ALL".equals(expType) || "Data".equals(expType) || "Material".equals(expType) || "ExperimentRun".equals(expType);
+    assert "ALL".equals(expType) || ExpData.DEFAULT_CPAS_TYPE.equals(expType) || ExpMaterial.DEFAULT_CPAS_TYPE.equals(expType) || ExpRun.DEFAULT_CPAS_TYPE.equals(expType);
 %>
 <%!
     //COALESCE(PM.cpasType, PD.cpasType, PR.protocolLsid)
     HtmlString COALESCE(String expType, String name)
     {
-        switch (expType)
+        return switch (expType)
         {
-            default:
-                return unsafe("COALESCE(M." + name + ", D." + name + ", R." + name + ")");
-            case "Data":
-                return unsafe("D." + name);
-            case "Material":
-                return unsafe("M." + name);
-            case "ExperimentRun":
-                return unsafe("R." + name);
-        }
+            case ExpData.DEFAULT_CPAS_TYPE -> unsafe("D." + name);
+            case ExpMaterial.DEFAULT_CPAS_TYPE -> unsafe("M." + name);
+            case ExpRun.DEFAULT_CPAS_TYPE -> unsafe("R." + name);
+            default -> unsafe("COALESCE(M." + name + ", D." + name + ", R." + name + ")");
+        };
     }
 %>
 
@@ -139,17 +138,17 @@ if (bean.isOnlySelectObjectId()) {
         LEFT OUTER JOIN exp.material M ON I.fromObjectId = M.ObjectId
 <%
         break;
-    case "Data":
+    case ExpData.DEFAULT_CPAS_TYPE:
 %>
         JOIN exp.data D ON I.fromObjectId = D.ObjectId
 <%
         break;
-    case "ExperimentRun":
+    case ExpRun.DEFAULT_CPAS_TYPE:
 %>
         JOIN (select *, protocolLsid as cpasType FROM exp.experimentrun) R ON I.fromObjectId = R.ObjectId
 <%
         break;
-    case "Material":
+    case ExpMaterial.DEFAULT_CPAS_TYPE:
 %>
         JOIN exp.material M ON I.fromObjectId = M.ObjectId
 <%
@@ -234,17 +233,17 @@ if (bean.isOnlySelectObjectId()) {
         LEFT OUTER JOIN exp.material M ON I.toObjectId = M.ObjectId
 <%
         break;
-    case "Data":
+    case ExpData.DEFAULT_CPAS_TYPE:
 %>
         JOIN exp.data D ON I.toObjectId = D.ObjectId
 <%
         break;
-    case "ExperimentRun":
+    case ExpRun.DEFAULT_CPAS_TYPE:
 %>
         JOIN (select *, protocolLsid as cpasType FROM exp.experimentrun) R ON I.toObjectId = R.ObjectId
 <%
         break;
-    case "Material":
+    case ExpMaterial.DEFAULT_CPAS_TYPE:
 %>
         JOIN exp.material M ON I.toObjectId = M.ObjectId
 <%

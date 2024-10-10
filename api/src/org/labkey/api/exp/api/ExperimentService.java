@@ -680,7 +680,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
     /**
      * Get all ExpData for the dataFileUrl.
      *
-     * Having an more than one ExpData for the same file path doesn't happen often but is allowed.
+     * Having more than one ExpData for the same file path doesn't happen often but is allowed.
      * Some examples:
      * - The file or pipeline root may be shared by more than one container and an exp.data may be created in each container when importing assay data.
      * - In the MS2 analysis pipeline, there are tools that rewrite an input file to add more data. We model them as separate exp.data.
