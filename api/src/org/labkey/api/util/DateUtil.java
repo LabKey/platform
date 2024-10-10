@@ -1332,12 +1332,9 @@ validNum:       {
     {
         if (date instanceof Time)
         {
-            if (HttpView.hasCurrentView())
-            {
-                ViewContext context = HttpView.currentContext();
-                if (context != null && context.getContainer() != null)
-                    return FastDateFormat.getInstance(FolderSettingsCache.getDefaultTimeFormat(context.getContainer())).format(date);
-            }
+            ViewContext context = HttpView.currentContext();
+            if (context != null && context.getContainer() != null)
+                return FastDateFormat.getInstance(FolderSettingsCache.getDefaultTimeFormat(context.getContainer())).format(date);
 
             return jsonTimeFormat.format(date);
         }
