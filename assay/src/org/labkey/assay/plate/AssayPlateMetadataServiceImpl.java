@@ -84,10 +84,11 @@ import org.labkey.api.util.logging.LogHelper;
 import org.labkey.assay.TSVProtocolSchema;
 import org.labkey.assay.plate.model.WellBean;
 import org.labkey.assay.query.AssayDbSchema;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -229,7 +230,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         AssayProvider provider,
         ExpProtocol protocol,
         Integer plateSetId,
-        File dataFile,
+        FileLike dataFile,
         DataLoaderSettings settings
     ) throws ExperimentException
     {
@@ -275,7 +276,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             ExpProtocol protocol,
             PlateSet plateSet,
             List<Plate> plates,
-            File dataFile,
+            FileLike dataFile,
             DataLoaderSettings settings
     ) throws ExperimentException
     {
@@ -328,7 +329,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             AssayProvider provider,
             ExpProtocol protocol,
             ExpData data,
-            File dataFile,
+            FileLike dataFile,
             DataLoaderSettings settings
     ) throws ExperimentException
     {
@@ -351,7 +352,8 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                         List<Map<String, Object>> newRows = new ArrayList<>(rows);
 
                         // parse the previous data and combine with any new data
-                        for (Map<String, Object> row : _parsePlateData(container, user, prevData, provider, protocol, plateSet, plates, prevFile, settings))
+                        FileLike prevFileLike = new FileSystemLike.Builder(prevFile).root();
+                        for (Map<String, Object> row : _parsePlateData(container, user, prevData, provider, protocol, plateSet, plates, prevFileLike, settings))
                         {
                             String plate = String.valueOf(row.get(AssayResultDomainKind.PLATE_COLUMN_NAME));
                             if (plateMap.containsKey(plate) && !existingPlates.contains(plate))
@@ -366,12 +368,12 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                             try (DbScope.Transaction tx = AssayDbSchema.getInstance().getScope().ensureTransaction())
                             {
                                 // replace the contents of the uploaded data file with the new combined data
-                                File dir = dataFile.getParentFile() != null ? dataFile.getParentFile() : AssayFileWriter.ensureUploadDirectory(container);
-                                String newName = FileUtil.getBaseName(dataFile) + ".tsv";
-                                Path newPath = AssayFileWriter.findUniqueFileName(newName, dir.toPath());
+                                FileLike dir = dataFile.getParent() != null ? dataFile.getParent() : AssayFileWriter.ensureUploadDirectory(container);
+                                String newName = FileUtil.getBaseName(dataFile.toNioPathForRead().toFile()) + ".tsv";
+                                FileLike newPath = AssayFileWriter.findUniqueFileName(newName, dir);
                                 try (TSVMapWriter writer = new TSVMapWriter(newRows))
                                 {
-                                    writer.write(newPath.toFile());
+                                    writer.write(newPath.toNioPathForWrite().toFile());
                                     dataFile.delete();
                                 }
                                 catch (IOException e)
@@ -380,7 +382,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                                 }
 
                                 // update the ExpData file URI
-                                data.setDataFileURI(FileUtil.getAbsoluteCaseSensitiveFile(newPath.toFile()).toURI());
+                                data.setDataFileURI(FileUtil.getAbsoluteCaseSensitiveFile(newPath.toNioPathForRead().toFile()).toURI());
                                 data.setName(String.format("%s (merged with previous run)", newName));
                                 data.save(user);
 
@@ -579,7 +581,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         ExpProtocol protocol,
         PlateSet plateSet,
         List<Plate> plates,
-        File dataFile
+        FileLike dataFile
     ) throws ExperimentException
     {
         // parse the data file for each distinct plate type found in the set of plates for the plateSetId
@@ -595,7 +597,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             if (!plateTypeGrids.containsKey(plate.getPlateType()))
             {
                 Plate p = PlateService.get().createPlate(container, TsvPlateLayoutHandler.TYPE, plate.getPlateType());
-                for (PlateUtils.GridInfo gridInfo : plateReader.loadMultiGridFile(p, dataFile))
+                for (PlateUtils.GridInfo gridInfo : plateReader.loadMultiGridFile(p, dataFile.toNioPathForRead().toFile()))
                 {
                     PlateGridInfo plateInfo = new PlateGridInfo(gridInfo, plateSet);
                     plateTypeGrids.put(plate.getPlateType(), plateInfo);

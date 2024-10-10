@@ -49,6 +49,7 @@ import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.view.InsertView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewForm;
+import org.labkey.vfs.FileLike;
 import org.springframework.validation.Errors;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -284,8 +285,8 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
                     in = new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8));
                 }
 
-                File uploadDir = ensureUploadDirectory(context.getContainer());
-                File file = createFile(context.getProtocol(), uploadDir, "thawList");
+                FileLike uploadDir = ensureUploadDirectory(context.getContainer());
+                File file = createFile(context.getProtocol(), uploadDir, "thawList").toNioPathForWrite().toFile();
                 try
                 {
                     writeFile(in, file);

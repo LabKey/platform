@@ -21,6 +21,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.FileType;
+import org.labkey.vfs.FileLike;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -61,4 +62,9 @@ public interface DataLoaderService
     DataLoader createLoader(Resource r, boolean hasColumnHeaders, Container mvIndicatorContainer, @Nullable FileType guessFormat) throws IOException;
 
     DataLoader createLoader(File file, String contentType, boolean hasColumnHeaders, Container mvIndicatorContainer, @Nullable FileType guessFormat) throws IOException;
+
+    default DataLoader createLoader(FileLike file, String contentType, boolean hasColumnHeaders, Container mvIndicatorContainer, @Nullable FileType guessFormat) throws IOException
+    {
+        return createLoader(file.toNioPathForRead().toFile(), contentType, hasColumnHeaders, mvIndicatorContainer, guessFormat);
+    };
 }

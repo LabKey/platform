@@ -83,6 +83,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.MemoryVirtualFile;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.experiment.controllers.exp.ExperimentController;
+import org.labkey.experiment.lineage.LineageMethod;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.validation.BindException;
 

@@ -30,6 +30,7 @@ import org.labkey.api.data.NameGenerator;
 import org.labkey.api.exp.OntologyManager.PropertyRow;
 import org.labkey.api.reader.ExcelFactory;
 import org.labkey.api.util.DateUtil;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.math.BigDecimal;
@@ -443,8 +444,10 @@ public enum PropertyType
         @Override
         protected void setValue(ObjectProperty property, Object value)
         {
-            if (value instanceof File)
-                property.stringValue = ((File) value).getPath();
+            if (value instanceof File f)
+                property.stringValue = f.getPath();
+            else if (value instanceof FileLike fl)
+                property.stringValue = fl.toNioPathForRead().toString();
             else
                 property.stringValue = value == null ? null : value.toString();
         }

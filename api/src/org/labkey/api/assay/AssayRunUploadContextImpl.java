@@ -19,6 +19,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CollectionUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.exp.ExperimentException;
@@ -36,6 +37,7 @@ import org.labkey.api.util.URIUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.io.IOException;
@@ -80,7 +82,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     private final String _auditUserComment;
 
     // Lazily created fields
-    private Map<String, File> _uploadedData;
+    private Map<String, FileLike> _uploadedData;
     private Map<DomainProperty, String> _runProperties;
     private Map<DomainProperty, String> _batchProperties;
     private Map<String, Object> _unresolvedRunProperties;
@@ -119,7 +121,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
         _allowLookupByAlternateKey = factory._allowLookupByAlternateKey;
 
         _rawData = factory._rawData;
-        _uploadedData = factory._uploadedData;
+        _uploadedData = CollectionUtils.checkValueClass(factory._uploadedData, FileLike.class);
 
         _reRunId = factory._reRunId;
         _reImportOption = factory._reImportOption;
@@ -304,15 +306,16 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
      */
     @Override
     @NotNull
-    public Map<String, File> getUploadedData() throws ExperimentException
+    public Map<String, FileLike> getUploadedData() throws ExperimentException
     {
         if (_uploadedData == null && _context != null)
         {
             try
             {
                 AssayDataCollector<AssayRunUploadContextImpl<?>> collector = new FileUploadDataCollector<>(1, emptyMap(), FILE_INPUT_NAME);
-                Map<String, File> files = collector.createData(this);
+                Map<String, FileLike> files = collector.createData(this);
                 // HACK: rekey the map using PRIMARY_FILE instead of FILE_INPUT_NAME
+                assert null == files.get(FILE_INPUT_NAME) || files.get(FILE_INPUT_NAME) instanceof FileLike;
                 _uploadedData = Collections.singletonMap(AssayDataCollector.PRIMARY_FILE, files.get(FILE_INPUT_NAME));
             }
             catch (IOException e)
@@ -320,7 +323,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
                 throw new ExperimentException(e);
             }
         }
-        return _uploadedData;
+        return null == _uploadedData ? Map.of() : _uploadedData;
     }
 
     @Nullable

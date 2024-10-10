@@ -20,6 +20,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CollectionUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.exp.ExperimentException;
@@ -32,6 +33,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HasHttpRequest;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.util.Map;
@@ -92,7 +94,7 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
      * Map of file name to uploaded file that will be parsed and imported by the assay's DataHandler.
      */
     @NotNull
-    Map<String, File> getUploadedData() throws ExperimentException;
+    Map<String, FileLike> getUploadedData() throws ExperimentException;
 
     @Nullable
     default DataIteratorBuilder getRawData()
@@ -235,7 +237,7 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
         protected boolean _allowCrossRunFileInputs;
         protected boolean _allowLookupByAlternateKey = true;
         protected DataIteratorBuilder _rawData;
-        protected Map<String, File> _uploadedData;
+        protected Map<String, FileLike> _uploadedData;
         protected String _jobDescription;
         protected String _jobNotificationProvider;
         protected String _auditUserComment;
@@ -374,9 +376,9 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
          * Map of file name to uploaded file that will be parsed and imported by the assay's DataHandler.
          * One of either uploadedData or rawData can be used, not both.
          */
-        public final FACTORY setUploadedData(Map<String, File> uploadedData)
+        public final FACTORY setUploadedData(Map<String, FileLike> uploadedData)
         {
-            _uploadedData = uploadedData;
+            _uploadedData = CollectionUtils.checkValueClass(uploadedData,FileLike.class);
             return self();
         }
 

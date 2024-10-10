@@ -153,6 +153,7 @@ import org.labkey.assay.actions.SetDefaultValuesAssayAction;
 import org.labkey.assay.actions.ShowSelectedDataAction;
 import org.labkey.assay.actions.ShowSelectedRunsAction;
 import org.labkey.assay.actions.TemplateAction;
+import org.labkey.vfs.FileLike;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -745,20 +746,20 @@ public class AssayController extends SpringActionController
             List<List<String>> runNamesPerFile = new ArrayList<>();
             try
             {
-                File targetDirectory = AssayFileWriter.ensureUploadDirectory(getContainer());
+                FileLike targetDirectory = AssayFileWriter.ensureUploadDirectory(getContainer());
                 JSONArray fileNames = form.getJsonObject() == null ? null : form.getJsonObject().getJSONArray("fileNames");
                 if (fileNames != null && fileNames.length() > 0)
                 {
                     for (int i = 0; i < fileNames.length(); i++)
                     {
                         String fileName = (String)fileNames.get(i);
-                        File f = new File(targetDirectory, fileName);
+                        FileLike f = targetDirectory.resolveChild(fileName);
                         if (f.exists())
                         {
                             duplicate = true;
-                            File newFile = AssayFileWriter.findUniqueFileName(fileName, targetDirectory);
+                            FileLike newFile = AssayFileWriter.findUniqueFileName(fileName, targetDirectory);
                             newFileNames.add(i, newFile.getName());  // will infer duplication by whether an element exists at that position or not
-                            ExpData expData = ExperimentService.get().getExpDataByURL(f, null);
+                            ExpData expData = ExperimentService.get().getExpDataByURL(f.toNioPathForRead().toFile(), null);
                             List<String> runNames = new ArrayList<>();
                             if (expData != null)
                             {
@@ -817,8 +818,8 @@ public class AssayController extends SpringActionController
 
             try
             {
-                File targetDirectory = AssayFileWriter.ensureUploadDirectory(getContainer());
-                return AssayFileWriter.findUniqueFileName(filename, targetDirectory);
+                FileLike targetDirectory = AssayFileWriter.ensureUploadDirectory(getContainer());
+                return AssayFileWriter.findUniqueFileName(filename, targetDirectory).toNioPathForWrite().toFile();
             }
             catch (ExperimentException e)
             {
@@ -906,11 +907,11 @@ public class AssayController extends SpringActionController
 
             if (handler != null)
             {
-                File tempDir = getTempFolder();
+                FileLike tempDir = getTempFolder();
 
                 try {
                     handler.createSampleData(protocol, getViewContext(), tempDir);
-                    File[] files = tempDir.listFiles();
+                    File[] files = tempDir.toNioPathForRead().toFile().listFiles();
 
                     if (files.length > 0)
                     {
@@ -941,16 +942,16 @@ public class AssayController extends SpringActionController
                 }
                 finally
                 {
-                    FileUtil.deleteDir(tempDir);
+                    FileUtil.deleteDir(tempDir.toNioPathForWrite().toFile());
                 }
             }
             return null;
         }
 
-        private File getTempFolder() throws IOException
+        private FileLike getTempFolder() throws IOException
         {
-            File tempDir = new File(System.getProperty("java.io.tmpdir"));
-            File tempFolder = new File(tempDir.getAbsolutePath() + File.separator + "QCSampleData", String.valueOf(Thread.currentThread().getId()));
+            FileLike tempDir = FileUtil.getTempDirectoryFileLike();
+            FileLike tempFolder = tempDir.resolveChild("QCSampleData").resolveChild(String.valueOf(Thread.currentThread().getId()));
             if (!tempFolder.exists())
                 FileUtil.mkdirs(tempFolder);
 

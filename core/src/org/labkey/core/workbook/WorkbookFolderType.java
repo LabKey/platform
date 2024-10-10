@@ -15,6 +15,7 @@
  */
 package org.labkey.core.workbook;
 
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.module.DefaultFolderType;
 import org.labkey.api.module.ModuleLoader;
@@ -24,15 +25,7 @@ import org.labkey.api.view.WebPartFactory;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-/**
- * User: labkey
- * Date: Jan 6, 2010
- * Time: 3:01:45 PM
- */
 public class WorkbookFolderType extends DefaultFolderType
 {
     public static final String NAME = "Workbook";
@@ -43,7 +36,7 @@ public class WorkbookFolderType extends DefaultFolderType
                 "A workbook containing files and experiment runs.",
                 null,
                 null,
-                getDefaultModuleSet(ModuleLoader.getInstance().getCoreModule(), ModuleLoader.getInstance().getModule("Experiment")),
+                getDefaultModuleSet(ModuleLoader.getInstance().getCoreModule(), ModuleLoader.getInstance().getModule(ExperimentService.MODULE_NAME)),
                 ModuleLoader.getInstance().getCoreModule());
         setWorkbookType(true);
     }

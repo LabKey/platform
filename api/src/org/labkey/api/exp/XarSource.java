@@ -105,7 +105,7 @@ public abstract class XarSource implements Serializable
             try
             {
                 URI uri = new URI(dataFileURL);
-                if ("file".equalsIgnoreCase(uri.getScheme()) || FileUtil.hasCloudScheme(uri))
+                if (FileUtil.FILE_SCHEME.equalsIgnoreCase(uri.getScheme()) || FileUtil.hasCloudScheme(uri))
                 {
                     urlToLookup = FileUtil.uriToString(uri);
                 }
@@ -218,7 +218,7 @@ public abstract class XarSource implements Serializable
             }
             if (result == null)
             {
-                throw new XarFormatException(createIllegalReferenceMessage(experimentRun, protApp, materialLSID, "Material"));
+                throw new XarFormatException(createIllegalReferenceMessage(experimentRun, protApp, materialLSID, ExpMaterial.DEFAULT_CPAS_TYPE));
             }
             map.put(result.getLSID(), result);
         }

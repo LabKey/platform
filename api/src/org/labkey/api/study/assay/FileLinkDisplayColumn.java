@@ -252,7 +252,11 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
         String result = value == null ? null : StringUtils.trimToNull(value.toString());
         if (result != null)
         {
-            File f = FileUtil.getAbsoluteCaseSensitiveFile(new File(result));
+            File f;
+            if (result.startsWith("file:"))
+                f = new File(URI.create(result));
+            else
+                f = FileUtil.getAbsoluteCaseSensitiveFile(new File(result));
             NetworkDrive.ensureDrive(f.getPath());
             List<FileContentService.ContentType> fileRootTypes = List.of(FileContentService.ContentType.files, FileContentService.ContentType.pipeline, FileContentService.ContentType.assayfiles);
             for (FileContentService.ContentType fileRootType : fileRootTypes)

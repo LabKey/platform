@@ -12,7 +12,6 @@ import org.labkey.api.assay.plate.PlateSet;
 import org.labkey.api.assay.plate.PlateSetType;
 import org.labkey.api.assay.plate.PlateType;
 import org.labkey.api.assay.plate.Position;
-import org.labkey.api.assay.plate.Well;
 import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
@@ -1613,7 +1612,7 @@ public final class PlateManagerTest
             int t = 0;
             while (r.next())
             {
-                var sampleId = r.getInt(FieldKey.fromParts(WellTable.Column.SampleId.name()));
+                var sampleId = r.getInt(FieldKey.fromParts(WellTable.Column.SampleID.name()));
                 var wellPosition = r.getString(FieldKey.fromParts("position"));
 
                 switch (wellPosition)
@@ -1648,7 +1647,7 @@ public final class PlateManagerTest
             int t = 0;
             while (r.next())
             {
-                var sampleId = r.getInt(FieldKey.fromParts(WellTable.Column.SampleId.name()));
+                var sampleId = r.getInt(FieldKey.fromParts(WellTable.Column.SampleID.name()));
                 var wellPosition = r.getString(FieldKey.fromParts("position"));
 
                 switch (wellPosition)
@@ -1682,7 +1681,7 @@ public final class PlateManagerTest
         {
             for (Map<String, Object> well : data.data())
             {
-                if (well.get(WellTable.Column.SampleId.name()) instanceof Integer sampleId)
+                if (well.get(WellTable.Column.SampleID.name()) instanceof Integer sampleId)
                     sampleIds.add(sampleId);
             }
         }

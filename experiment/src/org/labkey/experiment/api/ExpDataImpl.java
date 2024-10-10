@@ -84,6 +84,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.experiment.controllers.exp.ExperimentController;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.net.URI;
@@ -244,18 +245,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     public void setDataFileURI(URI uri)
     {
         ensureUnlocked();
-        if (uri != null && !uri.isAbsolute())
-        {
-            throw new IllegalArgumentException("URI must be absolute.");
-        }
-        String s = FileUtil.uriToString(uri);
-
-        // Strip off any trailing "/"
-        if (s != null && s.endsWith("/"))
-        {
-            s = s.substring(0, s.length() - 1);
-        }
-        _object.setDataFileUrl(s);
+        _object.setDataFileUrl(ExpData.normalizeDataFileURI(uri));
     }
 
     @Override
@@ -263,7 +253,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     {
         // Replace the default "Data" cpastype if the Data belongs to a DataClass
         ExpDataClassImpl dataClass = getDataClass(null);
-        if (dataClass != null && DEFAULT_CPAS_TYPE.equals(getCpasType()))
+        if (dataClass != null && ExpData.DEFAULT_CPAS_TYPE.equals(getCpasType()))
            setCpasType(dataClass.getLSID());
 
         boolean isNew = getRowId() == 0;
@@ -327,6 +317,12 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     public File getFile()
     {
         return _object.getFile();
+    }
+
+    @Override
+    public @Nullable FileLike getFileLike()
+    {
+        return _object.getFileLike();
     }
 
     @Override

@@ -61,6 +61,8 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
@@ -248,7 +250,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         if (file != null)
         {
             factory.setRawData(null);
-            factory.setUploadedData(Collections.singletonMap(PRIMARY_FILE, file));
+            factory.setUploadedData(Collections.singletonMap(PRIMARY_FILE, FileSystemLike.wrapFile(file)));
         }
         else if (rawData != null && !rawData.isEmpty())
         {
@@ -258,9 +260,9 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             {
                 // try to write out a tmp file containing the imported data so it can be used for transforms or for previewing
                 // the original (untransformed) data within, say, a sample management application.
-                File dir = AssayFileWriter.ensureUploadDirectory(getContainer());
+                FileLike dir = AssayFileWriter.ensureUploadDirectory(getContainer());
                 // NOTE: We use a 'tmp' file extension so that DataLoaderService will sniff the file type by parsing the file's header.
-                file = createFile(protocol, dir, "tmp");
+                var fileObject = createFile(protocol, dir, "tmp");
 
                 // Issue 50719: If the first column name starts with a #, the data loader will treat the header row as a comment
                 List<String> columns = provider.getResultsDomain(protocol).getProperties().stream().map(DomainProperty::getName).collect(Collectors.toList());
@@ -278,9 +280,9 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
 
                 try (TSVMapWriter tsvWriter = new TSVMapWriter(columns, rawData))
                 {
-                    tsvWriter.write(file);
+                    tsvWriter.write(fileObject.toNioPathForWrite().toFile());
                     factory.setRawData(null);
-                    factory.setUploadedData(Collections.singletonMap(PRIMARY_FILE, file));
+                    factory.setUploadedData(Collections.singletonMap(PRIMARY_FILE, fileObject));
                 }
                 catch (Exception e)
                 {

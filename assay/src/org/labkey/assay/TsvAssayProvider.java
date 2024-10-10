@@ -665,7 +665,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
             }});
 
             TsvAssayProvider provider = new TsvAssayProvider();
-            List<AssayDataCollector> dataCollectors = provider.getDataCollectors(Collections.singletonMap(AssayDataCollector.PRIMARY_FILE, new File("mockFile")), _uploadContext);
+            List<AssayDataCollector> dataCollectors = provider.getDataCollectors(Collections.singletonMap(AssayDataCollector.PRIMARY_FILE, new File("/mockFile")), _uploadContext);
             assertEquals(3, dataCollectors.size());
             assertEquals(TextAreaDataCollector.class, dataCollectors.get(0).getClass());
             assertEquals(PreviouslyUploadedDataCollector.class, dataCollectors.get(1).getClass());

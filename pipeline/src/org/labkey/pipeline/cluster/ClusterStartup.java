@@ -85,7 +85,7 @@ public class ClusterStartup extends AbstractPipelineStartup
                 throw new IllegalArgumentException("Invalid URI. Could not find serialized job file: " + args[0], e);
             }
 
-            if (!localURI.isAbsolute() || !"file".equals(localURI.getScheme()))
+            if (!localURI.isAbsolute() || !FileUtil.FILE_SCHEME.equals(localURI.getScheme()))
             {
                 throw new IllegalArgumentException("Invalid URI. Could not find serialized job file: " + localURI);
             }

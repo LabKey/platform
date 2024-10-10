@@ -27,6 +27,7 @@ List apache = [
         "org.apache.commons:commons-lang3:${commonsLang3Version}",
         "commons-pool:commons-pool:${commonsPoolVersion}",
         "commons-validator:commons-validator:${commonsValidatorVersion}",
+        "org.apache.commons:commons-vfs2:${commonsVfs2Version}",
         "org.apache.httpcomponents.client5:httpclient5:${httpclient5Version}",
         "org.apache.httpcomponents.core5:httpcore5:${httpcore5Version}",
         "org.apache.poi:poi:${poiVersion}",
@@ -296,6 +297,21 @@ dependencies {
             "Data validation and error messages",
         )
     )
+
+    BuildUtils.addExternalDependency(
+            project,
+            new ExternalDependency(
+                    "org.apache.commons:commons-vfs2:${commonsVfs2Version}",
+                    "Commons Virtual File System",
+                    "Apache",
+                    "https://commons.apache.org/proper/commons-vfs/",
+                    ExternalDependency.APACHE_2_LICENSE_NAME,
+                    ExternalDependency.APACHE_2_LICENSE_URL,
+                    "Consistent API for accessing files of different types",
+            )
+    )
+
+
 
     BuildUtils.addExternalDependency(
         project,

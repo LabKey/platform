@@ -64,6 +64,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.sql.SQLException;
@@ -472,8 +473,13 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         return new DilutionDataFileParser(data, dataFile, info);
     }
 
+    final protected DilutionDataFileParser getDataFileParser(ExpData data, FileLike dataFile, ViewBackgroundInfo info)
+    {
+        return new DilutionDataFileParser(data, dataFile.toNioPathForRead().toFile(), info);
+    }
+
     @Override
-    public void importFile(ExpData data, File dataFile, ViewBackgroundInfo info, Logger log, XarContext context) throws ExperimentException
+    public void importFile(@NotNull ExpData data, File dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context) throws ExperimentException
     {
         ExpRun run = data.getRun();
         ExpProtocol protocol = run.getProtocol();

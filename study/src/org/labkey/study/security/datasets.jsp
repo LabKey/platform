@@ -248,7 +248,7 @@ set on the alternate ID dataset will affect who can edit other datasets. Hover o
             .addOption("None")
             .addOptions(
                 possibleRoles.stream()
-                    .filter(pr->!pr.getExcludedPrincipals().contains(g)) // Filter out roles that can't be assigned to this group
+                    .filter(pr->!pr.isExcludedPrincipal(g)) // Filter out roles that can't be assigned to this group
                     .map(Role::getName)
             )
             .onChange("setColumnSelections(this); LABKEY.setDirty(true);")
@@ -289,7 +289,7 @@ set on the alternate ID dataset will affect who can edit other datasets. Hover o
                     .addOption(new OptionBuilder("None", id + "_NONE").selected(noPerm))
                     .addOptions(
                         possibleRoles.stream()
-                            .filter(pr->!pr.getExcludedPrincipals().contains(g)) // Filter out roles that can't be assigned to this group
+                            .filter(pr->!pr.isExcludedPrincipal(g)) // Filter out roles that can't be assigned to this group
                             .map(r->new OptionBuilder(r.getName(), id + "_" + r.getClass().getName()).selected(r == assignedRole))
                     )
                     .onChange("LABKEY.setDirty(true);")

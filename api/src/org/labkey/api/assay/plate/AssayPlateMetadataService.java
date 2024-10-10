@@ -20,6 +20,7 @@ import org.labkey.api.qc.DataLoaderSettings;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.OptionalFeatureService;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.util.List;
@@ -79,7 +80,7 @@ public interface AssayPlateMetadataService
         AssayProvider provider,
         ExpProtocol protocol,
         Integer plateSetId,
-        File dataFile,
+        FileLike dataFile,
         DataLoaderSettings settings
     ) throws ExperimentException;
 

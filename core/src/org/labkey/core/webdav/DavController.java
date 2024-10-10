@@ -93,6 +93,7 @@ import org.labkey.api.webdav.WebdavStatus;
 import org.labkey.core.view.template.bootstrap.AppTemplate;
 import org.labkey.core.view.template.bootstrap.PrintTemplate;
 import org.labkey.core.webdav.apache.XMLWriter;
+import org.labkey.vfs.FileLike;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
@@ -3097,11 +3098,11 @@ public class DavController extends SpringActionController
             }
 
             // otherwise, save to temp directory, scan, return wrapper over saved file
-            File tmp = new File(getTempUploadDir(), GUID.makeGUID());
-            fis.transferTo(tmp);
+            FileLike tmp = getTempUploadDir().resolveChild(GUID.makeGUID());
+            fis.transferTo(tmp.toNioPathForWrite().toFile());
 
             ViewBackgroundInfo info = new ViewBackgroundInfo(getContainer(), getUser(), null);
-            AntiVirusService.ScanResult result = avs.scan(new AntiVirusService.FileScannable(tmp, name), info);
+            AntiVirusService.ScanResult result = avs.scan(new AntiVirusService.FileScannable(tmp.toNioPathForRead().toFile(), name), info);
             if (result.result == AntiVirusService.Result.OK)
             {
                 _fis = new FileStream.FileFileStream(tmp, true);

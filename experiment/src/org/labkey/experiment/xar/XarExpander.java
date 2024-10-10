@@ -301,11 +301,14 @@ public class XarExpander extends AbstractXarImporter
         fileResolver.verifyEmpty();
     }
 
-    private void createProtAppInstance(ProtocolBean pbStep,
-                                       XarContext parentContext,
-                                       ExperimentLogEntryType step,
-                                       InstanceDetailsType details,
-                                       ExperimentRunType xbRun, FileResolver fileResolver) throws ExperimentException
+    private void createProtAppInstance(
+        ProtocolBean pbStep,
+        XarContext parentContext,
+        ExperimentLogEntryType step,
+        InstanceDetailsType details,
+        ExperimentRunType xbRun,
+        FileResolver fileResolver
+    ) throws ExperimentException
     {
         XarContext context = new XarContext(parentContext);
 
@@ -315,9 +318,9 @@ public class XarExpander extends AbstractXarImporter
         // apply template rules to input refs
         for (InputOutputRefsType.MaterialLSID inputMaterialLSID : inputMaterialLSIDs)
         {
-            String declaredType = (inputMaterialLSID.isSetCpasType() ? inputMaterialLSID.getCpasType() : "Material");
+            String declaredType = (inputMaterialLSID.isSetCpasType() ? inputMaterialLSID.getCpasType() : ExpMaterial.DEFAULT_CPAS_TYPE);
             checkMaterialCpasType(declaredType);
-            String lsid = LsidUtils.resolveLsidFromTemplate(inputMaterialLSID.getStringValue(), context, declaredType, "Material");
+            String lsid = LsidUtils.resolveLsidFromTemplate(inputMaterialLSID.getStringValue(), context, declaredType, ExpMaterial.DEFAULT_CPAS_TYPE);
             inputMaterialLSID.setStringValue(lsid);
 
             if (pbStep.stepProtocolLSID.equals(_run.getProtocolLSID()))
