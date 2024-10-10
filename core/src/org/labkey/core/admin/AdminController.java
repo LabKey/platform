@@ -5422,7 +5422,6 @@ public class AdminController extends SpringActionController
         }
     }
 
-
     @RequiresPermission(AdminPermission.class)
     public static class FolderSettingsAction extends FolderManagementViewPostAction<FolderSettingsForm>
     {
@@ -5440,10 +5439,7 @@ public class AdminController extends SpringActionController
         @Override
         public boolean handlePost(FolderSettingsForm form, BindException errors)
         {
-            Container c = getContainer();
-            WriteableFolderLookAndFeelProperties props = LookAndFeelProperties.getWriteableFolderInstance(c);
-
-            return saveFolderSettings(c, form, props, getUser(), errors);
+            return saveFolderSettings(getContainer(), getUser(), form, errors);
         }
     }
 
@@ -10838,41 +10834,6 @@ public class AdminController extends SpringActionController
         }
     }
 
-    // Same as ProjectSettingsAction, but provides special admin console permissions handling
-    @AdminConsoleAction(ApplicationAdminPermission.class)
-    public static class LookAndFeelSettingsAction extends ProjectSettingsAction
-    {
-        @Override
-        protected TYPE getType()
-        {
-            return TYPE.LookAndFeelSettings;
-        }
-    }
-
-    @RequiresPermission(AdminPermission.class)
-    // TODO Should this be renamed UpdateContainerSettingsAction? There's nothing that explicitly checks for this being a project vs. a folder
-    public static class UpdateProjectSettingsAction extends MutatingApiAction<SimpleApiJsonForm>
-    {
-        @Override
-        public void validateForm(SimpleApiJsonForm form, Errors errors)
-        {
-            JSONObject json = form.getJsonObject();
-            if (json == null)
-                errors.reject(ERROR_MSG, "Empty request ");
-        }
-
-        @Override
-        public Object execute(SimpleApiJsonForm form, BindException errors)
-        {
-            JSONObject json = form.getJsonObject();
-            boolean saved = saveProjectSettings(json, getUser(), getContainer(), errors);
-
-            ApiSimpleResponse response = new ApiSimpleResponse();
-            response.put("success", saved && !errors.hasErrors());
-            return response;
-        }
-    }
-
     // TODO: Before updating this to handle the new-style inheritance parameters getting posted, we should seriously
     // consider flipping the approach to where both callers pass in a ProjectSettingsForm and then change this method
     // to call saveFolderSettings() instead of duplicating all the folder settings
@@ -11045,6 +11006,32 @@ public class AdminController extends SpringActionController
         return true;
     }
 
+    // Same as ProjectSettingsAction, but provides special admin console permissions handling
+    @AdminConsoleAction(ApplicationAdminPermission.class)
+    public static class LookAndFeelSettingsAction extends ProjectSettingsAction
+    {
+        @Override
+        protected TYPE getType()
+        {
+            return TYPE.LookAndFeelSettings;
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    // TODO Should this be renamed UpdateContainerSettingsAction? There's nothing that explicitly checks for this being a project vs. a folder
+    public static class UpdateProjectSettingsAction extends MutatingApiAction<FolderSettingsForm>
+    {
+        @Override
+        public Object execute(FolderSettingsForm form, BindException errors)
+        {
+            boolean saved = saveFolderSettings(getContainer(), getUser(), form, errors);
+
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            response.put("success", saved && !errors.hasErrors());
+            return response;
+        }
+    }
+
     @RequiresPermission(AdminPermission.class)
     public static class ResourcesAction extends ProjectSettingsViewPostAction<Object>
     {
@@ -11091,6 +11078,93 @@ public class AdminController extends SpringActionController
 
             return true;
         }
+    }
+
+    // Validate and populate the folder settings; save & log all changes
+    private static boolean saveFolderSettings(Container c, User user, FolderSettingsForm form, BindException errors)
+    {
+        WriteableFolderLookAndFeelProperties props = LookAndFeelProperties.getWriteableFolderInstance(c);
+
+        if (!validateAndSaveFormat(form.getDefaultDateFormat(), form.isDefaultDateFormatInherited(), props::clearDefaultDateFormat, props::setDefaultDateFormat, errors, "date"))
+            return false;
+        if (!validateAndSaveFormat(form.getDefaultDateTimeFormat(), form.isDefaultDateTimeFormatInherited(), props::clearDefaultDateTimeFormat, props::setDefaultDateTimeFormat, errors, "date-time"))
+            return false;
+        if (!validateAndSaveFormat(form.getDefaultTimeFormat(), form.isDefaultTimeFormatInherited(), props::clearDefaultTimeFormat, props::setDefaultTimeFormat, errors, "time"))
+            return false;
+        if (!validateAndSaveFormat(form.getDefaultNumberFormat(), form.isDefaultNumberFormatInherited(), props::clearDefaultNumberFormat, props::setDefaultNumberFormat, errors, "number"))
+            return false;
+        if (!validateAndSaveFormat(form.getExtraDateParsingPattern(), form.isExtraDateParsingPatternInherited(), props::clearExtraDateParsingPattern, props::setExtraDateParsingPattern, errors, "date"))
+            return false;
+        if (!validateAndSaveFormat(form.getExtraDateTimeParsingPattern(), form.isExtraDateTimeParsingPatternInherited(), props::clearExtraDateTimeParsingPattern, props::setExtraDateTimeParsingPattern, errors, "date-time"))
+            return false;
+        if (!validateAndSaveFormat(form.getExtraTimeParsingPattern(), form.isExtraTimeParsingPatternInherited(), props::clearExtraTimeParsingPattern, props::setExtraTimeParsingPattern, errors, "time"))
+            return false;
+
+        if (form.isRestrictedColumnsEnabledInherited())
+            props.clearRestrictedColumnsEnabled();
+        else
+            props.setRestrictedColumnsEnabled(form.areRestrictedColumnsEnabled());
+
+        props.save();
+
+        //write an audit log event
+        props.writeAuditLogEvent(c, user);
+
+        return true;
+    }
+
+    private interface FormatSaver
+    {
+        void save(String format) throws IllegalArgumentException;
+    }
+
+    // TODO: Migrate callers and delete
+    @Deprecated
+    private static boolean validateAndSaveFormat(String format, Runnable clearer, FormatSaver saver, BindException errors, String what)
+    {
+        String defaultFormat = StringUtils.trimToNull(format);
+        if (null == defaultFormat)
+        {
+            clearer.run();
+        }
+        else
+        {
+            try
+            {
+                saver.save(defaultFormat);
+            }
+            catch (IllegalArgumentException e)
+            {
+                errors.reject(ERROR_MSG, "Invalid " + what + " format: " + e.getMessage());
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    // TODO: Use this!
+    private static boolean validateAndSaveFormat(String format, boolean inherited, Runnable clearer, FormatSaver saver, BindException errors, String what)
+    {
+        String defaultFormat = StringUtils.trimToNull(format);
+        if (inherited)
+        {
+            clearer.run();
+        }
+        else
+        {
+            try
+            {
+                saver.save(defaultFormat);
+            }
+            catch (IllegalArgumentException e)
+            {
+                errors.reject(ERROR_MSG, "Invalid " + what + " format: " + e.getMessage());
+                return false;
+            }
+        }
+
+        return true;
     }
 
     // Same as ResourcesAction, but provides special admin console permissions handling
@@ -11232,91 +11306,6 @@ public class AdminController extends SpringActionController
             }
             return url;
         }
-    }
-
-
-    // Validate and populate the folder settings; save & log all changes
-    private static boolean saveFolderSettings(Container c, FolderSettingsForm form, WriteableFolderLookAndFeelProperties props, User user, BindException errors)
-    {
-        if (!validateAndSaveFormat(form.getDefaultDateFormat(), form.isDefaultDateFormatInherited(), props::clearDefaultDateFormat, props::setDefaultDateFormat, errors, "date"))
-            return false;
-        if (!validateAndSaveFormat(form.getDefaultDateTimeFormat(), form.isDefaultDateTimeFormatInherited(), props::clearDefaultDateTimeFormat, props::setDefaultDateTimeFormat, errors, "date-time"))
-            return false;
-        if (!validateAndSaveFormat(form.getDefaultTimeFormat(), form.isDefaultTimeFormatInherited(), props::clearDefaultTimeFormat, props::setDefaultTimeFormat, errors, "time"))
-            return false;
-        if (!validateAndSaveFormat(form.getDefaultNumberFormat(), form.isDefaultNumberFormatInherited(), props::clearDefaultNumberFormat, props::setDefaultNumberFormat, errors, "number"))
-            return false;
-        if (!validateAndSaveFormat(form.getExtraDateParsingPattern(), form.isExtraDateParsingPatternInherited(), props::clearExtraDateParsingPattern, props::setExtraDateParsingPattern, errors, "date"))
-            return false;
-        if (!validateAndSaveFormat(form.getExtraDateTimeParsingPattern(), form.isExtraDateTimeParsingPatternInherited(), props::clearExtraDateTimeParsingPattern, props::setExtraDateTimeParsingPattern, errors, "date-time"))
-            return false;
-        if (!validateAndSaveFormat(form.getExtraTimeParsingPattern(), form.isExtraTimeParsingPatternInherited(), props::clearExtraTimeParsingPattern, props::setExtraTimeParsingPattern, errors, "time"))
-            return false;
-
-        if (form.isRestrictedColumnsEnabledInherited())
-            props.clearRestrictedColumnsEnabled();
-        else
-            props.setRestrictedColumnsEnabled(form.areRestrictedColumnsEnabled());
-
-        props.save();
-
-        //write an audit log event
-        props.writeAuditLogEvent(c, user);
-
-        return true;
-    }
-
-    private interface FormatSaver
-    {
-        void save(String format) throws IllegalArgumentException;
-    }
-
-    // TODO: Migrate callers and delete
-    private static boolean validateAndSaveFormat(String format, Runnable clearer, FormatSaver saver, BindException errors, String what)
-    {
-        String defaultFormat = StringUtils.trimToNull(format);
-        if (null == defaultFormat)
-        {
-            clearer.run();
-        }
-        else
-        {
-            try
-            {
-                saver.save(defaultFormat);
-            }
-            catch (IllegalArgumentException e)
-            {
-                errors.reject(ERROR_MSG, "Invalid " + what + " format: " + e.getMessage());
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    // TODO: Use this!
-    private static boolean validateAndSaveFormat(String format, boolean inherited, Runnable clearer, FormatSaver saver, BindException errors, String what)
-    {
-        String defaultFormat = StringUtils.trimToNull(format);
-        if (inherited)
-        {
-            clearer.run();
-        }
-        else
-        {
-            try
-            {
-                saver.save(defaultFormat);
-            }
-            catch (IllegalArgumentException e)
-            {
-                errors.reject(ERROR_MSG, "Invalid " + what + " format: " + e.getMessage());
-                return false;
-            }
-        }
-
-        return true;
     }
 
     public static class LookAndFeelView extends JspView<LookAndFeelBean>
