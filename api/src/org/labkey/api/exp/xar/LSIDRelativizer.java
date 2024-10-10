@@ -162,7 +162,7 @@ public enum LSIDRelativizer implements SafeToRenderEnum
             }
             else if (ExpMaterial.DEFAULT_CPAS_TYPE.equals(prefix))
             {
-                if (lsid.getNamespaceSuffix().startsWith("Folder-"))
+                if (StringUtils.startsWith(lsid.getNamespaceSuffix(),"Folder-"))
                 {
                     return stripFolderSuffix(lsid, lsids);
                 }
@@ -173,7 +173,7 @@ public enum LSIDRelativizer implements SafeToRenderEnum
             }
             else if (ExpData.DEFAULT_CPAS_TYPE.equals(prefix))
             {
-                if (lsid.getNamespaceSuffix().startsWith("Folder-"))
+                if (StringUtils.startsWith(lsid.getNamespaceSuffix(),"Folder-"))
                 {
                     return stripFolderSuffix(lsid, lsids);
                 }
@@ -184,7 +184,7 @@ public enum LSIDRelativizer implements SafeToRenderEnum
             }
             else
             {
-                if (suffix != null && suffix.startsWith("Folder-"))
+                if (StringUtils.startsWith(suffix,"Folder-"))
                 {
                     return stripFolderSuffix(lsid, lsids);
                 }

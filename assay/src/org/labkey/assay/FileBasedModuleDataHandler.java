@@ -16,6 +16,7 @@
 package org.labkey.assay;
 
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.XarContext;
@@ -67,7 +68,7 @@ public class FileBasedModuleDataHandler extends AbstractExperimentDataHandler
     }
 
     @Override
-    public void importFile(ExpData data, File dataFile, ViewBackgroundInfo info, Logger log, XarContext context)
+    public void importFile(@NotNull ExpData data, File dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context)
     {
     }
 }

@@ -17,7 +17,6 @@ package org.labkey.api;
 
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.FilterRegistration;
-import jakarta.servlet.MultipartConfigElement;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletRegistration;
 import org.apache.catalina.filters.CorsFilter;
@@ -317,7 +316,7 @@ public class ApiModule extends CodeOnlyModule
 
         ServletRegistration.Dynamic viewServletDynamic = servletCtx.addServlet("ViewServlet", new ViewServlet());
         viewServletDynamic.setLoadOnStartup(1);
-        viewServletDynamic.setMultipartConfig(new MultipartConfigElement(SpringActionController.getTempUploadDir().getPath()));
+        viewServletDynamic.setMultipartConfig(SpringActionController.getMultiPartConfigElement());
         viewServletDynamic.addMapping("*.view");
         viewServletDynamic.addMapping("*.api");
         viewServletDynamic.addMapping("*.post");
@@ -344,7 +343,7 @@ public class ApiModule extends CodeOnlyModule
         {
             ServletRegistration.Dynamic redirectorDynamic = servletCtx.addServlet("RedirectorServlet", new RedirectorServlet(legacyContextPath));
             redirectorDynamic.addMapping(legacyContextPath + "/*");
-            redirectorDynamic.setMultipartConfig(new MultipartConfigElement(SpringActionController.getTempUploadDir().getPath()));
+            redirectorDynamic.setMultipartConfig(SpringActionController.getMultiPartConfigElement());
         }
     }
 
@@ -441,6 +440,7 @@ public class ApiModule extends CodeOnlyModule
         List<Factory<Class<?>>> list = new ArrayList<>(super.getIntegrationTestFactories());
         list.add(new JspTestCase("/org/labkey/api/module/testSimpleModule.jsp"));
         list.add(new JspTestCase("/org/labkey/api/module/actionAndFormTest.jsp"));
+        list.add(new JspTestCase("/org/labkey/vfs/vfsTestCase.jsp"));
         return list;
     }
 

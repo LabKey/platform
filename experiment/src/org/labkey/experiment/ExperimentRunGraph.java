@@ -82,9 +82,7 @@ public class ExperimentRunGraph
     {
         if (baseDirectory == null)
         {
-            File tempFile = FileUtil.createTempFile("Exp", ".dir");
-            tempFile.delete();
-            File tempDir = new File(tempFile.getParentFile(), "ExperimentRunGraphs");
+            File tempDir = FileUtil.appendName(FileUtil.getTempDirectory(), "ExperimentRunGraphs");
             if (tempDir.exists())
             {
                 FileUtil.deleteDirectoryContents(tempDir);
@@ -103,7 +101,7 @@ public class ExperimentRunGraph
 
     private synchronized static File getFolderDirectory(Container container) throws IOException
     {
-        File result = new File(getBaseDirectory(), "Folder" + container.getRowId());
+        File result = FileUtil.appendName(getBaseDirectory(), "Folder" + container.getRowId());
         FileUtil.mkdirs(result);
         for (int i = 0; i < 5; i++)
         {
