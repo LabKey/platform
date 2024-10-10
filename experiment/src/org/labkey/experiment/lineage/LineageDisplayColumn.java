@@ -1,4 +1,4 @@
-package org.labkey.experiment.api;
+package org.labkey.experiment.lineage;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -307,5 +307,4 @@ public class LineageDisplayColumn extends DataColumn implements IMultiValuedDisp
             return schema;
         }
     }
-
 }

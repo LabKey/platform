@@ -38,6 +38,7 @@ public interface ExpProtocol extends ExpObject
     String ASSAY_DOMAIN_RUN = AssayDomainTypes.Run.getPrefix();
     String ASSAY_DOMAIN_BATCH = AssayDomainTypes.Batch.getPrefix();
     String ASSAY_DOMAIN_DATA = AssayDomainTypes.Result.getPrefix();
+    String DEFAULT_CPAS_TYPE = "Protocol";
 
     /**
      * List of well-known domain types.  AssayProviders may

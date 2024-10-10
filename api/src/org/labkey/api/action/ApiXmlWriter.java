@@ -192,7 +192,7 @@ public class ApiXmlWriter extends ApiResponseWriter
     @Override
     public void startResponse()
     {
-        assert _streamStack.size() == 0 : "called startResponse() after response was already started!";
+        assert _streamStack.isEmpty() : "called startResponse() after response was already started!";
         //we always return an object at the top level
         _streamStack.push(new StreamState());
     }

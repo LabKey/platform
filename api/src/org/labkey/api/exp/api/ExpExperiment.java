@@ -27,6 +27,8 @@ import java.util.List;
  */
 public interface ExpExperiment extends ExpObject
 {
+    String DEFAULT_CPAS_TYPE = "Experiment";
+
     List<? extends ExpRun> getRuns();
     List<? extends ExpRun> getRuns(@Nullable ExpProtocol parentProtocol, ExpProtocol childProtocol);
 

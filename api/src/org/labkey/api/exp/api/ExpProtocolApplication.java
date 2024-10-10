@@ -32,6 +32,8 @@ import java.util.Set;
  */
 public interface ExpProtocolApplication extends ExpObject
 {
+    String DEFAULT_CPAS_TYPE = "ProtocolApplication";
+
     @NotNull
     List<? extends ExpDataRunInput> getDataInputs();
     @NotNull

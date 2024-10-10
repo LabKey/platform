@@ -479,7 +479,7 @@ public class XarReader extends AbstractXarImporter
     {
         for (Map.Entry<Integer, String> entry : _runReplacedByMap.entrySet())
         {
-            String runLSID = LsidUtils.resolveLsidFromTemplate(entry.getValue(), _xarSource.getXarContext(), "ExperimentRun", "ExperimentRun");
+            String runLSID = LsidUtils.resolveLsidFromTemplate(entry.getValue(), _xarSource.getXarContext(), ExpRun.DEFAULT_CPAS_TYPE, ExpRun.DEFAULT_CPAS_TYPE);
             ExpRunImpl replacedByRun = ExperimentServiceImpl.get().getExpRun(runLSID);
             if (replacedByRun != null && replacedByRun.getContainer().equals(getContainer()))
             {
@@ -563,7 +563,7 @@ public class XarReader extends AbstractXarImporter
             // We can use Name as the idCol1 without requiring it to be a domain property
             materialSource.setIdCol1(ExpMaterialTable.Column.Name.name());
         }
-        else if (keyFields.size() > 0)
+        else if (!keyFields.isEmpty())
         {
             List<String> propertyURIs = new ArrayList<>(keyFields.size());
             for (String keyField : keyFields)
@@ -853,7 +853,7 @@ public class XarReader extends AbstractXarImporter
     {
         for (ProtocolActionSetType actionDef : actionDefs)
         {
-            String protocolLSID = LsidUtils.resolveLsidFromTemplate(actionDef.getParentProtocolLSID(), getRootContext(), "Protocol");
+            String protocolLSID = LsidUtils.resolveLsidFromTemplate(actionDef.getParentProtocolLSID(), getRootContext(), ExpProtocol.DEFAULT_CPAS_TYPE);
             ExpProtocol existingProtocol = ExperimentService.get().getExpProtocol(protocolLSID);
 
             if (existingProtocol != null)
@@ -877,7 +877,7 @@ public class XarReader extends AbstractXarImporter
     {
         for (ProtocolBaseType protocol : protocolDefs)
         {
-            String protocolLSID = LsidUtils.resolveLsidFromTemplate(protocol.getAbout(), getRootContext(), "Protocol");
+            String protocolLSID = LsidUtils.resolveLsidFromTemplate(protocol.getAbout(), getRootContext(), ExpProtocol.DEFAULT_CPAS_TYPE);
             ExpProtocol existingProtocol = ExperimentService.get().getExpProtocol(protocolLSID);
 
             if (existingProtocol != null)
@@ -900,7 +900,7 @@ public class XarReader extends AbstractXarImporter
     {
         for (ExperimentRunType experimentRun : experimentRuns.getExperimentRunArray())
         {
-            String runLSID = LsidUtils.resolveLsidFromTemplate(experimentRun.getAbout(), getRootContext(), "ExperimentRun", "ExperimentRun");
+            String runLSID = LsidUtils.resolveLsidFromTemplate(experimentRun.getAbout(), getRootContext(), ExpRun.DEFAULT_CPAS_TYPE, ExpRun.DEFAULT_CPAS_TYPE);
 
             // Clear out any existing runs with the same LSID
             ExpRun existingRun = ExperimentService.get().getExpRun(runLSID);
@@ -950,7 +950,7 @@ public class XarReader extends AbstractXarImporter
             }
         }
 
-        String experimentLSID = LsidUtils.resolveLsidFromTemplate(exp.getAbout(), getRootContext(), "Experiment");
+        String experimentLSID = LsidUtils.resolveLsidFromTemplate(exp.getAbout(), getRootContext(), ExpExperiment.DEFAULT_CPAS_TYPE);
         _experimentLSIDs.add(experimentLSID);
 
         TableInfo tiExperiment = ExperimentServiceImpl.get().getTinfoExperiment();
@@ -971,7 +971,7 @@ public class XarReader extends AbstractXarImporter
 
             if (exp.isSetBatchProtocolLSID())
             {
-                String batchProtocolLSID = LsidUtils.resolveLsidFromTemplate(exp.getBatchProtocolLSID(), getRootContext(), "Protocol");
+                String batchProtocolLSID = LsidUtils.resolveLsidFromTemplate(exp.getBatchProtocolLSID(), getRootContext(), ExpProtocol.DEFAULT_CPAS_TYPE);
 
                 ExpProtocol batchProtocol = getProtocolFromLsid(batchProtocolLSID);
 
@@ -1026,7 +1026,7 @@ public class XarReader extends AbstractXarImporter
         String experimentLSID = null;
         if (a.isSetExperimentLSID())
         {
-            experimentLSID = LsidUtils.resolveLsidFromTemplate(a.getExperimentLSID(), runContext, "Experiment");
+            experimentLSID = LsidUtils.resolveLsidFromTemplate(a.getExperimentLSID(), runContext, ExpExperiment.DEFAULT_CPAS_TYPE);
         }
         else
         {
@@ -1038,7 +1038,7 @@ public class XarReader extends AbstractXarImporter
 
         runContext.addSubstitution("ExperimentLSID", experimentLSID);
 
-        String runLSID = LsidUtils.resolveLsidFromTemplate(a.getAbout(), runContext, "ExperimentRun", "ExperimentRun");
+        String runLSID = LsidUtils.resolveLsidFromTemplate(a.getAbout(), runContext, ExpRun.DEFAULT_CPAS_TYPE, ExpRun.DEFAULT_CPAS_TYPE);
 
         // First check if the run has already been deleted
         ExpRun existingRun = ExperimentService.get().getExpRun(runLSID);
@@ -1055,7 +1055,7 @@ public class XarReader extends AbstractXarImporter
         }
 
         Lsid pRunLSID = new Lsid(runLSID);
-        String runProtocolLSID = LsidUtils.resolveLsidFromTemplate(a.getProtocolLSID(), getRootContext(), "Protocol");
+        String runProtocolLSID = LsidUtils.resolveLsidFromTemplate(a.getProtocolLSID(), getRootContext(), ExpProtocol.DEFAULT_CPAS_TYPE);
         ExpProtocol protocol = getProtocolFromLsid(runProtocolLSID);
 
         if (protocol == null)
@@ -1311,9 +1311,8 @@ public class XarReader extends AbstractXarImporter
             recordCount = xmlProtocolApp.getRecordCount();
         }
 
-        String protAppLSID = LsidUtils.resolveLsidFromTemplate(xmlProtocolApp.getAbout(), context, "ProtocolApplication");
-
-        String protocolLSID = LsidUtils.resolveLsidFromTemplate(xmlProtocolApp.getProtocolLSID(), context, "Protocol");
+        String protAppLSID = LsidUtils.resolveLsidFromTemplate(xmlProtocolApp.getAbout(), context, ExpProtocolApplication.DEFAULT_CPAS_TYPE);
+        String protocolLSID = LsidUtils.resolveLsidFromTemplate(xmlProtocolApp.getProtocolLSID(), context, ExpProtocol.DEFAULT_CPAS_TYPE);
         ExpProtocol protocol = getProtocolFromLsid(protocolLSID);
 
         if (protocol == null)
@@ -2121,7 +2120,7 @@ public class XarReader extends AbstractXarImporter
 
     private void loadProtocol(ProtocolBaseType p) throws ExperimentException, SQLException
     {
-        String protocolLSID = LsidUtils.resolveLsidFromTemplate(p.getAbout(), getRootContext(), "Protocol");
+        String protocolLSID = LsidUtils.resolveLsidFromTemplate(p.getAbout(), getRootContext(), ExpProtocol.DEFAULT_CPAS_TYPE);
         ExpProtocolImpl existingProtocol = ExperimentServiceImpl.get().getExpProtocol(protocolLSID);
 
         // gpat assay support renaming, use name instead of lsid to find existing
@@ -2199,7 +2198,7 @@ public class XarReader extends AbstractXarImporter
         TableInfo tiAction = ExperimentServiceImpl.get().getTinfoProtocolAction();
 
         //Check that the parent is defined already
-        String parentLSID = LsidUtils.resolveLsidFromTemplate(actionSet.getParentProtocolLSID(), getRootContext(), "Protocol");
+        String parentLSID = LsidUtils.resolveLsidFromTemplate(actionSet.getParentProtocolLSID(), getRootContext(), ExpProtocol.DEFAULT_CPAS_TYPE);
         ExpProtocol parentProtocol = _loadedProtocols.get(parentLSID);
         if (parentProtocol == null)
             parentProtocol = _xarSource.getProtocol(parentLSID, "Parent");
@@ -2219,7 +2218,7 @@ public class XarReader extends AbstractXarImporter
 
         for (ProtocolActionType xAction : xActions)
         {
-            String childLSID = LsidUtils.resolveLsidFromTemplate(xAction.getChildProtocolLSID(), getRootContext(), "Protocol");
+            String childLSID = LsidUtils.resolveLsidFromTemplate(xAction.getChildProtocolLSID(), getRootContext(), ExpProtocol.DEFAULT_CPAS_TYPE);
 
             int currentSeq = xAction.getActionSequence();
             if (currentSeq <= priorSeq)
@@ -2319,14 +2318,12 @@ public class XarReader extends AbstractXarImporter
     private Protocol readProtocol(ProtocolBaseType p) throws XarFormatException, SQLException
     {
         Protocol protocol = new Protocol();
-        protocol.setLSID(LsidUtils.resolveLsidFromTemplate(p.getAbout(), getRootContext(), "Protocol"));
+        protocol.setLSID(LsidUtils.resolveLsidFromTemplate(p.getAbout(), getRootContext(), ExpProtocol.DEFAULT_CPAS_TYPE));
         protocol.setName(trimString(p.getName()));
         protocol.setProtocolDescription(trimString(p.getProtocolDescription()));
         String applicationType = trimString(p.getApplicationType());
         if (applicationType == null)
-        {
-            applicationType = "ProtocolApplication";
-        }
+            applicationType = ExpProtocolApplication.DEFAULT_CPAS_TYPE;
         protocol.setApplicationType(applicationType);
 
         if ((!p.isSetMaxInputMaterialPerInstance()) || p.isNilMaxInputMaterialPerInstance())
@@ -2376,7 +2373,7 @@ public class XarReader extends AbstractXarImporter
 
         if (null != p.getStatus())
             protocol.setStatus(ExpProtocol.Status.valueOf(p.getStatus()));
-        else if (applicationType.equals("ExperimentRun"))
+        else if (ExpRun.DEFAULT_CPAS_TYPE.equals(applicationType))
             protocol.setStatus(ExpProtocol.Status.Active);
 
         protocol.setContainer(getContainer());

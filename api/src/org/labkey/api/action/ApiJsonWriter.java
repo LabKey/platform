@@ -58,11 +58,10 @@ public class ApiJsonWriter extends ApiResponseWriter
     enum WriterState {Initialized, Started, Ended, Closed}
     private WriterState state = WriterState.Initialized;
 
-
     public ApiJsonWriter(Writer out) throws IOException
     {
         super(out);
-        // Don't flush the underlying Writer (thus committing the response) on all calls to write JSON content. See issue 19924
+        // Issue 19924: Do not flush the underlying Writer (thus committing the response) on all calls to write JSON content.
         jg.disable(JsonGenerator.Feature.FLUSH_PASSED_TO_STREAM);
     }
 
@@ -92,7 +91,7 @@ public class ApiJsonWriter extends ApiResponseWriter
     private void initGenerator()
     {
         jg.setCodec(getObjectMapper());  // makes the generator annotation aware
-        // Don't flush the underlying Writer (thus committing the response) on all calls to write JSON content. See issue 19924
+        // Issue 19924: Do not flush the underlying Writer (thus committing the response) on all calls to write JSON content.
         jg.disable(JsonGenerator.Feature.FLUSH_PASSED_TO_STREAM);
     }
 
@@ -146,7 +145,7 @@ public class ApiJsonWriter extends ApiResponseWriter
             throw new IllegalStateException("startResponse() has already been called");
         state = WriterState.Started;
 
-        //we always return an object at the top level
+        // Always return an object at the top level
         assert jg.getOutputContext().inRoot();
         jg.writeStartObject();
     }
@@ -285,13 +284,21 @@ public class ApiJsonWriter extends ApiResponseWriter
             writeProperty(String.valueOf(e.getKey()), e.getValue());
     }
 
-
     @Override
     public void writeProperties(JSONObject json) throws IOException
     {
         writeProperties(json.toMap());
     }
 
+    public void startObject(String name) throws IOException
+    {
+        jg.writeObjectFieldStart(name);
+    }
+
+    public void endObject() throws IOException
+    {
+        jg.writeEndObject();
+    }
 
     @Override
     public void startList(String name) throws IOException
@@ -367,7 +374,7 @@ public class ApiJsonWriter extends ApiResponseWriter
 
     static int beancount = 0;
 
-     public static class Bean extends HashMap<String,Object> {}
+    public static class Bean extends HashMap<String,Object> {}
 
     public static class TopBean extends Bean
     {
@@ -458,12 +465,12 @@ public class ApiJsonWriter extends ApiResponseWriter
             }
             var responseText = ((MockHttpServletResponse)writer.getResponse()).getContentAsString();
             var json = new JSONObject(responseText);
-            assertEquals( "throwing up", json.getString("exception") );
-            assertTrue( json.has("stackTrace") );
-            assertFalse( json.has("schemaName"));
-            System.out.println(json);
+            assertEquals("throwing up", json.getString("exception"));
+            assertTrue(json.has("stackTrace"));
+            assertFalse(json.has("schemaName"));
         }
 
+        // TODO: This test should be enabled or removed. Expectations are unclear.
         public void testExceptionCommitted() throws IOException
         {
             var beans = new TopBean();
@@ -494,10 +501,9 @@ public class ApiJsonWriter extends ApiResponseWriter
             }
             var responseText = ((MockHttpServletResponse)writer.getResponse()).getContentAsString();
             var json = new JSONObject(responseText);
-            assertEquals( "throwing up", json.getString("excception") );
-            assertTrue( json.has("stackTrace") );
-            assertTrue( json.has("schemaName"));
-            System.out.println(json);
+            assertEquals("throwing up", json.getString("exception"));
+            assertTrue(json.has("stackTrace"));
+            assertTrue(json.has("schemaName"));
         }
     }
 }

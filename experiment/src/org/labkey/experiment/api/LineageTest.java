@@ -29,11 +29,11 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpLineage;
 import org.labkey.api.exp.api.ExpLineageEdge;
 import org.labkey.api.exp.api.ExpLineageOptions;
+import org.labkey.api.exp.api.ExpLineageService;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleType;
-import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.list.ListDefinition;
@@ -61,7 +61,11 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.DefaultContainerUser;
+import org.labkey.experiment.lineage.LineageDisplayColumn;
+import org.labkey.experiment.lineage.ExpLineageServiceImpl;
+import org.springframework.mock.web.MockHttpServletResponse;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -198,14 +202,14 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         options.setChildren(false);
 
         final ExpData bob = ExperimentService.get().getExpData(firstDataClass, "bob");
-        ExpLineage lineage = ExperimentService.get().getLineage(c, user, bob, options);
+        ExpLineage lineage = ExpLineageService.get().getLineage(c, user, bob, options);
         Assert.assertTrue(lineage.getDatas().isEmpty());
         assertEquals(1, lineage.getMaterials().size());
         Assert.assertTrue(lineage.getMaterials().contains(s1));
 
         final ExpData jimbo = ExperimentService.get().getExpData(secondDataClass, "jimbo");
         final ExpData sally = ExperimentService.get().getExpData(firstDataClass, "sally");
-        lineage = ExperimentService.get().getLineage(c, user, sally, options);
+        lineage = ExpLineageService.get().getLineage(c, user, sally, options);
         assertEquals(2, lineage.getDatas().size());
         Assert.assertTrue(lineage.getDatas().contains(bob));
         Assert.assertTrue(lineage.getDatas().contains(jimbo));
@@ -213,7 +217,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         Assert.assertTrue(lineage.getMaterials().contains(firstAliquot));
 
         final ExpData mike = ExperimentService.get().getExpData(firstDataClass, "mike");
-        lineage = ExperimentService.get().getLineage(c, user, mike, options);
+        lineage = ExpLineageService.get().getLineage(c, user, mike, options);
         assertEquals("Expected 2 data, found: " + lineage.getDatas().stream().map(ExpData::getName).collect(joining(", ")),
                 2, lineage.getDatas().size());
         Assert.assertTrue(lineage.getDatas().contains(bob));
@@ -370,7 +374,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         options.setChildren(false);
 
         ContainerUser context = new DefaultContainerUser(c, user);
-        ExpLineage lineage = ExperimentService.get().getLineage(c, user, bob, options);
+        ExpLineage lineage = ExpLineageService.get().getLineage(c, user, bob, options);
         Assert.assertTrue(lineage.getDatas().isEmpty());
         assertEquals(1, lineage.getRuns().size());
         assertEquals(1, lineage.getMaterials().size());
@@ -395,7 +399,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         // will be deleted and a new one created for only the lineage in the update command.
 
         // Verify the lineage
-        lineage = ExperimentService.get().getLineage(c, user, bob, options);
+        lineage = ExpLineageService.get().getLineage(c, user, bob, options);
         Assert.assertTrue(lineage.getDatas().isEmpty());
         assertEquals(1, lineage.getRuns().size());
         assertEquals(2, lineage.getMaterials().size());
@@ -417,7 +421,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         assertEquals(1, updatedRows.size());
 
         // Verify the lineage
-        lineage = ExperimentService.get().getLineage(c, user, bob, options);
+        lineage = ExpLineageService.get().getLineage(c, user, bob, options);
         Assert.assertTrue(lineage.getDatas().isEmpty());
         assertEquals(1, lineage.getRuns().size());
         assertEquals(1, lineage.getMaterials().size());
@@ -543,7 +547,8 @@ public class LineageTest extends ExpProvisionedTableTestHelper
                 "runId", run.getRowId(), "fromObjectId", runObjectId, "toObjectId", b2.objectId));
 
         // query the lineage
-        ExpLineage lineage = expSvc.getLineage(c, user, a1.identifiable, new ExpLineageOptions());
+        Identifiable seed = a1.identifiable;
+        ExpLineage lineage = ExpLineageService.get().getLineage(c, user, seed, new ExpLineageOptions());
 
         assertTrue(lineage.getRuns().contains(run));
         assertEquals(Set.of(a1.identifiable), lineage.getSeeds());
@@ -556,7 +561,9 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         assertEquals(Set.of(b1.identifiable, b2.identifiable), lineage.getNodeChildren(run));
 
         // verify json structure
-        JSONObject json = lineage.toJSON(user, true, new ExperimentJSONConverter.Settings(false, false, false));
+        ExpLineageOptions options = new ExpLineageOptions();
+        options.setLsid(seed.getLSID());
+        JSONObject json = getLineageResponse(seed, options);
         assertEquals(a1.identifiable.getLSID(), json.getString("seed"));
 
         JSONObject nodes = json.getJSONObject("nodes");
@@ -673,7 +680,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         // Base case
         {
             var lineageOptions = new ExpLineageOptions(false, true, 10);
-            var lineage = expSvc.getLineage(c, user, aa.identifiable, lineageOptions);
+            var lineage = ExpLineageService.get().getLineage(c, user, aa.identifiable, lineageOptions);
             assertEquals("Unexpected number of child objects", 4, lineage.getObjects().size());
         }
 
@@ -681,7 +688,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         {
             var lineageOptions = new ExpLineageOptions(false, true, 10);
             lineageOptions.setSourceKey(sourceKey);
-            var lineage = expSvc.getLineage(c, user, aa.identifiable, lineageOptions);
+            var lineage = ExpLineageService.get().getLineage(c, user, aa.identifiable, lineageOptions);
             var objectNames = getLineageObjectNames(lineage);
             assertEquals("Unexpected number of child objects filtered", 1, objectNames.size());
             assertEquals("Unexpected child object", List.of("filteredBB"), objectNames);
@@ -691,7 +698,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         {
             var lineageOptions = new ExpLineageOptions(true, false, 10);
             lineageOptions.setSourceKey(sourceKey);
-            var lineage = expSvc.getLineage(c, user, ee.identifiable, lineageOptions);
+            var lineage = ExpLineageService.get().getLineage(c, user, ee.identifiable, lineageOptions);
             var objectNames = getLineageObjectNames(lineage);
             assertEquals("Unexpected number of parent objects filtered", 2, objectNames.size());
             assertEquals("Unexpected parent objects filtered", List.of("filteredCC", "filteredDD"), objectNames);
@@ -701,7 +708,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         {
             var lineageOptions = new ExpLineageOptions(true, false, 10);
             lineageOptions.setSourceKey("SELECT(*");
-            var lineage = expSvc.getLineage(c, user, cc.identifiable, lineageOptions);
+            var lineage = ExpLineageService.get().getLineage(c, user, cc.identifiable, lineageOptions);
             var objectNames = getLineageObjectNames(lineage);
             assertEquals("Unexpected number of objects from SQL injection #1", 1, objectNames.size());
             assertEquals("Unexpected object from SQL injection #1", List.of("filteredBB"), objectNames);
@@ -711,7 +718,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         {
             var lineageOptions = new ExpLineageOptions(true, false, 10);
             lineageOptions.setSourceKey(sourceKey + " OR _Edges.sourcekey = 'SELECT(*'");
-            var lineage = expSvc.getLineage(c, user, ee.identifiable, lineageOptions);
+            var lineage = ExpLineageService.get().getLineage(c, user, ee.identifiable, lineageOptions);
             assertEquals("Unexpected number of objects from SQL injection #2", 0, lineage.getObjects().size());
         }
     }
@@ -769,13 +776,16 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         var rows = insertRows(c, sampleRows, sampleTypeName, QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("Samples")));
         var gameSample = expSvc.getExpMaterial((Integer) rows.get(0).get("RowId"));
 
-        // Request lineage including all rows
-        var lineage = expSvc.getLineage(c, user, dadExpData, new ExpLineageOptions(false, true, 2));
+        var options = new ExpLineageOptions(false, true, 2);
+        options.setIncludeProperties(true);
+        options.setLsid(dadExpData.getLSID());
 
         // Act
-        var json = lineage.toJSON(user, true, new ExperimentJSONConverter.Settings(true, false, false));
+        // Request lineage including properties
+        var json = getLineageResponse(dadExpData, options);
 
         // Assert
+        // Verify json structure
         assertEquals(dadExpData.getLSID(), json.getString("seed"));
         var nodes = json.getJSONObject("nodes");
 
@@ -797,6 +807,13 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         // TODO: Logic is mostly correct but need to determine best date behavior for CI
         // expected:<Fri Sep 14 07:00:00 UTC 1990> but was:<1990-09-14 00:00:00.0>
         // assertEquals(gameDate, gameProperties.get(dateProperty.getPropertyURI()));
+    }
+
+    private JSONObject getLineageResponse(Identifiable seed, ExpLineageOptions options) throws IOException
+    {
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        ExpLineageServiceImpl.get().streamLineage(c, user, response, Set.of(seed), options);
+        return new JSONObject(response.getContentAsString());
     }
 
     private List<String> getLineageObjectNames(ExpLineage lineage)

@@ -236,6 +236,7 @@ import org.labkey.experiment.XarExporter;
 import org.labkey.experiment.XarReader;
 import org.labkey.experiment.api.property.DomainPropertyManager;
 import org.labkey.experiment.controllers.exp.ExperimentController;
+import org.labkey.experiment.lineage.ExpLineageServiceImpl;
 import org.labkey.experiment.pipeline.ExpGeneratorHelper;
 import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 import org.labkey.experiment.pipeline.MoveRunsPipelineJob;
@@ -1362,7 +1363,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         protocol.setContainer(container);
         protocol.setApplicationType(type.toString());
         protocol.setOutputDataType(ExpData.DEFAULT_CPAS_TYPE);
-        protocol.setOutputMaterialType("Material");
+        protocol.setOutputMaterialType(ExpMaterial.DEFAULT_CPAS_TYPE);
         // the default for runs
         if (ExperimentRun.equals(type))
             protocol.setStatus(ExpProtocol.Status.Active);
@@ -1575,21 +1576,21 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     public static String getNamespacePrefix(Class<? extends ExpObject> clazz)
     {
         if (clazz == ExpData.class)
-            return "Data";
+            return ExpData.DEFAULT_CPAS_TYPE;
         if (clazz == ExpMaterial.class)
-            return "Material";
+            return ExpMaterial.DEFAULT_CPAS_TYPE;
         if (clazz == ExpProtocol.class)
-            return "Protocol";
+            return ExpProtocol.DEFAULT_CPAS_TYPE;
         if (clazz == ExpRun.class)
-            return "Run";
+            return ExpRunImpl.NAMESPACE_PREFIX;
         if (clazz == ExpExperiment.class)
-            return "Experiment";
+            return ExpExperiment.DEFAULT_CPAS_TYPE;
         if (clazz == ExpSampleType.class)
             return "SampleSet";
         if (clazz == ExpDataClass.class)
             return ExpDataClassImpl.NAMESPACE_PREFIX;
         if (clazz == ExpProtocolApplication.class)
-            return "ProtocolApplication";
+            return ExpProtocolApplication.DEFAULT_CPAS_TYPE;
         if (clazz == ExpProtocolInput.class)
             return AbstractProtocolInput.NAMESPACE;
         throw new IllegalArgumentException("Invalid class " + clazz.getName());
@@ -2449,25 +2450,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 .toList();
     }
 
-
-    /**
-     * walk experiment graph with one tricky recursive query
-     * <p>
-     * <p>
-     * TWO BIG PROBLEMS
-     * <p>
-     * A) Can't mutually recurse between CTE (urg)
-     * 2) Can only reference the recursive CTE exactly once (urg)
-     * <p>
-     * NOTE: when recursing UP:      INNER M.rowid=MI.materialid AND INNER MI.targetapplicationid=PA.rowid\
-     * NOTE: when recursing DOWN:    INNER PA.rowid=D.sourceapplicationid AND OUTER M.rowid=MI.materialid
-     * <p>
-     * NOTE: it is very unfortunately that experiment objects do not have globally unique objectids
-     * NOTE: this requires that we join internally on rowid, but globally on lsid...
-     * <p>
-     * each row in the result represents one 'edge' or 'leaf/root' in the experiment graph, that is to say
-     * nodes (material,data,protocolapplication) may appear more than once, but edges shouldn't
-     **/
     @Override
     public Pair<Set<ExpData>, Set<ExpMaterial>> getParents(Container c, User user, ExpRunItem start)
     {
@@ -2478,9 +2460,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return Pair.of(lineage.getDatas(), lineage.getMaterials());
     }
 
-    /**
-     * walk experiment graph with one tricky recursive query
-     **/
     @Override
     public Pair<Set<ExpData>, Set<ExpMaterial>> getChildren(Container c, User user, ExpRunItem start)
     {
@@ -2576,30 +2555,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return lineage.findNearestParentMaterials(start);
     }
 
-    public List<ExpRun> oldCollectRunsToInvestigate(ExpRunItem start, ExpLineageOptions options)
-    {
-        List<ExpRun> runsToInvestigate = new ArrayList<>();
-        boolean up = options.isParents();
-        boolean down = options.isChildren();
-
-        if (up)
-        {
-            ExpRun parentRun = start.getRun();
-            if (parentRun != null)
-                runsToInvestigate.add(parentRun);
-        }
-
-        if (down)
-        {
-            if (start instanceof ExpData)
-                runsToInvestigate.addAll(getRunsUsingDataIds(Arrays.asList(start.getRowId())));
-            else if (start instanceof ExpMaterial)
-                runsToInvestigate.addAll(getRunsUsingMaterials(start.getRowId()));
-            runsToInvestigate.remove(start.getRun());
-        }
-        return runsToInvestigate;
-    }
-
     // Get list of ExpRun LSIDs for the start Data or Material
     @Override
     public List<String> collectRunsToInvestigate(ExpRunItem start, ExpLineageOptions options)
@@ -2613,7 +2568,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     // Get up and down maps of ExpRun LSID to Role
-    private Pair<Map<String, String>, Map<String, String>> collectRunsAndRolesToInvestigate(ExpRunItem start, ExpLineageOptions options)
+    public Pair<Map<String, String>, Map<String, String>> collectRunsAndRolesToInvestigate(ExpRunItem start, ExpLineageOptions options)
     {
         Map<String, String> runsUp = new HashMap<>();
         Map<String, String> runsDown = new HashMap<>();
@@ -2624,7 +2579,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (up)
         {
             if (parentRun != null)
-                runsUp.put(parentRun.getLSID(), start instanceof Data ? "Data" : "Material");
+                runsUp.put(parentRun.getLSID(), start instanceof Data ? ExpData.DEFAULT_CPAS_TYPE : ExpMaterial.DEFAULT_CPAS_TYPE);
         }
         if (down)
         {
@@ -2636,8 +2591,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (parentRun != null)
                 runsDown.remove(parentRun.getLSID());
         }
-
-        assert checkRunsAndRoles(start, options, runsUp, runsDown);
 
         return Pair.of(runsUp, runsDown);
     }
@@ -2651,21 +2604,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return runLsidToRoleMap;
     }
 
-    private boolean checkRunsAndRoles(ExpRunItem start, ExpLineageOptions options, Map<String, String> runsUp, Map<String, String> runsDown)
-    {
-        Set<ExpRun> runs = new HashSet<>();
-        runsUp.keySet().stream().map(this::getExpRun).forEach(runs::add);
-        runsDown.keySet().stream().map(this::getExpRun).forEach(runs::add);
-
-        Set<ExpRun> oldRuns = new HashSet<>(oldCollectRunsToInvestigate(start, options));
-        if (!runs.equals(oldRuns))
-        {
-            LOG.warn("Mismatch between collectRunsAndRolesToInvestigate and oldCollectRunsToInvestigate. start: " + start + "\nruns: " + runs + "\nold runs:" + oldRuns);
-            return false;
-        }
-        return true;
-    }
-
     @Override
     @NotNull
     public ExpLineage getLineage(Container c, User user, @NotNull Identifiable start, @NotNull ExpLineageOptions options)
@@ -2676,168 +2614,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @NotNull
     public ExpLineage getLineage(Container c, User user, @NotNull Set<Identifiable> seeds, @NotNull ExpLineageOptions options)
     {
-        // validate seeds
-        Set<Integer> seedObjectIds = new HashSet<>(seeds.size());
-        Set<String> seedLsids = new HashSet<>(seeds.size());
-        for (Identifiable seed : seeds)
-        {
-            if (seed.getLSID() == null)
-                throw new RuntimeException("Lineage not available for unknown object");
-
-            // CONSIDER: add objectId to Identifiable?
-            int objectId = -1;
-            if (seed instanceof ExpObject expObjectSeed)
-                objectId = expObjectSeed.getObjectId();
-            else if (seed instanceof IdentifiableBase identifiableSeed)
-                objectId = identifiableSeed.getObjectId();
-
-            if (objectId == -1)
-                throw new RuntimeException("Lineage not available for unknown object: " + seed.getLSID());
-
-            if (seed instanceof ExpRunItem && isUnknownMaterial((ExpRunItem) seed))
-            {
-                LOG.warn("Lineage not available for unknown material: " + seed.getLSID());
-                continue;
-            }
-
-            // ensure the user has read permission in the seed container
-            if (c != null && !c.equals(seed.getContainer()))
-            {
-                if (!seed.getContainer().hasPermission(user, ReadPermission.class))
-                    throw new UnauthorizedException("Lineage not available. User does not have permission to view " + seed.getName() + ".");
-            }
-
-            if (!seedLsids.add(seed.getLSID()))
-                throw new RuntimeException("Requested lineage for duplicate LSID seed: " + seed.getLSID());
-
-            if (!seedObjectIds.add(objectId))
-                throw new RuntimeException("Requested lineage for duplicate objectId seed: " + objectId);
-        }
-
-        if (seedObjectIds.isEmpty())
-            return new ExpLineage(seeds, emptySet(), emptySet(), emptySet(), emptySet(), emptySet());
-
-        options.setUseObjectIds(true);
-        SQLFragment sqlf = generateExperimentTreeSQLObjectIdsSeeds(seedObjectIds, options);
-        Set<Integer> dataIds = new HashSet<>();
-        Set<Integer> materialIds = new HashSet<>();
-        Set<Integer> runIds = new HashSet<>();
-        Set<String> objectLsids = new HashSet<>();
-        Set<ExpLineage.Edge> edges = new HashSet<>();
-
-        for (Identifiable seed : seeds)
-        {
-            // create additional edges from the run for each ExpMaterial or ExpData seed
-            if (seed instanceof ExpRunItem runSeed && !isUnknownMaterial(runSeed))
-            {
-                Pair<Map<String, String>, Map<String, String>> pair = collectRunsAndRolesToInvestigate(runSeed, options);
-
-                // add edges for initial runs and roles up
-                for (Map.Entry<String, String> runAndRole : pair.first.entrySet())
-                    edges.add(new ExpLineage.Edge(runAndRole.getKey(), seed.getLSID(), "no role"));
-
-                // add edges for initial runs and roles down
-                for (Map.Entry<String, String> runAndRole : pair.second.entrySet())
-                    edges.add(new ExpLineage.Edge(seed.getLSID(), runAndRole.getKey(), "no role"));
-            }
-        }
-
-        new SqlSelector(getExpSchema(), sqlf).forEachMap((m)->
-        {
-            Integer depth = (Integer)m.get("depth");
-            String parentLSID = (String)m.get("parent_lsid");
-            String childLSID = (String)m.get("child_lsid");
-
-            String parentExpType = (String)m.get("parent_exptype");
-            String childExpType = (String)m.get("child_exptype");
-
-            Integer parentRowId = (Integer)m.get("parent_rowid");
-            Integer childRowId = (Integer)m.get("child_rowid");
-
-            String role = "no role";
-            if (parentRowId == null || childRowId == null)
-            {
-                LOG.error(String.format("Node not found for lineage: %s.\n  depth=%d, parentLsid=%s, parentType=%s, parentRowId=%d, childLsid=%s, childType=%s, childRowId=%d",
-                        StringUtils.join(seedLsids, ", "), depth, parentLSID, parentExpType, parentRowId, childLSID, childExpType, childRowId));
-            }
-            else
-            {
-                edges.add(new ExpLineage.Edge(parentLSID, childLSID, role));
-
-                // Don't include the seed in the lineage collections
-                if (!seedLsids.contains(parentLSID))
-                {
-                    // process parents
-                    if ("Data".equals(parentExpType))
-                        dataIds.add(parentRowId);
-                    else if ("Material".equals(parentExpType))
-                        materialIds.add(parentRowId);
-                    else if ("ExperimentRun".equals(parentExpType))
-                        runIds.add(parentRowId);
-                    else if ("Object".equals(parentExpType))
-                        objectLsids.add(parentLSID);
-                }
-
-                // Don't include the seed in the lineage collections
-                if (!seedLsids.contains(childLSID))
-                {
-                    // process children
-                    if ("Data".equals(childExpType))
-                        dataIds.add(childRowId);
-                    else if ("Material".equals(childExpType))
-                        materialIds.add(childRowId);
-                    else if ("ExperimentRun".equals(childExpType))
-                        runIds.add(childRowId);
-                    else if ("Object".equals(childExpType))
-                        objectLsids.add(childLSID);
-                }
-            }
-        });
-
-        Set<ExpData> datas;
-        List<ExpDataImpl> expDatas = getExpDatas(dataIds);
-        if (user != null)
-            datas = expDatas.stream().filter(data -> data.getContainer().hasPermission(user, ReadPermission.class)).collect(toSet());
-        else
-            datas = new HashSet<>(expDatas);
-
-        Set<ExpMaterial> materials;
-        List<ExpMaterialImpl> expMaterials = getExpMaterials(materialIds);
-        if (user != null)
-            materials = expMaterials.stream().filter(material -> material.getContainer().hasPermission(user, ReadPermission.class)).collect(toSet());
-        else
-            materials = new HashSet<>(expMaterials);
-
-        Set<ExpRun> runs;
-        List<ExpRunImpl> expRuns = getExpRuns(runIds);
-        if (user != null)
-            runs = expRuns.stream().filter(run -> run.getContainer().hasPermission(user, ReadPermission.class)).collect(toSet());
-        else
-            runs = new HashSet<>(expRuns);
-
-        Set<Identifiable> otherObjects = new HashSet<>(objectLsids.size());
-        for (String lsid : objectLsids)
-        {
-            Identifiable obj = LsidManager.get().getObject(lsid);
-            if (obj != null)
-            {
-                if (user == null || obj.getContainer().hasPermission(user, ReadPermission.class))
-                    otherObjects.add(obj);
-            }
-            else
-            {
-                LOG.warn("Failed to get object for LSID '" + lsid + "' referenced in lineage for seed: " +  StringUtils.join(seedLsids, ", "));
-            }
-        }
-
-        return new ExpLineage(seeds, datas, materials, runs, otherObjects, edges);
+        return ExpLineageServiceImpl.get().getLineage(c, user, seeds, options);
     }
 
     @Override
     public SQLFragment generateExperimentTreeSQLLsidSeeds(List<String> lsids, ExpLineageOptions options)
     {
         assert !options.isUseObjectIds();
-        String comma="";
+        String comma = "";
         SQLFragment sqlf = new SQLFragment();
         for (String lsid : lsids)
         {
@@ -2850,7 +2634,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     public SQLFragment generateExperimentTreeSQLObjectIdsSeeds(Collection<Integer> objectIds, ExpLineageOptions options)
     {
         assert options.isUseObjectIds();
-        String comma="";
+        String comma = "";
         SQLFragment sqlf = new SQLFragment("VALUES ");
         for (Integer objectId : objectIds)
         {
@@ -2936,6 +2720,24 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return new Pair<>(parentsToken,childrenToken);
     }
 
+    /**
+     * Walk experiment graph with one tricky recursive query.
+     * <p>
+     * <p>
+     * TWO BIG PROBLEMS
+     * <p>
+     * A) Can't mutually recurse between CTE (urg)
+     * 2) Can only reference the recursive CTE exactly once (urg)
+     * <p>
+     * NOTE: when recursing UP:      INNER M.rowid=MI.materialid AND INNER MI.targetapplicationid=PA.rowid\
+     * NOTE: when recursing DOWN:    INNER PA.rowid=D.sourceapplicationid AND OUTER M.rowid=MI.materialid
+     * <p>
+     * NOTE: it is very unfortunately that experiment objects do not have globally unique objectids
+     * NOTE: this requires that we join internally on rowid, but globally on lsid...
+     * <p>
+     * Each row in the result represents one 'edge' or 'leaf/root' in the experiment graph, that is to say
+     * nodes (material,data,protocolapplication) may appear more than once, but edges should not.
+     **/
     @Override
     public @NotNull SQLFragment generateExperimentTreeSQL(SQLFragment lsidsFrag, ExpLineageOptions options)
     {
@@ -3094,7 +2896,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return sqlf;
     }
 
-
     private void removeEdgesForRun(int runId)
     {
         TableInfo edge = getTinfoEdge();
@@ -3219,7 +3020,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             edges.add(List.of(fromObjectId, toObjectId, edgeRunId));
         });
 
-        // quick check
         if (params.size() == 0 && edges.size() == 0)
             return true;
 
@@ -4010,11 +3810,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     {
         return getExpSchema().getTable("Data");
     }
+
     public TableInfo getTinfoDataIndexed()
     {
         return getExpSchema().getTable("DataIndexed");
     }
-
 
     @Override
     public TableInfo getTinfoDataClass()
@@ -4029,7 +3829,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public TableInfo getTinfoDataAncestors() { return getExpSchema().getTable("DataAncestors"); }
+    public TableInfo getTinfoDataAncestors()
+    {
+        return getExpSchema().getTable("DataAncestors");
+    }
 
     @Override
     public TableInfo getTinfoProtocolInput()
@@ -4995,7 +4798,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         {
                             // verify the material doesn't belong to a SampleType
                             if (!ExpMaterial.DEFAULT_CPAS_TYPE.equals(material.getCpasType()))
-                                throw new IllegalArgumentException("Error deleting sample of default '" + ExpMaterialImpl.DEFAULT_CPAS_TYPE + "' type: '" + material.getName() + "' is in the sample type '" + material.getCpasType() + "'");
+                                throw new IllegalArgumentException("Error deleting sample of default '" + ExpMaterial.DEFAULT_CPAS_TYPE + "' type: '" + material.getName() + "' is in the sample type '" + material.getCpasType() + "'");
                         }
                     }
                     else
@@ -7101,7 +6904,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         ProtocolParameter parentNameTemplateParam = parentParams.get(XarConstants.APPLICATION_NAME_TEMPLATE_URI);
         assert parentLSIDTemplateParam != null : "Parent LSID Template was null";
         assert parentNameTemplateParam != null : "Parent Name Template was null";
-        protApp.setLSID(LsidUtils.resolveLsidFromTemplate(parentLSIDTemplateParam.getStringValue(), context, "ProtocolApplication"));
+        protApp.setLSID(LsidUtils.resolveLsidFromTemplate(parentLSIDTemplateParam.getStringValue(), context, ExpProtocolApplication.DEFAULT_CPAS_TYPE));
         protApp.setName(parentNameTemplateParam.getStringValue());
     }
 
@@ -9085,7 +8888,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         TableInfo tableInfo = getTinfoObjectLegacyNames();
 
-        String objecIdSql = dataType.equals("Protocol") ? "RowId FROM exp.Protocol" : "ObjectId FROM exp.Object";
+        String objecIdSql = ExpProtocol.DEFAULT_CPAS_TYPE.equals(dataType) ? "RowId FROM exp.Protocol" : "ObjectId FROM exp.Object";
 
         // find the last ObjectLegacyNames record with matched name and timestamp
         SQLFragment sql = new SQLFragment("SELECT ObjectId, Created FROM exp.ObjectLegacyNames " +

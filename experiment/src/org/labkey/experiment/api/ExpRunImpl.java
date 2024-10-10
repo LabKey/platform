@@ -82,8 +82,9 @@ import static org.labkey.experiment.api.ExperimentServiceImpl.getExpSchema;
 
 public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> implements ExpRun
 {
-    private boolean _populated;
+    public static final String NAMESPACE_PREFIX = "Run";
 
+    private boolean _populated;
     private List<ExpProtocolApplicationImpl> _protocolSteps;
     private Map<ExpMaterialImpl, String> _materialInputs = new HashMap<>();
     private Map<ExpDataImpl, String> _dataInputs = new HashMap<>();

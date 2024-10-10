@@ -218,7 +218,7 @@ public abstract class XarSource implements Serializable
             }
             if (result == null)
             {
-                throw new XarFormatException(createIllegalReferenceMessage(experimentRun, protApp, materialLSID, "Material"));
+                throw new XarFormatException(createIllegalReferenceMessage(experimentRun, protApp, materialLSID, ExpMaterial.DEFAULT_CPAS_TYPE));
             }
             map.put(result.getLSID(), result);
         }

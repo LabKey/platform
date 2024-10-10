@@ -20,6 +20,7 @@ import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.XarSource;
 import org.labkey.api.exp.api.ExpDataClass;
+import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
@@ -317,7 +318,7 @@ public abstract class AbstractExpFolderImporter implements FolderImporter
                                         extraContext.put(IS_NEW_FOLDER_IMPORT_KEY, true);
                                     }
 
-                                    DataIterator data = new ResolveLsidAndFileLinkDataIterator(loader.getDataIterator(context), xarContext, expObject instanceof ExpDataClass ? "DataClass" : "Material", tinfo);
+                                    DataIterator data = new ResolveLsidAndFileLinkDataIterator(loader.getDataIterator(context), xarContext, expObject instanceof ExpDataClass ? "DataClass" : ExpMaterial.DEFAULT_CPAS_TYPE, tinfo);
                                     int count = qus.loadRows(ctx.getUser(), ctx.getContainer(), data, context, extraContext);
                                     log.info("Imported a total of " + count + " rows into : " + tableName);
 
