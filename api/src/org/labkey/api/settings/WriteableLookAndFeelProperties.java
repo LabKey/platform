@@ -112,6 +112,11 @@ public class WriteableLookAndFeelProperties extends WriteableFolderLookAndFeelPr
         storeStringValue(systemDescription, description);
     }
 
+    public void clearSystemDescription()
+    {
+        remove(systemDescription);
+    }
+
     public void setSystemShortName(String shortName)
     {
         storeStringValue(systemShortName, shortName);
@@ -135,6 +140,11 @@ public class WriteableLookAndFeelProperties extends WriteableFolderLookAndFeelPr
     public void setCustomLogin(String login)
     {
         storeStringValue(customLogin, login);
+    }
+
+    public void clearCustomLogin()
+    {
+        remove(customLogin);
     }
 
     public void setCustomWelcome(String welcome)

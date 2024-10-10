@@ -88,15 +88,14 @@
     {
 %>
 <tr>
-    <td>Security defaults</td>
-    <td style="padding-left: 5px; padding-right: 5px;">Inherited<%=inheritHelp%></td>
+    <td colspan="3">Security defaults</td>
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="shouldInherit">New folders should inherit permissions by default</label></td>
     <td><input type="checkbox" id="shouldInherit" name="shouldInherit" size="50"<%=checked(SecurityManager.shouldNewSubfoldersInheritPermissions(c))%>></td>
 </tr>
 <tr>
-    <td colspan=2>&nbsp;</td>
+    <td colspan=3>&nbsp;</td>
 </tr>
 <%
     }
@@ -119,11 +118,21 @@
             .getHtmlString();
 %>
 <tr>
-    <td colspan=2>Customize the look and feel of <%=h(c.isRoot() ? "your LabKey Server installation" : "the '" + c.getProject().getName() + "' project")%> (<%=bean.helpLink%>)</td>
+    <td>Customize the look and feel of <%=h(c.isRoot() ? "your LabKey Server installation" : "the '" + c.getProject().getName() + "' project")%> (<%=bean.helpLink%>)</td>
+    <%
+        if (c.isProject())
+        {
+    %>
+        <td style="padding-left: 5px; padding-right: 5px;">Inherited<%=inheritHelp%></td>
+    <%
+        }
+    %>
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="<%=systemDescription%>">System description (used in emails)</label></td>
-    <td><input type="text" id="<%=systemDescription%>" name="<%=systemDescription%>" size="50" value="<%= h(laf.getDescription()) %>"></td>
+    <% boolean inherited = null == laf.getDescriptionStored(); %>
+    <%=inheritCheckbox(c, inherited, this, systemDescription.name())%>
+    <td><input type="text" id="<%=systemDescription%>" name="<%=systemDescription%>" size="50" value="<%= h(laf.getDescription()) %>"<%=disabled(inherited)%>></td>
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="<%=systemShortName%>">Header short name (appears in every page header and in emails)</label><%=helpPopup("Header short name", shortNameHelp, 350)%></td>
@@ -397,7 +406,9 @@
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="<%=customLogin%>">Alternative login page</label><%=helpPopup("Custom Login Page", customLoginHelp, true)%></td>
-    <td><input type="text" id="<%=customLogin%>" name="<%=customLogin%>" size="50" value="<%= h(laf.getCustomLogin()) %>"<%=disabled(!hasAdminOpsPerm)%>></td>
+    <% inherited = null == laf.getCustomLoginStored(); %>
+    <%=inheritCheckbox(c, inherited, this, customLogin.name())%>
+    <td><input type="text" id="<%=customLogin%>" name="<%=customLogin%>" size="50" value="<%= h(laf.getCustomLogin()) %>"<%=disabled(inherited || !hasAdminOpsPerm)%>></td>
 </tr>
 <tr>
     <td>&nbsp;</td>
@@ -408,7 +419,7 @@
     if (c.isRoot())
     {
         String customWelcomeHelp = "The relative URL of the page, either a full LabKey view or simple HTML resource, to be loaded as the welcome page." +
-            " The welcome page will be loaded when a user loads the site with no action provided (i.e. https://www.labkey.org)." +
+            " The welcome page will be loaded when a user loads the site with no action provided (e.g., https://www.labkey.org)." +
             " This is often used to provide a splash screen for guests. Note: do not include the contextPath in this string." +
             " For example: /myModule/welcome.view to select a view within a module, or /myModule/welcome.html for a simple HTML page in the web directory of your module.";
 %>

@@ -173,7 +173,12 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
 
     public String getDescription()
     {
-        return lookupStringValue(systemDescription, "");
+        return lookupStringValue(systemDescription, null);
+    }
+
+    public String getDescriptionStored()
+    {
+        return getStoredValue(_settingsContainer, systemDescription);
     }
 
     public String getUnsubstitutedShortName()
@@ -288,7 +293,12 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
 
     public String getCustomLogin()
     {
-        return lookupStringValue(customLogin, "login-login");
+        return lookupStringValue(customLogin, null);
+    }
+
+    public String getCustomLoginStored()
+    {
+        return getStoredValue(_settingsContainer, customLogin);
     }
 
     public String getCustomWelcome()
@@ -298,7 +308,7 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
 
     public DateParsingMode getDateParsingMode()
     {
-        assert this._settingsContainer.isRoot();
+        assert _settingsContainer.isRoot();
         return DateParsingMode.fromString(lookupStringValue(dateParsingMode, DateParsingMode.US.toString()));
     }
 

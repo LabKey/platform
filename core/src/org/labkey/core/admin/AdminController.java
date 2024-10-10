@@ -1731,6 +1731,7 @@ public class AdminController extends SpringActionController
     {
         private boolean _shouldInherit; // new subfolders should inherit parent permissions
         private String _systemDescription;
+        private boolean _systemDescriptionInherited;
         private String _systemShortName;
         private String _themeName;
         private String _themeFont;
@@ -1745,6 +1746,7 @@ public class AdminController extends SpringActionController
         private String _supportEmail;
         private String _dateParsingMode;
         private String _customLogin;
+        private boolean _customLoginInherited;
         private String _customWelcome;
 
         public boolean getShouldInherit()
@@ -1767,6 +1769,17 @@ public class AdminController extends SpringActionController
         public void setSystemDescription(String systemDescription)
         {
             _systemDescription = systemDescription;
+        }
+
+        public boolean isSystemDescriptionInherited()
+        {
+            return _systemDescriptionInherited;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setSystemDescriptionInherited(boolean systemDescriptionInherited)
+        {
+            _systemDescriptionInherited = systemDescriptionInherited;
         }
 
         public String getSystemShortName()
@@ -1813,7 +1826,6 @@ public class AdminController extends SpringActionController
             _folderDisplayMode = folderDisplayMode;
         }
 
-
         public String getApplicationMenuDisplayMode()
         {
             return _applicationMenuDisplayMode;
@@ -1824,7 +1836,6 @@ public class AdminController extends SpringActionController
         {
             _applicationMenuDisplayMode = displayMode;
         }
-
 
         public String getDateParsingMode()
         {
@@ -1903,6 +1914,17 @@ public class AdminController extends SpringActionController
             _customLogin = customLogin;
         }
 
+        public boolean isCustomLoginInherited()
+        {
+            return _customLoginInherited;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setCustomLoginInherited(boolean customLoginInherited)
+        {
+            _customLoginInherited = customLoginInherited;
+        }
+
         public String getCustomWelcome()
         {
             return _customWelcome;
@@ -1934,38 +1956,6 @@ public class AdminController extends SpringActionController
         public String getSupportEmail()
         {
             return _supportEmail;
-        }
-
-        public JSONObject toJSON()
-        {
-            Map<String, Object> json = new HashMap<>();
-            json.put("applicationMenuDisplayMode", getApplicationMenuDisplayMode());
-            json.put("companyName", getCompanyName());
-            json.put("customLogin", getCustomLogin());
-            json.put("customWelcome", getCustomWelcome());
-            json.put("dateParsingMode", getDateParsingMode());
-            json.put("defaultDateFormat", getDefaultDateFormat());
-            json.put("defaultDateTimeFormat", getDefaultDateTimeFormat());
-            json.put("defaultTimeFormat", getDefaultTimeFormat());
-            json.put("defaultNumberFormat", getDefaultNumberFormat());
-            json.put("discussionEnabled", isDiscussionEnabled());
-            json.put("extraDateParsingPattern", getExtraDateParsingPattern());
-            json.put("extraDateTimeParsingPattern", getExtraDateTimeParsingPattern());
-            json.put("extraTimeParsingPattern", getExtraTimeParsingPattern());
-            json.put("folderDisplayMode", getFolderDisplayMode());
-            json.put("helpMenuEnabled", isHelpMenuEnabled());
-            json.put("logoHref", getLogoHref());
-            json.put("reportAProblemPath", getReportAProblemPath());
-            json.put("restrictedColumnsEnabled", areRestrictedColumnsEnabled());
-            json.put("shouldInherit" ,getShouldInherit());
-            json.put("supportEmail" ,getSupportEmail());
-            json.put("systemDescription", getSystemDescription());
-            json.put("systemEmailAddress", getSystemEmailAddress());
-            json.put("systemShortName", getSystemShortName());
-            json.put("themeFont", getThemeFont());
-            json.put("themeName", getThemeName());
-
-            return JsonUtil.toJsonPreserveNulls(json);
         }
     }
 
@@ -5439,10 +5429,94 @@ public class AdminController extends SpringActionController
         @Override
         public boolean handlePost(FolderSettingsForm form, BindException errors)
         {
-            return saveFolderSettings(getContainer(), getUser(), form, errors);
+            return saveFolderSettings(getContainer(), getUser(), LookAndFeelProperties.getWriteableFolderInstance(getContainer()), form, errors);
         }
     }
 
+    // Validate and populate the folder settings; save & log all changes
+    private static boolean saveFolderSettings(Container c, User user, WriteableFolderLookAndFeelProperties props, FolderSettingsForm form, BindException errors)
+    {
+        if (!validateAndSaveFormat(form.getDefaultDateFormat(), form.isDefaultDateFormatInherited(), props::clearDefaultDateFormat, props::setDefaultDateFormat, errors, "date"))
+            return false;
+        if (!validateAndSaveFormat(form.getDefaultDateTimeFormat(), form.isDefaultDateTimeFormatInherited(), props::clearDefaultDateTimeFormat, props::setDefaultDateTimeFormat, errors, "date-time"))
+            return false;
+        if (!validateAndSaveFormat(form.getDefaultTimeFormat(), form.isDefaultTimeFormatInherited(), props::clearDefaultTimeFormat, props::setDefaultTimeFormat, errors, "time"))
+            return false;
+        if (!validateAndSaveFormat(form.getDefaultNumberFormat(), form.isDefaultNumberFormatInherited(), props::clearDefaultNumberFormat, props::setDefaultNumberFormat, errors, "number"))
+            return false;
+        if (!validateAndSaveFormat(form.getExtraDateParsingPattern(), form.isExtraDateParsingPatternInherited(), props::clearExtraDateParsingPattern, props::setExtraDateParsingPattern, errors, "date"))
+            return false;
+        if (!validateAndSaveFormat(form.getExtraDateTimeParsingPattern(), form.isExtraDateTimeParsingPatternInherited(), props::clearExtraDateTimeParsingPattern, props::setExtraDateTimeParsingPattern, errors, "date-time"))
+            return false;
+        if (!validateAndSaveFormat(form.getExtraTimeParsingPattern(), form.isExtraTimeParsingPatternInherited(), props::clearExtraTimeParsingPattern, props::setExtraTimeParsingPattern, errors, "time"))
+            return false;
+
+        if (form.isRestrictedColumnsEnabledInherited())
+            props.clearRestrictedColumnsEnabled();
+        else
+            props.setRestrictedColumnsEnabled(form.areRestrictedColumnsEnabled());
+
+        props.save();
+
+        //write an audit log event
+        props.writeAuditLogEvent(c, user);
+
+        return true;
+    }
+
+    private interface FormatSaver
+    {
+        void save(String format) throws IllegalArgumentException;
+    }
+
+    // TODO: Migrate callers and delete
+    @Deprecated
+    private static boolean validateAndSaveFormat(String format, Runnable clearer, FormatSaver saver, BindException errors, String what)
+    {
+        String defaultFormat = StringUtils.trimToNull(format);
+        if (null == defaultFormat)
+        {
+            clearer.run();
+        }
+        else
+        {
+            try
+            {
+                saver.save(defaultFormat);
+            }
+            catch (IllegalArgumentException e)
+            {
+                errors.reject(ERROR_MSG, "Invalid " + what + " format: " + e.getMessage());
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    // TODO: Use this!
+    private static boolean validateAndSaveFormat(String format, boolean inherited, Runnable clearer, FormatSaver saver, BindException errors, String what)
+    {
+        String defaultFormat = StringUtils.trimToNull(format);
+        if (inherited)
+        {
+            clearer.run();
+        }
+        else
+        {
+            try
+            {
+                saver.save(defaultFormat);
+            }
+            catch (IllegalArgumentException e)
+            {
+                errors.reject(ERROR_MSG, "Invalid " + what + " format: " + e.getMessage());
+                return false;
+            }
+        }
+
+        return true;
+    }
 
     @RequiresPermission(AdminPermission.class)
     public static class ModulePropertiesAction extends FolderManagementViewAction
@@ -10814,7 +10888,7 @@ public class AdminController extends SpringActionController
     public static class ProjectSettingsAction extends ProjectSettingsViewPostAction<ProjectSettingsForm>
     {
         @Override
-        protected HttpView getTabView(ProjectSettingsForm form, boolean reshow, BindException errors)
+        protected LookAndFeelView getTabView(ProjectSettingsForm form, boolean reshow, BindException errors)
         {
             return new LookAndFeelView(errors);
         }
@@ -10827,16 +10901,160 @@ public class AdminController extends SpringActionController
         @Override
         public boolean handlePost(ProjectSettingsForm form, BindException errors) throws Exception
         {
-            Container c = getContainer();
-            User user = getUser();
-            JSONObject json = form.toJSON();
-            return saveProjectSettings(json, user, c, errors);
+            return saveProjectSettings(getContainer(), getUser(), form, errors);
         }
     }
 
-    // TODO: Before updating this to handle the new-style inheritance parameters getting posted, we should seriously
-    // consider flipping the approach to where both callers pass in a ProjectSettingsForm and then change this method
-    // to call saveFolderSettings() instead of duplicating all the folder settings
+    private static boolean saveProjectSettings(Container c, User user, ProjectSettingsForm form, BindException errors)
+    {
+        WriteableLookAndFeelProperties props = LookAndFeelProperties.getWriteableInstance(c);
+        boolean hasAdminOpsPerm = c.hasPermission(user, AdminOperationsPermission.class);
+
+//        if (json.has("themeName"))
+//        {
+//            String themName = json.optString("themeName");
+//            try
+//            {
+//                if (themName.isBlank())
+//                {
+//                    if (!c.isRoot())
+//                        props.clearThemeName();
+//                }
+//                else
+//                {
+//                    props.setThemeName(themName);
+//                }
+//            }
+//            catch (IllegalArgumentException ignored)
+//            {
+//            }
+//        }
+//
+//        if (json.has("shouldInherit"))
+//        {
+//            boolean shouldInherit = json.optBoolean("shouldInherit");
+//            if (shouldInherit != SecurityManager.shouldNewSubfoldersInheritPermissions(c))
+//            {
+//                SecurityManager.setNewSubfoldersInheritPermissions(c, user, shouldInherit);
+//            }
+//        }
+//
+        // a few properties on this page should be restricted to operational permissions (i.e. site admin)
+        if (hasAdminOpsPerm)
+        {
+//            if (json.has("systemEmailAddress"))
+//            {
+//                String systemEmailAddress = json.optString("systemEmailAddress");
+//                try
+//                {
+//                    // this will throw an InvalidEmailException for invalid email addresses
+//                    ValidEmail email = new ValidEmail(systemEmailAddress);
+//                    props.setSystemEmailAddress(email);
+//                }
+//                catch (ValidEmail.InvalidEmailException e)
+//                {
+//                    errors.reject(SpringActionController.ERROR_MSG, "Invalid System Email Address: ["
+//                            + e.getBadEmail() + "]. Please enter a valid email address.");
+//                    return false;
+//                }
+//            }
+//
+            if (form.isCustomLoginInherited())
+            {
+                props.clearCustomLogin();
+            }
+            else
+            {
+                String customLogin = form.getCustomLogin();
+                if (!props.isValidUrl(customLogin))
+                {
+                    errors.reject(SpringActionController.ERROR_MSG, "Invalid login URL. Should be in the form <module>-<name>.");
+                    return false;
+                }
+                props.setCustomLogin(customLogin);
+            }
+
+            if (c.isRoot())
+            {
+                String customWelcome = form.getCustomWelcome();
+                String welcomeUrl = StringUtils.trimToNull(customWelcome);
+                if ("/".equals(welcomeUrl) || AppProps.getInstance().getContextPath().equalsIgnoreCase(welcomeUrl))
+                {
+                    errors.reject(SpringActionController.ERROR_MSG, "Invalid welcome URL. The url cannot equal '/' or the contextPath (" + AppProps.getInstance().getContextPath() + ")");
+                    return false;
+                }
+                props.setCustomWelcome(welcomeUrl);
+            }
+        }
+//
+//        if (json.has("companyName"))
+//            props.setCompanyName(json.optString("companyName"));
+        if (form.isSystemDescriptionInherited())
+        {
+            props.clearSystemDescription();
+        }
+        else
+        {
+            props.setSystemDescription(form.getSystemDescription());
+        }
+//        if (json.has("logoHref"))
+//            props.setLogoHref(json.optString("logoHref"));
+//        if (json.has("systemShortName"))
+//            props.setSystemShortName(json.optString("systemShortName"));
+//        if (json.has("reportAProblemPath"))
+//            props.setReportAProblemPath(json.optString("reportAProblemPath"));
+//
+//        if (json.has("supportEmail"))
+//        {
+//            String supportEmail = json.optString("supportEmail");
+//            if (!isBlank(supportEmail))
+//            {
+//                try
+//                {
+//                    // this will throw an InvalidEmailException for invalid email addresses
+//                    ValidEmail email = new ValidEmail(supportEmail);
+//                    props.setSupportEmail(email.toString());
+//                }
+//                catch (ValidEmail.InvalidEmailException e)
+//                {
+//                    errors.reject(SpringActionController.ERROR_MSG, "Invalid Support Email Address: ["
+//                            + e.getBadEmail() + "]. Please enter a valid email address.");
+//                    return false;
+//                }
+//            }
+//            else
+//            {
+//                props.setSupportEmail(null);
+//            }
+//        }
+//
+//        if (json.has("folderDisplayMode"))
+//            props.setFolderDisplayMode(FolderDisplayMode.fromString(json.optString("folderDisplayMode")));
+//        if (json.has("applicationMenuDisplayMode"))
+//            props.setApplicationMenuDisplayMode(FolderDisplayMode.fromString(json.optString("applicationMenuDisplayMode")));
+//        if (json.has("helpMenuEnabled"))
+//            props.setHelpMenuEnabled(json.optBoolean("helpMenuEnabled"));
+//        if (json.has("discussionEnabled"))
+//            props.setDiscussionEnabled(json.optBoolean("discussionEnabled"));
+//
+//        if (json.has("dateParsingMode"))
+//        {
+//            DateParsingMode dateParsingMode = DateParsingMode.fromString(json.optString("dateParsingMode"));
+//            props.setDateParsingMode(dateParsingMode);
+//        }
+
+        saveFolderSettings(c, user, props, form, errors);
+
+        if (errors.hasErrors())
+            return false;
+
+        // Bump the look & feel revision so browsers retrieve the new theme stylesheet
+        WriteableAppProps.incrementLookAndFeelRevisionAndSave();
+
+        return true;
+    }
+
+    @Deprecated // TODO: DELETE ME
     private static boolean saveProjectSettings(JSONObject json, User user, Container c, BindException errors)
     {
         WriteableLookAndFeelProperties props = LookAndFeelProperties.getWriteableInstance(c);
@@ -11024,7 +11242,7 @@ public class AdminController extends SpringActionController
         @Override
         public Object execute(FolderSettingsForm form, BindException errors)
         {
-            boolean saved = saveFolderSettings(getContainer(), getUser(), form, errors);
+            boolean saved = saveFolderSettings(getContainer(), getUser(), LookAndFeelProperties.getWriteableFolderInstance(getContainer()), form, errors);
 
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("success", saved && !errors.hasErrors());
@@ -11078,93 +11296,6 @@ public class AdminController extends SpringActionController
 
             return true;
         }
-    }
-
-    // Validate and populate the folder settings; save & log all changes
-    private static boolean saveFolderSettings(Container c, User user, FolderSettingsForm form, BindException errors)
-    {
-        WriteableFolderLookAndFeelProperties props = LookAndFeelProperties.getWriteableFolderInstance(c);
-
-        if (!validateAndSaveFormat(form.getDefaultDateFormat(), form.isDefaultDateFormatInherited(), props::clearDefaultDateFormat, props::setDefaultDateFormat, errors, "date"))
-            return false;
-        if (!validateAndSaveFormat(form.getDefaultDateTimeFormat(), form.isDefaultDateTimeFormatInherited(), props::clearDefaultDateTimeFormat, props::setDefaultDateTimeFormat, errors, "date-time"))
-            return false;
-        if (!validateAndSaveFormat(form.getDefaultTimeFormat(), form.isDefaultTimeFormatInherited(), props::clearDefaultTimeFormat, props::setDefaultTimeFormat, errors, "time"))
-            return false;
-        if (!validateAndSaveFormat(form.getDefaultNumberFormat(), form.isDefaultNumberFormatInherited(), props::clearDefaultNumberFormat, props::setDefaultNumberFormat, errors, "number"))
-            return false;
-        if (!validateAndSaveFormat(form.getExtraDateParsingPattern(), form.isExtraDateParsingPatternInherited(), props::clearExtraDateParsingPattern, props::setExtraDateParsingPattern, errors, "date"))
-            return false;
-        if (!validateAndSaveFormat(form.getExtraDateTimeParsingPattern(), form.isExtraDateTimeParsingPatternInherited(), props::clearExtraDateTimeParsingPattern, props::setExtraDateTimeParsingPattern, errors, "date-time"))
-            return false;
-        if (!validateAndSaveFormat(form.getExtraTimeParsingPattern(), form.isExtraTimeParsingPatternInherited(), props::clearExtraTimeParsingPattern, props::setExtraTimeParsingPattern, errors, "time"))
-            return false;
-
-        if (form.isRestrictedColumnsEnabledInherited())
-            props.clearRestrictedColumnsEnabled();
-        else
-            props.setRestrictedColumnsEnabled(form.areRestrictedColumnsEnabled());
-
-        props.save();
-
-        //write an audit log event
-        props.writeAuditLogEvent(c, user);
-
-        return true;
-    }
-
-    private interface FormatSaver
-    {
-        void save(String format) throws IllegalArgumentException;
-    }
-
-    // TODO: Migrate callers and delete
-    @Deprecated
-    private static boolean validateAndSaveFormat(String format, Runnable clearer, FormatSaver saver, BindException errors, String what)
-    {
-        String defaultFormat = StringUtils.trimToNull(format);
-        if (null == defaultFormat)
-        {
-            clearer.run();
-        }
-        else
-        {
-            try
-            {
-                saver.save(defaultFormat);
-            }
-            catch (IllegalArgumentException e)
-            {
-                errors.reject(ERROR_MSG, "Invalid " + what + " format: " + e.getMessage());
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    // TODO: Use this!
-    private static boolean validateAndSaveFormat(String format, boolean inherited, Runnable clearer, FormatSaver saver, BindException errors, String what)
-    {
-        String defaultFormat = StringUtils.trimToNull(format);
-        if (inherited)
-        {
-            clearer.run();
-        }
-        else
-        {
-            try
-            {
-                saver.save(defaultFormat);
-            }
-            catch (IllegalArgumentException e)
-            {
-                errors.reject(ERROR_MSG, "Invalid " + what + " format: " + e.getMessage());
-                return false;
-            }
-        }
-
-        return true;
     }
 
     // Same as ResourcesAction, but provides special admin console permissions handling

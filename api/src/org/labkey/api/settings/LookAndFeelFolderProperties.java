@@ -19,6 +19,8 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.DateUtil;
 
+import java.util.Map;
+
 import static org.labkey.api.settings.LookAndFeelProperties.Properties.extraDateParsingPattern;
 import static org.labkey.api.settings.LookAndFeelProperties.Properties.extraDateTimeParsingPattern;
 import static org.labkey.api.settings.LookAndFeelProperties.Properties.extraTimeParsingPattern;
@@ -37,7 +39,6 @@ public class LookAndFeelFolderProperties extends AbstractWriteableSettingsGroup
     protected static final String defaultDateTimeFormatString = "defaultDateTimeFormatString";
     protected static final String defaultNumberFormatString = "defaultNumberFormatString";
     protected static final String defaultTimeFormatString = "defaultTimeFormatString";
-
 
     protected final Container _c;
 
@@ -84,6 +85,19 @@ public class LookAndFeelFolderProperties extends AbstractWriteableSettingsGroup
         return value;
     }
 
+    // Get the actual stored value in this container; no default handling, no walking the hierarchy
+    protected String getStoredValue(Container c, String name)
+    {
+        Map<String, String> props = getProperties(c);
+        return props.get(name);
+    }
+
+    // Get the actual stored value in this container; no default handling, no walking the hierarchy
+    protected String getStoredValue(Container c, Enum<?> e)
+    {
+        return getStoredValue(c, e.name());
+    }
+
     // TODO: consider enforcing usage of lookupBooleanValue with container
     /*@Override
     protected boolean lookupBooleanValue(String name, boolean defaultValue)
@@ -93,96 +107,98 @@ public class LookAndFeelFolderProperties extends AbstractWriteableSettingsGroup
 
     public String getDefaultDateFormat()
     {
-        // Look up this value starting from the current container (unlike most look & feel settings)
+        // Look up this value starting from the current container
         return lookupStringValue(_c, defaultDateFormatString, DateUtil.getStandardDateFormatString());
+    }
+
+    // Get the value that's actually stored in this container or null if inherited; don't look up the hierarchy
+    // This is useful for export and showing inheritance status in the UI.
+    public String getDefaultDateFormatStored()
+    {
+        return getStoredValue(_c, defaultDateFormatString);
     }
 
     public String getDefaultDateTimeFormat()
     {
-        // Look up this value starting from the current container (unlike most look & feel settings)
+        // Look up this value starting from the current container
         return lookupStringValue(_c, defaultDateTimeFormatString, DateUtil.getStandardDateTimeFormatString());
-    }
-
-    public String getDefaultTimeFormat()
-    {
-        // Look up this value starting from the current container (unlike most look & feel settings)
-        return lookupStringValue(_c, defaultTimeFormatString, DateUtil.getStandardTimeFormatString());
-    }
-
-    public String getDefaultNumberFormat()
-    {
-        // Look up this value starting from the current container (unlike most look & feel settings)
-        return lookupStringValue(_c, defaultNumberFormatString, null);
-    }
-
-    public String getExtraDateParsingPattern()
-    {
-        // Look up this value starting from the current container (unlike most look & feel settings)
-        return lookupStringValue(_c, extraDateParsingPattern, null);
-    }
-
-    public String getExtraDateTimeParsingPattern()
-    {
-        // Look up this value starting from the current container (unlike most look & feel settings)
-        return lookupStringValue(_c, extraDateTimeParsingPattern, null);
-    }
-
-    public String getExtraTimeParsingPattern()
-    {
-        // Look up this value starting from the current container (unlike most look & feel settings)
-        return lookupStringValue(_c, extraTimeParsingPattern, null);
-    }
-
-    public boolean areRestrictedColumnsEnabled()
-    {
-        return lookupBooleanValue(_c, restrictedColumnsEnabled, false);
-    }
-
-    // Get the value that's actually stored in this container or null if inherited; don't look up the hierarchy. This is useful for export and showing inheritance status in the UI.
-    public String getDefaultDateFormatStored()
-    {
-        return super.lookupStringValue(_c, defaultDateFormatString, null);
-    }
-
-    // Get the value that's actually stored in this container or null if inherited; don't look up the hierarchy. This is useful for export and showing inheritance status in the UI.
-    public String getDefaultDateTimeFormatStored()
-    {
-        return super.lookupStringValue(_c, defaultDateTimeFormatString, null);
     }
 
     // Get the value that's actually stored in this container or null if inherited; don't look up the hierarchy.
     // This is useful for export and showing inheritance status in the UI.
-    public String getDefaultNumberFormatStored()
+    public String getDefaultDateTimeFormatStored()
     {
-        return super.lookupStringValue(_c, defaultNumberFormatString, null);
+        return getStoredValue(_c, defaultDateTimeFormatString);
+    }
+
+    public String getDefaultTimeFormat()
+    {
+        // Look up this value starting from the current container
+        return lookupStringValue(_c, defaultTimeFormatString, DateUtil.getStandardTimeFormatString());
     }
 
     // Get the value that's actually stored in this container or null if inherited; don't look up the hierarchy.
     // This is useful for export and showing inheritance status in the UI.
     public String getDefaultTimeFormatStored()
     {
-        return super.lookupStringValue(_c, defaultTimeFormatString, null);
+        return getStoredValue(_c, defaultTimeFormatString);
+    }
+
+    public String getDefaultNumberFormat()
+    {
+        // Look up this value starting from the current container
+        return lookupStringValue(_c, defaultNumberFormatString, null);
+    }
+
+    // Get the value that's actually stored in this container or null if inherited; don't look up the hierarchy.
+    // This is useful for export and showing inheritance status in the UI.
+    public String getDefaultNumberFormatStored()
+    {
+        return getStoredValue(_c, defaultNumberFormatString);
+    }
+
+    public String getExtraDateParsingPattern()
+    {
+        // Look up this value starting from the current container
+        return lookupStringValue(_c, extraDateParsingPattern, null);
     }
 
     // Get the value that's actually stored in this container or null if inherited; don't look up the hierarchy.
     // This is useful for export and showing inheritance status in the UI.
     public String getExtraDateParsingPatternStored()
     {
-        return super.lookupStringValue(_c, extraDateParsingPattern.name(), null);
+        return getStoredValue(_c, extraDateParsingPattern);
+    }
+
+    public String getExtraDateTimeParsingPattern()
+    {
+        // Look up this value starting from the current container
+        return lookupStringValue(_c, extraDateTimeParsingPattern, null);
     }
 
     // Get the value that's actually stored in this container or null if inherited; don't look up the hierarchy.
     // This is useful for export and showing inheritance status in the UI.
     public String getExtraDateTimeParsingPatternStored()
     {
-        return super.lookupStringValue(_c, extraDateTimeParsingPattern.name(), null);
+        return getStoredValue(_c, extraDateTimeParsingPattern);
+    }
+
+    public String getExtraTimeParsingPattern()
+    {
+        // Look up this value starting from the current container
+        return lookupStringValue(_c, extraTimeParsingPattern, null);
     }
 
     // Get the value that's actually stored in this container or null if inherited; don't look up the hierarchy.
     // This is useful for export and showing inheritance status in the UI.
     public String getExtraTimeParsingPatternStored()
     {
-        return super.lookupStringValue(_c, extraTimeParsingPattern.name(), null);
+        return getStoredValue(_c, extraTimeParsingPattern.name());
+    }
+
+    public boolean areRestrictedColumnsEnabled()
+    {
+        return lookupBooleanValue(_c, restrictedColumnsEnabled, false);
     }
 
     // Get the value that's actually stored in this container or null if inherited; don't look up the hierarchy.
