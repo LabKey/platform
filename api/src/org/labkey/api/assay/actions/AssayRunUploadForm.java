@@ -727,7 +727,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
         AssayDataCollector collector = getSelectedDataCollector();
         if (collector != null)
         {
-            _uploadedData = collector.uploadComplete(this, run);
+            _uploadedData = CollectionUtils.checkValueClass(collector.uploadComplete(this, run),FileLike.class);
         }
 
         TsvDataExchangeHandler.removeWorkingDirectory(this);

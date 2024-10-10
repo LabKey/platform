@@ -153,6 +153,10 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         boolean importInBackground = forceAsync || (provider.isBackgroundUpload(protocol) && HttpView.hasCurrentView());
         if (!importInBackground)
         {
+            if ((Object)context.getUploadedData().get(AssayDataCollector.PRIMARY_FILE) instanceof File errFile)
+            {
+                throw new ClassCastException("FileLike expected: " + errFile + " context: " + context.getClass() + " " + context);
+            }
             FileLike primaryFile = context.getUploadedData().get(AssayDataCollector.PRIMARY_FILE);
             run = AssayService.get().createExperimentRun(context.getName(), context.getContainer(), protocol, null==primaryFile ? null : primaryFile.toNioPathForRead().toFile());
             run.setComments(context.getComments());

@@ -20,6 +20,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CollectionUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.exp.ExperimentException;
@@ -358,7 +359,7 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
          */
         public final FACTORY setUploadedData(Map<String, FileLike> uploadedData)
         {
-            _uploadedData = uploadedData;
+            _uploadedData = CollectionUtils.checkValueClass(uploadedData,FileLike.class);
             return self();
         }
 

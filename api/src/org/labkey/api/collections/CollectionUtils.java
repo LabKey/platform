@@ -160,10 +160,16 @@ public class CollectionUtils
      */
     public static <V> Map<String,V> enforceValueClass(Map<String,V> map, final Class<V> valueClass)
     {
+        checkValueClass(map, valueClass);
         Map<String,V> ret = map;
         //noinspection ConstantValue,AssertWithSideEffects
         assert null != (ret = Collections.checkedMap(map,String.class,valueClass));
         return ret;
+    }
+    public static <V> Map<String,V> checkValueClass(Map<String,V> map, final Class<V> valueClass)
+    {
+        assert map.values().stream().allMatch(v -> null==v || valueClass.isInstance(v));
+        return map;
     }
 
     public static class TestCase extends Assert

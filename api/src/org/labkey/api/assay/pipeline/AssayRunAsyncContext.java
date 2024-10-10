@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayRunUploadContext;
 import org.labkey.api.assay.AssayService;
+import org.labkey.api.collections.CollectionUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.ExperimentException;
@@ -113,7 +114,7 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
         if (_container != null)
             _containerId = _container.getId();
         _actionURL = originalContext.getActionURL();
-        _uploadedData = originalContext.getUploadedData();
+        _uploadedData = CollectionUtils.checkValueClass(originalContext.getUploadedData(),FileLike.class);
         _reRunId = originalContext.getReRunId();
         _originalFileLocation = originalContext.getOriginalFileLocation();
 
