@@ -292,7 +292,7 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
 
     public FieldType getFieldByName(String name)
     {
-        for (FieldType field : getFields())
+        for (FieldType field : getFields(true))
         {
             if (field.getName() != null && field.getName().equalsIgnoreCase(name))
                 return field;
