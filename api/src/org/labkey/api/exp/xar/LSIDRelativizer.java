@@ -23,7 +23,10 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpObject;
+import org.labkey.api.exp.api.ExpProtocolApplication;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.util.SafeToRenderEnum;
 
 import java.util.HashMap;
@@ -79,11 +82,11 @@ public enum LSIDRelativizer implements SafeToRenderEnum
             String sharedFolderSuffix = "Folder-" + ContainerManager.getSharedContainer().getRowId();
             String containerSubstitution = sharedFolderSuffix.equals(suffix) ? XarContext.SHARED_CONTAINER_ID_SUBSTITUTION : XarContext.CONTAINER_ID_SUBSTITUTION;
 
-            if ("ExperimentRun".equals(prefix))
+            if (ExpRun.DEFAULT_CPAS_TYPE.equals(prefix))
             {
                 return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":ExperimentRun.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ".${XarFileId}", lsid.getObjectId(), lsid.getVersion());
             }
-            else if ("ProtocolApplication".equals(prefix))
+            else if (ExpProtocolApplication.DEFAULT_CPAS_TYPE.equals(prefix))
             {
                 return lsids.uniquifyRelativizedLSID("${RunLSIDBase}", lsid.getObjectId(), lsid.getVersion());
             }
@@ -100,12 +103,12 @@ public enum LSIDRelativizer implements SafeToRenderEnum
                     id = suffix.substring(ind);
                 return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + containerSubstitution+ ".${XarJobId}" + id, lsid.getObjectId(), lsid.getVersion());
             }
-            else if ("Sample".equals(prefix) || "Material".equals(prefix))
+            else if ("Sample".equals(prefix) || ExpMaterial.DEFAULT_CPAS_TYPE.equals(prefix))
             {
                 String xarJobId = "." + XAR_JOB_ID_NAME_SUB; // XarJobId is more concise than XarFileId
                 return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + xarJobId + lsids.getNextSampleId(), lsid.getObjectId(), lsid.getVersion());
             }
-            else if ("Data".equals(prefix))
+            else if (ExpData.DEFAULT_CPAS_TYPE.equals(prefix))
             {
                 // UNDONE: Now that "Data" prefix is used for DataClass, the AutoFileLSID is not a good default.
                 // UNDONE: Can we be more restrictive about which LSIDs this is applied to?  Maybe only if the objectId part of the LSID includes a "/" (%2F) or something?
@@ -145,11 +148,11 @@ public enum LSIDRelativizer implements SafeToRenderEnum
             {
                 return lsid.toString();
             }
-            if ("ExperimentRun".equals(prefix))
+            if (ExpRun.DEFAULT_CPAS_TYPE.equals(prefix))
             {
                 return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":ExperimentRun.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ".${XarFileId}", lsid.getObjectId(), lsid.getVersion());
             }
-            else if ("ProtocolApplication".equals(prefix))
+            else if (ExpProtocolApplication.DEFAULT_CPAS_TYPE.equals(prefix))
             {
                 return lsids.uniquifyRelativizedLSID("${RunLSIDBase}", lsid.getObjectId(), lsid.getVersion());
             }
@@ -157,9 +160,9 @@ public enum LSIDRelativizer implements SafeToRenderEnum
             {
                 return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Sample.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + "." + XAR_JOB_ID_NAME_SUB + "-" + lsids.getNextSampleId(), lsid.getObjectId(), lsid.getVersion());
             }
-            else if ("Material".equals(prefix))
+            else if (ExpMaterial.DEFAULT_CPAS_TYPE.equals(prefix))
             {
-                if (lsid.getNamespaceSuffix().startsWith("Folder-"))
+                if (StringUtils.startsWith(lsid.getNamespaceSuffix(),"Folder-"))
                 {
                     return stripFolderSuffix(lsid, lsids);
                 }
@@ -168,9 +171,9 @@ public enum LSIDRelativizer implements SafeToRenderEnum
                     return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Material.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + "." + XAR_JOB_ID_NAME_SUB + "-" + lsids.getNextMaterialId(), lsid.getObjectId(), lsid.getVersion());
                 }
             }
-            else if ("Data".equals(prefix))
+            else if (ExpData.DEFAULT_CPAS_TYPE.equals(prefix))
             {
-                if (lsid.getNamespaceSuffix().startsWith("Folder-"))
+                if (StringUtils.startsWith(lsid.getNamespaceSuffix(),"Folder-"))
                 {
                     return stripFolderSuffix(lsid, lsids);
                 }
@@ -181,7 +184,7 @@ public enum LSIDRelativizer implements SafeToRenderEnum
             }
             else
             {
-                if (suffix != null && suffix.startsWith("Folder-"))
+                if (StringUtils.startsWith(suffix,"Folder-"))
                 {
                     return stripFolderSuffix(lsid, lsids);
                 }

@@ -216,6 +216,7 @@ import org.labkey.experiment.api.ProtocolActionStepDetail;
 import org.labkey.experiment.api.SampleTypeServiceImpl;
 import org.labkey.experiment.api.SampleTypeUpdateServiceDI;
 import org.labkey.experiment.controllers.property.PropertyController;
+import org.labkey.experiment.lineage.ExpLineageServiceImpl;
 import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 import org.labkey.experiment.types.TypesController;
 import org.labkey.experiment.xar.XarExportSelection;
@@ -5807,7 +5808,7 @@ public class ExperimentController extends SpringActionController
                 if (materialOutputCount > 0 && outSampleType != null)
                 {
                     requiredParentTypes.addAll(outSampleType.getRequiredImportAliases().values());
-                    DerivedOutputs<ExpMaterial> derived = new DerivedOutputs<ExpMaterial>(parentInputNames, form.materialDefault, form.materialOutputs, materialOutputCount, "Material")
+                    DerivedOutputs<ExpMaterial> derived = new DerivedOutputs<>(parentInputNames, form.materialDefault, form.materialOutputs, materialOutputCount, ExpMaterial.DEFAULT_CPAS_TYPE)
                     {
                         @Override
                         protected TableInfo createTable()
@@ -5835,7 +5836,7 @@ public class ExperimentController extends SpringActionController
                 if (dataOutputCount > 0 && outDataClass != null)
                 {
                     requiredParentTypes.addAll(outDataClass.getRequiredImportAliases().values());
-                    DerivedOutputs<ExpData> derived = new DerivedOutputs<ExpData>(parentInputNames, form.dataDefault, form.dataOutputs, dataOutputCount, "Data")
+                    DerivedOutputs<ExpData> derived = new DerivedOutputs<>(parentInputNames, form.dataDefault, form.dataOutputs, dataOutputCount, ExpData.DEFAULT_CPAS_TYPE)
                     {
                         @Override
                         protected TableInfo createTable()
@@ -5879,9 +5880,9 @@ public class ExperimentController extends SpringActionController
                 tx.commit();
 
                 StringBuilder successMessage = new StringBuilder("Created ");
-                if (outputMaterials.size() > 0)
+                if (!outputMaterials.isEmpty())
                     successMessage.append(outputMaterials.size()).append(" materials");
-                if (outputData.size() > 0)
+                if (!outputData.isEmpty())
                     successMessage.append(outputData.size()).append(" data");
 
                 JSONObject ret;
@@ -5938,7 +5939,7 @@ public class ExperimentController extends SpringActionController
 
                     rows.add(row);
 
-                    if (role == null || "".equals(role))
+                    if (StringUtils.trimToNull(role) == null)
                     {
                         role = _rolePrefix + (unknownOutputDataCount == 0 ? "" : Integer.toString(unknownOutputDataCount + 1));
                         unknownOutputDataCount++;
@@ -6099,7 +6100,7 @@ public class ExperimentController extends SpringActionController
                         template = template + suffix;
                     }
                     suffix++;
-                    lsid = LsidUtils.resolveLsidFromTemplate(template, new XarContext("Experiment Creation", getContainer(), getUser()), "Experiment");
+                    lsid = LsidUtils.resolveLsidFromTemplate(template, new XarContext("Experiment Creation", getContainer(), getUser()), ExpExperiment.DEFAULT_CPAS_TYPE);
                 }
                 while (ExperimentService.get().getExpExperiment(lsid) != null);
                 exp.setLSID(lsid);
@@ -7003,16 +7004,14 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-
     @RequiresPermission(ReadPermission.class)
     public static class LineageAction extends BaseResolveLsidApiAction<ExpLineageOptions>
     {
         @Override
-        public Object execute(ExpLineageOptions options, BindException errors)
+        public Object execute(ExpLineageOptions options, BindException errors) throws Exception
         {
-            ExpLineage lineage = ExperimentServiceImpl.get().getLineage(getContainer(), getUser(), _seeds, options);
-            var settings = new ExperimentJSONConverter.Settings(options.isIncludeProperties(), options.isIncludeInputsAndOutputs(), options.isIncludeRunSteps());
-            return new ApiSimpleResponse(lineage.toJSON(getUser(), options.isSingleSeedRequested(), settings));
+            ExpLineageServiceImpl.get().streamLineage(getContainer(), getUser(), getViewContext().getResponse(), _seeds, options);
+            return null;
         }
     }
 

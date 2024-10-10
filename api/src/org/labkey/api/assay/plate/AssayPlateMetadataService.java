@@ -68,7 +68,7 @@ public interface AssayPlateMetadataService
         AssayProvider provider,
         ExpProtocol protocol,
         Integer plateSetId,
-        File dataFile,
+        File dataFile,          // TODO File->FileLike
         DataIteratorBuilder data
     ) throws ExperimentException;
 

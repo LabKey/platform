@@ -17,22 +17,21 @@ package org.labkey.api.assay;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.collections4.map.LRUMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.sample.AssaySampleLookupContext;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.api.ExpData;
-import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ProvenanceService;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
@@ -47,6 +46,7 @@ import org.labkey.api.view.UnauthorizedException;
 
 import java.nio.file.Path;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -54,14 +54,36 @@ import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConf
 
 public class AssayResultUpdateService extends DefaultQueryUpdateService
 {
-    private RemapCache _remapCache;
-    private Map<Integer, ExpMaterial> _materialsCache;
+    private final AssaySampleLookupContext _assaySampleLookupContext;
 
     public AssayResultUpdateService(AssayProtocolSchema schema, FilteredTable table)
     {
         super(table, table.getRealTable(), createMVMapping(schema.getProvider().getResultsDomain(schema.getProtocol())));
         if (!(table instanceof AssayResultTable))
             throw new IllegalArgumentException("Expected AssayResultTable");
+
+        _assaySampleLookupContext = new AssaySampleLookupContext();
+    }
+
+    @Override
+    public List<Map<String, Object>> updateRows(
+        User user,
+        Container container,
+        List<Map<String, Object>> rows,
+        List<Map<String, Object>> oldKeys,
+        BatchValidationException errors,
+        @Nullable Map<Enum, Object> configParameters,
+        Map<String, Object> extraScriptContext
+    ) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+    {
+        var result = super.updateRows(user, container, rows, oldKeys, errors, configParameters, extraScriptContext);
+
+        _assaySampleLookupContext.syncLineage(container, user, errors);
+
+        if (errors.hasErrors())
+            throw errors;
+
+        return result;
     }
 
     @Override
@@ -93,15 +115,21 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
         for (Map.Entry<String, Object> entry : updatedValues.entrySet())
         {
             // Also check for properties
-            ColumnInfo col = getQueryTable().getColumn(entry.getKey());
+            TableInfo table = getQueryTable();
+            ColumnInfo col = table.getColumn(entry.getKey());
+
             if (col != null)
             {
                 Object oldValue = originalRow.get(entry.getKey());
                 Object newValue = entry.getValue();
+                boolean hasValueChanged = !Objects.equals(oldValue, newValue);
+
+                if (hasValueChanged)
+                    _assaySampleLookupContext.trackSampleLookupChange(container, user, table, col, run);
 
                 TableInfo fkTableInfo = col.getFkTableInfo();
                 // Don't follow the lookup for specimen IDs, since their FK is very special and based on target study, etc
-                if (!Objects.equals(oldValue, newValue) && fkTableInfo != null && !AbstractAssayProvider.SPECIMENID_PROPERTY_NAME.equalsIgnoreCase(entry.getKey()))
+                if (hasValueChanged && fkTableInfo != null && !AbstractAssayProvider.SPECIMENID_PROPERTY_NAME.equalsIgnoreCase(entry.getKey()))
                 {
                     // Do type conversion in case there's a mismatch in the lookup source and target columns
                     ColumnInfo fkTablePkCol = fkTableInfo.getPkColumns().get(0);
@@ -111,10 +139,6 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
                 appendPropertyIfChanged(sb, col.getLabel(), oldValue, newValue);
             }
         }
-
-        AssayProvider assayProvider = AssayService.get().getProvider(run);
-        if (assayProvider != null)
-            assayProvider.updatePropertyLineage(container, user, getQueryTable(), run, updatedValues, oldRow, false, getRemapCache(), getMaterialsCache());
 
         String userComment = configParameters == null ? null : (String) configParameters.get(AuditUserComment);
         ExperimentService.get().auditRunEvent(user, run.getProtocol(), run, null, sb.toString(), userComment);
@@ -221,19 +245,5 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
         sb.append(" to ");
         sb.append(newValue == null ? "blank" : "'" + newValue + "'");
         sb.append(".");
-    }
-
-    private RemapCache getRemapCache()
-    {
-        if (_remapCache == null)
-            _remapCache = new RemapCache();
-        return _remapCache;
-    }
-
-    private Map<Integer, ExpMaterial> getMaterialsCache()
-    {
-        if (_materialsCache == null)
-            _materialsCache = new LRUMap<>(1_000);
-        return _materialsCache;
     }
 }

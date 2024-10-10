@@ -94,7 +94,6 @@
 <%@ page import="org.labkey.api.pipeline.PipeRoot" %>
 <%@ page import="org.jetbrains.annotations.Nullable" %>
 <%@ page import="java.io.IOException" %>
-<%@ page import="org.junit.Ignore" %>
 
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
 <%!
@@ -593,8 +592,7 @@
     }
 
     @Test
-    @Ignore // NK: Ignored while Issue 51316 is being triaged and fixed.
-    public void testRunResultLineageUpdate() throws Exception
+    public void testSampleLookupUpdate() throws Exception
     {
         // Regression coverage for Issue 45594 and Issue 51316.
         // Verify run/result properties backed by lineage update when query data is updated.
@@ -620,10 +618,9 @@
             resultSample3.getName(),
             resultSample3.getName()
         );
-        var file = createAssayDataFile(fileContents);
 
         // create a run
-        var run = assayImportFile(c, user, provider, assayProtocol, file, false, Map.of("runExpMaterialsLookup", runSample1.getName()));
+        var run = assayImportFile(c, user, provider, assayProtocol, createAssayDataFile(fileContents), false, Map.of("runExpMaterialsLookup", runSample1.getName()));
 
         // Verify pre-conditions
         assertEquals(4, run.getMaterialInputs().size());
@@ -637,12 +634,25 @@
         TableInfo resultsTable = schema.getTable("Data");
 
         // Act
+        // Replace "RunExpMaterialsLookup" lookup runSample1 -> runSample2
         var errors = new BatchValidationException();
         var updatedRunRow = CaseInsensitiveHashMap.of("RowId", run.getRowId(), "RunExpMaterialsLookup", runSample2.getRowId());
         runsTable.getUpdateService().updateRows(user, c, List.of((Map) updatedRunRow), null, errors, null, null);
         if (errors.hasErrors())
             throw errors;
 
+        // Assert
+        var updatedRun = ExperimentService.get().getExpRun(run.getRowId());
+        assertNotNull(updatedRun);
+
+        assertEquals(4, updatedRun.getMaterialInputs().size());
+        assertEquals("RunExpMaterialsLookup", updatedRun.getMaterialInputs().get(runSample2)); // Run row
+        assertEquals("ResultExpMaterialsLookup", updatedRun.getMaterialInputs().get(resultSample1)); // Result row 1
+        assertEquals("ResultExpMaterialsLookup", updatedRun.getMaterialInputs().get(resultSample3)); // Result row 3
+        assertEquals("SampleTypeLookup", updatedRun.getMaterialInputs().get(sampleLookupSample)); // Result row 1
+
+        // Act
+        // Replace some lookup values on results
         var resultRows = new TableSelector(resultsTable).getMapArray();
         var updatedResultRow1 = CaseInsensitiveHashMap.of("RowId", resultRows[0].get("RowId"), "ResultExpMaterialsLookup", resultSample2.getRowId());
         var updatedResultRow2 = CaseInsensitiveHashMap.of("RowId", resultRows[1].get("RowId"), "resultProp", 42);
@@ -652,7 +662,7 @@
             throw errors;
 
         // Assert
-        var updatedRun = ExperimentService.get().getExpRun(run.getRowId());
+        updatedRun = ExperimentService.get().getExpRun(run.getRowId());
         assertNotNull(updatedRun);
 
         assertEquals(5, updatedRun.getMaterialInputs().size());
@@ -661,5 +671,38 @@
         assertEquals("ResultExpMaterialsLookup", updatedRun.getMaterialInputs().get(resultSample3)); // Result row 2
         assertEquals("ResultExpMaterialsLookup", updatedRun.getMaterialInputs().get(resultSample4)); // Result row 3
         assertEquals("SampleTypeLookup", updatedRun.getMaterialInputs().get(sampleLookupSample)); // Result row 1
+
+        // Act
+        // Clear run lookup value
+        updatedRunRow = CaseInsensitiveHashMap.of("RowId", run.getRowId(), "RunExpMaterialsLookup", null);
+        runsTable.getUpdateService().updateRows(user, c, List.of((Map) updatedRunRow), null, errors, null, null);
+        if (errors.hasErrors())
+            throw errors;
+
+        // Assert
+        updatedRun = ExperimentService.get().getExpRun(run.getRowId());
+        assertNotNull(updatedRun);
+
+        assertEquals(4, updatedRun.getMaterialInputs().size());
+        assertEquals("ResultExpMaterialsLookup", updatedRun.getMaterialInputs().get(resultSample2)); // Result row 1
+        assertEquals("ResultExpMaterialsLookup", updatedRun.getMaterialInputs().get(resultSample3)); // Result row 2
+        assertEquals("ResultExpMaterialsLookup", updatedRun.getMaterialInputs().get(resultSample4)); // Result row 3
+        assertEquals("SampleTypeLookup", updatedRun.getMaterialInputs().get(sampleLookupSample)); // Result row 1
+
+        // Act
+        // Clear result lookup values
+        resultRows = new TableSelector(resultsTable).getMapArray();
+        updatedResultRow1 = CaseInsensitiveHashMap.of("RowId", resultRows[0].get("RowId"), "ResultExpMaterialsLookup", null, "SampleTypeLookup", null);
+        updatedResultRow2 = CaseInsensitiveHashMap.of("RowId", resultRows[1].get("RowId"), "ResultExpMaterialsLookup", null);
+        updatedResultRow3 = CaseInsensitiveHashMap.of("RowId", resultRows[2].get("RowId"), "ResultExpMaterialsLookup", null);
+        resultsTable.getUpdateService().updateRows(user, c, List.of(updatedResultRow1, updatedResultRow2, updatedResultRow3), null, errors, null, null);
+        if (errors.hasErrors())
+            throw errors;
+
+        // Assert
+        updatedRun = ExperimentService.get().getExpRun(run.getRowId());
+        assertNotNull(updatedRun);
+
+        assertEquals(0, updatedRun.getMaterialInputs().size());
     }
 %>

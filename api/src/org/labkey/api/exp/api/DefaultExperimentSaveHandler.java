@@ -443,7 +443,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
                     material.setRootMaterialRowId(aliquotRootRowId);
                 }
 
-                outputMaterial.put(material, materialObject.optString(ExperimentJSONConverter.ROLE, "Material"));
+                outputMaterial.put(material, materialObject.optString(ExperimentJSONConverter.ROLE, ExpMaterial.DEFAULT_CPAS_TYPE));
             }
         }
 

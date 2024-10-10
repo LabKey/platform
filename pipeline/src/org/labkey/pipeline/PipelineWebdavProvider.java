@@ -15,6 +15,7 @@
  */
 package org.labkey.pipeline;
 
+import org.apache.commons.vfs2.FileObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
@@ -100,9 +101,9 @@ public class PipelineWebdavProvider implements WebdavService.Provider
             setSecurableResource(root);
 
             _files = new ArrayList<>();
-            for (File file : root.getRootPaths())
+            for (var fileObject : root.getRootPathFileObjects(true))
             {
-                _files.add(new FileInfo(file));
+                _files.add(new FileInfo(fileObject));
             }
 
             this.setSearchProperty(SearchService.PROPERTY.securableResourceId, root.getResourceId());

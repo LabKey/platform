@@ -23,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
+import org.labkey.api.assay.sample.AssaySampleLookupContext;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
@@ -96,6 +97,8 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 import org.springframework.jdbc.BadSqlGrammarException;
 
 import java.io.File;
@@ -167,7 +170,8 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         // type conversion error).
         settings.setBestEffortConversion(true);
 
-        Map<DataType, DataIteratorBuilder> rawData = getValidationDataMap(data, dataFile, info, log, context, settings);
+        FileLike fo = FileSystemLike.wrapFile(dataFile);
+        Map<DataType, DataIteratorBuilder> rawData = getValidationDataMap(data, fo, info, log, context, settings);
         assert(rawData.size() <= 1);
         try
         {
@@ -193,7 +197,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     }
 
     @Override
-    public Map<DataType, DataIteratorBuilder> getValidationDataMap(ExpData data, File dataFile, ViewBackgroundInfo info, Logger log, XarContext context, DataLoaderSettings settings) throws ExperimentException
+    public Map<DataType, DataIteratorBuilder> getValidationDataMap(ExpData data, FileLike dataFile, ViewBackgroundInfo info, Logger log, XarContext context, DataLoaderSettings settings) throws ExperimentException
     {
         ExpProtocol protocol = data.getRun().getProtocol();
         AssayProvider provider = AssayService.get().getProvider(protocol);
@@ -208,7 +212,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             if (plateMetadataEnabled && AssayPlateMetadataService.isExperimentalAppPlateEnabled())
             {
                 Integer plateSetId = getPlateSetValueFromRunProps(context, provider, protocol);
-                dataRows = AssayPlateMetadataService.get().parsePlateData(context.getContainer(), context.getUser(), provider, protocol, plateSetId, dataFile, dataRows);
+                dataRows = AssayPlateMetadataService.get().parsePlateData(context.getContainer(), context.getUser(), provider, protocol, plateSetId, dataFile.toNioPathForRead().toFile(), dataRows);
             }
 
             // assays with plate metadata support will merge the plate metadata with the data rows to make it easier for
@@ -255,7 +259,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
      * Creates a DataLoader that can handle missing value indicators if the columns on the domain
      * are configured to support it.
      */
-    public static DataLoader createLoaderForImport(File dataFile, ExpRun run, @Nullable Domain dataDomain, DataLoaderSettings settings, boolean shouldInferTypes)
+    public static DataLoader createLoaderForImport(FileLike dataFile, ExpRun run, @Nullable Domain dataDomain, DataLoaderSettings settings, boolean shouldInferTypes)
     {
         Map<String, DomainProperty> aliases = new HashMap<>();
         Set<String> mvEnabledColumns = Sets.newCaseInsensitiveHashSet();
@@ -730,15 +734,15 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             }
             else
             {
-                ExpSampleType st = ExperimentService.get().getLookupSampleType(pd, container, user);
-                if (st != null)
+                var sampleLookup = AssaySampleLookupContext.checkSampleLookup(container, user, pd);
+                if (sampleLookup.expSampleType() != null)
                 {
                     if (pd.getPropertyType().getJdbcType().isText())
-                        lookupToSampleTypeByName.put(pd, st);
+                        lookupToSampleTypeByName.put(pd, sampleLookup.expSampleType());
                     else
-                        lookupToSampleTypeById.put(pd, st);
+                        lookupToSampleTypeById.put(pd, sampleLookup.expSampleType());
                 }
-                else if (ExperimentService.get().isLookupToMaterials(pd))
+                else if (sampleLookup.isLookup())
                 {
                     if (pd.getPropertyType().getJdbcType().isText())
                         lookupToAllSamplesByName.add(pd);

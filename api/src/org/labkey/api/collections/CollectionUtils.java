@@ -154,6 +154,24 @@ public class CollectionUtils
         return (STABLE_ORDERED_SET_CLASSES.contains(set.getClass()));
     }
 
+    /**
+     * The compiler does not 100% guarantee that classes are consistent, due to casts or type erasure.
+     * This wrapper allows for a runtime check.
+     */
+    public static <V> Map<String,V> enforceValueClass(Map<String,V> map, final Class<V> valueClass)
+    {
+        checkValueClass(map, valueClass);
+        Map<String,V> ret = map;
+        //noinspection ConstantValue,AssertWithSideEffects
+        assert null != (ret = Collections.checkedMap(map,String.class,valueClass));
+        return ret;
+    }
+    public static <V> Map<String,V> checkValueClass(Map<String,V> map, final Class<V> valueClass)
+    {
+        assert null==map || map.values().stream().allMatch(v -> null==v || valueClass.isInstance(v));
+        return map;
+    }
+
     public static class TestCase extends Assert
     {
         @Test

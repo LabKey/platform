@@ -32,6 +32,8 @@ import java.util.Set;
  */
 public interface ExpProtocolApplication extends ExpObject
 {
+    String DEFAULT_CPAS_TYPE = "ProtocolApplication";
+
     @NotNull
     List<? extends ExpDataRunInput> getDataInputs();
     @NotNull
@@ -59,6 +61,7 @@ public interface ExpProtocolApplication extends ExpObject
      */
     @NotNull ExpDataRunInput addDataInput(User user, ExpData input, String inputRole);
     @NotNull ExpDataRunInput addDataInput(User user, ExpData input, String inputRole, @Nullable ExpDataProtocolInput protocolInput);
+    void removeAllDataInputs(User user);
     void removeDataInput(User user, ExpData data);
     void removeDataInputs(User user, Collection<Integer> rowIds);
 
@@ -69,8 +72,11 @@ public interface ExpProtocolApplication extends ExpObject
      */
     @NotNull ExpMaterialRunInput addMaterialInput(User user, ExpMaterial material, @Nullable String inputRole);
     @NotNull ExpMaterialRunInput addMaterialInput(User user, ExpMaterial material, @Nullable String inputRole, @Nullable ExpMaterialProtocolInput protocolInput);
+    void addMaterialInputs(User user, Collection<Integer> materialRowIds, @Nullable String inputRole, @Nullable ExpMaterialProtocolInput protocolInput);
+    void removeAllMaterialInputs(User user);
     void removeMaterialInput(User user, ExpMaterial material);
     void removeMaterialInputs(User user, Collection<Integer> rowIds);
+
     void addProvenanceInput(Set<String> lsids);
     void addProvenanceMapping(Set<Pair<String, String>> lsidPairs);
     Set<Pair<String, String>> getProvenanceMapping();

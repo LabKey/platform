@@ -24,6 +24,7 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
+import org.labkey.vfs.FileLike;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -64,7 +65,7 @@ public class TextAreaDataCollector<ContextType extends AssayRunUploadContext<? e
 
     @Override
     @NotNull
-    public Map<String, File> createData(ContextType context) throws IOException, ExperimentException
+    public Map<String, FileLike> createData(ContextType context) throws IOException, ExperimentException
     {
         if (_uploadComplete)
             return Collections.emptyMap();
@@ -80,11 +81,11 @@ public class TextAreaDataCollector<ContextType extends AssayRunUploadContext<? e
         }
 
         // NOTE: We use a 'tmp' file extension so that DataLoaderService will sniff the file type by parsing the file's header.
-        File dir = getFileTargetDir(context);
-        File file = createFile(protocol, dir, "tmp");
+        FileLike dir = getFileTargetDir(context);
+        FileLike file = createFile(protocol, dir, "tmp");
         ByteArrayInputStream bIn = new ByteArrayInputStream(data.getBytes(context.getRequest().getCharacterEncoding()));
 
-        writeFile(bIn, file);
+        writeFile(bIn, file.toNioPathForRead().toFile());
         return Collections.singletonMap(PRIMARY_FILE, file);
     }
 

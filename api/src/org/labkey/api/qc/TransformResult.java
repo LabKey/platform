@@ -20,6 +20,7 @@ import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.util.HtmlString;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.util.List;
@@ -37,7 +38,7 @@ public interface TransformResult
 
     Map<DomainProperty, String> getBatchProperties();
 
-    List<File> getUploadedFiles();
+    List<FileLike> getUploadedFiles();
 
     String getAssayId();
 

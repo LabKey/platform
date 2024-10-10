@@ -32,7 +32,10 @@ import org.labkey.api.files.FileContentService;
 import org.labkey.api.security.Crypt;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewServlet;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -78,15 +81,20 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+
 /**
  * User: jeckels
  * Date: Dec 5, 2005
  */
 public class FileUtil
 {
+    public static final String FILE_SCHEME = "file";    // url scheme for local file system
+
+
     private static final Logger LOG = LogHelper.getLogger(FileUtil.class, "FileUtil.java logger");
 
     private static File _tempDir = null;
+    private static FileLike _tempDirFileLike = null;
 
     static private final String windowsRestricted = "\\/:*?\"<>|`";
     // and ` seems like a bad idea for linux?
@@ -142,6 +150,14 @@ public class FileUtil
     }
 
 
+    public static boolean deleteDirectoryContents(FileLike dir) throws IOException
+    {
+        if (!dir.getFileSystem().canWriteFiles())
+            throw new UnauthorizedException();
+        return deleteDirectoryContents(toFileForWrite(dir).toPath(), null);
+    }
+
+
     public static boolean deleteDirectoryContents(Path dir, @Nullable Logger log) throws IOException
     {
         if (Files.isDirectory(dir))
@@ -169,13 +185,12 @@ public class FileUtil
     {
         if (dir.isDirectory())
         {
-            String[] children = dir.list();
+            File[] children = dir.listFiles();
             if (null != children)
             {
-                for (String aChildren : children)
+                for (File child : children)
                 {
                     boolean success = true;
-                    File child = new File(dir, aChildren);
                     if (child.isDirectory())
                         success = deleteDir(child);
                     if (!success)
@@ -324,6 +339,25 @@ public class FileUtil
         return mkdir(file, AppProps.getInstance().isInvalidFilenameBlocked());
     }
 
+    public static File toFileForRead(FileLike file)
+    {
+        if (null == file)
+            return null;
+        return file.toNioPathForRead().toFile();
+    }
+
+    public static File toFileForWrite(FileLike file)
+    {
+        if (null == file)
+            return null;
+        return file.toNioPathForWrite().toFile();
+    }
+
+    public static boolean mkdir(FileLike file) throws IOException
+    {
+        return mkdir(toFileForWrite(file), AppProps.getInstance().isInvalidFilenameBlocked());
+    }
+
     public static boolean mkdir(File file, boolean checkFileName) throws IOException
     {
         if (checkFileName)
@@ -338,6 +372,14 @@ public class FileUtil
         return mkdirs(file, AppProps.getInstance().isInvalidFilenameBlocked());
     }
 
+    public static boolean mkdirs(FileLike file) throws IOException
+    {
+        if (!file.getFileSystem().canWriteFiles())
+            throw new UnauthorizedException();
+        var ret = mkdirs(toFileForWrite(file), AppProps.getInstance().isInvalidFilenameBlocked());
+        file.refresh();
+        return ret;
+    }
 
     public static boolean mkdirs(File file, boolean checkFileName) throws IOException
     {
@@ -373,6 +415,15 @@ public class FileUtil
     public static Path createDirectories(Path path) throws IOException
     {
         return createDirectories(path, AppProps.getInstance().isInvalidFilenameBlocked());
+    }
+
+
+    public static void createDirectories(FileLike file) throws IOException
+    {
+        if (!file.getFileSystem().canWriteFiles())
+            throw new UnauthorizedException();
+        File target = toFileForWrite(file);
+        createDirectories(target.toPath(), AppProps.getInstance().isInvalidFilenameBlocked());
     }
 
 
@@ -691,7 +742,7 @@ public class FileUtil
     }
 
 
-    /* Only returns a child path */
+    /** Only returns a child path */
     public static File appendPath(File dir, org.labkey.api.util.Path path)
     {
         path = path.normalize();
@@ -705,6 +756,23 @@ public class FileUtil
     }
 
 
+    /** Only returns a child path */
+    public static FileLike appendPath(FileLike dir, org.labkey.api.util.Path path)
+    {
+        path = path.normalize();
+        if (path.size() > 0 && "..".equals(path.get(0)))
+            throw new IllegalArgumentException(path.toString());
+        return dir.resolveFile(path);
+    }
+
+
+    /** Resolve a relative path, may not be a descendant.  */
+    public static FileLike resolveFile(FileLike dir, org.labkey.api.util.Path path)
+    {
+        return dir.resolveFile(path);
+    }
+
+
     /* Only returns an immediate child */
     public static File appendName(File dir, org.labkey.api.util.Path.Part part)
     {
@@ -715,18 +783,26 @@ public class FileUtil
     /* Only returns an immediate child */
     public static File appendName(File dir, String name)
     {
-        if (StringUtils.contains(name, '/'))
-            throw new IllegalArgumentException(name);
-        if (StringUtils.contains(name, File.separatorChar))
-            throw new IllegalArgumentException(name);
-        if (".".equals(name) || "..".equals(name))
-            throw new IllegalArgumentException(name);
+        legalPathPartThrow(name);
         @SuppressWarnings("SSBasedInspection")
         var ret = new File(dir, name);
 
         if (!URIUtil.isDescendant(dir.toURI(), ret.toURI()))
             throw new IllegalArgumentException(name);
         return ret;
+    }
+
+
+    // narrower check than isLegalName() or isAllowedFileName()
+    // this check that a name is a valid path part (e.g. filename) and is not path like.
+    private static void legalPathPartThrow(String name)
+    {
+        if (StringUtils.contains(name, '/'))
+            throw new IllegalArgumentException(name);
+        if (StringUtils.contains(name, File.separatorChar))
+            throw new IllegalArgumentException(name);
+        if (".".equals(name) || "..".equals(name))
+            throw new IllegalArgumentException(name);
     }
 
 
@@ -813,8 +889,8 @@ public class FileUtil
     {
         if (canonicalize)
         {
-            home = home.getCanonicalFile();
-            file = file.getCanonicalFile();
+            home = FileUtil.getAbsoluteCaseSensitiveFile(home);
+            file = FileUtil.getAbsoluteCaseSensitiveFile(file);
         }
         else
         {
@@ -1472,9 +1548,31 @@ quickScan:
     }
 
 
+    // use FileLike createTempDirectoryFileLike()
+    @Deprecated
     public static Path createTempDirectory(@Nullable String prefix) throws IOException
     {
+        if (null != prefix)
+            legalPathPartThrow(prefix);
         return Files.createTempDirectory(prefix).toAbsolutePath();
+    }
+
+
+    public static FileLike createTempDirectoryFileLike(@Nullable String prefix) throws IOException
+    {
+        if (null != prefix)
+            legalPathPartThrow(prefix);
+        return new FileSystemLike.Builder(Files.createTempDirectory(prefix).toAbsolutePath()).readwrite().root();
+    }
+
+
+    public static boolean deleteTempDirectoryFileLike(@NotNull FileLike file) throws IOException
+    {
+        if (!file.getPath().isEmpty())
+            throw new IllegalArgumentException("Method expects a file returned by createTempDirectoryFileObject");
+        if (!file.getFileSystem().canWriteFiles())
+            throw new UnauthorizedException();
+        return FileUtil.deleteDirectoryContents(file);
     }
 
 
@@ -1487,7 +1585,7 @@ quickScan:
             try
             {
                 File temp = createTempFile("deleteme", null);
-                _tempDir = temp.getParentFile();
+                _tempDir = temp.getParentFile().getAbsoluteFile();
                 temp.delete();
             }
             catch (IOException e)
@@ -1500,9 +1598,23 @@ quickScan:
     }
 
 
+    public static FileLike getTempDirectoryFileLike()
+    {
+        if (null == _tempDirFileLike)
+        {
+            _tempDirFileLike = new FileSystemLike.Builder(getTempDirectory()).readwrite().noMemCheck().root();
+        }
+        return _tempDirFileLike;
+    }
+
+
     // Use this instead of File.createTempFile() (see Issue #46794)
     public static File createTempFile(@Nullable String prefix, @Nullable String suffix, File directory) throws IOException
     {
+        if (null != prefix)
+            legalPathPartThrow(prefix);
+        if (null != suffix)
+            legalPathPartThrow(suffix);
         return Files.createTempFile(directory.toPath(), prefix, suffix).toFile();
     }
 
@@ -1513,9 +1625,18 @@ quickScan:
         return createTempFile(prefix, suffix, false);
     }
 
+    // Use this instead of File.createTempFile() (see Issue #46794)
+    public static FileLike createTempFileLike(@Nullable String prefix, @Nullable String suffix) throws IOException
+    {
+        return FileSystemLike.wrapFile(createTempFile(prefix, suffix, false));
+    }
 
     public static File createTempFile(@Nullable String prefix, @Nullable String suffix, boolean threadLocal) throws IOException
     {
+        if (null != prefix)
+            legalPathPartThrow(prefix);
+        if (null != suffix)
+            legalPathPartThrow(suffix);
         var path = Files.createTempFile(prefix, suffix).toAbsolutePath();
         if (threadLocal)
             tempPaths.get().add(path);

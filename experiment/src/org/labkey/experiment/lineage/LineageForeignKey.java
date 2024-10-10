@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.experiment.api;
+package org.labkey.experiment.lineage;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -40,6 +40,8 @@ import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringExpression;
+import org.labkey.experiment.api.ExpTableImpl;
+import org.labkey.experiment.api.ExperimentServiceImpl;
 
 import java.util.List;
 import java.util.Map;
@@ -48,11 +50,7 @@ import java.util.function.Supplier;
 import static java.util.Objects.requireNonNull;
 import static org.apache.commons.lang3.StringUtils.defaultString;
 
-/**
- * User: kevink
- * Date: 3/22/16
- */
-class LineageForeignKey extends AbstractForeignKey
+public class LineageForeignKey extends AbstractForeignKey
 {
     private final boolean _useLineageDisplayColumn;
     private final ExpTableImpl _seedTable;

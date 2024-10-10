@@ -13,11 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.experiment.api;
+package org.labkey.experiment.lineage;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
@@ -32,9 +31,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.snapshot.AbstractTableMethodInfo;
 
 /**
- * User: kevink
- * Date: 2/23/16
- *
  * Adds a table method to exp.Data or exp.Material tables.  For example:
  *   exp.Data.Inputs(type, depth)
  *   exp.Data.Outputs(type, depth)
@@ -45,12 +41,12 @@ import org.labkey.api.query.snapshot.AbstractTableMethodInfo;
  *   CONSIDER: we could use use run.protocollsid as its cpastype.
  * - (optional) depth is an integer >= 0.
  */
-/*package*/ class LineageMethod extends AbstractTableMethodInfo
+public class LineageMethod extends AbstractTableMethodInfo
 {
-    private ColumnInfo _lsidColumn;
-    private boolean _parents;
+    private final ColumnInfo _lsidColumn;
+    private final boolean _parents;
 
-    LineageMethod(ColumnInfo lsidColumn, boolean parents)
+    public LineageMethod(ColumnInfo lsidColumn, boolean parents)
     {
         super(JdbcType.VARCHAR);
 
@@ -122,14 +118,13 @@ import org.labkey.api.query.snapshot.AbstractTableMethodInfo;
 
     public static boolean isSimpleString(SQLFragment f)
     {
-        if (f.getParams().size() > 0)
+        if (!f.getParams().isEmpty())
             return false;
         String s = f.getSQL();
         if (s.length() < 2 || !s.startsWith("'"))
             return false;
         return s.length()-1 == s.indexOf('\'',1);
     }
-
 
     public static String toSimpleString(SQLFragment f)
     {
@@ -141,5 +136,4 @@ import org.labkey.api.query.snapshot.AbstractTableMethodInfo;
         s = StringUtils.replace(s,"''","'");
         return s;
     }
-
 }

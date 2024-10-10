@@ -118,7 +118,6 @@ public class ExperimentRun extends IdentifiableEntity
     @Override
     public @Nullable ActionURL detailsURL()
     {
-        Container c = getContainer();
         return ExperimentController.getRunGraphURL(getContainer(), getRowId());
     }
 

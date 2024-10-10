@@ -77,14 +77,14 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 
 import static org.labkey.experiment.api.ExperimentServiceImpl.getExpSchema;
 
 public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> implements ExpRun
 {
-    private boolean _populated;
+    public static final String NAMESPACE_PREFIX = "Run";
 
+    private boolean _populated;
     private List<ExpProtocolApplicationImpl> _protocolSteps;
     private Map<ExpMaterialImpl, String> _materialInputs = new HashMap<>();
     private Map<ExpDataImpl, String> _dataInputs = new HashMap<>();
@@ -441,7 +441,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     }
 
     @Override
-    public Map<ExpDataImpl, String> getDataInputs()
+    public @NotNull Map<ExpDataImpl, String> getDataInputs()
     {
         ensureFullyPopulated();
         return _dataInputs;
@@ -466,6 +466,12 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     {
         ensureFullyPopulated();
         return _protocolSteps;
+    }
+
+    @Override
+    public @Nullable ExpProtocolApplication getProtocolApplication()
+    {
+        return findProtocolApplication(ExpProtocol.ApplicationType.ProtocolApplication);
     }
 
     @Override
@@ -953,7 +959,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
                         File archivedDir;
                         try
                         {
-                            archivedDir = AssayFileWriter.ensureSubdirectory(getContainer(), AssayFileWriter.ARCHIVED_DIR_NAME);
+                            archivedDir = AssayFileWriter.ensureSubdirectory(getContainer(), AssayFileWriter.ARCHIVED_DIR_NAME).toNioPathForWrite().toFile();
                         }
                         catch (ExperimentException e)
                         {
@@ -986,7 +992,8 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
 
     private boolean inAssayData(File file) throws ExperimentException
     {
-        return file.getParentFile().equals(AssayFileWriter.ensureUploadDirectory(getContainer()));
+        var uploadDir = AssayFileWriter.ensureUploadDirectory(getContainer()).toNioPathForWrite().toFile();
+        return file.getParentFile().equals(uploadDir);
     }
 
     /**

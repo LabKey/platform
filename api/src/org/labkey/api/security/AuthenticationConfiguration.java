@@ -22,12 +22,11 @@ import org.labkey.api.security.AuthenticationProvider.SecondaryAuthenticationPro
 import org.labkey.api.security.permissions.RequireSecondaryAuthenticationPermission;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collections;
@@ -152,11 +151,13 @@ public interface AuthenticationConfiguration<AP extends AuthenticationProvider> 
                             supplier = () -> {
                                 try
                                 {
-                                    return new FileInputStream(new File(ModuleLoader.getInstance().getStartupPropDirectory(), value));
+                                    var dir = ModuleLoader.getInstance().getStartupPropDirectory();
+                                    var file = dir.resolveChild(value);
+                                    return file.openInputStream();
                                 }
-                                catch (FileNotFoundException e)
+                                catch (IOException e)
                                 {
-                                    throw new RuntimeException(e);
+                                    throw UnexpectedException.wrap(e);
                                 }
                             };
                         }

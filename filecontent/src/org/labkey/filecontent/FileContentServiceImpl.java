@@ -1662,7 +1662,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
 
         String targetPath = absoluteFilePath.replace(sourceRootPath, targetFileRoot.getAbsolutePath());
         File targetFile = new File(targetPath);
-        return AssayFileWriter.findUniqueFileName(file.getName(), targetFile.getParentFile().toPath()).toFile();
+        return AssayFileWriter.findUniqueFileName(file.getName(), targetFile.getParentFile());
     }
 
     @Override
