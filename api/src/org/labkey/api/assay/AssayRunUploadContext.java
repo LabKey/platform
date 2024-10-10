@@ -52,8 +52,8 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
     // options for how re-imported data is handled, default is REPLACE
     enum ReImportOption
     {
-        REPLACE,
-        MERGE_DATA
+        REPLACE,                // existing behavior where all results are replaced with new incoming data
+        MERGE_DATA              // can be interpreted by the data handler what this means, but for plate based assays merge on a plate boundary within the same plate set
     }
 
     @NotNull

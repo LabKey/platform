@@ -48,7 +48,9 @@ import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.assay.plate.AssayPlateTriggerFactory;
@@ -89,9 +91,7 @@ public class TSVProtocolSchema extends AssayProtocolSchema
         }
         else if (name.equalsIgnoreCase(PLATE_REPLICATE_STATS_TABLE))
         {
-            TableInfo replicateTable = createPlateReplicateStatsTable(cf);
-            if (replicateTable != null)
-                return replicateTable;
+            return createPlateReplicateStatsTable(cf, false);
         }
 
         return super.createProviderTable(name, cf);
@@ -236,21 +236,24 @@ public class TSVProtocolSchema extends AssayProtocolSchema
     }
 
     @Nullable
-    private TableInfo createPlateReplicateStatsTable(ContainerFilter cf)
+    public TableInfo createPlateReplicateStatsTable(ContainerFilter cf, boolean allowInsertUpdate)
     {
         Domain domain = AssayPlateMetadataService.get().getPlateReplicateStatsDomain(getProtocol());
         if (domain != null)
         {
-            return new _AssayPlateReplicateStatsTable(domain, this, cf);
+            return new _AssayPlateReplicateStatsTable(domain, this, cf, allowInsertUpdate);
         }
         return null;
     }
 
     private class _AssayPlateReplicateStatsTable extends FilteredTable<AssayProtocolSchema>
     {
-        public _AssayPlateReplicateStatsTable(@NotNull Domain domain, @NotNull AssayProtocolSchema userSchema, @Nullable ContainerFilter containerFilter)
+        private final boolean _allowInsertUpdate;
+
+        public _AssayPlateReplicateStatsTable(@NotNull Domain domain, @NotNull AssayProtocolSchema userSchema, @Nullable ContainerFilter containerFilter, boolean allowInsertUpdate)
         {
             super(StorageProvisioner.createTableInfo(domain), userSchema, containerFilter);
+            _allowInsertUpdate = allowInsertUpdate;
 
             setDescription("Represents the replicate statistics for a plate based assay containing replicate well groups.");
             setName("PlateReplicateStats");
@@ -271,6 +274,9 @@ public class TSVProtocolSchema extends AssayProtocolSchema
         @Override
         public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
         {
+            if (!_allowInsertUpdate && (perm.equals(InsertPermission.class) || perm.equals(UpdatePermission.class)))
+                return false;
+
             return _userSchema.getContainer().hasPermission(user, perm);
         }
 

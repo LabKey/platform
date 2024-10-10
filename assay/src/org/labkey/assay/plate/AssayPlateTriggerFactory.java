@@ -8,7 +8,6 @@ import org.labkey.api.assay.AssayResultDomainKind;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -17,7 +16,6 @@ import org.labkey.api.data.triggers.TriggerFactory;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
@@ -91,7 +89,7 @@ public class AssayPlateTriggerFactory implements TriggerFactory
                 TableInfo dataTable = schema.createDataTable(null, false);
                 if (dataTable != null)
                 {
-                    try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
+                    try
                     {
                         SimpleFilter filter = new SimpleFilter().addInClause(FieldKey.fromParts(AssayResultDomainKind.REPLICATE_LSID_COLUMN_NAME), _replicateLsid.keySet());
                         Map<Lsid, List<Map<String, Object>>> replicates = new HashMap<>();
@@ -114,7 +112,6 @@ public class AssayPlateTriggerFactory implements TriggerFactory
                             AssayPlateMetadataService.get().deleteReplicateStats(c, user, _protocol, deletedRows);
 
                         AssayPlateMetadataService.get().insertReplicateStats(c, user, _protocol, null, false, replicates);
-                        tx.commit();
                     }
                     catch (ExperimentException e)
                     {

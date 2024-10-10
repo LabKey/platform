@@ -913,10 +913,12 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
     private QueryUpdateService getReplicateStatsUpdateService(Container container, User user, AssayProvider provider, ExpProtocol protocol)
     {
         AssayProtocolSchema schema = provider.createProtocolSchema(user, container, protocol, null);
-        TableInfo tableInfo = schema.createTable(TSVProtocolSchema.PLATE_REPLICATE_STATS_TABLE, null);
-        if (tableInfo != null)
-            return tableInfo.getUpdateService();
-
+        if (schema instanceof TSVProtocolSchema tsvProtocolSchema)
+        {
+            TableInfo tableInfo = tsvProtocolSchema.createPlateReplicateStatsTable(null, true);
+            if (tableInfo != null)
+                return tableInfo.getUpdateService();
+        }
         return null;
     }
 
