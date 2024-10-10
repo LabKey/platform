@@ -80,7 +80,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         Position,
         Row,
         RowId,
-        SampleId,
+        SampleID,
         Type,
         Value,
         WellGroup;
@@ -248,7 +248,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         var columnInfo = super.wrapColumn(col);
 
         // workaround for sample lookup not resolving correctly
-        if (columnInfo.getName().equalsIgnoreCase(Column.SampleId.name()))
+        if (columnInfo.getName().equalsIgnoreCase(Column.SampleID.name()))
         {
             columnInfo.setFk(QueryForeignKey.from(getUserSchema(), getContainerFilter())
                     .schema(ExpSchema.SCHEMA_NAME, getContainer())

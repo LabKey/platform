@@ -20,6 +20,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.io.IOException;
@@ -128,6 +129,17 @@ public class NetworkDrive
         return f.exists();
     }
 
+    public static boolean exists(@Nullable FileLike f)
+    {
+        if (f == null)
+            return false;
+        if (f.exists())
+            return true;
+        ensureDrive(f);
+        f.refresh();
+        return f.exists();
+    }
+
     /**
      * @return whether the file exists, mounting the drive if needed
      */
@@ -139,6 +151,12 @@ public class NetworkDrive
             return true;
         ensureDrive(p.toString());
         return Files.exists(p);
+    }
+
+    public static void ensureDrive(FileLike f)
+    {
+        if (FileUtil.FILE_SCHEME.equals(f.getFileSystem().getScheme()))
+            ensureDrive(f.toNioPathForRead().toString());
     }
 
     /**

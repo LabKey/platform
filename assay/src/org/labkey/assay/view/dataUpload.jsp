@@ -21,10 +21,12 @@
 <%@ page import="org.labkey.api.exp.ExperimentException" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.vfs.FileLike" %>
 <%@ page import="java.io.File" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.apache.commons.vfs2.FileObject" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -35,7 +37,7 @@
     <%
         boolean first = true;
         List<AssayDataCollector> visibleCollectors = new ArrayList<>();
-        Map<String, File> uploadedData = null;
+        Map<String, FileLike> uploadedData = null;
         try
         {
             uploadedData = bean.getUploadedData();
@@ -45,7 +47,7 @@
         {
         }
 
-        for (AssayDataCollector collector : bean.getProvider().getDataCollectors(uploadedData, bean))
+        for (AssayDataCollector collector : bean.getProvider().getDataCollectorsFileObject(uploadedData, bean))
         {
             if (collector.isVisible())
             {

@@ -108,6 +108,7 @@ import org.labkey.api.view.DetailsView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
+import org.labkey.vfs.FileSystemLike;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
@@ -588,12 +589,12 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return getName();
     }
 
-    public List<AssayDataCollector> getDataCollectors(@Nullable Map<String, File> uploadedFiles, AssayRunUploadForm context, boolean allowFileReuseOnReRun)
+    public List<AssayDataCollector> getDataCollectors(@Nullable Map<String, File> uploadedFiles, AssayRunUploadForm<?> context, boolean allowFileReuseOnReRun)
     {
         List<AssayDataCollector> result = new ArrayList<>();
         if (!PipelineDataCollector.getFileQueue(context).isEmpty())
         {
-            result.add(new PipelineDataCollector());
+            result.add(new PipelineDataCollector<>());
         }
         else
         {
@@ -656,15 +657,16 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     // to reuse or re-upload
                     if (!reusableFiles.isEmpty())
                     {
-                        result.add(new PreviouslyUploadedDataCollector(reusableFiles));
+                        var reusableFileLike = FileSystemLike.wrapFiles(reusableFiles);
+                        result.add(new PreviouslyUploadedDataCollector<>(reusableFileLike));
                     }
-                    result.add(new FileUploadDataCollector(getMaxFileInputs()));
+                    result.add(new FileUploadDataCollector<>(getMaxFileInputs()));
                 }
                 else
                 {
                     // We allow multiple files per assay run, so give a UI that lets the user mix and match
                     // between existing ones and new ones
-                    result.add(new FileUploadDataCollector(getMaxFileInputs(), reusableFiles));
+                    result.add(new FileUploadDataCollector<>(getMaxFileInputs(), reusableFiles));
                 }
             }
             else
@@ -672,9 +674,10 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 // Normal (non-rerun) scenario
                 if (uploadedFiles != null)
                 {
-                    result.add(new PreviouslyUploadedDataCollector(uploadedFiles));
+                    var uploadedFileLikes = FileSystemLike.wrapFiles(uploadedFiles);
+                    result.add(new PreviouslyUploadedDataCollector<>(uploadedFileLikes));
                 }
-                result.add(new FileUploadDataCollector(getMaxFileInputs()));
+                result.add(new FileUploadDataCollector<>(getMaxFileInputs()));
             }
         }
         return result;
@@ -1499,7 +1502,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     }
 
     @Override
-    public AssayRunAsyncContext createRunAsyncContext(AssayRunUploadContext context) throws IOException, ExperimentException
+    public AssayRunAsyncContext<?> createRunAsyncContext(AssayRunUploadContext<?> context) throws IOException, ExperimentException
     {
         return new AssayRunAsyncContext(context);
     }

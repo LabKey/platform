@@ -82,8 +82,9 @@ import static org.labkey.experiment.api.ExperimentServiceImpl.getExpSchema;
 
 public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> implements ExpRun
 {
-    private boolean _populated;
+    public static final String NAMESPACE_PREFIX = "Run";
 
+    private boolean _populated;
     private List<ExpProtocolApplicationImpl> _protocolSteps;
     private Map<ExpMaterialImpl, String> _materialInputs = new HashMap<>();
     private Map<ExpDataImpl, String> _dataInputs = new HashMap<>();
@@ -958,7 +959,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
                         File archivedDir;
                         try
                         {
-                            archivedDir = AssayFileWriter.ensureSubdirectory(getContainer(), AssayFileWriter.ARCHIVED_DIR_NAME);
+                            archivedDir = AssayFileWriter.ensureSubdirectory(getContainer(), AssayFileWriter.ARCHIVED_DIR_NAME).toNioPathForWrite().toFile();
                         }
                         catch (ExperimentException e)
                         {
@@ -991,7 +992,8 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
 
     private boolean inAssayData(File file) throws ExperimentException
     {
-        return file.getParentFile().equals(AssayFileWriter.ensureUploadDirectory(getContainer()));
+        var uploadDir = AssayFileWriter.ensureUploadDirectory(getContainer()).toNioPathForWrite().toFile();
+        return file.getParentFile().equals(uploadDir);
     }
 
     /**

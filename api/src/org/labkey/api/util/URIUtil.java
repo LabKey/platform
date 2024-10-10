@@ -183,7 +183,7 @@ public class URIUtil
 
     static public InputStream getInputStream(URI uri) throws Exception
     {
-        if ("file".equals(uri.getScheme()))
+        if (FileUtil.FILE_SCHEME.equals(uri.getScheme()))
             return new FileInputStream(new File(uri));
         return uri.toURL().openStream();
     }
@@ -200,7 +200,7 @@ public class URIUtil
             return null;
 
         URI res = uri;
-        if ("file".equalsIgnoreCase(uri.getScheme())
+        if (FileUtil.FILE_SCHEME.equalsIgnoreCase(uri.getScheme())
                 && !StringUtils.startsWith(uri.getRawSchemeSpecificPart(), "///")
                 && StringUtils.isBlank(uri.getHost()))
         {

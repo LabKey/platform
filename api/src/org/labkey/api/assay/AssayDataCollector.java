@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.view.HttpView;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.io.IOException;
@@ -64,11 +65,11 @@ public interface AssayDataCollector<ContextType extends AssayRunUploadContext>
     String getDescription(ContextType context);
 
     /** Map of original file name to file on disk */
-    @NotNull Map<String, File> createData(ContextType context) throws IOException, ExperimentException;
+    @NotNull Map<String, FileLike> createData(ContextType context) throws IOException, ExperimentException;
 
     boolean isVisible();
 
-    Map<String, File> uploadComplete(ContextType context, @Nullable ExpRun run) throws ExperimentException;
+    Map<String, FileLike> uploadComplete(ContextType context, @Nullable ExpRun run) throws ExperimentException;
 
     AdditionalUploadType getAdditionalUploadType(ContextType context);
 

@@ -14,6 +14,8 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.util.FileUtil;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -60,7 +62,7 @@ public class AssayResultsFileWriter<ContextType extends AssayRunUploadContext<? 
         return root != null ? root.resolve(dirName) : null;
     }
 
-    public static File ensureAssayFilesDirectoryPath(Container container, String dirName) throws ExperimentException
+    public static FileLike ensureAssayFilesDirectoryPath(Container container, String dirName) throws ExperimentException
     {
         Path dir = getAssayFilesDirectoryPath(container, dirName);
         if (null != dir && !Files.exists(dir))
@@ -76,7 +78,7 @@ public class AssayResultsFileWriter<ContextType extends AssayRunUploadContext<? 
         }
 
         if (null != dir && !FileUtil.hasCloudScheme(dir))
-            return dir.toFile();
+            return FileSystemLike.wrapFile(dir);
         return null;
     }
 
@@ -91,7 +93,7 @@ public class AssayResultsFileWriter<ContextType extends AssayRunUploadContext<? 
     }
 
     @Override
-    protected File getFileTargetDir(ContextType context) throws ExperimentException
+    protected FileLike getFileTargetDir(ContextType context) throws ExperimentException
     {
         String dir = getFileTargetDirName();
         return ensureAssayFilesDirectoryPath(context.getContainer(), dir);
@@ -126,7 +128,7 @@ public class AssayResultsFileWriter<ContextType extends AssayRunUploadContext<? 
         return getFileNameWithoutPath(filename);
     }
 
-    public Map<String, File> savePostedFiles(ContextType context) throws ExperimentException, IOException
+    public Map<String, FileLike> savePostedFiles(ContextType context) throws ExperimentException, IOException
     {
         // if the file results dir already exists, delete it (clean up from previous failed import)
         Container container = context.getContainer();
@@ -145,7 +147,7 @@ public class AssayResultsFileWriter<ContextType extends AssayRunUploadContext<? 
             }
         }
 
-        Map<String, File> files = super.savePostedFiles(context, Collections.singleton(FILE_INPUT_NAME), true, true);
+        Map<String, FileLike> files = super.savePostedFiles(context, Collections.singleton(FILE_INPUT_NAME), true, true);
 
         // if no files were written to the targetDir, delete the empty directory
         if (files.isEmpty())

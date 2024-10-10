@@ -62,6 +62,7 @@ import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpDataRunInput;
 import org.labkey.api.exp.api.ExpLineage;
 import org.labkey.api.exp.api.ExpLineageOptions;
+import org.labkey.api.exp.api.ExpLineageService;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -114,6 +115,7 @@ import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.SampleTypeServiceImpl;
 import org.labkey.experiment.api.SampleTypeUpdateServiceDI;
 import org.labkey.experiment.controllers.exp.RunInputOutputBean;
+import org.labkey.vfs.FileLike;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -1971,7 +1973,7 @@ public class ExpDataIterators
             options.setChildren(false);
             options.setDepth(2); // use 2 to get the first generation of parents because the first "parent" is the run
 
-            ExpLineage lineage = ExperimentService.get().getLineage(c, user, runItem, options);
+            ExpLineage lineage = ExpLineageService.get().getLineage(c, user, runItem, options);
             Pair<Set<ExpData>, Set<ExpMaterial>> currentParents = Pair.of(lineage.getDatas(), lineage.getMaterials());
             if (currentParents.first != null)
             {
@@ -2185,10 +2187,10 @@ public class ExpDataIterators
                         {
                             try
                             {
-                                Path path = AssayFileWriter.getUploadDirectoryPath(c, fileLinkDirName);
+                                Path path = AssayFileWriter.getUploadDirectoryPath(c, fileLinkDirName).toNioPathForWrite();
                                 Object file = fileColumnValueMapping.saveFileColumnValue(user, c, path, col.getName(), value);
-                                assert file instanceof File;
-                                value = ((File)file).getPath();
+                                assert file instanceof FileLike;
+                                value = ((FileLike)file).toNioPathForRead().toString();
                                 savedFileName[index] = (String)value;
                             }
                             catch (QueryUpdateServiceException ex)

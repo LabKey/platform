@@ -89,6 +89,7 @@
 <%@ page import="java.util.Set" %>
 <%@ page import="org.labkey.api.reader.MapLoader" %>
 <%@ page import="org.labkey.api.action.ApiUsageException" %>
+<%@ page import="org.labkey.api.exp.api.ExpLineageService" %>
 
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
 
@@ -726,12 +727,12 @@ public void testUpdateSomeParents() throws Exception
     svc.mergeRows(user, c, new MapLoader(rows), errors, null, null);
     assertFalse(errors.hasErrors());
 
-    ExpLineage lineage = ExperimentService.get().getLineage(c, user, C1, opts);
+    ExpLineage lineage = ExpLineageService.get().getLineage(c, user, C1, opts);
     assertTrue("Expected 'C1' to be derived from 'P1-1'", lineage.getMaterials().contains(P11));
     assertFalse("Expected 'C1' to no longer be derived from 'P1-2'", lineage.getMaterials().contains(P12));
     assertTrue("Expected 'C1' to still be derived from 'P2-1'", lineage.getMaterials().contains(P21));
 
-    lineage = ExperimentService.get().getLineage(c, user, C4, opts);
+    lineage = ExpLineageService.get().getLineage(c, user, C4, opts);
     assertFalse("Expected 'C4' to not be derived from 'P1-2'", lineage.getMaterials().contains(P12));
     assertTrue("Expected 'C4' to still be derived from 'P2-2'", lineage.getMaterials().contains(P22));
 
@@ -743,15 +744,15 @@ public void testUpdateSomeParents() throws Exception
     svc.mergeRows(user, c, new MapLoader(rows), errors, null, null);
     assertFalse(errors.hasErrors());
 
-    lineage = ExperimentService.get().getLineage(c, user, C2, opts);
+    lineage = ExpLineageService.get().getLineage(c, user, C2, opts);
     assertTrue("Expected 'C2' to have no parents'", lineage.getMaterials().isEmpty());
 
-    lineage = ExperimentService.get().getLineage(c, user, C4, opts);
+    lineage = ExpLineageService.get().getLineage(c, user, C4, opts);
     assertEquals("Expected 'C4' to have two parents", 2, lineage.getMaterials().size());
     assertTrue("Expected 'C4' to be derived from 'P1-1'", lineage.getMaterials().contains(P11));
     assertTrue("Expected 'C4' to be derived from 'P2-1'", lineage.getMaterials().contains(P21));
 
-    lineage = ExperimentService.get().getLineage(c, user, C5, opts);
+    lineage = ExpLineageService.get().getLineage(c, user, C5, opts);
     assertEquals("Expected 'C5' to have three parents", 3, lineage.getMaterials().size());
     assertTrue("Expected 'C5' to be derived from 'P1-1'", lineage.getMaterials().contains(P11));
     assertTrue("Expected 'C5' to be derived from 'P1-4,test'", lineage.getMaterials().contains(P14));
@@ -809,14 +810,14 @@ public void testParentColAndDataInputDerivation() throws Exception
     ExpMaterial A = st.getSample(c, "A");
     assertEquals(0, A.getAliquotCount());
     assertNotNull(A);
-    ExpLineage lineage = ExperimentService.get().getLineage(c, user, A, opts);
+    ExpLineage lineage = ExpLineageService.get().getLineage(c, user, A, opts);
     assertTrue(lineage.getMaterials().isEmpty());
     assertNull(A.getRunId());
 
     ExpMaterial B = st.getSample(c, "B");
     assertEquals(0, A.getAliquotCount());
     assertNotNull(B);
-    lineage = ExperimentService.get().getLineage(c, user, B, opts);
+    lineage = ExpLineageService.get().getLineage(c, user, B, opts);
     assertEquals(1, lineage.getMaterials().size());
     assertTrue("Expected 'B' to be derived from 'A'", lineage.getMaterials().contains(A));
     assertNotNull(B.getRunId());
@@ -824,21 +825,21 @@ public void testParentColAndDataInputDerivation() throws Exception
     ExpMaterial C = st.getSample(c, "C");
     assertEquals(0, A.getAliquotCount());
     assertNotNull(C);
-    lineage = ExperimentService.get().getLineage(c, user, C, opts);
+    lineage = ExpLineageService.get().getLineage(c, user, C, opts);
     assertEquals(1, lineage.getMaterials().size());
     assertTrue("Expected 'C' to be derived from 'B'", lineage.getMaterials().contains(B));
 
     ExpMaterial D = st.getSample(c, "D");
     assertEquals(0, A.getAliquotCount());
     assertNotNull(D);
-    lineage = ExperimentService.get().getLineage(c, user, D, opts);
+    lineage = ExpLineageService.get().getLineage(c, user, D, opts);
     assertEquals(2, lineage.getMaterials().size());
     assertTrue("Expected 'D' to be derived from 'B'", lineage.getMaterials().contains(B));
     assertTrue("Expected 'D' to be derived from 'C'", lineage.getMaterials().contains(C));
 
     ExpMaterial E = st.getSample(c, "E");
     assertNotNull(E);
-    lineage = ExperimentService.get().getLineage(c, user, E, opts);
+    lineage = ExpLineageService.get().getLineage(c, user, E, opts);
     assertTrue("Expected 'E' to be the seed", lineage.getSeeds().contains(E));
     assertEquals(2, lineage.getMaterials().size());
     assertTrue("Expected 'E' to be derived from 'B'", lineage.getMaterials().contains(B));
@@ -876,7 +877,7 @@ public void testParentColAndDataInputDerivation() throws Exception
     assertEquals(1, updated.size());
 
     ExpMaterial D2 = st.getSample(c, "D");
-    lineage = ExperimentService.get().getLineage(c, user, D2, opts);
+    lineage = ExpLineageService.get().getLineage(c, user, D2, opts);
     assertEquals(2, lineage.getMaterials().size());
     assertTrue("Expected 'D' to be derived from 'B'", lineage.getMaterials().contains(B));
     assertTrue("Expected 'D' to be derived from 'E'", lineage.getMaterials().contains(E));

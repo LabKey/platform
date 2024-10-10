@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.experiment.api;
+package org.labkey.experiment.lineage;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -35,6 +35,7 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpLineageOptions;
+import org.labkey.api.exp.api.ExpLineageService;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleType;
@@ -56,8 +57,6 @@ import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.api.writer.ContainerUser;
-import org.labkey.api.writer.DefaultContainerUser;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -316,7 +315,6 @@ public class LineagePerfTest extends Assert
 
         elapsedTimer.stop();
 
-
         LOG.info("===");
         LOG.info(CPUTimer.header());
         LOG.info(generateRowsTimer);
@@ -430,7 +428,6 @@ public class LineagePerfTest extends Assert
         final ViewBackgroundInfo info = new ViewBackgroundInfo(_container, _user, null);
 
         Integer maxMaterialId = new SqlSelector(ExperimentService.get().getSchema(), "SELECT MAX(rowId) FROM exp.material").getObject(Integer.class);
-        ContainerUser context = new DefaultContainerUser(_container, _user);
 
         for (int i = 0; i < 10; i++)
         {
@@ -476,14 +473,13 @@ public class LineagePerfTest extends Assert
 
             LOG.info("  lineage graph 1");
             lineageGraph.start();
-            ExperimentService.get().getLineage(_container, _user, sample, opt);
+            ExpLineageService.get().getLineage(_container, _user, sample, opt);
             lineageGraph.stop();
 
             LOG.info("  lineage graph 2");
             lineageGraph.start();
-            ExperimentService.get().getLineage(_container, _user, sample, opt);
+            ExpLineageService.get().getLineage(_container, _user, sample, opt);
             lineageGraph.stop();
         }
     }
-
 }

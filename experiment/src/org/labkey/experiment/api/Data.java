@@ -17,10 +17,11 @@ package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.api.ExpData;
-import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 
 import java.io.File;
 import java.net.URI;
@@ -61,7 +62,7 @@ public class Data extends RunItem
         }
         
         URI uri = FileUtil.createUri(getDataFileUrl());
-        if ("file".equals(uri.getScheme()))
+        if (FileUtil.FILE_SCHEME.equals(uri.getScheme()))
         {
             //consider try/catch on IllegalArgumentException
             return new File(uri);
@@ -72,13 +73,23 @@ public class Data extends RunItem
         }
     }
 
+
+    public FileLike getFileLike()
+    {
+        File f = getFile();
+        if (null == f)
+            return null;
+        return FileSystemLike.wrapFile(f);
+    }
+
+
     @Nullable
     public Path getFilePath()
     {
         if (null != getDataFileUrl())
         {
             URI uri = FileUtil.createUri(getDataFileUrl());
-            if ("file".equals(uri.getScheme()))
+            if (FileUtil.FILE_SCHEME.equals(uri.getScheme()))
                 return new File(uri).toPath();
 
             return FileUtil.stringToPath(getContainer(), getDataFileUrl());
