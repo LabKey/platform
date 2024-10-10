@@ -168,7 +168,7 @@ public class CollectionUtils
     }
     public static <V> Map<String,V> checkValueClass(Map<String,V> map, final Class<V> valueClass)
     {
-        assert map.values().stream().allMatch(v -> null==v || valueClass.isInstance(v));
+        assert null==map || map.values().stream().allMatch(v -> null==v || valueClass.isInstance(v));
         return map;
     }
 
