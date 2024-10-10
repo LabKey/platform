@@ -324,9 +324,17 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             List<Plate> plates = PlateManager.get().getPlatesForPlateSet(plateSet);
             List<String> annotations = getAnnotations();
 
-            // single annotation can only be a plate identifier
-            if (annotations.size() == 1)
+            // if the plate set only has one plate, then treat a single annotation as the measure
+            // otherwise a single annotation can only be a plate identifier
+            if (plates.size() == 1 && annotations.size() == 1)
+            {
+                _plate = plates.get(0);
+                _measureName = annotations.get(0);
+            }
+            else if (annotations.size() == 1)
+            {
                 _plate = getPlateForId(annotations.get(0), plates);
+            }
             else
             {
                 // multiple annotation must have an annotation prefix
