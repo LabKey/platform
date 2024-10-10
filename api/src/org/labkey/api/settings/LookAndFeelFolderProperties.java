@@ -59,12 +59,6 @@ public class LookAndFeelFolderProperties extends AbstractWriteableSettingsGroup
         return LOOK_AND_FEEL_SET_NAME;
     }
 
-    public boolean isPropertyInherited(Container c, String name)
-    {
-        String value = super.lookupStringValue(c, name, null);
-        return null == value;
-    }
-
     @Override
     protected String lookupStringValue(String name, @Nullable String defaultValue)
     {
@@ -193,7 +187,7 @@ public class LookAndFeelFolderProperties extends AbstractWriteableSettingsGroup
     // This is useful for export and showing inheritance status in the UI.
     public String getExtraTimeParsingPatternStored()
     {
-        return getStoredValue(_c, extraTimeParsingPattern.name());
+        return getStoredValue(_c, extraTimeParsingPattern);
     }
 
     public boolean areRestrictedColumnsEnabled()
@@ -205,7 +199,7 @@ public class LookAndFeelFolderProperties extends AbstractWriteableSettingsGroup
     // This is useful for export and showing inheritance status in the UI.
     public Boolean areRestrictedColumnsEnabledStored()
     {
-        String stored = super.lookupStringValue(_c, restrictedColumnsEnabled.name(), null);
+        String stored = getStoredValue(_c, restrictedColumnsEnabled);
         return null == stored ? null : "TRUE".equals(stored);
     }
 }

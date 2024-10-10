@@ -1736,11 +1736,14 @@ public class AdminController extends SpringActionController
         private boolean _systemShortNameInherited;
         private String _themeName;
         private boolean _themeNameInherited;
-        private String _themeFont;
         private String _folderDisplayMode;
+        private boolean _folderDisplayModeInherited;
         private String _applicationMenuDisplayMode;
+        private boolean _applicationMenuDisplayModeInherited;
         private boolean _helpMenuEnabled;
+        private boolean _helpMenuEnabledInherited;
         private boolean _discussionEnabled;
+        private boolean _discussionEnabledInherited;
         private String _logoHref;
         private String _companyName;
         private String _systemEmailAddress;
@@ -1828,17 +1831,6 @@ public class AdminController extends SpringActionController
             _themeNameInherited = themeNameInherited;
         }
 
-        public String getThemeFont()
-        {
-            return _themeFont;
-        }
-
-        @SuppressWarnings({"UnusedDeclaration"})
-        public void setThemeFont(String themeFont)
-        {
-            _themeFont = themeFont;
-        }
-
         public String getFolderDisplayMode()
         {
             return _folderDisplayMode;
@@ -1848,6 +1840,17 @@ public class AdminController extends SpringActionController
         public void setFolderDisplayMode(String folderDisplayMode)
         {
             _folderDisplayMode = folderDisplayMode;
+        }
+
+        public boolean isFolderDisplayModeInherited()
+        {
+            return _folderDisplayModeInherited;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setFolderDisplayModeInherited(boolean folderDisplayModeInherited)
+        {
+            _folderDisplayModeInherited = folderDisplayModeInherited;
         }
 
         public String getApplicationMenuDisplayMode()
@@ -1861,15 +1864,15 @@ public class AdminController extends SpringActionController
             _applicationMenuDisplayMode = displayMode;
         }
 
-        public String getDateParsingMode()
+        public boolean isApplicationMenuDisplayModeInherited()
         {
-            return _dateParsingMode;
+            return _applicationMenuDisplayModeInherited;
         }
 
         @SuppressWarnings({"UnusedDeclaration"})
-        public void setDateParsingMode(String dateParsingMode)
+        public void setApplicationMenuDisplayModeInherited(boolean applicationMenuDisplayModeInherited)
         {
-            _dateParsingMode = dateParsingMode;
+            _applicationMenuDisplayModeInherited = applicationMenuDisplayModeInherited;
         }
 
         public boolean isHelpMenuEnabled()
@@ -1883,6 +1886,17 @@ public class AdminController extends SpringActionController
             _helpMenuEnabled = helpMenuEnabled;
         }
 
+        public boolean isHelpMenuEnabledInherited()
+        {
+            return _helpMenuEnabledInherited;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setHelpMenuEnabledInherited(boolean helpMenuEnabledInherited)
+        {
+            _helpMenuEnabledInherited = helpMenuEnabledInherited;
+        }
+
         public boolean isDiscussionEnabled()
         {
             return _discussionEnabled;
@@ -1892,6 +1906,17 @@ public class AdminController extends SpringActionController
         public void setDiscussionEnabled(boolean discussionEnabled)
         {
             _discussionEnabled = discussionEnabled;
+        }
+
+        public boolean isDiscussionEnabledInherited()
+        {
+            return _discussionEnabledInherited;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setDiscussionEnabledInherited(boolean discussionEnabledInherited)
+        {
+            _discussionEnabledInherited = discussionEnabledInherited;
         }
 
         public String getLogoHref()
@@ -1980,6 +2005,17 @@ public class AdminController extends SpringActionController
         public String getSupportEmail()
         {
             return _supportEmail;
+        }
+
+        public String getDateParsingMode()
+        {
+            return _dateParsingMode;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setDateParsingMode(String dateParsingMode)
+        {
+            _dateParsingMode = dateParsingMode;
         }
     }
 
@@ -10971,6 +11007,42 @@ public class AdminController extends SpringActionController
             props.setThemeName(form.getThemeName());
         }
 
+        if (form.isFolderDisplayModeInherited())
+        {
+            props.clearFolderDisplayMode();
+        }
+        else
+        {
+            props.setFolderDisplayMode(FolderDisplayMode.fromString(form.getFolderDisplayMode()));
+        }
+
+        if (form.isApplicationMenuDisplayModeInherited())
+        {
+            props.clearApplicationMenuDisplayMode();
+        }
+        else
+        {
+            props.setApplicationMenuDisplayMode(FolderDisplayMode.fromString(form.getApplicationMenuDisplayMode()));
+        }
+
+        if (form.isHelpMenuEnabledInherited())
+        {
+            props.clearHelpMenuEnabled();
+        }
+        else
+        {
+            props.setHelpMenuEnabled(form.isHelpMenuEnabled());
+        }
+
+        if (form.isDiscussionEnabledInherited())
+        {
+            props.clearDiscussionEnabled();
+        }
+        else
+        {
+            props.setDiscussionEnabled(form.isDiscussionEnabled());
+        }
+
         // a few properties on this page should be restricted to operational permissions (i.e. site admin)
         if (hasAdminOpsPerm)
         {
@@ -11050,14 +11122,6 @@ public class AdminController extends SpringActionController
 //            }
 //        }
 //
-//        if (json.has("folderDisplayMode"))
-//            props.setFolderDisplayMode(FolderDisplayMode.fromString(json.optString("folderDisplayMode")));
-//        if (json.has("applicationMenuDisplayMode"))
-//            props.setApplicationMenuDisplayMode(FolderDisplayMode.fromString(json.optString("applicationMenuDisplayMode")));
-//        if (json.has("helpMenuEnabled"))
-//            props.setHelpMenuEnabled(json.optBoolean("helpMenuEnabled"));
-//        if (json.has("discussionEnabled"))
-//            props.setDiscussionEnabled(json.optBoolean("discussionEnabled"));
 //
 //        if (json.has("dateParsingMode"))
 //        {

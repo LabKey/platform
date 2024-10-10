@@ -97,14 +97,19 @@ public class WriteableLookAndFeelProperties extends WriteableFolderLookAndFeelPr
         storeStringValue(folderDisplayMode, mode.toString());
     }
 
+    public void clearFolderDisplayMode()
+    {
+        remove(folderDisplayMode);
+    }
+
     public void setApplicationMenuDisplayMode(FolderDisplayMode displayMode)
     {
         storeStringValue(applicationMenuDisplayMode, displayMode.toString());
     }
 
-    public void setDateParsingMode(DateParsingMode mode)
+    public void clearApplicationMenuDisplayMode()
     {
-        storeStringValue(dateParsingMode, mode.toString());
+        remove(applicationMenuDisplayMode);
     }
 
     public void setHelpMenuEnabled(boolean enabled)
@@ -112,9 +117,24 @@ public class WriteableLookAndFeelProperties extends WriteableFolderLookAndFeelPr
         storeBooleanValue(helpMenuEnabled, enabled);
     }
 
+    public void clearHelpMenuEnabled()
+    {
+        remove(helpMenuEnabled);
+    }
+
     public void setDiscussionEnabled(boolean enabled)
     {
         storeBooleanValue(discussionEnabled, enabled);
+    }
+
+    public void clearDiscussionEnabled()
+    {
+        remove(discussionEnabled);
+    }
+
+    public void setDateParsingMode(DateParsingMode mode)
+    {
+        storeStringValue(dateParsingMode, mode.toString());
     }
 
     public void setSupportEmail(@Nullable String email)

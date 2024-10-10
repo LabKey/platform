@@ -40,6 +40,7 @@ import static org.labkey.api.settings.LookAndFeelProperties.Properties.folderDis
 import static org.labkey.api.settings.LookAndFeelProperties.Properties.helpMenuEnabled;
 import static org.labkey.api.settings.LookAndFeelProperties.Properties.logoHref;
 import static org.labkey.api.settings.LookAndFeelProperties.Properties.reportAProblemPath;
+import static org.labkey.api.settings.LookAndFeelProperties.Properties.restrictedColumnsEnabled;
 import static org.labkey.api.settings.LookAndFeelProperties.Properties.supportEmail;
 import static org.labkey.api.settings.LookAndFeelProperties.Properties.systemDescription;
 import static org.labkey.api.settings.LookAndFeelProperties.Properties.systemEmailAddress;
@@ -202,11 +203,6 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
         return lookupStringValue(themeName, Theme.DEFAULT.name());
     }
 
-    public boolean isThemeNameInherited()
-    {
-        return isPropertyInherited(_settingsContainer, themeName.name());
-    }
-
     public String getThemeNameStored()
     {
         return getStoredValue(_settingsContainer, themeName);
@@ -214,12 +210,24 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
 
     public FolderDisplayMode getFolderDisplayMode()
     {
-        return FolderDisplayMode.fromString(lookupStringValue(folderDisplayMode, FolderDisplayMode.ALWAYS.toString()));
+        return FolderDisplayMode.fromString(lookupStringValue(folderDisplayMode, null));
+    }
+
+    public FolderDisplayMode getFolderDisplayModeStored()
+    {
+        String displayMode = getStoredValue(_settingsContainer, folderDisplayMode);
+        return displayMode != null ? FolderDisplayMode.fromString(lookupStringValue(folderDisplayMode, null)) : null;
     }
 
     public FolderDisplayMode getApplicationMenuDisplayMode()
     {
-        return FolderDisplayMode.fromString(lookupStringValue(applicationMenuDisplayMode, FolderDisplayMode.ALWAYS.toString()));
+        return FolderDisplayMode.fromString(lookupStringValue(applicationMenuDisplayMode, null));
+    }
+
+    public FolderDisplayMode getApplicationMenuDisplayModeStored()
+    {
+        String displayMode = getStoredValue(_settingsContainer, applicationMenuDisplayMode);
+        return displayMode != null ? FolderDisplayMode.fromString(lookupStringValue(applicationMenuDisplayMode, null)) : null;
     }
 
     public boolean isHelpMenuEnabled()
@@ -227,11 +235,26 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
         return lookupBooleanValue(helpMenuEnabled, true);
     }
 
+    public Boolean isHelpMenuEnabledStored()
+    {
+        String stored = getStoredValue(_c, restrictedColumnsEnabled);
+        return null == stored ? null : "TRUE".equals(stored);
+    }
+
     public boolean isDiscussionEnabled()
     {
         // Prefer correctly spelled property name, but fall-back to the old, misspelled one
         String enabled = lookupStringValue(discussionEnabled.name(), null);
         return enabled != null ? "TRUE".equalsIgnoreCase(enabled) : lookupBooleanValue("dicussionEnabled", true);
+    }
+
+    public Boolean isDiscussionEnabledStored()
+    {
+        // Prefer correctly spelled property name, but fall-back to the old, misspelled one
+        String enabled = getStoredValue(_c, discussionEnabled);
+        if (enabled == null)
+            enabled = getStoredValue(_c, "dicussionEnabled");
+        return "TRUE".equalsIgnoreCase(enabled);
     }
 
     public String getUnsubstitutedLogoHref()
