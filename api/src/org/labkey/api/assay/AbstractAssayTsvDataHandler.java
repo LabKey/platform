@@ -175,7 +175,8 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         assert(rawData.size() <= 1);
         try
         {
-            importRows(data, info.getUser(), run, protocol, provider, rawData.values().iterator().next(), settings, autoFillDefaultResultColumns);
+            AssayRunUploadContext<?> runUploadContext = context instanceof AssayUploadXarContext ? ((AssayUploadXarContext)context).getContext() : null;
+            importRows(data, info.getUser(), run, protocol, provider, rawData.values().iterator().next(), settings, autoFillDefaultResultColumns, runUploadContext);
         }
         catch (BatchValidationException e)
         {
@@ -188,7 +189,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         try
         {
             DataLoaderSettings settings = new DataLoaderSettings();
-            importRows(data, context.getUser(), run, context.getProtocol(), context.getProvider(), dataMap, settings, context.shouldAutoFillDefaultResultColumns());
+            importRows(data, context.getUser(), run, context.getProtocol(), context.getProvider(), dataMap, settings, context.shouldAutoFillDefaultResultColumns(), context);
         }
         catch (BatchValidationException e)
         {
@@ -197,45 +198,54 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     }
 
     @Override
-    public Map<DataType, DataIteratorBuilder> getValidationDataMap(ExpData data, FileLike dataFile, ViewBackgroundInfo info, Logger log, XarContext context, DataLoaderSettings settings) throws ExperimentException
+    public Map<DataType, DataIteratorBuilder> getValidationDataMap(
+            ExpData data,
+            FileLike dataFile,
+            ViewBackgroundInfo info,
+            Logger log,
+            XarContext context,
+            DataLoaderSettings settings) throws ExperimentException
     {
         ExpProtocol protocol = data.getRun().getProtocol();
         AssayProvider provider = AssayService.get().getProvider(protocol);
         Domain dataDomain = provider.getResultsDomain(protocol);
         boolean plateMetadataEnabled = provider.isPlateMetadataEnabled(protocol);
+        DataIteratorBuilder dataRows;
 
-        try (DataLoader loader = createLoaderForImport(dataFile, data.getRun(), dataDomain, settings, true))
+        if (plateMetadataEnabled && AssayPlateMetadataService.isExperimentalAppPlateEnabled())
         {
-            Map<DataType, DataIteratorBuilder> datas = new HashMap<>();
-            DataIteratorBuilder dataRows = (diContext) -> loader.getDataIterator(diContext);
-
-            if (plateMetadataEnabled && AssayPlateMetadataService.isExperimentalAppPlateEnabled())
-            {
-                Integer plateSetId = getPlateSetValueFromRunProps(context, provider, protocol);
-                dataRows = AssayPlateMetadataService.get().parsePlateData(context.getContainer(), context.getUser(), provider, protocol, plateSetId, dataFile.toNioPathForRead().toFile(), dataRows);
-            }
-
-            // assays with plate metadata support will merge the plate metadata with the data rows to make it easier for
-            // transform scripts to perform metadata related calculations
-            if (plateMetadataEnabled)
-                dataRows = mergePlateMetadata(context, provider, protocol, dataRows);
-
-            datas.put(getDataType(), dataRows);
-
-            return datas;
+            dataRows = parsePlateData(context.getContainer(), context.getUser(), protocol, data, dataFile, context, settings);
         }
+        else
+        {
+            try (DataLoader loader = createLoaderForImport(dataFile, data.getRun(), dataDomain, settings, true))
+            {
+                dataRows = (diContext) -> loader.getDataIterator(diContext);
+            }
+        }
+        return Map.of(getDataType(), dataRows);
     }
 
-    private DataIteratorBuilder mergePlateMetadata(XarContext context, AssayProvider provider, ExpProtocol protocol, DataIteratorBuilder dataRows)
-            throws ExperimentException
+    private DataIteratorBuilder parsePlateData(
+            Container container,
+            User user,
+            ExpProtocol protocol,
+            ExpData data,
+            FileLike dataFile,
+            XarContext context,
+            DataLoaderSettings settings) throws ExperimentException
     {
+        AssayProvider provider = AssayService.get().getProvider(protocol);
+        Integer plateSetId = getPlateSetValueFromRunProps(context, provider, protocol);
+        DataIteratorBuilder dataRows = AssayPlateMetadataService.get().parsePlateData(container, user, ((AssayUploadXarContext)context).getContext(), data, provider,
+                protocol, plateSetId, dataFile, settings);
+
+        // assays with plate metadata support will merge the plate metadata with the data rows to make it easier for
+        // transform scripts to perform metadata related calculations
         Domain runDomain = provider.getRunDomain(protocol);
         DomainProperty propertyPlateSet = runDomain.getPropertyByName(AssayPlateMetadataService.PLATE_SET_COLUMN_NAME);
         if (propertyPlateSet != null)
-        {
-            Integer plateSetId = getPlateSetValueFromRunProps(context, provider, protocol);
-            return AssayPlateMetadataService.get().mergePlateMetadata(context.getContainer(), context.getUser(), plateSetId, dataRows, provider, protocol);
-        }
+            dataRows = AssayPlateMetadataService.get().mergePlateMetadata(container, user, plateSetId, dataRows, provider, protocol);
 
         return dataRows;
     }
@@ -466,7 +476,17 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         }
     }
 
-    public void importRows(ExpData data, User user, ExpRun run, ExpProtocol protocol, AssayProvider provider, DataIteratorBuilder rawData, @Nullable DataLoaderSettings settings, boolean autoFillDefaultResultColumns)
+    public void importRows(
+            ExpData data,
+            User user,
+            ExpRun run,
+            ExpProtocol protocol,
+            AssayProvider provider,
+            DataIteratorBuilder rawData,
+            @Nullable DataLoaderSettings settings,
+            boolean autoFillDefaultResultColumns,
+            @Nullable AssayRunUploadContext<?> context
+    )
             throws ExperimentException, BatchValidationException
     {
         if (settings == null)
@@ -534,7 +554,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 // Insert the data into the assay's data table.
                 // On insert, the raw data will have the provisioned table's rowId added to the list of maps
                 // autoFillDefaultResultColumns - only populate created/modified/by for results created separately from runs
-                insertRowData(data, user, container, run, protocol, provider, dataDomain, fileData, dataTable, autoFillDefaultResultColumns, rowCallback);
+                insertRowData(data, user, container, run, protocol, provider, dataDomain, fileData, dataTable, autoFillDefaultResultColumns, rowCallback, context);
             }
             catch (NoRowsException e)
             {
@@ -584,12 +604,13 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         DataIterator fileData,
         TableInfo tableInfo,
         boolean autoFillDefaultColumns,
-        OntologyManager.RowCallback rowCallback
+        OntologyManager.RowCallback rowCallback,
+        @Nullable AssayRunUploadContext<?> context
     ) throws SQLException, BatchValidationException, ExperimentException
     {
         OntologyManager.UpdateableTableImportHelper importHelper = new SimpleAssayDataImportHelper(data, protocol, provider);
         if (provider.isPlateMetadataEnabled(protocol))
-            importHelper = AssayPlateMetadataService.get().getImportHelper(container, user, run, data, protocol, provider);
+            importHelper = AssayPlateMetadataService.get().getImportHelper(container, user, run, data, protocol, provider, context);
 
         if (tableInfo instanceof UpdateableTableInfo uti)
         {

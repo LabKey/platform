@@ -42,6 +42,7 @@ public class AssayResultDomainKind extends AssayDomainKind
     public static final String PLATE_COLUMN_NAME = "Plate";
     public static final String WELL_LOCATION_COLUMN_NAME = "WellLocation";
     public static final String WELL_LSID_COLUMN_NAME = "WellLsid";
+    public static final String REPLICATE_LSID_COLUMN_NAME = "ReplicateLsid";
 
     public AssayResultDomainKind()
     {
@@ -136,6 +137,7 @@ public class AssayResultDomainKind extends AssayDomainKind
                     mandatoryNames.add(PLATE_COLUMN_NAME);
                     mandatoryNames.add(WELL_LOCATION_COLUMN_NAME);
                     mandatoryNames.add(WELL_LSID_COLUMN_NAME);
+                    mandatoryNames.add(REPLICATE_LSID_COLUMN_NAME);
                 }
             }
         }
