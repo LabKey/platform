@@ -144,7 +144,7 @@ public interface PipelineJobService extends TaskPipelineRegistry
      * Callers should invoke the close() on the returned object when the process completes normally and no longer
      * needs to be tracked
      */
-    QuietCloser trackForJobCancellation(String jobGuid, Process process);
+    QuietCloser trackForCancellation(Process process);
 
     void cancelForJob(String jobGuid);
 

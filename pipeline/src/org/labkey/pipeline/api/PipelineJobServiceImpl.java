@@ -30,7 +30,6 @@ import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CopyOnWriteHashMap;
-import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.formSchema.CheckboxField;
@@ -133,7 +132,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
     @NotNull
     private LocationType _locationType;
 
-    private final Map<String, List<Process>> _processesByJob = new CopyOnWriteHashMap<>();
+    private final Map<Thread, List<Process>> _processesByJob = new CopyOnWriteHashMap<>();
 
     public static PipelineJobServiceImpl initDefaults(@NotNull LocationType locationType)
     {
@@ -264,15 +263,10 @@ public class PipelineJobServiceImpl implements PipelineJobService
     }
 
     @Override
-    public QuietCloser trackForJobCancellation(String jobGuid, Process process)
+    public QuietCloser trackForCancellation(Process process)
     {
-        if (jobGuid == null)
-        {
-            return () -> {};
-        }
-
         MemTracker.getInstance().put(process);
-        List<Process> processes = _processesByJob.computeIfAbsent(jobGuid, (k) -> new CopyOnWriteArrayList<>());
+        List<Process> processes = _processesByJob.computeIfAbsent(Thread.currentThread(), (k) -> new CopyOnWriteArrayList<>());
         processes.add(process);
         return () -> processes.remove(process);
     }
@@ -280,7 +274,13 @@ public class PipelineJobServiceImpl implements PipelineJobService
     @Override
     public void cancelForJob(String jobGuid)
     {
-        List<Process> processes = _processesByJob.remove(jobGuid);
+        Thread jobThread = _jobThreads.get(jobGuid);
+        if (jobThread == null)
+        {
+            return;
+        }
+
+        List<Process> processes = _processesByJob.remove(jobThread);
         if (processes != null)
         {
             for (Process p : processes)
@@ -298,14 +298,11 @@ public class PipelineJobServiceImpl implements PipelineJobService
 
             // If we need to support query cancellation on SQL Server, we'd have to start tracking the Statements
             // the Connection hands out and kill them individually.
-            Thread jobThread = _jobThreads.get(jobGuid);
-            if (jobThread != null)
+
+            // Piggyback on the job thread so we can shut down open connections on its behalf
+            try (DbScope.ConnectionSharingCloseable ignored = DbScope.shareConnections(jobThread, Thread.currentThread()))
             {
-                // Piggyback on the job thread so we can shut down open connections on its behalf
-                try (DbScope.ConnectionSharingCloseable ignored = DbScope.shareConnections(jobThread, Thread.currentThread()))
-                {
-                    DbScope.closeAllConnectionsForCurrentThread();
-                }
+                DbScope.closeAllConnectionsForCurrentThread();
             }
         }
     }

@@ -253,7 +253,7 @@ public class RReportJob extends PipelineJob implements Serializable
                 ActionURL url = context.cloneActionURL();
                 url.addParameters(_params);
                 context.setActionURL(url);
-                String output = _report.runScript(context, outputSubst, inputFile, null);
+                String output = _report.runScript(context, outputSubst, inputFile, null, getJob().getJobGUID());
                 if (!StringUtils.isEmpty(output))
                 {
                     getJob().info("CONSOLE OUTPUT:\n" + output);

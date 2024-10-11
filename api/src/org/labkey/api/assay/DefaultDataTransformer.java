@@ -156,17 +156,6 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
 
                         bindings.put(ExternalScriptEngine.PARAM_REPLACEMENT_MAP, paramMap);
 
-                        // Issue 50774 - associate external process with the job that spawned it so that we can
-                        // kill it if the job is canceled
-                        if (run.getJobId() != null)
-                        {
-                            PipelineStatusFile statusFile = PipelineService.get().getStatusFile(run.getJobId());
-                            if (statusFile != null)
-                            {
-                                bindings.put(ExternalScriptEngine.PIPELINE_JOB_GUID, statusFile.getJobId());
-                            }
-                        }
-
                         Object output = engine.eval(script);
 
                         FileLike rewrittenScriptFile = null;
