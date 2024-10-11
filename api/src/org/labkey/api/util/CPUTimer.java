@@ -117,18 +117,15 @@ public class CPUTimer
 
     protected void _update(long elapsed)
     {
-        synchronized(timers)
+        _cumulative += elapsed;
+        _min = Math.min(_min, elapsed);
+        _max = Math.max(_max, elapsed);
+        if (_first == 0)
         {
-            _cumulative += elapsed;
-            _min = Math.min(_min, elapsed);
-            _max = Math.max(_max, elapsed);
-            if (_first == 0)
-            {
-                _first = elapsed;
-            }
-            _last = elapsed;
-            _calls++;
+            _first = elapsed;
         }
+        _last = elapsed;
+        _calls++;
     }
 
     public boolean saveTo(CPUTimer accumulator)
@@ -152,17 +149,14 @@ public class CPUTimer
      */
 	public boolean clear()
     {
-        synchronized(timers)
-        {
-            _cumulative = 0;
-            _min = Long.MAX_VALUE;
-            _max = Long.MIN_VALUE;
-            _first = 0;
-            _last = 0;
-            _start = 0;
-            _stop = 0;
-            _calls = 0;
-        }
+        _cumulative = 0;
+        _min = Long.MAX_VALUE;
+        _max = Long.MIN_VALUE;
+        _first = 0;
+        _last = 0;
+        _start = 0;
+        _stop = 0;
+        _calls = 0;
         return true;
     }
 
@@ -173,12 +167,17 @@ public class CPUTimer
      */
     public boolean remove()
     {
-        this.stop();
+
+        if(started())
+            stop();
+
         clear();
+
         synchronized(timers)
         {
             timers.remove(this);
         }
+
         return true;
     }
 
