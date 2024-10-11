@@ -5,7 +5,6 @@
 import React, { FC, memo, useCallback, useEffect, useState } from 'react';
 import { fromJS } from 'immutable';
 import {
-    applyEditorModelChanges,
     QueryModel,
     withQueryModels,
     EditableGridChange,
