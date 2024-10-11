@@ -698,8 +698,6 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                             String measureName = gridInfo.getMeasureName();
                             if (measureName == null)
                                 throw new ExperimentException("The measure name for plate (" + gridInfo.getPlate().getPlateId() + ") has not been specified in the data file.");
-                            else if (!measureAliases.contains(measureName))
-                                throw new ExperimentException("The measure name (" + measureName + ") is not a valid measure property for the assay protocol.");
 
                             if (measures.contains(measureName))
                                 throw new ExperimentException("The measure name (" + measureName + ") has been previously associated with data for the same plate.");
