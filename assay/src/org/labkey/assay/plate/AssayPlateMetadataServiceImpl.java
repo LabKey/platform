@@ -338,10 +338,15 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         if (run != null)
         {
             // incoming plate data has precedence over any previous plate data.
-            Map<String, Plate> plateMap = plates.stream().collect(Collectors.toMap(Plate::getName, p -> p));
-            Set<String> existingPlates = new HashSet<>();
-            Set<String> prevPlates = new HashSet<>();
-            rows.forEach(r -> existingPlates.add(r.get(AssayResultDomainKind.PLATE_COLUMN_NAME).toString()));
+            Map<Object, Plate> plateMap = new HashMap<>();
+            plates.forEach(p -> {
+                // map by both row ID and plate name
+                plateMap.put(p.getRowId(), p);
+                plateMap.put(p.getName(), p);
+            });
+            Set<Object> incomingPlates = new HashSet<>();       // incoming plates may be either row IDs or plate IDs
+            Set<String> prevPlateRowIDs = new HashSet<>();
+            rows.forEach(r -> incomingPlates.add(r.get(AssayResultDomainKind.PLATE_COLUMN_NAME)));
             List<Map<String, Object>> newRows = new ArrayList<>();
 
             // parse the existing run data and combine with any new data
@@ -349,14 +354,14 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             TableInfo resultsTable = schema.createDataTable(null, false);
             if (resultsTable != null)
             {
-                // The plate value is either a string or integer on the incoming data, need to match that when merging
+                // The plate identifier is either a row ID or plate ID on incoming data, need to match that when merging
                 // existing data
                 Object plateObj = rows.get(0).get(AssayResultDomainKind.PLATE_COLUMN_NAME);
                 final FieldKey plateFieldKey;
-                //if (plateObj instanceof String)
+                if (plateObj instanceof String)
                     plateFieldKey = FieldKey.fromParts(AssayResultDomainKind.PLATE_COLUMN_NAME, "Name");
-                //else
-                //    plateFieldKey = FieldKey.fromParts(AssayResultDomainKind.PLATE_COLUMN_NAME);
+                else
+                    plateFieldKey = FieldKey.fromParts(AssayResultDomainKind.PLATE_COLUMN_NAME);
 
                 List<FieldKey> columns = resultsTable.getDomain().getProperties().stream().map(dp ->
                         {
@@ -377,8 +382,8 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                     {
                         while (results.next())
                         {
-                            String plate = results.getString(plateFieldKey);
-                            if (plateMap.containsKey(plate) && !existingPlates.contains(plate))
+                            Object plate = results.getObject(plateFieldKey);
+                            if (plateMap.containsKey(plate) && !incomingPlates.contains(plate))
                             {
                                 Map<String, Object> row = new HashMap<>();
                                 Map<FieldKey, Object> rowMap = results.getFieldKeyRowMap();
@@ -389,7 +394,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                                 }
                                 row.put(AssayResultDomainKind.PLATE_COLUMN_NAME, plate);
                                 newRows.add(row);
-                                prevPlates.add(plateMap.get(plate).getRowId().toString());
+                                prevPlateRowIDs.add(String.valueOf(plateMap.get(plate).getRowId()));
                             }
                         }
                     }
@@ -401,7 +406,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 // add incoming data at the end
                 newRows.addAll(rows);
 
-                if (!prevPlates.isEmpty())
+                if (!prevPlateRowIDs.isEmpty())
                 {
                     try (DbScope.Transaction tx = AssayDbSchema.getInstance().getScope().ensureTransaction())
                     {
@@ -434,7 +439,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                                 .append(" ON AR.dataid = ED.rowid")
                                 .append(" WHERE ED.runId = ? ").add(run.getRowId())
                                 .append(" AND AR.plate NOT IN (")
-                                .append(String.join(",", prevPlates)).append(")");
+                                .append(String.join(",", prevPlateRowIDs)).append(")");
                         List<Integer> rowIds = new SqlSelector(scope, sql).getArrayList(Integer.class);
                         if (!rowIds.isEmpty())
                             PlateManager.get().deleteHits(protocol.getRowId(), rowIds);
@@ -448,7 +453,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                     PlateManager.get().deleteHits(FieldKey.fromParts("RunId"), List.of(run));
                 }
 
-                if (!prevPlates.isEmpty())
+                if (!prevPlateRowIDs.isEmpty())
                     rows = newRows;
             }
             else
