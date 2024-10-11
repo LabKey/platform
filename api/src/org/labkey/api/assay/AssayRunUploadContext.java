@@ -49,6 +49,13 @@ import static java.util.Collections.emptyMap;
 */
 public interface AssayRunUploadContext<ProviderType extends AssayProvider> extends ContainerUser, HasHttpRequest
 {
+    // options for how re-imported data is handled, default is REPLACE
+    enum ReImportOption
+    {
+        REPLACE,                // existing behavior where all results are replaced with new incoming data
+        MERGE_DATA              // can be interpreted by the data handler what this means, but for plate based assays merge on a plate boundary within the same plate set
+    }
+
     @NotNull
     ExpProtocol getProtocol();
 
@@ -152,6 +159,11 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
     /** The RowId for the run that is being deleted and reuploaded, or null if this is a new run */
     Integer getReRunId();
 
+    default ReImportOption getReImportOption()
+    {
+        return ReImportOption.REPLACE;
+    }
+
     void uploadComplete(ExpRun run) throws ExperimentException;
 
     default String getJobDescription()
@@ -215,6 +227,7 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
         protected Integer _workflowTask;
         protected String _targetStudy;
         protected Integer _reRunId;
+        protected AssayRunUploadContext.ReImportOption _reImportOption;
         protected Map<String, Object> _rawRunProperties;
         protected Map<String, Object> _rawBatchProperties;
         protected Map<?, String> _inputDatas;
@@ -289,6 +302,12 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
         public final FACTORY setReRunId(Integer reRunId)
         {
             _reRunId = reRunId;
+            return self();
+        }
+
+        public final FACTORY setReImportOption(AssayRunUploadContext.ReImportOption option)
+        {
+            _reImportOption = option;
             return self();
         }
 
