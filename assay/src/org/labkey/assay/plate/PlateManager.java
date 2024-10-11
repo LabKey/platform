@@ -2984,7 +2984,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         Table.delete(AssayDbSchema.getInstance().getTableInfoHit(), filter);
     }
 
-    private void deleteHits(FieldKey fieldKey, Collection<? extends ExpObject> objects)
+    public void deleteHits(FieldKey fieldKey, Collection<? extends ExpObject> objects)
     {
         if (objects == null || objects.isEmpty())
             return;
@@ -2992,11 +2992,30 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         deleteHits(new SimpleFilter(fieldKey, objects.stream().map(ExpObject::getRowId).toList(), CompareType.IN));
     }
 
-    private void deleteHits(int protocolId, Collection<Integer> resultIds)
+    public void deleteHits(int protocolId, Collection<Integer> resultIds)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ProtocolId"), protocolId);
         filter.addCondition(FieldKey.fromParts("ResultId"), resultIds, CompareType.IN);
         deleteHits(filter);
+    }
+
+    private void deleteReplicateStats(ExpProtocol protocol, User user, SimpleFilter filter)
+    {
+        AssayProvider provider = AssayService.get().getProvider(protocol);
+        if (provider != null)
+        {
+            Domain replicateDomain = AssayPlateMetadataService.get().getPlateReplicateStatsDomain(protocol);
+            if (replicateDomain != null)
+            {
+                DbScope scope = AssayDbSchema.getInstance().getScope();
+                SQLFragment sql = new SQLFragment("DELETE FROM ")
+                        .append(replicateDomain.getDomainKind().getStorageSchemaName()).append(".")
+                        .append(replicateDomain.getStorageTableName()).append(" ")
+                        .append(filter.getSQLFragment(scope.getSqlDialect()));
+
+                new SqlExecutor(scope).execute(sql);
+            }
+       }
     }
 
     @Override
@@ -3009,6 +3028,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     public void beforeRunDelete(ExpProtocol protocol, ExpRun run, User user)
     {
         deleteHits(FieldKey.fromParts("RunId"), List.of(run));
+        deleteReplicateStats(protocol, user, new SimpleFilter(FieldKey.fromParts(PlateReplicateStatsDomainKind.Column.Run.name()), run.getRowId()));
     }
 
     @Override

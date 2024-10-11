@@ -80,6 +80,7 @@ import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.PlateManagerTest;
 import org.labkey.assay.plate.PlateMetadataDomainKind;
 import org.labkey.assay.plate.PlateMetricsProvider;
+import org.labkey.assay.plate.PlateReplicateStatsDomainKind;
 import org.labkey.assay.plate.TsvPlateLayoutHandler;
 import org.labkey.assay.plate.query.PlateSchema;
 import org.labkey.assay.plate.query.PlateSchemaTest;
@@ -163,6 +164,7 @@ public class AssayModule extends SpringModule
         PropertyService.get().registerDomainKind(new AssayBatchDomainKind());
         PropertyService.get().registerDomainKind(new AssayRunDomainKind());
         PropertyService.get().registerDomainKind(new AssayResultDomainKind());
+        PropertyService.get().registerDomainKind(new PlateReplicateStatsDomainKind());
 
         ParamReplacementSvc.get().registerDeprecated(LEGACY_SESSION_COOKIE_NAME_REPLACEMENT, ValidationException.SEVERITY.WARN, "Use '" + SecurityManager.API_KEY + "' instead");
         ParamReplacementSvc.get().registerDeprecated(LEGACY_SESSION_ID_REPLACEMENT, ValidationException.SEVERITY.WARN, "Use '" + SecurityManager.API_KEY + "' instead");
