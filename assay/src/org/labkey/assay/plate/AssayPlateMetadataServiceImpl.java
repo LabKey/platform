@@ -17,6 +17,7 @@ import org.labkey.api.assay.AssayRunUploadContext;
 import org.labkey.api.assay.AssaySchema;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.SimpleAssayDataImportHelper;
+import org.labkey.api.assay.TsvDataHandler;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.plate.ExcelPlateReader;
 import org.labkey.api.assay.plate.Plate;
@@ -425,6 +426,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                         }
 
                         // update the ExpData file URI
+                        data = ensureExpDataForRun(data);
                         data.setDataFileURI(FileUtil.getAbsoluteCaseSensitiveFile(newPath.toNioPathForRead().toFile()).toURI());
                         data.setName(String.format("%s (merged with previous run)", newName));
                         data.save(user);
@@ -463,6 +465,27 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             throw new ExperimentException(String.format("Unable to resolve the replaced run with ID : %d", context.getReRunId()));
 
         return rows;
+    }
+
+    /**
+     * The ExpData parameter passed into the merge function isn't always the object representing the uploaded data.
+     * The data transformer will create a fake object to pass the data in when creating the parsed data outputs. In
+     * this case find the one attached to the run representing the object in the database.
+     */
+    private ExpData ensureExpDataForRun(ExpData expData)
+    {
+        if (expData.getSourceApplication() == null)
+        {
+            for (ExpData data : expData.getRun().getDataOutputs())
+            {
+                if (data.getDataType().getNamespacePrefix().equalsIgnoreCase(TsvDataHandler.NAMESPACE))
+                {
+                    if (data.getSourceApplication() != null)
+                        return data;
+                }
+            }
+        }
+        return expData;
     }
 
     private boolean isGridFormat(List<Map<String, Object>> data)
