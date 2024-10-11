@@ -67,10 +67,7 @@ const EditableGridPageBody: FC<InjectedQueryModels> = memo(props => {
     }, [model]);
 
     const onGridChange = useCallback<EditableGridChange>((event, changes) => {
-        setEditorModel(current => {
-            const updatedModels = applyEditorModelChanges([current], changes);
-            return updatedModels[0];
-        });
+        setEditorModel(current => current.applyChanges(changes));
     }, []);
 
     if (error || model.hasLoadErrors) {
