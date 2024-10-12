@@ -5544,7 +5544,7 @@ public class AdminController extends SpringActionController
     public static class FolderSettingsAction extends FolderManagementViewPostAction<FolderSettingsForm>
     {
         @Override
-        protected HttpView getTabView(FolderSettingsForm form, boolean reshow, BindException errors)
+        protected LookAndFeelView getTabView(FolderSettingsForm form, boolean reshow, BindException errors)
         {
             return new LookAndFeelView(errors);
         }
@@ -5564,32 +5564,25 @@ public class AdminController extends SpringActionController
     // Validate and populate the folder settings; save & log all changes
     private static boolean saveFolderSettings(Container c, User user, WriteableFolderLookAndFeelProperties props, FolderSettingsForm form, BindException errors)
     {
-        if (!validateAndSaveFormat(form.getDefaultDateFormat(), form.isDefaultDateFormatInherited(), props::clearDefaultDateFormat, props::setDefaultDateFormat, errors, "date"))
-            return false;
-        if (!validateAndSaveFormat(form.getDefaultDateTimeFormat(), form.isDefaultDateTimeFormatInherited(), props::clearDefaultDateTimeFormat, props::setDefaultDateTimeFormat, errors, "date-time"))
-            return false;
-        if (!validateAndSaveFormat(form.getDefaultTimeFormat(), form.isDefaultTimeFormatInherited(), props::clearDefaultTimeFormat, props::setDefaultTimeFormat, errors, "time"))
-            return false;
-        if (!validateAndSaveFormat(form.getDefaultNumberFormat(), form.isDefaultNumberFormatInherited(), props::clearDefaultNumberFormat, props::setDefaultNumberFormat, errors, "number"))
-            return false;
-        if (!validateAndSaveFormat(form.getExtraDateParsingPattern(), form.isExtraDateParsingPatternInherited(), props::clearExtraDateParsingPattern, props::setExtraDateParsingPattern, errors, "date"))
-            return false;
-        if (!validateAndSaveFormat(form.getExtraDateTimeParsingPattern(), form.isExtraDateTimeParsingPatternInherited(), props::clearExtraDateTimeParsingPattern, props::setExtraDateTimeParsingPattern, errors, "date-time"))
-            return false;
-        if (!validateAndSaveFormat(form.getExtraTimeParsingPattern(), form.isExtraTimeParsingPatternInherited(), props::clearExtraTimeParsingPattern, props::setExtraTimeParsingPattern, errors, "time"))
-            return false;
+        validateAndSaveFormat(form.getDefaultDateFormat(), form.isDefaultDateFormatInherited(), props::clearDefaultDateFormat, props::setDefaultDateFormat, errors, "date");
+        validateAndSaveFormat(form.getDefaultDateTimeFormat(), form.isDefaultDateTimeFormatInherited(), props::clearDefaultDateTimeFormat, props::setDefaultDateTimeFormat, errors, "date-time");
+        validateAndSaveFormat(form.getDefaultTimeFormat(), form.isDefaultTimeFormatInherited(), props::clearDefaultTimeFormat, props::setDefaultTimeFormat, errors, "time");
+        validateAndSaveFormat(form.getDefaultNumberFormat(), form.isDefaultNumberFormatInherited(), props::clearDefaultNumberFormat, props::setDefaultNumberFormat, errors, "number");
+        validateAndSaveFormat(form.getExtraDateParsingPattern(), form.isExtraDateParsingPatternInherited(), props::clearExtraDateParsingPattern, props::setExtraDateParsingPattern, errors, "date");
+        validateAndSaveFormat(form.getExtraDateTimeParsingPattern(), form.isExtraDateTimeParsingPatternInherited(), props::clearExtraDateTimeParsingPattern, props::setExtraDateTimeParsingPattern, errors, "date-time");
+        validateAndSaveFormat(form.getExtraTimeParsingPattern(), form.isExtraTimeParsingPatternInherited(), props::clearExtraTimeParsingPattern, props::setExtraTimeParsingPattern, errors, "time");
 
-        if (form.isRestrictedColumnsEnabledInherited())
-            props.clearRestrictedColumnsEnabled();
-        else
-            props.setRestrictedColumnsEnabled(form.areRestrictedColumnsEnabled());
+        setProperty(form.isRestrictedColumnsEnabledInherited(), props::clearRestrictedColumnsEnabled, () -> props.setRestrictedColumnsEnabled(form.areRestrictedColumnsEnabled()));
 
-        props.save();
+        if (!errors.hasErrors())
+        {
+            props.save();
 
-        //write an audit log event
-        props.writeAuditLogEvent(c, user);
+            //write an audit log event
+            props.writeAuditLogEvent(c, user);
+        }
 
-        return true;
+        return !errors.hasErrors();
     }
 
     private interface FormatSaver
@@ -5597,33 +5590,7 @@ public class AdminController extends SpringActionController
         void save(String format) throws IllegalArgumentException;
     }
 
-    // TODO: Migrate callers and delete
-    @Deprecated
-    private static boolean validateAndSaveFormat(String format, Runnable clearer, FormatSaver saver, BindException errors, String what)
-    {
-        String defaultFormat = StringUtils.trimToNull(format);
-        if (null == defaultFormat)
-        {
-            clearer.run();
-        }
-        else
-        {
-            try
-            {
-                saver.save(defaultFormat);
-            }
-            catch (IllegalArgumentException e)
-            {
-                errors.reject(ERROR_MSG, "Invalid " + what + " format: " + e.getMessage());
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    // TODO: Use this!
-    private static boolean validateAndSaveFormat(String format, boolean inherited, Runnable clearer, FormatSaver saver, BindException errors, String what)
+    private static void validateAndSaveFormat(String format, boolean inherited, Runnable clearer, FormatSaver saver, BindException errors, String what)
     {
         String defaultFormat = StringUtils.trimToNull(format);
         if (inherited)
@@ -5639,23 +5606,19 @@ public class AdminController extends SpringActionController
             catch (IllegalArgumentException e)
             {
                 errors.reject(ERROR_MSG, "Invalid " + what + " format: " + e.getMessage());
-                return false;
             }
         }
-
-        return true;
     }
 
     @RequiresPermission(AdminPermission.class)
     public static class ModulePropertiesAction extends FolderManagementViewAction
     {
         @Override
-        protected HttpView getTabView()
+        protected JspView<?> getTabView()
         {
             return new JspView<>("/org/labkey/core/project/modulePropertiesAdmin.jsp");
         }
     }
-
 
     @SuppressWarnings("unused")
     public static class FolderTypeForm
@@ -5713,7 +5676,7 @@ public class AdminController extends SpringActionController
         private ActionURL _successURL = null;
 
         @Override
-        protected HttpView getTabView(FolderTypeForm form, boolean reshow, BindException errors)
+        protected JspView<?> getTabView(FolderTypeForm form, boolean reshow, BindException errors)
         {
             return new JspView<>("/org/labkey/core/admin/folderType.jsp", form, errors);
         }
@@ -11052,9 +11015,11 @@ public class AdminController extends SpringActionController
                 if ("/".equals(welcomeUrl) || AppProps.getInstance().getContextPath().equalsIgnoreCase(welcomeUrl))
                 {
                     errors.reject(SpringActionController.ERROR_MSG, "Invalid welcome URL. The url cannot equal '/' or the contextPath (" + AppProps.getInstance().getContextPath() + ")");
-                    return false;
                 }
-                props.setCustomWelcome(welcomeUrl);
+                else
+                {
+                    props.setCustomWelcome(welcomeUrl);
+                }
             }
         }
 
@@ -11066,78 +11031,18 @@ public class AdminController extends SpringActionController
             SecurityManager.setNewSubfoldersInheritPermissions(c, user, shouldInherit);
         }
 
-        if (form.isSystemDescriptionInherited())
-        {
-            props.clearSystemDescription();
-        }
-        else
-        {
-            props.setSystemDescription(form.getSystemDescription());
-        }
-
-        if (form.isSystemShortNameInherited())
-        {
-            props.clearSystemShortName();
-        }
-        else
-        {
-            props.setSystemShortName(form.getSystemShortName());
-        }
-
-        if (form.isThemeNameInherited())
-        {
-            props.clearThemeName();
-        }
-        else
-        {
-            props.setThemeName(form.getThemeName());
-        }
-
-        if (form.isFolderDisplayModeInherited())
-        {
-            props.clearFolderDisplayMode();
-        }
-        else
-        {
-            props.setFolderDisplayMode(FolderDisplayMode.fromString(form.getFolderDisplayMode()));
-        }
-
-        if (form.isApplicationMenuDisplayModeInherited())
-        {
-            props.clearApplicationMenuDisplayMode();
-        }
-        else
-        {
-            props.setApplicationMenuDisplayMode(FolderDisplayMode.fromString(form.getApplicationMenuDisplayMode()));
-        }
-
-        if (form.isHelpMenuEnabledInherited())
-        {
-            props.clearHelpMenuEnabled();
-        }
-        else
-        {
-            props.setHelpMenuEnabled(form.isHelpMenuEnabled());
-        }
-
-        if (form.isDiscussionEnabledInherited())
-        {
-            props.clearDiscussionEnabled();
-        }
-        else
-        {
-            props.setDiscussionEnabled(form.isDiscussionEnabled());
-        }
+        setProperty(form.isSystemDescriptionInherited(), props::clearSystemDescription, () -> props.setSystemDescription(form.getSystemDescription()));
+        setProperty(form.isSystemShortNameInherited(), props::clearSystemShortName, () -> props.setSystemShortName(form.getSystemShortName()));
+        setProperty(form.isThemeNameInherited(), props::clearThemeName, () -> props.setThemeName(form.getThemeName()));
+        setProperty(form.isFolderDisplayModeInherited(), props::clearFolderDisplayMode, () -> props.setFolderDisplayMode(FolderDisplayMode.fromString(form.getFolderDisplayMode())));
+        setProperty(form.isApplicationMenuDisplayModeInherited(), props::clearApplicationMenuDisplayMode, () -> props.setApplicationMenuDisplayMode(FolderDisplayMode.fromString(form.getApplicationMenuDisplayMode())));
+        setProperty(form.isHelpMenuEnabledInherited(), props::clearHelpMenuEnabled, () -> props.setHelpMenuEnabled(form.isHelpMenuEnabled()));
+        setProperty(form.isDiscussionEnabledInherited(), props::clearDiscussionEnabled, () -> props.setDiscussionEnabled(form.isDiscussionEnabled()));
 
         // a few properties on this page should be restricted to operational permissions (i.e. site admin)
         if (hasAdminOpsPerm)
         {
-            if (form.isSystemEmailAddressInherited())
-            {
-                props.clearSystemEmailAddress();
-            }
-            else
-            {
+            setProperty(form.isSystemEmailAddressInherited(), props::clearSystemEmailAddress, () -> {
                 String systemEmailAddress = form.getSystemEmailAddress();
                 try
                 {
@@ -11149,187 +11054,28 @@ public class AdminController extends SpringActionController
                 {
                     errors.reject(SpringActionController.ERROR_MSG, "Invalid System Email Address: ["
                             + e.getBadEmail() + "]. Please enter a valid email address.");
-                    return false;
                 }
-            }
+            });
 
-            if (form.isCustomLoginInherited())
-            {
-                props.clearCustomLogin();
-            }
-            else
-            {
+            setProperty(form.isCustomLoginInherited(), props::clearCustomLogin, () -> {
                 String customLogin = form.getCustomLogin();
-                if (!props.isValidUrl(customLogin))
+                if (props.isValidUrl(customLogin))
                 {
-                    errors.reject(SpringActionController.ERROR_MSG, "Invalid login URL. Should be in the form <module>-<name>.");
-                    return false;
-                }
-                props.setCustomLogin(customLogin);
-            }
-        }
-
-        if (form.isCompanyNameInherited())
-        {
-            props.clearCompanyName();
-        }
-        else
-        {
-            props.setCompanyName(form.getCompanyName());
-        }
-
-        if (form.isLogoHrefInherited())
-        {
-            props.clearLogoHref();
-        }
-        else
-        {
-            props.setLogoHref(form.getLogoHref());
-        }
-
-        if (form.isReportAProblemPathInherited())
-        {
-            props.clearReportAProblemPath();
-        }
-        else
-        {
-            props.setReportAProblemPath(form.getReportAProblemPath());
-        }
-
-        if (form.isSupportEmailInherited())
-        {
-            props.clearSupportEmail();
-        }
-        else
-        {
-            String supportEmail = form.getSupportEmail();
-
-            if (!StringUtils.isBlank(supportEmail))
-            {
-                try
-                {
-                    // this will throw an InvalidEmailException for invalid email addresses
-                    ValidEmail email = new ValidEmail(supportEmail);
-                    props.setSupportEmail(email.toString());
-                }
-                catch (ValidEmail.InvalidEmailException e)
-                {
-                    errors.reject(SpringActionController.ERROR_MSG, "Invalid Support Email Address: ["
-                            + e.getBadEmail() + "]. Please enter a valid email address.");
-                    return false;
-                }
-            }
-            else
-            {
-                // This stores a blank value, not null (which would mean inherit)
-                props.setSupportEmail(null);
-            }
-        }
-
-        saveFolderSettings(c, user, props, form, errors);
-
-        if (errors.hasErrors())
-            return false;
-
-        // Bump the look & feel revision so browsers retrieve the new theme stylesheet
-        WriteableAppProps.incrementLookAndFeelRevisionAndSave();
-
-        return true;
-    }
-
-    @Deprecated // TODO: DELETE ME
-    private static boolean saveProjectSettings(JSONObject json, User user, Container c, BindException errors)
-    {
-        WriteableLookAndFeelProperties props = LookAndFeelProperties.getWriteableInstance(c);
-        boolean hasAdminOpsPerm = c.hasPermission(user, AdminOperationsPermission.class);
-
-        if (json.has("themeName"))
-        {
-            String themName = json.optString("themeName");
-            try
-            {
-                if (themName.isBlank())
-                {
-                    if (!c.isRoot())
-                        props.clearThemeName();
+                    props.setCustomLogin(customLogin);
                 }
                 else
                 {
-                    props.setThemeName(themName);
-                }
-            }
-            catch (IllegalArgumentException ignored)
-            {
-            }
-        }
-
-        if (json.has("shouldInherit"))
-        {
-            boolean shouldInherit = json.optBoolean("shouldInherit");
-            if (shouldInherit != SecurityManager.shouldNewSubfoldersInheritPermissions(c))
-            {
-                SecurityManager.setNewSubfoldersInheritPermissions(c, user, shouldInherit);
-            }
-        }
-
-        // a few properties on this page should be restricted to operational permissions (i.e. site admin)
-        if (hasAdminOpsPerm)
-        {
-            if (json.has("systemEmailAddress"))
-            {
-                String systemEmailAddress = json.optString("systemEmailAddress");
-                try
-                {
-                    // this will throw an InvalidEmailException for invalid email addresses
-                    ValidEmail email = new ValidEmail(systemEmailAddress);
-                    props.setSystemEmailAddress(email);
-                }
-                catch (ValidEmail.InvalidEmailException e)
-                {
-                    errors.reject(SpringActionController.ERROR_MSG, "Invalid System Email Address: ["
-                            + e.getBadEmail() + "]. Please enter a valid email address.");
-                    return false;
-                }
-            }
-
-            if (json.has("customLogin"))
-            {
-                String customLogin = json.optString("customLogin");
-                if (!props.isValidUrl(customLogin))
-                {
                     errors.reject(SpringActionController.ERROR_MSG, "Invalid login URL. Should be in the form <module>-<name>.");
-                    return false;
                 }
-                props.setCustomLogin(customLogin);
-            }
-
-            if (json.has("customWelcome"))
-            {
-                String customWelcome = json.optString("customWelcome");
-                String welcomeUrl = StringUtils.trimToNull(customWelcome);
-                if ("/".equals(welcomeUrl) || AppProps.getInstance().getContextPath().equalsIgnoreCase(welcomeUrl))
-                {
-                    errors.reject(SpringActionController.ERROR_MSG, "Invalid welcome URL. The url cannot equal '/' or the contextPath (" + AppProps.getInstance().getContextPath() + ")");
-                    return false;
-                }
-                props.setCustomWelcome(welcomeUrl);
-            }
+            });
         }
 
-        if (json.has("companyName"))
-            props.setCompanyName(json.optString("companyName"));
-        if (json.has("systemDescription"))
-            props.setSystemDescription(json.optString("systemDescription"));
-        if (json.has("logoHref"))
-            props.setLogoHref(json.optString("logoHref"));
-        if (json.has("systemShortName"))
-            props.setSystemShortName(json.optString("systemShortName"));
-        if (json.has("reportAProblemPath"))
-            props.setReportAProblemPath(json.optString("reportAProblemPath"));
+        setProperty(form.isCompanyNameInherited(), props::clearCompanyName, () -> props.setCompanyName(form.getCompanyName()));
+        setProperty(form.isLogoHrefInherited(), props::clearLogoHref, () -> props.setLogoHref(form.getLogoHref()));
+        setProperty(form.isReportAProblemPathInherited(), props::clearReportAProblemPath, () -> props.setReportAProblemPath(form.getReportAProblemPath()));
+        setProperty(form.isSupportEmailInherited(), props::clearSupportEmail, () -> {
+            String supportEmail = form.getSupportEmail();
 
-        if (json.has("supportEmail"))
-        {
-            String supportEmail = json.optString("supportEmail");
             if (!isBlank(supportEmail))
             {
                 try
@@ -11342,69 +11088,32 @@ public class AdminController extends SpringActionController
                 {
                     errors.reject(SpringActionController.ERROR_MSG, "Invalid Support Email Address: ["
                             + e.getBadEmail() + "]. Please enter a valid email address.");
-                    return false;
                 }
             }
             else
             {
+                // This stores a blank value, not null (which would mean inherit)
                 props.setSupportEmail(null);
             }
-        }
+        });
 
-        if (json.has("folderDisplayMode"))
-            props.setFolderDisplayMode(FolderDisplayMode.fromString(json.optString("folderDisplayMode")));
-        if (json.has("applicationMenuDisplayMode"))
-            props.setApplicationMenuDisplayMode(FolderDisplayMode.fromString(json.optString("applicationMenuDisplayMode")));
-        if (json.has("helpMenuEnabled"))
-            props.setHelpMenuEnabled(json.optBoolean("helpMenuEnabled"));
-        if (json.has("discussionEnabled"))
-            props.setDiscussionEnabled(json.optBoolean("discussionEnabled"));
+        boolean noErrors = !saveFolderSettings(c, user, props, form, errors);
 
-        if (json.has("dateParsingMode"))
+        if (noErrors)
         {
-            DateParsingMode dateParsingMode = DateParsingMode.fromString(json.optString("dateParsingMode"));
-            props.setDateParsingMode(dateParsingMode);
+            // Bump the look & feel revision so browsers retrieve the new theme stylesheet
+            WriteableAppProps.incrementLookAndFeelRevisionAndSave();
         }
 
-        if (json.has("defaultDateFormat") && !validateAndSaveFormat(json.optString("defaultDateFormat"), props::clearDefaultDateFormat, props::setDefaultDateFormat, errors, "date"))
-            return false;
-        if (json.has("defaultDateTimeFormat") && !validateAndSaveFormat(json.optString("defaultDateTimeFormat"), props::clearDefaultDateTimeFormat, props::setDefaultDateTimeFormat, errors, "date-time"))
-            return false;
-        if (json.has("defaultTimeFormat") && !validateAndSaveFormat(json.optString("defaultTimeFormat"), props::clearDefaultTimeFormat, props::setDefaultTimeFormat, errors, "time"))
-            return false;
-        if (json.has("defaultNumberFormat") && !validateAndSaveFormat(json.optString("defaultNumberFormat"), props::clearDefaultNumberFormat, props::setDefaultNumberFormat, errors, "number"))
-            return false;
-        if (json.has("extraDateParsingPattern") && !validateAndSaveFormat(json.optString("extraDateParsingPattern"), props::clearExtraDateParsingPattern, props::setExtraDateParsingPattern, errors, "date"))
-            return false;
-        if (json.has("extraDateTimeParsingPattern") && !validateAndSaveFormat(json.optString("extraDateTimeParsingPattern"), props::clearExtraDateTimeParsingPattern, props::setExtraDateTimeParsingPattern, errors, "date-time"))
-            return false;
-        if (json.has("extraTimeParsingPattern") && !validateAndSaveFormat(json.optString("extraTimeParsingPattern"), props::clearExtraTimeParsingPattern, props::setExtraTimeParsingPattern, errors, "time"))
-            return false;
+        return noErrors;
+    }
 
-        if (json.has("restrictedColumnsEnabled"))
-        {
-            try
-            {
-                props.setRestrictedColumnsEnabled(json.optBoolean("restrictedColumnsEnabled"));
-            }
-            catch (IllegalArgumentException e)
-            {
-                errors.reject(ERROR_MSG, "Invalid restricted columns flag: " + e.getMessage());
-            }
-        }
-
-        if (errors.hasErrors())
-            return false;
-
-        props.save();
-
-        //write an audit log event
-        props.writeAuditLogEvent(c, user);
-
-        // Bump the look & feel revision so browsers retrieve the new theme stylesheet
-        WriteableAppProps.incrementLookAndFeelRevisionAndSave();
-
-        return true;
+    private static void setProperty(boolean inherited, Runnable clear, Runnable set)
+    {
+        if (inherited)
+            clear.run();
+        else
+            set.run();
     }
 
     // Same as ProjectSettingsAction, but provides special admin console permissions handling
