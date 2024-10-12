@@ -62,6 +62,20 @@ public class WriteableLookAndFeelProperties extends WriteableFolderLookAndFeelPr
             getProperties().put(customLogin.name(), login);
     }
 
+    // Site-only properties
+
+    public void setDateParsingMode(DateParsingMode mode)
+    {
+        storeStringValue(dateParsingMode, mode.toString());
+    }
+
+    public void setCustomWelcome(String welcome)
+    {
+        storeStringValue(customWelcome, welcome);
+    }
+
+    // Site & project properties
+
     public void setSystemDescription(String description)
     {
         storeStringValue(systemDescription, description);
@@ -132,9 +146,24 @@ public class WriteableLookAndFeelProperties extends WriteableFolderLookAndFeelPr
         remove(discussionEnabled);
     }
 
-    public void setDateParsingMode(DateParsingMode mode)
+    public void setLogoHref(String href)
     {
-        storeStringValue(dateParsingMode, mode.toString());
+        storeStringValue(logoHref, href);
+    }
+
+    public void clearLogoHref()
+    {
+        remove(logoHref);
+    }
+
+    public void setReportAProblemPath(String path)
+    {
+        storeStringValue(reportAProblemPath, path);
+    }
+
+    public void clearReportAProblemPath()
+    {
+        remove(reportAProblemPath);
     }
 
     public void setSupportEmail(@Nullable String email)
@@ -142,14 +171,9 @@ public class WriteableLookAndFeelProperties extends WriteableFolderLookAndFeelPr
         storeStringValue(supportEmail, email);
     }
 
-    public void setLogoHref(String href)
+    public void clearSupportEmail()
     {
-        storeStringValue(logoHref, href);
-    }
-
-    public void setCompanyName(String name)
-    {
-        storeStringValue(companyName, name);
+        remove(supportEmail);
     }
 
     public void setSystemEmailAddress(ValidEmail systemEmail)
@@ -157,9 +181,19 @@ public class WriteableLookAndFeelProperties extends WriteableFolderLookAndFeelPr
         storeStringValue(systemEmailAddress, systemEmail.getEmailAddress());
     }
 
-    public void setReportAProblemPath(String path)
+    public void clearSystemEmailAddress()
     {
-        storeStringValue(reportAProblemPath, path);
+        remove(systemEmailAddress);
+    }
+
+    public void setCompanyName(String name)
+    {
+        storeStringValue(companyName, name);
+    }
+
+    public void clearCompanyName()
+    {
+        remove(companyName);
     }
 
     public void setCustomLogin(String login)
@@ -170,11 +204,6 @@ public class WriteableLookAndFeelProperties extends WriteableFolderLookAndFeelPr
     public void clearCustomLogin()
     {
         remove(customLogin);
-    }
-
-    public void setCustomWelcome(String welcome)
-    {
-        storeStringValue(customWelcome, welcome);
     }
 
     public boolean isValidUrl(String url)

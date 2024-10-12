@@ -379,6 +379,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.labkey.api.data.MultiValuedRenderContext.VALUE_DELIMITER_REGEX;
 import static org.labkey.api.settings.AdminConsole.SettingsLinkType.Configuration;
 import static org.labkey.api.settings.AdminConsole.SettingsLinkType.Diagnostics;
+import static org.labkey.api.settings.LookAndFeelProperties.Properties.dateParsingMode;
 import static org.labkey.api.util.DOM.A;
 import static org.labkey.api.util.DOM.Attribute.href;
 import static org.labkey.api.util.DOM.Attribute.method;
@@ -1729,6 +1730,11 @@ public class AdminController extends SpringActionController
 
     public static class ProjectSettingsForm extends FolderSettingsForm
     {
+        // Site-only properties
+        private String _dateParsingMode;
+        private String _customWelcome;
+
+        // Site & project properties
         private boolean _shouldInherit; // new subfolders should inherit parent permissions
         private String _systemDescription;
         private boolean _systemDescriptionInherited;
@@ -1745,14 +1751,43 @@ public class AdminController extends SpringActionController
         private boolean _discussionEnabled;
         private boolean _discussionEnabledInherited;
         private String _logoHref;
+        private boolean _logoHrefInherited;
         private String _companyName;
+        private boolean _companyNameInherited;
         private String _systemEmailAddress;
+        private boolean _systemEmailAddressInherited;
         private String _reportAProblemPath;
+        private boolean _reportAProblemPathInherited;
         private String _supportEmail;
-        private String _dateParsingMode;
+        private boolean _supportEmailInherited;
         private String _customLogin;
         private boolean _customLoginInherited;
-        private String _customWelcome;
+
+        // Site-only properties
+
+        public String getDateParsingMode()
+        {
+            return _dateParsingMode;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setDateParsingMode(String dateParsingMode)
+        {
+            _dateParsingMode = dateParsingMode;
+        }
+
+        public String getCustomWelcome()
+        {
+            return _customWelcome;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setCustomWelcome(String customWelcome)
+        {
+            _customWelcome = customWelcome;
+        }
+
+        // Site & project properties
 
         public boolean getShouldInherit()
         {
@@ -1930,6 +1965,17 @@ public class AdminController extends SpringActionController
             _logoHref = logoHref;
         }
 
+        public boolean isLogoHrefInherited()
+        {
+            return _logoHrefInherited;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setLogoHrefInherited(boolean logoHrefInherited)
+        {
+            _logoHrefInherited = logoHrefInherited;
+        }
+
         public String getReportAProblemPath()
         {
             return _reportAProblemPath;
@@ -1941,6 +1987,61 @@ public class AdminController extends SpringActionController
             _reportAProblemPath = reportAProblemPath;
         }
 
+        public boolean isReportAProblemPathInherited()
+        {
+            return _reportAProblemPathInherited;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setReportAProblemPathInherited(boolean reportAProblemPathInherited)
+        {
+            _reportAProblemPathInherited = reportAProblemPathInherited;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setSupportEmail(String supportEmail)
+        {
+            _supportEmail = supportEmail;
+        }
+
+        public String getSupportEmail()
+        {
+            return _supportEmail;
+        }
+
+        public boolean isSupportEmailInherited()
+        {
+            return _supportEmailInherited;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setSupportEmailInherited(boolean supportEmailInherited)
+        {
+            _supportEmailInherited = supportEmailInherited;
+        }
+
+        public String getSystemEmailAddress()
+        {
+            return _systemEmailAddress;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setSystemEmailAddress(String systemEmailAddress)
+        {
+            _systemEmailAddress = systemEmailAddress;
+        }
+
+        public boolean isSystemEmailAddressInherited()
+        {
+            return _systemEmailAddressInherited;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setSystemEmailAddressInherited(boolean systemEmailAddressInherited)
+        {
+            _systemEmailAddressInherited = systemEmailAddressInherited;
+        }
+
         public String getCompanyName()
         {
             return _companyName;
@@ -1950,6 +2051,17 @@ public class AdminController extends SpringActionController
         public void setCompanyName(String companyName)
         {
             _companyName = companyName;
+        }
+
+        public boolean isCompanyNameInherited()
+        {
+            return _companyNameInherited;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setCompanyNameInherited(boolean companyNameInherited)
+        {
+            _companyNameInherited = companyNameInherited;
         }
 
         public String getCustomLogin()
@@ -1972,50 +2084,6 @@ public class AdminController extends SpringActionController
         public void setCustomLoginInherited(boolean customLoginInherited)
         {
             _customLoginInherited = customLoginInherited;
-        }
-
-        public String getCustomWelcome()
-        {
-            return _customWelcome;
-        }
-
-        @SuppressWarnings({"UnusedDeclaration"})
-        public void setCustomWelcome(String customWelcome)
-        {
-            _customWelcome = customWelcome;
-        }
-
-        public String getSystemEmailAddress()
-        {
-            return _systemEmailAddress;
-        }
-
-        @SuppressWarnings({"UnusedDeclaration"})
-        public void setSystemEmailAddress(String systemEmailAddress)
-        {
-            _systemEmailAddress = systemEmailAddress;
-        }
-
-        @SuppressWarnings({"UnusedDeclaration"})
-        public void setSupportEmail(String supportEmail)
-        {
-            _supportEmail = supportEmail;
-        }
-
-        public String getSupportEmail()
-        {
-            return _supportEmail;
-        }
-
-        public String getDateParsingMode()
-        {
-            return _dateParsingMode;
-        }
-
-        @SuppressWarnings({"UnusedDeclaration"})
-        public void setDateParsingMode(String dateParsingMode)
-        {
-            _dateParsingMode = dateParsingMode;
         }
     }
 
@@ -10970,16 +11038,34 @@ public class AdminController extends SpringActionController
         WriteableLookAndFeelProperties props = LookAndFeelProperties.getWriteableInstance(c);
         boolean hasAdminOpsPerm = c.hasPermission(user, AdminOperationsPermission.class);
 
+        // Site-only properties
 
-//        if (json.has("shouldInherit"))
-//        {
-//            boolean shouldInherit = json.optBoolean("shouldInherit");
-//            if (shouldInherit != SecurityManager.shouldNewSubfoldersInheritPermissions(c))
-//            {
-//                SecurityManager.setNewSubfoldersInheritPermissions(c, user, shouldInherit);
-//            }
-//        }
-//
+        if (c.isRoot())
+        {
+            DateParsingMode dateParsingMode = DateParsingMode.fromString(form.getDateParsingMode());
+            props.setDateParsingMode(dateParsingMode);
+
+            if (hasAdminOpsPerm)
+            {
+                String customWelcome = form.getCustomWelcome();
+                String welcomeUrl = StringUtils.trimToNull(customWelcome);
+                if ("/".equals(welcomeUrl) || AppProps.getInstance().getContextPath().equalsIgnoreCase(welcomeUrl))
+                {
+                    errors.reject(SpringActionController.ERROR_MSG, "Invalid welcome URL. The url cannot equal '/' or the contextPath (" + AppProps.getInstance().getContextPath() + ")");
+                    return false;
+                }
+                props.setCustomWelcome(welcomeUrl);
+            }
+        }
+
+        // Site & project properties
+
+        boolean shouldInherit = form.getShouldInherit();
+        if (shouldInherit != SecurityManager.shouldNewSubfoldersInheritPermissions(c))
+        {
+            SecurityManager.setNewSubfoldersInheritPermissions(c, user, shouldInherit);
+        }
+
         if (form.isSystemDescriptionInherited())
         {
             props.clearSystemDescription();
@@ -11046,23 +11132,27 @@ public class AdminController extends SpringActionController
         // a few properties on this page should be restricted to operational permissions (i.e. site admin)
         if (hasAdminOpsPerm)
         {
-//            if (json.has("systemEmailAddress"))
-//            {
-//                String systemEmailAddress = json.optString("systemEmailAddress");
-//                try
-//                {
-//                    // this will throw an InvalidEmailException for invalid email addresses
-//                    ValidEmail email = new ValidEmail(systemEmailAddress);
-//                    props.setSystemEmailAddress(email);
-//                }
-//                catch (ValidEmail.InvalidEmailException e)
-//                {
-//                    errors.reject(SpringActionController.ERROR_MSG, "Invalid System Email Address: ["
-//                            + e.getBadEmail() + "]. Please enter a valid email address.");
-//                    return false;
-//                }
-//            }
-//
+            if (form.isSystemEmailAddressInherited())
+            {
+                props.clearSystemEmailAddress();
+            }
+            else
+            {
+                String systemEmailAddress = form.getSystemEmailAddress();
+                try
+                {
+                    // this will throw an InvalidEmailException for invalid email addresses
+                    ValidEmail email = new ValidEmail(systemEmailAddress);
+                    props.setSystemEmailAddress(email);
+                }
+                catch (ValidEmail.InvalidEmailException e)
+                {
+                    errors.reject(SpringActionController.ERROR_MSG, "Invalid System Email Address: ["
+                            + e.getBadEmail() + "]. Please enter a valid email address.");
+                    return false;
+                }
+            }
+
             if (form.isCustomLoginInherited())
             {
                 props.clearCustomLogin();
@@ -11077,57 +11167,64 @@ public class AdminController extends SpringActionController
                 }
                 props.setCustomLogin(customLogin);
             }
+        }
 
-            if (c.isRoot())
+        if (form.isCompanyNameInherited())
+        {
+            props.clearCompanyName();
+        }
+        else
+        {
+            props.setCompanyName(form.getCompanyName());
+        }
+
+        if (form.isLogoHrefInherited())
+        {
+            props.clearLogoHref();
+        }
+        else
+        {
+            props.setLogoHref(form.getLogoHref());
+        }
+
+        if (form.isReportAProblemPathInherited())
+        {
+            props.clearReportAProblemPath();
+        }
+        else
+        {
+            props.setReportAProblemPath(form.getReportAProblemPath());
+        }
+
+        if (form.isSupportEmailInherited())
+        {
+            props.clearSupportEmail();
+        }
+        else
+        {
+            String supportEmail = form.getSupportEmail();
+
+            if (!StringUtils.isBlank(supportEmail))
             {
-                String customWelcome = form.getCustomWelcome();
-                String welcomeUrl = StringUtils.trimToNull(customWelcome);
-                if ("/".equals(welcomeUrl) || AppProps.getInstance().getContextPath().equalsIgnoreCase(welcomeUrl))
+                try
                 {
-                    errors.reject(SpringActionController.ERROR_MSG, "Invalid welcome URL. The url cannot equal '/' or the contextPath (" + AppProps.getInstance().getContextPath() + ")");
+                    // this will throw an InvalidEmailException for invalid email addresses
+                    ValidEmail email = new ValidEmail(supportEmail);
+                    props.setSupportEmail(email.toString());
+                }
+                catch (ValidEmail.InvalidEmailException e)
+                {
+                    errors.reject(SpringActionController.ERROR_MSG, "Invalid Support Email Address: ["
+                            + e.getBadEmail() + "]. Please enter a valid email address.");
                     return false;
                 }
-                props.setCustomWelcome(welcomeUrl);
+            }
+            else
+            {
+                // This stores a blank value, not null (which would mean inherit)
+                props.setSupportEmail(null);
             }
         }
-//
-//        if (json.has("companyName"))
-//            props.setCompanyName(json.optString("companyName"));
-//        if (json.has("logoHref"))
-//            props.setLogoHref(json.optString("logoHref"));
-//        if (json.has("reportAProblemPath"))
-//            props.setReportAProblemPath(json.optString("reportAProblemPath"));
-//
-//        if (json.has("supportEmail"))
-//        {
-//            String supportEmail = json.optString("supportEmail");
-//            if (!isBlank(supportEmail))
-//            {
-//                try
-//                {
-//                    // this will throw an InvalidEmailException for invalid email addresses
-//                    ValidEmail email = new ValidEmail(supportEmail);
-//                    props.setSupportEmail(email.toString());
-//                }
-//                catch (ValidEmail.InvalidEmailException e)
-//                {
-//                    errors.reject(SpringActionController.ERROR_MSG, "Invalid Support Email Address: ["
-//                            + e.getBadEmail() + "]. Please enter a valid email address.");
-//                    return false;
-//                }
-//            }
-//            else
-//            {
-//                props.setSupportEmail(null);
-//            }
-//        }
-//
-//
-//        if (json.has("dateParsingMode"))
-//        {
-//            DateParsingMode dateParsingMode = DateParsingMode.fromString(json.optString("dateParsingMode"));
-//            props.setDateParsingMode(dateParsingMode);
-//        }
 
         saveFolderSettings(c, user, props, form, errors);
 

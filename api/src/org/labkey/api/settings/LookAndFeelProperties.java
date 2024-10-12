@@ -56,6 +56,11 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
     private static final Cache<Container, String> SHORT_NAME_CACHE = CacheManager.getBlockingCache(Constants.getMaxProjects(), CacheManager.YEAR, "Short name", null);
     private static final Logger LOG = LogHelper.getLogger(LookAndFeelProperties.class, "Manages site-wide and project-scoped look and feel settings");
 
+    public static void clearCaches()
+    {
+        SHORT_NAME_CACHE.clear();
+    }
+
     // Defined in the same order they appear on the Site-level Look and Feel Settings page
     public enum Properties implements StartupProperty, SafeToRenderEnum
     {
@@ -132,8 +137,6 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
         }
     }
 
-    private final Container _settingsContainer;
-
     public static LookAndFeelProperties getInstance(Container c)
     {
         return new LookAndFeelProperties(c);
@@ -155,15 +158,12 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
             return new WriteableFolderLookAndFeelProperties(c);
     }
 
+    private final Container _settingsContainer;
+
     private LookAndFeelProperties(Container c)
     {
         super(c);
         _settingsContainer = getSettingsContainer(c);
-    }
-
-    public static void clearCaches()
-    {
-        SHORT_NAME_CACHE.clear();
     }
 
     @Override
@@ -172,6 +172,26 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
         return lookupStringValue(_settingsContainer, name, defaultValue);
     }
 
+    private String getStoredValue(Enum<?> e)
+    {
+        return getStoredValue(_settingsContainer, e) ;
+    }
+
+    // Site-only properties
+
+    public String getCustomWelcome()
+    {
+        return lookupStringValue(customWelcome, null);
+    }
+
+    public DateParsingMode getDateParsingMode()
+    {
+        assert _settingsContainer.isRoot();
+        return DateParsingMode.fromString(lookupStringValue(dateParsingMode, DateParsingMode.US.toString()));
+    }
+
+    // Site & project properties
+
     public String getDescription()
     {
         return lookupStringValue(systemDescription, null);
@@ -179,7 +199,7 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
 
     public String getDescriptionStored()
     {
-        return getStoredValue(_settingsContainer, systemDescription);
+        return getStoredValue(systemDescription);
     }
 
     public String getUnsubstitutedShortName()
@@ -189,7 +209,7 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
 
     public String getUnsubstitutedShortNameStored()
     {
-        return getStoredValue(_settingsContainer, systemShortName);
+        return getStoredValue(systemShortName);
     }
 
     public String getShortName()
@@ -205,7 +225,7 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
 
     public String getThemeNameStored()
     {
-        return getStoredValue(_settingsContainer, themeName);
+        return getStoredValue(themeName);
     }
 
     public FolderDisplayMode getFolderDisplayMode()
@@ -215,7 +235,7 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
 
     public FolderDisplayMode getFolderDisplayModeStored()
     {
-        String displayMode = getStoredValue(_settingsContainer, folderDisplayMode);
+        String displayMode = getStoredValue(folderDisplayMode);
         return displayMode != null ? FolderDisplayMode.fromString(lookupStringValue(folderDisplayMode, null)) : null;
     }
 
@@ -226,7 +246,7 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
 
     public FolderDisplayMode getApplicationMenuDisplayModeStored()
     {
-        String displayMode = getStoredValue(_settingsContainer, applicationMenuDisplayMode);
+        String displayMode = getStoredValue(applicationMenuDisplayMode);
         return displayMode != null ? FolderDisplayMode.fromString(lookupStringValue(applicationMenuDisplayMode, null)) : null;
     }
 
@@ -237,7 +257,7 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
 
     public Boolean isHelpMenuEnabledStored()
     {
-        String stored = getStoredValue(_c, restrictedColumnsEnabled);
+        String stored = getStoredValue(restrictedColumnsEnabled);
         return null == stored ? null : "TRUE".equals(stored);
     }
 
@@ -251,10 +271,10 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
     public Boolean isDiscussionEnabledStored()
     {
         // Prefer correctly spelled property name, but fall-back to the old, misspelled one
-        String enabled = getStoredValue(_c, discussionEnabled);
+        String enabled = getStoredValue(discussionEnabled);
         if (enabled == null)
-            enabled = getStoredValue(_c, "dicussionEnabled");
-        return "TRUE".equalsIgnoreCase(enabled);
+            enabled = getStoredValue(_settingsContainer, "dicussionEnabled");
+        return null == enabled ? null : "TRUE".equalsIgnoreCase(enabled);
     }
 
     public String getUnsubstitutedLogoHref()
@@ -262,14 +282,54 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
         return lookupStringValue(logoHref, AppProps.getInstance().getHomePageUrl().replaceAll("^" + AppProps.getInstance().getContextPath(), "\\${contextPath}"));
     }
 
+    public String getUnsubstitutedLogoHrefStored()
+    {
+        return getStoredValue(logoHref);
+    }
+
     public String getLogoHref()
     {
         return substituteContextPath(getUnsubstitutedLogoHref());
     }
 
-    public String getCompanyName()
+    public String getUnsubstitutedReportAProblemPath()
     {
-        return lookupStringValue(companyName, "Demo Installation");
+        return lookupStringValue(reportAProblemPath, "${contextPath}" + ContainerManager.DEFAULT_SUPPORT_PROJECT_PATH + "/project-begin.view");
+    }
+
+    public String getReportAProblemPath()
+    {
+        String path = getUnsubstitutedReportAProblemPath();
+
+        if ("/dev/issues".equals(path))
+        {
+            path = "${contextPath}/issues/dev/issues/insert.view";
+            WriteableLookAndFeelProperties writeable = getWriteableInstance(_c);
+            writeable.setReportAProblemPath(path);
+            writeable.save();
+        }
+
+        return substituteContextPath(path);
+    }
+
+    private String substituteContextPath(String path)
+    {
+        return path.replace("${contextPath}", AppProps.getInstance().getContextPath());
+    }
+
+    public String getUnsubstitutedReportAProblemPathStored()
+    {
+        return getStoredValue(reportAProblemPath);
+    }
+
+    public String getSupportEmail()
+    {
+        return lookupStringValue(supportEmail, null);
+    }
+
+    public String getSupportEmailStored()
+    {
+        return getStoredValue(supportEmail);
     }
 
     /**
@@ -294,34 +354,19 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
         return lookupStringValue(systemEmailAddress, null) != null;
     }
 
-    public String getUnsubstitutedReportAProblemPath()
+    public String getSystemEmailAddressStored()
     {
-        return lookupStringValue(reportAProblemPath, "${contextPath}" + ContainerManager.DEFAULT_SUPPORT_PROJECT_PATH + "/project-begin.view");
+        return getStoredValue(systemEmailAddress);
     }
 
-    public String getSupportEmail()
+    public String getCompanyName()
     {
-        return lookupStringValue(supportEmail, null);
+        return lookupStringValue(companyName, "Demo Installation");
     }
 
-    public String getReportAProblemPath()
+    public String getCompanyNameStored()
     {
-        String path = getUnsubstitutedReportAProblemPath();
-
-        if ("/dev/issues".equals(path))
-        {
-            path = "${contextPath}/issues/dev/issues/insert.view";
-            WriteableLookAndFeelProperties writeable = getWriteableInstance(_c);
-            writeable.setReportAProblemPath(path);
-            writeable.save();
-        }
-
-        return substituteContextPath(path);
-    }
-
-    private String substituteContextPath(String path)
-    {
-        return path.replace("${contextPath}", AppProps.getInstance().getContextPath());
+        return getStoredValue(companyName);
     }
 
     public String getCustomLogin()
@@ -331,18 +376,7 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
 
     public String getCustomLoginStored()
     {
-        return getStoredValue(_settingsContainer, customLogin);
-    }
-
-    public String getCustomWelcome()
-    {
-        return lookupStringValue(customWelcome, null);
-    }
-
-    public DateParsingMode getDateParsingMode()
-    {
-        assert _settingsContainer.isRoot();
-        return DateParsingMode.fromString(lookupStringValue(dateParsingMode, DateParsingMode.US.toString()));
+        return getStoredValue(customLogin);
     }
 
     public static Container getSettingsContainer(Container c)

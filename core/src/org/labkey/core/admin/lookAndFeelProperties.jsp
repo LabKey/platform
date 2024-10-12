@@ -18,8 +18,6 @@
 <%@ page import="org.labkey.api.admin.AdminBean" %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.data.ContainerManager" %>
-<%@ page import="org.labkey.api.jsp.JspBase" %>
 <%@ page import="org.labkey.api.module.ModuleLoader" %>
 <%@ page import="org.labkey.api.security.SecurityManager" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
@@ -48,12 +46,12 @@
 <%@ page import="java.util.Set" %>
 <%@ page import="java.util.stream.Collectors" %>
 <%@ page import="static org.labkey.api.settings.LookAndFeelProperties.Properties.*" %>
+<%@ page import="org.jetbrains.annotations.Nullable" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     AdminController.LookAndFeelBean bean = ((JspView<AdminController.LookAndFeelBean>)HttpView.currentView()).getModelBean();
     Container c = getContainer();
-    boolean isRoot = c.isRoot();
     boolean folder = !c.isRoot() && !c.isProject();
     boolean hasAdminOpsPerm = c.hasPermission(getUser(), AdminOperationsPermission.class);
     HtmlString clearMessage = HtmlString.unsafe(folder ? "the default format properties" : "all look & feel properties");
@@ -78,9 +76,9 @@
 </div>
 <labkey:form name="preferences" method="post" id="form-preferences">
 <table class="lk-fields-table">
-<%=getTroubleshooterWarning(canUpdate, HtmlString.unsafe("<tr><td colspan=2>"), HtmlString.unsafe("</td></tr>"))%>
+<%=getTroubleshooterWarning(canUpdate, HtmlString.unsafe("<tr><td colspan=3>"), HtmlString.unsafe("</td></tr>"))%>
 <tr>
-    <td colspan=2>&nbsp;</td>
+    <td colspan=3>&nbsp;</td>
 </tr>
 <%
     if (c.isProject())
@@ -129,20 +127,20 @@
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="<%=systemDescription%>">System description (used in emails)</label></td>
-    <% boolean inherited = !isRoot && null == laf.getDescriptionStored(); %>
-    <%=inheritCheckbox(c, inherited, this, systemDescription)%>
+    <% boolean inherited = isInherited(laf.getDescriptionStored()); %>
+    <%=inheritCheckbox(inherited, systemDescription)%>
     <td><input type="text" id="<%=systemDescription%>" name="<%=systemDescription%>" size="<%=standardInputWidth%>" value="<%= h(laf.getDescription()) %>"<%=disabled(inherited)%>></td>
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="<%=systemShortName%>">Header short name (appears in every page header and in emails)</label><%=helpPopup("Header short name", shortNameHelp, 350)%></td>
-    <% inherited = !isRoot && null == laf.getUnsubstitutedShortNameStored(); %>
-    <%=inheritCheckbox(c, inherited, this, systemShortName)%>
+    <% inherited = isInherited(laf.getUnsubstitutedShortNameStored()); %>
+    <%=inheritCheckbox(inherited, systemShortName)%>
     <td><input type="text" id="<%=systemShortName%>" name="<%=systemShortName%>" size="<%=standardInputWidth%>" value="<%= h(laf.getUnsubstitutedShortName()) %>"<%=disabled(inherited)%>></td>
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="<%=themeName%>">Theme</label></td>
-    <% inherited = !isRoot && null == laf.getThemeNameStored(); %>
-    <%=inheritCheckbox(c, inherited, this, themeName)%>
+    <% inherited = isInherited(laf.getThemeNameStored()); %>
+    <%=inheritCheckbox(inherited, themeName)%>
     <td>
         <select id="<%=themeName%>" name="<%=themeName%>"<%=disabled(inherited)%>>
         <%
@@ -158,12 +156,12 @@
 <tr>
     <td class="labkey-form-label">Show Project and Folder Navigation</td><%
         FolderDisplayMode currentMode = laf.getFolderDisplayMode();
-        inherited = !isRoot && null == laf.getFolderDisplayModeStored();
+        inherited = isInherited(laf.getFolderDisplayModeStored());
     %>
-    <%=inheritCheckbox(c, inherited, this, folderDisplayMode)%>
+    <%=inheritCheckbox(inherited, folderDisplayMode, "folder_always", "folder_admin")%>
     <td>
-        <label><input type="radio" name="<%=folderDisplayMode%>" value="<%=FolderDisplayMode.ALWAYS%>"<%=checked(currentMode == FolderDisplayMode.ALWAYS)%><%=disabled(inherited)%>> <%=h(FolderDisplayMode.ALWAYS.getDisplayString())%></label><br>
-        <label><input type="radio" name="<%=folderDisplayMode%>" value="<%=FolderDisplayMode.ADMIN%>"<%=checked(currentMode == FolderDisplayMode.ADMIN)%><%=disabled(inherited)%>> <%=h(FolderDisplayMode.ADMIN.getDisplayString())%></label><br>
+        <label><input id="folder_always" type="radio" name="<%=folderDisplayMode%>" value="<%=FolderDisplayMode.ALWAYS%>"<%=checked(currentMode == FolderDisplayMode.ALWAYS)%><%=disabled(inherited)%>> <%=h(FolderDisplayMode.ALWAYS.getDisplayString())%></label><br>
+        <label><input id="folder_admin" type="radio" name="<%=folderDisplayMode%>" value="<%=FolderDisplayMode.ADMIN%>"<%=checked(currentMode == FolderDisplayMode.ADMIN)%><%=disabled(inherited)%>> <%=h(FolderDisplayMode.ADMIN.getDisplayString())%></label><br>
     </td>
 </tr>
     <% if (hasPremiumModule)
@@ -174,9 +172,9 @@
         Show Application Selection Menu
     </td><%
         FolderDisplayMode currentMenuDisplayMode = laf.getApplicationMenuDisplayMode();
-        inherited = !isRoot && null == laf.getApplicationMenuDisplayModeStored();
+        inherited = isInherited(laf.getApplicationMenuDisplayModeStored());
     %>
-    <%=inheritCheckbox(c, inherited, this, applicationMenuDisplayMode)%>
+    <%=inheritCheckbox(inherited, applicationMenuDisplayMode, "menu_always", "menu_admin")%>
     <td>
         <label><input id="menu_always" type="radio" name="<%=applicationMenuDisplayMode%>" value="<%=FolderDisplayMode.ALWAYS%>"<%=checked(currentMenuDisplayMode == FolderDisplayMode.ALWAYS)%><%=disabled(inherited)%>> <%=h(FolderDisplayMode.ALWAYS.getDisplayString())%></label><br>
         <label><input id="menu_admin"  type="radio" name="<%=applicationMenuDisplayMode%>" value="<%=FolderDisplayMode.ADMIN%>"<%=checked(currentMenuDisplayMode == FolderDisplayMode.ADMIN)%><%=disabled(inherited)%>>
@@ -193,47 +191,57 @@
 %>
 <tr>
     <td class="labkey-form-label"><label for="<%=helpMenuEnabled%>">Show LabKey Help menu item</label></td>
-    <% inherited = !isRoot && null == laf.isHelpMenuEnabledStored(); %>
-    <%=inheritCheckbox(c, inherited, this, helpMenuEnabled)%>
+    <% inherited = isInherited(laf.isHelpMenuEnabledStored()); %>
+    <%=inheritCheckbox(inherited, helpMenuEnabled)%>
     <td><input type="checkbox" id="<%=helpMenuEnabled%>" name="<%=helpMenuEnabled%>" size="<%=standardInputWidth%>"<%=checked(laf.isHelpMenuEnabled())%><%=disabled(inherited)%>></td>
 </tr>
 <tr>
     <%
         String enableDiscussionHelp = "Some items within LabKey Server, like reports and wiki pages, support discussions " +
             "that are scoped directly to that report or wiki page. Administrators can disable this feature.";
-        inherited = !isRoot && laf.isDiscussionEnabledStored();
+        inherited = isInherited(laf.isDiscussionEnabledStored());
     %>
     <td class="labkey-form-label"><label for="<%=discussionEnabled%>">Enable Object-Level Discussions</label><%=helpPopup("Enable Discussion", enableDiscussionHelp, true)%></td>
-    <%=inheritCheckbox(c, inherited, this, discussionEnabled)%>
+    <%=inheritCheckbox(inherited, discussionEnabled)%>
     <td><input type="checkbox" id="<%=discussionEnabled%>" name="<%=discussionEnabled%>" size="<%=standardInputWidth%>"<%=checked(laf.isDiscussionEnabled())%><%=disabled(inherited)%>></td>
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="<%=logoHref%>">Logo link (specifies page that header logo links to)</label></td>
-    <td><input type="text" id="<%=logoHref%>" name="<%=logoHref%>" size="<%=standardInputWidth%>" value="<%=h(laf.getUnsubstitutedLogoHref())%>"></td>
+    <% inherited = isInherited(laf.getUnsubstitutedLogoHrefStored()); %>
+    <%=inheritCheckbox(inherited, logoHref)%>
+    <td><input type="text" id="<%=logoHref%>" name="<%=logoHref%>" size="<%=standardInputWidth%>" value="<%=h(laf.getUnsubstitutedLogoHref())%>"<%=disabled(inherited)%>></td>
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="<%=reportAProblemPath%>">Support link (specifies page where users can request support)</label></td>
-    <td><input type="text" id="<%=reportAProblemPath%>" name="<%=reportAProblemPath%>" size="<%=standardInputWidth%>" value="<%=h(laf.getUnsubstitutedReportAProblemPath())%>"></td>
+    <% inherited = isInherited(laf.getUnsubstitutedReportAProblemPathStored()); %>
+    <%=inheritCheckbox(inherited, reportAProblemPath)%>
+    <td><input type="text" id="<%=reportAProblemPath%>" name="<%=reportAProblemPath%>" size="<%=standardInputWidth%>" value="<%=h(laf.getUnsubstitutedReportAProblemPath())%>"<%=disabled(inherited)%>></td>
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="<%=supportEmail%>">Support email (shown to users if they don't have permission<br/>to see a page, or are having trouble logging in)</label></td>
-    <td style="vertical-align: top;"><input type="text" id="<%=supportEmail%>" name="<%=supportEmail%>" size="<%=standardInputWidth%>" value="<%=h(laf.getSupportEmail())%>"></td>
+    <% inherited = isInherited(laf.getSupportEmailStored()); %>
+    <%=inheritCheckbox(inherited, supportEmail)%>
+    <td style="vertical-align: top;"><input type="text" id="<%=supportEmail%>" name="<%=supportEmail%>" size="<%=standardInputWidth%>" value="<%=h(laf.getSupportEmail())%>"<%=disabled(inherited)%>></td>
 </tr>
 <tr>
     <td>&nbsp;</td>
 </tr>
 <tr>
-    <td colspan=2>Customize settings used in system emails (<%=bean.helpLink%>)</td>
+    <td colspan=3>Customize settings used in system emails (<%=bean.helpLink%>)</td>
 </tr>
 <tr>
     <td class="labkey-form-label">
         <label for="<%=systemEmailAddress%>">System email address (<i>from</i> address for system notification emails)</label><%=helpPopup("System email address", "Requires AdminOperationsPermission to update.", false)%>
     </td>
-    <td><input type="text" id="<%=systemEmailAddress%>" name="<%=systemEmailAddress%>" size="<%=standardInputWidth%>" value="<%= h(laf.getSystemEmailAddress()) %>"<%=disabled(!hasAdminOpsPerm)%>></td>
+    <% inherited = isInherited(laf.getSystemEmailAddressStored()); %>
+    <%=inheritCheckbox(inherited, systemEmailAddress)%>
+    <td><input type="text" id="<%=systemEmailAddress%>" name="<%=systemEmailAddress%>" size="<%=standardInputWidth%>" value="<%= h(laf.getSystemEmailAddress()) %>"<%=disabled(!hasAdminOpsPerm)%><%=disabled(inherited)%>></td>
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="<%=companyName%>">Organization name (appears in notification emails sent by system)</label></td>
-    <td><input type="text" id="<%=companyName%>" name="<%=companyName%>" size="<%=standardInputWidth%>" value="<%= h(laf.getCompanyName()) %>"></td>
+    <% inherited = isInherited(laf.getCompanyNameStored()); %>
+    <%=inheritCheckbox(inherited, companyName)%>
+    <td><input type="text" id="<%=companyName%>" name="<%=companyName%>" size="<%=standardInputWidth%>" value="<%= h(laf.getCompanyName()) %><%=disabled(inherited)%>"></td>
 </tr>
 <tr>
     <td>&nbsp;</td>
@@ -309,14 +317,14 @@
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="<%=defaultDateFormat%>">Default display format for dates</label><%=helpPopup("Date format", dateFormatHelp, true)%></td>
-    <% boolean inherited = !isRoot && null == laf.getDefaultDateFormatStored(); %>
-    <%=inheritCheckbox(c, inherited, this, defaultDateFormat)%>
+    <% boolean inherited = isInherited(laf.getDefaultDateFormatStored()); %>
+    <%=inheritCheckbox(inherited, defaultDateFormat)%>
     <td><% select(out, DateDisplayFormatType.Date, defaultDateFormat.name(), DateUtil.STANDARD_DATE_DISPLAY_FORMATS, laf.getDefaultDateFormat(), false, inherited); %></td>
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="<%=defaultDateTimeFormat%>">Default display format for date-times</label><%=helpPopup("Date-time format", dateTimeFormatHelp, true)%></td>
-    <% inherited = !isRoot && null == laf.getDefaultDateTimeFormatStored(); %>
-    <%=inheritCheckbox(c, inherited, defaultDateTimeFormat.name(), this, "dateSelect", "timeSelect")%>
+    <% inherited = isInherited(laf.getDefaultDateTimeFormatStored()); %>
+    <%=inheritCheckbox(inherited, defaultDateTimeFormat.name(), "dateSelect", "timeSelect")%>
 <%
         String[] parts = DateUtil.splitDateTimeFormat(laf.getDefaultDateTimeFormat());
 %>
@@ -328,14 +336,14 @@
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="<%=defaultTimeFormat%>">Default display format for time-only values</label><%=helpPopup("Time format", timeFormatHelp, true)%></td>
-    <% inherited = !isRoot && null == laf.getDefaultTimeFormatStored(); %>
-    <%=inheritCheckbox(c, inherited, this, defaultTimeFormat)%>
+    <% inherited = isInherited(laf.getDefaultTimeFormatStored()); %>
+    <%=inheritCheckbox(inherited, defaultTimeFormat)%>
     <td><% select(out, DateDisplayFormatType.Time, defaultTimeFormat.name(), DateUtil.STANDARD_TIME_DISPLAY_FORMATS, laf.getDefaultTimeFormat(), false, inherited); %></td>
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="<%=defaultNumberFormat%>">Default display format for numbers</label><%=helpPopup("Number format", decimalFormatHelp, true)%></td>
-    <% inherited = !isRoot && null == laf.getDefaultNumberFormatStored(); %>
-    <%=inheritCheckbox(c, inherited, this, defaultNumberFormat)%>
+    <% inherited = isInherited(laf.getDefaultNumberFormatStored()); %>
+    <%=inheritCheckbox(inherited, defaultNumberFormat)%>
     <td><input type="text" id="<%=defaultNumberFormat%>" name="<%=defaultNumberFormat%>" size="<%=standardInputWidth%>" value="<%= h(laf.getDefaultNumberFormat()) %>"<%=disabled(inherited)%>></td>
 </tr>
 <tr>
@@ -367,20 +375,20 @@
 %>
 <tr>
     <td class="labkey-form-label"><label for="<%=extraDateParsingPattern%>">Additional parsing pattern for dates</label><%=helpPopup("Extra date parsing pattern", dateParsingHelp, true)%></td>
-    <% inherited = !isRoot && null == laf.getExtraDateParsingPatternStored(); %>
-    <%=inheritCheckbox(c, inherited, this, extraDateParsingPattern)%>
+    <% inherited = isInherited(laf.getExtraDateParsingPatternStored()); %>
+    <%=inheritCheckbox(inherited, extraDateParsingPattern)%>
     <td><input type="text" id="<%=extraDateParsingPattern%>" name="<%=extraDateParsingPattern%>" size="<%=standardInputWidth%>" value="<%= h(laf.getExtraDateParsingPattern()) %>"<%=disabled(inherited)%>></td>
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="<%=extraDateTimeParsingPattern%>">Additional parsing pattern for date-times</label><%=helpPopup("Extra date-time parsing pattern", dateTimeParsingHelp, true, 300)%></td>
-    <% inherited = !isRoot && null == laf.getExtraDateTimeParsingPatternStored(); %>
-    <%=inheritCheckbox(c, inherited, this, extraDateTimeParsingPattern)%>
+    <% inherited = isInherited(laf.getExtraDateTimeParsingPatternStored()); %>
+    <%=inheritCheckbox(inherited, extraDateTimeParsingPattern)%>
     <td><input type="text" id="<%=extraDateTimeParsingPattern%>"  name="<%=extraDateTimeParsingPattern%>" size="<%=standardInputWidth%>" value="<%= h(laf.getExtraDateTimeParsingPattern()) %>"<%=disabled(inherited)%>></td>
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="<%=extraTimeParsingPattern%>">Additional parsing pattern for times</label><%=helpPopup("Extra time parsing pattern", timeParsingHelp, true)%></td>
-    <% inherited = !isRoot && null == laf.getExtraTimeParsingPatternStored(); %>
-    <%=inheritCheckbox(c, inherited, this, extraTimeParsingPattern)%>
+    <% inherited = isInherited(laf.getExtraTimeParsingPatternStored()); %>
+    <%=inheritCheckbox(inherited, extraTimeParsingPattern)%>
     <td><input type="text" id="<%=extraTimeParsingPattern%>" name="<%=extraTimeParsingPattern%>" size="<%=standardInputWidth%>" value="<%= h(laf.getExtraTimeParsingPattern()) %>"<%=disabled(inherited)%>></td>
 </tr>
 <tr>
@@ -392,8 +400,8 @@
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="<%=restrictedColumnsEnabled%>">Restrict charting columns by measure and dimension flags</label></td>
-    <% inherited = !isRoot && null == laf.areRestrictedColumnsEnabledStored(); %>
-    <%=inheritCheckbox(c, inherited, this, restrictedColumnsEnabled)%>
+    <% inherited = isInherited(laf.areRestrictedColumnsEnabledStored()); %>
+    <%=inheritCheckbox(inherited, restrictedColumnsEnabled)%>
     <td><input type="checkbox" id="<%=restrictedColumnsEnabled%>" name="<%=restrictedColumnsEnabled%>" size="<%=standardInputWidth%>"<%=checked(laf.areRestrictedColumnsEnabled())%><%=disabled(inherited)%>></td>
 </tr>
 <tr>
@@ -411,8 +419,8 @@
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="<%=customLogin%>">Alternative login page</label><%=helpPopup("Custom Login Page", customLoginHelp, true)%></td>
-    <% inherited = !isRoot && null == laf.getCustomLoginStored(); %>
-    <%=inheritCheckbox(c, inherited, this, customLogin)%>
+    <% inherited = isInherited(laf.getCustomLoginStored()); %>
+    <%=inheritCheckbox(inherited, customLogin)%>
     <td><input type="text" id="<%=customLogin%>" name="<%=customLogin%>" size="<%=standardInputWidth%>" value="<%= h(laf.getCustomLogin()) %>"<%=disabled(inherited || !hasAdminOpsPerm)%>></td>
 </tr>
 <tr>
@@ -559,19 +567,19 @@
         }
     }
 
-    private HtmlString inheritCheckbox(Container c, boolean inherited, JspBase base, Enum<?> e)
+    private HtmlString inheritCheckbox(boolean inherited, Enum<?> e)
     {
-        return inheritCheckbox(c, inherited, e.name(), base, e.name());
+        return inheritCheckbox(inherited, e.name(), e.name());
     }
 
-    private HtmlString inheritCheckbox(Container c, boolean inherited, JspBase base, String name)
+    private HtmlString inheritCheckbox(boolean inherited, Enum<?> e, String... ids)
     {
-        return inheritCheckbox(c, inherited, name, base, name);
+        return inheritCheckbox(inherited, e.name(), ids);
     }
 
-    private HtmlString inheritCheckbox(Container c, boolean inherited, String name, JspBase base, String... ids)
+    private HtmlString inheritCheckbox(boolean inherited, String name, String... ids)
     {
-        if (c.isRoot())
+        if (getContainer().isRoot())
             return HtmlString.EMPTY_STRING;
 
         String checkBoxName = name + "Inherited";
@@ -579,7 +587,7 @@
         StringBuilder js = new StringBuilder("LABKEY.setDirty(true); ");
         Arrays.stream(ids)
             .forEach(id -> js.append("document.getElementById(\"").append(id).append("\").disabled = this.checked; "));
-        base.addHandler(checkBoxName, "change", js.toString());
+        addHandler(checkBoxName, "change", js.toString());
 
         HtmlStringBuilder builder = HtmlStringBuilder.of(HtmlString.unsafe("<td style=\"text-align: center;\"><input type=\"checkbox\" name=\""))
             .append(checkBoxName)
@@ -591,5 +599,10 @@
             builder.append(" checked");
 
         return builder.append(HtmlString.unsafe("></td>")).getHtmlString();
+    }
+
+    private boolean isInherited(@Nullable Object value)
+    {
+        return null == value && !getContainer().isRoot();
     }
 %>
