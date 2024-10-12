@@ -379,7 +379,6 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.labkey.api.data.MultiValuedRenderContext.VALUE_DELIMITER_REGEX;
 import static org.labkey.api.settings.AdminConsole.SettingsLinkType.Configuration;
 import static org.labkey.api.settings.AdminConsole.SettingsLinkType.Diagnostics;
-import static org.labkey.api.settings.LookAndFeelProperties.Properties.dateParsingMode;
 import static org.labkey.api.util.DOM.A;
 import static org.labkey.api.util.DOM.Attribute.href;
 import static org.labkey.api.util.DOM.Attribute.method;
