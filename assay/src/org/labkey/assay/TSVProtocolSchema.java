@@ -22,6 +22,7 @@ import org.labkey.api.assay.AssayResultDomainKind;
 import org.labkey.api.assay.AssayResultTable;
 import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.assay.AssayWellExclusionService;
+import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -34,15 +35,26 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.flag.FlagColumnRenderer;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.AliasedColumn;
+import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryForeignKey;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.assay.plate.AssayPlateTriggerFactory;
+import org.labkey.assay.plate.PlateReplicateStatsDomainKind;
 import org.labkey.assay.plate.query.PlateSchema;
 import org.labkey.assay.plate.query.WellTable;
 import org.labkey.assay.query.AssayDbSchema;
@@ -50,12 +62,15 @@ import org.labkey.assay.query.AssayDbSchema;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 public class TSVProtocolSchema extends AssayProtocolSchema
 {
+    public static final String PLATE_REPLICATE_STATS_TABLE = "PlateReplicateStats";
+
     public TSVProtocolSchema(User user, Container container, @NotNull TsvAssayProvider provider, @NotNull ExpProtocol protocol, @Nullable Container targetStudy)
     {
         super(user, container, provider, protocol, targetStudy);
@@ -71,7 +86,13 @@ public class TSVProtocolSchema extends AssayProtocolSchema
     public TableInfo createProviderTable(String name, ContainerFilter cf)
     {
         if (EXCLUSION_REPORT_TABLE_NAME.equalsIgnoreCase(name))
+        {
             return createExclusionReportTable(cf);
+        }
+        else if (name.equalsIgnoreCase(PLATE_REPLICATE_STATS_TABLE))
+        {
+            return createPlateReplicateStatsTable(cf, false);
+        }
 
         return super.createProviderTable(name, cf);
     }
@@ -131,6 +152,9 @@ public class TSVProtocolSchema extends AssayProtocolSchema
             List<FieldKey> defaultColumns = new ArrayList<>(getDefaultVisibleColumns());
             if (getProvider().isPlateMetadataEnabled(getProtocol()))
             {
+                // plate related triggers
+                addTriggerFactory(new AssayPlateTriggerFactory(getProtocol()));
+
                 // join to the well table which may have plate metadata
                 ColumnInfo wellLsidCol = getColumn(AssayResultDomainKind.WELL_LSID_COLUMN_NAME);
                 if (wellLsidCol != null)
@@ -164,8 +188,102 @@ public class TSVProtocolSchema extends AssayProtocolSchema
                 }
 
                 defaultColumns.add(0, FieldKey.fromParts("Well", "SampleId"));
+
+                // join to any replicate roll ups
+                Domain replicateDomain = AssayPlateMetadataService.get().getPlateReplicateStatsDomain(getProtocol());
+                if (replicateDomain != null)
+                {
+                    ColumnInfo replicateLsidCol = getColumn(AssayResultDomainKind.REPLICATE_LSID_COLUMN_NAME);
+                    if (replicateLsidCol != null)
+                    {
+                        BaseColumnInfo replicateCol = new AliasedColumn("Replicate", replicateLsidCol);
+                        replicateCol.setFk(QueryForeignKey
+                                .from(getUserSchema(), getContainerFilter())
+                                .to(PLATE_REPLICATE_STATS_TABLE, PlateReplicateStatsDomainKind.Column.Lsid.name(), null)
+                        );
+                        replicateCol.setUserEditable(false);
+                        replicateCol.setCalculated(true);
+                        addColumn(replicateCol);
+
+                        // adjust the default columns to position the replicate columns adjacent to the measures they track
+                        Map<String, FieldKey> replicateFields = new HashMap<>();
+                        for (DomainProperty prop : replicateDomain.getProperties())
+                            replicateFields.put(prop.getName(), FieldKey.fromParts("Replicate", prop.getName()));
+
+                        List<FieldKey> newDefaultColumns = new ArrayList<>();
+                        for (FieldKey fk : defaultColumns)
+                        {
+                            newDefaultColumns.add(fk);
+                            ColumnInfo col = getColumn(fk);
+                            if (col != null && col.isMeasure() && col.getJdbcType().isNumeric())
+                                addReplicateColsForMeasure(newDefaultColumns, col, replicateFields);
+                        }
+                        defaultColumns = newDefaultColumns;
+                    }
+                }
                 setDefaultVisibleColumns(defaultColumns);
             }
+        }
+    }
+
+    private void addReplicateColsForMeasure(List<FieldKey> defaultCols, ColumnInfo measure, Map<String, FieldKey> replicateFields)
+    {
+        for (String replicateName : PlateReplicateStatsDomainKind.getStatsFieldNames(measure.getName()))
+        {
+            if (replicateFields.containsKey(replicateName))
+                defaultCols.add(replicateFields.get(replicateName));
+        }
+    }
+
+    @Nullable
+    public TableInfo createPlateReplicateStatsTable(ContainerFilter cf, boolean allowInsertUpdate)
+    {
+        Domain domain = AssayPlateMetadataService.get().getPlateReplicateStatsDomain(getProtocol());
+        if (domain != null)
+        {
+            return new _AssayPlateReplicateStatsTable(domain, this, cf, allowInsertUpdate);
+        }
+        return null;
+    }
+
+    private class _AssayPlateReplicateStatsTable extends FilteredTable<AssayProtocolSchema>
+    {
+        private final boolean _allowInsertUpdate;
+
+        public _AssayPlateReplicateStatsTable(@NotNull Domain domain, @NotNull AssayProtocolSchema userSchema, @Nullable ContainerFilter containerFilter, boolean allowInsertUpdate)
+        {
+            super(StorageProvisioner.createTableInfo(domain), userSchema, containerFilter);
+            _allowInsertUpdate = allowInsertUpdate;
+
+            setDescription("Represents the replicate statistics for a plate based assay containing replicate well groups.");
+            setName("PlateReplicateStats");
+            setPublicSchemaName(_userSchema.getSchemaName());
+
+            for (ColumnInfo col : getRealTable().getColumns())
+            {
+                var columnInfo = wrapColumn(col);
+                if (col.getName().equals("Lsid"))
+                {
+                    columnInfo.setHidden(true);
+                    columnInfo.setKeyField(true);
+                }
+                addColumn(columnInfo);
+            }
+        }
+
+        @Override
+        public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
+        {
+            if (!_allowInsertUpdate && (perm.equals(InsertPermission.class) || perm.equals(UpdatePermission.class)))
+                return false;
+
+            return _userSchema.getContainer().hasPermission(user, perm);
+        }
+
+        @Override
+        public @Nullable QueryUpdateService getUpdateService()
+        {
+            return new DefaultQueryUpdateService(this, getRealTable());
         }
     }
 

@@ -1151,12 +1151,6 @@ validNum:       {
         return "yyyy-MM-dd HH:mm:ss.SSS";
     }
 
-    public static String getSafariJsonDateTimeFormatString()
-    {
-        // Issue 43557 - Safari needs the ISO-8601-like 'T' between the date and time to parse this precise of a date
-        return "yyyy-MM-dd'T'HH:mm:ss.SSS";
-    }
-
     /**
      * Format current date using ISO 8601 pattern. This is appropriate only for persisting dates in machine-readable
      * form, for example, for export or in filenames. Most callers should use formatDate(Container c) instead.
@@ -1338,31 +1332,20 @@ validNum:       {
     }
 
     private static final FastDateFormat jsonDateFormat = FastDateFormat.getInstance(getJsonDateTimeFormatString());
-    private static final FastDateFormat safariJsonDateFormat = FastDateFormat.getInstance(getSafariJsonDateTimeFormatString());
     private static final FastDateFormat jsonTimeFormat = FastDateFormat.getInstance(ISO_TIME_FORMAT_STRING);
 
     public static String formatJsonDateTime(Date date)
     {
-        // Issue 43557 - Safari needs a 'T' between the date and time. Instead of needing to rev all client APIs to parse
-        // the new variant, conditionally send Safari its preferred format (which works fine in other browsers but not
-        // in all other parsing code)
-        boolean isSafari = false;
-        if (HttpView.hasCurrentView())
+        if (date instanceof Time)
         {
             ViewContext context = HttpView.currentContext();
-            if (context != null && context.getRequest() != null)
-            {
-                isSafari = HttpUtil.isSafari(context.getRequest());
+            if (context != null && context.getContainer() != null)
+                return FastDateFormat.getInstance(FolderSettingsCache.getDefaultTimeFormat(context.getContainer())).format(date);
 
-                if (date instanceof Time && context.getContainer() != null)
-                    return FastDateFormat.getInstance(FolderSettingsCache.getDefaultTimeFormat(context.getContainer())).format(date);
-            }
+            return jsonTimeFormat.format(date);
         }
 
-        if (date instanceof Time)
-            return jsonTimeFormat.format(date);
-
-        return isSafari ? safariJsonDateFormat.format(date) : jsonDateFormat.format(date);
+        return jsonDateFormat.format(date);
     }
 
     private static class _duration
@@ -1377,8 +1360,9 @@ validNum:       {
 
     public static boolean isSignedDuration(@NotNull String durationCandidate)
     {
-        try{
-            if(durationCandidate.isEmpty() || !(durationCandidate.startsWith("+") || durationCandidate.startsWith("-")))
+        try
+        {
+            if (durationCandidate.isEmpty() || !(durationCandidate.startsWith("+") || durationCandidate.startsWith("-")))
             {
                 return false;
             }
@@ -1393,16 +1377,14 @@ validNum:       {
 
     public static long applySignedDuration(long time, String duration)
     {
-        if(duration.startsWith("+"))
-        {
+        if (duration.startsWith("+"))
              return addDuration(time, duration.substring(1));
-        }
-        if(duration.startsWith("-"))
-        {
-            return subtractDuration(time,duration.substring(1));
-        }
+        if (duration.startsWith("-"))
+            return subtractDuration(time, duration.substring(1));
+
         throw new IllegalArgumentException("The duration provided is not valid: " + duration);
     }
+
     public static _duration _parseDuration(String s)
     {
         boolean period = false;

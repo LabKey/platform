@@ -69,6 +69,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     private final Integer _workflowTask;
     private final String _targetStudy;
     private final Integer _reRunId;
+    private final ReImportOption _reImportOption;
     private final Map<String, Object> _rawRunProperties;
     private final Map<String, Object> _rawBatchProperties;
     private final DataIteratorBuilder _rawData;
@@ -123,6 +124,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
         _uploadedData = CollectionUtils.checkValueClass(factory._uploadedData, FileLike.class);
 
         _reRunId = factory._reRunId;
+        _reImportOption = factory._reImportOption;
         _targetStudy = factory._targetStudy;
 
         _jobDescription = factory._jobDescription;
@@ -381,6 +383,12 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     public Integer getReRunId()
     {
         return _reRunId;
+    }
+
+    @Override
+    public ReImportOption getReImportOption()
+    {
+        return _reImportOption;
     }
 
     @Override
