@@ -576,6 +576,11 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 
         public PlateGridInfo(PlateUtils.GridInfo info, PlateSet plateSet) throws ExperimentException
         {
+            this(info, plateSet, null);
+        }
+
+        public PlateGridInfo(PlateUtils.GridInfo info, PlateSet plateSet, Set<String> measureAliases) throws ExperimentException
+        {
             super(info.getData(), info.getAnnotations());
 
             // locate the plate in the plate set this grid is associated with plus an optional
@@ -583,9 +588,19 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             List<Plate> plates = PlateManager.get().getPlatesForPlateSet(plateSet);
             List<String> annotations = getAnnotations();
 
-            // single annotation can only be a plate identifier
+            // if the plate set only has one plate, then treat a single annotation as the measure
+            // otherwise a single annotation can only be a plate identifier
             if (annotations.size() == 1)
-                _plate = getPlateForId(annotations.get(0), plates);
+            {
+                String annotation = annotations.get(0);
+                if (plates.size() == 1 && measureAliases != null && measureAliases.contains(annotation))
+                {
+                    _plate = plates.get(0);
+                    _measureName = annotation;
+                }
+                else
+                    _plate = getPlateForId(annotation, plates);
+            }
             else
             {
                 // multiple annotation must have an annotation prefix
@@ -651,6 +666,10 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         boolean missingPlateIdentifiers = false;
         boolean multipleMeasures = false;
 
+        List<DomainProperty> measureProperties = provider.getResultsDomain(protocol).getProperties().stream().filter(DomainProperty::isMeasure).collect(Collectors.toList());
+        Set<String> measureAliases = new CaseInsensitiveHashSet();
+        measureProperties.forEach(p -> measureAliases.addAll(PropertyService.get().getDomainPropertyImportAliases(p)));
+
         for (Plate plate : plates)
         {
             if (!plateTypeGrids.containsKey(plate.getPlateType()))
@@ -658,7 +677,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 Plate p = PlateService.get().createPlate(container, TsvPlateLayoutHandler.TYPE, plate.getPlateType());
                 for (PlateUtils.GridInfo gridInfo : plateReader.loadMultiGridFile(p, dataFile.toNioPathForRead().toFile()))
                 {
-                    PlateGridInfo plateInfo = new PlateGridInfo(gridInfo, plateSet);
+                    PlateGridInfo plateInfo = new PlateGridInfo(gridInfo, plateSet, measureAliases);
                     plateTypeGrids.put(plate.getPlateType(), plateInfo);
 
                     if (plateInfo.getPlate() != null && !hasPlateIdentifiers)
@@ -671,7 +690,6 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             }
         }
 
-        List<DomainProperty> measureProperties = provider.getResultsDomain(protocol).getProperties().stream().filter(DomainProperty::isMeasure).collect(Collectors.toList());
         if (!multipleMeasures && measureProperties.size() != 1)
             throw new ExperimentException("The assay protocol must have exactly one measure property to support graphical plate layout file parsing.");
         else if (multipleMeasures && measureProperties.isEmpty())
