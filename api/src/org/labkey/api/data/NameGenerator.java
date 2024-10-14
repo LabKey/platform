@@ -690,6 +690,8 @@ public class NameGenerator
                 tabLoader.setUnescapeBackslashes(false);
                 // Issue 50924: LKSM: Importing samples using naming expression referencing parent inputs with # result in error
                 tabLoader.setIncludeComments(true);
+                // Issue 51056 Samples with single double quotes in the name will not resolve if added as parent samples.
+                tabLoader.setParseEnclosedQuotes(true);
                 try
                 {
                     String[][] parsedValues = tabLoader.getFirstNLines(1);

@@ -189,6 +189,7 @@ public class TabLoader extends DataLoader
     private String _strQuote = null;
     private String _strQuoteQuote = null;
     private boolean _parseQuotes = true;
+    private boolean _parseEnclosedQuotes = false; // only treat quote as quote if it comes in pairs, otherwise treat it as a regular character
     private boolean _unescapeBackslashes = true;
 
     // Infer whether there are headers
@@ -413,19 +414,22 @@ public class TabLoader extends DataLoader
         while (start < buf.length())
         {
             boolean loadThisColumn = null==columns || colIndex >= columns.length || columns[colIndex].load;
-            int end;
+            int end = 0;
             char ch = buf.charAt(start);
             char chQuote = '"';
 
             colIndex++;
 
+            boolean isDelimiterOrQuote = false;
             if (ch == _chDelimiter)
             {
                 end = start;
                 field = _preserveEmptyString ? null : "";
+                isDelimiterOrQuote = true;
             }
             else if (ch == chQuote)
             {
+                isDelimiterOrQuote = true;
                 if (_strQuote == null)
                 {
                     _strQuote = String.valueOf(chQuote);
@@ -448,6 +452,8 @@ public class TabLoader extends DataLoader
                         if (nextLine == null)
                         {
                             // We've reached the end of the input, so there's nothing else to append
+                            if (_parseEnclosedQuotes)
+                                isDelimiterOrQuote = false;
                             break;
                         }
 
@@ -457,33 +463,44 @@ public class TabLoader extends DataLoader
                     }
 
                     if (end == buf.length() - 1 || buf.charAt(end + 1) != chQuote)
+                    {
+                        // Issue 51056: pooling sample parents with single quote doesn't work
+                        // " a, " b should be parsed as [" a, " b], not [a,  b]
+                        if (_parseEnclosedQuotes && end != buf.length() - 1 && buf.charAt(end + 1) != _chDelimiter)
+                            isDelimiterOrQuote = false;
                         break;
+                    }
                     hasQuotes = true;
                     end++; // skip double ""
                 }
 
-                field = buf.substring(start + 1, end);
-                if (hasQuotes && field.contains(_strQuoteQuote))
-                    field = _replaceDoubleQuotes.matcher(field).replaceAll("\"");
-
-                // eat final "
-                end++;
-
-                //FIX: 9727
-                //if not at end of line and next char is not a tab, append any chars to field up to the next tab/eol
-                //note that this is a surgical quick-fix due to the proximity of release.
-                //the better fix would be to parse the file character-by-character and support
-                //double quotes anywhere within the field to escape delimiters
-                if (end < buf.length() && buf.charAt(end) != _chDelimiter)
+                if (isDelimiterOrQuote)
                 {
-                    start = end;
-                    end = buf.indexOf(_strDelimiter, end);
-                    if (-1 == end)
-                        end = buf.length();
-                    field = field + buf.substring(start, end);
+                    field = buf.substring(start + 1, end);
+                    if (hasQuotes && field.contains(_strQuoteQuote))
+                        field = _replaceDoubleQuotes.matcher(field).replaceAll("\"");
+
+                    // eat final "
+                    end++;
+
+                    //FIX: 9727
+                    //if not at end of line and next char is not a tab, append any chars to field up to the next tab/eol
+                    //note that this is a surgical quick-fix due to the proximity of release.
+                    //the better fix would be to parse the file character-by-character and support
+                    //double quotes anywhere within the field to escape delimiters
+                    if (end < buf.length() && buf.charAt(end) != _chDelimiter)
+                    {
+                        start = end;
+                        end = buf.indexOf(_strDelimiter, end);
+                        if (-1 == end)
+                            end = buf.length();
+                        field = field + buf.substring(start, end);
+                    }
+
                 }
             }
-            else
+
+            if (!isDelimiterOrQuote)
             {
                 end = buf.indexOf(_strDelimiter, start);
                 if (end == -1)
@@ -558,6 +575,11 @@ public class TabLoader extends DataLoader
     public void setParseQuotes(boolean parseQuotes)
     {
         _parseQuotes = parseQuotes;
+    }
+
+    public void setParseEnclosedQuotes(boolean parseEnclosedQuotes)
+    {
+        _parseEnclosedQuotes = parseEnclosedQuotes;
     }
 
     public void setUnescapeBackslashes(boolean unescapeBackslashes)
@@ -698,7 +720,11 @@ public class TabLoader extends DataLoader
     {
         String malformedCsvData = """
                 "Header1","Header2", "Header3"
-                "test1a", "testb""";
+                "test1a", "testb, "a "b""";
+
+        String malformedTsvData = """
+                "Header1"\t"Header2"\t "Header3"
+                "test1a"\t "testb\t"a "b""";
 
         String csvData = """
                 # algorithm=org.fhcrc.cpas.viewer.feature.FeatureStrategyPeakClusters
@@ -763,14 +789,16 @@ public class TabLoader extends DataLoader
             return f;
         }
 
-        @Test
-        public void testMalformedCsv() throws IOException
+        private void verifyMalformedData(File csv, boolean requireEnclosedQuotes, String expectedResult11, @Nullable String expectedTestBResult12) throws IOException
         {
-            File csv = _createTempFile(malformedCsvData, ".csv");
-
             try (TabLoader l = new TabLoader(csv))
             {
-                l.parseAsCSV();
+                if (requireEnclosedQuotes)
+                    l.setParseEnclosedQuotes(true);
+
+                if (csv.getName().endsWith("csv"))
+                    l.parseAsCSV();
+                
                 List<Map<String, Object>> maps = l.load();
                 assertEquals(3, l.getColumns().length);
                 assertEquals(String.class, l.getColumns()[0].clazz);
@@ -783,11 +811,35 @@ public class TabLoader extends DataLoader
                 assertEquals("Header3", maps.get(0).get("column2"));
 
                 assertEquals("test1a", maps.get(1).get("column0"));
-                assertEquals("testb", maps.get(1).get("column1"));
-                assertNull(maps.get(1).get("column2"));
+                assertEquals(expectedResult11, maps.get(1).get("column1"));
+
+                if (requireEnclosedQuotes)
+                    assertEquals(expectedTestBResult12, maps.get(1).get("column2"));
+                else
+                    assertNull(maps.get(1).get("column2"));
             }
+        }
+
+        @Test
+        public void testMalformedCsv() throws IOException
+        {
+            File csv = _createTempFile(malformedCsvData, ".csv");
+
+            verifyMalformedData(csv, false, "testb, a \"b", null);
+            verifyMalformedData(csv, true, "\"testb", "\"a \"b");
 
             assertTrue(csv.delete());
+        }
+
+        @Test
+        public void testMalformedTsv() throws IOException
+        {
+            File tsv = _createTempFile(malformedTsvData, ".tsv");
+
+            verifyMalformedData(tsv, false, "testb\ta \"b", null);
+            verifyMalformedData(tsv, true, "\"testb", "\"a \"b");
+
+            assertTrue(tsv.delete());
         }
 
         @Test

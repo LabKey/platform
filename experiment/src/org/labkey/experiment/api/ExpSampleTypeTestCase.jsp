@@ -37,7 +37,6 @@
 <%@ page import="org.labkey.api.data.TableSelector" %>
 <%@ page import="org.labkey.api.dataiterator.DataIteratorContext" %>
 <%@ page import="org.labkey.api.dataiterator.DetailedAuditLogDataIterator" %>
-<%@ page import="org.labkey.api.exp.ExperimentException" %>
 <%@ page import="org.labkey.api.exp.Lsid" %>
 <%@ page import="org.labkey.api.exp.OntologyManager" %>
 <%@ page import="org.labkey.api.exp.PropertyDescriptor" %>
@@ -89,6 +88,7 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Set" %>
 <%@ page import="org.labkey.api.reader.MapLoader" %>
+<%@ page import="org.labkey.api.action.ApiUsageException" %>
 <%@ page import="org.labkey.api.exp.api.ExpLineageService" %>
 
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
@@ -141,7 +141,7 @@ public void nameNotNull() throws Exception
                 null, null, props, Collections.emptyList(),
                 -1, -1, -1, -1, null, null);
     }
-    catch (IllegalArgumentException ee)
+    catch (ApiUsageException ee)
     {
         assertEquals("Sample Type name is required.", ee.getMessage());
     }
@@ -161,7 +161,7 @@ public void reservedNameFirst() throws Exception
                 "First", null, props, Collections.emptyList(),
                 -1, -1, -1, -1, null, null);
     }
-    catch (IllegalArgumentException ee)
+    catch (ApiUsageException ee)
     {
         assertEquals("Sample Type name 'First' is reserved.", ee.getMessage());
     }
@@ -181,7 +181,7 @@ public void reservedNameAll() throws Exception
                 "All", null, props, Collections.emptyList(),
                 -1, -1, -1, -1, null, null);
     }
-    catch (IllegalArgumentException ee)
+    catch (ApiUsageException ee)
     {
         assertEquals("Sample Type name 'All' is reserved.", ee.getMessage());
     }
@@ -204,7 +204,7 @@ public void nameScale() throws Exception
                 name, null, props, Collections.emptyList(),
                 -1, -1, -1, -1, null, null);
     }
-    catch (IllegalArgumentException ee)
+    catch (ApiUsageException ee)
     {
         assertEquals("Sample Type name may not exceed 100 characters.", ee.getMessage());
     }
@@ -229,7 +229,7 @@ public void nameExpressionScale() throws Exception
                 "Samples", null, props, Collections.emptyList(),
                 -1, -1, -1, -1, nameExpression, null);
     }
-    catch (ExperimentException ee)
+    catch (ApiUsageException ee)
     {
         assertEquals("Name expression may not exceed 500 characters.", ee.getMessage());
     }
@@ -252,7 +252,7 @@ public void idColsUnset_nameExpressionNull_noNameProperty() throws Exception
                 -1, -1, -1, -1, null, null);
         fail("Expected exception");
     }
-    catch (ExperimentException ee)
+    catch (ApiUsageException ee)
     {
         assertEquals("Either a 'Name' property or an index for idCol1 is required", ee.getMessage());
     }
@@ -363,7 +363,7 @@ public void idColsSet_nameExpressionNull_hasUnusedNameProperty() throws Exceptio
                 1, -1, -1, -1, null, null);
         fail("Expected exception");
     }
-    catch (ExperimentException ee)
+    catch (ApiUsageException ee)
     {
         assertEquals("Either a 'Name' property or idCols can be used, but not both", ee.getMessage());
     }
@@ -429,7 +429,7 @@ public void idColsSet_nameExpression_hasUnusedNameProperty() throws Exception
                 1, -1, -1, -1, "S-${name}.${age}", null);
         fail("Expected exception");
     }
-    catch (ExperimentException ee)
+    catch (ApiUsageException ee)
     {
         assertEquals("Name expression cannot be used with id columns", ee.getMessage());
     }
