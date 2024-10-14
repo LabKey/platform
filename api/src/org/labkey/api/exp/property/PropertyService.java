@@ -140,6 +140,8 @@ public interface PropertyService
 
     ConceptURIVocabularyDomainProvider getConceptUriVocabularyDomainProvider(String conceptUri);
 
+    Set<String> getDomainPropertyImportAliases(DomainProperty property);
+
     @Nullable
     Object getDomainPropertyValueFromRow(DomainProperty property, Map<String, Object> row);
 
