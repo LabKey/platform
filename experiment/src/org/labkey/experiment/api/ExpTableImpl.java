@@ -344,9 +344,9 @@ abstract public class ExpTableImpl<C extends Enum>
         {
             PropertyDescriptor pd = dp.getPropertyDescriptor();
             PropertyColumn propColumn;
-            if (null != getExpObjectColumn())
+            if (null != getColumn("ObjectId"))
             {
-                propColumn = new PropertyColumn(pd, getExpObjectColumn(), getContainer(), _userSchema.getUser(), false, containerFilter);
+                propColumn = new PropertyColumn(pd, getColumn("ObjectId"), getContainer(), _userSchema.getUser(), false, containerFilter);
                 propColumn.setParentIsObjectId(true);
             }
             else
