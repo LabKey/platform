@@ -562,7 +562,7 @@
 
         if (!inherited && !NONE.equals(current) && !type.isStandardFormat(current))
         {
-            out.print(HtmlString.unsafe("&nbsp;<i class=\"fa fa-exclamation-triangle has-warning\"></i>"));
+            out.print(HtmlString.unsafe("&nbsp;<span class=\"has-warning\" title=\"Non-standard format\"><i class=\"fa fa-exclamation-circle validation-state-icon\"></i></span>"));
             hasBadFormats = true;
         }
     }
