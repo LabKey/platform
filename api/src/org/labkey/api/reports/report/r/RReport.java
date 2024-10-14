@@ -30,7 +30,6 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
-import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.LabKeyScriptEngine;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
@@ -713,7 +712,7 @@ public class RReport extends ExternalScriptEngineReport
 
 
     @Override
-    public String runScript(ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters, @Nullable String jobGuid) throws ScriptException
+    public String runScript(ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters) throws ScriptException
     {
         ScriptEngine engine = getScriptEngine(context.getContainer());
         if (engine != null)

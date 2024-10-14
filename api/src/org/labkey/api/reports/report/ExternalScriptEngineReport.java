@@ -18,7 +18,6 @@ package org.labkey.api.reports.report;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.ApiModule;
 import org.labkey.api.assay.DefaultDataTransformer;
 import org.labkey.api.attachments.AttachmentParent;
@@ -226,7 +225,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
         {
             try
             {
-                runScript(context, outputSubst, createInputDataFile(context), inputParameters, null);
+                runScript(context, outputSubst, createInputDataFile(context), inputParameters);
             }
             catch (ScriptException | NamedParameterNotProvided | ValidationException e)
             {
@@ -256,7 +255,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
     }
 
     @Override
-    public String runScript(ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters, @Nullable String jobGuid) throws ScriptException
+    public String runScript(ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters) throws ScriptException
     {
         ScriptEngine engine = getScriptEngine(context.getContainer());
 

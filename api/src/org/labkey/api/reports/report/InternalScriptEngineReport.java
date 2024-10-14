@@ -15,7 +15,6 @@
  */
 package org.labkey.api.reports.report;
 
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.ApiModule;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.reports.ExternalScriptEngine;
@@ -77,7 +76,7 @@ public class InternalScriptEngineReport extends ScriptEngineReport
         {
             // todo: when we refactor, pass inputParameters down from the upper layer
             // through the renderReport API.
-            runScript(context, outputSubst, createInputDataFile(context), null, null);
+            runScript(context, outputSubst, createInputDataFile(context), null);
         }
         catch (ScriptException e)
         {
@@ -98,7 +97,7 @@ public class InternalScriptEngineReport extends ScriptEngineReport
     }
 
     @Override
-    public String runScript(ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters, @Nullable String jobGuid) throws ScriptException
+    public String runScript(ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters) throws ScriptException
     {
         ScriptEngine engine = getScriptEngine(context.getContainer());
         if (engine != null)
