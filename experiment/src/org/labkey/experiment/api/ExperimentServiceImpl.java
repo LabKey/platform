@@ -36,6 +36,7 @@ import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.assay.AssayProvider;
@@ -7842,10 +7843,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (lowerReservedNames.contains(propertyName))
             {
                 if (options != null && options.isStrictFieldValidation())
-                    throw new IllegalArgumentException("Property name '" + propertyName + "' is a reserved name.");
+                    throw new ApiUsageException("Property name '" + propertyName + "' is a reserved name.");
             }
             else if (domain.getPropertyByName(propertyName) != null) // issue 25275
-                throw new IllegalArgumentException("Property name '" + propertyName + "' is already defined for this domain.");
+                throw new ApiUsageException("Property name '" + propertyName + "' is already defined for this domain.");
             else
                 DomainUtil.addProperty(domain, pd, defaultValues, propertyUris, null);
         }
@@ -7866,7 +7867,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (!svc.allowUserSpecifiedNames(c))
             {
                 if (nameExpression == null)
-                    throw new ExperimentException(c.hasProductFolders() ? NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS : NAME_EXPRESSION_REQUIRED_MSG);
+                    throw new ApiUsageException(c.hasProductFolders() ? NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS : NAME_EXPRESSION_REQUIRED_MSG);
             }
 
             if (svc.getExpressionPrefix(c) != null)
@@ -7945,7 +7946,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     Set<String> existingRequiredInputs = new HashSet<>(dataClass.getRequiredImportAliases().values());
                     String invalidParentType = getInvalidRequiredImportAliasUpdate(dataClass.getLSID(), false, newAliases, existingRequiredInputs, c, u);
                     if (invalidParentType != null)
-                        throw new IllegalArgumentException("'" + invalidParentType + "' cannot be required as a parent type when there are existing data without a parent of this type.");
+                        throw new ApiUsageException("'" + invalidParentType + "' cannot be required as a parent type when there are existing data without a parent of this type.");
                 }
                 catch (IOException e)
                 {
@@ -7955,7 +7956,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             dataClass.setImportAliasMap(newAliases);
 
             if (!NameExpressionOptionService.get().allowUserSpecifiedNames(c) && options.getNameExpression() == null)
-                throw new IllegalArgumentException(c.hasProductFolders() ? NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS : NAME_EXPRESSION_REQUIRED_MSG);
+                throw new ApiUsageException(c.hasProductFolders() ? NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS : NAME_EXPRESSION_REQUIRED_MSG);
         }
 
         try (DbScope.Transaction transaction = ensureTransaction())
@@ -7999,24 +8000,23 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     private void validateDataClassName(@NotNull Container c, @NotNull User u, String name) throws IllegalArgumentException
     {
         if (name == null)
-            throw new IllegalArgumentException("DataClass name is required.");
+            throw new ApiUsageException("DataClass name is required.");
 
         TableInfo dataClassTable = getTinfoDataClass();
         int nameMax = dataClassTable.getColumn("Name").getScale();
         if (name.length() > nameMax)
-            throw new IllegalArgumentException("DataClass name may not exceed " + nameMax + " characters.");
+            throw new ApiUsageException("DataClass name may not exceed " + nameMax + " characters.");
 
         ExpDataClass existing = getDataClass(c, u, name);
         if (existing != null)
-            throw new IllegalArgumentException("DataClass '" + existing.getName() + "' already exists.");
+            throw new ApiUsageException("DataClass '" + existing.getName() + "' already exists.");
 
         // Issue 51321: check reserved data class name: First, All
         if ("First".equalsIgnoreCase(name) || "All".equalsIgnoreCase(name))
-            throw new IllegalArgumentException("DataClass name '" + name + "' is reserved.");
+            throw new ApiUsageException("DataClass name '" + name + "' is reserved.");
     }
 
     private void validateDataClassOptions(@NotNull Container c, @NotNull User u, @Nullable DataClassDomainKindProperties options)
-            throws IllegalArgumentException
     {
         if (options == null)
             return;
@@ -8024,21 +8024,21 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         TableInfo dataClassTable = getTinfoDataClass();
         int nameExpMax = dataClassTable.getColumn("NameExpression").getScale();
         if (options.getNameExpression() != null && options.getNameExpression().length() > nameExpMax)
-            throw new IllegalArgumentException("Name expression may not exceed " + nameExpMax + " characters.");
+            throw new ApiUsageException("Name expression may not exceed " + nameExpMax + " characters.");
 
         // Validate category length
         int categoryMax = dataClassTable.getColumn("Category").getScale();
         if (options.getCategory() != null && options.getCategory().length() > categoryMax)
-            throw new IllegalArgumentException("Category may not exceed " + categoryMax + " characters.");
+            throw new ApiUsageException("Category may not exceed " + categoryMax + " characters.");
 
         if (options.getSampleType() != null)
         {
             ExpSampleType st = SampleTypeService.get().getSampleType(c, u, options.getSampleType());
             if (st == null)
-                throw new IllegalArgumentException("SampleType '" + options.getSampleType() + "' not found.");
+                throw new ApiUsageException("SampleType '" + options.getSampleType() + "' not found.");
 
             if (!st.getContainer().equals(c))
-                throw new IllegalArgumentException("Associated SampleType must be defined in the same container as this DataClass.");
+                throw new ApiUsageException("Associated SampleType must be defined in the same container as this DataClass.");
         }
     }
 
