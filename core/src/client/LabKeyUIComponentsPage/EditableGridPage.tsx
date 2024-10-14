@@ -29,16 +29,18 @@ class Loader implements EditableGridLoader {
     id: string;
     mode: EditorMode;
     queryInfo: QueryInfo;
+    queryModel: QueryModel;
 
-    constructor(queryInfo: QueryInfo) {
+    constructor(queryModel: QueryModel) {
         this.mode = EditorMode.Insert;
-        this.queryInfo = queryInfo;
+        this.queryInfo = queryModel.queryInfo;
+        this.queryModel = queryModel;
     }
 
-    async fetch(model: QueryModel): Promise<GridResponse> {
+    async fetch(): Promise<GridResponse> {
         return {
-            data: fromJS(model.rows),
-            dataIds: fromJS(model.orderedRows),
+            data: fromJS(this.queryModel.rows),
+            dataIds: fromJS(this.queryModel.orderedRows),
         };
     }
 }
@@ -55,8 +57,8 @@ const EditableGridPageBody: FC<InjectedQueryModels> = memo(props => {
 
         (async () => {
             try {
-                const loader = new Loader(model.queryInfo);
-                const em = await initEditorModel(model, loader);
+                const loader = new Loader(model);
+                const em = await initEditorModel(loader);
                 setEditorModel(em);
             } catch (err) {
                 console.error(err);
