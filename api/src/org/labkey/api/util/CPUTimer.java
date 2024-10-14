@@ -161,7 +161,7 @@ public class CPUTimer
     }
 
     /**
-     * Remove this time from the internal collection of timers.
+     * Stop this timer and remove it from the internal collection of timers.
      *
      * @return Always return true.
      */
@@ -170,8 +170,6 @@ public class CPUTimer
 
         if(started())
             stop();
-
-        clear();
 
         synchronized(timers)
         {
