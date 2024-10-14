@@ -17,6 +17,7 @@ import org.labkey.api.assay.AssayRunUploadContext;
 import org.labkey.api.assay.AssaySchema;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.SimpleAssayDataImportHelper;
+import org.labkey.api.assay.TsvDataHandler;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.plate.ExcelPlateReader;
 import org.labkey.api.assay.plate.Plate;
@@ -425,6 +426,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                         }
 
                         // update the ExpData file URI
+                        data = ensureExpDataForRun(data);
                         data.setDataFileURI(FileUtil.getAbsoluteCaseSensitiveFile(newPath.toNioPathForRead().toFile()).toURI());
                         data.setName(String.format("%s (merged with previous run)", newName));
                         data.save(user);
@@ -463,6 +465,27 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             throw new ExperimentException(String.format("Unable to resolve the replaced run with ID : %d", context.getReRunId()));
 
         return rows;
+    }
+
+    /**
+     * The ExpData parameter passed into the merge function isn't always the object representing the uploaded data.
+     * The data transformer will create a fake object to pass the data in when creating the parsed data outputs. In
+     * this case find the one attached to the run representing the object in the database.
+     */
+    private ExpData ensureExpDataForRun(ExpData expData)
+    {
+        if (expData.getSourceApplication() == null)
+        {
+            for (ExpData data : expData.getRun().getDataOutputs())
+            {
+                if (data.getDataType().getNamespacePrefix().equalsIgnoreCase(TsvDataHandler.NAMESPACE))
+                {
+                    if (data.getSourceApplication() != null)
+                        return data;
+                }
+            }
+        }
+        return expData;
     }
 
     private boolean isGridFormat(List<Map<String, Object>> data)
@@ -553,6 +576,11 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 
         public PlateGridInfo(PlateUtils.GridInfo info, PlateSet plateSet) throws ExperimentException
         {
+            this(info, plateSet, null);
+        }
+
+        public PlateGridInfo(PlateUtils.GridInfo info, PlateSet plateSet, Set<String> measureAliases) throws ExperimentException
+        {
             super(info.getData(), info.getAnnotations());
 
             // locate the plate in the plate set this grid is associated with plus an optional
@@ -560,9 +588,19 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             List<Plate> plates = PlateManager.get().getPlatesForPlateSet(plateSet);
             List<String> annotations = getAnnotations();
 
-            // single annotation can only be a plate identifier
+            // if the plate set only has one plate, then treat a single annotation as the measure
+            // otherwise a single annotation can only be a plate identifier
             if (annotations.size() == 1)
-                _plate = getPlateForId(annotations.get(0), plates);
+            {
+                String annotation = annotations.get(0);
+                if (plates.size() == 1 && measureAliases != null && measureAliases.contains(annotation))
+                {
+                    _plate = plates.get(0);
+                    _measureName = annotation;
+                }
+                else
+                    _plate = getPlateForId(annotation, plates);
+            }
             else
             {
                 // multiple annotation must have an annotation prefix
@@ -628,6 +666,10 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         boolean missingPlateIdentifiers = false;
         boolean multipleMeasures = false;
 
+        List<DomainProperty> measureProperties = provider.getResultsDomain(protocol).getProperties().stream().filter(DomainProperty::isMeasure).collect(Collectors.toList());
+        Set<String> measureAliases = new CaseInsensitiveHashSet();
+        measureProperties.forEach(p -> measureAliases.addAll(PropertyService.get().getDomainPropertyImportAliases(p)));
+
         for (Plate plate : plates)
         {
             if (!plateTypeGrids.containsKey(plate.getPlateType()))
@@ -635,7 +677,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 Plate p = PlateService.get().createPlate(container, TsvPlateLayoutHandler.TYPE, plate.getPlateType());
                 for (PlateUtils.GridInfo gridInfo : plateReader.loadMultiGridFile(p, dataFile.toNioPathForRead().toFile()))
                 {
-                    PlateGridInfo plateInfo = new PlateGridInfo(gridInfo, plateSet);
+                    PlateGridInfo plateInfo = new PlateGridInfo(gridInfo, plateSet, measureAliases);
                     plateTypeGrids.put(plate.getPlateType(), plateInfo);
 
                     if (plateInfo.getPlate() != null && !hasPlateIdentifiers)
@@ -648,7 +690,6 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             }
         }
 
-        List<DomainProperty> measureProperties = provider.getResultsDomain(protocol).getProperties().stream().filter(DomainProperty::isMeasure).collect(Collectors.toList());
         if (!multipleMeasures && measureProperties.size() != 1)
             throw new ExperimentException("The assay protocol must have exactly one measure property to support graphical plate layout file parsing.");
         else if (multipleMeasures && measureProperties.isEmpty())
