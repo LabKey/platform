@@ -401,7 +401,7 @@ Ext4.define('LABKEY.ext4.panel.FolderManagement', {
                                 successHandler();
                             },
                             failure  : function(response, ops) {
-                                var _msg = "Failed to complete move. This folder may have already been moved or deleted.";
+                                var _msg = response.exception || "Failed to complete move. This folder may have already been moved or deleted.";
                                 if (response && response.errors) {
                                     var errors = response.errors;
                                     _msg = "";
