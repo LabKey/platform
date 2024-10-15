@@ -186,7 +186,8 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
 
     public DateParsingMode getDateParsingMode()
     {
-        assert _settingsContainer.isRoot();
+        if (!_settingsContainer.isRoot())
+            throw new IllegalStateException("Valid only with root");
         return DateParsingMode.fromString(lookupStringValue(dateParsingMode, DateParsingMode.US.toString()));
     }
 
