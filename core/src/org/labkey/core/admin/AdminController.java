@@ -1055,7 +1055,7 @@ public class AdminController extends SpringActionController
         }
     }
 
-    private static class HealthCheckForm
+    public static class HealthCheckForm
     {
         private String _categories; // if null, all categories will be checked.
 
@@ -11144,7 +11144,7 @@ public class AdminController extends SpringActionController
     public static class ResourcesAction extends ProjectSettingsViewPostAction<Object>
     {
         @Override
-        protected HttpView getTabView(Object o, boolean reshow, BindException errors)
+        protected JspView<?> getTabView(Object o, boolean reshow, BindException errors)
         {
             LookAndFeelBean bean = new LookAndFeelBean();
             return new JspView<>("/org/labkey/core/admin/lookAndFeelResources.jsp", bean, errors);

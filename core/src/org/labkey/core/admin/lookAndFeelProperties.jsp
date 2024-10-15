@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.jetbrains.annotations.Nullable" %>
 <%@ page import="org.labkey.api.admin.AdminBean" %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.data.Container" %>
@@ -46,7 +47,6 @@
 <%@ page import="java.util.Set" %>
 <%@ page import="java.util.stream.Collectors" %>
 <%@ page import="static org.labkey.api.settings.LookAndFeelProperties.Properties.*" %>
-<%@ page import="org.jetbrains.annotations.Nullable" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -54,18 +54,23 @@
     Container c = getContainer();
     boolean folder = !c.isRoot() && !c.isProject();
     boolean hasAdminOpsPerm = c.hasPermission(getUser(), AdminOperationsPermission.class);
-    HtmlString clearMessage = HtmlString.unsafe(folder ? "the default format properties" : "all look & feel properties");
-    LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
-    String currentThemeName = laf.getThemeName();
     HelpPopupBuilder inheritHelp = null;
+    String parentName = null;
     if (!c.isRoot())
     {
         Container parent = c.getParent();
-        String parentName = parent.isRoot() ? "the site root" : (parent.isProject() ? "project" : "folder") + " " + parent.getPath();
+        parentName = parent.isRoot() ? "the site root" : (parent.isProject() ? "project" : "folder") + " " + parent.getPath();
         String helpText = "Settings where the \"Inherited\" box is checked inherit their values from " + parentName +
-            ". Settings where \"Inherited\" is unchecked override their values in this " + (c.isProject() ? "project": "folder") + ".";
+                ". Settings where \"Inherited\" is unchecked override their values in this " + (c.isProject() ? "project": "folder") + ".";
         inheritHelp = helpPopup("Inherited", helpText, false);
     }
+    HtmlString clearMessage = HtmlString.of(
+        c.isRoot() ? "all look & feel properties to their default values" : (
+        c.isProject() ? "all project settings to inherit from the site look & feel properties" :
+        "all folder settings to inherit from " + parentName)
+    );
+    LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
+    String currentThemeName = laf.getThemeName();
     boolean canUpdate = !c.isRoot() || c.hasPermission(getUser(), ApplicationAdminPermission.class);
     boolean hasPremiumModule = ModuleLoader.getInstance().hasModule("Premium");
     int standardInputWidth = 60;
@@ -324,7 +329,7 @@
 <tr>
     <td class="labkey-form-label"><label for="<%=defaultDateTimeFormat%>">Default display format for date-times</label><%=helpPopup("Date-time format", dateTimeFormatHelp, true)%></td>
     <% inherited = isInherited(laf.getDefaultDateTimeFormatStored()); %>
-    <%=inheritCheckbox(inherited, defaultDateTimeFormat.name(), "dateSelect", "timeSelect")%>
+    <%=inheritCheckbox(inherited, defaultDateTimeFormat, "dateSelect", "timeSelect")%>
 <%
         String[] parts = DateUtil.splitDateTimeFormat(laf.getDefaultDateTimeFormat());
 %>
@@ -354,14 +359,13 @@
     <td colspan=3>Customize date and time parsing behavior (<%=bean.helpLink%>)</td>
 </tr>
 <%
-    // TODO: This check is temporary and should switch to "if (!folder) {}" once the date parsing methods pass Container consistently
     if (c.isRoot())
     {
         DateParsingMode mode = laf.getDateParsingMode();
         String dateParsingModeHelp = "LabKey needs to understand how to interpret (parse) dates that users enter into input forms. " +
-                "For example, if a user enters the date \"10/4/2013\" does that person mean October 4, 2013 (typical interpretation " +
-                "in the United States) or April 10, 2013 (typical interpretation in most other countries)? Choose the " +
-                "parsing mode that matches your users' expectations.";
+            "For example, if a user enters the date \"10/4/2013\" does that person mean October 4, 2013 (typical interpretation " +
+            "in the United States) or April 10, 2013 (typical interpretation in most other countries)? Choose the " +
+            "parsing mode that matches your users' expectations.";
 %>
 <tr>
     <td class="labkey-form-label">Date parsing mode<%=helpPopup("Date parsing mode", dateParsingModeHelp, false)%></td>
@@ -454,7 +458,7 @@
 %>
 <tr>
     <td><%=button("Save").submit(true).onClick("save();") %>&nbsp;
-        <%=button("Reset").onClick("return confirmReset();") %>
+        <%=button(c.isRoot() ? "Reset to Defaults" : "Inherit all").onClick("return confirmReset();") %>
     </td>
 </tr>
 <%
@@ -486,7 +490,7 @@
 
     function confirmReset()
     {
-        if (confirm('Are you sure you want to clear <%=clearMessage%>?'))
+        if (confirm('Are you sure you want to reset <%=clearMessage%>?'))
         {
             _form.setClean();
             LABKEY.Utils.postToAction(<%=q(new AdminUrlsImpl().getResetLookAndFeelPropertiesURL(c))%>);
@@ -498,7 +502,7 @@
 
     function save()
     {
-        // Concatenate the date and time parts for defaultDateTimeFormat
+        // Concatenate the date and time parts to set defaultDateTimeFormat before POST
         const datePart = document.getElementById("dateSelect").value;
         const timePart = document.getElementById("timeSelect").value;
         const dateTimeElement = document.getElementById("defaultDateTimeFormat");
@@ -569,20 +573,15 @@
 
     private HtmlString inheritCheckbox(boolean inherited, Enum<?> e)
     {
-        return inheritCheckbox(inherited, e.name(), e.name());
+        return inheritCheckbox(inherited, e, e.name());
     }
 
     private HtmlString inheritCheckbox(boolean inherited, Enum<?> e, String... ids)
     {
-        return inheritCheckbox(inherited, e.name(), ids);
-    }
-
-    private HtmlString inheritCheckbox(boolean inherited, String name, String... ids)
-    {
         if (getContainer().isRoot())
             return HtmlString.EMPTY_STRING;
 
-        String checkBoxName = name + "Inherited";
+        String checkBoxName = e.name() + "Inherited";
 
         StringBuilder js = new StringBuilder("LABKEY.setDirty(true); ");
         Arrays.stream(ids)
