@@ -171,13 +171,13 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
     @Nullable
     final public TableInfo getTable(String name, @Nullable ContainerFilter cf, boolean allowCalculatedColumns)
     {
-        return getTable(name, cf, true, false, true, allowCalculatedColumns);
+        return getTable(name, cf, true, false, false, allowCalculatedColumns);
     }
 
     @Nullable
     public TableInfo getTable(String name, @Nullable ContainerFilter cf, boolean includeExtraMetadata, boolean forWrite)
     {
-        return getTable(name, cf, includeExtraMetadata, forWrite, true, true);
+        return getTable(name, cf, includeExtraMetadata, forWrite, false, true);
     }
 
     /**

@@ -3455,7 +3455,7 @@ public class QueryController extends SpringActionController
             if (null != StringUtils.trimToNull(form.getViewName()) &&
                     null == view.getQueryDef().getCustomView(getUser(), getViewContext().getRequest(), form.getViewName()))
             {
-                throw new NotFoundException("The requested view does not exist for this user: " + form.getViewName() + ".");
+                throw new NotFoundException("The requested view '" + form.getViewName() + "' does not exist for this user.");
             }
 
             TableInfo t = view.getTable();
@@ -8182,8 +8182,10 @@ public class QueryController extends SpringActionController
                 for (var entry : form.getColumnMap().entrySet())
                 {
                     BaseColumnInfo entryCol = new BaseColumnInfo(entry.getKey(), entry.getValue());
+                    // bindQueryExpressionColumn has a check that restricts PHI columns from being used in expressions
+                    // so we need to set the PHI level to something other than NotPHI on these fake BaseColumnInfo objects
                     if (form.getPhiColumns().contains(entry.getKey()))
-                        entryCol.setPHI(PHI.PHI); // the specific PHI level to set doesn't matter as long as it is > NotPHI
+                        entryCol.setPHI(PHI.PHI);
                     columns.put(entry.getKey(), entryCol);
                     table.addColumn(entryCol);
                 }
