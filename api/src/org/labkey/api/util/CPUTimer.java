@@ -143,13 +143,39 @@ public class CPUTimer
     }
 
     /**
-     * Sets cumulative and average time to 0. Does not reset max, min, first or last.
+     * Reset all the values in the timer.
      *
      * @return Always returns true.
      */
 	public boolean clear()
     {
-		_cumulative = 0;
+        _cumulative = 0;
+        _min = Long.MAX_VALUE;
+        _max = Long.MIN_VALUE;
+        _first = 0;
+        _last = 0;
+        _start = 0;
+        _stop = 0;
+        _calls = 0;
+        return true;
+    }
+
+    /**
+     * Stop this timer and remove it from the internal collection of timers.
+     *
+     * @return Always return true.
+     */
+    public boolean remove()
+    {
+
+        if(started())
+            stop();
+
+        synchronized(timers)
+        {
+            timers.remove(this);
+        }
+
         return true;
     }
 

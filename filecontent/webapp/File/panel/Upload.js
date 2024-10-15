@@ -84,6 +84,11 @@ Ext4.define('File.panel.Upload', {
         return this.getOuterPanel();
     },
 
+    getMaskElement : function() {
+        var browser = this.up('filebrowser');
+        return browser ? browser.getEl() : this.getEl();
+    },
+
     initDropzone : function () {
         var self = this;
         var dropzone = LABKEY.internal.FileDrop.registerDropzone({
@@ -163,11 +168,6 @@ Ext4.define('File.panel.Upload', {
 
             init : function () {
 
-                var getMaskElement = function(uploadPanel) {
-                    var browser = uploadPanel.up('filebrowser');
-                    return browser ? browser.getEl() : uploadPanel.getEl();
-                };
-
                 this.on('processing', function (file) {
                     var cwd = this.uploadPanel.getWorkingDirectory('cwd');
                     if (cwd)
@@ -199,7 +199,7 @@ Ext4.define('File.panel.Upload', {
                 this.on('sending', function (file, xhr, formData) {
                     if (!this.uploadPanel.isBusy()) {
                         this.uploadPanel.setBusy(true);
-                        getMaskElement(this.uploadPanel).mask();
+                        this.uploadPanel.getMaskElement().mask();
 
                         this.uploadPanel.statusText.setText('Uploading ' + file.name + '...');
                     }
@@ -322,12 +322,12 @@ Ext4.define('File.panel.Upload', {
                 this.on('canceled', function (file) {
                     this.uploadPanel.statusText.setText('Canceled upload of ' + file.name);
                     this.uploadPanel.setBusy(false);
-                    getMaskElement(this.uploadPanel).unmask();
+                    this.uploadPanel.getMaskElement().unmask();
                 });
 
                 this.on('queuecomplete', function () {
                     this.uploadPanel.setBusy(false);
-                    getMaskElement(this.uploadPanel).unmask();
+                    this.uploadPanel.getMaskElement().unmask();
 
                     var countErrorFiles = 0;
                     var errorFiles = [];
@@ -697,13 +697,14 @@ Ext4.define('File.panel.Upload', {
             }
 
             this.doPost = function(overwrite) {
+                this.showSingleUploadWindow(name);
                 var options = {
                     method:'POST',
                     form : form,
                     url : this.fileSystem.getURI(cwd, true) + '?Accept=application/json&overwrite=' + (overwrite ? 'T' : 'F') + "&X-LABKEY-CSRF=" + LABKEY.CSRF + lastModifiedParam,
                     name : name,
                     success : function(f, action, message) {
-
+                        this.hideSingleUploadWindow();
                         // File upload success response is same as PROPFIND, error response is JSON.
 
                         // Issue 21100: IE8 responseText is the XML PROPFIND response
@@ -767,7 +768,10 @@ Ext4.define('File.panel.Upload', {
 
                         this.fireEvent('transfercomplete', {fileNames : [{name:name}]});
                     },
-                    failure : LABKEY.Utils.displayAjaxErrorResponse,
+                    failure : (resp) => {
+                        this.hideSingleUploadWindow();
+                        LABKEY.Utils.displayAjaxErrorResponse(resp);
+                    },
                     scope : this
                 };
                 form.errorReader = new Ext4.data.reader.Xml({
@@ -855,6 +859,12 @@ Ext4.define('File.panel.Upload', {
             border: false
         });
 
+        this.cancelUploadBtn = Ext4.create('Ext.button.Button', {
+            text: 'Cancel Upload',
+            handler: this.cancelUpload,
+            scope: this
+        });
+
         this.uploadStatusWindow = Ext4.create('Ext.window.Window', {
             title: 'Upload Progress',
             layout: 'vbox',
@@ -862,14 +872,27 @@ Ext4.define('File.panel.Upload', {
             closable: false,
             border: false,
             items: [this.statusText, progressBarContainer],
-            buttons: [{
-                text: 'Cancel Upload',
-                handler: this.cancelUpload,
-                scope: this
-            }]
+            buttons: [this.cancelUploadBtn]
         });
 
         return this.uploadStatusWindow;
+    },
+
+    showSingleUploadWindow : function(filename)
+    {
+        this.showUploadWindow();
+        this.cancelUploadBtn.setVisible(false);
+        this.statusText.setText("Uploading " + filename);
+        this.progressBar.updateProgress(50/100);
+        this.getMaskElement().mask();
+    },
+
+    hideSingleUploadWindow : function()
+    {
+        this.getMaskElement().unmask();
+        this.hideUploadWindow();
+        this.cancelUploadBtn.setVisible(true);
+        this.statusText.setText('');
     },
 
     showUploadWindow : function()

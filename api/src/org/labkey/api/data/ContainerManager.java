@@ -1686,10 +1686,6 @@ public class ContainerManager
 
             return changedProjects;
         }
-        finally
-        {
-            mutatingContainers.remove(c.getRowId());
-        }
     }
 
     public static void rename(@NotNull Container c, User user, String name)
