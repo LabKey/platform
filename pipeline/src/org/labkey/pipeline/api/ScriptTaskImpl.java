@@ -175,9 +175,6 @@ public class ScriptTaskImpl extends CommandTaskImpl
 
             Map<String, String> replacements = createReplacements(scriptFile, apiKey, container);
             bindings.put(ExternalScriptEngine.PARAM_REPLACEMENT_MAP, replacements);
-            // Issue 50774 - associate external process with the job that spawned it so that we can kill it if the job
-            // is canceled
-            bindings.put(ExternalScriptEngine.PIPELINE_JOB_GUID, getJob().getJobGUID());
 
             // Write task properties file into the work directory
             // This needs to be called after the PIPELINE_ROOT is set in the engine bindings

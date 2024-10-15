@@ -1342,7 +1342,7 @@ abstract public class PipelineJob extends Job implements Serializable
         }
 
 
-        try (QuietCloser ignored = PipelineJobService.get().trackForJobCancellation(_jobGUID, proc))
+        try (QuietCloser ignored = PipelineJobService.get().trackForCancellation(proc))
         {
             // create thread pool for collecting the process output
             ExecutorService pool = Executors.newSingleThreadExecutor();
