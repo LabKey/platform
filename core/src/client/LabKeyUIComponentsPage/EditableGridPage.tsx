@@ -8,7 +8,6 @@ import {
     QueryModel,
     withQueryModels,
     EditableGridChange,
-    EditableGridPanel,
     EditableGridLoader,
     EditorModel,
     initEditorModel,
@@ -20,6 +19,7 @@ import {
     EditorMode,
     QueryInfo,
     QueryColumn,
+    EditableGrid,
 } from '@labkey/components';
 
 import { SchemaQueryInputContext, SchemaQueryInputProvider } from './SchemaQueryInputProvider';
@@ -79,16 +79,20 @@ const EditableGridPageBody: FC<InjectedQueryModels> = memo(props => {
     }
 
     return (
-        <EditableGridPanel
-            allowAdd
-            allowBulkAdd
-            allowBulkRemove
-            allowBulkUpdate
-            bulkAddProps={{ title: 'Bulk Add' }}
-            editorModel={editorModel}
-            onChange={onGridChange}
-            title="EditableGridPanel"
-        />
+        <div className="panel panel-default">
+            <div className="panel-heading">EditableGridPanel</div>
+            <div className="panel-body">
+                <EditableGrid
+                    allowAdd
+                    allowBulkAdd
+                    allowBulkRemove
+                    allowBulkUpdate
+                    bulkAddProps={{ title: 'Bulk Add' }}
+                    editorModel={editorModel}
+                    onChange={onGridChange}
+                />
+            </div>
+        </div>
     );
 });
 
