@@ -38,10 +38,10 @@ import org.apache.commons.beanutils.converters.IntegerArrayConverter;
 import org.apache.commons.beanutils.converters.LongArrayConverter;
 import org.apache.commons.beanutils.converters.ShortArrayConverter;
 import org.apache.commons.beanutils.converters.ShortConverter;
-import org.apache.commons.beanutils.converters.SqlTimeConverter;
 import org.apache.commons.beanutils.converters.StringConverter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
@@ -79,7 +79,6 @@ import java.sql.Clob;
 import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Timestamp;
-import java.text.ParseException;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Map;
@@ -189,7 +188,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
     }
 
 
-    protected void _register(Converter conv, Class cl)
+    protected void _register(Converter conv, Class<?> cl)
     {
         ConvertUtils.register(conv, cl);
         _converters.add(cl);
@@ -197,9 +196,9 @@ public class ConvertHelper implements PropertyEditorRegistrar
 
 
     @Override
-    public void registerCustomEditors(PropertyEditorRegistry registry)
+    public void registerCustomEditors(@NotNull PropertyEditorRegistry registry)
     {
-        for (Class c : _converters)
+        for (Class<?> c : _converters)
         {
             registry.registerCustomEditor(c, new ConvertUtilsEditor(c));
         }
@@ -216,17 +215,17 @@ public class ConvertHelper implements PropertyEditorRegistrar
         }
 
         @Override
-        public Object convert(Class clss, Object o)
+        public <T> T convert(Class<T> clss, Object o)
         {
-            if (o instanceof String)
+            if (o instanceof String s)
             {
                 // 2956 : AbstractConvertHelper shouldn't trim Strings
                 //o = ((String) o).trim();
-                if (((String) o).length() == 0)
+                if (s.isEmpty())
                     return null;
             }
 
-            return null == o || "".equals(o) ? null : _converter.convert(clss, o);
+            return null == o ? null : _converter.convert(clss, o);
         }
     }
 
@@ -245,13 +244,13 @@ public class ConvertHelper implements PropertyEditorRegistrar
             if (value instanceof Boolean)
                 return value;
 
-            String str = value.toString();
+            String str = value.toString().trim();
             if (str.equalsIgnoreCase("t"))
                 return Boolean.TRUE;
             else if (str.equalsIgnoreCase("f"))
                 return Boolean.FALSE;
 
-            return _nested.convert(type, value);
+            return _nested.convert(type, str);
         }
     }
 
@@ -331,8 +330,8 @@ public class ConvertHelper implements PropertyEditorRegistrar
                 return o;
 
             Date date;
-            String signedDurationCandidate = StringUtils.trimToNull((String) o);
-            if (DateUtil.isSignedDuration(signedDurationCandidate))
+            String signedDurationCandidate = StringUtils.trimToNull(o instanceof String s ? s : null);
+            if (signedDurationCandidate != null && DateUtil.isSignedDuration(signedDurationCandidate))
             {
                 date = new Date(DateUtil.applySignedDuration(new Date().getTime(), signedDurationCandidate));
             }
@@ -530,9 +529,8 @@ public class ConvertHelper implements PropertyEditorRegistrar
         {
             if (clazz != byte[].class)
                 return _converter.convert(clazz, o);
-            if (!(o instanceof Blob))
+            if (!(o instanceof Blob blob))
                 return _converter.convert(clazz, o);
-            Blob blob = (Blob) o;
             try
             {
                 long length = blob.length();
@@ -629,11 +627,11 @@ public class ConvertHelper implements PropertyEditorRegistrar
             {
                 return value;
             }
-            else if (value instanceof Number)
+            else if (value instanceof Number n)
             {
                 try
                 {
-                    return BigDecimal.valueOf(((Number) value).doubleValue()).intValueExact();
+                    return BigDecimal.valueOf(n.doubleValue()).intValueExact();
                 }
                 catch (Exception e)
                 {
@@ -641,7 +639,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
                 }
             }
 
-            String s = value.toString();
+            String s = value.toString().trim();
             try
             {
                 try
@@ -661,7 +659,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
                 }
                 else
                 {
-                    throw new ConversionException("Could not convert '" + s + "' to an integer", e);
+                    throw new ConversionException("Could not convert '" + value + "' to an integer", e);
                 }
             }
         }
@@ -734,11 +732,11 @@ public class ConvertHelper implements PropertyEditorRegistrar
             {
                 return value;
             }
-            else if (value instanceof Number)
+            else if (value instanceof Number n)
             {
                 try
                 {
-                    return BigDecimal.valueOf(((Number) value).doubleValue()).longValueExact();
+                    return BigDecimal.valueOf(n.doubleValue()).longValueExact();
                 }
                 catch (Exception e)
                 {
@@ -746,7 +744,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
                 }
             }
 
-            String s = value.toString();
+            String s = value.toString().trim();
             try
             {
                 try
@@ -766,7 +764,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
                 }
                 else
                 {
-                    throw new ConversionException("Could not convert '" + s + "' to a long", e);
+                    throw new ConversionException("Could not convert '" + value + "' to a long", e);
                 }
             }
         }
@@ -844,11 +842,10 @@ public class ConvertHelper implements PropertyEditorRegistrar
                 return null;
             if (value instanceof String[])
                 return value;
-            if (value instanceof String)
+            if (value instanceof String s)
             {
                 // If the value is wrapped with { and }, let the beanutils converter tokenize the values.
                 // This let's us handle Issue 5340 while allowing multi-value strings to be parsed.
-                String s = (String)value;
                 if (s.startsWith("{") && s.endsWith("}"))
                     return _nested.convert(type, value);
             }
@@ -1023,6 +1020,52 @@ public class ConvertHelper implements PropertyEditorRegistrar
             convertedDate = new LenientTimestampConverter().convert(Timestamp.class, "Thu Jun 10 00:00:00 PDT 1999");
             cal.set(1999, Calendar.JUNE,10,0,0,0);
             assertEquals("Wrong date", DateUtil.getDateOnly(cal.getTime()), DateUtil.getDateOnly((Timestamp)convertedDate));
+        }
+
+        @Test
+        public void testConvertBooleans()
+        {
+            assertEquals(true, ConvertUtils.convert("true", Boolean.class));
+            assertEquals(true, ConvertUtils.convert("t", Boolean.class));
+            assertEquals(true, ConvertUtils.convert(" true ", Boolean.class));
+            assertEquals(true, ConvertUtils.convert(" t ", Boolean.class));
+
+            assertEquals(false, ConvertUtils.convert("false", Boolean.class));
+            assertEquals(false, ConvertUtils.convert("f", Boolean.class));
+            assertEquals(false, ConvertUtils.convert(" false ", Boolean.class));
+            assertEquals(false, ConvertUtils.convert(" f ", Boolean.class));
+        }
+
+        /** Issue 51305: insertRows does not trim before attempting to parse integers */
+        @Test
+        public void testConvertNumbers()
+        {
+            assertEquals(100, ConvertUtils.convert("100", Integer.class));
+            assertEquals(100, ConvertUtils.convert(" 100 ", Integer.class));
+            // One more than maximum
+            try
+            {
+                ConvertUtils.convert("2147483648", Integer.class);
+                fail("Should have failed to parse");
+            }
+            catch (ConversionException ignored) {}
+
+            assertEquals(100L, ConvertUtils.convert("100", Long.class));
+            assertEquals(2147483648L, ConvertUtils.convert("2147483648", Long.class));
+            assertEquals(100L, ConvertUtils.convert(" 100 ", Long.class));
+            // One more than maximum
+            try
+            {
+                ConvertUtils.convert("9223372036854775808", Long.class);
+                fail("Should have failed to parse");
+            }
+            catch (ConversionException ignored) {}
+
+            assertEquals(12.3, ConvertUtils.convert("12.3", Double.class));
+            assertEquals(12.3, ConvertUtils.convert(" 12.3 ", Double.class));
+
+            assertEquals(12.3f, ConvertUtils.convert("12.3", Float.class));
+            assertEquals(12.3f, ConvertUtils.convert(" 12.3 ", Float.class));
         }
     }
 
