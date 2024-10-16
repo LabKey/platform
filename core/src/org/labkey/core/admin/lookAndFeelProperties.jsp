@@ -336,16 +336,8 @@
         DateTimeFormat td = DateUtil.splitDateTimeFormat(dateTimeFormat);
 %>
     <td>
-        <%
-            if (null == td)
-            {
-        %>
-        <input type="text" name="nonStandardDateTime" id="nonStandardDateTime" style="width:225px" value="<%=h(dateTimeFormat)%>" disabled><%
-                renderWarningSymbol(out);
-            }
-        %>
-        <% select(out, DateDisplayFormatType.Date, "dateSelect", DateUtil.STANDARD_DATE_DISPLAY_FORMATS, td != null ? td.datePortion() : null, false, inherited); %>&nbsp;&nbsp;
-        <% select(out, DateDisplayFormatType.Time, "timeSelect", DateUtil.STANDARD_TIME_DISPLAY_FORMATS, td == null ? null : (td.timePortion() != null ? td.timePortion() : NONE), true, inherited); %>
+        <% select(out, DateDisplayFormatType.Date, "dateSelect", DateUtil.STANDARD_DATE_DISPLAY_FORMATS, td != null ? td.datePortion() : dateTimeFormat, false, inherited); %>&nbsp;&nbsp;
+        <% select(out, DateDisplayFormatType.Time, "timeSelect", DateUtil.STANDARD_TIME_DISPLAY_FORMATS, td != null && td.timePortion() != null ? td.timePortion() : NONE, true, inherited); %>
         <input type="hidden" name="<%=defaultDateTimeFormat%>" id="<%=defaultDateTimeFormat%>">
     </td>
 </tr>
@@ -517,10 +509,7 @@
         const datePart = document.getElementById("dateSelect").value;
         const timePart = document.getElementById("timeSelect").value;
         const dateTimeElement = document.getElementById("defaultDateTimeFormat");
-        if (datePart)
             dateTimeElement.value = datePart + " " + timePart;
-        else
-            dateTimeElement.value = document.getElementById("nonStandardDateTime").value
         _form.setClean();
         return true;
     }
@@ -550,9 +539,6 @@
         Date now = new Date();
         Map<String, String> map = options.stream()
             .collect(Collectors.toMap(option -> option, option -> {
-                if (null == option)
-                    return "";
-
                 String formatted = "invalid format";
 
                 try
@@ -581,16 +567,11 @@
             .addStyle("width:225px")
             .appendTo(out);
 
-        if (!inherited && current != null && !NONE.equals(current) && !type.isStandardFormat(current))
+        if (!inherited && !NONE.equals(current) && !type.isStandardFormat(current))
         {
-            renderWarningSymbol(out);
+            out.print(HtmlString.unsafe("&nbsp;<span class=\"has-warning\" title=\"Non-standard format\"><i class=\"fa fa-exclamation-circle validation-state-icon\"></i></span>"));
+            hasBadFormats = true;
         }
-    }
-
-    private void renderWarningSymbol(JspWriter out) throws IOException
-    {
-        out.print(HtmlString.unsafe("&nbsp;<span class=\"has-warning\" title=\"Non-standard format\"><i class=\"fa fa-exclamation-circle validation-state-icon\"></i></span>"));
-        hasBadFormats = true;
     }
 
     private HtmlString inheritCheckbox(boolean inherited, Enum<?> e)
