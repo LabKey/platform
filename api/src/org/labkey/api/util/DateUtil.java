@@ -44,6 +44,9 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -1230,12 +1233,18 @@ validNum:       {
     }
 
     /**
-     * Format specific LocalDate using folder-specified default pattern
+     * Format specific LocalDate using folder-specified default pattern.
      * Warning: Return value is unsafe and must be HTML filtered, if rendered to an HTML page
      */
-    public static String formatDate(Container c, LocalDate date)
+    public static String formatDate(Container c, @Nullable LocalDate date)
     {
-        return null == date ? null : date.format(DateTimeFormatter.ofPattern(getDateFormatString(c)));
+        if (null == date)
+            return null;
+
+        // LocalDate doesn't include time zone, but the display format might specify "z". Add the server's time zone to
+        // prevent an exception.
+        ZonedDateTime zoned = ZonedDateTime.of(date, LocalTime.MIDNIGHT, ZoneId.systemDefault());
+        return zoned.format(DateTimeFormatter.ofPattern(getDateFormatString(c)));
     }
 
     /**

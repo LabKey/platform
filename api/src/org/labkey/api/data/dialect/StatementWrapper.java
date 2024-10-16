@@ -2850,9 +2850,10 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
                     {
                         o = ((Array) o).getArray();
                     }
-                    catch (SQLException e)
+                    catch (Exception e)
                     {
                         _log.error("Could not retrieve array", e);
+                        o = null;
                     }
                 }
 

@@ -2445,7 +2445,7 @@ public class ModuleLoader implements MemTrackerListener
         if (!propFiles.isEmpty())
         {
             List<FileLike> sortedPropFiles = propFiles.stream()
-                .sorted(Comparator.comparing(FileLike::getName))
+                .sorted(Comparator.comparing(FileLike::getName).reversed())
                 .toList();
 
             for (FileLike propFile : sortedPropFiles)

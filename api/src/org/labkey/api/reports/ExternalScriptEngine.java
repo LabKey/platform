@@ -67,8 +67,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
      */
     public static final String WORKING_DIRECTORY = "external.script.engine.workingDirectory";
     public static final String PARAM_REPLACEMENT_MAP = "external.script.engine.replacementMap";
-    /** Identifier of the pipeline job that initiated the script execution, if any */
-    public static final String PIPELINE_JOB_GUID = "external.script.engine.pipelineJobGuid";
+
     public static final String PARAM_SCRIPT = "scriptFile";
     public static final String SCRIPT_PATH = "scriptPath";
     public static final String SCRIPT_NAME_REPLACEMENT = "${scriptName}";
@@ -322,8 +321,6 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
      */
     protected int runProcess(ScriptContext context, ProcessBuilder pb, StringBuffer output, long timeout, TimeUnit timeoutUnit)
     {
-        String jobGuid = (String)context.getBindings(ScriptContext.ENGINE_SCOPE).get(PIPELINE_JOB_GUID);
-
         Process proc;
         try
         {
@@ -343,7 +340,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
             throw new RuntimeException(message, eio);
         }
 
-        try (QuietCloser ignored = PipelineJobService.get().trackForJobCancellation(jobGuid, proc))
+        try (QuietCloser ignored = PipelineJobService.get().trackForCancellation(proc))
         {
             // Write script process output to the provided writer
             // if the writer isn't the original writer (a PrintWriter over the tomcat console).
