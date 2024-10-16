@@ -142,15 +142,6 @@ public enum UsageReportingLevel implements SafeToRenderEnum
         _timer.cancel();
     }
 
-    public static void init()
-    {
-        if (_task != null)
-        {
-            throw new IllegalStateException("Already initialized");
-        }
-        reportNow();
-    }
-
     /** Reset the timer and immediately check in (or not) based on current configuration */
     public static void reportNow()
     {
