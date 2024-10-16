@@ -206,7 +206,6 @@ export const SmallFileUpload: FC<SmallFileInputProps> = props => {
                         showLabel={false}
                         allowMultiple={false}
                         allowDirectories={false}
-                        acceptedFormats=".txt,.pem,.crt"
                         showAcceptedFormats={false}
                         onFileChange={onFileChange}
                         onFileRemoval={onFileRemoval}
