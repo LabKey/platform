@@ -139,30 +139,31 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     private LockState _lockState = null;
     private LocalDate _expirationDate = null;
+    private Long _fileRootSize = null;
 
     private final static BlockingCache<GUID, Set<Module>> REQUIRED_MODULES_CACHE = new BlockingCache<>(
-            CacheManager.getCache(
-                    Constants.getMaxContainers(),
-                    CacheManager.DAY,
-                    "Required modules per containers"),
-            (key, argument) -> {
-                if (!(argument instanceof Container c))
-                {
-                    throw new IllegalStateException("Expected usage pattern is to include the container instance as the argument. Key: " + key);
-                }
-                Set<Module> requiredModules = new HashSet<>(c.getRequiredModulesForFolderType(c.getFolderType()));
-                requiredModules.add(ModuleLoader.getInstance().getModule("API"));
+        CacheManager.getCache(
+            Constants.getMaxContainers(),
+            CacheManager.DAY,
+            "Required modules per containers"),
+        (key, argument) -> {
+            if (!(argument instanceof Container c))
+            {
+                throw new IllegalStateException("Expected usage pattern is to include the container instance as the argument. Key: " + key);
+            }
+            Set<Module> requiredModules = new HashSet<>(c.getRequiredModulesForFolderType(c.getFolderType()));
+            requiredModules.add(ModuleLoader.getInstance().getModule("API"));
 
-                for (Container child: c.getChildren())
+            for (Container child: c.getChildren())
+            {
+                if (child.isWorkbook())
                 {
-                    if (child.isWorkbook())
-                    {
-                        requiredModules.addAll(c.getRequiredModulesForFolderType(child.getFolderType()));
-                    }
+                    requiredModules.addAll(c.getRequiredModulesForFolderType(child.getFolderType()));
                 }
+            }
 
-                return Collections.unmodifiableSet(requiredModules);
-            });
+            return Collections.unmodifiableSet(requiredModules);
+        });
 
     static
     {
@@ -391,7 +392,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
     public Container getParent()
     {
         Container parent = _parent == null ? null : _parent.get();
-        if (null == parent && _path.size() > 0)
+        if (null == parent && !_path.isEmpty())
         {
             parent = ContainerManager.getForPath(_path.getParent());
             _parent = new WeakReference<>(parent);
@@ -703,7 +704,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public boolean hasChildren()
     {
-        return getChildren().size() > 0;
+        return !getChildren().isEmpty();
     }
 
     public List<Container> getChildren()
@@ -1838,6 +1839,16 @@ public class Container implements Serializable, Comparable<Container>, Securable
     public void setExpirationDate(LocalDate expirationDate)
     {
         _expirationDate = expirationDate;
+    }
+
+    public Long getFileRootSize()
+    {
+        return _fileRootSize;
+    }
+
+    public void setFileRootSize(Long fileRootSize)
+    {
+        _fileRootSize = fileRootSize;
     }
 
     /** Convert a container into a reference that can be used to get the latest version of the container object. See issue 46473 */

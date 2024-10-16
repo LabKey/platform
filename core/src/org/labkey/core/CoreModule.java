@@ -17,7 +17,6 @@ package org.labkey.core;
 
 import com.fasterxml.jackson.core.io.CharTypes;
 import com.google.common.collect.Sets;
-import jakarta.servlet.MultipartConfigElement;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletRegistration;
 import org.apache.commons.lang3.StringUtils;
@@ -248,6 +247,7 @@ import org.labkey.core.junit.JunitController;
 import org.labkey.core.login.DbLoginAuthenticationProvider;
 import org.labkey.core.login.DbLoginManager;
 import org.labkey.core.login.LoginController;
+import org.labkey.core.metrics.FileRootMaintenanceTask;
 import org.labkey.core.metrics.SimpleMetricsServiceImpl;
 import org.labkey.core.metrics.WebSocketConnectionManager;
 import org.labkey.core.notification.EmailPreferenceConfigServiceImpl;
@@ -1251,6 +1251,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         MessageConfigService.setInstance(new EmailPreferenceConfigServiceImpl());
         ContainerManager.addContainerListener(new EmailPreferenceContainerListener());
         UserManager.addUserListener(new EmailPreferenceUserListener());
+
+        SystemMaintenance.addTask(new FileRootMaintenanceTask());
     }
 
     // Issue 7527: Auto-detect missing sql views and attempt to recreate
