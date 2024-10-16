@@ -1385,15 +1385,15 @@ public class Container implements Serializable, Comparable<Container>, Securable
             Map<String, Object> formats = new HashMap<>();
             formats.put("dateFormat", props.getDefaultDateFormat());
             formats.put("dateTimeFormat", props.getDefaultDateTimeFormat());
-            formats.put("numberFormat", props.getDefaultNumberFormat());
             formats.put("timeFormat", props.getDefaultTimeFormat());
+            formats.put("numberFormat", props.getDefaultNumberFormat());
 
             if (includeParentFormatProps)
             {
                 formats.put("dateFormatInherited", props.getDefaultDateFormatStored() == null);
                 formats.put("dateTimeFormatInherited", props.getDefaultDateTimeFormatStored() == null);
-                formats.put("numberFormatInherited", props.getDefaultNumberFormatStored() == null);
                 formats.put("timeFormatInherited", props.getDefaultTimeFormatStored() == null);
+                formats.put("numberFormatInherited", props.getDefaultNumberFormatStored() == null);
 
                 if (!isRoot())
                 {
@@ -1401,8 +1401,8 @@ public class Container implements Serializable, Comparable<Container>, Securable
                     LookAndFeelProperties parentProps = LookAndFeelProperties.getInstance(parentContainer);
                     formats.put("parentDateFormat", parentProps.getDefaultDateFormat());
                     formats.put("parentDateTimeFormat", parentProps.getDefaultDateTimeFormat());
-                    formats.put("parentNumberFormat", parentProps.getDefaultNumberFormat());
                     formats.put("parentTimeFormat", parentProps.getDefaultTimeFormat());
+                    formats.put("parentNumberFormat", parentProps.getDefaultNumberFormat());
                 }
             }
             containerProps.put("formats", formats);

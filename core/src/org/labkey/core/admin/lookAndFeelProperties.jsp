@@ -64,11 +64,10 @@
                 ". Settings where \"Inherited\" is unchecked override their values in this " + (c.isProject() ? "project": "folder") + ".";
         inheritHelp = helpPopup("Inherited", helpText, false);
     }
-    HtmlString clearMessage = HtmlString.of(
+    String clearMessage =
         c.isRoot() ? "all look & feel properties to their default values" : (
         c.isProject() ? "all project settings to inherit from the site look & feel properties" :
-        "all folder settings to inherit from " + parentName)
-    );
+        "all folder settings to inherit from " + parentName);
     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
     String currentThemeName = laf.getThemeName();
     boolean canUpdate = !c.isRoot() || c.hasPermission(getUser(), ApplicationAdminPermission.class);
@@ -490,7 +489,8 @@
 
     function confirmReset()
     {
-        if (confirm('Are you sure you want to reset <%=clearMessage%>?'))
+        // Although not clearly documented, confirm() appears to encode the message
+        if (confirm('Are you sure you want to reset <%=unsafe(clearMessage)%>?'))
         {
             _form.setClean();
             LABKEY.Utils.postToAction(<%=q(new AdminUrlsImpl().getResetLookAndFeelPropertiesURL(c))%>);
