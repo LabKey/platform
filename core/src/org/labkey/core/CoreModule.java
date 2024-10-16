@@ -1318,7 +1318,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         // On bootstrap in production mode, this will send an initial ping with very little information, as the admin will
         // not have set up their account yet. On later startups, depending on the reporting level, this will send an immediate
         // ping, and then once every 24 hours.
-        UsageReportingLevel.init();
+        UsageReportingLevel.reportNow();
         TempTableTracker.init();
 
         // Loading the PDFBox font cache can be very slow on some agents; fill it proactively. Issue 50601
