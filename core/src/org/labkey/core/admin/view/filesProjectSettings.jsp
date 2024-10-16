@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.util.Formats" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -83,6 +84,7 @@
     boolean isCurrentFileRootManaged = !(isCurrentFileRootCloud &&
                                                 null != storeInfos.get(bean.getCloudRootName()) && !storeInfos.get(bean.getCloudRootName()).isLabKeyManaged());
     String fileRootText = getContainer().isProject() ? "site-level file root" : getContainer().getParsedPath().size() == 2 ? "file root of the parent project" : "file root of the parent folder";
+    String currentOption = bean.getFileRootOption();
 %>
 
 <%  if (bean.getConfirmMessage() != null) { %>
@@ -103,38 +105,45 @@
             files. By default, LabKey stores your files in a standard directory structure. Site administrators can override this location for each
             folder if you wish.
         </td></tr>
-        <tr><td></td></tr>
+        <%
+            if (FileRootProp.siteDefault.name().equals(currentOption) || FileRootProp.folderOverride.name().equals(currentOption))
+            {
+        %>
+        <tr><td><p>Total size of the current file root: <%=h(Formats.commaf0.format(getContainer().getFileRootSize()))%> bytes</p></td></tr>
+        <%
+            }
+        %>
         <tr>
             <td>
                 <table>
                     <tr style="height: 1.75em">
                         <td><input <%=h(canChangeFileSettings ? "" : " disabled ")%>
                                 type="radio" name="fileRootOption" id="optionDisable" value="<%=FileRootProp.disable%>"
-                                <%=checked(FileRootProp.disable.name().equals(bean.getFileRootOption()))%>>
+                                <%=checked(FileRootProp.disable.name().equals(currentOption))%>>
                             Disable file sharing for this <%=h(getContainer().getContainerNoun())%></td>
-                        <% addHandler("optionDisable", "click", "return updateSelection(" + !FileRootProp.disable.name().equals(bean.getFileRootOption()) + ");"); %>
+                        <% addHandler("optionDisable", "click", "return updateSelection(" + !FileRootProp.disable.name().equals(currentOption) + ");"); %>
                     </tr>
                     <tr style="height: 1.75em">
                         <td><input <%=h(canChangeFileSettings ? "" : " disabled ")%>
                                 type="radio" name="fileRootOption" id="optionSiteDefault" value="<%=FileRootProp.siteDefault%>"
-                                <%=checked(FileRootProp.siteDefault.name().equals(bean.getFileRootOption()))%>>
+                                <%=checked(FileRootProp.siteDefault.name().equals(currentOption))%>>
                             Use a default based on the <%=h(fileRootText)%>:
                             <input type="text" id="rootPath" size="64" disabled="true" value="<%=h(defaultRoot)%>"></td>
-                        <% addHandler("optionSiteDefault", "click", "return updateSelection(" + !FileRootProp.siteDefault.name().equals(bean.getFileRootOption()) + ");"); %>
+                        <% addHandler("optionSiteDefault", "click", "return updateSelection(" + !FileRootProp.siteDefault.name().equals(currentOption) + ");"); %>
                     </tr>
                     <tr style="height: 1.75em">
                         <td><input <%=h(canChangeFileSettings && hasAdminOpsPerm ? "" : " disabled ")%>
                                 type="radio" name="fileRootOption" id="optionProjectSpecified" value="<%=FileRootProp.folderOverride%>"
-                                <%=checked(FileRootProp.folderOverride.name().equals(bean.getFileRootOption()))%>>
+                                <%=checked(FileRootProp.folderOverride.name().equals(currentOption))%>>
                             Use a <%=unsafe(getContainer().getContainerNoun())%>-level file root
                             <labkey:input type="text" id="folderRootPath" name="folderRootPath" size="64" onChange="onRootChange()" value="<%=h(bean.getFolderRootPath())%>" /></td>
-                        <% addHandler("optionProjectSpecified", "click", "return updateSelection(" + !FileRootProp.folderOverride.name().equals(bean.getFileRootOption()) + ");"); %>
+                        <% addHandler("optionProjectSpecified", "click", "return updateSelection(" + !FileRootProp.folderOverride.name().equals(currentOption) + ");"); %>
                     </tr>
                     <% if (cloud != null) { %>
                     <tr style="height: 1.75em">
                         <td><input <%=h(canChangeFileSettings && hasAdminOpsPerm ? "" : " disabled ")%>
                                 type="radio" name="fileRootOption" id="optionCloudRoot" value="<%=FileRootProp.cloudRoot%>"
-                                <%=checked(FileRootProp.cloudRoot.name().equals(bean.getFileRootOption()))%>>
+                                <%=checked(FileRootProp.cloudRoot.name().equals(currentOption))%>>
                             Use cloud-based file storage
                             <% addHandler("cloudRootName", "change", "updateSelection(true);"); %>
                             <select name="cloudRootName" id="cloudRootName">
@@ -147,7 +156,7 @@
                                 <%  } %>
                             </select>
                         </td>
-                        <% addHandler("optionCloudRoot", "click", "return updateSelection(" + !FileRootProp.cloudRoot.name().equals(bean.getFileRootOption()) + ");"); %>
+                        <% addHandler("optionCloudRoot", "click", "return updateSelection(" + !FileRootProp.cloudRoot.name().equals(currentOption) + ");"); %>
                     </tr>
                     <% } %>
                     <tr style="height: 1.75em" id="migrateFilesRow">
@@ -368,6 +377,6 @@
         }
     }
 
-    updateSelection(<%=!origBean.getFileRootOption().equals(bean.getFileRootOption())%>);
+    updateSelection(<%=!origBean.getFileRootOption().equals(currentOption)%>);
 </script>
 

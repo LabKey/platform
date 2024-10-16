@@ -3066,6 +3066,7 @@ public class ContainerManager
             // Note: Would prefer rs.getObject("ExpirationDate", LocalDate.class), but jTDS throws on LocalDate
             java.sql.Date sqlDate = rs.getDate("ExpirationDate");
             LocalDate expirationDate = null == sqlDate ? null : sqlDate.toLocalDate();
+            Long fileRootSize = rs.getLong("FileRootSize");
 
             Container dirParent = null;
             if (null != parentId)
@@ -3077,6 +3078,7 @@ public class ContainerManager
             d.setTitle(title);
             d.setLockState(lockState);
             d.setExpirationDate(expirationDate);
+            d.setFileRootSize(fileRootSize);
             return d;
         }
 

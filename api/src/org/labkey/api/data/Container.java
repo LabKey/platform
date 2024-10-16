@@ -145,7 +145,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         CacheManager.getCache(
             Constants.getMaxContainers(),
             CacheManager.DAY,
-            "Required modules per containers"),
+            "Required modules per container"),
         (key, argument) -> {
             if (!(argument instanceof Container c))
             {

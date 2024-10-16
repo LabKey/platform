@@ -52,7 +52,7 @@ public class FileRootMaintenanceTask implements MaintenanceTask
             MutableInt rootCount = new MutableInt();
             MutableBoolean finished = new MutableBoolean(true);
 
-            new TableSelector(CoreSchema.getInstance().getTableInfoContainers(), Set.of("RowId", "EntityId", "FileRootSize", "LastCrawled"), null, new Sort("LastCrawled"))
+            new TableSelector(CoreSchema.getInstance().getTableInfoContainers(), Set.of("RowId", "EntityId", "FileRootSize"), null, new Sort("LastCrawled"))
                 .forEach(FileRootRecord.class, record -> {
                     Container c = ContainerManager.getForId(record.entityId());
                     if (c != null)

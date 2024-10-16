@@ -25,7 +25,12 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.StopIteratingRuntimeException;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.view.FilesWebPart;
@@ -33,6 +38,7 @@ import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HeartBeat;
@@ -49,6 +55,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -220,6 +227,16 @@ public class FileContentModule extends DefaultModule
                 results.put("fileRootCrawlTimedOut", timedOut);
                 results.put("fileRootCrawlSucceeded", succeeded);
                 results.put("fileRootMillisecondsToCalculateSize", System.currentTimeMillis() - startTime);
+
+                // During system maintenance, FileRootMaintenanceTask populates FileRootSize and LastCrawled for every container (subject to a timeout)
+                TableInfo containers = CoreSchema.getInstance().getTableInfoContainers();
+                long total = new SqlSelector(containers.getSchema(), "SELECT SUM(FileRootSize) FROM " + containers.getSelectName())
+                    .getObject(Long.class);
+                results.put("fileRootsTotalSize", total);
+                // Any rows where LastCrawled = null? That would indicate we haven't managed to crawl every container's file root.
+                boolean crawlComplete = !new TableSelector(containers, new SimpleFilter(FieldKey.fromParts("LastCrawled"), null), null).exists();
+                results.put("fileRootsCrawlComplete", crawlComplete);
+                results.put("fileRootsEarliestCrawlTime", new SqlSelector(CoreSchema.getInstance().getSchema(), "SELECT MIN(LastCrawled) FROM " + containers.getSelectName()).getObject(Date.class));
             }
             return results;
         });
