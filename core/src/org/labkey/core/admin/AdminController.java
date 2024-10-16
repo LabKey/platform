@@ -5563,13 +5563,13 @@ public class AdminController extends SpringActionController
     // Validate and populate the folder settings; save & log all changes
     private static boolean saveFolderSettings(Container c, User user, WriteableFolderLookAndFeelProperties props, FolderSettingsForm form, BindException errors)
     {
-        validateAndSaveFormat(form.getDefaultDateFormat(), form.isDefaultDateFormatInherited(), props::clearDefaultDateFormat, props::setDefaultDateFormat, errors, "date");
-        validateAndSaveFormat(form.getDefaultDateTimeFormat(), form.isDefaultDateTimeFormatInherited(), props::clearDefaultDateTimeFormat, props::setDefaultDateTimeFormat, errors, "date-time");
-        validateAndSaveFormat(form.getDefaultTimeFormat(), form.isDefaultTimeFormatInherited(), props::clearDefaultTimeFormat, props::setDefaultTimeFormat, errors, "time");
-        validateAndSaveFormat(form.getDefaultNumberFormat(), form.isDefaultNumberFormatInherited(), props::clearDefaultNumberFormat, props::setDefaultNumberFormat, errors, "number");
-        validateAndSaveFormat(form.getExtraDateParsingPattern(), form.isExtraDateParsingPatternInherited(), props::clearExtraDateParsingPattern, props::setExtraDateParsingPattern, errors, "date");
-        validateAndSaveFormat(form.getExtraDateTimeParsingPattern(), form.isExtraDateTimeParsingPatternInherited(), props::clearExtraDateTimeParsingPattern, props::setExtraDateTimeParsingPattern, errors, "date-time");
-        validateAndSaveFormat(form.getExtraTimeParsingPattern(), form.isExtraTimeParsingPatternInherited(), props::clearExtraTimeParsingPattern, props::setExtraTimeParsingPattern, errors, "time");
+        validateAndSaveFormat(form.getDefaultDateFormat(), form.isDefaultDateFormatInherited(), props::clearDefaultDateFormat, props::setDefaultDateFormat, errors, "date display format");
+        validateAndSaveFormat(form.getDefaultDateTimeFormat(), form.isDefaultDateTimeFormatInherited(), props::clearDefaultDateTimeFormat, props::setDefaultDateTimeFormat, errors, "date-time display format");
+        validateAndSaveFormat(form.getDefaultTimeFormat(), form.isDefaultTimeFormatInherited(), props::clearDefaultTimeFormat, props::setDefaultTimeFormat, errors, "time display format");
+        validateAndSaveFormat(form.getDefaultNumberFormat(), form.isDefaultNumberFormatInherited(), props::clearDefaultNumberFormat, props::setDefaultNumberFormat, errors, "number display format");
+        validateAndSaveFormat(form.getExtraDateParsingPattern(), form.isExtraDateParsingPatternInherited(), props::clearExtraDateParsingPattern, props::setExtraDateParsingPattern, errors, "date parsing pattern");
+        validateAndSaveFormat(form.getExtraDateTimeParsingPattern(), form.isExtraDateTimeParsingPatternInherited(), props::clearExtraDateTimeParsingPattern, props::setExtraDateTimeParsingPattern, errors, "date-time parsing pattern");
+        validateAndSaveFormat(form.getExtraTimeParsingPattern(), form.isExtraTimeParsingPatternInherited(), props::clearExtraTimeParsingPattern, props::setExtraTimeParsingPattern, errors, "time parsing pattern");
 
         setProperty(form.isRestrictedColumnsEnabledInherited(), props::clearRestrictedColumnsEnabled, () -> props.setRestrictedColumnsEnabled(form.areRestrictedColumnsEnabled()));
 
@@ -5604,7 +5604,7 @@ public class AdminController extends SpringActionController
             }
             catch (IllegalArgumentException e)
             {
-                errors.reject(ERROR_MSG, "Invalid " + what + " format: " + e.getMessage());
+                errors.reject(ERROR_MSG, "Invalid " + what + ": " + e.getMessage());
             }
         }
     }

@@ -61,9 +61,7 @@ import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.settings.ProductFeature;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.ContainerContext;
-import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.Formats;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
@@ -1385,25 +1383,26 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
             LookAndFeelProperties props = LookAndFeelProperties.getInstance(this);
             Map<String, Object> formats = new HashMap<>();
-            formats.put("dateFormat", props.getDefaultDateFormat()); // when to use DateUtil.getDateFormatString vs laf.getDefaultDateFormat?
+            formats.put("dateFormat", props.getDefaultDateFormat());
             formats.put("dateTimeFormat", props.getDefaultDateTimeFormat());
             formats.put("numberFormat", props.getDefaultNumberFormat());
             formats.put("timeFormat", props.getDefaultTimeFormat());
 
             if (includeParentFormatProps)
             {
-                formats.put("dateFormatInherited", StringUtils.isEmpty(props.getDefaultDateFormatStored()));
-                formats.put("dateTimeFormatInherited", StringUtils.isEmpty(props.getDefaultDateTimeFormatStored()));
-                formats.put("numberFormatInherited", StringUtils.isEmpty(props.getDefaultNumberFormatStored()));
-                formats.put("timeFormatInherited", StringUtils.isEmpty(props.getDefaultTimeFormatStored()));
+                formats.put("dateFormatInherited", props.getDefaultDateFormatStored() == null);
+                formats.put("dateTimeFormatInherited", props.getDefaultDateTimeFormatStored() == null);
+                formats.put("numberFormatInherited", props.getDefaultNumberFormatStored() == null);
+                formats.put("timeFormatInherited", props.getDefaultTimeFormatStored() == null);
 
                 if (!isRoot())
                 {
-                    Container parentContainer = getParent();  // when to use DateUtil.getDateFormatString vs laf.getDefaultDateFormat?
-                    formats.put("parentDateFormat", DateUtil.getDateFormatString(parentContainer));
-                    formats.put("parentDateTimeFormat", DateUtil.getDateTimeFormatString(parentContainer));
-                    formats.put("parentNumberFormat", Formats.getNumberFormatString(parentContainer));
-                    formats.put("parentTimeFormat", DateUtil.getTimeFormatString(parentContainer));
+                    Container parentContainer = getParent();
+                    LookAndFeelProperties parentProps = LookAndFeelProperties.getInstance(parentContainer);
+                    formats.put("parentDateFormat", parentProps.getDefaultDateFormat());
+                    formats.put("parentDateTimeFormat", parentProps.getDefaultDateTimeFormat());
+                    formats.put("parentNumberFormat", parentProps.getDefaultNumberFormat());
+                    formats.put("parentTimeFormat", parentProps.getDefaultTimeFormat());
                 }
             }
             containerProps.put("formats", formats);

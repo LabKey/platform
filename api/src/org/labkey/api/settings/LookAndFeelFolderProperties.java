@@ -99,10 +99,10 @@ public class LookAndFeelFolderProperties extends AbstractWriteableSettingsGroup
         throw new IllegalStateException("Must provide a container");
     }*/
 
+    // Returns inherited value from the cache. Same as DateUtil.getDateFormatString(Container).
     public String getDefaultDateFormat()
     {
-        // Look up this value starting from the current container
-        return lookupStringValue(_c, defaultDateFormatString, DateUtil.getStandardDateFormatString());
+        return FolderSettingsCache.getDefaultDateFormat(_c);
     }
 
     // Get the value that's actually stored in this container or null if inherited; don't look up the hierarchy
@@ -112,7 +112,21 @@ public class LookAndFeelFolderProperties extends AbstractWriteableSettingsGroup
         return getStoredValue(_c, defaultDateFormatString);
     }
 
+    // Note: Should be called only by FolderSettingsCache; other callers use getDefaultDateFormat() instead.
+    public String calculateDefaultDateFormat()
+    {
+        // Look up this value starting from the current container
+        return lookupStringValue(_c, defaultDateFormatString, DateUtil.getStandardDateFormatString());
+    }
+
+    // Returns inherited value from the cache. Same as DateUtil.getDateTimeFormatString(Container).
     public String getDefaultDateTimeFormat()
+    {
+        return FolderSettingsCache.getDefaultDateTimeFormat(_c);
+    }
+
+    // Note: Should be called only by FolderSettingsCache; other callers use getDefaultDateTimeFormat() instead.
+    public String calculateDefaultDateTimeFormat()
     {
         // Look up this value starting from the current container
         return lookupStringValue(_c, defaultDateTimeFormatString, DateUtil.getStandardDateTimeFormatString());
@@ -125,7 +139,14 @@ public class LookAndFeelFolderProperties extends AbstractWriteableSettingsGroup
         return getStoredValue(_c, defaultDateTimeFormatString);
     }
 
+    // Returns inherited value from the cache. Same as DateUtil.getTimeFormatString(Container).
     public String getDefaultTimeFormat()
+    {
+        return FolderSettingsCache.getDefaultTimeFormat(_c);
+    }
+
+    // Note: Should be called only by FolderSettingsCache; other callers use getDefaultTimeFormat() instead.
+    public String calculateDefaultTimeFormat()
     {
         // Look up this value starting from the current container
         return lookupStringValue(_c, defaultTimeFormatString, DateUtil.getStandardTimeFormatString());
@@ -138,7 +159,14 @@ public class LookAndFeelFolderProperties extends AbstractWriteableSettingsGroup
         return getStoredValue(_c, defaultTimeFormatString);
     }
 
+    // Returns inherited value from the cache. Same as Formats.getNumberFormatString(Container).
     public String getDefaultNumberFormat()
+    {
+        return FolderSettingsCache.getDefaultNumberFormat(_c);
+    }
+
+    // Note: Should be called only by FolderSettingsCache; other callers use getDefaultNumberFormat() instead.
+    public String calculateDefaultNumberFormat()
     {
         // Look up this value starting from the current container
         return lookupStringValue(_c, defaultNumberFormatString, null);
@@ -151,7 +179,14 @@ public class LookAndFeelFolderProperties extends AbstractWriteableSettingsGroup
         return getStoredValue(_c, defaultNumberFormatString);
     }
 
+    // Returns inherited value from the cache
     public String getExtraDateParsingPattern()
+    {
+        return FolderSettingsCache.getExtraDateParsingPattern(_c);
+    }
+
+    // Note: Should be called only by FolderSettingsCache; other callers use getExtraDateParsingPattern() instead.
+    public String calculateExtraDateParsingPattern()
     {
         // Look up this value starting from the current container
         return lookupStringValue(_c, extraDateParsingPattern, null);
@@ -164,7 +199,14 @@ public class LookAndFeelFolderProperties extends AbstractWriteableSettingsGroup
         return getStoredValue(_c, extraDateParsingPattern);
     }
 
+    // Returns inherited value from the cache
     public String getExtraDateTimeParsingPattern()
+    {
+        return FolderSettingsCache.getExtraDateTimeParsingPattern(_c);
+    }
+
+    // Note: Should be called only by FolderSettingsCache; other callers use getExtraDateTimeParsingPattern() instead.
+    public String calculateExtraDateTimeParsingPattern()
     {
         // Look up this value starting from the current container
         return lookupStringValue(_c, extraDateTimeParsingPattern, null);
@@ -177,7 +219,14 @@ public class LookAndFeelFolderProperties extends AbstractWriteableSettingsGroup
         return getStoredValue(_c, extraDateTimeParsingPattern);
     }
 
+    // Returns inherited value from the cache
     public String getExtraTimeParsingPattern()
+    {
+        return FolderSettingsCache.getExtraTimeParsingPattern(_c);
+    }
+
+    // Note: Should be called only by FolderSettingsCache; other callers use getExtraTimeParsingPattern() instead.
+    public String calculateExtraTimeParsingPattern()
     {
         // Look up this value starting from the current container
         return lookupStringValue(_c, extraTimeParsingPattern, null);
@@ -190,7 +239,14 @@ public class LookAndFeelFolderProperties extends AbstractWriteableSettingsGroup
         return getStoredValue(_c, extraTimeParsingPattern);
     }
 
+    // Returns inherited value from the cache
     public boolean areRestrictedColumnsEnabled()
+    {
+        return FolderSettingsCache.areRestrictedColumnsEnabled(_c);
+    }
+
+    // Note: Should be called only by FolderSettingsCache; other callers use getExtraTimeParsingPattern() instead.
+    public boolean calculateRestrictedColumnsEnabled()
     {
         return lookupBooleanValue(_c, restrictedColumnsEnabled, false);
     }
