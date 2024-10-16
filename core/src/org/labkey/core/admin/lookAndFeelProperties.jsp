@@ -27,6 +27,7 @@
 <%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
 <%@ page import="org.labkey.api.settings.Theme" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
+<%@ page import="org.labkey.api.util.DateUtil.DateTimeFormat" %>
 <%@ page import="org.labkey.api.util.FolderDisplayMode" %>
 <%@ page import="org.labkey.api.util.Formats" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
@@ -331,11 +332,20 @@
     <% inherited = isInherited(laf.getDefaultDateTimeFormatStored()); %>
     <%=inheritCheckbox(inherited, defaultDateTimeFormat, "dateSelect", "timeSelect")%>
 <%
-        String[] parts = DateUtil.splitDateTimeFormat(laf.getDefaultDateTimeFormat());
+        String dateTimeFormat = laf.getDefaultDateTimeFormat();
+        DateTimeFormat td = DateUtil.splitDateTimeFormat(dateTimeFormat);
 %>
     <td>
-        <% select(out, DateDisplayFormatType.Date, "dateSelect", DateUtil.STANDARD_DATE_DISPLAY_FORMATS, parts.length > 0 ? parts[0] : null, false, inherited); %>&nbsp;&nbsp;
-        <% select(out, DateDisplayFormatType.Time, "timeSelect", DateUtil.STANDARD_TIME_DISPLAY_FORMATS, parts.length > 1 ? parts[1] : NONE, true, inherited); %>
+        <%
+            if (null == td)
+            {
+        %>
+        <input type="text" name="nonStandardDateTime" id="nonStandardDateTime" style="width:225px" value="<%=h(dateTimeFormat)%>" disabled><%
+                renderWarningSymbol(out);
+            }
+        %>
+        <% select(out, DateDisplayFormatType.Date, "dateSelect", DateUtil.STANDARD_DATE_DISPLAY_FORMATS, td != null ? td.datePortion() : null, false, inherited); %>&nbsp;&nbsp;
+        <% select(out, DateDisplayFormatType.Time, "timeSelect", DateUtil.STANDARD_TIME_DISPLAY_FORMATS, td == null ? null : (td.timePortion() != null ? td.timePortion() : NONE), true, inherited); %>
         <input type="hidden" name="<%=defaultDateTimeFormat%>" id="<%=defaultDateTimeFormat%>">
     </td>
 </tr>
@@ -507,7 +517,10 @@
         const datePart = document.getElementById("dateSelect").value;
         const timePart = document.getElementById("timeSelect").value;
         const dateTimeElement = document.getElementById("defaultDateTimeFormat");
-        dateTimeElement.value = datePart + " " + timePart;
+        if (datePart)
+            dateTimeElement.value = datePart + " " + timePart;
+        else
+            dateTimeElement.value = document.getElementById("nonStandardDateTime").value
         _form.setClean();
         return true;
     }
@@ -530,13 +543,16 @@
         // Add a non-standard and an invalid format to every drop-down for testing purposes
         // TODO: Delete this block - just for testing
         Set<String> set = new LinkedHashSet<>(options);
-        set.add(type == DateDisplayFormatType.Date ? "MM-dd-yyyy" : "kk:mm"); // non-standard
+        set.add(type == DateDisplayFormatType.Date ? "MMMM dd, yyyy" : "kk:mm"); // non-standard
         set.add("xyz"); // invalid
         options = set;
 
         Date now = new Date();
         Map<String, String> map = options.stream()
             .collect(Collectors.toMap(option -> option, option -> {
+                if (null == option)
+                    return "";
+
                 String formatted = "invalid format";
 
                 try
@@ -565,11 +581,16 @@
             .addStyle("width:225px")
             .appendTo(out);
 
-        if (!inherited && !NONE.equals(current) && !type.isStandardFormat(current))
+        if (!inherited && current != null && !NONE.equals(current) && !type.isStandardFormat(current))
         {
-            out.print(HtmlString.unsafe("&nbsp;<span class=\"has-warning\" title=\"Non-standard format\"><i class=\"fa fa-exclamation-circle validation-state-icon\"></i></span>"));
-            hasBadFormats = true;
+            renderWarningSymbol(out);
         }
+    }
+
+    private void renderWarningSymbol(JspWriter out) throws IOException
+    {
+        out.print(HtmlString.unsafe("&nbsp;<span class=\"has-warning\" title=\"Non-standard format\"><i class=\"fa fa-exclamation-circle validation-state-icon\"></i></span>"));
+        hasBadFormats = true;
     }
 
     private HtmlString inheritCheckbox(boolean inherited, Enum<?> e)

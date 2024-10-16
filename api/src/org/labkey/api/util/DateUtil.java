@@ -104,26 +104,43 @@ public class DateUtil
         return STANDARD_DATE_DISPLAY_FORMATS.contains(dateFormat);
     }
 
-    public static String[] splitDateTimeFormat(String dateTimeFormat)
+    public record DateTimeFormat(String datePortion, @Nullable String timePortion) {};
+
+    // Splits the date and time portions of a standard date-time format, where date portion is required and time portion
+    // is optional. Returns null if the format is non-standard, which means we can't split it.
+    public static DateTimeFormat splitDateTimeFormat(String dateTimeFormat)
     {
-        // Tolerate any amount of whitespace between the parts -- note that standard time portion could have
-        // a space ("hh:mm a"), hence the limit
-        return dateTimeFormat.split("\\s+", 2);
+        dateTimeFormat = dateTimeFormat.trim();
+        String datePortion = null;
+
+        // We can't just split on whitespace because non-standard formats could: have any amount of whitespace between
+        // characters, put the time portion before the date portion, or even intermingle date and time characters.
+
+        for (String format : STANDARD_DATE_DISPLAY_FORMATS)
+        {
+            if (dateTimeFormat.startsWith(format))
+            {
+                datePortion = format;
+                break;
+            }
+        }
+
+        // If it starts with a standard date format pattern then check for standard time portion (or none)
+        if (datePortion != null)
+        {
+            String timePortion = dateTimeFormat.substring(datePortion.length()).trim();
+            if (timePortion.isEmpty())
+                return new DateTimeFormat(datePortion, null);
+            else if (isStandardTimeDisplayFormat(timePortion))
+                return new DateTimeFormat(datePortion, timePortion);
+        }
+
+        return null; // Non-standard format
     }
 
     public static boolean isStandardDateTimeDisplayFormat(String dateTimeFormat)
     {
-        String[] parts = splitDateTimeFormat(dateTimeFormat);
-
-        // If one part, must be standard date format
-        // If two parts, must be standard date format followed by standard time format
-        // Otherwise, it's non-standard
-        return switch (parts.length)
-        {
-            case 1 -> isStandardDateDisplayFormat(parts[0]);
-            case 2 -> isStandardDateDisplayFormat(parts[0]) && isStandardTimeDisplayFormat(parts[1]);
-            default -> false;
-        };
+        return splitDateTimeFormat(dateTimeFormat) != null;
     }
 
     public static boolean isStandardTimeDisplayFormat(String timeFormat)
