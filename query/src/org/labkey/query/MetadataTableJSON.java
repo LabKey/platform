@@ -876,7 +876,6 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                         }
                         if (column.getValueExpression() != null)
                         {
-                            metadataColumnJSON.setLockExistingField(false);
                             metadataColumnJSON.setValueExpression(column.getValueExpression());
                         }
                     }
