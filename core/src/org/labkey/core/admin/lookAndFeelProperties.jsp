@@ -93,6 +93,7 @@
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="shouldInherit">New folders should inherit permissions by default</label></td>
+    <td>&nbsp;</td>
     <td><input type="checkbox" id="shouldInherit" name="shouldInherit" size="<%=standardInputWidth%>"<%=checked(SecurityManager.shouldNewSubfoldersInheritPermissions(c))%>></td>
 </tr>
 <tr>
@@ -119,7 +120,7 @@
             .getHtmlString();
 %>
 <tr>
-    <td>Customize the look and feel of <%=h(c.isRoot() ? "your LabKey Server installation" : "the '" + c.getProject().getName() + "' project")%> (<%=bean.helpLink%>)</td>
+    <td<%=h(c.isRoot() ? " colspan=3" : "")%>>Customize the look and feel of <%=h(c.isRoot() ? "your LabKey Server installation" : "the '" + c.getProject().getName() + "' project")%> (<%=bean.helpLink%>)</td>
     <%
         if (c.isProject())
         {
