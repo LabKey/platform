@@ -244,13 +244,13 @@ public class ConvertHelper implements PropertyEditorRegistrar
             if (value instanceof Boolean)
                 return value;
 
-            String str = value.toString();
+            String str = value.toString().trim();
             if (str.equalsIgnoreCase("t"))
                 return Boolean.TRUE;
             else if (str.equalsIgnoreCase("f"))
                 return Boolean.FALSE;
 
-            return _nested.convert(type, value);
+            return _nested.convert(type, str);
         }
     }
 
@@ -1022,6 +1022,21 @@ public class ConvertHelper implements PropertyEditorRegistrar
             assertEquals("Wrong date", DateUtil.getDateOnly(cal.getTime()), DateUtil.getDateOnly((Timestamp)convertedDate));
         }
 
+        @Test
+        public void testConvertBooleans()
+        {
+            assertEquals(true, ConvertUtils.convert("true", Boolean.class));
+            assertEquals(true, ConvertUtils.convert("t", Boolean.class));
+            assertEquals(true, ConvertUtils.convert(" true ", Boolean.class));
+            assertEquals(true, ConvertUtils.convert(" t ", Boolean.class));
+
+            assertEquals(false, ConvertUtils.convert("false", Boolean.class));
+            assertEquals(false, ConvertUtils.convert("f", Boolean.class));
+            assertEquals(false, ConvertUtils.convert(" false ", Boolean.class));
+            assertEquals(false, ConvertUtils.convert(" f ", Boolean.class));
+        }
+
+        /** Issue 51305: insertRows does not trim before attempting to parse integers */
         @Test
         public void testConvertNumbers()
         {
