@@ -20,6 +20,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.poi.UnsupportedFileFormatException;
 import org.apache.poi.ooxml.POIXMLException;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.openxml4j.exceptions.InvalidOperationException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackageAccess;
 import org.apache.poi.ss.format.CellGeneralFormatter;
@@ -270,7 +271,7 @@ public class ExcelFactory
                 }
             }
         }
-        catch (IllegalArgumentException | POIXMLException e)
+        catch (IllegalArgumentException | POIXMLException | InvalidOperationException e)
         {
             throw reportErrorOpeningExcelFile(e);
         }
@@ -287,7 +288,7 @@ public class ExcelFactory
     }
 
     /**
-     * Contructs an in-memory Excel file from a JSON representation, as described in the LABKEY.Utils.convertToExcel JavaScript API
+     * Constructs an in-memory Excel file from a JSON representation, as described in the LABKEY.Utils.convertToExcel JavaScript API
      */
     public static Workbook createFromArray(JSONArray sheetsArray, ExcelWriter.ExcelDocumentType docType)
     {
@@ -342,25 +343,25 @@ public class ExcelFactory
                     }
 
                     Cell cell = row.createCell(colIndex);
-                    if (value instanceof Number)
+                    if (value instanceof Number n)
                     {
-                        cell.setCellValue(((Number)value).doubleValue());
+                        cell.setCellValue(n.doubleValue());
                         if (metadataObject != null && metadataObject.has("formatString"))
                         {
                             String formatString = metadataObject.getString("formatString");
                             cellStyle = getCustomCellStyle(workbook, customStyles, dataFormat, formatString);
                         }
                     }
-                    else if (value instanceof Boolean)
+                    else if (value instanceof Boolean b)
                     {
-                        cell.setCellValue((Boolean) value);
+                        cell.setCellValue(b);
                     }
-                    else if (value instanceof String && !forceString)
+                    else if (value instanceof String s && !forceString)
                     {
                         try
                         {
                             // JSON has no date literal syntax so try to parse all Strings as dates
-                            Date d = new Date(org.labkey.api.util.DateUtil.parseDateTime((String) value));
+                            Date d = new Date(org.labkey.api.util.DateUtil.parseDateTime(s));
                             try
                             {
                                 if (metadataObject != null && metadataObject.has("formatString"))
@@ -401,7 +402,7 @@ public class ExcelFactory
                         int commentBoxWidth = 3;
                         int commentBoxHeight = 4;
 
-                        if (cellComment.length() > 30 )
+                        if (cellComment.length() > 30)
                         {
                             commentBoxHeight= 5;
                         }
@@ -410,17 +411,13 @@ public class ExcelFactory
                             commentBoxWidth= 4;
                             commentBoxHeight= 4;
                         }
-                        if (cellComment.length() >= 60)
-                        {
-                            commentBoxHeight = 5;
-                        }
                         if (cellComment.length() > 70)
                         {
                             commentBoxHeight = 6;
                             commentBoxWidth = 4;
                         }
                         ClientAnchor anchor = factory.createClientAnchor();
-                        Drawing drawing = sheet.createDrawingPatriarch();
+                        Drawing<?> drawing = sheet.createDrawingPatriarch();
 
                         anchor.setCol1(cell.getColumnIndex()+1);
                         anchor.setCol2(cell.getColumnIndex()+commentBoxWidth);
@@ -471,7 +468,7 @@ public class ExcelFactory
 
     /**
      * @param colIndex zero-based column index
-     * http://stackoverflow.com/questions/22708/how-do-i-find-the-excel-column-name-that-corresponds-to-a-given-integer
+     * <a href="http://stackoverflow.com/questions/22708/how-do-i-find-the-excel-column-name-that-corresponds-to-a-given-integer">...</a>
      */
     private static String getCellColumnDescription(int colIndex)
     {
@@ -586,7 +583,8 @@ public class ExcelFactory
     }
 
     /** Supports .xls (BIFF8 only), and .xlsx */
-    public static JSONArray convertExcelToJSON(InputStream in, boolean extended) throws IOException, InvalidFormatException
+    @NotNull
+    public static JSONArray convertExcelToJSON(InputStream in, boolean extended) throws IOException
     {
         try (Workbook workbook = WorkbookFactory.create(in))
         {
@@ -595,11 +593,13 @@ public class ExcelFactory
     }
 
     /** Supports both new and old style .xls (BIFF5 and BIFF8), and .xlsx because we can reopen the stream if needed */
+    @NotNull
     public static JSONArray convertExcelToJSON(File excelFile, boolean extended) throws IOException, InvalidFormatException
     {
         return convertExcelToJSON(excelFile, extended, -1);
     }
 
+    @NotNull
     public static JSONArray convertExcelToJSON(File excelFile, boolean extended, int maxRows) throws IOException, InvalidFormatException
     {
         try (Workbook workbook = ExcelFactory.create(excelFile))
@@ -609,11 +609,13 @@ public class ExcelFactory
     }
 
     /** Supports .xls (BIFF8 only) and .xlsx */
+    @NotNull
     public static JSONArray convertExcelToJSON(Workbook workbook, boolean extended)
     {
         return convertExcelToJSON(workbook, extended, -1);
     }
 
+    @NotNull
     public static JSONArray convertExcelToJSON(Workbook workbook, boolean extended, int maxRows)
     {
         JSONArray result = new JSONArray();
@@ -754,7 +756,7 @@ public class ExcelFactory
                         if (extended)
                         {
                             metadataMap.put("value", value);
-                            if (formatString != null && !"".equals(formatString))
+                            if (formatString != null && !formatString.isEmpty())
                             {
                                 metadataMap.put("formatString", formatString);
                             }
@@ -898,9 +900,10 @@ public class ExcelFactory
         //Issue 15478: IllegalStateException from org.labkey.api.reader.ExcelFactory.getCellStringValue
         public void testExcelFileImportShouldSucceed()  throws Exception
         {
-            JSONArray jsonArray = startImportFile("Formulas.xlsx");
-            if(jsonArray == null && !AppProps.getInstance().isDevMode())
+            if (!AppProps.getInstance().isDevMode())
                 return; // test requires dev mode
+
+            JSONArray jsonArray = startImportFile("Formulas.xlsx");
             try
             {
                 assertEquals("#VALUE!", jsonArray.getJSONObject(0).getJSONArray("data").getJSONArray(1).getJSONObject(0).getString("value"));
@@ -916,21 +919,18 @@ public class ExcelFactory
         {
             File dataloading = JunitUtil.getSampleData(null, "dataLoading/excel");
 
-            if (null == dataloading)
-                return;
-
             attemptImportExpectError(new File(dataloading, "doesntexist.xls"), FileNotFoundException.class);
             attemptImportExpectError(new File(dataloading, ""), FileNotFoundException.class);
             attemptImportExpectError(new File(dataloading, "notreallyexcel.xls"), InvalidFormatException.class);
         }
 
-        private void attemptImportExpectError(File excelFile, Class exceptionClass)
+        private void attemptImportExpectError(File excelFile, Class<? extends Throwable> exceptionClass)
         {
             try
             {
-                JSONArray jsonArray = ExcelFactory.convertExcelToJSON(excelFile, true);
-                if(jsonArray == null && !AppProps.getInstance().isDevMode())
+                if (!AppProps.getInstance().isDevMode())
                     return; // test requires dev mode
+                ExcelFactory.convertExcelToJSON(excelFile, true);
                 fail("Should have failed before this point");
             }
             catch(Exception e)
@@ -954,18 +954,17 @@ public class ExcelFactory
             assertEquals("SIR", getCellColumnDescription(13095));
         }
 
+        @NotNull
         private JSONArray startImportFile(String filename) throws Exception
         {
             File excelFile = JunitUtil.getSampleData(null, "dataLoading/excel/" + filename);
 
-            return null != excelFile ? ExcelFactory.convertExcelToJSON(excelFile, true) : null;
+            return ExcelFactory.convertExcelToJSON(excelFile, true);
         }
 
         private void validateSimpleExcel(String filename) throws Exception
         {
             JSONArray jsonArray = startImportFile(filename);
-            if(jsonArray == null)
-                return;
             assertEquals("Wrong number of sheets", 3, jsonArray.length());
             JSONObject sheet1 = jsonArray.getJSONObject(0);
             assertEquals("Sheet name", "SheetA", sheet1.getString("name"));
