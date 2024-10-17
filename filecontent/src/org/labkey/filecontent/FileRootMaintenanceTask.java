@@ -60,7 +60,7 @@ public class FileRootMaintenanceTask implements MaintenanceTask
                         File root = service.getFileRoot(c);
                         Long size = null != root && root.isDirectory() ? FileUtils.sizeOfDirectory(root) : null;
 
-                        // Always update LastCrawled, even for invalid file roots
+                        // Always update LastCrawled, even for invalid file roots and non-changing sizes
                         Map<String, Object> map = new HashMap<>();
                         long current = HeartBeat.currentTimeMillis();
                         map.put("LastCrawled", new Date(current));

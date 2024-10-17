@@ -108,8 +108,9 @@
         <%
             if (FileRootProp.siteDefault.name().equals(currentOption) || FileRootProp.folderOverride.name().equals(currentOption))
             {
+                Long fileRootSize = getContainer().getFileRootSize();
         %>
-        <tr><td><p>Total size of the current file root: <%=h(FileUtil.formatFileSize(getContainer().getFileRootSize()))%></p></td></tr>
+        <tr><td><p>Total size of the current file root: <%=h(fileRootSize != null ? FileUtil.formatFileSize(getContainer().getFileRootSize()) : "Unknown")%></p></td></tr>
         <%
             }
         %>
