@@ -5136,15 +5136,15 @@ public class DavController extends SpringActionController
                     }
                 }
 
-                // Issue 51344 - slow downloads from remote file system, but only for files that aren't part of the
+                // Issue 51344 - slow downloads from remote file system. Only for files that aren't part of the
                 // webapp itself, or under the source root (for development machines)
-                boolean stageFile = file != null &&
+                boolean avoidSendFile = file != null &&
                         ExperimentalFeatureService.get().isFeatureEnabled(FileStream.STAGE_FILE_TRANSFERS) &&
                         !URIUtil.isDescendant(ModuleLoader.getInstance().getWebappDir().getParentFile().toURI(), file.toUri()) &&
                         (PROJECT_ROOT == null || !URIUtil.isDescendant(PROJECT_ROOT, file.toUri()));
 
                 HttpServletRequest request = getRequest();
-                if (!stageFile && null != file && !FileUtil.hasCloudScheme(file) && Boolean.TRUE == request.getAttribute("org.apache.tomcat.sendfile.support"))
+                if (!avoidSendFile && null != file && !FileUtil.hasCloudScheme(file) && Boolean.TRUE == request.getAttribute("org.apache.tomcat.sendfile.support"))
                 {
                     String absolutePath = file.toFile().getAbsolutePath();
                     long length = Files.size(file);
@@ -5174,43 +5174,13 @@ public class DavController extends SpringActionController
                         }
                     }
 
-                    File tempFile = null;
-                    try
+                    InputStream is = getResourceInputStream(gz==null?resource:gz,getUser());
+                    if (ostream != null)
                     {
-                        InputStream is = getResourceInputStream(gz == null ? resource : gz, getUser());
-                        if (stageFile)
-                        {
-                            // Issue 51344 - slow downloads from remote file system
-                            tempFile = FileUtil.createTempFile(FileStream.STAGE_FILE_TRANSFERS, ".tmp");
-                            _log.debug("Staging " + file + " to " + tempFile + " for faster download.");
-                            try (FileOutputStream fOut = new FileOutputStream(tempFile))
-                            {
-                                is.transferTo(fOut);
-                                is.close();
-                                is = new FileInputStream(tempFile);
-                            }
-                            _log.debug("Finished staging " + file);
-                        }
-
-                        if (ostream != null)
-                        {
-                            copy(is, ostream);
-                        }
-                        else if (writer != null)
-                            copy(is, writer);
+                        copy(is, ostream);
                     }
-                    finally
-                    {
-                        if (tempFile != null)
-                        {
-                            boolean deleted = tempFile.delete();
-                            _log.debug("{} staged file {}", deleted ? "Deleted" : "Failed to delete", tempFile);
-                            if (!deleted)
-                            {
-                                tempFile.deleteOnExit();
-                            }
-                        }
-                    }
+                    else if (writer != null)
+                        copy(is, writer);
                 }
             }
         }
