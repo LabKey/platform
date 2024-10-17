@@ -37,6 +37,7 @@ import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.HeartBeat;
+import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.ModuleChangeListener;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -401,6 +402,8 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
             super(path);
             _parent = parent;
             _files = files;
+            var mt = MemTracker.get();
+            assert files.stream().allMatch(mt::remove);
             _additional = addl;
         }
 
@@ -455,7 +458,11 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
                     for (Map.Entry<String, ArrayList<FileLike>> e : map.entrySet())
                     {
                         Path path = getPath().append(e.getKey());
-                        children.put(e.getKey(), new StaticResource(this, path, e.getValue(), null));
+                        List<FileLike> alternates = e.getValue();
+                        if (alternates.get(0).isFile())
+                            children.put(e.getKey(), new StaticResource(this, path, alternates.subList(0,1), null));
+                        else
+                            children.put(e.getKey(), new StaticResource(this, path, e.getValue(), null));
                     }
 
                     if (_additional != null)

@@ -17,9 +17,6 @@
 package org.labkey.pipeline.api;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.vfs2.FileObject;
-import org.apache.commons.vfs2.FileSystemException;
-import org.apache.commons.vfs2.NameScope;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -275,26 +272,19 @@ public class PipeRootImpl implements PipeRoot
         return _rootPaths;
     }
 
-    public synchronized List<FileLike> getRootPathFileObjects(boolean forWrite)
+    // This list will return local path for cloud as well, caller can exclude
+    public synchronized List<FileLike> getRootFileLikePaths(boolean forWrite)
     {
-        if (_rootPaths.isEmpty() && !isCloudRoot())
-        {
-            for (URI uri : _uris)
-            {
-                File file = new File(uri);
-                _rootPaths.add(file);
-                NetworkDrive.ensureDrive(file.getPath());
-            }
-        }
         if (forWrite)
-            return _rootPaths.stream().map(f -> new FileSystemLike.Builder(f).readwrite().root()).toList();
+            return getRootPaths().stream().map(f -> new FileSystemLike.Builder(f).readwrite().root()).toList();
         else
-            return _rootPaths.stream().map(f -> new FileSystemLike.Builder(f).readonly().root()).toList();
+            return getRootPaths().stream().map(f -> new FileSystemLike.Builder(f).readonly().root()).toList();
     }
+
 
     public synchronized List<Path> getRootNioPaths()
     {
-        if (_rootNioPaths.size() == 0 && !isCloudRoot())
+        if (_rootNioPaths.isEmpty() && !isCloudRoot())
         {
             for (URI uri : _uris)
             {
@@ -434,6 +424,30 @@ public class PipeRootImpl implements PipeRoot
         }
         return new Pair<>(root,file);
     }
+
+//    /** resolve a path treating it as an absolute file system path */
+//    @Nullable
+//    private Pair<FileLike,FileLike> _resolveRootRelative(org.labkey.api.util.Path path)
+//    {
+//        FileLike defaultRoot = getRootFileLike();
+//        path = path.absolute().normalize();
+//        if (path.isEmpty() || "..".equals(path.get(0)))
+//            return null;
+//
+//        // Check if the file already exists on disk
+//        for (FileLike root : getRootFileLikePaths(false))
+//        {
+//            if (root.is)
+//            FileLike file = root.resolveFile(path);
+//            if (file.exists())
+//                return new Pair<>(root,file);
+//        }
+//
+//        FileLike root = getRootFileLike();
+//        FileLike file = root.resolveFile(path);
+//        return new Pair<>(root,file);
+//    }
+
 
     @Override
     @Nullable

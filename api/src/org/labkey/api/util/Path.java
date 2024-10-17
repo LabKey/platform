@@ -182,6 +182,13 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
         return new Path(_path, _length, true, _isDirectory);
     }
 
+    public Path relative()
+    {
+        if (!isAbsolute())
+            return this;
+        return new Path(_path, _length, false, _isDirectory);
+    }
+
     public boolean isAbsolute()
     {
         return _isAbsolute;
