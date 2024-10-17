@@ -24,21 +24,21 @@
 <%@ page import="org.labkey.api.data.JdbcType" %>
 <%@ page import="org.labkey.api.data.SQLFragment" %>
 <%@ page import="org.labkey.api.data.SimpleFilter" %>
-<%@ page import="org.labkey.api.data.Sort" %>
 <%@ page import="org.labkey.api.data.TableInfo" %>
 <%@ page import="org.labkey.api.data.TableSelector" %>
 <%@ page import="org.labkey.api.query.DefaultSchema" %>
 <%@ page import="org.labkey.api.query.FieldKey" %>
-<%@ page import="static org.apache.commons.lang3.StringUtils.isBlank" %>
 <%@ page import="org.labkey.api.query.QuerySchema" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
 <%@ page import="org.labkey.api.util.GUID" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.core.portal.ProjectController" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.Comparator" %>
 <%@ page import="java.util.HashMap" %>
@@ -47,8 +47,7 @@
 <%@ page import="java.util.Objects" %>
 <%@ page import="java.util.Set" %>
 <%@ page import="java.util.stream.Collectors" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.core.portal.ProjectController" %>
+<%@ page import="static org.apache.commons.lang3.StringUtils.isBlank" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -104,23 +103,23 @@
     }
 
     SimpleFilter filter = new SimpleFilter();
-    filter.addInClause(new FieldKey(null,"containerType"), Arrays.asList(StringUtils.split(properties.get("containerTypes"),";")));
+    filter.addInClause(new FieldKey(null, "containerType"), Arrays.asList(StringUtils.split(properties.get("containerTypes"), ";")));
     filter.addClause(new SimpleFilter.InClause(new FieldKey(null,"entityId"), Set.of(ContainerManager.getHomeContainer().getId(), ContainerManager.getSharedContainer().getId()), false, true));
     filter.addClause(new SimpleFilter.SQLClause(new SQLFragment("Name NOT LIKE '\\_%' ESCAPE '\\'")));
     ContainerFilter cf = ContainerFilter.getContainerFilterByName(properties.get("containerFilter"),target,getUser());
     QuerySchema core = DefaultSchema.get(getUser(),target).getSchema("core");
-    TableInfo t = core.getTable("Containers",cf);
-    Set<GUID> set = new TableSelector(t, List.of(t.getColumn("entityId"),t.getColumn("name")), filter, (Sort)null)
-            .stream(String.class)
-            .map(GUID::new)
-            .collect(Collectors.toSet());
+    TableInfo t = core.getTable("Containers", cf);
+    Set<GUID> set = new TableSelector(t, List.of(t.getColumn("entityId"), t.getColumn("name")), filter, null)
+        .stream(String.class)
+        .map(GUID::new)
+        .collect(Collectors.toSet());
     if (cf.getType() == ContainerFilter.Type.CurrentAndFirstChildren)
         set.remove(target.getEntityId());
     List<Container> containers = set.stream()
         .map(ContainerManager::getForId)
         .filter(Objects::nonNull)
         .sorted(Comparator.comparingInt(Container::getSortOrder).thenComparing((c1, c2) -> String.CASE_INSENSITIVE_ORDER.compare(displayName(c1), displayName(c2))))
-        .collect(Collectors.toList());
+        .toList();
 
     if (containers.isEmpty())
     {
@@ -155,7 +154,7 @@
         }
         %>
         <div class="labkey-projects-container" style="background-color: transparent; border-width: 0;">
-        <div class="labkey-iconpanel" style="width: 100%; right: auto; left: 0; top: 0; margin: 0;">
+            <div class="labkey-iconpanel" style="width: 100%; right: auto; left: 0; top: 0; margin: 0;">
 <%
         for (Container c : containers)
         {
@@ -173,7 +172,7 @@
             }
         }
 %>
-        </div>
+            </div>
         </div>
 <%
     } // !containers.isEmpty()

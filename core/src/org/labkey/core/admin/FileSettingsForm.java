@@ -15,15 +15,10 @@
  */
 package org.labkey.core.admin;
 
-/**
-* User: jeckels
-* Date: Sep 26, 2011
-*/
 public class FileSettingsForm
 {
     private String _rootPath;
     private boolean _upgrade;
-    private String _userRootPath;
     private boolean _webfilesEnabled;
     private boolean _fileUploadDisabled;
     private boolean _invalidUploadBlocked;

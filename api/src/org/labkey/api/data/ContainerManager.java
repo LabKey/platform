@@ -926,6 +926,11 @@ public class ContainerManager
         firePropertyChangeEvent(evt);
     }
 
+    public static void uncache(Container c)
+    {
+        _removeFromCache(c);
+    }
+
     public static final String SHARED_CONTAINER_PATH = "/Shared";
 
     @NotNull
@@ -3066,6 +3071,7 @@ public class ContainerManager
             // Note: Would prefer rs.getObject("ExpirationDate", LocalDate.class), but jTDS throws on LocalDate
             java.sql.Date sqlDate = rs.getDate("ExpirationDate");
             LocalDate expirationDate = null == sqlDate ? null : sqlDate.toLocalDate();
+            Long fileRootSize = (Long)rs.getObject("FileRootSize");  // getObject() and cast because getLong() returns 0 for null
 
             Container dirParent = null;
             if (null != parentId)
@@ -3077,6 +3083,7 @@ public class ContainerManager
             d.setTitle(title);
             d.setLockState(lockState);
             d.setExpirationDate(expirationDate);
+            d.setFileRootSize(fileRootSize);
             return d;
         }
 
