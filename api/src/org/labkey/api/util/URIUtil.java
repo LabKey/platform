@@ -17,6 +17,7 @@ package org.labkey.api.util;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hc.core5.net.URIBuilder;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
@@ -31,7 +32,7 @@ import java.net.URISyntaxException;
  */
 public class URIUtil
 {
-    static public boolean isDescendant(URI base, URI descendant)
+    static public boolean isDescendant(@NotNull URI base, @NotNull URI descendant)
     {
         // to protect against paths that are trying to escape the base, return false if the descendant includes "/../"
         if (descendant.getPath().contains("/../"))

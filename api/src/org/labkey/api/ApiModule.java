@@ -224,7 +224,7 @@ public class ApiModule extends CodeOnlyModule
 
         LabKeyManagement.register(new StandardMBean(new OperationsMXBeanImpl(), OperationsMXBean.class, true), "Operations");
 
-        AdminConsole.addExperimentalFeatureFlag(FileStream.STAGE_FILE_UPLOADS, "Stage file uploads before moving to final destination", "When using a non-local file system, using a specific API that requires a locally staged copy of the file as the source can sometimes be significantly faster than streaming the uploaded file directly", false);
+        AdminConsole.addExperimentalFeatureFlag(FileStream.STAGE_FILE_TRANSFERS, "Stage file uploads and downloads to temporary local file", "When using a non-local file system, using a specific API that requires a locally staged copy of the file as the source can sometimes be significantly faster than streaming the file directly to/from storage", false);
     }
 
     @NotNull
