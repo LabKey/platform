@@ -143,6 +143,7 @@ import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.AppPropsTestCase;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.settings.LookAndFeelFolderPropertiesTest;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.settings.OptionalFeatureStartupListener;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
@@ -479,6 +480,7 @@ public class ApiModule extends CodeOnlyModule
             JdbcMetaDataTest.class,
             JspTemplate.TestCase.class,
             LabKeyCollectors.TestCase.class,
+            LookAndFeelFolderPropertiesTest.class,
             MapLoader.MapLoaderTestCase.class,
             MarkdownService.TestCase.class,
             MaterialInputRoleComparator.TestCase.class,
