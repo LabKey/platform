@@ -926,6 +926,11 @@ public class ContainerManager
         firePropertyChangeEvent(evt);
     }
 
+    public static void uncache(Container c)
+    {
+        _removeFromCache(c);
+    }
+
     public static final String SHARED_CONTAINER_PATH = "/Shared";
 
     @NotNull

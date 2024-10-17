@@ -1,4 +1,4 @@
-package org.labkey.core.metrics;
+package org.labkey.filecontent;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
@@ -58,31 +58,39 @@ public class FileRootMaintenanceTask implements MaintenanceTask
                     if (c != null)
                     {
                         File root = service.getFileRoot(c);
-                        Long size = null;
-                        if (null != root)
-                            size = FileUtils.sizeOfDirectory(root);
+                        Long size = null != root && root.isDirectory() ? FileUtils.sizeOfDirectory(root) : null;
 
+                        // Always update LastCrawled, even for invalid file roots
                         Map<String, Object> map = new HashMap<>();
                         long current = HeartBeat.currentTimeMillis();
                         map.put("LastCrawled", new Date(current));
 
-                        if (!Objects.equals(record.fileRootSize(), size))
+                        // Update FileRootSize if it changed
+                        boolean sizeChanged = !Objects.equals(record.fileRootSize(), size);
+                        if (sizeChanged)
                             map.put("FileRootSize", size);
 
-                        Table.update(User.getSearchUser(), CoreSchema.getInstance().getTableInfoContainers(), map, record.rowId());
+                        Table.update(User.getAdminServiceUser(), CoreSchema.getInstance().getTableInfoContainers(), map, record.rowId());
+
+                        if (sizeChanged)
+                            ContainerManager.uncache(c);  // Container stashes FileRootSize
+
                         rootCount.increment();
 
                         if (current >= deadline)
                         {
                             finished.setFalse();
-                            log.info("Crawled {} file roots before reaching the {}-minute deadline. Crawling will continue during the next system maintenance run.", rootCount.getValue(), MAX_MINUTES);
                             throw new StopIteratingException();
                         }
                     }
                 });
 
             if (finished.getValue())
-                log.info("Completed crawling all {} file roots", rootCount.getValue());
+                //noinspection StringConcatenationArgumentToLogCall - pipeline logger doesn't support parameterized messages yet! Issue #
+                log.info("Completed crawling all " + rootCount.getValue() + " file roots");
+            else
+                //noinspection StringConcatenationArgumentToLogCall
+                log.info("Crawled " + rootCount.getValue() + " file roots before reaching the " + MAX_MINUTES + "-minute deadline. Crawling will continue during the next system maintenance run.");
         }
     }
 }
