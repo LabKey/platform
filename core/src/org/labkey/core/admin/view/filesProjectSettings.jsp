@@ -23,7 +23,7 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
-<%@ page import="org.labkey.api.util.Formats" %>
+<%@ page import="org.labkey.api.util.FileUtil" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -100,7 +100,7 @@
 
 <labkey:form action="" method="post">
     <table>
-        <tr><td colspan="10"><span><b><i> File Root</i></b></span></td></tr>
+        <tr><td colspan="10"><span><b><i>File Root</i></b></span></td></tr>
         <tr><td colspan="10">LabKey Server allows you to upload and process your data files, including flow, proteomics and study-related
             files. By default, LabKey stores your files in a standard directory structure. Site administrators can override this location for each
             folder if you wish.
@@ -109,7 +109,7 @@
             if (FileRootProp.siteDefault.name().equals(currentOption) || FileRootProp.folderOverride.name().equals(currentOption))
             {
         %>
-        <tr><td><p>Total size of the current file root: <%=h(Formats.commaf0.format(getContainer().getFileRootSize()))%> bytes</p></td></tr>
+        <tr><td><p>Total size of the current file root: <%=h(FileUtil.formatFileSize(getContainer().getFileRootSize()))%></p></td></tr>
         <%
             }
         %>

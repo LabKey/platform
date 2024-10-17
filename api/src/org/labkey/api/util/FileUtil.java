@@ -71,6 +71,7 @@ import java.nio.file.attribute.PosixFilePermissions;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -1971,6 +1972,20 @@ quickScan:
         }
     }
 
+    private static final String[] UNITS = new String[] { "bytes", "KB", "MB", "GB", "TB", "PB", "EB" };
+
+    /**
+     * Formats a (potentially large) number of bytes in a human-readable way: in bytes, KB, MB, GB, etc. as appropriate
+     */
+    public static String formatFileSize(long size)
+    {
+        if (size <= 0)
+            return "0 bytes";
+
+        int digitGroups = (int) (Math.log10(size) / Math.log10(1024));
+
+        return new DecimalFormat("#,##0.#").format(size / Math.pow(1024, digitGroups)) + " " + UNITS[digitGroups];
+    }
 
     @SuppressWarnings("SSBasedInspection")
     public static class TestCase extends Assert
@@ -2178,5 +2193,19 @@ quickScan:
             assertNotNull(isAllowedFileName("a`b"));
         }
 
+        @Test
+        public void testFormatFileSize()
+        {
+            assertEquals("0 bytes",   formatFileSize(           -22));
+            assertEquals("0 bytes",   formatFileSize(             0));
+            assertEquals("100 bytes", formatFileSize(           100));
+            assertEquals("2 KB",      formatFileSize(         2_000));
+            assertEquals("195.3 KB",  formatFileSize(       200_000));
+            assertEquals("1.9 MB",    formatFileSize(     2_000_000));
+            assertEquals("19.1 MB",   formatFileSize(    20_000_000));
+            assertEquals("190.7 MB",  formatFileSize(   200_000_000));
+            assertEquals("1.9 GB",    formatFileSize( 2_000_000_000));
+            assertEquals("18.6 GB",   formatFileSize(20_000_000_000L));
+        }
     }
 }
