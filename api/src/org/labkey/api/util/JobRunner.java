@@ -76,11 +76,16 @@ public class JobRunner implements Executor
             public void shutdownPre()
             {
                 _executor.shutdown();
+                synchronized (_jobs)
+                {
+                    _jobs.values().forEach(job -> job.cancel(true));
+                }
             }
 
             @Override
             public void shutdownStarted()
             {
+                waitForCompletion(5_000);
             }
         });
     }
@@ -93,13 +98,18 @@ public class JobRunner implements Executor
 
     public void waitForCompletion()
     {
+        waitForCompletion(0L);
+    }
+
+    private void waitForCompletion(long timeoutMillis)
+    {
         synchronized (_jobs)
         {
             while (!_jobs.isEmpty())
             {
                 try
                 {
-                    _jobs.wait();
+                    _jobs.wait(timeoutMillis);
                 }
                 catch (InterruptedException ignored) {}
             }
