@@ -62,34 +62,38 @@ public class WriteableLookAndFeelProperties extends WriteableFolderLookAndFeelPr
             getProperties().put(customLogin.name(), login);
     }
 
-    public void setFolderDisplayMode(FolderDisplayMode mode)
-    {
-        storeStringValue(folderDisplayMode, mode.toString());
-    }
-
-    public void setApplicationMenuDisplayMode(FolderDisplayMode displayMode)
-    {
-        storeStringValue(applicationMenuDisplayMode, displayMode.toString());
-    }
+    // Site-only properties
 
     public void setDateParsingMode(DateParsingMode mode)
     {
         storeStringValue(dateParsingMode, mode.toString());
     }
 
-    public void setHelpMenuEnabled(boolean enabled)
+    public void setCustomWelcome(String welcome)
     {
-        storeBooleanValue(helpMenuEnabled, enabled);
+        storeStringValue(customWelcome, welcome);
     }
 
-    public void setDiscussionEnabled(boolean enabled)
+    // Site & project properties
+
+    public void setSystemDescription(String description)
     {
-        storeBooleanValue(discussionEnabled, enabled);
+        storeStringValue(systemDescription, description);
     }
 
-    public void setSupportEmail(@Nullable String email)
+    public void clearSystemDescription()
     {
-        storeStringValue(supportEmail, email);
+        remove(systemDescription);
+    }
+
+    public void setSystemShortName(String shortName)
+    {
+        storeStringValue(systemShortName, shortName);
+    }
+
+    public void clearSystemShortName()
+    {
+        remove(systemShortName);
     }
 
     public void setThemeName(String name)
@@ -102,29 +106,54 @@ public class WriteableLookAndFeelProperties extends WriteableFolderLookAndFeelPr
         remove(themeName);
     }
 
+    public void setFolderDisplayMode(FolderDisplayMode mode)
+    {
+        storeStringValue(folderDisplayMode, mode.toString());
+    }
+
+    public void clearFolderDisplayMode()
+    {
+        remove(folderDisplayMode);
+    }
+
+    public void setApplicationMenuDisplayMode(FolderDisplayMode displayMode)
+    {
+        storeStringValue(applicationMenuDisplayMode, displayMode.toString());
+    }
+
+    public void clearApplicationMenuDisplayMode()
+    {
+        remove(applicationMenuDisplayMode);
+    }
+
+    public void setHelpMenuEnabled(boolean enabled)
+    {
+        storeBooleanValue(helpMenuEnabled, enabled);
+    }
+
+    public void clearHelpMenuEnabled()
+    {
+        remove(helpMenuEnabled);
+    }
+
+    public void setDiscussionEnabled(boolean enabled)
+    {
+        storeBooleanValue(discussionEnabled, enabled);
+    }
+
+    public void clearDiscussionEnabled()
+    {
+        remove(discussionEnabled);
+    }
+
     public void setLogoHref(String href)
     {
         storeStringValue(logoHref, href);
     }
 
-    public void setSystemDescription(String description)
+    public void clearLogoHref()
     {
-        storeStringValue(systemDescription, description);
-    }
-
-    public void setSystemShortName(String shortName)
-    {
-        storeStringValue(systemShortName, shortName);
-    }
-
-    public void setCompanyName(String name)
-    {
-        storeStringValue(companyName, name);
-    }
-
-    public void setSystemEmailAddress(ValidEmail systemEmail)
-    {
-        storeStringValue(systemEmailAddress, systemEmail.getEmailAddress());
+        remove(logoHref);
     }
 
     public void setReportAProblemPath(String path)
@@ -132,14 +161,49 @@ public class WriteableLookAndFeelProperties extends WriteableFolderLookAndFeelPr
         storeStringValue(reportAProblemPath, path);
     }
 
+    public void clearReportAProblemPath()
+    {
+        remove(reportAProblemPath);
+    }
+
+    public void setSupportEmail(@Nullable String email)
+    {
+        storeStringValue(supportEmail, email);
+    }
+
+    public void clearSupportEmail()
+    {
+        remove(supportEmail);
+    }
+
+    public void setSystemEmailAddress(ValidEmail systemEmail)
+    {
+        storeStringValue(systemEmailAddress, systemEmail.getEmailAddress());
+    }
+
+    public void clearSystemEmailAddress()
+    {
+        remove(systemEmailAddress);
+    }
+
+    public void setCompanyName(String name)
+    {
+        storeStringValue(companyName, name);
+    }
+
+    public void clearCompanyName()
+    {
+        remove(companyName);
+    }
+
     public void setCustomLogin(String login)
     {
         storeStringValue(customLogin, login);
     }
 
-    public void setCustomWelcome(String welcome)
+    public void clearCustomLogin()
     {
-        storeStringValue(customWelcome, welcome);
+        remove(customLogin);
     }
 
     public boolean isValidUrl(String url)
