@@ -51,7 +51,7 @@ public interface FileStream
     Logger LOG = LogHelper.getLogger(FileStream.class, "File transfers");
 
     // See issue 50620
-    String STAGE_FILE_UPLOADS = "StageFileUploads";
+    String STAGE_FILE_TRANSFERS = "StageFileUploads";
 
     /** @return -1 if unknown */
     long getSize() throws IOException;
@@ -83,9 +83,9 @@ public interface FileStream
         }
 
         long size = s.getSize();
-        if (ExperimentalFeatureService.get().isFeatureEnabled(STAGE_FILE_UPLOADS))
+        if (ExperimentalFeatureService.get().isFeatureEnabled(STAGE_FILE_TRANSFERS))
         {
-            File tempFile = FileUtil.createTempFile(STAGE_FILE_UPLOADS, ".tmp");
+            File tempFile = FileUtil.createTempFile(STAGE_FILE_TRANSFERS, ".tmp");
             try
             {
                 // Although the FileStream passed here is backed by temp file on disk, the underlying FileChannelImpl
