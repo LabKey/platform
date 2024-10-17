@@ -362,7 +362,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 {
     private static final Logger LOG = LogHelper.getLogger(CoreModule.class, "Errors during server startup and shut down");
     public static final String PROJECTS_WEB_PART_NAME = "Projects";
-    private static final String EXPERIMENTAL_CALCULATED_FIELDS = "experimental-calculated-fields";
 
     static Runnable _afterUpdateRunnable = null;
 
@@ -505,8 +504,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 "SQLFragment now has very strict usage validation, these checks may cause errors in code that has not been updated. Turn on this feature to disable checks.", false);
         AdminConsole.addExperimentalFeatureFlag(LoginController.FEATUREFLAG_DISABLE_LOGIN_XFRAME, "Disable Login X-FRAME-OPTIONS=DENY",
                 "By default LabKey disables all framing of login related actions. Disabling this feature will revert to using the standard site settings.", false);
-        AdminConsole.addExperimentalFeatureFlag(EXPERIMENTAL_CALCULATED_FIELDS, "Calculated Fields",
-                "Allow defining calculated fields in the Field Editor for supported data types: Sample Type, Data Class, List, Study Dataset, Assay Design", false);
 
         SiteValidationService svc = SiteValidationService.get();
         if (null != svc)
@@ -1317,7 +1314,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         // On bootstrap in production mode, this will send an initial ping with very little information, as the admin will
         // not have set up their account yet. On later startups, depending on the reporting level, this will send an immediate
         // ping, and then once every 24 hours.
-        UsageReportingLevel.init();
+        UsageReportingLevel.reportNow();
         TempTableTracker.init();
 
         // Loading the PDFBox font cache can be very slow on some agents; fill it proactively. Issue 50601
@@ -1353,7 +1350,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     {
         JSONObject json = new JSONObject(getDefaultPageContextJson(context.getContainer()));
         json.put("productFeatures", ProductRegistry.getProductFeatureSet());
-        json.put(EXPERIMENTAL_CALCULATED_FIELDS, OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_CALCULATED_FIELDS));
         return json;
     }
 

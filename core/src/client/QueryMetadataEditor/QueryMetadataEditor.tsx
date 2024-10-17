@@ -26,6 +26,7 @@ import {
     LoadingSpinner,
     Modal,
     withServerContext,
+    IFieldChange,
 } from '@labkey/components';
 import { ActionURL, getServerContext } from '@labkey/api';
 
@@ -106,13 +107,15 @@ class QueryMetadataEditor extends PureComponent<any, Partial<IAppState>> {
         }
     };
 
-    onChangeHandler = (newDomain, dirty) => {
+    onChangeHandler = (newDomain: DomainDesign, dirty: boolean, rowIndexChange?, changes?: List<IFieldChange>) => {
         this._dirty = this._dirty || dirty; // if the state is already dirty, leave it as such
 
-        this.setState(() => ({
-            domain: newDomain,
-            showSave: true,
-        }));
+        if (newDomain) {
+            this.setState(() => ({
+                domain: newDomain,
+                showSave: true,
+            }));
+        }
     };
 
     showMessage = (message: string, messageType: string, index: number, additionalState?: Partial<IAppState>) => {

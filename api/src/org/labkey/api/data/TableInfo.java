@@ -806,4 +806,6 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
     {
         return true;
     }
+
+    default void setAllowCalculatedColumns(boolean allowCalculatedColumns) {}
 }
