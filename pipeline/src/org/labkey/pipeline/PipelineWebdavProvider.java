@@ -95,14 +95,7 @@ public class PipelineWebdavProvider implements WebdavService.Provider
             _containerId = c.getId();
             _shouldIndex = root.isSearchable();
             setSecurableResource(root);
-
-            _files = new ArrayList<>();
-            for (var fileObject : root.getRootFileLikePaths(true))
-            {
-                var cachingRoot = fileObject.getFileSystem().getCachingFileSystem().resolveFile(fileObject.getPath());
-                _files.add(cachingRoot);
-            }
-
+            _files = new ArrayList<>(root.getRootFileLikePaths(true));
             this.setSearchProperty(SearchService.PROPERTY.securableResourceId, root.getResourceId());
         }
 

@@ -238,7 +238,9 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
             WebdavService.get().getRootResolvers().forEach(webdavResolver ->
                 webdavResources.add(new SymbolicLink(webdavResolver.getRootPath(), webdavResolver))
             );
-            _root = new StaticResource(null, Path.emptyPath,  roots, webdavResources);
+
+            List<FileLike> cachedRoots = roots.stream().map(r -> r.getFileSystem().getCachingFileSystem().resolveFile(r.getPath())).toList();
+            _root = new StaticResource(null, Path.emptyPath, cachedRoots, webdavResources);
             initialized.set(true);
         }
     }
