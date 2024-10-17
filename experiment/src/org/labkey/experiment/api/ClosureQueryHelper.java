@@ -305,7 +305,9 @@ public class ClosureQueryHelper
             ttt = TempTableTracker.track(tempTableName, ref);
             SQLFragment from = new SQLFragment("FROM temp." + familyTempTable).append(" WHERE ObjectType = ").appendValue(isSampleType ? "m" : "d").append(" ");
             SQLFragment selectInto = selectIntoTempTableSql(getScope().getSqlDialect(), from, tempTableName);
-            new SqlExecutor(getScope()).execute(selectInto);
+            int count = new SqlExecutor(getScope()).execute(selectInto);
+            if (count == 0)
+                return;
 
             SQLFragment upsert;
             TableInfo tInfo = isSampleType ? ExperimentServiceImpl.get().getTinfoMaterialAncestors() : ExperimentServiceImpl.get().getTinfoDataAncestors();
@@ -446,7 +448,10 @@ public class ClosureQueryHelper
             if (getScope().getSqlDialect().isSqlServer())
                 // complete hack to get SQLServer to not make RowId an identity column in the target table so the subsequent insert will work without complaint
                 selectIntoSql.append(" UNION ALL SELECT RowId, ObjectId, 'x' AS ObjectType FROM " ).append(isSampleType ? "exp.material" : "exp.data").append(" WHERE 1 <> 1");
-            new SqlExecutor(getScope()).execute(selectIntoSql);
+            int numSeeds = new SqlExecutor(getScope()).execute(selectIntoSql);
+            // if we didn't actually insert any items into the table (perhaps because someone else was deleting), there's nothing more to be done
+            if (numSeeds == 0)
+                return;
 
             // add the descendants ids to the temp table
             SQLFragment descendants = new SQLFragment();
@@ -458,8 +463,8 @@ public class ClosureQueryHelper
 
             descendants.append("INSERT INTO temp.").append(familyTableName)
                     .append(" (RowId, ObjectId, ObjectType) ").append(descendantClosureSelectSql);
-
-            new SqlExecutor(getScope()).execute(descendants);
+            //TODO if there are no descendants, perhaps there's nothing to do, or we may need different logic to clear out any existing ones
+            int numRows = new SqlExecutor(getScope()).execute(descendants);
 
             // recompute the ancestors for the seed ids and the descendants
             incrementalRecomputeFromTempTable(familyTableName, isSampleType);
