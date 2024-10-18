@@ -15,11 +15,14 @@
  */
 package org.labkey.api.dataiterator;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.util.logging.LogHelper;
@@ -63,6 +66,7 @@ public interface MapDataIterator extends DataIterator
 
         public MapDataIteratorImpl(DataIterator in, boolean mutable, Set<String> skip)
         {
+            CaseInsensitiveTreeSet duplicates = null;
             _input = in;
             _mutable = mutable;
             Map map = new CaseInsensitiveHashMap<Integer>(in.getColumnCount()*2);
@@ -74,11 +78,15 @@ public interface MapDataIterator extends DataIterator
                     continue;
                 if (_findMap.containsKey(name))
                 {
-                    LOGGER.warn("Map already has column named '" + name + "'");
+                    if (null == duplicates)
+                        duplicates = new CaseInsensitiveTreeSet();
+                    duplicates.add(name);
                     continue;
                 }
                 _findMap.put(in.getColumnInfo(i).getName(),i);
             }
+            if (null != duplicates)
+                LOGGER.warn("Data has duplicates columns: '" + StringUtils.join(duplicates.toArray(), ", ") + "'");
         }
 
         @Override
