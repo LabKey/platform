@@ -24,10 +24,8 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.view.FilesWebPart;
@@ -35,7 +33,6 @@ import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -185,14 +182,14 @@ public class FileContentModule extends DefaultModule
 
             // During system maintenance, FileRootMaintenanceTask populates FileRootSize and FileRootLastCrawled for every container (subject to a timeout)
             TableInfo containers = CoreSchema.getInstance().getTableInfoContainers();
-            String select = "SELECT SUM(FileRootSize) AS TotalSize, MIN(FileRootLastCrawled) EarliestCrawl, COUNT(*) AS RowCount, COUNT(FileRootLastCrawled) AS FileRootsCrawled FROM ";
+            String select = "SELECT SUM(FileRootSize) AS TotalSize, MIN(FileRootLastCrawled) EarliestCrawl, COUNT(*) AS AllFileRoots, COUNT(FileRootLastCrawled) AS FileRootsCrawled FROM ";
             Map<String, Object> map = new SqlSelector(containers.getSchema(), select + containers.getSelectName())
                 .getMap();
             results.put("fileRootsTotalSize", map.get("TotalSize"));
             results.put("fileRootsEarliestCrawlTime", map.get("EarliestCrawl"));
-            long crawled = (long)map.get("FileRootsCrawled");
+            long crawled = ((Number)map.get("FileRootsCrawled")).longValue();
             results.put("fileRootsCrawled", crawled);
-            results.put("fileRootsNotYetCrawled", (long)map.get("RowCount") - crawled);
+            results.put("fileRootsNotYetCrawled", ((Number)map.get("AllFileRoots")).longValue() - crawled);
 
             return results;
         });
