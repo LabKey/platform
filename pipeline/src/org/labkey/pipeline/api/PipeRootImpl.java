@@ -425,29 +425,6 @@ public class PipeRootImpl implements PipeRoot
         return new Pair<>(root,file);
     }
 
-//    /** resolve a path treating it as an absolute file system path */
-//    @Nullable
-//    private Pair<FileLike,FileLike> _resolveRootRelative(org.labkey.api.util.Path path)
-//    {
-//        FileLike defaultRoot = getRootFileLike();
-//        path = path.absolute().normalize();
-//        if (path.isEmpty() || "..".equals(path.get(0)))
-//            return null;
-//
-//        // Check if the file already exists on disk
-//        for (FileLike root : getRootFileLikePaths(false))
-//        {
-//            if (root.is)
-//            FileLike file = root.resolveFile(path);
-//            if (file.exists())
-//                return new Pair<>(root,file);
-//        }
-//
-//        FileLike root = getRootFileLike();
-//        FileLike file = root.resolveFile(path);
-//        return new Pair<>(root,file);
-//    }
-
 
     @Override
     @Nullable
