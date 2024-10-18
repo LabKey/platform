@@ -109,6 +109,7 @@ import java.beans.PropertyChangeListener;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -924,6 +925,11 @@ public class ContainerManager
         container = getForRowId(container.getRowId());
         ContainerPropertyChangeEvent evt = new ContainerPropertyChangeEvent(container, user, Property.Title, oldValue, title);
         firePropertyChangeEvent(evt);
+    }
+
+    public static void uncache(Container c)
+    {
+        _removeFromCache(c);
     }
 
     public static final String SHARED_CONTAINER_PATH = "/Shared";
@@ -3063,9 +3069,9 @@ public class ContainerManager
             String lockStateString = rs.getString("LockState");
             LockState lockState = null != lockStateString ? Enums.getIfPresent(LockState.class, lockStateString).or(LockState.Unlocked) : LockState.Unlocked;
 
-            // Note: Would prefer rs.getObject("ExpirationDate", LocalDate.class), but jTDS throws on LocalDate
-            java.sql.Date sqlDate = rs.getDate("ExpirationDate");
-            LocalDate expirationDate = null == sqlDate ? null : sqlDate.toLocalDate();
+            LocalDate expirationDate = rs.getObject("ExpirationDate", LocalDate.class);
+            Long fileRootSize = (Long)rs.getObject("FileRootSize");  // getObject() and cast because getLong() returns 0 for null
+            LocalDateTime fileRootLastCrawled = rs.getObject("FileRootLastCrawled", LocalDateTime.class);
 
             Container dirParent = null;
             if (null != parentId)
@@ -3077,6 +3083,8 @@ public class ContainerManager
             d.setTitle(title);
             d.setLockState(lockState);
             d.setExpirationDate(expirationDate);
+            d.setFileRootSize(fileRootSize);
+            d.setFileRootLastCrawled(fileRootLastCrawled);
             return d;
         }
 

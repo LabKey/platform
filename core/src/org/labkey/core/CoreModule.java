@@ -17,7 +17,6 @@ package org.labkey.core;
 
 import com.fasterxml.jackson.core.io.CharTypes;
 import com.google.common.collect.Sets;
-import jakarta.servlet.MultipartConfigElement;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletRegistration;
 import org.apache.commons.lang3.StringUtils;

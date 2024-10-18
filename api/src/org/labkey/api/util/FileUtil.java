@@ -81,15 +81,9 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-
-/**
- * User: jeckels
- * Date: Dec 5, 2005
- */
 public class FileUtil
 {
     public static final String FILE_SCHEME = "file";    // url scheme for local file system
-
 
     private static final Logger LOG = LogHelper.getLogger(FileUtil.class, "FileUtil.java logger");
 
@@ -2177,6 +2171,5 @@ quickScan:
             assertNotNull(isAllowedFileName("-ab"));
             assertNotNull(isAllowedFileName("a`b"));
         }
-
     }
 }

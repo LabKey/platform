@@ -15,14 +15,17 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.cloud.CloudStoreService"%>
+<%@ page import="org.apache.commons.io.FileUtils"%>
+<%@ page import="org.labkey.api.cloud.CloudStoreService" %>
 <%@ page import="org.labkey.api.cloud.CloudUrls" %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.files.FileContentService" %>
 <%@ page import="org.labkey.api.files.FileUrls" %>
 <%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -37,6 +40,7 @@
 
 <%
     AdminController.FileManagementForm bean = ((JspView<AdminController.FileManagementForm>)HttpView.currentView()).getModelBean();
+    Container c = getContainer();
 
     // Issue 38439: get a copy of the original form bean in the error reshow case to use for toggling the migrateFilesRow message and select input
     AdminController.FileRootsForm origBean = new AdminController.FileRootsForm();
@@ -48,15 +52,15 @@
 
     // the default file root based on the root of the first ancestor with an override, or site root
     String currentCloudRootName = bean.getCloudRootName();
-    FileContentService.DefaultRootInfo defaultRootInfo = service.getDefaultRootInfo(getContainer());
+    FileContentService.DefaultRootInfo defaultRootInfo = service.getDefaultRootInfo(c);
     String defaultRoot = defaultRootInfo.getPrettyStr();
 
     //b/c setting a custom file root potentially allows access to any files, we only allow
     //site admins (i.e. AdminOperationsPermission) to do this.  however, folder admin can disable sharing on a folder
     //if this folder already has a custom file root, only a site admin can make further changes
     User user = getUser();
-    boolean hasAdminPerm = getContainer().hasPermission(user, AdminPermission.class);
-    boolean hasAdminOpsPerm = getContainer().hasPermission(user, AdminOperationsPermission.class);
+    boolean hasAdminPerm = c.hasPermission(user, AdminPermission.class);
+    boolean hasAdminOpsPerm = c.hasPermission(user, AdminOperationsPermission.class);
     boolean canChangeFileSettings = hasAdminPerm || hasAdminOpsPerm;
     if (AdminController.FileRootProp.folderOverride.name().equals(bean.getFileRootOption()) && !hasAdminOpsPerm)
     {
@@ -70,19 +74,20 @@
     boolean isCurrentFileRootOptionDisable = FileRootProp.disable.name().equals(origBean.getFileRootOption());
 
     CloudStoreService cloud = CloudStoreService.get();
-    Map<String, CloudStoreService.StoreInfo> storeInfos = cloud != null ? cloud.getStoreInfos(getContainer()) : Collections.emptyMap();
+    Map<String, CloudStoreService.StoreInfo> storeInfos = cloud != null ? cloud.getStoreInfos(c) : Collections.emptyMap();
 
     String folderSetup = getActionURL().getParameter("folderSetup");
     boolean isFolderSetup = "true".equalsIgnoreCase(folderSetup);
     String cancelButtonText = isFolderSetup ? "Next" : "Cancel";
     URLHelper cancelButtonUrl = isFolderSetup && getActionURL().getReturnURL() != null
             ? getActionURL().getReturnURL()
-            : getContainer().getStartURL(getUser());
-    ActionURL redirectToPipeline = urlProvider(PipelineUrls.class).urlBegin(getContainer());
+            : c.getStartURL(getUser());
+    ActionURL redirectToPipeline = urlProvider(PipelineUrls.class).urlBegin(c);
     boolean isCurrentFileRootCloud = FileRootProp.cloudRoot.name().equals(bean.getFileRootOption());
     boolean isCurrentFileRootManaged = !(isCurrentFileRootCloud &&
                                                 null != storeInfos.get(bean.getCloudRootName()) && !storeInfos.get(bean.getCloudRootName()).isLabKeyManaged());
-    String fileRootText = getContainer().isProject() ? "site-level file root" : getContainer().getParsedPath().size() == 2 ? "file root of the parent project" : "file root of the parent folder";
+    String fileRootText = c.isProject() ? "site-level file root" : c.getParsedPath().size() == 2 ? "file root of the parent project" : "file root of the parent folder";
+    String currentOption = bean.getFileRootOption();
 %>
 
 <%  if (bean.getConfirmMessage() != null) { %>
@@ -98,43 +103,70 @@
 
 <labkey:form action="" method="post">
     <table>
-        <tr><td colspan="10"><span><b><i> File Root</i></b></span></td></tr>
+        <tr><td colspan="10"><span><b><i>File Root</i></b></span></td></tr>
         <tr><td colspan="10">LabKey Server allows you to upload and process your data files, including flow, proteomics and study-related
             files. By default, LabKey stores your files in a standard directory structure. Site administrators can override this location for each
             folder if you wish.
         </td></tr>
-        <tr><td></td></tr>
+        <%
+            if (FileRootProp.siteDefault.name().equals(currentOption) || FileRootProp.folderOverride.name().equals(currentOption))
+            {
+                Long fileRootSize = c.getFileRootSize();
+                final String sizeMessage;
+                final String lastCalculatedMessage;
+                if (fileRootSize != null)
+                {
+                    sizeMessage = FileUtils.byteCountToDisplaySize(c.getFileRootSize());
+                    lastCalculatedMessage = "File root size last calculated: " + DateUtil.formatDateTime(c, c.getFileRootLastCrawled());
+                }
+                else
+                {
+                    sizeMessage = "Unknown";
+                    if (c.getFileRootLastCrawled() == null)
+                        lastCalculatedMessage = "File root size has not yet been calculated (this takes place during system maintenance)";
+                    else
+                        lastCalculatedMessage = "File root size could not be calculated. There is likely an issue with this file root.";
+                }
+
+        %>
+        <tr><td>&nbsp;</td></tr>
+        <tr><td>Total size of the current file root: <%=h(sizeMessage)%></td></tr>
+        <tr><td><%=h(lastCalculatedMessage)%></td></tr>
+        <tr><td>&nbsp;</td></tr>
+        <%
+            }
+        %>
         <tr>
             <td>
                 <table>
                     <tr style="height: 1.75em">
                         <td><input <%=h(canChangeFileSettings ? "" : " disabled ")%>
                                 type="radio" name="fileRootOption" id="optionDisable" value="<%=FileRootProp.disable%>"
-                                <%=checked(FileRootProp.disable.name().equals(bean.getFileRootOption()))%>>
-                            Disable file sharing for this <%=h(getContainer().getContainerNoun())%></td>
-                        <% addHandler("optionDisable", "click", "return updateSelection(" + !FileRootProp.disable.name().equals(bean.getFileRootOption()) + ");"); %>
+                                <%=checked(FileRootProp.disable.name().equals(currentOption))%>>
+                            Disable file sharing for this <%=h(c.getContainerNoun())%></td>
+                        <% addHandler("optionDisable", "click", "return updateSelection(" + !FileRootProp.disable.name().equals(currentOption) + ");"); %>
                     </tr>
                     <tr style="height: 1.75em">
                         <td><input <%=h(canChangeFileSettings ? "" : " disabled ")%>
                                 type="radio" name="fileRootOption" id="optionSiteDefault" value="<%=FileRootProp.siteDefault%>"
-                                <%=checked(FileRootProp.siteDefault.name().equals(bean.getFileRootOption()))%>>
+                                <%=checked(FileRootProp.siteDefault.name().equals(currentOption))%>>
                             Use a default based on the <%=h(fileRootText)%>:
                             <input type="text" id="rootPath" size="64" disabled="true" value="<%=h(defaultRoot)%>"></td>
-                        <% addHandler("optionSiteDefault", "click", "return updateSelection(" + !FileRootProp.siteDefault.name().equals(bean.getFileRootOption()) + ");"); %>
+                        <% addHandler("optionSiteDefault", "click", "return updateSelection(" + !FileRootProp.siteDefault.name().equals(currentOption) + ");"); %>
                     </tr>
                     <tr style="height: 1.75em">
                         <td><input <%=h(canChangeFileSettings && hasAdminOpsPerm ? "" : " disabled ")%>
                                 type="radio" name="fileRootOption" id="optionProjectSpecified" value="<%=FileRootProp.folderOverride%>"
-                                <%=checked(FileRootProp.folderOverride.name().equals(bean.getFileRootOption()))%>>
-                            Use a <%=unsafe(getContainer().getContainerNoun())%>-level file root
+                                <%=checked(FileRootProp.folderOverride.name().equals(currentOption))%>>
+                            Use a <%=unsafe(c.getContainerNoun())%>-level file root
                             <labkey:input type="text" id="folderRootPath" name="folderRootPath" size="64" onChange="onRootChange()" value="<%=h(bean.getFolderRootPath())%>" /></td>
-                        <% addHandler("optionProjectSpecified", "click", "return updateSelection(" + !FileRootProp.folderOverride.name().equals(bean.getFileRootOption()) + ");"); %>
+                        <% addHandler("optionProjectSpecified", "click", "return updateSelection(" + !FileRootProp.folderOverride.name().equals(currentOption) + ");"); %>
                     </tr>
                     <% if (cloud != null) { %>
                     <tr style="height: 1.75em">
                         <td><input <%=h(canChangeFileSettings && hasAdminOpsPerm ? "" : " disabled ")%>
                                 type="radio" name="fileRootOption" id="optionCloudRoot" value="<%=FileRootProp.cloudRoot%>"
-                                <%=checked(FileRootProp.cloudRoot.name().equals(bean.getFileRootOption()))%>>
+                                <%=checked(FileRootProp.cloudRoot.name().equals(currentOption))%>>
                             Use cloud-based file storage
                             <% addHandler("cloudRootName", "change", "updateSelection(true);"); %>
                             <select name="cloudRootName" id="cloudRootName">
@@ -147,7 +179,7 @@
                                 <%  } %>
                             </select>
                         </td>
-                        <% addHandler("optionCloudRoot", "click", "return updateSelection(" + !FileRootProp.cloudRoot.name().equals(bean.getFileRootOption()) + ");"); %>
+                        <% addHandler("optionCloudRoot", "click", "return updateSelection(" + !FileRootProp.cloudRoot.name().equals(currentOption) + ");"); %>
                     </tr>
                     <% } %>
                     <tr style="height: 1.75em" id="migrateFilesRow">
@@ -176,7 +208,7 @@
         <% if (hasAdminOpsPerm && !isFolderSetup && !isCurrentFileRootCloud) { %>
         <tr>
             <td>
-                <a id="manageAdditionalFileRoots" class="labkey-text-link" href="<%=h(urlProvider(FileUrls.class).urlShowAdmin(getContainer()))%>">Manage Additional File Roots</a>
+                <a id="manageAdditionalFileRoots" class="labkey-text-link" href="<%=h(urlProvider(FileUrls.class).urlShowAdmin(c))%>">Manage Additional File Roots</a>
             </td>
         </tr>
         <% } %>
@@ -368,6 +400,6 @@
         }
     }
 
-    updateSelection(<%=!origBean.getFileRootOption().equals(bean.getFileRootOption())%>);
+    updateSelection(<%=!origBean.getFileRootOption().equals(currentOption)%>);
 </script>
 

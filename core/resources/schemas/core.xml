@@ -35,6 +35,8 @@
       <column columnName="Searchable"/>
       <column columnName="LockState"/>
       <column columnName="ExpirationDate"/>
+      <column columnName="FileRootSize"/>
+      <column columnName="FileRootLastCrawled"/>
     </columns>
   </table>
   <table tableName="Documents" tableDbType="TABLE">

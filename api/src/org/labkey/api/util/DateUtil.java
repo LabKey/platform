@@ -44,6 +44,7 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -1224,7 +1225,7 @@ validNum:       {
     }
 
     /**
-     * Format specific date using folder-specified default pattern
+     * Format a date using folder-specified default pattern
      * Warning: Return value is unsafe and must be HTML filtered, if rendered to an HTML page
      */
     public static String formatDate(Container c, Date date)
@@ -1233,7 +1234,7 @@ validNum:       {
     }
 
     /**
-     * Format specific LocalDate using folder-specified default pattern.
+     * Format a LocalDate using folder-specified default pattern.
      * Warning: Return value is unsafe and must be HTML filtered, if rendered to an HTML page
      */
     public static String formatDate(Container c, @Nullable LocalDate date)
@@ -1263,6 +1264,21 @@ validNum:       {
     public static String formatDateTime(Container c, Date date)
     {
         return formatDateTime(date, getDateTimeFormatString(c));
+    }
+
+    /**
+     * Format a LocalDateTime using folder-specified default pattern.
+     * Warning: Return value is unsafe and must be HTML filtered, if rendered to an HTML page
+     */
+    public static String formatDateTime(Container c, @Nullable LocalDateTime dateTime)
+    {
+        if (null == dateTime)
+            return null;
+
+        // LocalDateTime doesn't include time zone, but the display format might specify "z". Add the server's time zone to
+        // prevent an exception.
+        ZonedDateTime zoned = ZonedDateTime.of(dateTime, ZoneId.systemDefault());
+        return zoned.format(DateTimeFormatter.ofPattern(getDateTimeFormatString(c)));
     }
 
     /**
