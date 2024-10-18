@@ -164,7 +164,7 @@ public class ClosureQueryHelper
             )
             """, (MAX_ANCESTOR_LOOKUP_DEPTH));
 
-    public static SQLFragment selectAndInsertSql(SqlDialect d, SQLFragment from, @Nullable String into, @Nullable String insert)
+    public static SQLFragment selectAndInsertSql(SqlDialect d, SQLFragment from, @Nullable SQLFragment into, @Nullable String insert)
     {
         String cte;
         String select;
@@ -189,11 +189,11 @@ public class ClosureQueryHelper
         return sql;
     }
 
-    public static SQLFragment selectIntoTempTableSql(SqlDialect d, SQLFragment from, @Nullable String tempTable)
+    public static SQLFragment selectIntoTempTableSql(SqlDialect d, SQLFragment from, @Nullable SQLFragment tempTable)
     {
-        String into = " INTO temp.${NAME} ";
+        SQLFragment into = new SQLFragment(" INTO temp.${NAME} ");
         if (null != tempTable)
-            into = " INTO temp." + tempTable + " ";
+            into = new SQLFragment(" INTO temp.").append(tempTable).append(" ");
         return selectAndInsertSql(d, from, into, null);
     }
 
@@ -286,7 +286,7 @@ public class ClosureQueryHelper
 
     static final AtomicInteger temptableNumber = new AtomicInteger();
 
-    private static SQLFragment invalidateAncestorData(TableInfo tInfo, String familyIdTableName, boolean isSampleType)
+    private static SQLFragment invalidateAncestorData(TableInfo tInfo, SQLFragment familyIdTableName, boolean isSampleType)
     {
         SQLFragment delete = new SQLFragment();
         delete.append("DELETE FROM ").append(tInfo).append(" WHERE RowId IN (\n");
@@ -295,19 +295,21 @@ public class ClosureQueryHelper
         return delete;
     }
 
-    private static void incrementalRecomputeFromTempTable(String familyTempTable, boolean isSampleType)
+    private static void incrementalRecomputeFromTempTable(SQLFragment familyTempTable, boolean isSampleType)
     {
         TempTableTracker ttt = null;
         try
         {
             Object ref = new Object();
             String tempTableName = "closinc_" + temptableNumber.incrementAndGet();
+            SQLFragment tableNameSql = new SQLFragment(tempTableName);
+            tableNameSql.addTempToken(ref);
             ttt = TempTableTracker.track(tempTableName, ref);
-            SQLFragment from = new SQLFragment("FROM temp." + familyTempTable).append(" WHERE ObjectType = ").appendValue(isSampleType ? "m" : "d").append(" ");
-            SQLFragment selectInto = selectIntoTempTableSql(getScope().getSqlDialect(), from, tempTableName);
+            SQLFragment from = new SQLFragment("FROM temp.").append(familyTempTable).append(" WHERE ObjectType = ").appendValue(isSampleType ? "m" : "d").append(" ");
+            SQLFragment selectInto = selectIntoTempTableSql(getScope().getSqlDialect(), from, tableNameSql);
             selectInto.addTempToken(ref);
             int count = new SqlExecutor(getScope()).execute(selectInto);
-            logger.info("Selected {} rows into temp.{} for recompute.", count, tempTableName);
+            logger.info("Selected {} rows into temp.{} for recompute of {} ancestors.", count, tempTableName, isSampleType ? "sample" : "data");
 
             SQLFragment upsert;
             TableInfo tInfo = isSampleType ? ExperimentServiceImpl.get().getTinfoMaterialAncestors() : ExperimentServiceImpl.get().getTinfoDataAncestors();
@@ -325,14 +327,14 @@ public class ClosureQueryHelper
                 upsert = new SQLFragment()
                         .append("INSERT INTO ").append(tInfo)
                         .append(" (RowId, AncestorRowId, AncestorTypeId)\n")
-                        .append("SELECT RowId, ancestorRowId, ancestorTypeId FROM temp.").append(tempTableName).append(" TMP\n")
+                        .append("SELECT RowId, ancestorRowId, ancestorTypeId FROM temp.").append(tableNameSql).append(" TMP\n")
                         .append("ON CONFLICT(RowId,ancestorTypeId) DO UPDATE SET ancestorRowId = EXCLUDED.ancestorRowId").appendEOS();
             }
             else
             {
                 upsert = new SQLFragment()
                         .append("MERGE ").append(tInfo, "Target")
-                        .append(" USING (SELECT RowId, AncestorRowId, AncestorTypeId FROM temp.").append(tempTableName)
+                        .append(" USING (SELECT RowId, AncestorRowId, AncestorTypeId FROM temp.").append(tableNameSql)
                         .append(") AS Source ON Target.RowId=Source.RowId AND Target.AncestorTypeId=Source.ancestorTypeId\n")
                         .append("WHEN MATCHED THEN UPDATE SET Target.AncestorTypeId = Source.ancestorTypeId\n")
                         .append("WHEN NOT MATCHED THEN INSERT (RowId, AncestorRowId, AncestorTypeId) VALUES (Source.RowId, Source.ancestorRowId, Source.ancestorTypeId)").appendEOS();
@@ -444,16 +446,17 @@ public class ClosureQueryHelper
         {
             Object ref = new Object();
             String familyTableName = "familyIds_" + temptableNumber.incrementAndGet();
-            ttt = TempTableTracker.track(familyTableName, ref);
+            SQLFragment tableNameSql = new SQLFragment(familyTableName);
+            tableNameSql.addTempToken(ref);
+            ttt = TempTableTracker.track(tableNameSql.getSQL(), ref);
 
             // add the seed ids to the temp table
-            SQLFragment selectIntoSql = new SQLFragment("SELECT RowId, ObjectId, ObjectType INTO temp.").append(familyTableName).append(" FROM (").append(selectSeedsSql).append(") x");
-            selectIntoSql.addTempToken(ref);
+            SQLFragment selectIntoSql = new SQLFragment("SELECT RowId, ObjectId, ObjectType INTO temp.").append(tableNameSql).append(" FROM (").append(selectSeedsSql).append(") x");
             if (getScope().getSqlDialect().isSqlServer())
                 // complete hack to get SQLServer to not make RowId an identity column in the target table so the subsequent insert will work without complaint
                 selectIntoSql.append(" UNION ALL SELECT RowId, ObjectId, 'x' AS ObjectType FROM " ).append(isSampleType ? "exp.material" : "exp.data").append(" WHERE 1 <> 1");
             int numSeeds = new SqlExecutor(getScope()).execute(selectIntoSql);
-            logger.info("Added {} seed rows to temp.{}", numSeeds, familyTableName);
+            logger.info("Added {} seed {} rows to temp.{}", numSeeds, isSampleType ? "sample" : "data", familyTableName);
             // if we didn't actually insert any items into the table, there's nothing more to be done
             if (numSeeds == 0)
                 return;
@@ -463,17 +466,17 @@ public class ClosureQueryHelper
             String cte = getScope().getSqlDialect().isPostgreSQL() ?  "WITH RECURSIVE " + pgDescendantClosureCTE : "WITH " + mssqlDescendantClosureCTE;
             String[] cteParts = StringUtils.splitByWholeSeparator(cte, "/*FROM*/");
             SQLFragment descendantsCte = new SQLFragment();
-            descendantsCte.append(cteParts[0]).append("FROM (SELECT * FROM temp.").append(familyTableName).append(") s ").append(cteParts[1]);
+            descendantsCte.append(cteParts[0]).append("FROM (SELECT * FROM temp.").append(tableNameSql).append(") s ").append(cteParts[1]);
             descendants.append(descendantsCte);
 
-            descendants.append("INSERT INTO temp.").append(familyTableName)
+            descendants.append("INSERT INTO temp.").append(tableNameSql)
                     .append(" (RowId, ObjectId, ObjectType) ").append(descendantClosureSelectSql);
             int numRows = new SqlExecutor(getScope()).execute(descendants);
-            logger.debug("Added {} descendant rows for {}", numRows, familyTableName);
+            logger.debug("Added {} {} descendant rows for {}", numRows, isSampleType ? "sample" : "data", familyTableName);
 
             // recompute the ancestors for the seed ids and the descendants
-            incrementalRecomputeFromTempTable(familyTableName, isSampleType);
-            incrementalRecomputeFromTempTable(familyTableName, !isSampleType);
+            incrementalRecomputeFromTempTable(tableNameSql, isSampleType);
+            incrementalRecomputeFromTempTable(tableNameSql, !isSampleType);
         }
         finally
         {
