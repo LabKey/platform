@@ -125,6 +125,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.URI;
+import java.net.URL;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -473,17 +474,15 @@ public class FileContentController extends SpringActionController
             {
                 try
                 {
-                    String offset = Path.decode(form.getRootOffset()).toString().replaceAll("^/", "").toString();
-                    String path = part.getModelBean().getRootPath();
+                    String offset = Path.decode(form.getRootOffset()).toString().replaceAll("^/", "");
+                    String path = part.getModelBean().getRootPath().toString();
                     path += path.endsWith("/") ? "" : "/";
-                    path += part.getModelBean().getRootPath().endsWith("/") ? "" : "/";
+                    path += part.getModelBean().getRootPath().getPath().endsWith("/") ? "" : "/";
                     path += offset;
-                    part.getModelBean().setRootPath(path);
+                    part.getModelBean().setRootPath(new URI(path));
                     part.getModelBean().setRootOffset(offset);
                 }
-                catch (Throwable t)
-                {
-                }
+                catch (Throwable ignored) {}
             }
             if (null != form.getFolderTreeVisible())
             {
@@ -800,7 +799,7 @@ public class FileContentController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public abstract class FileTreeNodeAction extends ReadOnlyApiAction<NodeForm>
+    public abstract static class FileTreeNodeAction extends ReadOnlyApiAction<NodeForm>
     {
         protected abstract Set<Map<String, Object>> getChildren(NodeForm form, BindException errors);
 
@@ -1087,8 +1086,8 @@ public class FileContentController extends SpringActionController
             PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
             if (root != null && root.isValid())
             {
-                String webdavURL = root.getWebdavURL();
-                if (null != webdavURL && webdavURL.contains(FileContentService.PIPELINE_LINK) && root.getContainer().equals(getContainer()))
+                URI webdavURL = root.getWebdavURL();
+                if (null != webdavURL && webdavURL.getPath().contains(FileContentService.PIPELINE_LINK) && root.getContainer().equals(getContainer()))
                     ret.put(FileContentService.PIPELINE_LINK, WebdavService.getPath().append(getContainer().getParsedPath()).append(FileContentService.PIPELINE_LINK).toString());
             }
 

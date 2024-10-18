@@ -99,6 +99,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.StandardOpenOption;
@@ -1296,7 +1297,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
             {
                 Map<String, Object> node = createFileSetNode(c, ASSAY_FILES, assayFilesRoot);
                 node.put("default", false);
-                node.put("webdavURL", FilesWebPart.getRootPath(c, ASSAY_FILES));
+                node.put("webdavURL", FilesWebPart.getRootPath(c, ASSAY_FILES).toString());
                 children.add(node);
             }
 
@@ -1311,7 +1312,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
                     node.put("default", isUseDefaultRoot(c));
                     node.put("configureURL", config.getEncodedLocalURIString());
                     node.put("browseURL", browseUrl);
-                    node.put("webdavURL", FilesWebPart.getRootPath(c, FILES_LINK));
+                    node.put("webdavURL", FilesWebPart.getRootPath(c, FILES_LINK).toString());
 
                     children.add(node);
                 }
@@ -1323,7 +1324,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
                 Map<String, Object> node =  createFileSetNode(c, fileSet.getName(), fileSet.getFileSystemDirectoryPath());
                 node.put("configureURL", config.getEncodedLocalURIString());
                 node.put("browseURL", browseUrl);
-                node.put("webdavURL", FilesWebPart.getRootPath(c, FILE_SETS_LINK, fileSet.getName()));
+                node.put("webdavURL", FilesWebPart.getRootPath(c, FILE_SETS_LINK, fileSet.getName()).toString());
                 node.put("rootType", "fileset");
 
                 children.add(node);
@@ -1341,7 +1342,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
                     node.put("default", isDefault );
                     node.put("configureURL", config.getEncodedLocalURIString());
                     node.put("browseURL", pipelineBrowse.getEncodedLocalURIString());
-                    node.put("webdavURL", FilesWebPart.getRootPath(c, PIPELINE_LINK));
+                    node.put("webdavURL", FilesWebPart.getRootPath(c, PIPELINE_LINK).toString());
 
                     children.add(node);
                 }
@@ -1370,13 +1371,13 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
 
     @Nullable
     @Override
-    public String getWebDavUrl(@NotNull java.nio.file.Path path, @NotNull Container container, @NotNull PathType type)
+    public URI getWebDavUrl(@NotNull java.nio.file.Path path, @NotNull Container container, @NotNull PathType type)
     {
         PipeRoot root = PipelineService.get().getPipelineRootSetting(container);
         java.nio.file.Path assayFilesPath = getFileRootPath(container, ContentType.assayfiles);
         path = path.toAbsolutePath();
         String relPath = null;
-        String rootWebDavUrl = null;
+        URI rootWebDavUrl = null;
 
         try
         {
@@ -1406,13 +1407,13 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
 
                 return switch (type)
                 {
-                    case folderRelative -> relPath;
-                    case serverRelative -> Path.parse(rootWebDavUrl).encode() + relPath;
-                    case full -> AppProps.getInstance().getBaseServerUrl() + Path.parse(rootWebDavUrl).encode() + relPath;
+                    case folderRelative -> new URI(relPath);
+                    case serverRelative -> new URI(rootWebDavUrl + (rootWebDavUrl.getPath().endsWith("/") ? "" : "/") + relPath);
+                    case full -> new URI(AppProps.getInstance().getBaseServerUrl() + rootWebDavUrl + (rootWebDavUrl.getPath().endsWith("/") ? "" : "/") + relPath);
                 };
             }
         }
-        catch (InvalidPathException e)
+        catch (InvalidPathException | URISyntaxException e)
         {
             _log.error("Invalid WebDav URL from: " + path, e);
         }

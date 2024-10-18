@@ -36,8 +36,6 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.premium.PremiumService;
 import org.labkey.api.security.SecurableResource;
-import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -46,6 +44,7 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
 import org.labkey.api.view.HttpView;
@@ -56,6 +55,10 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.WebdavService;
 
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -86,7 +89,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
 
     private boolean showAdmin = false;
     private String fileSet;
-    private Container container;
+    private final Container container;
     private boolean _isPipelineFiles;       // viewing @pipeline files
     private boolean _isRootNotFilesPipeline;
 
@@ -348,7 +351,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         }
 
         List<FilesForm.actions> actions = getConfiguredActions(resource);
-        form.setButtonConfig(actions.toArray(new FilesForm.actions[actions.size()]));
+        form.setButtonConfig(actions.toArray(new FilesForm.actions[0]));
 
         return form;
     }
@@ -361,59 +364,69 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             FileContentService.ASSAY_FILES
     ));
 
-    public static String getRootPath(Container c, @Nullable String davName)
+    @NotNull
+    public static URI getRootPath(Container c, @Nullable String davName)
     {
         return getRootPath(c, davName, null);
     }
 
-    public static String getRootPath(Container c, @Nullable String davName, @Nullable String fileset)
+    @NotNull
+    public static URI getRootPath(Container c, @Nullable String davName, @Nullable String fileset)
     {
         return getRootPath(c, davName, fileset, false);
     }
 
-    public static String getRootPath(Container c, @Nullable String davName, @Nullable String fileset, boolean skipDavPrefix)
+    /** @return the WebDAV URL, including a trailing slash */
+    @NotNull
+    public static URI getRootPath(Container c, @Nullable String davName, @Nullable String fileset, boolean skipDavPrefix)
     {
         String relativePath = "";
         if (davName != null)
         {
-            if (!_allowedDavNames.contains(davName))              // TODO and I don't think we need to encode
+            if (!_allowedDavNames.contains(davName))
                 throw new IllegalStateException("unrecognized DavName");
 
             if (FileContentService.CLOUD_LINK.equalsIgnoreCase(davName) && FileContentService.get().getCloudRootName(c).equalsIgnoreCase(fileset))
             {
-                relativePath += FileContentService.FILES_LINK;
+                relativePath += PageFlowUtil.encode(FileContentService.FILES_LINK);
             }
             else
             {
-                relativePath += davName;
+                relativePath += PageFlowUtil.encode(davName);
                 if (fileset != null)
-                    relativePath += "/" + fileset;
+                    relativePath += "/" + PageFlowUtil.encode(fileset);
             }
         }
 
         return _getRootPath(c, relativePath, skipDavPrefix);
     }
 
-    private static String _getRootPath(Container c, @Nullable String relativePath, boolean skipDavPrefix)
+    /**
+     * @param relativePath path to append to the container's WebDAV path, already URL-encoded
+     * @return optionally including the context path and _webdav, representing the WebDAV path to the container,
+     * with a trailing slash.
+     * Does not include protocol, host, or port */
+    @NotNull
+    private static URI _getRootPath(Container c, @Nullable String relativePath, boolean skipDavPrefix)
     {
-        String webdavPrefix = skipDavPrefix ? "" : AppProps.getInstance().getContextPath() + "/" + WebdavService.getServletPath();
-        String rootPath = webdavPrefix + c.getPath();
+        try
+        {
+            String webdavPrefix = skipDavPrefix ? "" : PageFlowUtil.encode(AppProps.getInstance().getContextPath()) + "/" + PageFlowUtil.encode(WebdavService.getServletPath());
+            URI rootPath = new URI(webdavPrefix + c.getEncodedPath());
 
-        if (!rootPath.endsWith("/"))
-            rootPath += "/";
+            if (null != relativePath)
+                rootPath = rootPath.resolve(relativePath.endsWith("/") ? relativePath : relativePath + "/");
 
-        if (null != relativePath)
-            rootPath += relativePath;
-
-        if (!rootPath.endsWith("/"))
-            rootPath += "/";
-
-        // Issue 43374: Some characters in file names cause a problem when creating exp.data rows in FileImporter.
-        // Need to centrally encode characters that are special in URIs but not in most file systems. See getURLWithCharsReplaced() in Webdav.js for special client-side handling of these characters.
-        return rootPath.replace("%", "%25").replace("+", "%2B");
+            return rootPath;
+        }
+        catch (URISyntaxException e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
     }
 
-    public static String getWebPartFolderRootPath(Container c, @Nullable String folderFileRoot)
+    @NotNull
+    public static URI getWebPartFolderRootPath(Container c, @Nullable String folderFileRoot)
     {
         return _getRootPath(c, folderFileRoot, false);
     }
@@ -502,13 +515,13 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         }
 
         @Override
-        public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+        public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
         {
             return new FilesWebPart(portalCtx, webPart);
         }
 
         @Override
-        public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
+        public HttpView<?> getEditView(Portal.WebPart webPart, ViewContext context)
         {
             return new CustomizeFilesWebPartView(webPart);
         }
@@ -524,7 +537,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         private boolean _autoResize;
         private boolean _enabled;
         private actions[] _buttonConfig;
-        private String _rootPath;
+        private URI _rootPath;
         private String _rootOffset; //path between root for container and _rootPath used for webdav (if rooted at subdir)
         private Path _directory;
         private String _contentId;
@@ -618,12 +631,12 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             _buttonConfig = buttonConfig;
         }
 
-        public String getRootPath()
+        public URI getRootPath()
         {
             return _rootPath;
         }
 
-        public void setRootPath(String rootPath)
+        public void setRootPath(URI rootPath)
         {
             _rootPath = rootPath;
         }
@@ -772,16 +785,17 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
 
         private boolean isCloudStoreEnabled(Container container)
         {
-            int cloudIndex = StringUtils.indexOf(_rootPath, CLOUD_PATTERN);
+            String pathString = _rootPath.toString();
+            int cloudIndex = StringUtils.indexOf(pathString, CLOUD_PATTERN);
             int cloudPatternLength = CLOUD_PATTERN.length();
             if (-1 == cloudIndex)
             {
-                cloudIndex = StringUtils.indexOf(_rootPath, CLOUD_PATTERN_ENCODED);
+                cloudIndex = StringUtils.indexOf(pathString, CLOUD_PATTERN_ENCODED);
                 cloudPatternLength = CLOUD_PATTERN_ENCODED.length();
             }
             if (-1 != cloudIndex)
             {
-                String config = StringUtils.substring(_rootPath, cloudIndex + cloudPatternLength);
+                String config = StringUtils.substring(pathString, cloudIndex + cloudPatternLength);
                 int slashIndex = StringUtils.indexOf(config, "/");
                 if (-1 != slashIndex)
                     config = StringUtils.substring(config, 0, slashIndex);
@@ -803,14 +817,16 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
 
         public boolean isCloudRootPath()
         {
-            return -1 != StringUtils.indexOf(_rootPath, CLOUD_PATTERN) ||
-                   -1 != StringUtils.indexOf(_rootPath, CLOUD_PATTERN_ENCODED);
+            String pathString = _rootPath.toString();
+            return -1 != StringUtils.indexOf(pathString, CLOUD_PATTERN) ||
+                   -1 != StringUtils.indexOf(pathString, CLOUD_PATTERN_ENCODED);
         }
 
         public boolean isAtFilesRootPath()
         {
-            return -1 != StringUtils.indexOf(_rootPath, "@files/") ||
-                   -1 != StringUtils.indexOf(_rootPath, "%40files/");
+            String pathString = _rootPath.toString();
+            return -1 != StringUtils.indexOf(pathString, "@files/") ||
+                   -1 != StringUtils.indexOf(pathString, "%40files/");
         }
 
         @Nullable

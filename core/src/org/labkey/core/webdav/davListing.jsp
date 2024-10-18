@@ -37,8 +37,6 @@
     WebdavResource resource = listpage.resource;
     AppProps app = AppProps.getInstance();
     String contextPath = request.getContextPath();
-    if (StringUtils.isBlank(contextPath))
-        contextPath = "/";
 %>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
@@ -77,10 +75,9 @@
             relativePath = resourcePath.subpath(listpage.root.size(),relativePath.size());
         %>
 
-        // Don't encode rootPath or rootOffset
         var fileSystem = Ext4.create('File.system.Webdav', {
-            rootPath: <%=q(Path.parse(contextPath).append(listpage.root).toString())%>,
-            rootOffset: <%=q(relativePath.toString("/","/"))%>,
+            rootPath: <%=q(Path.parse(contextPath).append(listpage.root).encode("/", "/"))%>,
+            rootOffset: <%=q(relativePath.encode("/", "/"))%>,
             rootName: <%=q(app.getServerName())%>
         });
         Ext4.create('Ext.container.Viewport', {

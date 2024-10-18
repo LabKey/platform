@@ -1511,6 +1511,8 @@ abstract public class PipelineJob extends Job implements Serializable
             setErrorStatus(message);
         }
 
+
+
         @Override
         public void error(String message, @Nullable Throwable t)
         {
