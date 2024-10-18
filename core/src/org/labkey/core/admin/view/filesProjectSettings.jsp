@@ -33,11 +33,15 @@
 <%@ page import="org.labkey.core.admin.AdminController.MigrateFilesOption" %>
 <%@ page import="java.util.Collections" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.util.DateUtil" %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.apache.commons.io.FileUtils" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
 <%
     AdminController.FileManagementForm bean = ((JspView<AdminController.FileManagementForm>)HttpView.currentView()).getModelBean();
+    Container c = getContainer();
 
     // Issue 38439: get a copy of the original form bean in the error reshow case to use for toggling the migrateFilesRow message and select input
     AdminController.FileRootsForm origBean = new AdminController.FileRootsForm();
@@ -49,15 +53,15 @@
 
     // the default file root based on the root of the first ancestor with an override, or site root
     String currentCloudRootName = bean.getCloudRootName();
-    FileContentService.DefaultRootInfo defaultRootInfo = service.getDefaultRootInfo(getContainer());
+    FileContentService.DefaultRootInfo defaultRootInfo = service.getDefaultRootInfo(c);
     String defaultRoot = defaultRootInfo.getPrettyStr();
 
     //b/c setting a custom file root potentially allows access to any files, we only allow
     //site admins (i.e. AdminOperationsPermission) to do this.  however, folder admin can disable sharing on a folder
     //if this folder already has a custom file root, only a site admin can make further changes
     User user = getUser();
-    boolean hasAdminPerm = getContainer().hasPermission(user, AdminPermission.class);
-    boolean hasAdminOpsPerm = getContainer().hasPermission(user, AdminOperationsPermission.class);
+    boolean hasAdminPerm = c.hasPermission(user, AdminPermission.class);
+    boolean hasAdminOpsPerm = c.hasPermission(user, AdminOperationsPermission.class);
     boolean canChangeFileSettings = hasAdminPerm || hasAdminOpsPerm;
     if (AdminController.FileRootProp.folderOverride.name().equals(bean.getFileRootOption()) && !hasAdminOpsPerm)
     {
@@ -71,19 +75,19 @@
     boolean isCurrentFileRootOptionDisable = FileRootProp.disable.name().equals(origBean.getFileRootOption());
 
     CloudStoreService cloud = CloudStoreService.get();
-    Map<String, CloudStoreService.StoreInfo> storeInfos = cloud != null ? cloud.getStoreInfos(getContainer()) : Collections.emptyMap();
+    Map<String, CloudStoreService.StoreInfo> storeInfos = cloud != null ? cloud.getStoreInfos(c) : Collections.emptyMap();
 
     String folderSetup = getActionURL().getParameter("folderSetup");
     boolean isFolderSetup = "true".equalsIgnoreCase(folderSetup);
     String cancelButtonText = isFolderSetup ? "Next" : "Cancel";
     URLHelper cancelButtonUrl = isFolderSetup && getActionURL().getReturnURL() != null
             ? getActionURL().getReturnURL()
-            : getContainer().getStartURL(getUser());
-    ActionURL redirectToPipeline = urlProvider(PipelineUrls.class).urlBegin(getContainer());
+            : c.getStartURL(getUser());
+    ActionURL redirectToPipeline = urlProvider(PipelineUrls.class).urlBegin(c);
     boolean isCurrentFileRootCloud = FileRootProp.cloudRoot.name().equals(bean.getFileRootOption());
     boolean isCurrentFileRootManaged = !(isCurrentFileRootCloud &&
                                                 null != storeInfos.get(bean.getCloudRootName()) && !storeInfos.get(bean.getCloudRootName()).isLabKeyManaged());
-    String fileRootText = getContainer().isProject() ? "site-level file root" : getContainer().getParsedPath().size() == 2 ? "file root of the parent project" : "file root of the parent folder";
+    String fileRootText = c.isProject() ? "site-level file root" : c.getParsedPath().size() == 2 ? "file root of the parent project" : "file root of the parent folder";
     String currentOption = bean.getFileRootOption();
 %>
 
@@ -108,9 +112,28 @@
         <%
             if (FileRootProp.siteDefault.name().equals(currentOption) || FileRootProp.folderOverride.name().equals(currentOption))
             {
-                Long fileRootSize = getContainer().getFileRootSize();
+                Long fileRootSize = c.getFileRootSize();
+                final String sizeMessage;
+                final String lastCalculatedMessage;
+                if (fileRootSize != null)
+                {
+                    sizeMessage = FileUtils.byteCountToDisplaySize(c.getFileRootSize());
+                    lastCalculatedMessage = "File root size last calculated: " + DateUtil.formatDateTime(c, c.getFileRootLastCrawled());
+                }
+                else
+                {
+                    sizeMessage = "Unknown";
+                    if (c.getFileRootLastCrawled() == null)
+                        lastCalculatedMessage = "File root size has not yet been calculated (this takes place during system maintenance)";
+                    else
+                        lastCalculatedMessage = "File root size could not be calculated. There is likely an issue with this file root.";
+                }
+
         %>
-        <tr><td><p>Total size of the current file root: <%=h(fileRootSize != null ? FileUtil.formatFileSize(getContainer().getFileRootSize()) : "Unknown")%></p></td></tr>
+        <tr><td>&nbsp;</td></tr>
+        <tr><td>Total size of the current file root: <%=h(sizeMessage)%></td></tr>
+        <tr><td><%=h(lastCalculatedMessage)%></td></tr>
+        <tr><td>&nbsp;</td></tr>
         <%
             }
         %>
@@ -121,7 +144,7 @@
                         <td><input <%=h(canChangeFileSettings ? "" : " disabled ")%>
                                 type="radio" name="fileRootOption" id="optionDisable" value="<%=FileRootProp.disable%>"
                                 <%=checked(FileRootProp.disable.name().equals(currentOption))%>>
-                            Disable file sharing for this <%=h(getContainer().getContainerNoun())%></td>
+                            Disable file sharing for this <%=h(c.getContainerNoun())%></td>
                         <% addHandler("optionDisable", "click", "return updateSelection(" + !FileRootProp.disable.name().equals(currentOption) + ");"); %>
                     </tr>
                     <tr style="height: 1.75em">
@@ -136,7 +159,7 @@
                         <td><input <%=h(canChangeFileSettings && hasAdminOpsPerm ? "" : " disabled ")%>
                                 type="radio" name="fileRootOption" id="optionProjectSpecified" value="<%=FileRootProp.folderOverride%>"
                                 <%=checked(FileRootProp.folderOverride.name().equals(currentOption))%>>
-                            Use a <%=unsafe(getContainer().getContainerNoun())%>-level file root
+                            Use a <%=unsafe(c.getContainerNoun())%>-level file root
                             <labkey:input type="text" id="folderRootPath" name="folderRootPath" size="64" onChange="onRootChange()" value="<%=h(bean.getFolderRootPath())%>" /></td>
                         <% addHandler("optionProjectSpecified", "click", "return updateSelection(" + !FileRootProp.folderOverride.name().equals(currentOption) + ");"); %>
                     </tr>
@@ -186,7 +209,7 @@
         <% if (hasAdminOpsPerm && !isFolderSetup && !isCurrentFileRootCloud) { %>
         <tr>
             <td>
-                <a id="manageAdditionalFileRoots" class="labkey-text-link" href="<%=h(urlProvider(FileUrls.class).urlShowAdmin(getContainer()))%>">Manage Additional File Roots</a>
+                <a id="manageAdditionalFileRoots" class="labkey-text-link" href="<%=h(urlProvider(FileUrls.class).urlShowAdmin(c))%>">Manage Additional File Roots</a>
             </td>
         </tr>
         <% } %>

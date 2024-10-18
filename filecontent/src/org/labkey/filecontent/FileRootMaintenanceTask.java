@@ -8,10 +8,11 @@ import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.Sort;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.StopIteratingException;
 import org.labkey.api.data.Table;
-import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.HeartBeat;
@@ -22,7 +23,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 
 public class FileRootMaintenanceTask implements MaintenanceTask
 {
@@ -51,8 +51,11 @@ public class FileRootMaintenanceTask implements MaintenanceTask
             long deadline = HeartBeat.currentTimeMillis() + DateUtils.MILLIS_PER_MINUTE * MAX_MINUTES;
             MutableInt rootCount = new MutableInt();
             MutableBoolean finished = new MutableBoolean(true);
+            TableInfo containers = CoreSchema.getInstance().getTableInfoContainers();
+            String orderBy = " ORDER BY FileRootLastCrawled" + (containers.getSqlDialect().isPostgreSQL() ? " NULLS FIRST" : "");
+            SQLFragment sql = new SQLFragment("SELECT RowId, EntityId, FileRootSize FROM " + containers.getSelectName() + orderBy);
 
-            new TableSelector(CoreSchema.getInstance().getTableInfoContainers(), Set.of("RowId", "EntityId", "FileRootSize"), null, new Sort("LastCrawled"))
+            new SqlSelector(containers.getSchema(), sql)
                 .forEach(FileRootRecord.class, record -> {
                     Container c = ContainerManager.getForId(record.entityId());
                     if (c != null)
@@ -63,17 +66,15 @@ public class FileRootMaintenanceTask implements MaintenanceTask
                         // Always update LastCrawled, even for invalid file roots and non-changing sizes
                         Map<String, Object> map = new HashMap<>();
                         long current = HeartBeat.currentTimeMillis();
-                        map.put("LastCrawled", new Date(current));
+                        map.put("FileRootLastCrawled", new Date(current));
 
                         // Update FileRootSize if it changed
                         boolean sizeChanged = !Objects.equals(record.fileRootSize(), size);
                         if (sizeChanged)
                             map.put("FileRootSize", size);
 
-                        Table.update(User.getAdminServiceUser(), CoreSchema.getInstance().getTableInfoContainers(), map, record.rowId());
-
-                        if (sizeChanged)
-                            ContainerManager.uncache(c);  // Container stashes FileRootSize
+                        Table.update(User.getAdminServiceUser(), containers, map, record.rowId());
+                        ContainerManager.uncache(c);  // Container stashes FileRootLastCrawled & FileRootSize
 
                         rootCount.increment();
 

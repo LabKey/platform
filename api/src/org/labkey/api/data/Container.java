@@ -82,6 +82,7 @@ import java.io.File;
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -140,6 +141,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
     private LockState _lockState = null;
     private LocalDate _expirationDate = null;
     private Long _fileRootSize = null;
+    private LocalDateTime _fileRootLastCrawled = null;
 
     private final static BlockingCache<GUID, Set<Module>> REQUIRED_MODULES_CACHE = new BlockingCache<>(
         CacheManager.getCache(
@@ -1849,6 +1851,16 @@ public class Container implements Serializable, Comparable<Container>, Securable
     public void setFileRootSize(Long fileRootSize)
     {
         _fileRootSize = fileRootSize;
+    }
+
+    public LocalDateTime getFileRootLastCrawled()
+    {
+        return _fileRootLastCrawled;
+    }
+
+    public void setFileRootLastCrawled(LocalDateTime fileRootLastCrawled)
+    {
+        _fileRootLastCrawled = fileRootLastCrawled;
     }
 
     /** Convert a container into a reference that can be used to get the latest version of the container object. See issue 46473 */
