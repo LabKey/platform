@@ -529,13 +529,6 @@
             options = set;
         }
 
-        // Add a non-standard and an invalid format to every drop-down for testing purposes
-        // TODO: Delete this block - just for testing
-        Set<String> set = new LinkedHashSet<>(options);
-        set.add(type == DateDisplayFormatType.Date ? "MMMM dd, yyyy" : "kk:mm"); // non-standard
-        set.add("xyz"); // invalid
-        options = set;
-
         Date now = new Date();
         Map<String, String> map = options.stream()
             .collect(Collectors.toMap(option -> option, option -> {
