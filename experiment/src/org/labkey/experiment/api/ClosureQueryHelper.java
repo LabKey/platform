@@ -309,7 +309,7 @@ public class ClosureQueryHelper
             SQLFragment selectInto = selectIntoTempTableSql(getScope().getSqlDialect(), from, tableNameSql);
             selectInto.addTempToken(ref);
             int count = new SqlExecutor(getScope()).execute(selectInto);
-            logger.info("Selected {} rows into temp.{} for recompute of {} ancestors.", count, tempTableName, isSampleType ? "sample" : "data");
+            logger.debug("Selected {} rows into temp.{} for recompute of {} ancestors.", count, tempTableName, isSampleType ? "sample" : "data");
 
             SQLFragment upsert;
             TableInfo tInfo = isSampleType ? ExperimentServiceImpl.get().getTinfoMaterialAncestors() : ExperimentServiceImpl.get().getTinfoDataAncestors();
@@ -456,7 +456,7 @@ public class ClosureQueryHelper
                 // complete hack to get SQLServer to not make RowId an identity column in the target table so the subsequent insert will work without complaint
                 selectIntoSql.append(" UNION ALL SELECT RowId, ObjectId, 'x' AS ObjectType FROM " ).append(isSampleType ? "exp.material" : "exp.data").append(" WHERE 1 <> 1");
             int numSeeds = new SqlExecutor(getScope()).execute(selectIntoSql);
-            logger.info("Added {} seed {} rows to temp.{}", numSeeds, isSampleType ? "sample" : "data", familyTableName);
+            logger.debug("Added {} seed {} rows to temp.{}", numSeeds, isSampleType ? "sample" : "data", familyTableName);
             // if we didn't actually insert any items into the table, there's nothing more to be done
             if (numSeeds == 0)
                 return;

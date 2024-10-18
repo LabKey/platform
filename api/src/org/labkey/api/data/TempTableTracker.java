@@ -142,7 +142,7 @@ public class TempTableTracker extends WeakReference<Object>
     private boolean sqlDelete()
     {
         DbSchema schema = getSchema();
-        _log.info("Deleting table " + schema.getName() + "." + tableName);
+        _log.debug("Deleting table " + schema.getName() + "." + tableName);
         schema.dropTableIfExists(tableName);
         return true;
     }
