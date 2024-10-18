@@ -11,7 +11,6 @@ import java.util.List;
 
 abstract public class AbstractFileLike implements FileLike
 {
-
     final Path path;
 
     protected AbstractFileLike(Path path)
@@ -72,10 +71,8 @@ abstract public class AbstractFileLike implements FileLike
         var parent = getParent();
         if (null == parent || !getParent().isDirectory())
             throw new IOException("Parent is not a folder");
-        _mkdir();
+        _mkdirs();
     }
-
-    abstract protected void _mkdir() throws IOException;
 
     @Override
     public void mkdirs() throws IOException

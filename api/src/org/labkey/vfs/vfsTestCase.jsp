@@ -185,6 +185,24 @@
     }
 
 
+    @Test
+    public void testDescendant()
+    {
+        // Just a smoke test. See URIUtil.TestCase
+        var root = new FileSystemLike.Builder(tempUri).root();
+        String str = StringUtils.stripEnd(root.toNioPathForRead().toString(),"/");
+        assertTrue(root.isDescendant(URI.create(str)));
+        assertTrue(root.isDescendant(URI.create(str+"/")));
+        assertTrue(root.isDescendant(new File(str).toURI()));
+        assertTrue(root.isDescendant(new File(str).toPath().toUri()));
+
+        assertFalse(root.isDescendant(URI.create(str+"x")));
+        assertFalse(root.isDescendant(URI.create(str+"x/")));
+        assertFalse(root.isDescendant(new File(str+"x").toURI()));
+        assertFalse(root.isDescendant(new File(str+"x/").toPath().toUri()));
+    }
+
+
     void resolve(FileSystemLike fs)
     {
 
@@ -205,6 +223,63 @@
 
     }
 
+   void testCaching(FileSystemLike fs) throws Exception
+    {
+        // Modify the local fs directly and check that FS does not pickup changes immediately
+        fs = fs.getCachingFileSystem();
+        FileLike root = fs.getRoot();
+        File ROOT = root.toNioPathForWrite().toFile();
+        File DIR = new File(ROOT,"caching");
+        FileUtil.deleteDir(new File(ROOT,"caching"));
+
+        FileLike dir = root.resolveChild("caching");
+        assertFalse(dir.exists());
+        assertFalse(dir.isDirectory());
+        DIR.mkdir();
+        assertFalse(dir.exists());
+        assertFalse(dir.isDirectory());
+        dir.refresh();
+        assertTrue(dir.exists());
+        assertTrue(dir.isDirectory());
+        assertTrue(dir.getChildren().isEmpty());
+
+        File FILE = new File(DIR, "a.txt");
+        FileLike file = dir.resolveChild("a.txt");
+        assertFalse(file.exists());
+        assertFalse(file.isFile());
+        assertTrue(dir.getChildren().isEmpty());
+        FILE.createNewFile();
+        assertFalse(file.exists());
+        assertFalse(file.isFile());
+        assertTrue(dir.getChildren().isEmpty());
+        file.refresh();
+        assertTrue(file.exists());
+        assertTrue(file.isFile());
+        dir.refresh();
+        assertTrue(dir.exists());
+        assertTrue(dir.isDirectory());
+        assertFalse(dir.getChildren().isEmpty());
+
+        FILE.delete();
+        // NOTE calling getChildren() above may or may not refresh metadata of children, so we don't know state of 'file'
+        assertFalse(dir.getChildren().isEmpty());
+        file.refresh();
+        assertFalse(file.exists());
+        assertFalse(file.isFile());
+        dir.refresh();
+        assertTrue(dir.exists());
+        assertTrue(dir.isDirectory());
+        assertTrue(dir.getChildren().isEmpty());
+
+        DIR.delete();
+        assertTrue(dir.exists());
+        assertTrue(dir.isDirectory());
+        dir.refresh();
+        assertFalse(dir.exists());
+        assertFalse(dir.isDirectory());
+    }
+
+
     @Test
     public void vfs() throws Exception
     {
@@ -215,6 +290,7 @@
         createFile(fs);
         mkdir(fs);
         serialize(fs);
+        testCaching(fs);
     }
 
     @Test
@@ -227,5 +303,6 @@
         createFile(fs);
         mkdir(fs);
         serialize(fs);
+        testCaching(fs);
     }
 %>

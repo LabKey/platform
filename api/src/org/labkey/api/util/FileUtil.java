@@ -1544,7 +1544,8 @@ quickScan:
             file = file.getParentFile();
             parent = file.getParentFile();
         }
-        return FileUtil.appendName(resolveFile(parent), file.getName());
+        // we don't need to use FileUtil.appendName() here
+        return new File(resolveFile(parent), file.getName());
     }
 
 
@@ -1618,6 +1619,16 @@ quickScan:
         return Files.createTempFile(directory.toPath(), prefix, suffix).toFile();
     }
 
+    // Use this instead of File.createTempFile() (see Issue #46794)
+    public static FileLike createTempFile(@Nullable String prefix, @Nullable String suffix, FileLike directory) throws IOException
+    {
+        if (null != prefix)
+            legalPathPartThrow(prefix);
+        if (null != suffix)
+            legalPathPartThrow(suffix);
+        var path = Files.createTempFile(directory.toNioPathForWrite(), prefix, suffix);
+        return directory.resolveChild(path.getFileName().toString());
+    }
 
     // Use this instead of File.createTempFile() (see Issue #46794)
     public static File createTempFile(@Nullable String prefix, @Nullable String suffix) throws IOException

@@ -988,9 +988,16 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
     @Override
+    @Deprecated // prefer getExplodedFileLike()
     public final File getExplodedPath()
     {
         return _explodedPath;
+    }
+
+    @Override
+    public final FileLike getExplodedFileLike()
+    {
+        return new FileSystemLike.Builder(_explodedPath).readonly().root();
     }
 
     @Override
