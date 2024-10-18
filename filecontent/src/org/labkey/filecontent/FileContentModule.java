@@ -185,13 +185,14 @@ public class FileContentModule extends DefaultModule
 
             // During system maintenance, FileRootMaintenanceTask populates FileRootSize and FileRootLastCrawled for every container (subject to a timeout)
             TableInfo containers = CoreSchema.getInstance().getTableInfoContainers();
-            Map<String, Object> map = new SqlSelector(containers.getSchema(), "SELECT SUM(FileRootSize) AS TotalSize, MIN(FileRootLastCrawled) EarliestCrawl FROM " + containers.getSelectName())
+            String select = "SELECT SUM(FileRootSize) AS TotalSize, MIN(FileRootLastCrawled) EarliestCrawl, COUNT(*) AS RowCount, COUNT(FileRootLastCrawled) AS FileRootsCrawled FROM ";
+            Map<String, Object> map = new SqlSelector(containers.getSchema(), select + containers.getSelectName())
                 .getMap();
             results.put("fileRootsTotalSize", map.get("TotalSize"));
             results.put("fileRootsEarliestCrawlTime", map.get("EarliestCrawl"));
-            // Any rows where LastCrawled = null? That would indicate we haven't managed to crawl every container's file root.
-            boolean crawlComplete = !new TableSelector(containers, new SimpleFilter(FieldKey.fromParts("FileRootLastCrawled"), null), null).exists();
-            results.put("fileRootsCrawlComplete", crawlComplete);
+            long crawled = (long)map.get("FileRootsCrawled");
+            results.put("fileRootsCrawled", crawled);
+            results.put("fileRootsNotYetCrawled", (long)map.get("RowCount") - crawled);
 
             return results;
         });

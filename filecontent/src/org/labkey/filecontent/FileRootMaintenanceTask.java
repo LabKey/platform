@@ -42,6 +42,12 @@ public class FileRootMaintenanceTask implements MaintenanceTask
     }
 
     @Override
+    public boolean canDisable()
+    {
+        return false;
+    }
+
+    @Override
     public void run(Logger log)
     {
         FileContentService service = FileContentService.get();
