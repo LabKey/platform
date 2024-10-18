@@ -305,8 +305,9 @@ public class ClosureQueryHelper
             ttt = TempTableTracker.track(tempTableName, ref);
             SQLFragment from = new SQLFragment("FROM temp." + familyTempTable).append(" WHERE ObjectType = ").appendValue(isSampleType ? "m" : "d").append(" ");
             SQLFragment selectInto = selectIntoTempTableSql(getScope().getSqlDialect(), from, tempTableName);
+            selectInto.addTempToken(ref);
             int count = new SqlExecutor(getScope()).execute(selectInto);
-            logger.debug("Selected {} rows into {} for recompute.", count, tempTableName);
+            logger.info("Selected {} rows into temp.{} for recompute.", count, tempTableName);
 
             SQLFragment upsert;
             TableInfo tInfo = isSampleType ? ExperimentServiceImpl.get().getTinfoMaterialAncestors() : ExperimentServiceImpl.get().getTinfoDataAncestors();
@@ -336,7 +337,7 @@ public class ClosureQueryHelper
                         .append("WHEN MATCHED THEN UPDATE SET Target.AncestorTypeId = Source.ancestorTypeId\n")
                         .append("WHEN NOT MATCHED THEN INSERT (RowId, AncestorRowId, AncestorTypeId) VALUES (Source.RowId, Source.ancestorRowId, Source.ancestorTypeId)").appendEOS();
             }
-
+            upsert.addTempToken(ref);
             new SqlExecutor(scope).execute(upsert);
         }
         finally
@@ -447,11 +448,12 @@ public class ClosureQueryHelper
 
             // add the seed ids to the temp table
             SQLFragment selectIntoSql = new SQLFragment("SELECT RowId, ObjectId, ObjectType INTO temp.").append(familyTableName).append(" FROM (").append(selectSeedsSql).append(") x");
+            selectIntoSql.addTempToken(ref);
             if (getScope().getSqlDialect().isSqlServer())
                 // complete hack to get SQLServer to not make RowId an identity column in the target table so the subsequent insert will work without complaint
                 selectIntoSql.append(" UNION ALL SELECT RowId, ObjectId, 'x' AS ObjectType FROM " ).append(isSampleType ? "exp.material" : "exp.data").append(" WHERE 1 <> 1");
             int numSeeds = new SqlExecutor(getScope()).execute(selectIntoSql);
-            logger.debug("Added {} seed rows to {}", numSeeds, familyTableName);
+            logger.info("Added {} seed rows to temp.{}", numSeeds, familyTableName);
             // if we didn't actually insert any items into the table, there's nothing more to be done
             if (numSeeds == 0)
                 return;
