@@ -87,7 +87,7 @@ public class QIdentifier extends QFieldKey
     @Override
     public void appendSource(SourceBuilder builder)
     {
-        builder.append(getTokenText());
+        builder.appendIdentifier(getTokenText());
     }
 
     @Override
