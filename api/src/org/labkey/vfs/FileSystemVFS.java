@@ -3,11 +3,14 @@ package org.labkey.vfs;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.vfs2.CacheStrategy;
 import org.apache.commons.vfs2.FileContent;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSystemException;
 import org.apache.commons.vfs2.VFS;
+import org.apache.commons.vfs2.impl.StandardFileSystemManager;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.UnexpectedException;
@@ -42,6 +45,37 @@ public class FileSystemVFS extends AbstractFileSystemLike
         {
             throw new ConfigurationException("VFS could not be configured", e);
         }
+    }
+
+    private FileSystemVFS(URI uri, @Nullable CacheStrategy cacheStrategy, boolean canRead, boolean canWrite, boolean canDeleteRoot)
+    {
+        super(uri, canRead, canWrite, canDeleteRoot);
+        try
+        {
+            var manager = VFS.getManager();
+            if (null != cacheStrategy && manager.getCacheStrategy() != cacheStrategy)
+            {
+                var fs = new StandardFileSystemManager();
+                fs.setCacheStrategy(CacheStrategy.ON_RESOLVE);
+                fs.init();
+                manager = fs;
+            }
+            vfsRoot = manager.resolveFile(uri);
+            root = new _FileLike(Path.rootPath, vfsRoot);
+        }
+        catch (FileSystemException e)
+        {
+            throw new ConfigurationException("VFS could not be configured", e);
+        }
+    }
+
+    @Override
+    public FileSystemLike getCachingFileSystem()
+    {
+        var cacheStrategy = vfsRoot.getFileSystem().getFileSystemManager().getCacheStrategy();
+        if (cacheStrategy != CacheStrategy.ON_CALL)
+            return this;
+        return new FileSystemVFS(getURI(), CacheStrategy.ON_RESOLVE, canReadFiles(), canWriteFiles(), canDeleteRoot());
     }
 
     @Override
@@ -118,22 +152,15 @@ public class FileSystemVFS extends AbstractFileSystemLike
         }
 
         @Override
-        public void delete() throws IOException
+        public boolean delete() throws IOException
         {
             if (!canWriteFiles())
                 throw new UnauthorizedException();
             if (this.getPath().isEmpty() && !canDeleteRoot())
                 throw new UnauthorizedException();
-            vfs.delete();
+            return vfs.delete();
         }
 
-        @Override
-        public void _mkdir() throws IOException
-        {
-            if (!vfs.getParent().isFolder())
-                throw new IOException("Parent is not a folder");
-            vfs.createFolder();
-        }
 
         @Override
         public void _mkdirs() throws IOException
@@ -204,6 +231,19 @@ public class FileSystemVFS extends AbstractFileSystemLike
             catch (FileSystemException e)
             {
                 throw UnexpectedException.wrap(e);
+            }
+        }
+
+        @Override
+        public long getLastModified()
+        {
+            try
+            {
+                return getContent().getLastModifiedTime();
+            }
+            catch (FileSystemException e)
+            {
+                return 0;
             }
         }
 
