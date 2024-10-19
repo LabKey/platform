@@ -1527,7 +1527,7 @@ abstract public class PipelineJob extends Job implements Serializable
                     }
                 }, throwable);
             }
-            if (mgsLevel.isMoreSpecificThan(Level.WARN))
+            if (mgsLevel.isMoreSpecificThan(Level.ERROR))
             {
                 setErrorStatus(msg.getFormattedMessage());
             }
