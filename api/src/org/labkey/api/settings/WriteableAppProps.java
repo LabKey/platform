@@ -221,8 +221,18 @@ public class WriteableAppProps extends AppPropsImpl
         StringBuilder urls = new StringBuilder();
         for (String externalRedirectURL : externalRedirectHosts)
         {
-            urls.append(externalRedirectURL.trim()).append(EXTERNAL_REDIRECT_HOST_DELIMITER);
+            urls.append(externalRedirectURL.trim()).append(EXTERNAL_HOST_DELIMITER);
         }
         storeStringValue(externalRedirectHostURLs, urls.toString());
+    }
+
+    public void setExternalSourceHosts(@NotNull List<String> externalSourceHosts)
+    {
+        StringBuilder urls = new StringBuilder();
+        for (String externalSourceURL : externalSourceHosts)
+        {
+            urls.append(externalSourceURL.trim()).append(EXTERNAL_HOST_DELIMITER);
+        }
+        storeStringValue(externalSourceHostURLs, urls.toString());
     }
 }

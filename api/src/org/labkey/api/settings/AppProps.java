@@ -238,6 +238,13 @@ public interface AppProps
     @NotNull
     List<String> getExternalRedirectHosts();
 
+    /**
+     *
+     * @return List of configured external resource hosts
+     */
+    @NotNull
+    List<String> getExternalSourceHosts();
+
     Map<StashedStartupProperties, StartupPropertyEntry> getStashedStartupProperties();
 
     @NotNull String getDistributionName();

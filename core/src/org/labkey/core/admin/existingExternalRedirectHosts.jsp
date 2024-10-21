@@ -60,27 +60,27 @@
 <labkey:form method="post" name="existingRedirectHosts">
 
     <%
-        AdminController.ExternalRedirectForm bean = (AdminController.ExternalRedirectForm) HttpView.currentModel();
+        AdminController.ExternalHostsForm bean = (AdminController.ExternalHostsForm) HttpView.currentModel();
     %>
     <table class="labkey-data-region-legacy labkey-show-borders">
         <tr>
-            <th>External Redirect Host(s)</th>
+            <th>External <%=h(bean.getTypeEnum().name())%> Host(s)</th>
             <th></th>
         </tr>
-        <% if (bean.getExistingRedirectHostList().size() == 0) { %>
-            <tr><td colspan="2">No External Redirect Hosts have been configured.</td></tr>
+        <% if (bean.getExistingHostList().isEmpty()) { %>
+            <tr><td colspan="2">No External <%=h(bean.getTypeEnum().name())%> Hosts have been configured.</td></tr>
         <% } %>
 
         <%
             int num = 1;
-            for (String externalRedirectHost : bean.getExistingRedirectHostList()) {
+            for (String externalHost : bean.getExistingHostList()) {
                 String inputNameExisting = "existingExternalHost" + num;
         %>
         <tr>
 
-            <td><input type="text" id="<%=h(inputNameExisting)%>" name="<%=h(inputNameExisting)%>" value="<%= h(externalRedirectHost)%>" size="80"/></td>
+            <td><input type="text" id="<%=h(inputNameExisting)%>" name="<%=h(inputNameExisting)%>" value="<%= h(externalHost)%>" size="80"/></td>
 
-            <td><%=isTroubleshooter ? HtmlString.EMPTY_STRING : button("Delete").primary(true).onClick("return deleteExisting(\"" + h(externalRedirectHost) + "\");") %>
+            <td><%=isTroubleshooter ? HtmlString.EMPTY_STRING : button("Delete").primary(true).onClick("return deleteExisting(\"" + h(externalHost) + "\");") %>
 
             </td>
         </tr>
@@ -89,7 +89,7 @@
             }
         %>
     </table>
-        <% if (bean.getExistingRedirectHostList().size() > 0) { %>
+        <% if (!bean.getExistingHostList().isEmpty()) { %>
             <input type="hidden" id="delete" name="delete" value="false" />
             <input type="hidden" id="existingExternalHost" name="existingExternalHost" value="" />
             <input type="hidden" id="existingExternalRedirectHosts" name="existingExternalRedirectHosts" value="" />

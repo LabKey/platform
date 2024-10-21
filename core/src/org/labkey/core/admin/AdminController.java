@@ -313,6 +313,7 @@ import org.labkey.core.reports.ExternalScriptEngineDefinitionImpl;
 import org.labkey.core.security.BlockListFilter;
 import org.labkey.core.security.SecurityController;
 import org.labkey.data.xml.TablesDocument;
+import org.labkey.filters.ContentSecurityPolicyFilter;
 import org.labkey.security.xml.GroupEnumType;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BindException;
@@ -419,9 +420,15 @@ public class AdminController extends SpringActionController
     private static final Logger LOG = LogHelper.getLogger(AdminController.class, "Admin-related UI and APIs");
     private static final Logger CLIENT_LOG = LogHelper.getLogger(LogAction.class, "Client/browser logging submitted to server");
     private static final String HEAP_MEMORY_KEY = "Total Heap Memory";
+    private static final String EXTERNAL_SOURCE_HOSTS_KEY = "External Sources";
 
     private static long _errorMark = 0;
     private static long _primaryLogMark = 0;
+
+    public static String getExternalSourceHostsKey()
+    {
+        return EXTERNAL_SOURCE_HOSTS_KEY;
+    }
 
     public static void registerAdminConsoleLinks()
     {
@@ -444,7 +451,8 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(Configuration, "short urls", new ActionURL(ShortURLAdminAction.class, root), AdminPermission.class);
         AdminConsole.addLink(Configuration, "site settings", new AdminUrlsImpl().getCustomizeSiteURL());
         AdminConsole.addLink(Configuration, "system maintenance", new ActionURL(ConfigureSystemMaintenanceAction.class, root));
-        AdminConsole.addLink(Configuration, "External Redirect Hosts", new ActionURL(ExternalRedirectAdminAction.class, root));
+        AdminConsole.addLink(Configuration, "external redirect hosts", new ActionURL(ExternalRedirectAdminAction.class, root).addParameter("type", ExternalServerType.Redirect.name()), TroubleshooterPermission.class);
+        AdminConsole.addLink(Configuration, "external allowed sources", new ActionURL(ExternalRedirectAdminAction.class, root).addParameter("type", ExternalServerType.Source.name()), TroubleshooterPermission.class);
 
         // Diagnostics
         AdminConsole.addLink(Diagnostics, "actions", new ActionURL(ActionsAction.class, root));
@@ -10725,44 +10733,66 @@ public class AdminController extends SpringActionController
     }
 
     @AdminConsoleAction()
-    public class ExternalRedirectAdminAction extends FormViewAction<ExternalRedirectForm>
+    public class ExternalRedirectAdminAction extends FormViewAction<ExternalHostsForm>
     {
         @Override
-        public void validateCommand(ExternalRedirectForm target, Errors errors)
+        public void validateCommand(ExternalHostsForm target, Errors errors)
         {
         }
 
         @Override
-        public ModelAndView getView(ExternalRedirectForm form, boolean reshow, BindException errors)
+        public ModelAndView getView(ExternalHostsForm form, boolean reshow, BindException errors)
         {
-            form.setExistingRedirectHostList(AppProps.getInstance().getExternalRedirectHosts());
+            form.setExistingHostsList(form.getTypeEnum() == ExternalServerType.Source ? AppProps.getInstance().getExternalSourceHosts() : AppProps.getInstance().getExternalRedirectHosts());
 
-            JspView<ExternalRedirectForm> newView = new JspView<>("/org/labkey/core/admin/addNewExternalRedirectHost.jsp", form, errors);
-            newView.setTitle("Register New External Redirect Host");
+            JspView<ExternalHostsForm> newView = new JspView<>("/org/labkey/core/admin/addNewExternalRedirectHost.jsp", form, errors);
+            newView.setTitle(String.format("Register New External %1$s Host", form.getTypeEnum().name()));
             newView.setFrame(WebPartView.FrameType.PORTAL);
-            JspView<ExternalRedirectForm> existingView = new JspView<>("/org/labkey/core/admin/existingExternalRedirectHosts.jsp", form, errors);
-            existingView.setTitle("Existing External Redirect Hosts");
+            JspView<ExternalHostsForm> existingView = new JspView<>("/org/labkey/core/admin/existingExternalRedirectHosts.jsp", form, errors);
+            existingView.setTitle(String.format("Existing External %1$s Hosts", form.getTypeEnum().name()));
             existingView.setFrame(WebPartView.FrameType.PORTAL);
 
             return new VBox(newView, existingView);
         }
 
         @Override
-        public boolean handlePost(ExternalRedirectForm form, BindException errors) throws Exception
+        public boolean handlePost(ExternalHostsForm form, BindException errors) throws Exception
+        {
+            WriteableAppProps appProps = AppProps.getWriteableInstance();
+            boolean update;
+
+            if (form.getTypeEnum() == ExternalServerType.Source)
+                update = handleHostPost(form, appProps::getExternalSourceHosts, appProps::setExternalSourceHosts, errors);
+            else
+                update = handleHostPost(form, appProps::getExternalRedirectHosts, appProps::setExternalRedirectHosts,  errors);
+
+            if (update)
+            {
+                appProps.save(getUser());
+                if (form.getTypeEnum() == ExternalServerType.Source)
+                {
+                    // Refresh the CSP with new values.
+                    ContentSecurityPolicyFilter.unregisterAllowedConnectionSource(getExternalSourceHostsKey());
+                    ContentSecurityPolicyFilter.registerAllowedConnectionSource(getExternalSourceHostsKey(), appProps.getExternalSourceHosts().toArray(new String[0]));
+                }
+            }
+
+            return update;
+        }
+
+        private boolean handleHostPost(ExternalHostsForm form, Supplier<List<String>> getHosts, Consumer<List<String>> setHosts, BindException errors) throws Exception
         {
             //handle delete of existing external redirect host
             if (form.isDelete())
             {
                 String urlToDelete = form.getExistingExternalHost();
-                List<String> redirectHosts = AppProps.getInstance().getExternalRedirectHosts();
+                List<String> redirectHosts = getHosts.get();
                 for (String externalRedirectHost : redirectHosts)
                 {
                     if (null != urlToDelete && urlToDelete.trim().equalsIgnoreCase(externalRedirectHost.trim()))
                     {
                         redirectHosts.remove(externalRedirectHost);
-                        WriteableAppProps appProps = AppProps.getWriteableInstance();
-                        appProps.setExternalRedirectHosts(redirectHosts);
-                        appProps.save(getUser());
+                        setHosts.accept(redirectHosts);
                         break;
                     }
                 }
@@ -10770,14 +10800,12 @@ public class AdminController extends SpringActionController
             //handle updates - clicking on Save button under Existing will save the updated urls
             else if (form.isSaveAll())
             {
-                List<String> redirectHosts = form.getExistingRedirectHostList(); //get hosts from the form, this includes updated hosts
-                if (null != redirectHosts && redirectHosts.size() > 0)
+                List<String> redirectHosts = form.getExistingHostList(); //get hosts from the form, this includes updated hosts
+                if (null != redirectHosts && !redirectHosts.isEmpty())
                 {
                     if (!hasDuplicates(redirectHosts, errors))
                     {
-                        WriteableAppProps appProps = AppProps.getWriteableInstance();
-                        appProps.setExternalRedirectHosts(form.getExistingRedirectHostList());
-                        appProps.save(getUser());
+                        setHosts.accept(form.getExistingHostList());
                     }
                     else
                         return false;
@@ -10786,7 +10814,7 @@ public class AdminController extends SpringActionController
             //save new external redirect host
             else if (form.isSaveNew())
             {
-                String newExternalRedirectHost = StringUtils.trimToEmpty(form.getNewExternalRedirectHost());
+                String newExternalRedirectHost = StringUtils.trimToEmpty(form.getNewExternalHost());
 
                 if (StringUtils.isEmpty(newExternalRedirectHost))
                 {
@@ -10795,13 +10823,11 @@ public class AdminController extends SpringActionController
                 }
                 else if (StringUtils.isNotEmpty(newExternalRedirectHost))
                 {
-                    List<String> existingRedirectHosts = AppProps.getInstance().getExternalRedirectHosts();
+                    List<String> existingRedirectHosts = getHosts.get();
                     if (!isDuplicate(existingRedirectHosts, newExternalRedirectHost, errors))
                     {
                         existingRedirectHosts.add(newExternalRedirectHost);
-                        WriteableAppProps appProps = AppProps.getWriteableInstance();
-                        appProps.setExternalRedirectHosts(existingRedirectHosts);
-                        appProps.save(getUser());
+                        setHosts.accept(existingRedirectHosts);
                     }
                     else
                         return false;
@@ -10843,9 +10869,9 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public URLHelper getSuccessURL(ExternalRedirectForm form)
+        public URLHelper getSuccessURL(ExternalHostsForm form)
         {
-            return new ActionURL(ExternalRedirectAdminAction.class, getContainer());
+            return new ActionURL(ExternalRedirectAdminAction.class, getContainer()).addParameter("type", form.getTypeEnum().name());
         }
 
         @Override
@@ -10856,25 +10882,26 @@ public class AdminController extends SpringActionController
         }
     }
 
-    public static class ExternalRedirectForm
+    public static class ExternalHostsForm
     {
-        private String _newExternalRedirectHost;
+        private String _newExternalHost;
         private String _existingExternalHost;
         private boolean _delete;
-        private String _existingExternalRedirectHosts;
+        private String _existingExternalHosts;
         private boolean _saveAll;
         private boolean _saveNew;
+        private String _type;
 
-        private List<String> _existingRedirectURLList;
+        private List<String> _existingHostURLList;
 
-        public String getNewExternalRedirectHost()
+        public String getNewExternalHost()
         {
-            return _newExternalRedirectHost;
+            return _newExternalHost;
         }
 
-        public void setNewExternalRedirectHost(String newExternalRedirectHost)
+        public void setNewExternalHost(String newExternalHost)
         {
-            _newExternalRedirectHost = newExternalRedirectHost;
+            _newExternalHost = newExternalHost;
         }
 
         public String getExistingExternalHost()
@@ -10897,14 +10924,14 @@ public class AdminController extends SpringActionController
             _delete = delete;
         }
 
-        public String getExistingExternalRedirectHosts()
+        public String getExistingExternalHosts()
         {
-            return _existingExternalRedirectHosts;
+            return _existingExternalHosts;
         }
 
-        public void setExistingExternalRedirectHosts(String existingExternalRedirectHosts)
+        public void setExistingExternalHosts(String existingExternalHosts)
         {
-            _existingExternalRedirectHosts = existingExternalRedirectHosts;
+            _existingExternalHosts = existingExternalHosts;
         }
 
         public boolean isSaveAll()
@@ -10927,19 +10954,36 @@ public class AdminController extends SpringActionController
             _saveNew = saveNew;
         }
 
-        public List<String> getExistingRedirectHostList()
+        public List<String> getExistingHostList()
         {
             //for updated urls that comes in as String values from the jsp/html form
-            if (null != getExistingExternalRedirectHosts())
+            if (null != getExistingExternalHosts())
             {
-                return new ArrayList<>(Arrays.asList(getExistingExternalRedirectHosts().split("\n")));
+                return new ArrayList<>(Arrays.asList(getExistingExternalHosts().split("\n")));
             }
-            return _existingRedirectURLList;
+            return _existingHostURLList;
         }
 
-        public void setExistingRedirectHostList(List<String> urlList)
+        public void setExistingHostsList(List<String> urlList)
         {
-            _existingRedirectURLList = urlList;
+            _existingHostURLList = urlList;
+        }
+
+        public String getType()
+        {
+            return _type;
+        }
+
+        @SuppressWarnings("unused")
+        public void setType(String type)
+        {
+            _type = type;
+        }
+
+        @NotNull
+        public ExternalServerType getTypeEnum()
+        {
+            return EnumUtils.getEnum(ExternalServerType.class, getType(), ExternalServerType.Redirect);
         }
     }
 
