@@ -16,16 +16,16 @@
 
 package org.labkey.filecontent;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.mutable.MutableLong;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.StopIteratingRuntimeException;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.view.FilesWebPart;
@@ -35,15 +35,14 @@ import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.filecontent.message.FileContentDigestProvider;
 import org.labkey.filecontent.message.FileEmailConfig;
 import org.labkey.filecontent.message.ShortMessageDigest;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -55,7 +54,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 
 public class FileContentModule extends DefaultModule
 {
@@ -155,9 +153,6 @@ public class FileContentModule extends DefaultModule
         return result;
     }
 
-    /** Maximum time to spend crawling the file root to get its size */
-    private static final long FILE_CRAWL_TIMEOUT_MILLIS = 20_000;
-
     @Override
     public void doStartup(ModuleContext moduleContext)
     {
@@ -184,45 +179,22 @@ public class FileContentModule extends DefaultModule
 
         UsageMetricsService.get().registerUsageMetrics(getName(), () -> {
             Map<String, Object> results = new HashMap<>();
-            File root = FileContentServiceImpl.getInstance().getSiteDefaultRoot();
-            if (root.isDirectory())
-            {
-                long startTime = HeartBeat.currentTimeMillis();
-                MutableLong totalSize = new MutableLong(0);
-                MutableLong fileCount = new MutableLong(0);
-                boolean timedOut = false;
-                boolean succeeded = true;
-                try (Stream<File> s = FileUtils.streamFiles(root, true, (String[])null))
-                {
-                    s.forEach(f ->
-                    {
-                        totalSize.add(f.length());
-                        fileCount.increment();
 
-                        if (HeartBeat.currentTimeMillis() - startTime > FILE_CRAWL_TIMEOUT_MILLIS)
-                        {
-                            throw new StopIteratingRuntimeException();
-                        }
-                    });
-                }
-                catch (StopIteratingRuntimeException e)
-                {
-                    timedOut = true;
-                    succeeded = false;
-                }
-                catch (IOException ignored)
-                {
-                    succeeded = false;
-                }
-                results.put("invalidConfiguredFileRoot", FileContentServiceImpl.getInstance().getProblematicFileRootMessage() != null);
-                results.put("fileRootSize", totalSize.longValue());
-                results.put("fileRootFileCount", fileCount.longValue());
-                results.put("fileRootCrawlTimedOut", timedOut);
-                results.put("fileRootCrawlSucceeded", succeeded);
-                results.put("fileRootMillisecondsToCalculateSize", System.currentTimeMillis() - startTime);
-            }
+            // During system maintenance, FileRootMaintenanceTask populates FileRootSize and FileRootLastCrawled for every container (subject to a timeout)
+            TableInfo containers = CoreSchema.getInstance().getTableInfoContainers();
+            String select = "SELECT SUM(FileRootSize) AS TotalSize, MIN(FileRootLastCrawled) EarliestCrawl, COUNT(*) AS AllFileRoots, COUNT(FileRootLastCrawled) AS FileRootsCrawled FROM ";
+            Map<String, Object> map = new SqlSelector(containers.getSchema(), select + containers.getSelectName())
+                .getMap();
+            results.put("fileRootsTotalSize", map.get("TotalSize"));
+            results.put("fileRootsEarliestCrawlTime", map.get("EarliestCrawl"));
+            long crawled = ((Number)map.get("FileRootsCrawled")).longValue();
+            results.put("fileRootsCrawled", crawled);
+            results.put("fileRootsNotYetCrawled", ((Number)map.get("AllFileRoots")).longValue() - crawled);
+
             return results;
         });
+
+        SystemMaintenance.addTask(new FileRootMaintenanceTask());
     }
 
     @Override

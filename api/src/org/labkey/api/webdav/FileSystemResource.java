@@ -63,14 +63,9 @@ import org.labkey.vfs.FileSystemLike;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Proxy;
 import java.nio.file.Files;
-import java.nio.file.InvalidPathException;
-import java.nio.file.NoSuchFileException;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -81,7 +76,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.TimeUnit;
 
 /**
  *  Base class for file-system based resources
@@ -92,7 +86,7 @@ public class FileSystemResource extends AbstractWebdavResource
 
     public static final String DISPLAY_VALUE_SUFFIX = "_displayValue";
 
-    protected List<FileInfo> _files;
+    protected List<FileLike> _files;
     String _name = null;
     WebdavResource _folder;   // containing controller used for canList()
     protected Boolean _shouldIndex = null; // null means ask parent
@@ -121,7 +115,7 @@ public class FileSystemResource extends AbstractWebdavResource
         _name = name.toString();
         setSecurableResource(resource);
         FileLike root = new FileSystemLike.Builder(FileUtil.getAbsoluteCaseSensitiveFile(file)).root();
-        _files = Collections.singletonList(new FileInfo(root));
+        _files = Collections.singletonList(root);
     }
 
     public FileSystemResource(FileSystemResource folder, Path.Part name)
@@ -130,10 +124,9 @@ public class FileSystemResource extends AbstractWebdavResource
         _folder = folder;
         setSecurableResource(folder.getSecurableResource());
 
-        var list = folder._files.stream()
-            .map(file -> new FileInfo(file._file.resolveChild(name.toString())))
+        _files = folder._files.stream()
+            .map(file -> file.resolveChild(name.toString()))
             .toList();
-        _files = new ArrayList<>(list);
     }
 
     public FileSystemResource(Path path, File file, SecurableResource resource)
@@ -142,7 +135,7 @@ public class FileSystemResource extends AbstractWebdavResource
         setSecurableResource(resource);
         // NOTE: we don't have a user yet, so we're can't limit to read-only
         FileLike root = new FileSystemLike.Builder(FileUtil.getAbsoluteCaseSensitiveFile(file)).readwrite().root();
-        _files = Collections.singletonList(new FileInfo(root));
+        _files = Collections.singletonList(root);
     }
 
     @Override
@@ -185,12 +178,10 @@ public class FileSystemResource extends AbstractWebdavResource
             return FileType.notpresent;
         }
 
-        for (FileInfo file : _files)
+        for (var file : _files)
         {
-            if (file.getType() != FileType.notpresent)
-            {
-                return file.getType();
-            }
+            if (file.exists())
+                return file.isFile() ? FileType.file : FileType.directory;
         }
         return FileType.notpresent;
     }
@@ -210,18 +201,14 @@ public class FileSystemResource extends AbstractWebdavResource
         return _files != null && getType() == FileType.file;
     }
 
-    protected FileInfo getFileInfo()
+    protected FileLike getFileLike()
     {
         if (_files == null || _files.isEmpty())
-        {
             return null;
-        }
-        for (FileInfo file : _files)
+        for (var file : _files)
         {
-            if (file.getType() != FileType.notpresent)
-            {
+            if (file.exists())
                 return file;
-            }
         }
         return _files.get(0);
     }
@@ -229,10 +216,10 @@ public class FileSystemResource extends AbstractWebdavResource
     @Override
     public File getFile()
     {
-        FileInfo f = getFileInfo();
+        FileLike f = getFileLike();
         if (null == f)
             return null;
-        return f._file.toNioPathForRead().toFile();
+        return f.toNioPathForRead().toFile();
     }
 
     @Override
@@ -242,7 +229,7 @@ public class FileSystemResource extends AbstractWebdavResource
             return null;
         if (null == _files || !exists())
             return null;
-        FileLike f = getFileInfo().getFileLike();
+        FileLike f = getFileLike();
         if (FileUtil.FILE_SCHEME.equals(f.getFileSystem().getScheme()))
             return new FileStream.FileFileStream(f.toNioPathForRead().toFile());
         FileObject fo = VFS.getManager().resolveFile(f.toURI());
@@ -327,10 +314,8 @@ public class FileSystemResource extends AbstractWebdavResource
     {
         if (_files != null)
         {
-            for (FileInfo file : _files)
-            {
-                file._attributes = null;
-            }
+            for (var file : _files)
+                file.refresh();
         }
     }
 
@@ -344,9 +329,9 @@ public class FileSystemResource extends AbstractWebdavResource
         if (_files != null)
         {
             _files.stream()
-                    .filter(fileInfo -> fileInfo.getType() == FileType.directory)
-                    .forEach(fileInfo -> {
-                            List<FileLike> children = fileInfo._file.getChildren();
+                    .filter(FileLike::isDirectory)
+                    .forEach(dir -> {
+                            List<FileLike> children = dir.getChildren();
                             for (FileLike child : children)
                                 result.add(child.getName());
                     });
@@ -384,7 +369,7 @@ public class FileSystemResource extends AbstractWebdavResource
     @Override
     public long getLastModified()
     {
-        FileInfo fi = getFileInfo();
+        FileLike fi = getFileLike();
         if (null != fi)
         {
             return fi.getLastModified();
@@ -396,10 +381,10 @@ public class FileSystemResource extends AbstractWebdavResource
     @Override
     public long getContentLength()
     {
-        FileInfo fi = getFileInfo();
-        if (null == fi || FileType.file != fi.getType())
+        FileLike file = getFileLike();
+        if (null == file || !file.isFile())
             return 0;
-        return fi.getLength();
+        return file.getSize();
     }
 
 
@@ -717,98 +702,6 @@ public class FileSystemResource extends AbstractWebdavResource
         if (nioPath != null)
         {
             Files.setLastModifiedTime(nioPath, FileTime.fromMillis(time));
-        }
-        FileInfo info = getFileInfo();
-        if (info != null)
-        {
-            info._attributes = null;
-        }
-    }
-
-    static final FileTime nullTime = FileTime.from(Long.MIN_VALUE,TimeUnit.MILLISECONDS);
-
-    static final BasicFileAttributes doesNotExist = (BasicFileAttributes)Proxy.newProxyInstance(
-            FileSystemResource.class.getClassLoader(),
-            new Class[] {BasicFileAttributes.class},
-            (proxy, method, args) -> {
-                if (method.getReturnType() == Boolean.class)
-                    return false;
-                if (method.getReturnType() == FileTime.class)
-                    return nullTime;
-                if (method.getReturnType() == Long.class)
-                    return 0;
-                return null;
-            });
-
-
-
-    protected static class FileInfo
-    {
-        private final FileLike _file;
-        BasicFileAttributes _attributes;
-
-        public FileInfo(FileLike file)
-        {
-            _file = file;
-        }
-
-        public FileLike getFileLike()
-        {
-            return _file;
-        }
-
-        /**
-         * Try to determine if this entry exists on disk, and its type (file or directory) with the minimum number of
-         * java.io.File method calls. Assume that entries are likely to exist, and that files are likely to have extensions.
-         * In most cases this reduces the number of java.io.File method calls to one to answer exists(), isDirectory(), and
-         * isFile().
-         */
-        private FileType getType()
-        {
-            _init();
-            if (null == _attributes)
-                return null;
-            if (doesNotExist == _attributes)
-                return FileType.notpresent;
-            if (_attributes.isRegularFile())
-                return FileType.file;
-            else
-                return FileType.directory;
-        }
-
-
-
-        private long getLastModified()
-        {
-            _init();
-            return null==_attributes ? Long.MIN_VALUE : _attributes.lastModifiedTime().toMillis();
-        }
-
-
-        private long getLength()
-        {
-            _init();
-            return null==_attributes ? 0 : _attributes.size();
-        }
-
-
-        private void _init()
-        {
-            if (_file != null && _attributes == null)
-            {
-                try
-                {
-                    _attributes = Files.readAttributes(_file.toNioPathForRead(), BasicFileAttributes.class);
-                }
-                catch (FileNotFoundException | InvalidPathException | NoSuchFileException x)
-                {
-                    _attributes = doesNotExist;
-                }
-                catch (IOException x)
-                {
-                    throw UnexpectedException.wrap(x);
-                }
-            }
         }
     }
 }
