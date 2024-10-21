@@ -34,7 +34,7 @@
         document.getElementById("delete").value = true;
         document.getElementById("saveAll").value = false;
         document.getElementById("existingExternalHost").value = hostToDelete;
-        document.forms["existingRedirectHosts"].submit();
+        document.forms["existingExternalHosts"].submit();
     }
 
     function saveAll() {
@@ -42,22 +42,22 @@
         //clicking on save will save all the values - changed and unchanged values
         var num = 1;
         var inputNameExisting = "existingExternalHost" + num;
-        var redirectHosts = "";
+        var hosts = "";
 
         while (null != document.getElementById(inputNameExisting))
         {
-            redirectHosts += (document.getElementById(inputNameExisting).value + "\n");
+            hosts += (document.getElementById(inputNameExisting).value + "\n");
             num++;
             inputNameExisting = "existingExternalHost" + num;
         }
 
         document.getElementById("saveAll").value = true;
-        document.getElementById("existingExternalRedirectHosts").value = redirectHosts;
-        document.forms["existingRedirectHosts"].submit();
+        document.getElementById("existingExternalHosts").value = hosts;
+        document.forms["existingExternalHosts"].submit();
     }
 </script>
 
-<labkey:form method="post" name="existingRedirectHosts">
+<labkey:form method="post" name="existingExternalHosts">
 
     <%
         AdminController.ExternalHostsForm bean = (AdminController.ExternalHostsForm) HttpView.currentModel();
@@ -92,7 +92,7 @@
         <% if (!bean.getExistingHostList().isEmpty()) { %>
             <input type="hidden" id="delete" name="delete" value="false" />
             <input type="hidden" id="existingExternalHost" name="existingExternalHost" value="" />
-            <input type="hidden" id="existingExternalRedirectHosts" name="existingExternalRedirectHosts" value="" />
+            <input type="hidden" id="existingExternalHosts" name="existingExternalHosts" value="" />
             <tr>
                 <td></td>
                 <td><br/><input type="hidden" id="saveAll" name="saveAll"><%=isTroubleshooter ? button("Done").href(urlProvider(AdminUrls.class).getAdminConsoleURL()) : button("Save").primary(true).onClick("return saveAll();")%>

@@ -43,8 +43,8 @@
 <labkey:form method="post">
     <table>
         <tr>
-            <td class="labkey-form-label"><label for="newExternalRedirectHostTextField">Host</label></td>
-            <td><input name="newExternalRedirectHost" id="newExternalRedirectHostTextField" size="75" /></td>
+            <td class="labkey-form-label"><label for="newExternalHostTextField">Host</label></td>
+            <td><input name="newExternalHost" id="newExternalHostTextField" size="75" /></td>
         </tr>
         <tr>
             <td><br/><input type="hidden" id="saveNew" name="saveNew" value="true"><%= button("Save").submit(true) %></td>
