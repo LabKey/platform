@@ -1111,7 +1111,7 @@ public class LoginController extends SpringActionController
             ActionURL url = new ActionURL(customLogin);
             String customLoginAction = url.getAction();
             String customLoginController =  url.getController();
-            if (null != customLoginController && !customLoginController.equals("") && null != customLoginAction && !customLoginAction.equals(""))
+            if (null != customLoginController && !customLoginController.isEmpty() && null != customLoginAction && !customLoginAction.isEmpty())
             {
                 loginController = customLoginController;
                 loginAction = customLoginAction;
