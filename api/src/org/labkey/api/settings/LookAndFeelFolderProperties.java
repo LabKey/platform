@@ -15,6 +15,7 @@
  */
 package org.labkey.api.settings;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.DateUtil;
@@ -168,8 +169,11 @@ public class LookAndFeelFolderProperties extends AbstractWriteableSettingsGroup
     // Note: Should be called only by FolderSettingsCache; other callers use getDefaultNumberFormat() instead.
     public String calculateDefaultNumberFormat()
     {
-        // Look up this value starting from the current container
-        return lookupStringValue(_c, defaultNumberFormatString, null);
+        // Look up this value starting from the current container.
+        // Note: Unchecking "Inherit" and saving an empty number format saves the empty string (""). Unfortunately,
+        // new DateFormat("") happily provides a format with thousands separators (??), so without this trimToNull()
+        // call, all numbers are displayed with commas, including RowIds.
+        return StringUtils.trimToNull(lookupStringValue(_c, defaultNumberFormatString, null));
     }
 
     // Get the value that's actually stored in this container or null if inherited; don't look up the hierarchy.
