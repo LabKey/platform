@@ -216,6 +216,7 @@ public class ApiModule extends CodeOnlyModule
     @Override
     protected void init()
     {
+        ModuleLoader.getInstance().registerResourcePrefix("/org/labkey/vfs", this);
         AttachmentService.get().registerAttachmentType(ReportType.get());
         AttachmentService.get().registerAttachmentType(LookAndFeelResourceType.get());
         AttachmentService.get().registerAttachmentType(AuthenticationLogoType.get());

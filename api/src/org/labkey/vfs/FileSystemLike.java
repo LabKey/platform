@@ -4,6 +4,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.URIUtil;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -15,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.apache.commons.lang3.StringUtils.defaultIfBlank;
+import static org.labkey.api.util.FileUtil.FILE_SCHEME;
 
 /**
  * In LabKey most files are accessed within a directory with a particular role.  For instance, a directory might be:
@@ -39,16 +41,26 @@ import static org.apache.commons.lang3.StringUtils.defaultIfBlank;
  *
  * <p/>
  * implementation notes:
- * - This is meant to be a wrapper over java.nio.file.Path or java.io.File or org.apache.commons.vfs2.FileObject.
+ * - This is meant to be a wrapper over java.nio.file.Path, java.io.File or org.apache.commons.vfs2.FileObject or other implementaions.
  *   However, it is still lower level than Resource.  For instance, it does not know about Permissions or ContentType, etc.
  * <br>
  * - FileLike objects always present String path and util.Path relative to the FileSystemLike root.
  *   If the FileLike wraps a local path, toNioPath() can be used.
  * <br>
- * - These classes should not cache, but the wrapped impl might.  This is why FileLike has a reset() method.
+ * - These classes generally do not cache metadata, but the wrapped impl might.  This is why FileLike has a reset() method.
+ * - Caching versions can be explicitly requested.
  */
 public interface FileSystemLike
 {
+    /*
+     * Create a file system that return FileLike objects that cache basic file meta-data such as type (file/directory)
+     * and direct children.  refresh() can be used to force reload of metadata.
+     * TODO See PipelineDirectoryImpl for code that currently does its own caching for performance
+     * reasons.
+     * FileSystemResource has already been converted to use getCachingFileSystem().
+     */
+    FileSystemLike getCachingFileSystem();
+
     default String getScheme()
     {
         return getURI().getScheme();
@@ -68,6 +80,21 @@ public interface FileSystemLike
     boolean canDeleteRoot();
 
 
+    default boolean isDescendant(FileLike base, URI uri)
+    {
+        // handle common case
+        if (null == base || getRoot() == base)
+            return URIUtil.isDescendant(getURI(), uri);
+        if (base.getFileSystem() != this)
+            throw new IllegalArgumentException();
+        return URIUtil.isDescendant(getURI(base), uri);
+    }
+
+    /** BasicFileAttributes uses more memory than we really need, so this is the basics */
+    record MinimalFileAttributes(boolean exists, boolean file, boolean directory, long size, long lastModified) {}
+    MinimalFileAttributes NULL_ATTRIBUTES = new MinimalFileAttributes(false, false, false, 0, 0);
+
+
     class Builder
     {
         URI uri;
@@ -77,6 +104,7 @@ public interface FileSystemLike
         boolean canWriteFiles = true;
         boolean canDeleteRoot = false;
         boolean memCheck = true;
+        boolean caching = false;
 
         public Builder(URI uri)
         {
@@ -91,6 +119,12 @@ public interface FileSystemLike
         public Builder(java.nio.file.Path path)
         {
             this.uri = path.toUri();
+        }
+
+        public Builder caching()
+        {
+            caching = true;
+            return this;
         }
 
         public Builder readonly()
@@ -127,12 +161,14 @@ public interface FileSystemLike
 
         public FileSystemLike build()
         {
-            var scheme = defaultIfBlank(uri.getScheme(), FileUtil.FILE_SCHEME);
+            var scheme = defaultIfBlank(uri.getScheme(), FILE_SCHEME);
             FileSystemLike ret;
-            if (defaultVfs || !FileUtil.FILE_SCHEME.equals(scheme))
+            if (defaultVfs || !FILE_SCHEME.equals(scheme))
                 ret = new FileSystemVFS(uri, canReadFiles, canWriteFiles, canDeleteRoot);
             else
                 ret = new FileSystemLocal(uri, canReadFiles, canWriteFiles, canDeleteRoot);
+            if (caching)
+                ret = ret.getCachingFileSystem();
             if (!memCheck)
             {
                 MemTracker.get().remove(ret);
@@ -145,24 +181,6 @@ public interface FileSystemLike
             return build().getRoot();
         }
     }
-
-//    static URI toURI(FileLike f)
-//    {
-//        return f.getFileSystem().getURI(f);
-//    }
-//
-//    static java.nio.file.Path toNioPath(FileLike f)
-//    {
-//        var fs = f.getFileSystem();
-//        if (!FileUtil.FILE_SCHEME.equals(fs.getScheme()))
-//            throw new UnsupportedOperationException("Unsupported URI scheme: " + fs.getScheme());
-//        return f.getFileSystem().getNioPath(f);
-//    }
-//
-//    static String toFilePath(FileLike f)
-//    {
-//        return toNioPath(f).toString();
-//    }
 
     /** Helper for partially converted code. Parent dir must exist. */
     static FileLike wrapFile(File f)

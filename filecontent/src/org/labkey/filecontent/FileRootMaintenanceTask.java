@@ -93,11 +93,9 @@ public class FileRootMaintenanceTask implements MaintenanceTask
                 });
 
             if (finished.getValue())
-                //noinspection StringConcatenationArgumentToLogCall - pipeline logger doesn't support parameterized messages yet! Issue #51480
-                log.info("Completed crawling all " + rootCount.getValue() + " file roots");
+                log.info("Completed crawling all {} file roots", rootCount.getValue());
             else
-                //noinspection StringConcatenationArgumentToLogCall
-                log.info("Crawled " + rootCount.getValue() + " file roots before reaching the " + MAX_MINUTES + "-minute deadline. Crawling will continue during the next system maintenance run.");
+                log.info("Crawled {} file roots before reaching the {}-minute deadline. Crawling will continue during the next system maintenance run.", rootCount.getValue(), MAX_MINUTES);
         }
     }
 

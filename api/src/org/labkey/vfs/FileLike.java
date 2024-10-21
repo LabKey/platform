@@ -45,6 +45,11 @@ public interface FileLike extends Comparable<FileLike>
         return getFileSystem().getURI(this);
     }
 
+    default boolean isDescendant(URI uri)
+    {
+        return getFileSystem().isDescendant(this, uri);
+    }
+
     default java.nio.file.Path toNioPathForRead()
     {
         if (!getFileSystem().canReadFiles())
@@ -89,7 +94,7 @@ public interface FileLike extends Comparable<FileLike>
      */
     void createFile() throws IOException;
 
-    void delete() throws IOException;
+    boolean delete() throws IOException;
 
     void refresh();
 
@@ -100,6 +105,8 @@ public interface FileLike extends Comparable<FileLike>
     boolean isFile();
 
     long getSize();
+
+    long getLastModified();
 
     OutputStream openOutputStream() throws IOException;
 
