@@ -25,8 +25,8 @@ public enum SampleMetadataInputFormat
     FILE_BASED("File Upload (metadata only)", "Metadata is provided from a file upload (separate from the run data file)"),
     COMBINED("Combined File Upload (metadata & run data)", "Metadata and run data are combined into a single file upload");
 
-    private String _label;
-    private String _description;
+    private final String _label;
+    private final String _description;
 
     SampleMetadataInputFormat(String label, String description)
     {

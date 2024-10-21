@@ -3151,7 +3151,7 @@ Ext4.define('File.panel.Browser', {
         for (var i = 0; i < toMove.length; i++) {
             var selected = toMove[i];
 
-            var dest = this.fileSystem.concatPaths(destination, (selected.newName || selected.record.data.name));
+            var dest = this.fileSystem.concatPaths(destination, encodeURIComponent(selected.newName || selected.record.data.name));
 
             // WebDav.movePath handles the "do you want to overwrite" case
             this.fileSystem.movePath({
