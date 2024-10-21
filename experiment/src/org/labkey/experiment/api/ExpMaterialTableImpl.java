@@ -1535,6 +1535,12 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     {
         TableInfo propertiesTable = _ss.getTinfo();
 
+        // The specimens sample type doesn't have a properties table
+        if (propertiesTable == null)
+        {
+            return data;
+        }
+
         int sampleTypeObjectId = requireNonNull(getOwnerObjectId());
 
         // TODO: subclass PersistDataIteratorBuilder to index Materials! not DataClass!

@@ -1,5 +1,6 @@
 package org.labkey.api.dataiterator;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
@@ -21,12 +22,12 @@ public class TableInsertDataIteratorBuilder implements DataIteratorBuilder
     Map<String, String> remapSchemaColumns = null;
     boolean failOnEmptyUpdate = false;
 
-    public TableInsertDataIteratorBuilder(DataIteratorBuilder data, TableInfo table)
+    public TableInsertDataIteratorBuilder(DataIteratorBuilder data, @NotNull TableInfo table)
     {
         this(data, table, null);
     }
 
-    public TableInsertDataIteratorBuilder(DataIteratorBuilder data, TableInfo table, @Nullable Container container)
+    public TableInsertDataIteratorBuilder(DataIteratorBuilder data, @NotNull TableInfo table, @Nullable Container container)
     {
         this(data, table, container, null);
     }
@@ -34,9 +35,13 @@ public class TableInsertDataIteratorBuilder implements DataIteratorBuilder
     /**
      * @param container If container != null, it will be set as a constant in the insert statement.
      */
-    public TableInsertDataIteratorBuilder(DataIteratorBuilder data, TableInfo table, @Nullable Container container, Set<String> dontUpdate)
+    public TableInsertDataIteratorBuilder(DataIteratorBuilder data, @NotNull TableInfo table, @Nullable Container container, Set<String> dontUpdate)
     {
         this.builder = data;
+        if (table == null)
+        {
+            throw new IllegalArgumentException("Table cannot be null");
+        }
         this.table = table;
         this.container = container;
         this.dontUpdate = dontUpdate;

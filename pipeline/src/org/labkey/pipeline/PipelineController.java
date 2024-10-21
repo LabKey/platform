@@ -128,6 +128,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 public class PipelineController extends SpringActionController
@@ -1162,8 +1163,7 @@ public class PipelineController extends SpringActionController
             ApiSimpleResponse resp = new ApiSimpleResponse();
             PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
             resp.put("containerPath", null != root ? root.getContainer().getPath() : null);
-            // Hack as temporary workaround for issue 43374
-            resp.put("webDavURL", null != root ? FileUtil.encodeForURL(root.getWebdavURL().replace("%25", "%").replace("%2B", "+")) : null);
+            resp.put("webDavURL", null != root ? Objects.toString(root.getWebdavURL(), null) : null);
             return resp;
         }
     }

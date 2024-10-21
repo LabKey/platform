@@ -766,8 +766,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     }
 
     @Override
-    @Nullable
-    public String getWebDavURL(@NotNull FileContentService.PathType type)
+    public @Nullable URI getWebDavURL(@NotNull FileContentService.PathType type)
     {
         java.nio.file.Path path = getFilePath();
         if (path == null)

@@ -16,15 +16,21 @@
 
 package org.labkey.api.files.view;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.commons.lang3.BooleanUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.Portal;
 
-import java.net.URLDecoder;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
@@ -45,13 +51,17 @@ public class CustomizeFilesWebPartView extends JspView<CustomizeFilesWebPartView
     public static class CustomizeWebPartForm
     {
         private String fileSet;
-        private String fileRoot; // webdav node id
+        @Getter
+        @Setter
+        private URI fileRoot; // webdav node id
         private String path;
         private boolean useFileSet;
         private boolean _folderTreeVisible;
         private String _location;
         private Portal.WebPart _webPart;
         private String _rootOffset;
+        @Setter
+        @Getter
         private int size = 350;
         private String _title;
 
@@ -141,16 +151,6 @@ public class CustomizeFilesWebPartView extends JspView<CustomizeFilesWebPartView
             _rootOffset = rootOffset;
         }
 
-        public int getSize()
-        {
-            return size;
-        }
-
-        public void setSize(int size)
-        {
-            this.size = size;
-        }
-
         public String getTitle()
         {
             return _title;
@@ -160,44 +160,36 @@ public class CustomizeFilesWebPartView extends JspView<CustomizeFilesWebPartView
         {
             _title = title;
         }
-
-        public String getFileRoot()
-        {
-            return fileRoot;
-        }
-
-        public String getDecodedFileRoot()
-        {
-            return null != fileRoot ? URLDecoder.decode(fileRoot) : null;
-        }
-
-        public void setFileRoot(String fileRoot)
-        {
-            this.fileRoot = fileRoot;
-        }
     }
 
-    private static String getDavTreeFileRoot(String fileRoot, String legacyFileRoot, Container c)
+    private static URI getDavTreeFileRoot(String fileRoot, String legacyFileRoot, Container c)
     {
-        String treeFileRoot = null;
+        URI treeFileRoot = null;
         FileContentService service = FileContentService.get();
         if (null != service)
         {
             if (fileRoot != null)
             {
-                if (fileRoot.startsWith(FileContentService.FILES_LINK))
+                try
                 {
-                    // @files disappears when root set to cloud, so make sure it exists before trying in expandPath there
-                    Path path = service.getFileRootPath(c);
-                    if (null != path)
+                    if (fileRoot.startsWith(FileContentService.FILES_LINK))
                     {
-                        if (Files.exists(path.resolve(fileRoot)))
-                            treeFileRoot = c.getPath() + "/" + fileRoot;
+                        // @files disappears when root set to cloud, so make sure it exists before trying in expandPath there
+                        Path path = service.getFileRootPath(c);
+                        if (null != path)
+                        {
+                            if (Files.exists(path.resolve(fileRoot)))
+                                treeFileRoot = new URI(c.getParsedPath().encode("", "/") + fileRoot);
+                        }
+                    }
+                    else
+                    {
+                        treeFileRoot = new URI(c.getParsedPath().encode("", "/") + fileRoot);
                     }
                 }
-                else
+                catch (URISyntaxException e)
                 {
-                    treeFileRoot = c.getPath() + "/" + fileRoot;
+                    throw UnexpectedException.wrap(e);
                 }
             }
             else if (legacyFileRoot != null) // legacy file root

@@ -49,6 +49,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
@@ -65,8 +66,8 @@ public class PipeRootImpl implements PipeRoot
 
     private String _containerId;
     private final List<URI> _uris = new ArrayList<>();
-    private List<File> _rootPaths = new ArrayList<>();
-    private List<Path> _rootNioPaths = new ArrayList<>();
+    private final List<File> _rootPaths = new ArrayList<>();
+    private final List<Path> _rootNioPaths = new ArrayList<>();
     private final String _entityId;
     private final boolean _searchable;
     private String _cloudStoreName;         // Only used for cloud
@@ -145,7 +146,7 @@ public class PipeRootImpl implements PipeRoot
         }
         catch (URISyntaxException e)
         {
-            throw new UnexpectedException(e);
+            throw UnexpectedException.wrap(e);
         }
         _entityId = root.getEntityId();
         _searchable = root.isSearchable();
@@ -204,7 +205,7 @@ public class PipeRootImpl implements PipeRoot
     @NotNull
     public URI getUri()
     {
-        if (_uris.size() == 0)
+        if (_uris.isEmpty())
             throw new IllegalStateException("No URI.");
         return _uris.get(0);
     }
@@ -213,7 +214,7 @@ public class PipeRootImpl implements PipeRoot
     @NotNull
     public File getRootPath()
     {
-        if (getRootPaths().size() == 0)
+        if (getRootPaths().isEmpty())
             throw new RuntimeException("No root path set.");
         return getRootPaths().get(0);
     }
@@ -222,7 +223,7 @@ public class PipeRootImpl implements PipeRoot
     @NotNull
     public Path getRootNioPath()
     {
-        assert _uris.size() > 0;
+        assert !_uris.isEmpty();
         if (ROOT_BASE.cloud.equals(_defaultRoot))
         {
             return CloudStoreService.get().getPath(getContainer(), _cloudStoreName, new org.labkey.api.util.Path(_uris.get(0).getPath()));
@@ -260,7 +261,7 @@ public class PipeRootImpl implements PipeRoot
 
     public synchronized List<File> getRootPaths()
     {
-        if (_rootPaths.size() == 0 && !isCloudRoot())
+        if (_rootPaths.isEmpty() && !isCloudRoot())
         {
             for (URI uri : _uris)
             {
@@ -333,7 +334,7 @@ public class PipeRootImpl implements PipeRoot
                     return root;
                 }
             }
-            catch (IOException e) {}
+            catch (IOException ignored) {}
         }
         return null;
     }
@@ -491,7 +492,6 @@ public class PipeRootImpl implements PipeRoot
      *
      * Cloud: Uses temp directory
      * Default: Uses file root
-     * @return
      */
     @Override
     @NotNull
@@ -672,7 +672,7 @@ public class PipeRootImpl implements PipeRoot
     }
 
     @Override
-    public String getWebdavURL()
+    public URI getWebdavURL()
     {
         String davName = _defaultRoot.getDavName();
         Container c = getContainer();
@@ -685,35 +685,28 @@ public class PipeRootImpl implements PipeRoot
     public List<String> validate()
     {
         List<String> result = new ArrayList<>();
-        if (null != _uris)
+        for (URI uri : _uris)
         {
-            for (URI uri : _uris)
+            if (null != uri && StringUtils.isNotBlank(uri.toString()) && !FileUtil.hasCloudScheme(uri))
             {
-                if (null != uri && StringUtils.isNotBlank(uri.toString()) && !FileUtil.hasCloudScheme(uri))
+                Path rootPath = Path.of(uri);
+                if (!NetworkDrive.exists(rootPath))
                 {
-                    Path rootPath = Path.of(uri);
-                    if (!NetworkDrive.exists(rootPath))
-                    {
-                        result.add("Pipeline root does not exist.");
-                    }
-                    else if (!Files.isDirectory(rootPath))
-                    {
-                        result.add("Pipeline root is not a directory.");
-                    }
-                    else if (URIUtil.resolve(uri, uri, "test") == null)
-                    {
-                        result.add("Pipeline root is invalid.");
-                    }
+                    result.add("Pipeline root does not exist.");
                 }
-                else if (isCloudRoot() && !isCloudStoreEnabled())
+                else if (!Files.isDirectory(rootPath))
                 {
-                    result.add("Cloud store not enabled.");
+                    result.add("Pipeline root is not a directory.");
+                }
+                else if (URIUtil.resolve(uri, uri, "test") == null)
+                {
+                    result.add("Pipeline root is invalid.");
                 }
             }
-        }
-        else
-        {
-            result.add("Pipeline root is invalid.");
+            else if (isCloudRoot() && !isCloudStoreEnabled())
+            {
+                result.add("Cloud store not enabled.");
+            }
         }
         return result;
     }
@@ -727,7 +720,7 @@ public class PipeRootImpl implements PipeRoot
     @Override
     public void configureForm(SetupForm form)
     {
-        if (_uris.size() > 0)
+        if (!_uris.isEmpty())
         {
             String uriPath = _uris.get(0).getPath();
             if (ROOT_BASE.cloud.equals(_defaultRoot))

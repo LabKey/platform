@@ -87,37 +87,22 @@
 
         changeFromURL : function(rawURL)
         {
-            // rawURL is encoded
-            this.rootOffset  = LABKEY.ActionURL.decodePath(rawURL).replace(this.rootPath, '/');
+            this.rootOffset  = rawURL.replace(this.rootPath, '/');
             this.offsetUrl = this.rootOffset.replace(this.baseUrl, '');
             return this.rootOffset;
         },
 
-        changeOffsetURL : function(newRootOffset, encode)
+        changeOffsetURL : function(newRootOffset)
         {
             this.rootOffset = newRootOffset;
             this.offsetUrl = this.rootOffset.replace(this.baseUrl, '');
 
-            var path = this.concatPaths(this.rootPath, this.rootOffset);
-
-            if (encode !== false)
-            {
-                path = LABKEY.ActionURL.encodePath(this.getURLWithCharsReplaced(path));
-            }
-
-            return path;
+            return this.concatPaths(this.rootPath, this.rootOffset);
         },
 
-        getURI: function (url, encode)
+        getURI: function (url)
         {
-            var u;
-            if (encode) {
-                u = LABKEY.ActionURL.encodePath(this.getURLWithCharsReplaced(url));
-            }
-            else {
-                u = url;
-            }
-            return this.concatPaths(LABKEY.ActionURL.getBaseURL(true), this.concatPaths(this.contextUrl, u));
+            return this.concatPaths(LABKEY.ActionURL.getBaseURL(true), this.concatPaths(this.contextUrl, url));
         },
 
         getAbsoluteBaseURL: function ()
@@ -136,11 +121,11 @@
 
         /**
          * Returns the base relative URL which is after the context URL. The 'root' for this instance
-         * e.g. "/home/@files"
+         * e.g. "/home/%40files"
          */
         getBaseURL: function ()
         {
-            return this.getURLWithCharsReplaced(this.baseUrl);
+            return this.baseUrl;
         },
 
         getContextBaseURL: function ()
@@ -159,7 +144,7 @@
 
         getURL: function ()
         {
-            return this.getURLWithCharsReplaced(this.concatPaths(this.contextUrl, this.concatPaths(this.baseUrl, this.offsetUrl)));
+            return this.concatPaths(this.contextUrl, this.concatPaths(this.baseUrl, this.offsetUrl));
         },
 
         init: function (config)
@@ -177,19 +162,19 @@
 
         getModel: function (type)
         {
-            return (type == 'xml' ? 'File.data.webdav.XMLResponse' : 'File.data.webdav.JSONResponse');
+            return (type === 'xml' ? 'File.data.webdav.XMLResponse' : 'File.data.webdav.JSONResponse');
         },
 
         getProxyCfg: function (type, options)
         {
-            return (type == 'xml' ? this.getXMLProxyCfg(options) : this.getJsonProxyCfg(options));
+            return (type === 'xml' ? this.getXMLProxyCfg(options) : this.getJsonProxyCfg(options));
         },
 
         getJsonProxyCfg: function (options)
         {
             var jsonProxy = {
                 type: 'ajax',
-                url: this.concatPaths(LABKEY.ActionURL.getBaseURL(true), LABKEY.ActionURL.encodePath(this.getURL())),
+                url: this.concatPaths(LABKEY.ActionURL.getBaseURL(true), this.getURL()),
                 extraParams: {
                     method: 'JSON'
                 },
@@ -224,20 +209,13 @@
         {
             return {
                 type: 'webdav',
-                url: this.concatPaths(LABKEY.ActionURL.getBaseURL(true), LABKEY.ActionURL.encodePath(this.getURLWithCharsReplaced(this.getContextBaseURL()))),
+                url: this.concatPaths(LABKEY.ActionURL.getBaseURL(true), this.getContextBaseURL()),
                 reader: {
                     type: 'xml',
                     root: 'multistatus',
                     record: 'response'
                 }
             }
-        },
-
-        // Compensate for encoding done in FilesWebPart._getRootPath() as part of a fix for
-        // 'Issue 43374: Some characters in file names cause a problem when creating exp.data rows in FileImporter'
-        getURLWithCharsReplaced : function(url)
-        {
-            return url.replaceAll("%25", "%").replaceAll("%2B", "+");
         },
 
         /**
@@ -419,9 +397,9 @@
                         {
                             var success = false;
                             File.system.Abstract.processAjaxResponse(response);
-                            if (NO_CONTENT == response.status || NOT_FOUND == response.status)
+                            if (NO_CONTENT === response.status || NOT_FOUND === response.status)
                                 success = true;
-                            else if (METHOD_NOT_ALLOWED == response.status)
+                            else if (METHOD_NOT_ALLOWED === response.status)
                                 success = false;
 
                             if (success)
@@ -439,7 +417,7 @@
                         failure: function (response, options)
                         {
                             var success = false;
-                            if (NOT_FOUND == response.status)
+                            if (NOT_FOUND === response.status)
                             {
                                 success = true;
                             }
@@ -479,8 +457,8 @@
          */
         movePath: function (config)
         {
-            var resourcePath = this.getURI(config.source, false);
-            var destinationPath = this.getURI(config.destination, false);
+            var resourcePath = this.getURI(config.source);
+            var destinationPath = this.getURI(config.destination);
             var headers = {
                 Destination: destinationPath
             };
@@ -509,8 +487,8 @@
                 success: function (response, options)
                 {
                     File.system.Abstract.processAjaxResponse(response);
-                    var success = (CREATED == response.status || NO_CONTENT == response.status || OK == response.status);
-                    if (!success && FILE_MATCH == response.status)
+                    var success = (CREATED === response.status || NO_CONTENT === response.status || OK === response.status);
+                    if (!success && FILE_MATCH === response.status)
                     {
                         var noun = config.isFile ? "File" : "Folder";
                         var name = config.fileRecord.newName || config.fileRecord.record.get('name');
@@ -523,7 +501,7 @@
                             buttons: Ext4.Msg.YESNO,
                             fn: function (btn)
                             {
-                                if (btn == 'yes')
+                                if (btn === 'yes')
                                 {
                                     this.fileSystem.movePath(Ext4.apply(config, {overwrite: true}));
                                 }
@@ -573,7 +551,7 @@
         renamePath: function (config)
         {
             //allow user to submit either full path for rename, or just the new filename
-            if (config.source.indexOf(this.separator) > -1 && config.destination.indexOf(this.separator) == -1)
+            if (config.source.indexOf(this.separator) > -1 && config.destination.indexOf(this.separator) === -1)
             {
                 config.destination = this.concatPaths(this.getParentPath(config.source), config.destination);
             }
