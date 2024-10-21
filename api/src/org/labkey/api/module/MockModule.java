@@ -380,6 +380,12 @@ public class MockModule implements Module
     }
 
     @Override
+    public FileLike getExplodedFileLike()
+    {
+        return null;
+    }
+
+    @Override
     public @Nullable File getZippedPath()
     {
         return null;

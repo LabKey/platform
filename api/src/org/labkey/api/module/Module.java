@@ -316,7 +316,14 @@ public interface Module
      * Returns the exploded path for the module.
      * @return The path to the exploded module directory
      */
+    @Deprecated
     File getExplodedPath();
+
+    /**
+     * Returns the exploded path for the module.
+     * @return The path to the exploded module directory
+     */
+    FileLike getExplodedFileLike();
 
     /**
      * This is called by the module loader to let the module know where its exploded path is

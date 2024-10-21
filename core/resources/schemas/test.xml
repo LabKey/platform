@@ -108,6 +108,8 @@
             <column columnName="Searchable"/>
             <column columnName="LockState"/>
             <column columnName="ExpirationDate"/>
+            <column columnName="FileRootSize"/>
+            <column columnName="FileRootLastCrawled"/>
         </columns>
     </table>
     <table tableName="a_b" tableDbType="UNKNOWN">
@@ -127,6 +129,8 @@
             <column columnName="Searchable"/>
             <column columnName="LockState"/>
             <column columnName="ExpirationDate"/>
+            <column columnName="FileRootSize"/>
+            <column columnName="FileRootLastCrawled"/>
         </columns>
     </table>
     <table tableName="ContainerAliases2" tableDbType="UNKNOWN">
