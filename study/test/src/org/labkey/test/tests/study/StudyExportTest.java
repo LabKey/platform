@@ -28,6 +28,7 @@ import org.labkey.test.components.domain.DomainFieldRow;
 import org.labkey.test.components.html.BootstrapMenu;
 import org.labkey.test.components.html.Checkbox;
 import org.labkey.test.components.html.Table;
+import org.labkey.test.pages.core.admin.BaseSettingsPage;
 import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.pages.study.ManageStudyPage;
 import org.labkey.test.pages.study.ManageVisitPage;
@@ -53,7 +54,6 @@ public class StudyExportTest extends StudyManualTest
     private static final String REORDERED_DATASET1 = "LLS-1: Screening Local Lab Results (Page 1)";
     private static final String REORDERED_DATASET2 = "LLS-2: Screening Local Lab Results (Page 2)";
     private static final String CATEGORY = "Test Category";
-    private static final String DATE_FORMAT = "dd/mm hh:mma";
     private static final String NUMBER_FORMAT = "00.00";
     private static final String MODIFIED_PARTICIPANT = "999321033";
     protected static final String GROUP_2 = "Group 2"; // protected so that CohortStudyExportTest can use it
@@ -153,8 +153,10 @@ public class StudyExportTest extends StudyManualTest
         // verify format strings
         goToFolderManagement();
         clickAndWait(Locator.linkWithText("Formats"));
-        assertFormElementEquals(Locator.name("defaultDateFormat"), DATE_FORMAT);
-        assertFormElementEquals(Locator.name("defaultNumberFormat"), NUMBER_FORMAT);
+        checker().verifyEquals("DateTime(Date) format not as expected.",
+                BaseSettingsPage.DATE_FORMAT.ddMMMyy.toString(), getSelectedOptionValue(Locator.name("dateSelect")));
+        checker().verifyEquals("Number format not as expected.",
+                NUMBER_FORMAT, Locator.name("defaultNumberFormat"));
 
         clickFolder(getFolderName());
 
@@ -587,7 +589,11 @@ public class StudyExportTest extends StudyManualTest
         clickFolder(getFolderName());
         goToFolderManagement();
         clickAndWait(Locator.linkWithText("Formats"));
-        setFormElement(Locator.name("defaultDateFormat"), DATE_FORMAT);
+        new Checkbox(Locator.name("defaultDateTimeFormatInherited").findElement(getDriver())).set(false);
+        new Checkbox(Locator.name("defaultNumberFormatInherited").findElement(getDriver())).set(false);
+        //"dd/mm hh:mma";
+        selectOptionByValue(Locator.name("dateSelect"), BaseSettingsPage.DATE_FORMAT.ddMMMyy.toString());
+        selectOptionByValue(Locator.name("timeSelect"), BaseSettingsPage.TIME_FORMAT.hh_mm_a.toString());
         setFormElement(Locator.name("defaultNumberFormat"), NUMBER_FORMAT);
         clickButton("Save");
     }
