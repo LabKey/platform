@@ -630,6 +630,7 @@ abstract public class PipelineJob extends Job implements Serializable
         // Rethrow so it doesn't get handled like other RuntimeExceptions
         catch (CancelledException e)
         {
+            _activeTaskStatus = TaskStatus.cancelled;
             throw e;
         }
         catch (RuntimeException e)
@@ -1527,11 +1528,15 @@ abstract public class PipelineJob extends Job implements Serializable
                     }
                 }, throwable);
             }
+
+            // Write to the job's log before setting the error status, which may end up throwing a CancelledException
+            // to signal that we need to bail out right away
+            write(msg.getFormattedMessage(), throwable, mgsLevel.getStandardLevel().name());
+
             if (mgsLevel.isMoreSpecificThan(Level.ERROR))
             {
                 setErrorStatus(msg.getFormattedMessage());
             }
-            write(msg.getFormattedMessage(), throwable, mgsLevel.getStandardLevel().name());
         }
 
         private void write(String message, @Nullable Throwable t, String level)
