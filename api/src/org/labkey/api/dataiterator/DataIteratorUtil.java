@@ -433,7 +433,7 @@ public class DataIteratorUtil
             // use source ColumnInfo where it matches
             _columns = new ArrayList<>(columnNames.size() + 1);
             _columns.add(in.getColumnInfo(0));
-            var nameSet = new CaseInsensitiveHashSet(map.keySet());
+            var nameSet = new CaseInsensitiveHashSet();
             for (var name : columnNames)
             {
                 if (nameSet.add(name))
