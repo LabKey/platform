@@ -273,22 +273,15 @@ public class PipeRootImpl implements PipeRoot
         return _rootPaths;
     }
 
-    public synchronized List<FileLike> getRootPathFileObjects(boolean forWrite)
+    // This list will return local path for cloud as well, caller can exclude
+    public synchronized List<FileLike> getRootFileLikePaths(boolean forWrite)
     {
-        if (_rootPaths.isEmpty() && !isCloudRoot())
-        {
-            for (URI uri : _uris)
-            {
-                File file = new File(uri);
-                _rootPaths.add(file);
-                NetworkDrive.ensureDrive(file.getPath());
-            }
-        }
         if (forWrite)
-            return _rootPaths.stream().map(f -> new FileSystemLike.Builder(f).readwrite().root()).toList();
+            return getRootPaths().stream().map(f -> new FileSystemLike.Builder(f).readwrite().root()).toList();
         else
-            return _rootPaths.stream().map(f -> new FileSystemLike.Builder(f).readonly().root()).toList();
+            return getRootPaths().stream().map(f -> new FileSystemLike.Builder(f).readonly().root()).toList();
     }
+
 
     public synchronized List<Path> getRootNioPaths()
     {
@@ -432,6 +425,7 @@ public class PipeRootImpl implements PipeRoot
         }
         return new Pair<>(root,file);
     }
+
 
     @Override
     @Nullable
