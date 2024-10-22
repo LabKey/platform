@@ -68,7 +68,7 @@ import org.labkey.api.security.permissions.BrowserDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
-import org.labkey.api.settings.ExperimentalFeatureService;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.*;
 import org.labkey.api.util.logging.LogHelper;
@@ -5140,8 +5140,8 @@ public class DavController extends SpringActionController
                 // Issue 51344 - slow downloads from remote file system. Only for files that aren't part of the
                 // webapp itself, or under the source root (for development machines)
                 boolean avoidSendFile = file != null &&
-                        ExperimentalFeatureService.get().isFeatureEnabled(FileStream.STAGE_FILE_TRANSFERS) &&
-                        !URIUtil.isDescendant(ModuleLoader.getInstance().getWebappDir().getParentFile().toURI(), file.toUri()) &&
+                        OptionalFeatureService.get().isFeatureEnabled(FileStream.STAGE_FILE_TRANSFERS) &&
+                        !URIUtil.isDescendant(ModuleLoader.getInstance().getWebappDir().toURI(), file.toUri()) &&
                         (PROJECT_ROOT == null || !URIUtil.isDescendant(PROJECT_ROOT, file.toUri()));
 
                 HttpServletRequest request = getRequest();
