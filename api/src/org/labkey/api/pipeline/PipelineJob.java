@@ -416,7 +416,7 @@ abstract public class PipelineJob extends Job implements Serializable
         return _activeTaskStatus;
     }
 
-    /** @return whether or not the status was set successfully */
+    /** @return whether the status was set successfully */
     public boolean setActiveTaskStatus(@NotNull TaskStatus activeTaskStatus)
     {
         _activeTaskStatus = activeTaskStatus;
@@ -883,7 +883,7 @@ abstract public class PipelineJob extends Job implements Serializable
             getLogger().info("Skipping already completed task '" + factory.getId() + "' at location '" + factory.getExecutionLocation() + "'");
         }
 
-        if (getActiveTaskStatus() != TaskStatus.complete)
+        if (getActiveTaskStatus() != TaskStatus.complete && getActiveTaskStatus() != TaskStatus.cancelled)
             setActiveTaskStatus(TaskStatus.complete);
     }
 
