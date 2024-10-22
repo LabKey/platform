@@ -156,7 +156,7 @@ public class StudyExportTest extends StudyManualTest
         checker().verifyEquals("DateTime(Date) format not as expected.",
                 BaseSettingsPage.DATE_FORMAT.ddMMMyy.toString(), getSelectedOptionValue(Locator.name("dateSelect")));
         checker().verifyEquals("Number format not as expected.",
-                NUMBER_FORMAT, Locator.name("defaultNumberFormat"));
+                NUMBER_FORMAT, getFormElement(Locator.name("defaultNumberFormat")));
 
         clickFolder(getFolderName());
 
