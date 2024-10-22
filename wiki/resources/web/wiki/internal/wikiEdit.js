@@ -693,7 +693,6 @@ const TabNames = Object.freeze({
         if (tinymce.activeEditor?.isDirty())
             LABKEY.setDirty(true);
 
-        console.log("_editor", tinymce.activeEditor?.isDirty());
         setTabStripVisible(true);
         getVisualTab().attr('class', 'labkey-tab-inactive');
         getSourceTab().attr('class', 'labkey-tab-active');
