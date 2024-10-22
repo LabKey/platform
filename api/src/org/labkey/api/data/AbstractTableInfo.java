@@ -1496,7 +1496,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
                 }
             }
             // Issue 51136: insert calculated columns to match their index within defaultVisibleColumns (so that calc fields are closer to domain custom fields)
-            else if (!calculatedFieldKeys.isEmpty())
+            else if (!calculatedFieldKeys.isEmpty() && !getDefaultVisibleColumns().isEmpty())
             {
                 // find the index of the first calculated column
                 int index = 0;
