@@ -57,15 +57,7 @@ public class SaveProtocolAction extends MutatingApiAction<GWTProtocol>
         }
 
         if (protocol.getName() != null)
-        {
-            String protocolName = protocol.getName().trim();
-
-            // Issue 51321: check reserved sample type name: First
-            if ("First".equalsIgnoreCase(protocolName) || "All".equalsIgnoreCase(protocolName))
-                throw new IllegalArgumentException("Assay design name '" + protocolName + "' is reserved.");
-
-            protocol.setName(protocolName);
-        }
+            protocol.setName(protocol.getName().trim());
 
         AssayDomainService svc = new AssayDomainServiceImpl(getViewContext());
         GWTProtocol updated = svc.saveChanges(protocol, true);
