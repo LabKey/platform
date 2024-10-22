@@ -60,6 +60,7 @@ import org.labkey.api.assay.actions.ProtocolIdForm;
 import org.labkey.api.assay.actions.ReimportRedirectAction;
 import org.labkey.api.assay.actions.UploadWizardAction;
 import org.labkey.api.assay.plate.PlateBasedAssayProvider;
+import org.labkey.api.assay.sample.AssaySampleLookupContext;
 import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.ColumnInfo;
@@ -96,6 +97,7 @@ import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.DataStateManager;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
@@ -151,6 +153,7 @@ import org.labkey.assay.actions.SetDefaultValuesAssayAction;
 import org.labkey.assay.actions.ShowSelectedDataAction;
 import org.labkey.assay.actions.ShowSelectedRunsAction;
 import org.labkey.assay.actions.TemplateAction;
+import org.labkey.vfs.FileLike;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -176,11 +179,6 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-/**
- * User: brittp
- * Date: Jun 20, 2007
- * Time: 11:09:51 AM
- */
 public class AssayController extends SpringActionController
 {
     private static final DefaultActionResolver _resolver = new DefaultActionResolver(AssayController.class,
@@ -748,20 +746,20 @@ public class AssayController extends SpringActionController
             List<List<String>> runNamesPerFile = new ArrayList<>();
             try
             {
-                File targetDirectory = AssayFileWriter.ensureUploadDirectory(getContainer());
+                FileLike targetDirectory = AssayFileWriter.ensureUploadDirectory(getContainer());
                 JSONArray fileNames = form.getJsonObject() == null ? null : form.getJsonObject().getJSONArray("fileNames");
                 if (fileNames != null && fileNames.length() > 0)
                 {
                     for (int i = 0; i < fileNames.length(); i++)
                     {
                         String fileName = (String)fileNames.get(i);
-                        File f = new File(targetDirectory, fileName);
+                        FileLike f = targetDirectory.resolveChild(fileName);
                         if (f.exists())
                         {
                             duplicate = true;
-                            File newFile = AssayFileWriter.findUniqueFileName(fileName, targetDirectory);
+                            FileLike newFile = AssayFileWriter.findUniqueFileName(fileName, targetDirectory);
                             newFileNames.add(i, newFile.getName());  // will infer duplication by whether an element exists at that position or not
-                            ExpData expData = ExperimentService.get().getExpDataByURL(f, null);
+                            ExpData expData = ExperimentService.get().getExpDataByURL(f.toNioPathForRead().toFile(), null);
                             List<String> runNames = new ArrayList<>();
                             if (expData != null)
                             {
@@ -820,8 +818,8 @@ public class AssayController extends SpringActionController
 
             try
             {
-                File targetDirectory = AssayFileWriter.ensureUploadDirectory(getContainer());
-                return AssayFileWriter.findUniqueFileName(filename, targetDirectory);
+                FileLike targetDirectory = AssayFileWriter.ensureUploadDirectory(getContainer());
+                return AssayFileWriter.findUniqueFileName(filename, targetDirectory).toNioPathForWrite().toFile();
             }
             catch (ExperimentException e)
             {
@@ -909,11 +907,11 @@ public class AssayController extends SpringActionController
 
             if (handler != null)
             {
-                File tempDir = getTempFolder();
+                FileLike tempDir = getTempFolder();
 
                 try {
                     handler.createSampleData(protocol, getViewContext(), tempDir);
-                    File[] files = tempDir.listFiles();
+                    File[] files = tempDir.toNioPathForRead().toFile().listFiles();
 
                     if (files.length > 0)
                     {
@@ -944,16 +942,16 @@ public class AssayController extends SpringActionController
                 }
                 finally
                 {
-                    FileUtil.deleteDir(tempDir);
+                    FileUtil.deleteDir(tempDir.toNioPathForWrite().toFile());
                 }
             }
             return null;
         }
 
-        private File getTempFolder() throws IOException
+        private FileLike getTempFolder() throws IOException
         {
-            File tempDir = new File(System.getProperty("java.io.tmpdir"));
-            File tempFolder = new File(tempDir.getAbsolutePath() + File.separator + "QCSampleData", String.valueOf(Thread.currentThread().getId()));
+            FileLike tempDir = FileUtil.getTempDirectoryFileLike();
+            FileLike tempFolder = tempDir.resolveChild("QCSampleData").resolveChild(String.valueOf(Thread.currentThread().getId()));
             if (!tempFolder.exists())
                 FileUtil.mkdirs(tempFolder);
 
@@ -1795,7 +1793,8 @@ public class AssayController extends SpringActionController
         }
     }
 
-    public enum AssayRunOperations {
+    public enum AssayRunOperations
+    {
         Delete("deleting", DeletePermission.class),
         Edit("editing", UpdatePermission.class),
         Move("moving", MoveEntitiesPermission.class);
@@ -1843,6 +1842,38 @@ public class AssayController extends SpringActionController
         public void setProtocolId(Integer protocolId)
         {
             _protocolId = protocolId;
+        }
+    }
+
+    public static class SyncRunLineageForm
+    {
+        private List<Integer> _runIds = new ArrayList<>();
+
+        public List<Integer> getRunIds()
+        {
+            return _runIds;
+        }
+
+        public void setRunIds(List<Integer> runIds)
+        {
+            _runIds = runIds;
+        }
+    }
+
+    @RequiresPermission(UpdatePermission.class)
+    public static class SyncRunLineageAction extends MutatingApiAction<SyncRunLineageForm>
+    {
+        @Override
+        public Object execute(SyncRunLineageForm form, BindException errors) throws Exception
+        {
+            var batchErrors = new BatchValidationException();
+            var context = new AssaySampleLookupContext(form.getRunIds());
+
+            context.syncLineage(getContainer(), getUser(), batchErrors);
+            if (batchErrors.hasErrors())
+                throw batchErrors;
+
+            return success();
         }
     }
 }

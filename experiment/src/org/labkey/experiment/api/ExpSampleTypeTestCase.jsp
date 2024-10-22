@@ -37,8 +37,6 @@
 <%@ page import="org.labkey.api.data.TableSelector" %>
 <%@ page import="org.labkey.api.dataiterator.DataIteratorContext" %>
 <%@ page import="org.labkey.api.dataiterator.DetailedAuditLogDataIterator" %>
-<%@ page import="org.labkey.api.dataiterator.ListofMapsDataIterator" %>
-<%@ page import="org.labkey.api.exp.ExperimentException" %>
 <%@ page import="org.labkey.api.exp.Lsid" %>
 <%@ page import="org.labkey.api.exp.OntologyManager" %>
 <%@ page import="org.labkey.api.exp.PropertyDescriptor" %>
@@ -90,6 +88,8 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Set" %>
 <%@ page import="org.labkey.api.reader.MapLoader" %>
+<%@ page import="org.labkey.api.action.ApiUsageException" %>
+<%@ page import="org.labkey.api.exp.api.ExpLineageService" %>
 
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
 
@@ -141,9 +141,49 @@ public void nameNotNull() throws Exception
                 null, null, props, Collections.emptyList(),
                 -1, -1, -1, -1, null, null);
     }
-    catch (ExperimentException ee)
+    catch (ApiUsageException ee)
     {
-        assertEquals("SampleType name is required", ee.getMessage());
+        assertEquals("Sample Type name is required.", ee.getMessage());
+    }
+}
+
+@Test // Issue 51321
+public void reservedNameFirst() throws Exception
+{
+    final User user = TestContext.get().getUser();
+
+    try
+    {
+        List<GWTPropertyDescriptor> props = new ArrayList<>();
+        props.add(new GWTPropertyDescriptor("name", "string"));
+
+        final ExpSampleType st = SampleTypeService.get().createSampleType(c, user,
+                "First", null, props, Collections.emptyList(),
+                -1, -1, -1, -1, null, null);
+    }
+    catch (ApiUsageException ee)
+    {
+        assertEquals("Sample Type name 'First' is reserved.", ee.getMessage());
+    }
+}
+
+@Test // Issue 51321
+public void reservedNameAll() throws Exception
+{
+    final User user = TestContext.get().getUser();
+
+    try
+    {
+        List<GWTPropertyDescriptor> props = new ArrayList<>();
+        props.add(new GWTPropertyDescriptor("name", "string"));
+
+        final ExpSampleType st = SampleTypeService.get().createSampleType(c, user,
+                "All", null, props, Collections.emptyList(),
+                -1, -1, -1, -1, null, null);
+    }
+    catch (ApiUsageException ee)
+    {
+        assertEquals("Sample Type name 'All' is reserved.", ee.getMessage());
     }
 }
 
@@ -164,9 +204,9 @@ public void nameScale() throws Exception
                 name, null, props, Collections.emptyList(),
                 -1, -1, -1, -1, null, null);
     }
-    catch (ExperimentException ee)
+    catch (ApiUsageException ee)
     {
-        assertEquals("SampleType name may not exceed 100 characters.", ee.getMessage());
+        assertEquals("Sample Type name may not exceed 100 characters.", ee.getMessage());
     }
 }
 
@@ -189,7 +229,7 @@ public void nameExpressionScale() throws Exception
                 "Samples", null, props, Collections.emptyList(),
                 -1, -1, -1, -1, nameExpression, null);
     }
-    catch (ExperimentException ee)
+    catch (ApiUsageException ee)
     {
         assertEquals("Name expression may not exceed 500 characters.", ee.getMessage());
     }
@@ -212,7 +252,7 @@ public void idColsUnset_nameExpressionNull_noNameProperty() throws Exception
                 -1, -1, -1, -1, null, null);
         fail("Expected exception");
     }
-    catch (ExperimentException ee)
+    catch (ApiUsageException ee)
     {
         assertEquals("Either a 'Name' property or an index for idCol1 is required", ee.getMessage());
     }
@@ -323,7 +363,7 @@ public void idColsSet_nameExpressionNull_hasUnusedNameProperty() throws Exceptio
                 1, -1, -1, -1, null, null);
         fail("Expected exception");
     }
-    catch (ExperimentException ee)
+    catch (ApiUsageException ee)
     {
         assertEquals("Either a 'Name' property or idCols can be used, but not both", ee.getMessage());
     }
@@ -389,7 +429,7 @@ public void idColsSet_nameExpression_hasUnusedNameProperty() throws Exception
                 1, -1, -1, -1, "S-${name}.${age}", null);
         fail("Expected exception");
     }
-    catch (ExperimentException ee)
+    catch (ApiUsageException ee)
     {
         assertEquals("Name expression cannot be used with id columns", ee.getMessage());
     }
@@ -687,12 +727,12 @@ public void testUpdateSomeParents() throws Exception
     svc.mergeRows(user, c, new MapLoader(rows), errors, null, null);
     assertFalse(errors.hasErrors());
 
-    ExpLineage lineage = ExperimentService.get().getLineage(c, user, C1, opts);
+    ExpLineage lineage = ExpLineageService.get().getLineage(c, user, C1, opts);
     assertTrue("Expected 'C1' to be derived from 'P1-1'", lineage.getMaterials().contains(P11));
     assertFalse("Expected 'C1' to no longer be derived from 'P1-2'", lineage.getMaterials().contains(P12));
     assertTrue("Expected 'C1' to still be derived from 'P2-1'", lineage.getMaterials().contains(P21));
 
-    lineage = ExperimentService.get().getLineage(c, user, C4, opts);
+    lineage = ExpLineageService.get().getLineage(c, user, C4, opts);
     assertFalse("Expected 'C4' to not be derived from 'P1-2'", lineage.getMaterials().contains(P12));
     assertTrue("Expected 'C4' to still be derived from 'P2-2'", lineage.getMaterials().contains(P22));
 
@@ -704,15 +744,15 @@ public void testUpdateSomeParents() throws Exception
     svc.mergeRows(user, c, new MapLoader(rows), errors, null, null);
     assertFalse(errors.hasErrors());
 
-    lineage = ExperimentService.get().getLineage(c, user, C2, opts);
+    lineage = ExpLineageService.get().getLineage(c, user, C2, opts);
     assertTrue("Expected 'C2' to have no parents'", lineage.getMaterials().isEmpty());
 
-    lineage = ExperimentService.get().getLineage(c, user, C4, opts);
+    lineage = ExpLineageService.get().getLineage(c, user, C4, opts);
     assertEquals("Expected 'C4' to have two parents", 2, lineage.getMaterials().size());
     assertTrue("Expected 'C4' to be derived from 'P1-1'", lineage.getMaterials().contains(P11));
     assertTrue("Expected 'C4' to be derived from 'P2-1'", lineage.getMaterials().contains(P21));
 
-    lineage = ExperimentService.get().getLineage(c, user, C5, opts);
+    lineage = ExpLineageService.get().getLineage(c, user, C5, opts);
     assertEquals("Expected 'C5' to have three parents", 3, lineage.getMaterials().size());
     assertTrue("Expected 'C5' to be derived from 'P1-1'", lineage.getMaterials().contains(P11));
     assertTrue("Expected 'C5' to be derived from 'P1-4,test'", lineage.getMaterials().contains(P14));
@@ -770,14 +810,14 @@ public void testParentColAndDataInputDerivation() throws Exception
     ExpMaterial A = st.getSample(c, "A");
     assertEquals(0, A.getAliquotCount());
     assertNotNull(A);
-    ExpLineage lineage = ExperimentService.get().getLineage(c, user, A, opts);
+    ExpLineage lineage = ExpLineageService.get().getLineage(c, user, A, opts);
     assertTrue(lineage.getMaterials().isEmpty());
     assertNull(A.getRunId());
 
     ExpMaterial B = st.getSample(c, "B");
     assertEquals(0, A.getAliquotCount());
     assertNotNull(B);
-    lineage = ExperimentService.get().getLineage(c, user, B, opts);
+    lineage = ExpLineageService.get().getLineage(c, user, B, opts);
     assertEquals(1, lineage.getMaterials().size());
     assertTrue("Expected 'B' to be derived from 'A'", lineage.getMaterials().contains(A));
     assertNotNull(B.getRunId());
@@ -785,21 +825,21 @@ public void testParentColAndDataInputDerivation() throws Exception
     ExpMaterial C = st.getSample(c, "C");
     assertEquals(0, A.getAliquotCount());
     assertNotNull(C);
-    lineage = ExperimentService.get().getLineage(c, user, C, opts);
+    lineage = ExpLineageService.get().getLineage(c, user, C, opts);
     assertEquals(1, lineage.getMaterials().size());
     assertTrue("Expected 'C' to be derived from 'B'", lineage.getMaterials().contains(B));
 
     ExpMaterial D = st.getSample(c, "D");
     assertEquals(0, A.getAliquotCount());
     assertNotNull(D);
-    lineage = ExperimentService.get().getLineage(c, user, D, opts);
+    lineage = ExpLineageService.get().getLineage(c, user, D, opts);
     assertEquals(2, lineage.getMaterials().size());
     assertTrue("Expected 'D' to be derived from 'B'", lineage.getMaterials().contains(B));
     assertTrue("Expected 'D' to be derived from 'C'", lineage.getMaterials().contains(C));
 
     ExpMaterial E = st.getSample(c, "E");
     assertNotNull(E);
-    lineage = ExperimentService.get().getLineage(c, user, E, opts);
+    lineage = ExpLineageService.get().getLineage(c, user, E, opts);
     assertTrue("Expected 'E' to be the seed", lineage.getSeeds().contains(E));
     assertEquals(2, lineage.getMaterials().size());
     assertTrue("Expected 'E' to be derived from 'B'", lineage.getMaterials().contains(B));
@@ -837,7 +877,7 @@ public void testParentColAndDataInputDerivation() throws Exception
     assertEquals(1, updated.size());
 
     ExpMaterial D2 = st.getSample(c, "D");
-    lineage = ExperimentService.get().getLineage(c, user, D2, opts);
+    lineage = ExpLineageService.get().getLineage(c, user, D2, opts);
     assertEquals(2, lineage.getMaterials().size());
     assertTrue("Expected 'D' to be derived from 'B'", lineage.getMaterials().contains(B));
     assertTrue("Expected 'D' to be derived from 'E'", lineage.getMaterials().contains(E));

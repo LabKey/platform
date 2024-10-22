@@ -62,6 +62,7 @@ import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpDataRunInput;
 import org.labkey.api.exp.api.ExpLineage;
 import org.labkey.api.exp.api.ExpLineageOptions;
+import org.labkey.api.exp.api.ExpLineageService;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -114,6 +115,7 @@ import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.SampleTypeServiceImpl;
 import org.labkey.experiment.api.SampleTypeUpdateServiceDI;
 import org.labkey.experiment.controllers.exp.RunInputOutputBean;
+import org.labkey.vfs.FileLike;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -987,6 +989,8 @@ public class ExpDataIterators
                                 tabLoader.setUnescapeBackslashes(false);
                                 // Issue 50924: LKSM: Importing samples using naming expression referencing parent inputs with # result in error
                                 tabLoader.setIncludeComments(true);
+                                // Issue 51056 Samples with single double quotes in the name will not resolve if added as parent samples.
+                                tabLoader.setParseEnclosedQuotes(true);
                                 try
                                 {
                                     String[][] values = tabLoader.getFirstNLines(1);
@@ -1969,7 +1973,7 @@ public class ExpDataIterators
             options.setChildren(false);
             options.setDepth(2); // use 2 to get the first generation of parents because the first "parent" is the run
 
-            ExpLineage lineage = ExperimentService.get().getLineage(c, user, runItem, options);
+            ExpLineage lineage = ExpLineageService.get().getLineage(c, user, runItem, options);
             Pair<Set<ExpData>, Set<ExpMaterial>> currentParents = Pair.of(lineage.getDatas(), lineage.getMaterials());
             if (currentParents.first != null)
             {
@@ -2050,9 +2054,9 @@ public class ExpDataIterators
     public static class SearchIndexIteratorBuilder implements DataIteratorBuilder
     {
         final DataIteratorBuilder _pre;
-        final Function<List<String>, Runnable> _indexFunction;
+        final Function<SearchIndexDataKeys, Runnable> _indexFunction;
 
-        public SearchIndexIteratorBuilder(DataIteratorBuilder pre, Function<List<String>, Runnable> indexFunction)
+        public SearchIndexIteratorBuilder(DataIteratorBuilder pre, Function<SearchIndexDataKeys, Runnable> indexFunction)
         {
             _pre = pre;
             _indexFunction = indexFunction;
@@ -2066,15 +2070,19 @@ public class ExpDataIterators
         }
     }
 
+    public record SearchIndexDataKeys(@NotNull List<Integer> orderedRowIds, @NotNull List<String> lsids) { }
+
     private static class SearchIndexIterator extends WrapperDataIterator
     {
         final DataIteratorContext _context;
         final Integer _lsidCol;
+        final Integer _rowIdCol;
         final ArrayList<String> _lsids;
-        final Function<List<String>, Runnable> _indexFunction;
-        final boolean _useExistingRecord;
+        final ArrayList<Integer> _rowIds;
+        final Function<SearchIndexDataKeys, Runnable> _indexFunction;
+        final boolean _isInsert;
 
-        protected SearchIndexIterator(DataIterator di, DataIteratorContext context, Function<List<String>, Runnable> indexFunction)
+        protected SearchIndexIterator(DataIterator di, DataIteratorContext context, Function<SearchIndexDataKeys, Runnable> indexFunction)
         {
             super(di);
             _context = context;
@@ -2083,9 +2091,11 @@ public class ExpDataIterators
             Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
 
             _lsidCol = map.get("lsid");
+            _rowIdCol = map.get("rowId");
             _lsids = new ArrayList<>(100);
+            _rowIds = new ArrayList<>(100);
 
-            _useExistingRecord = context.getInsertOption().updateOnly && _lsidCol == null;
+            _isInsert = !context.getInsertOption().allowUpdate; // only useRowIdCol for INSERT. For UPDATE, rowId usually is not available. For MERGE, rowId is a new DBSequence value for existing data
         }
 
         @Override
@@ -2095,22 +2105,34 @@ public class ExpDataIterators
 
             if (hasNext)
             {
-                if (_useExistingRecord)
+                Integer rowId = null;
+                String lsid = null;
+                if (_isInsert)
                 {
-                    Map<String, Object> map = getExistingRecord();
-                    if (map != null && map.containsKey("lsid"))
-                    {
-                        String lsid = (String) map.get("lsid");
-                        if (null != lsid)
-                            _lsids.add(lsid);
-                    }
-                 }
+                    rowId = _rowIdCol == null ? null : (Integer) get(_rowIdCol);
+                    if (rowId == null)
+                        lsid = _lsidCol == null ? null : (String) get(_lsidCol);
+                }
                 else
                 {
-                    String lsid = _lsidCol == null ? null : (String) get(_lsidCol);
-                    if (null != lsid)
-                        _lsids.add(lsid);
+                    Map<String, Object> map = getExistingRecord();
+                    if (map != null)
+                    {
+                        if (map.containsKey("rowId")) // favor rowId over lsid to reduce deadlock during indexing
+                            rowId = (Integer) map.get("rowId");
+                        if (rowId == null && map.containsKey("lsid"))
+                            lsid = (String) map.get("lsid");
+                    }
+
+                    // for UPDATE/MERGE, don't use _rowIdCol
+                    if (rowId == null && lsid == null)
+                        lsid = _lsidCol == null ? null : (String) get(_lsidCol);
                 }
+
+                if (rowId != null)
+                    _rowIds.add(rowId);
+                if (lsid != null)
+                    _lsids.add(lsid);
             }
             else
             {
@@ -2118,7 +2140,9 @@ public class ExpDataIterators
                 if (null != ss)
                 {
                     final ArrayList<String> lsids = new ArrayList<>(_lsids);
-                    final Runnable indexTask = _indexFunction.apply(lsids);
+                    final ArrayList<Integer> rowIds = new ArrayList<>(_rowIds);
+                    Collections.sort(rowIds);
+                    final Runnable indexTask = _indexFunction.apply(new SearchIndexDataKeys(rowIds, lsids));
 
                     if (null != DbScope.getLabKeyScope())
                         DbScope.getLabKeyScope().addCommitTask(indexTask, DbScope.CommitTaskOption.POSTCOMMIT);
@@ -2163,10 +2187,10 @@ public class ExpDataIterators
                         {
                             try
                             {
-                                Path path = AssayFileWriter.getUploadDirectoryPath(c, fileLinkDirName);
+                                Path path = AssayFileWriter.getUploadDirectoryPath(c, fileLinkDirName).toNioPathForWrite();
                                 Object file = fileColumnValueMapping.saveFileColumnValue(user, c, path, col.getName(), value);
-                                assert file instanceof File;
-                                value = ((File)file).getPath();
+                                assert file instanceof FileLike;
+                                value = ((FileLike)file).toNioPathForRead().toString();
                                 savedFileName[index] = (String)value;
                             }
                             catch (QueryUpdateServiceException ex)
@@ -2226,7 +2250,7 @@ public class ExpDataIterators
         private final Set<String> _excludedColumns = new HashSet<>(List.of("generated","runId","sourceapplicationid")); // generated has database DEFAULT 0
 
         private String _fileLinkDirectory = null;
-        Function<List<String>, Runnable> _indexFunction;
+        Function<SearchIndexDataKeys, Runnable> _indexFunction;
         final Map<String, String> _importAliases;
 
         // expTable is the shared experiment table e.g. exp.Data or exp.Materials
@@ -2241,7 +2265,7 @@ public class ExpDataIterators
             _importAliases = importAliases != null ? new CaseInsensitiveHashMap<>(importAliases) : new CaseInsensitiveHashMap<>();
         }
 
-        public PersistDataIteratorBuilder setIndexFunction(Function<List<String>, Runnable> indexFunction)
+        public PersistDataIteratorBuilder setIndexFunction(Function<SearchIndexDataKeys, Runnable> indexFunction)
         {
             _indexFunction = indexFunction;
             return this;

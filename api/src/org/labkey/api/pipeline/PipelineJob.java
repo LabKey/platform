@@ -28,7 +28,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.ThreadContext;
+import org.apache.logging.log4j.message.Message;
 import org.apache.logging.log4j.simple.SimpleLogger;
 import org.apache.logging.log4j.util.PropertiesUtil;
 import org.jetbrains.annotations.NotNull;
@@ -52,6 +54,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.Job;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.NetworkDrive;
+import org.labkey.api.util.QuietCloser;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
@@ -1341,7 +1344,7 @@ abstract public class PipelineJob extends Job implements Serializable
         }
 
 
-        try (PipelineJobService.Closer ignored = PipelineJobService.get().trackForJobCancellation(_jobGUID, proc))
+        try (QuietCloser ignored = PipelineJobService.get().trackForCancellation(proc))
         {
             // create thread pool for collecting the process output
             ExecutorService pool = Executors.newSingleThreadExecutor();
@@ -1446,92 +1449,11 @@ abstract public class PipelineJob extends Job implements Serializable
         private final String LINE_SEP = System.lineSeparator();
         private final String datePattern = "dd MMM yyyy HH:mm:ss,SSS";
 
-        @Deprecated //Prefer the Path version
-        protected OutputLogger(PipelineJob job, File file, String name, Level level)
-        {
-            this(job, file.toPath(), name, level);
-        }
-
         protected OutputLogger(PipelineJob job, Path file, String name, Level level)
         {
             super(name, level, false, false, false, false, "", null, new PropertiesUtil(PropertiesUtil.getSystemProperties()), null);
             _job = job;
             _file = file;
-
-        }
-
-        @Override
-        public void debug(String message)
-        {
-            _job.getClassLogger().debug(getSystemLogMessage(message));
-            write(message, null, Level.DEBUG.toString());
-        }
-
-        @Override
-        public void debug(String message, @Nullable Throwable t)
-        {
-            _job.getClassLogger().debug(getSystemLogMessage(message), t);
-            write(message, t, Level.DEBUG.toString());
-        }
-
-        @Override
-        public void info(String message)
-        {
-            _job.getClassLogger().info(getSystemLogMessage(message));
-            write(message, null, Level.INFO.toString());
-        }
-
-        @Override
-        public void info(String message, @Nullable Throwable t)
-        {
-            _job.getClassLogger().info(getSystemLogMessage(message), t);
-            write(message, t, Level.INFO.toString());
-        }
-
-        @Override
-        public void warn(String message)
-        {
-            _job.getClassLogger().warn(getSystemLogMessage(message));
-            write(message, null, Level.WARN.toString());
-        }
-
-        @Override
-        public void warn(String message, @Nullable Throwable t)
-        {
-            _job.getClassLogger().warn(getSystemLogMessage(message), t);
-            write(message, t, Level.WARN.toString());
-        }
-
-        @Override
-        public void error(String message)
-        {
-            _job.getClassLogger().error(getSystemLogMessage(message));
-            write(message, null, Level.ERROR.toString());
-            setErrorStatus(message);
-        }
-
-        @Override
-        public void error(String message, @Nullable Throwable t)
-        {
-            _job.getClassLogger().error(getSystemLogMessage(message), t);
-            write(message, t, Level.ERROR.toString());
-            setErrorStatus(message);
-        }
-
-        @Override
-        public void fatal(String message)
-        {
-            _job.getClassLogger().fatal(getSystemLogMessage(message));
-            write(message, null, Level.FATAL.toString());
-            setErrorStatus(message);
-        }
-
-        @Override
-        public void fatal(String message, Throwable t)
-        {
-            _job.getClassLogger().fatal(getSystemLogMessage(message), t);
-            write(message, t, Level.FATAL.toString());
-            setErrorStatus(message);
         }
 
         // called from LogOutputStream.flush()
@@ -1579,7 +1501,40 @@ abstract public class PipelineJob extends Job implements Serializable
             }
         }
 
-        public void write(String message, @Nullable Throwable t, String level)
+        @Override
+        public void logMessage(String fqcn, Level mgsLevel, Marker marker, Message msg, Throwable throwable)
+        {
+            if (_job.getClassLogger().isEnabled(mgsLevel, marker))
+            {
+                _job.getClassLogger().log(mgsLevel, marker, new Message()
+                {
+                    @Override
+                    public String getFormattedMessage()
+                    {
+                        return getSystemLogMessage(msg.getFormattedMessage());
+                    }
+
+                    @Override
+                    public Object[] getParameters()
+                    {
+                        return msg.getParameters();
+                    }
+
+                    @Override
+                    public Throwable getThrowable()
+                    {
+                        return msg.getThrowable();
+                    }
+                }, throwable);
+            }
+            if (mgsLevel.isMoreSpecificThan(Level.ERROR))
+            {
+                setErrorStatus(msg.getFormattedMessage());
+            }
+            write(msg.getFormattedMessage(), throwable, mgsLevel.getStandardLevel().name());
+        }
+
+        private void write(String message, @Nullable Throwable t, String level)
         {
             String formattedDate = DateUtil.formatDateTime(new Date(), datePattern);
 

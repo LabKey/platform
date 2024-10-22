@@ -18,7 +18,6 @@ package org.labkey.api.exp.api;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.exp.Identifiable;
 import org.labkey.api.security.User;
@@ -35,8 +34,6 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static java.util.stream.Collectors.toList;
-
 public class ExpLineage
 {
     private final Set<Identifiable> _seeds;
@@ -44,12 +41,8 @@ public class ExpLineage
     private final Set<ExpMaterial> _materials;
     private final Set<ExpRun> _runs;
     private final Set<Identifiable> _objects;
-    private final Set<Edge> _edges;
-
-    // constructed in processNodes
-    private Map<String, Identifiable> _nodes;
-    // constructed in processNodeEdges
-    private Map<String, Pair<Set<Edge>, Set<Edge>>> _nodesAndEdges;
+    private final Map<String, Identifiable> _nodes;
+    private final Map<String, Edges> _nodesAndEdges;
 
     public ExpLineage(Set<Identifiable> seeds, Set<ExpData> data, Set<ExpMaterial> materials, Set<ExpRun> runs, Set<Identifiable> objects, Set<Edge> edges)
     {
@@ -58,7 +51,8 @@ public class ExpLineage
         _materials = materials;
         _runs = runs;
         _objects = objects;
-        _edges = edges;
+        _nodes = processNodes();
+        _nodesAndEdges = processEdges(edges);
     }
 
     /**
@@ -106,69 +100,68 @@ public class ExpLineage
      */
     private Map<String, Identifiable> processNodes()
     {
-        if (_nodes == null)
+        var nodes = new HashMap<String, Identifiable>();
+
+        for (Identifiable seed : _seeds)
+            nodes.put(seed.getLSID(), seed);
+
+        for (ExpData node : _datas)
+            nodes.put(node.getLSID(), node);
+
+        for (ExpMaterial node : _materials)
+            nodes.put(node.getLSID(), node);
+
+        for (ExpRun node : _runs)
+            nodes.put(node.getLSID(), node);
+
+        for (Identifiable node : _objects)
+            nodes.put(node.getLSID(), node);
+
+        return nodes;
+    }
+
+    public record Edges(Set<Edge> parents, Set<Edge> children)
+    {
+        public static Edges emptyEdges = new Edges(Collections.emptySet(), Collections.emptySet());
+
+        public Edges()
         {
-            _nodes = new HashMap<>();
-
-            for (Identifiable seed : _seeds)
-                _nodes.put(seed.getLSID(), seed);
-
-            for (ExpData node : _datas)
-                _nodes.put(node.getLSID(), node);
-
-            for (ExpMaterial node : _materials)
-                _nodes.put(node.getLSID(), node);
-
-            for (ExpRun node : _runs)
-                _nodes.put(node.getLSID(), node);
-
-            for (Identifiable node : _objects)
-                _nodes.put(node.getLSID(), node);
+            this(new HashSet<>(), new HashSet<>());
         }
-
-        return _nodes;
     }
 
     /**
      * Create map from node LSID to the set of (parent, child) edges.
      */
-    private Map<String, Pair<Set<Edge>, Set<Edge>>> processNodeEdges()
+    public static Map<String, Edges> processEdges(Set<ExpLineage.Edge> edges)
     {
-        if (_nodesAndEdges == null)
+        var processedEdges = new HashMap<String, Edges>();
+
+        for (var edge : edges)
         {
-            _nodesAndEdges = new HashMap<>();
+            processedEdges.computeIfAbsent(edge.parent, (r) -> new Edges());
+            processedEdges.computeIfAbsent(edge.child, (r) -> new Edges());
 
-            for (Edge edge : _edges)
-            {
-                if (!_nodesAndEdges.containsKey(edge.parent))
-                    _nodesAndEdges.put(edge.parent, Pair.of(new HashSet<>(), new HashSet<>()));
+            // The edges parent now has a child of edge.second
+            if (!edge.parent.equals(edge.child)) // node cannot be a parent of itself
+                processedEdges.get(edge.parent).children.add(edge);
 
-                if (!_nodesAndEdges.containsKey(edge.child))
-                    _nodesAndEdges.put(edge.child, Pair.of(new HashSet<>(), new HashSet<>()));
-
-                // The edges parent now has a child of edge.second
-                if (!edge.parent.equals(edge.child)) // node cannot parent itself
-                    _nodesAndEdges.get(edge.parent).second.add(edge);
-
-                // The edges child now has a parent of edge.first
-                if (!edge.child.equals(edge.parent)) // node cannot child itself
-                    _nodesAndEdges.get(edge.child).first.add(edge);
-            }
+            // The edges child now has a parent of edge.first
+            if (!edge.child.equals(edge.parent)) // node cannot be a child of itself
+                processedEdges.get(edge.child).parents.add(edge);
         }
 
-        return _nodesAndEdges;
+        return processedEdges;
     }
 
     @Nullable
-    private Pair<Set<ExpLineage.Edge>, Set<ExpLineage.Edge>> nodeEdges(@NotNull Identifiable node)
+    private Edges nodeEdges(@NotNull Identifiable node)
     {
-        Map<String, Identifiable> nodes = processNodes();
         String nodeLsid = node.getLSID();
-        if (!nodes.containsKey(nodeLsid))
+        if (!_nodes.containsKey(nodeLsid))
             throw new IllegalArgumentException("node not in lineage");
 
-        Map<String, Pair<Set<ExpLineage.Edge>, Set<ExpLineage.Edge>>> edges = processNodeEdges();
-        return edges.get(nodeLsid);
+        return _nodesAndEdges.get(nodeLsid);
     }
 
     /** Get the set of directly connected parents for the node. */
@@ -178,9 +171,7 @@ public class ExpLineage
         if (nodeEdges == null)
             return Collections.emptySet();
 
-        Map<String, Identifiable> nodes = processNodes();
-        Set<ExpLineage.Edge> inputEdges = nodeEdges.getKey();
-        return inputEdges.stream().map(e -> nodes.get(e.parent)).collect(Collectors.toSet());
+        return nodeEdges.parents.stream().map(e -> _nodes.get(e.parent)).collect(Collectors.toSet());
     }
 
     /** Get the set of directly connected children for the node. */
@@ -190,9 +181,7 @@ public class ExpLineage
         if (nodeEdges == null)
             return Collections.emptySet();
 
-        Map<String, Identifiable> nodes = processNodes();
-        Set<ExpLineage.Edge> outputEdges = nodeEdges.getValue();
-        return outputEdges.stream().map(e -> nodes.get(e.child)).collect(Collectors.toSet());
+        return nodeEdges.children.stream().map(e -> _nodes.get(e.child)).collect(Collectors.toSet());
     }
 
     public Set<Identifiable> findAncestorObjects(ExpRunItem seed, List<Pair<ExpLineageOptions.LineageExpType, String>> ancestorPaths, User user)
@@ -222,14 +211,12 @@ public class ExpLineage
         if (!_seeds.contains(seed))
             throw new UnsupportedOperationException();
 
-        Map<String, Identifiable> nodes = processNodes();
-        Map<String, Pair<Set<ExpLineage.Edge>, Set<ExpLineage.Edge>>> edges = processNodeEdges();
-        return findRelatedChildSamples(seed, nodes, edges);
+        return findRelatedChildSamples(seed, _nodes);
     }
 
-    private Set<ExpMaterial> findRelatedChildSamples(ExpRunItem seed, Map<String, Identifiable> nodes, Map<String, Pair<Set<Edge>, Set<Edge>>> edges)
+    private Set<ExpMaterial> findRelatedChildSamples(ExpRunItem seed, Map<String, Identifiable> nodes)
     {
-        if (edges.size() == 0)
+        if (_nodesAndEdges.isEmpty())
             return Collections.emptySet();
 
         // walk from start through edges looking for all sample children, ignoring data children
@@ -244,27 +231,26 @@ public class ExpLineage
             String lsid = curr.getLSID();
 
             // Gather sample children
-            Set<ExpLineage.Edge> childEdges = edges.containsKey(lsid) ? edges.get(lsid).second : Collections.emptySet();
+            Set<ExpLineage.Edge> childEdges = _nodesAndEdges.containsKey(lsid) ? _nodesAndEdges.get(lsid).children : Collections.emptySet();
             for (ExpLineage.Edge edge : childEdges)
             {
-                String childLsid = edge.child;
-                Identifiable child = nodes.get(childLsid);
-                if (child instanceof ExpRun)
+                Identifiable child = nodes.get(edge.child);
+                if (child instanceof ExpRun run)
                 {
-                    if (!seen.contains(child))
+                    if (!seen.contains(run))
                     {
-                        stack.add(child);
-                        seen.add(child);
+                        stack.add(run);
+                        seen.add(run);
                     }
                 }
-                else if (child instanceof ExpMaterial)
+                else if (child instanceof ExpMaterial material)
                 {
-                    if (!seen.contains(child))
+                    if (!seen.contains(material))
                     {
-                        stack.add(child);
-                        seen.add(child);
+                        stack.add(material);
+                        seen.add(material);
                     }
-                    materials.add((ExpMaterial)child);
+                    materials.add(material);
                 }
             }
         }
@@ -351,10 +337,7 @@ public class ExpLineage
     {
         assert cpasType != null || clazz == ExpMaterial.class || clazz == ExpData.class || findBothMaterialAndData;
 
-        Map<String, Identifiable> nodes = processNodes();
-        Map<String, Pair<Set<ExpLineage.Edge>, Set<ExpLineage.Edge>>> allEdges = processNodeEdges();
-
-        if (allEdges.size() == 0)
+        if (_nodesAndEdges.isEmpty())
             return Collections.emptySet();
 
         // walk from start through edges looking for all nearest nodes, stopping at first ones found
@@ -367,20 +350,20 @@ public class ExpLineage
         {
             Identifiable curr = stack.poll();
             String lsid = curr.getLSID();
-            Set<ExpLineage.Edge> edges;
 
-            if (!allEdges.containsKey(lsid))
+            if (!_nodesAndEdges.containsKey(lsid))
                 continue;
 
+            Set<ExpLineage.Edge> edges;
             if (findParents)
-                edges = allEdges.get(lsid).first;
+                edges = _nodesAndEdges.get(lsid).parents;
             else
-                edges = allEdges.get(lsid).second;
+                edges = _nodesAndEdges.get(lsid).children;
 
             for (ExpLineage.Edge edge : edges)
             {
                 String targetLsid = findParents ? edge.parent : edge.child;
-                Identifiable target = nodes.get(targetLsid);
+                Identifiable target = _nodes.get(targetLsid);
                 if (target instanceof ExpRun)
                 {
                     if (!seen.contains(target))
@@ -389,7 +372,7 @@ public class ExpLineage
                         seen.add(target);
                     }
                 }
-                else if (cpasType != null && target instanceof ExpRunItem && cpasType.equals(((ExpRunItem)target).getCpasType()))
+                else if (cpasType != null && target instanceof ExpRunItem item && cpasType.equals(item.getCpasType()))
                 {
                     nearest.add((T) target);
                 }
@@ -413,125 +396,32 @@ public class ExpLineage
         return nearest;
     }
 
-    public JSONObject toJSON(User user, boolean requestedWithSingleSeed, ExperimentJSONConverter.Settings settings)
+    // NK: Originally, we included the "role" for each edge, however, in practice it was always a null
+    // value as we do not populate its value from the database. As such, we defaulted to serializing the
+    // string "no role" for the value of each edge. This is not useful information so it has been removed.
+    public record Edge(String parent, String child)
     {
-        Map<String, Identifiable> nodeMeta = processNodes();
-        Map<String, Object> values = new HashMap<>();
-        JSONObject nodes = new JSONObject();
-
-        if (_edges.isEmpty())
-        {
-            for (Identifiable seed : _seeds)
-            {
-                nodes.put(seed.getLSID(), nodeToJSON(seed, user, new JSONArray(), new JSONArray(), settings));
-            }
-        }
-        else
-        {
-            final Map<String, Pair<Set<Edge>, Set<Edge>>> edges = processNodeEdges();
-            for (Map.Entry<String, Pair<Set<Edge>, Set<Edge>>> node : edges.entrySet())
-            {
-                JSONArray parents = new JSONArray();
-                for (Edge edge : node.getValue().first)
-                    parents.put(edge.toParentJSON());
-
-                JSONArray children = new JSONArray();
-                for (Edge edge : node.getValue().second)
-                    children.put(edge.toChildJSON());
-
-                Identifiable obj = nodeMeta.get(node.getKey());
-                nodes.put(node.getKey(), nodeToJSON(obj, user, parents, children, settings));
-            }
-        }
-
-        // If the request was made with a single 'seed' property, use single 'seed' property in the response
-        // otherwise, include an array of 'seed' regardless of the number of seed items.
-        if (requestedWithSingleSeed)
-        {
-            assert _seeds.size() == 1;
-            values.put("seed", _seeds.stream().findFirst().orElseThrow().getLSID());
-        }
-        else
-        {
-            values.put("seeds", _seeds.stream().map(Identifiable::getLSID).collect(toList()));
-        }
-        values.put("nodes", nodes);
-
-        return new JSONObject(values);
-    }
-
-    private JSONObject nodeToJSON(Identifiable node, User user, JSONArray parents, JSONArray children, ExperimentJSONConverter.Settings settings)
-    {
-        JSONObject json = new JSONObject();
-
-        if (node != null)
-        {
-            json = ExperimentJSONConverter.serialize(node, user, settings);
-            json.put("type", node.getLSIDNamespacePrefix());
-        }
-
-        json.put("parents", parents);
-        json.put("children", children);
-
-        return json;
-    }
-
-    public static class Edge
-    {
-        public final String parent;
-        public final String child;
-        private final String _role;
-
-        public Edge(String parentLSID, String childLSID, String role)
-        {
-            parent = parentLSID;
-            child = childLSID;
-            _role = role;
-        }
-
         public JSONObject toParentJSON()
         {
-            JSONObject json = new JSONObject();
-            json.put("lsid", parent);
-            json.put("role", _role);
-            return json;
+            return toJSON(parent);
         }
 
         public JSONObject toChildJSON()
         {
+            return toJSON(child);
+        }
+
+        private JSONObject toJSON(String target)
+        {
             JSONObject json = new JSONObject();
-            json.put("lsid", child);
-            json.put("role", _role);
+            json.put("lsid", target);
             return json;
-        }
-
-        @Override
-        public int hashCode()
-        {
-            int result = parent.hashCode();
-            result = 31 * result + child.hashCode();
-            result = 31 * result + _role.hashCode();
-            return result;
-        }
-
-        @Override
-        public boolean equals(Object o)
-        {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            Edge edge = (Edge) o;
-
-            if (!parent.equals(edge.parent)) return false;
-            if (!child.equals(edge.child)) return false;
-            return _role.equals(edge._role);
-
         }
 
         @Override
         public String toString()
         {
-            return "[" + parent + "] -(" + _role + ")-> [" + child + "]";
+            return "[" + parent + "] -> [" + child + "]";
         }
     }
 

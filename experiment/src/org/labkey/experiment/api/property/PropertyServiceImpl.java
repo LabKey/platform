@@ -34,6 +34,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
@@ -683,6 +684,20 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
     public ConceptURIVocabularyDomainProvider getConceptUriVocabularyDomainProvider(String conceptUri)
     {
         return _conceptUriVocabularyProvider.get(conceptUri);
+    }
+
+    public Set<String> getDomainPropertyImportAliases(DomainProperty property)
+    {
+        if (property == null)
+            return Collections.emptySet();
+
+        Set<String> aliases = new CaseInsensitiveHashSet();
+        aliases.add(property.getName());
+        if (property.getLabel() != null)
+            aliases.add(property.getLabel());
+        if (!property.getImportAliasSet().isEmpty())
+            aliases.addAll(property.getImportAliasSet());
+        return aliases;
     }
 
     @Override

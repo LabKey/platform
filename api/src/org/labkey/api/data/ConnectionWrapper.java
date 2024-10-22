@@ -34,7 +34,6 @@ import org.labkey.api.util.SimpleLoggerWriter;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ViewServlet;
 
-import java.lang.reflect.Method;
 import java.sql.Array;
 import java.sql.Blob;
 import java.sql.CallableStatement;
@@ -70,6 +69,9 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class ConnectionWrapper implements java.sql.Connection
 {
+    // create a package logger, to make sure it shows up in the admin/loggers list
+    @SuppressWarnings({"SSBasedInspection", "unused"})
+    private static final Logger packageLogger = LogManager.getLogger(ConnectionWrapper.class.getPackageName());
     private static final Logger LOG = LogHelper.getLogger(ConnectionWrapper.class, "All JDBC metadata and SQL execution calls being made");
 
     private static final Set<ConnectionWrapper> _openConnections = Collections.synchronizedSet(new HashSet<>());
@@ -95,9 +97,6 @@ public class ConnectionWrapper implements java.sql.Connection
 
     /** Remember code that closed the Transaction but didn't commit - it may be faulty if it doesn't signal the failure back to the caller */
     private Throwable _suspiciousCloseStackTrace;
-
-    /** For debugging issue 23044 */
-    private static Method _transactionStateMethod;
 
     private volatile boolean _allowClose = true;
 
@@ -177,8 +176,9 @@ public class ConnectionWrapper implements java.sql.Connection
         return true;
     }
 
-    public static void closeConnections(Thread thread)
+    public static void closeConnections()
     {
+        Thread thread = DbScope.getEffectiveThread();
         List<ConnectionWrapper> toClose = new ArrayList<>();
 
         synchronized (_openConnections)
@@ -196,7 +196,7 @@ public class ConnectionWrapper implements java.sql.Connection
         {
             try
             {
-                connectionWrapper.close(thread);
+                connectionWrapper.close();
             }
             catch (SQLException ignored) {}
         }
@@ -396,14 +396,9 @@ public class ConnectionWrapper implements java.sql.Connection
     @Override
     public void close() throws SQLException
     {
-        close(Thread.currentThread());
-    }
-
-    public void close(Thread thread) throws SQLException
-    {
         DbScope.Transaction t;
 
-        if (_type != ConnectionType.Pooled && null != (t = _scope.getTransactionImpl(thread)))
+        if (_type != ConnectionType.Pooled && null != (t = _scope.getCurrentTransactionImpl()))
         {
             assert t.getConnection() == this : "Attempting to close a different connection from the one associated with this thread: " + this + " vs " + t.getConnection(); //Should release same conn we handed out
         }
@@ -428,31 +423,6 @@ public class ConnectionWrapper implements java.sql.Connection
         // if it's already been closed instead of doing a no-op
         if (null != _connection && !isClosed())
         {
-            /* For debugging issue 23044, look for connections that are set to be autoCommit but the driver thinks are mid-transaction */
-            Connection connection = DbScope.getDelegate(_connection);
-            if (connection != null && connection.getAutoCommit() && "org.postgresql.jdbc4.Jdbc4Connection".equals(connection.getClass().getName()))
-            {
-                try
-                {
-                    if (_transactionStateMethod == null)
-                    {
-                        _transactionStateMethod = connection.getClass().getMethod("getTransactionState");
-                        _log.debug("Got transactionStateMethod from org.postgresql.jdbc4.Jdbc4Connection. " + _transactionStateMethod);
-                    }
-                    Object state = _transactionStateMethod.invoke(connection);
-
-                    // org.postgresql.core.ProtocolConnection.TRANSACTION_OPEN = 1
-                    if (1 == ((Number) state).intValue())
-                    {
-                        _log.error("Transaction state does not match autoCommit for " + this, new Throwable());
-                    }
-                }
-                catch (Exception e)
-                {
-                    _log.error("Reflection error", e);
-                }
-            }
-
             try
             {
                 _runOnClose.close();
@@ -1051,15 +1021,15 @@ public class ConnectionWrapper implements java.sql.Connection
     }
 
     @Override
-    public void setNetworkTimeout(Executor executor, int milliseconds)
+    public void setNetworkTimeout(Executor executor, int milliseconds) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        _connection.setNetworkTimeout(executor, milliseconds);
     }
 
     @Override
-    public int getNetworkTimeout()
+    public int getNetworkTimeout() throws SQLException
     {
-        throw new UnsupportedOperationException();
+        return _connection.getNetworkTimeout();
     }
 
     private void checkForSuspiciousClose() throws SQLException

@@ -24,9 +24,10 @@ import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.List;
@@ -45,14 +46,23 @@ public interface PipeRoot extends SecurableResource
     @NotNull
     URI getUri();
 
+    @Deprecated // prefer getRootFileLike()
     @NotNull
     File getRootPath();
 
+    @Deprecated // prefer getRootFileLike()
     @NotNull
     Path getRootNioPath();
 
     @NotNull
+    FileLike getRootFileLike();
+
+    @Deprecated // prefer getRootFileLike()
+    @NotNull
     File getLogDirectory();
+
+    @NotNull
+    FileLike getLogDirectoryFileLike(boolean forWrite);
 
     @Nullable
     Path resolveToNioPath(String path);
@@ -66,14 +76,18 @@ public interface PipeRoot extends SecurableResource
      * is configured with an alternative file path, we'll check to see if the file exists there. If not, we'll return
      * a path relative to the root's primary path.
      */
+    @Deprecated // prefer resolvePathToFileLike()
     @Nullable
     File resolvePath(String relativePath);
 
-    default Path resolveRelativePath(String relativePath)
-    {
-        return getRootNioPath().resolve(relativePath);
-    }
-
+    /**
+     * @return the file that's at the given relativePath from the pipeline root. Will be null if the relative path
+     * attempts to reference something that's not under the root (such as "../../etc/passwd". When the root
+     * is configured with an alternative file path, we'll check to see if the file exists there. If not, we'll return
+     * a path relative to the root's primary path.
+     */
+    @Nullable
+    FileLike resolvePathToFileLike(String relativePath);
 
     /**
      * Get a local directory that can be used for importing (Read/Write)
@@ -108,11 +122,18 @@ public interface PipeRoot extends SecurableResource
 
     /** Creates a .labkey directory if it's not present and returns it. Used for things like protocol definition files,
      * log files for some upgrade tasks, etc. Its contents are generally not exposed directly to the user */
+    @Deprecated // prefer ensureSystemFileLike()
     @NotNull
     File ensureSystemDirectory();
 
+    @Deprecated // prefer ensureSystemFileLike()
     @NotNull
     Path ensureSystemDirectoryPath();
+
+    default FileLike ensureSystemFileLike()
+    {
+        return new FileSystemLike.Builder(ensureSystemDirectory()).readwrite().root();
+    }
 
     /** @return the entityId for this pipeline root, used to store permissions */
     String getEntityId();

@@ -76,11 +76,9 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.labkey.api.util.StringUtilsLabKey.append;
 
@@ -148,11 +146,11 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
             return new QueryRowReference(getContainer(), ExpSchema.SCHEMA_EXP, ExpSchema.TableType.Materials.name(), FieldKey.fromParts(ExpDataTable.Column.RowId), getRowId());
     }
 
-    @Nullable @Override
-    public ExpSampleTypeImpl getSampleType()
+    @Override
+    public @Nullable ExpSampleTypeImpl getSampleType()
     {
         String type = _object.getCpasType();
-        if (!ExpMaterialImpl.DEFAULT_CPAS_TYPE.equals(type) && !"Sample".equals(type))
+        if (!ExpMaterial.DEFAULT_CPAS_TYPE.equals(type) && !"Sample".equals(type))
         {
             // try current container first (uses cache)
             return SampleTypeServiceImpl.get().getSampleTypeByType(type, getContainer());
@@ -171,7 +169,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     public String getCpasType()
     {
         String result = _object.getCpasType();
-        return result == null ? ExpMaterialImpl.DEFAULT_CPAS_TYPE : result;
+        return result == null ? ExpMaterial.DEFAULT_CPAS_TYPE : result;
     }
 
     @Override
@@ -217,7 +215,6 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
 
         return SampleStatusService.get().getStateForRowId(getContainer(), getSampleStateId());
     }
-
 
     @Override
     public String getStateLabel()
@@ -306,8 +303,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
 
     /** Get the ObjectId of the ExpSampleType that this ExpMaterial belongs to. */
     @Override
-    @Nullable
-    public Integer getParentObjectId()
+    public @Nullable Integer getParentObjectId()
     {
         ExpSampleType st = getSampleType();
         if (st == null)
@@ -319,7 +315,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     @Override
     public void save(User user)
     {
-        save(user, (ExpSampleTypeImpl) getSampleType());
+        save(user, getSampleType());
     }
 
     public void save(User user, ExpSampleTypeImpl st)
@@ -408,7 +404,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     {
         // Big hack to prevent study specimens and bogus samples created from some plate assays (Issue 46037)
         // from being indexed as samples
-        if (StudyService.SPECIMEN_NAMESPACE_PREFIX.equals(getLSIDNamespacePrefix()) || "Material".equals(getCpasType()))
+        if (StudyService.SPECIMEN_NAMESPACE_PREFIX.equals(getLSIDNamespacePrefix()) || ExpMaterial.DEFAULT_CPAS_TYPE.equals(getCpasType()))
         {
             return;
         }
@@ -530,7 +526,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     @Override
     public Map<String, Object> getProperties()
     {
-        return getProperties((ExpSampleTypeImpl) getSampleType());
+        return getProperties(getSampleType());
     }
 
     public Map<String,Object> getProperties(ExpSampleTypeImpl st)
@@ -556,7 +552,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     @Override
     public Map<PropertyDescriptor, Object> getPropertyValues()
     {
-        ExpSampleTypeImpl sampleType = (ExpSampleTypeImpl) getSampleType();
+        ExpSampleTypeImpl sampleType = getSampleType();
         Map<String,Object> uriMap = getProperties(sampleType);
         Map<PropertyDescriptor, Object> values = new HashMap<>();
         if (sampleType != null)
@@ -572,7 +568,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     @Override
     public Map<String, ObjectProperty> getObjectProperties()
     {
-        return getObjectProperties((ExpSampleTypeImpl) getSampleType());
+        return getObjectProperties(getSampleType());
     }
 
     public Map<String, ObjectProperty> getObjectProperties(ExpSampleTypeImpl st)
@@ -610,7 +606,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
 
     public void setProperties(User user, Map<String,?> values_, boolean insertNullValues) throws ValidationException
     {
-        ExpSampleTypeImpl st = (ExpSampleTypeImpl) getSampleType();
+        ExpSampleTypeImpl st = getSampleType();
         Map<String, Object> values = new HashMap<>(values_);
         Map<String,Object> converted = new HashMap<>();
         RemapCache cache = new RemapCache();
@@ -629,11 +625,11 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
                     value = values.get(key = dp.getPropertyURI());
                 else
                     continue;
-                if (value instanceof ObjectProperty)
+                if (value instanceof ObjectProperty property)
                 {
                     // NOTE: ExpObjectImpl.setProperty() does not support MvIndicator and neither does Table.update().
                     // we could handle it here if we need to
-                    value = ((ObjectProperty) value).value();
+                    value = property.value();
                 }
                 try
                 {

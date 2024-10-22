@@ -33,6 +33,7 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpLineage;
 import org.labkey.api.exp.api.ExpLineageOptions;
+import org.labkey.api.exp.api.ExpLineageService;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpRunItem;
@@ -689,6 +690,8 @@ public class NameGenerator
                 tabLoader.setUnescapeBackslashes(false);
                 // Issue 50924: LKSM: Importing samples using naming expression referencing parent inputs with # result in error
                 tabLoader.setIncludeComments(true);
+                // Issue 51056 Samples with single double quotes in the name will not resolve if added as parent samples.
+                tabLoader.setParseEnclosedQuotes(true);
                 try
                 {
                     String[][] parsedValues = tabLoader.getFirstNLines(1);
@@ -1953,7 +1956,7 @@ public class NameGenerator
                             ancestorLookupValues = _ancestorSearchCache.get(ancestorKey);
                         else
                         {
-                            ExpLineage lineage = ExperimentService.get().getLineage(_container, _user, seed, options);
+                            ExpLineage lineage = ExpLineageService.get().getLineage(_container, _user, seed, options);
                             List<ExpRunItem> candidateAncestors = lineage.findAncestorByType(parentObject, ancestorOptions.ancestorSearchType(), _user);
                             candidateAncestors.sort(Comparator.comparing(Identifiable::getName));
                             for (ExpRunItem candidate : candidateAncestors)
@@ -1971,7 +1974,7 @@ public class NameGenerator
                             ancestorLookupValues = _ancestorCache.get(ancestorKey);
                         else
                         {
-                            ExpLineage lineage = ExperimentService.get().getLineage(_container, _user, seed, options);
+                            ExpLineage lineage = ExpLineageService.get().getLineage(_container, _user, seed, options);
                             List<Pair<ExpLineageOptions.LineageExpType, String>> ancestorPaths = ancestorOptions.ancestorPaths();
                             Set<Identifiable> ancestorObjects = lineage.findAncestorObjects(parentObject, ancestorPaths, _user);
 

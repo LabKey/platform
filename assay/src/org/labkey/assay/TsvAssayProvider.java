@@ -48,6 +48,7 @@ import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.PropertyType;
@@ -76,6 +77,7 @@ import org.labkey.api.study.assay.StudyParticipantVisitResolverType;
 import org.labkey.api.study.assay.ThawListResolverType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.assay.plate.query.PlateSchema;
@@ -467,10 +469,30 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
                     newFields.add(wellLsid);
                 }
 
+                if (!existingFields.contains(AssayResultDomainKind.REPLICATE_LSID_COLUMN_NAME))
+                {
+                    GWTPropertyDescriptor replicateLsid = new GWTPropertyDescriptor(AssayResultDomainKind.REPLICATE_LSID_COLUMN_NAME, PropertyType.STRING.getTypeUri());
+                    replicateLsid.setShownInInsertView(false);
+                    replicateLsid.setShownInUpdateView(false);
+                    replicateLsid.setHidden(true);
+
+                    newFields.add(replicateLsid);
+                }
+
                 if (!newFields.isEmpty())
                 {
                     newFields.addAll(update.getFields());
                     update.setFields(newFields);
+                }
+
+                try
+                {
+                    // update fields in the replicate stats table to match any changes to measures in the results domain
+                    AssayPlateMetadataService.get().updateReplicateStatsDomain(user, protocol, update, resultsDomain);
+                }
+                catch (ExperimentException e)
+                {
+                    throw UnexpectedException.wrap(e);
                 }
             }
         }
@@ -498,6 +520,12 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
 
     @Override
     public boolean canRename()
+    {
+        return true;
+    }
+
+    @Override
+    public boolean supportsSampleLookupsAsMaterialInputs()
     {
         return true;
     }
@@ -637,7 +665,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
             }});
 
             TsvAssayProvider provider = new TsvAssayProvider();
-            List<AssayDataCollector> dataCollectors = provider.getDataCollectors(Collections.singletonMap(AssayDataCollector.PRIMARY_FILE, new File("mockFile")), _uploadContext);
+            List<AssayDataCollector> dataCollectors = provider.getDataCollectors(Collections.singletonMap(AssayDataCollector.PRIMARY_FILE, new File("/mockFile")), _uploadContext);
             assertEquals(3, dataCollectors.size());
             assertEquals(TextAreaDataCollector.class, dataCollectors.get(0).getClass());
             assertEquals(PreviouslyUploadedDataCollector.class, dataCollectors.get(1).getClass());

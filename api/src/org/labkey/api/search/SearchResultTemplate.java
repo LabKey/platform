@@ -18,15 +18,14 @@ package org.labkey.api.search;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.search.SearchService.SearchCategory;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 
-/**
- * User: adam
- * Date: 2/18/12
- * Time: 10:13 AM
- */
+import java.util.List;
+
 public interface SearchResultTemplate
 {
     @Nullable String getName();
@@ -73,15 +72,27 @@ public interface SearchResultTemplate
             case Folder:
             case FolderAndSubfolders:
                 title += " folder '";
-                if ("".equals(c.getName()))
+                if (c.getName().isEmpty())
                     title += "root'";
                 else
                     title += c.getName() + "'";
                 break;
         }
 
-        if (null != category)
-            title += " for " + category.replaceAll(" ", "s, ") + "s";
+        SearchService ss = SearchService.get();
+        if (ss != null)
+        {
+            List<SearchCategory> categories = ss.getCategories(category);
+
+            if (null != categories)
+            {
+                List<String> list = categories.stream()
+                    .map(SearchCategory::getDescription)
+                    .toList();
+
+                title += " for " + StringUtilsLabKey.joinWithConjunction(list, "and");
+            }
+        }
 
         root.addChild(title);
     }

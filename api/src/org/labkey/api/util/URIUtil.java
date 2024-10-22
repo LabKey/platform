@@ -26,6 +26,9 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Arrays;
+
+import static org.labkey.api.util.FileUtil.FILE_SCHEME;
 
 /**
  */
@@ -33,13 +36,22 @@ public class URIUtil
 {
     static public boolean isDescendant(URI base, URI descendant)
     {
-        // to protect against paths that are trying to escape the base, return false if the descendant includes "/../"
-        if (descendant.getPath().contains("/../"))
+        var baseSchema = StringUtils.defaultString(base.getScheme(), FILE_SCHEME);
+        var descendantSchema = StringUtils.defaultString(descendant.getScheme(), FILE_SCHEME);
+
+        if (!descendantSchema.equalsIgnoreCase(baseSchema))
             return false;
 
-        if (!descendant.getScheme().equalsIgnoreCase(base.getScheme()))
+        // append '/' to both paths to handle these cases
+        //     "/atoz" starts with "/a" but is not a descendant
+        //     "/a" does not start with "/a/" but should be considered equal
+        var basePath = StringUtils.appendIfMissing(base.getPath(),"/");
+        var descendantPath = StringUtils.appendIfMissing(descendant.getPath(),"/");
+
+        if (descendantPath.contains("/../"))
             return false;
-        return descendant.getPath().startsWith(base.getPath());
+
+        return descendantPath.startsWith(basePath);
     }
 
     static public URI resolve(URI root, URI base, String path)
@@ -183,7 +195,7 @@ public class URIUtil
 
     static public InputStream getInputStream(URI uri) throws Exception
     {
-        if ("file".equals(uri.getScheme()))
+        if (FILE_SCHEME.equals(uri.getScheme()))
             return new FileInputStream(new File(uri));
         return uri.toURL().openStream();
     }
@@ -200,7 +212,7 @@ public class URIUtil
             return null;
 
         URI res = uri;
-        if ("file".equalsIgnoreCase(uri.getScheme())
+        if (FILE_SCHEME.equalsIgnoreCase(uri.getScheme())
                 && !StringUtils.startsWith(uri.getRawSchemeSpecificPart(), "///")
                 && StringUtils.isBlank(uri.getHost()))
         {
@@ -258,12 +270,27 @@ public class URIUtil
         @Test
         public void testIsDescendant()
         {
-            URI base = URI.create("file:///a/b/c/");
-            assertTrue(isDescendant(base, URI.create("file:///a/b/c/myfile.txt")));
-            assertTrue(isDescendant(base, URI.create("file:///a/b/c/d/myfile.txt")));
-            assertFalse(isDescendant(base, URI.create("file:///a/b/c/../c/myfile.txt")));
-            assertFalse(isDescendant(base, URI.create("file:///a/b/c/../myfile.txt")));
-            assertFalse(isDescendant(base, URI.create("file:///a/b/myfile.txt")));
+            for (var basePrefix : Arrays.asList("","file:","file://"))
+            {
+                for (var baseTrailing : Arrays.asList("", "/"))
+                {
+                    for (var descPrefix : Arrays.asList("", "file:", "file://"))
+                    {
+                        URI base = URI.create(basePrefix + "/a/b%27b/c" + trimTrailingSlash(baseTrailing));
+                        assertTrue(base.toString(),  isDescendant(base, URI.create(basePrefix + "/a/b'b/c/myfile.txt")));
+                        assertTrue(base.toString(),  isDescendant(base, URI.create(basePrefix + "/a/b%27b/c/myfile.txt")));
+                        assertTrue(base.toString(),  isDescendant(base, URI.create(basePrefix + "/a/b'b/c/d/myfile.txt")));
+                        assertFalse(base.toString(), isDescendant(base, URI.create(basePrefix + "/a/b'b/c/../c/myfile.txt")));
+                        assertFalse(base.toString(), isDescendant(base, URI.create(basePrefix + "/a/b%27b/c/../myfile.txt")));
+                        assertFalse(base.toString(), isDescendant(base, URI.create(basePrefix + "/a/b'b/myfile.txt")));
+                        assertFalse(base.toString(), isDescendant(base, URI.create(basePrefix + "/a/b'b/cxyz/d")));
+                        assertFalse(base.toString(), isDescendant(base, URI.create(basePrefix + "/a/b%27b/c.txt")));
+                        // test equal paths
+                        assertTrue(base.toString(),  isDescendant(base, URI.create(basePrefix + "/a/b'b/c")));
+                        assertTrue(base.toString(),  isDescendant(base, URI.create(basePrefix + "/a/b'b/c/")));
+                    }
+                }
+            }
         }
     }
 }

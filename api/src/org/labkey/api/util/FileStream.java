@@ -16,24 +16,22 @@
 package org.labkey.api.util;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.vfs2.FileContent;
+import org.apache.commons.vfs2.FileSystemException;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.vfs.FileLike;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.channels.Channel;
 import java.nio.channels.Channels;
-import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.util.Date;
 
@@ -184,12 +182,6 @@ public interface FileStream
             MemTracker.getInstance().remove(in);
             in = null;
         }
-
-        @Override
-        protected void finalize()
-        {
-            assert in == null;
-        }
     }
 
 
@@ -221,6 +213,12 @@ public interface FileStream
         public FileFileStream(@NotNull File f, boolean delete) throws IOException
         {
             file = f;
+            deleteOnClose = delete;
+        }
+
+        public FileFileStream(@NotNull FileLike fo, boolean delete) throws IOException
+        {
+            file = fo.toNioPathForRead().toFile();
             deleteOnClose = delete;
         }
 
@@ -265,11 +263,56 @@ public interface FileStream
                     return;
             FileStream.super.transferTo(dest);
         }
+    }
+
+    // TODO can we merge FileStream and FileContent???
+    class FileContentFileStream implements FileStream
+    {
+        private final FileContent content;
+        InputStream in;
+
+        public FileContentFileStream(FileContent c)
+        {
+            content = c;
+        }
 
         @Override
-        protected void finalize()
+        public long getSize() throws IOException
         {
-            assert in == null;
+            return content.getSize();
+        }
+
+        @Override
+        public @Nullable Date getLastModified()
+        {
+            try
+            {
+                return new Date(content.getLastModifiedTime());
+            }
+            catch (FileSystemException x)
+            {
+                throw UnexpectedException.wrap(x);
+            }
+        }
+
+        @Override
+        public InputStream openInputStream() throws IOException
+        {
+            in = content.getInputStream();
+            return in;
+        }
+
+        @Override
+        public void closeInputStream() throws IOException
+        {
+            IOUtils.closeQuietly(in);
+            in = null;
+        }
+
+        @Override
+        public void transferTo(File dest) throws IOException
+        {
+            FileStream.super.transferTo(dest);
         }
     }
 }

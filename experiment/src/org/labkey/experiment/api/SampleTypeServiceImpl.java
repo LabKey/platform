@@ -22,6 +22,7 @@ import org.apache.commons.math3.util.Precision;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.audit.AbstractAuditHandler;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogService;
@@ -284,6 +285,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 .append(" ON m.RowId = mi.MaterialId WHERE m.LSID NOT LIKE ").appendValue("%:" + StudyService.SPECIMEN_NAMESPACE_PREFIX + "%", getExpSchema().getSqlDialect())
                 .append(" AND m.cpasType = ?").add(sampleType.getLSID())
                 .append(" AND (mi.lastIndexed IS NULL OR mi.lastIndexed < ? OR (m.modified IS NOT NULL AND mi.lastIndexed < m.modified))")
+                .append(" ORDER BY m.RowId") // Issue 51263: order by RowId to reduce deadlock
                 .add(sampleType.getModified());
 
         new SqlSelector(getExpSchema().getScope(), sql).forEachBatch(Material.class, 1000, batch -> {
@@ -705,42 +707,32 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                                               @Nullable List<String> excludedContainerIds, @Nullable List<String> excludedDashboardContainerIds)
         throws ExperimentException
     {
-        if (name == null)
-            throw new ExperimentException("SampleType name is required");
-
-        TableInfo materialSourceTable = ExperimentService.get().getTinfoSampleType();
-        int nameMax = materialSourceTable.getColumn("Name").getScale();
-        if (name.length() > nameMax)
-            throw new ExperimentException("SampleType name may not exceed " + nameMax + " characters.");
-
-        ExpSampleType existing = getSampleType(c, name);
-        if (existing != null)
-            throw new IllegalArgumentException("SampleType '" + existing.getName() + "' already exists");
+        validateSampleTypeName(c, u, name);
 
         if (properties == null || properties.isEmpty())
-            throw new ExperimentException("At least one property is required");
+            throw new ApiUsageException("At least one property is required");
 
         if (idCol2 != -1 && idCol1 == idCol2)
-            throw new ExperimentException("You cannot use the same id column twice.");
+            throw new ApiUsageException("You cannot use the same id column twice.");
 
         if (idCol3 != -1 && (idCol1 == idCol3 || idCol2 == idCol3))
-            throw new ExperimentException("You cannot use the same id column twice.");
+            throw new ApiUsageException("You cannot use the same id column twice.");
 
         if ((idCol1 > -1 && idCol1 >= properties.size()) ||
             (idCol2 > -1 && idCol2 >= properties.size()) ||
             (idCol3 > -1 && idCol3 >= properties.size()) ||
             (parentCol > -1 && parentCol >= properties.size()))
-            throw new ExperimentException("column index out of range");
+            throw new ApiUsageException("column index out of range");
 
         // Name expression is only allowed when no idCol is set
         if (nameExpression != null && idCol1 > -1)
-            throw new ExperimentException("Name expression cannot be used with id columns");
+            throw new ApiUsageException("Name expression cannot be used with id columns");
 
         NameExpressionOptionService svc = NameExpressionOptionService.get();
         if (!svc.allowUserSpecifiedNames(c))
         {
             if (nameExpression == null)
-                throw new ExperimentException(c.hasProductFolders() ? NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS : NAME_EXPRESSION_REQUIRED_MSG);
+                throw new ApiUsageException(c.hasProductFolders() ? NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS : NAME_EXPRESSION_REQUIRED_MSG);
         }
 
         if (svc.getExpressionPrefix(c) != null)
@@ -751,29 +743,30 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         }
 
         // Validate the name expression length
+        TableInfo materialSourceTable = ExperimentService.get().getTinfoSampleType();
         int nameExpMax = materialSourceTable.getColumn("NameExpression").getScale();
         if (nameExpression != null && nameExpression.length() > nameExpMax)
-            throw new ExperimentException("Name expression may not exceed " + nameExpMax + " characters.");
+            throw new ApiUsageException("Name expression may not exceed " + nameExpMax + " characters.");
 
         // Validate the aliquot name expression length
         int aliquotNameExpMax = materialSourceTable.getColumn("AliquotNameExpression").getScale();
         if (aliquotNameExpression != null && aliquotNameExpression.length() > aliquotNameExpMax)
-            throw new ExperimentException("Aliquot naming patten may not exceed " + aliquotNameExpMax + " characters.");
+            throw new ApiUsageException("Aliquot naming patten may not exceed " + aliquotNameExpMax + " characters.");
 
         // Validate the label color length
         int labelColorMax = materialSourceTable.getColumn("LabelColor").getScale();
         if (labelColor != null && labelColor.length() > labelColorMax)
-            throw new ExperimentException("Label color may not exceed " + labelColorMax + " characters.");
+            throw new ApiUsageException("Label color may not exceed " + labelColorMax + " characters.");
 
         // Validate the metricUnit length
         int metricUnitMax = materialSourceTable.getColumn("MetricUnit").getScale();
         if (metricUnit != null && metricUnit.length() > metricUnitMax)
-            throw new ExperimentException("Metric unit may not exceed " + metricUnitMax + " characters.");
+            throw new ApiUsageException("Metric unit may not exceed " + metricUnitMax + " characters.");
 
         // Validate the category length
         int categoryMax = materialSourceTable.getColumn("Category").getScale();
         if (category != null && category.length() > categoryMax)
-            throw new ExperimentException("Category may not exceed " + categoryMax + " characters.");
+            throw new ApiUsageException("Category may not exceed " + categoryMax + " characters.");
 
         Pair<String, String> dbSeqLsids = getSampleTypeSamplePrefixLsids(c);
         String lsid = dbSeqLsids.first;
@@ -837,10 +830,10 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         domain.setPropertyIndices(indices, lowerReservedNames);
 
         if (!hasNameProperty && idUri1 == null)
-            throw new ExperimentException("Either a 'Name' property or an index for idCol1 is required");
+            throw new ApiUsageException("Either a 'Name' property or an index for idCol1 is required");
 
         if (hasNameProperty && idUri1 != null)
-            throw new ExperimentException("Either a 'Name' property or idCols can be used, but not both");
+            throw new ApiUsageException("Either a 'Name' property or idCols can be used, but not both");
 
         String importAliasJson = ExperimentJSONConverter.getAliasJson(importAliases, name);
 
@@ -973,6 +966,24 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         };
     }
 
+    private void validateSampleTypeName(Container container, User user, String name)
+    {
+        if (name == null || StringUtils.isBlank(name))
+            throw new ApiUsageException("Sample Type name is required.");
+
+        TableInfo materialSourceTable = ExperimentService.get().getTinfoSampleType();
+        int nameMax = materialSourceTable.getColumn("Name").getScale();
+        if (name.length() > nameMax)
+            throw new ApiUsageException("Sample Type name may not exceed " + nameMax + " characters.");
+
+        if (getSampleType(container, user, name) != null)
+            throw new ApiUsageException("A Sample Type with name '" + name + "' already exists.");
+
+        // Issue 51321: check reserved sample type name: First
+        if ("First".equalsIgnoreCase(name) || "All".equalsIgnoreCase(name))
+            throw new ApiUsageException("Sample Type name '" + name + "' is reserved.");
+    }
+
     @Override
     public ValidationException updateSampleType(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, SampleTypeDomainKindProperties options, Container container, User user, boolean includeWarnings)
     {
@@ -983,12 +994,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         String newName = StringUtils.trimToNull(update.getName());
         String oldSampleTypeName = st.getName();
         boolean hasNameChange = false;
-        if (newName != null && !oldSampleTypeName.equals(newName))
+        if (!oldSampleTypeName.equals(newName))
         {
-            ExpSampleType duplicateType = SampleTypeService.get().getSampleType(container, user, newName);
-            if (duplicateType != null)
-                throw new IllegalArgumentException("A Sample Type with name '" + newName + "' already exists.");
-
+            validateSampleTypeName(container, user, newName);
             hasNameChange = true;
             st.setName(newName);
         }
@@ -1010,7 +1018,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             {
                 st.setNameExpression(sampleIdPattern);
                 if (!NameExpressionOptionService.get().allowUserSpecifiedNames(container) && sampleIdPattern == null)
-                    throw new IllegalArgumentException(container.hasProductFolders() ? NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS : NAME_EXPRESSION_REQUIRED_MSG);
+                    throw new ApiUsageException(container.hasProductFolders() ? NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS : NAME_EXPRESSION_REQUIRED_MSG);
             }
 
             String aliquotIdPattern = StringUtils.trimToNull(options.getAliquotNameExpression());
@@ -1037,7 +1045,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                     Set<String> existingRequiredInputs = new HashSet<>(st.getRequiredImportAliases().values());
                     String invalidParentType = ExperimentServiceImpl.get().getInvalidRequiredImportAliasUpdate(st.getLSID(), true, newAliases, existingRequiredInputs, container, user);
                     if (invalidParentType != null)
-                        throw new IllegalArgumentException("'" + invalidParentType + "' cannot be required as a parent type when there are existing samples without a parent of this type.");
+                        throw new ApiUsageException("'" + invalidParentType + "' cannot be required as a parent type when there are existing samples without a parent of this type.");
 
                 }
                 catch (IOException e)

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.experiment.api;
+package org.labkey.experiment.lineage;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -45,37 +45,31 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringExpression;
+import org.labkey.experiment.api.ExperimentServiceImpl;
 
-/**
- * User: kevink
- * Date: 2/23/16
- */
 public class LineageTableInfo extends VirtualTable
 {
-    private @NotNull
-    final SQLFragment _objectids;
+    private final @NotNull SQLFragment _objectIds;
     private final boolean _parents;
-    private @Nullable
-    final Integer _depth;
-    private @Nullable
-    final ExpLineageOptions.LineageExpType _expType;
-    private @Nullable
-    final String _cpasType;
-    private @Nullable
-    final String _runProtocolLsid;
+    private final @Nullable Integer _depth;
+    private final @Nullable ExpLineageOptions.LineageExpType _expType;
+    private final @Nullable String _cpasType;
+    private final @Nullable String _runProtocolLsid;
 
-    public LineageTableInfo(String name,
-                            @NotNull UserSchema schema,
-                            @NotNull SQLFragment objectids,
-                            boolean parents,
-                            @Nullable Integer depth,
-                            @Nullable ExpLineageOptions.LineageExpType expType,
-                            @Nullable String cpasType,
-                            @Nullable String runProtocolLsid,
-                            @Nullable ContainerFilter cf)
+    public LineageTableInfo(
+        String name,
+        @NotNull UserSchema schema,
+        @NotNull SQLFragment objectIds,
+        boolean parents,
+        @Nullable Integer depth,
+        @Nullable ExpLineageOptions.LineageExpType expType,
+        @Nullable String cpasType,
+        @Nullable String runProtocolLsid,
+        @Nullable ContainerFilter cf
+    )
     {
         super(schema.getDbSchema(), name, schema, cf);
-        _objectids = objectids;
+        _objectIds = objectIds;
         _parents = parents;
 
         // depth is negative for parent values
@@ -118,7 +112,6 @@ public class LineageTableInfo extends VirtualTable
         addColumn(parentLsid);
 
         var parentRowId = new BaseColumnInfo(FieldKey.fromParts("rowId"), this, JdbcType.INTEGER);
-        //parentRowId.setFk(new QueryForeignKey("exp", schema.getContainer(), schema.getContainer(), schema.getUser(), "Materials", "rowId", "Name"));
         addColumn(parentRowId);
 
         setTitleColumn("Name");
@@ -300,7 +293,7 @@ public class LineageTableInfo extends VirtualTable
             options.setDepth(_depth);
 
         options.setUseObjectIds(true);
-        SQLFragment tree = ExperimentServiceImpl.get().generateExperimentTreeSQL(_objectids, options);
+        SQLFragment tree = ExperimentServiceImpl.get().generateExperimentTreeSQL(_objectIds, options);
 
         String comment = String.format("<LineageTableInfo parents=%b, depth=%d, expType=%s, cpasType=%s, runProtocolLsid=%s>\n", _parents, _depth, _expType, _cpasType, _runProtocolLsid);
 

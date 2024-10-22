@@ -40,6 +40,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.experiment.lineage.LineageForeignKey;
 
 import java.sql.Connection;
 import java.util.ArrayList;

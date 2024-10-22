@@ -17,12 +17,14 @@
 package org.labkey.api.assay;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.collections.CollectionUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.InsertView;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.io.IOException;
@@ -38,7 +40,7 @@ import java.util.Map;
  */
 public class PreviouslyUploadedDataCollector<ContextType extends AssayRunUploadContext<? extends AssayProvider>> extends AbstractTempDirDataCollector<ContextType>
 {
-    private final Map<String, File> _uploadedFiles;
+    private final Map<String, FileLike> _uploadedFiles;
     private final Type _type;
 
     /**
@@ -58,7 +60,7 @@ public class PreviouslyUploadedDataCollector<ContextType extends AssayRunUploadC
         private final String _pathFormElementName;
         private final String _nameFormElementName;
 
-        private Type(String pathFormElementName, String nameFormElementName)
+        Type(String pathFormElementName, String nameFormElementName)
         {
             _pathFormElementName = pathFormElementName;
             _nameFormElementName = nameFormElementName;
@@ -75,14 +77,14 @@ public class PreviouslyUploadedDataCollector<ContextType extends AssayRunUploadC
         }
     }
 
-    public PreviouslyUploadedDataCollector(Map<String, File> uploadedFiles, Type type)
+    public PreviouslyUploadedDataCollector(Map<String, FileLike> uploadedFiles, Type type)
     {
         _uploadedFiles = uploadedFiles;
         _type = type;
     }
 
     /** Default type is ErrorReshow */
-    public PreviouslyUploadedDataCollector(Map<String, File> uploadedFiles)
+    public PreviouslyUploadedDataCollector(Map<String, FileLike> uploadedFiles)
     {
         this(uploadedFiles, Type.ErrorReshow);
     }
@@ -92,12 +94,12 @@ public class PreviouslyUploadedDataCollector<ContextType extends AssayRunUploadC
     {
         HtmlStringBuilder sb = HtmlStringBuilder.of();
         String separator = "";
-        for (Map.Entry<String, File> entry : _uploadedFiles.entrySet())
+        for (Map.Entry<String, FileLike> entry : _uploadedFiles.entrySet())
         {
             sb.append(separator);
             separator = ", ";
             sb.append(entry.getValue().getName());
-            sb.append(getHiddenFormElementHTML(context.getContainer(), entry.getKey(), entry.getValue()));
+            sb.append(getHiddenFormElementHTML(context.getContainer(), entry.getKey(), entry.getValue().toNioPathForRead().toFile()));
         }
         return new HtmlView(sb);
     }
@@ -132,12 +134,12 @@ public class PreviouslyUploadedDataCollector<ContextType extends AssayRunUploadC
 
     @Override
     @NotNull
-    public Map<String, File> createData(ContextType context) throws IOException
+    public Map<String, FileLike> createData(ContextType context) throws IOException
     {
         if (_uploadComplete)
             return Collections.emptyMap();
 
-        Map<String, File> result = new LinkedHashMap<>();
+        Map<String, FileLike> result = CollectionUtils.enforceValueClass(new LinkedHashMap<>(), FileLike.class);
         // Add the files for the specific flavor we're expecting
         result.putAll(getFilesFromRequest(context, _type));
         if (_type != Type.PassThrough)
@@ -149,7 +151,7 @@ public class PreviouslyUploadedDataCollector<ContextType extends AssayRunUploadC
         return result;
     }
 
-    private Map<String, File> getFilesFromRequest(ContextType context, Type type) throws IOException
+    private Map<String, FileLike> getFilesFromRequest(ContextType context, Type type) throws IOException
     {
         String[] paths = context.getRequest().getParameterValues(type.getPathFormElementName());
         String[] names = context.getRequest().getParameterValues(type.getNameFormElementName());
@@ -165,13 +167,13 @@ public class PreviouslyUploadedDataCollector<ContextType extends AssayRunUploadC
         {
             throw new IOException("The number of paths did not match the number of names for form elements " + _type.getPathFormElementName() + " and " + _type.getNameFormElementName());
         }
-        Map<String, File> result = new LinkedHashMap<>();
 
         PipeRoot pipelineRoot = getPipelineRoot(context.getContainer());
 
+        Map<String, FileLike> result = CollectionUtils.enforceValueClass(new LinkedHashMap<>(), FileLike.class);
         for (int i = 0; i < paths.length; i++)
         {
-            result.put(names[i], pipelineRoot.resolvePath(paths[i]));
+            result.put(names[i], pipelineRoot.resolvePathToFileLike(paths[i]));
         }
         return result;
     }
@@ -187,10 +189,10 @@ public class PreviouslyUploadedDataCollector<ContextType extends AssayRunUploadC
         PipeRoot pipeRoot = getPipelineRoot(context.getContainer());
 
         view.getDataRegion().addHiddenFormField("dataCollectorName", getShortName());
-        for (Map.Entry<String, File> entry : _uploadedFiles.entrySet())
+        for (Map.Entry<String, FileLike> entry : _uploadedFiles.entrySet())
         {
             view.getDataRegion().addHiddenFormField(_type.getNameFormElementName(), entry.getKey());
-            view.getDataRegion().addHiddenFormField(_type.getPathFormElementName(), pipeRoot.relativePath(entry.getValue()));
+            view.getDataRegion().addHiddenFormField(_type.getPathFormElementName(), pipeRoot.relativePath(entry.getValue().toNioPathForWrite().toFile()));
         }
     }
 }

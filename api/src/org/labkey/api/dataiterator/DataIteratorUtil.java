@@ -433,12 +433,16 @@ public class DataIteratorUtil
             // use source ColumnInfo where it matches
             _columns = new ArrayList<>(columnNames.size() + 1);
             _columns.add(in.getColumnInfo(0));
+            var nameSet = new CaseInsensitiveHashSet();
             for (var name : columnNames)
             {
-                if (map.containsKey(name))
-                    _columns.add(in.getColumnInfo(map.get(name)));
-                else
-                    _columns.add(new BaseColumnInfo(name, JdbcType.OTHER));
+                if (nameSet.add(name))
+                {
+                    if (map.containsKey(name))
+                        _columns.add(in.getColumnInfo(map.get(name)));
+                    else
+                        _columns.add(new BaseColumnInfo(name, JdbcType.OTHER));
+                }
             }
         }
 

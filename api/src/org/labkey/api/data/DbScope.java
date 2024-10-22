@@ -1038,17 +1038,13 @@ public class DbScope
         }
     }
 
-    private static Thread getEffectiveThread()
-    {
-        return getEffectiveThread(Thread.currentThread());
-    }
-
     /**
      * @return the thread that owns the connections for the given thread. Background threads may piggyback on an
-     * HTTP request thread, for example. If no sharing has been established, the same thread as passed
+     * HTTP request thread, for example. If no sharing has been established, use the current thread
      */
-    private static Thread getEffectiveThread(Thread thread)
+    public static Thread getEffectiveThread()
     {
+        Thread thread = Thread.currentThread();
         synchronized (_sharedConnections)
         {
             Thread result = _sharedConnections.get(thread);
@@ -1073,12 +1069,7 @@ public class DbScope
     /* package */
     @Nullable TransactionImpl getCurrentTransactionImpl()
     {
-        return getTransactionImpl(Thread.currentThread());
-    }
-
-    /* package */ @Nullable TransactionImpl getTransactionImpl(Thread thread)
-    {
-        thread = getEffectiveThread(thread);
+        Thread thread = getEffectiveThread();
         synchronized (_transaction)
         {
             List<TransactionImpl> transactions = _transaction.get(thread);
@@ -2084,21 +2075,15 @@ public class DbScope
     }
 
     /**
-     * Shuts down any connections associated with DbScopes that have been handed out to the current thread
+     * Shuts down any connections associated with DbScopes that have been handed out to the current thread or its
+     * associated/effective thread. Also releases locks acquired as part of opening the transaction.
      */
     public static void closeAllConnectionsForCurrentThread()
     {
-        closeAllConnectionsForThread(getEffectiveThread());
-    }
-    /**
-     * Shuts down any connections associated with DbScopes that have been handed out to the current thread. Also
-     * releases locks acquired as part of opening the transaction.
-     */
-    public static void closeAllConnectionsForThread(Thread thread)
-    {
+        Thread thread = getEffectiveThread();
         for (DbScope scope : getInitializedDbScopes())
         {
-            TransactionImpl t = scope.getTransactionImpl(thread);
+            TransactionImpl t = scope.getCurrentTransactionImpl();
             int count = 0;
             while (t != null)
             {
@@ -2120,13 +2105,13 @@ public class DbScope
                 }
 
                 // We may have nested concurrent transactions for a given scope, so be sure we close them all
-                TransactionImpl t2 = scope.getTransactionImpl(thread);
+                TransactionImpl t2 = scope.getCurrentTransactionImpl();
                 t = (t2 == null || t2 == t) ? null : t2;
             }
         }
 
         // Also close down connections that might not have been connected with a Transaction object
-        ConnectionWrapper.closeConnections(thread);
+        ConnectionWrapper.closeConnections();
     }
 
     /**
@@ -2143,21 +2128,22 @@ public class DbScope
      * Causes any connections associated with the current thread to be used by the passed-in thread. This allows
      * an async thread to participate in the same transaction as the original HTTP request processing thread, for
      * example
-     * @param asyncThread the thread that should use the database connections of the current thread
+     * @param primaryThread the thread that should be treated as the owner for any connections used
+     * @param piggybackingThread the thread that should use the database connections of the primary thread
      * @return an AutoCloseable that will stop sharing the database connection with the other thread
      */
-    public static ConnectionSharingCloseable shareConnections(final Thread asyncThread)
+    public static ConnectionSharingCloseable shareConnections(Thread primaryThread, final Thread piggybackingThread)
     {
         synchronized (_sharedConnections)
         {
-            if (_sharedConnections.containsKey(asyncThread))
+            if (_sharedConnections.containsKey(piggybackingThread))
             {
-                throw new IllegalStateException("Thread '" + asyncThread.getName() + "' is already sharing the connections of thread '" + _sharedConnections.get(asyncThread) + "'");
+                throw new IllegalStateException("Thread '" + piggybackingThread.getName() + "' is already sharing the connections of thread '" + _sharedConnections.get(piggybackingThread) + "'");
             }
-            _sharedConnections.put(asyncThread, Thread.currentThread());
+            _sharedConnections.put(piggybackingThread, primaryThread);
         }
 
-        return new ConnectionSharingCloseable(asyncThread);
+        return new ConnectionSharingCloseable(piggybackingThread);
     }
 
     interface ConnectionMap
@@ -2441,8 +2427,9 @@ public class DbScope
     };
 
 
-    private void popCurrentTransaction(Thread thread)
+    private void popCurrentTransaction()
     {
+        Thread thread = getEffectiveThread();
         synchronized (_transaction)
         {
             List<TransactionImpl> transactions = _transaction.get(thread);
@@ -2601,7 +2588,7 @@ public class DbScope
                 {
                     // Don't pop until locks are empty, because other closes have yet to occur,
                     // and we want to use _abort to ensure no one tries to commit this transaction
-                    popCurrentTransaction(thread);
+                    popCurrentTransaction();
 
                     if (_aborted)
                     {
@@ -2666,7 +2653,7 @@ public class DbScope
                                 conn.internalClose();
                         }
 
-                        popCurrentTransaction(getEffectiveThread());
+                        popCurrentTransaction();
 
                         CommitTaskOption.POSTCOMMIT.run(this);
                     }
@@ -3312,7 +3299,7 @@ public class DbScope
             final User user = TestContext.get().getUser();
 
             Lock lockUser = new ServerPrimaryKeyLock(true, CoreSchema.getInstance().getTableInfoUsersData(), user.getUserId());
-            Lock lockHome = new ServerPrimaryKeyLock(true, CoreSchema.getInstance().getTableInfoContainers(), ContainerManager.getHomeContainer().getId());
+            Lock lockHome = new ServerPrimaryKeyLock(true, CoreSchema.getInstance().getTableInfoContainers(), ContainerManager.getHomeContainer().getRowId());
 
             Pair<Throwable, Throwable> throwables = attemptToDeadlock(lockUser, lockHome, (x) -> {});
 

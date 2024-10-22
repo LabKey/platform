@@ -23,8 +23,6 @@ import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.assay.pipeline.AssayRunAsyncContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.RemapCache;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.Lsid;
@@ -32,7 +30,6 @@ import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpExperiment;
-import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.IAssayDomainType;
@@ -53,6 +50,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
+import org.labkey.vfs.FileLike;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
@@ -61,6 +59,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -106,7 +105,17 @@ public interface AssayProvider extends Handler<ExpProtocol>
     AssayRunCreator getRunCreator();
 
     /** @return all the legal data collectors that the user can choose from for the current import attempt */
+    // TODO File->FileLike
     List<AssayDataCollector> getDataCollectors(Map<String, File> uploadedFiles, AssayRunUploadForm context);
+
+    default List<AssayDataCollector> getDataCollectorsFileObject(Map<String, FileLike> uploadedFileObjects, AssayRunUploadForm context)
+    {
+        Map<String,File> map = new HashMap<>();
+        if (uploadedFileObjects != null)
+            for (var entry : uploadedFileObjects.entrySet())
+                map.put(entry.getKey(), entry.getValue().toNioPathForRead().toFile());
+        return getDataCollectors(map, context);
+    }
 
     /**
      * @return the name of the assay provider.
@@ -225,9 +234,11 @@ public interface AssayProvider extends Handler<ExpProtocol>
      * File based QC and analysis scripts can be added to a protocol and invoked when the validate
      * method is called. Set to an empty list if no scripts exist.
      */
+    // TODO File->FileLike
     ValidationException setValidationAndAnalysisScripts(ExpProtocol protocol, @NotNull List<File> scripts) throws ExperimentException;
 
     @NotNull
+    // TODO File->FileLike
     List<File> getValidationAndAnalysisScripts(ExpProtocol protocol, Scope scope);
 
     void setSaveScriptFiles(ExpProtocol protocol, boolean save) throws ExperimentException;
@@ -287,7 +298,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
      * Make a context that knows how to do the import in the background, on a separate thread
      * (and therefore detached from the HTTP request that might have spawned it)
      */
-    AssayRunAsyncContext createRunAsyncContext(AssayRunUploadContext context) throws IOException, ExperimentException;
+    AssayRunAsyncContext<?> createRunAsyncContext(AssayRunUploadContext<?> context) throws IOException, ExperimentException;
 
     String getRunLSIDPrefix();
 
@@ -381,21 +392,11 @@ public interface AssayProvider extends Handler<ExpProtocol>
     }
 
     /**
-     * Some assay implementations support experiment lineage representation of run/result property values.
-     * This can be called during the update of a run/result to ensure the associated lineage is updated when
-     * associated run/result property values change.
+     * Declares if an assay provider type supports having sample lookups in
+     * run/result domains persisted as material inputs to runs.
      */
-    default void updatePropertyLineage(
-        Container container,
-        User user,
-        TableInfo table,
-        ExpRun run,
-        Map<String, Object> newRow,
-        Map<String, Object> olRow,
-        boolean isRunProperties,
-        @NotNull RemapCache cache,
-        @NotNull Map<Integer, ExpMaterial> materialsCache
-    ) throws ValidationException
+    default boolean supportsSampleLookupsAsMaterialInputs()
     {
+        return false;
     }
 }

@@ -106,6 +106,7 @@ import org.labkey.query.reports.AttachmentReport;
 import org.labkey.query.reports.LinkReport;
 import org.labkey.query.reports.ModuleReportCache;
 import org.labkey.query.reports.ReportAndDatasetChangeDigestProviderImpl;
+import org.labkey.query.reports.ReportAuditProvider;
 import org.labkey.query.reports.ReportImporter;
 import org.labkey.query.reports.ReportNotificationInfoProvider;
 import org.labkey.query.reports.ReportServiceImpl;
@@ -231,8 +232,8 @@ public class QueryModule extends DefaultModule
         AdminConsole.addExperimentalFeatureFlag(USE_ROW_BY_ROW_UPDATE, "Use row-by-row update", "For Query.updateRows api, do row-by-row update, instead of using a prepared statement that updates rows in batches.", false);
         AdminConsole.addExperimentalFeatureFlag(QueryServiceImpl.EXPERIMENTAL_PRODUCT_ALL_FOLDER_LOOKUPS, "Less restrictive product folder lookups",
                 "Allow for lookup fields in product folders to query across all folders within the top-level folder.", false);
-        AdminConsole.addExperimentalFeatureFlag(QueryServiceImpl.EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED, "Product projects display project-specific data",
-                "Only list project-specific data within product projects.", false);
+        AdminConsole.addExperimentalFeatureFlag(QueryServiceImpl.EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED, "Product folders display folder-specific data",
+                "Only list folder-specific data within product folders.", false);
     }
 
 
@@ -288,6 +289,7 @@ public class QueryModule extends DefaultModule
             AuditLogService.get().registerAuditType(new QueryExportAuditProvider());
             AuditLogService.get().registerAuditType(new QueryUpdateAuditProvider());
         }
+        AuditLogService.get().registerAuditType(new ReportAuditProvider());
 
         ReportAndDatasetChangeDigestProvider.get().addNotificationInfoProvider(new ReportNotificationInfoProvider());
         DailyMessageDigest.getInstance().addProvider(ReportAndDatasetChangeDigestProvider.get());

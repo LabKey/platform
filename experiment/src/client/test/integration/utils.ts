@@ -312,7 +312,7 @@ export async function checkLackDesignerOrReaderPerm(server: IntegrationTestServe
     }, {...topFolderOptions, ...designerOptions}).expect(403);
 }
 
-export async function verifyRequiredLineageInsertUpdate(server: IntegrationTestServer, isParentSample: boolean, isChildSample: boolean, topFolderOptions: RequestOptions, subfolder1Options: RequestOptions, designerReaderOptions: RequestOptions, readerUserOptions: RequestOptions, editorUserOptions: RequestOptions) {
+export async function verifyRequiredLineageInsertUpdate(server: IntegrationTestServer, isParentSample: boolean, isChildSample: boolean, topFolderOptions: RequestOptions, subfolder1Options: RequestOptions, designerReaderOptions: RequestOptions, readerUserOptions: RequestOptions, editorUserOptions: RequestOptions, adminUserOptions: RequestOptions) {
     const parentDataType = isParentSample ? "ParentSampleType" : "ParentDataType";
     await server.post('property', 'createDomain', {
         kind: isParentSample ? 'SampleSet' : 'DataClass',
@@ -332,6 +332,11 @@ export async function verifyRequiredLineageInsertUpdate(server: IntegrationTestS
 
     const dataType = "withRequired" + (isParentSample ? 'SampleParent' : 'DataParent');
     let childDomainId = -1, childDomainURI = '';
+
+    const useLowerCase = Math.random() < 0.5;
+    // test both lower case and upper case prefix
+    const parentInput = (isParentSample ? (useLowerCase ? 'materialInputs/' : 'MaterialInputs/') : (useLowerCase ? 'dataInputs/' : 'DataInputs/')) + parentDataType;
+    console.log("Selected alias input type: " + parentInput);
     await server.post('property', 'createDomain', {
         kind: isChildSample ? 'SampleSet' : 'DataClass',
         domainDesign: { name: dataType, fields: [{ name: isChildSample ? 'Name' : 'Prop' }]},
@@ -339,7 +344,7 @@ export async function verifyRequiredLineageInsertUpdate(server: IntegrationTestS
             name: dataType,
             importAliases: {
                 'pAlias': {
-                    inputType: (isParentSample ? 'materialInputs/' : 'dataInputs/') + parentDataType,
+                    inputType: parentInput,
                     required: false,
                 }
             }
@@ -358,7 +363,6 @@ export async function verifyRequiredLineageInsertUpdate(server: IntegrationTestS
     const sub1DataRowId = await createChildDataFn(server, dataType, 'CData2', subfolder1Options, editorUserOptions);
 
     const dataSchema = isChildSample ? 'samples' : 'exp.data';
-    const parentInput = (isParentSample ? 'materialInputs/' : "dataInputs/") + parentDataType;
 
     let aliquotRowId = -1;
     if (isChildSample) {
@@ -378,7 +382,7 @@ export async function verifyRequiredLineageInsertUpdate(server: IntegrationTestS
             nameExpression: 'S-${genId}',
             importAliases: {
                 'pAlias': {
-                    inputType: (isParentSample ? 'materialInputs/' : 'dataInputs/') + parentDataType,
+                    inputType: parentInput,
                     required: true,
                 }
             }
@@ -494,6 +498,9 @@ export async function verifyRequiredLineageInsertUpdate(server: IntegrationTestS
     successResp = await ExperimentCRUDUtils.importData(server, 'name\tpAlias\nCData5\tPDataHome', dataType, 'MERGE', topFolderOptions, editorUserOptions, false, false, isChildSample);
     expect(JSON.parse(successResp.text).success).toBeTruthy();
 
+    // Issue 51410: LKSM: A deleted required source type still shows up in the sample type grids
+    await deleteDataType(server, isParentSample ? 'deleteSampleTypes' : 'deleteDataClass', parentDtaTypeRowId, topFolderOptions, adminUserOptions);
+    await ExperimentCRUDUtils.insertRows(server, [{'name': 'CNoParent'}], dataSchema, dataType, topFolderOptions, editorUserOptions);
 }
 
 export const getAssayDesignPayload = (name: string, runFields: any[], resultFields: any[]) => {

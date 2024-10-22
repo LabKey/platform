@@ -86,7 +86,6 @@ public class ExperimentJSONConverter
     public static final String WORKFLOW_TASK = "workflowTask";
     public static final String LSID = "lsid";
     public static final String CPAS_TYPE = "cpasType";
-    // Matches the expType parameter used in the linage api: "Data", "Material", "ExperimentRun", "Object"
     public static final String EXP_TYPE = "expType";
     public static final String URL = "url";
     public static final String PROPERTIES = "properties";
@@ -204,7 +203,7 @@ public class ExperimentJSONConverter
     public static JSONObject serializeRunGroup(ExpExperiment runGroup, Domain domain, @NotNull Settings settings, @Nullable User user)
     {
         JSONObject jsonObject = serializeExpObject(runGroup, domain == null ? null : domain.getProperties(), settings, user);
-        jsonObject.put(ExperimentJSONConverter.EXP_TYPE, "Experiment");
+        jsonObject.put(ExperimentJSONConverter.EXP_TYPE, ExpExperiment.DEFAULT_CPAS_TYPE);
 
         ExpProtocol protocol = runGroup.getBatchProtocol();
         if (protocol != null)
@@ -224,7 +223,7 @@ public class ExperimentJSONConverter
     public static JSONObject serializeRun(ExpRun run, Domain domain, User user, @NotNull Settings settings)
     {
         JSONObject jsonObject = serializeExpObject(run, domain == null ? null : domain.getProperties(), settings, user);
-        jsonObject.put(ExperimentJSONConverter.EXP_TYPE, "ExperimentRun");
+        jsonObject.put(ExperimentJSONConverter.EXP_TYPE, ExpRun.DEFAULT_CPAS_TYPE);
 
         ExpProtocol protocol = run.getProtocol();
         if (protocol != null)
@@ -273,7 +272,7 @@ public class ExperimentJSONConverter
             JSONArray steps = new JSONArray();
             for (ExpProtocolApplication protApp : run.getProtocolApplications())
             {
-                // We can skip the initial input and final steps ince we've already included the run-level inputs and
+                // We can skip the initial input and final steps once we've already included the run-level inputs and
                 // outputs and there aren't usually any interesting properties on the initial and final steps.
                 if (protApp.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRun || protApp.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRunOutput)
                     continue;
@@ -287,7 +286,7 @@ public class ExperimentJSONConverter
         return jsonObject;
     }
 
-    public static JSONObject serializeProtocol(ExpProtocol protocol, User user)
+    public static @Nullable JSONObject serializeProtocol(ExpProtocol protocol, User user)
     {
         if (protocol == null || !protocol.getContainer().hasPermission(user, ReadPermission.class))
             return null;
@@ -295,7 +294,7 @@ public class ExperimentJSONConverter
         // Just include basic protocol properties for now.
         // See GetProtocolAction and GWTProtocol for serializing an assay protocol with domain fields.
         JSONObject jsonObject = serializeExpObject(protocol, null, DEFAULT_SETTINGS.withIncludeProperties(false), user);
-        jsonObject.put(ExperimentJSONConverter.EXP_TYPE, "Protocol");
+        jsonObject.put(ExperimentJSONConverter.EXP_TYPE, ExpProtocol.DEFAULT_CPAS_TYPE);
         return jsonObject;
     }
 
@@ -388,7 +387,7 @@ public class ExperimentJSONConverter
     protected static JSONObject serializeRunProtocolApplication(@NotNull ExpProtocolApplication protApp, User user, Settings settings)
     {
         JSONObject json = serializeExpObject(protApp, null, settings, user);
-        json.put(ExperimentJSONConverter.EXP_TYPE, "ProtocolApplication");
+        json.put(ExperimentJSONConverter.EXP_TYPE, ExpProtocolApplication.DEFAULT_CPAS_TYPE);
 
         json.put(ACTION_SEQUENCE, protApp.getActionSequence());
         json.put(APPLICATION_TYPE, protApp.getApplicationType().toString());
@@ -420,13 +419,6 @@ public class ExperimentJSONConverter
             // provenance
             provenanceMap(json, protApp);
         }
-
-        // CONSIDER: parameters
-//        List<ProtocolApplicationParameter> parameters = ExperimentService.get().getProtocolApplicationParameters(application.getRowId());
-//        if (!parameters.isEmpty())
-//        {
-//            json.put(PARAMETERS, parameters.stream().map());
-//        }
 
         return json;
     }
@@ -496,7 +488,7 @@ public class ExperimentJSONConverter
         return map;
     }
 
-    private static Object serializeProvenanceObject(String objectUri, boolean asJSON)
+    private static @Nullable Object serializeProvenanceObject(String objectUri, boolean asJSON)
     {
         if (objectUri == null)
             return null;
@@ -527,7 +519,7 @@ public class ExperimentJSONConverter
             json.put(URL, url);
 
         json.put(CONTAINER, obj.getContainer().getId());
-        json.put(CONTAINER_PATH, obj.getContainer().getId());
+        json.put(CONTAINER_PATH, obj.getContainer().getPath());
 
         QueryRowReference rowRef = obj.getQueryRowReference(user);
         if (rowRef != null)
@@ -547,7 +539,7 @@ public class ExperimentJSONConverter
     public static JSONObject serializeIdentifiable(@NotNull Identifiable obj, Settings settings, @Nullable User user)
     {
         JSONObject json = serializeIdentifiableBean(obj, user);
-        json.put(ExperimentJSONConverter.EXP_TYPE, (Object)null);
+        json.put(ExperimentJSONConverter.EXP_TYPE, (Object) null);
 
         if (settings.isIncludeProperties())
         {
@@ -577,29 +569,25 @@ public class ExperimentJSONConverter
         // instead and use serializeOntologyProperties(ExpObject) so the object properties will be
         // fetched using ExpObject.getProperty().
         JSONObject jsonObject = serializeIdentifiableBean(object, user);
-        jsonObject.put(ExperimentJSONConverter.EXP_TYPE, "Object");
+        jsonObject.put(ExperimentJSONConverter.EXP_TYPE, ExpObject.DEFAULT_CPAS_TYPE);
 
         int rowId = object.getRowId();
         if (rowId != 0)
-        {
             jsonObject.put(ID, rowId);
-        }
-        if (object.getCreatedBy() != null)
-        {
-            jsonObject.put(CREATED_BY, object.getCreatedBy().getEmail());
-        }
+
+        var createdBy = object.getCreatedBy();
+        if (createdBy != null)
+            jsonObject.put(CREATED_BY, createdBy.getEmail());
         jsonObject.put(CREATED, object.getCreated());
-        if (object.getModifiedBy() != null)
-        {
-            jsonObject.put(MODIFIED_BY, object.getModifiedBy().getEmail());
-        }
+
+        var modifiedBy = object.getModifiedBy();
+        if (modifiedBy != null)
+            jsonObject.put(MODIFIED_BY, modifiedBy.getEmail());
         jsonObject.put(MODIFIED, object.getModified());
-        String comment = object.getComment();
-        if (comment != null)
-            jsonObject.put(COMMENT, object.getComment());
 
         if (settings.isIncludeProperties())
         {
+            jsonObject.put(COMMENT, object.getComment());
             JSONObject propertiesObject = serializeOntologyProperties(object, properties, settings);
             if (!propertiesObject.isEmpty())
                 jsonObject.put(PROPERTIES, propertiesObject);
@@ -713,7 +701,7 @@ public class ExperimentJSONConverter
         }
 
         jsonObject.put(CPAS_TYPE, data.getCpasType());
-        jsonObject.put(EXP_TYPE, "Data");
+        jsonObject.put(EXP_TYPE, ExpData.DEFAULT_CPAS_TYPE);
         jsonObject.put(DATA_FILE_URL, data.getDataFileUrl());
 
         File f = data.getFile();
@@ -757,7 +745,7 @@ public class ExperimentJSONConverter
         }
 
         jsonObject.put(CPAS_TYPE, material.getCpasType());
-        jsonObject.put(ExperimentJSONConverter.EXP_TYPE, "Material");
+        jsonObject.put(ExperimentJSONConverter.EXP_TYPE, ExpMaterial.DEFAULT_CPAS_TYPE);
 
         boolean isAliquot = !StringUtils.isEmpty(material.getAliquotedFromLSID());
         boolean isDerivative = false;

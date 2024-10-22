@@ -21,7 +21,6 @@
 <%@ page import="org.junit.Test" %>
 <%@ page import="org.labkey.api.collections.ArrayListMap" %>
 <%@ page import="org.labkey.api.collections.CaseInsensitiveHashMap" %>
-<%@ page import="org.labkey.api.collections.CaseInsensitiveHashSet" %>
 <%@ page import="org.labkey.api.data.ColumnInfo" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
@@ -100,6 +99,7 @@
 <%@ page import="org.labkey.api.query.QueryUpdateService" %>
 <%@ page import="org.labkey.api.data.Sort" %>
 <%@ page import="org.labkey.api.exp.api.DataClassDomainKindProperties" %>
+<%@ page import="org.labkey.api.action.ApiUsageException" %>
 
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
 
@@ -137,9 +137,45 @@ public void nameNotNull() throws Exception
 
         ExperimentServiceImpl.get().createDataClass(c, user, null, null, props, emptyList(), null, null);
     }
-    catch (IllegalArgumentException e)
+    catch (ApiUsageException e)
     {
         assertEquals("DataClass name is required.", e.getMessage());
+    }
+}
+
+    @Test // Issue 51321
+public void reservedNameFirst() throws Exception
+{
+    final User user = TestContext.get().getUser();
+
+    try
+    {
+        List<GWTPropertyDescriptor> props = new ArrayList<>();
+        props.add(new GWTPropertyDescriptor("foo", "string"));
+
+        ExperimentServiceImpl.get().createDataClass(c, user, "First", null, props, emptyList(), null, null);
+    }
+    catch (ApiUsageException e)
+    {
+        assertEquals("DataClass name 'First' is reserved.", e.getMessage());
+    }
+}
+
+@Test // Issue 51321
+public void reservedNameAll() throws Exception
+{
+    final User user = TestContext.get().getUser();
+
+    try
+    {
+        List<GWTPropertyDescriptor> props = new ArrayList<>();
+        props.add(new GWTPropertyDescriptor("foo", "string"));
+
+        ExperimentServiceImpl.get().createDataClass(c, user, "All", null, props, emptyList(), null, null);
+    }
+    catch (ApiUsageException e)
+    {
+        assertEquals("DataClass name 'All' is reserved.", e.getMessage());
     }
 }
 
@@ -157,7 +193,7 @@ public void nameScale() throws Exception
         String name = StringUtils.repeat("a", 1000);
         ExperimentServiceImpl.get().createDataClass(c, user, name, null, props, emptyList(), null, null);
     }
-    catch (IllegalArgumentException e)
+    catch (ApiUsageException e)
     {
         assertEquals("DataClass name may not exceed 200 characters.", e.getMessage());
     }
@@ -179,7 +215,7 @@ public void nameExpressionScale() throws Exception
 
         ExperimentServiceImpl.get().createDataClass(c, user, "testing", options, props, emptyList(), null, null);
     }
-    catch (IllegalArgumentException e)
+    catch (ApiUsageException e)
     {
         assertEquals("Name expression may not exceed 500 characters.", e.getMessage());
     }

@@ -1866,7 +1866,7 @@ public abstract class CompareType
             if (value == null)
                 throw new IllegalArgumentException(getCompareType()._displayValue + " filter on '" + _fieldKey + "' column requires exactly two non-null and non-empty parameter values separated by comma");
 
-            if (value instanceof String && ((String)value).length() == 0)
+            if (value instanceof String s && s.isEmpty())
                 throw new IllegalArgumentException(getCompareType()._displayValue + " filter on '" + _fieldKey + "' column requires exactly two non-null and non-empty parameter values separated by comma");
 
             return value;

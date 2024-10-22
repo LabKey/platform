@@ -16,6 +16,7 @@
 package org.labkey.api.reader;
 
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.labkey.api.util.SkipMothershipLogging;
 
 import java.io.IOException;
 
@@ -23,7 +24,7 @@ import java.io.IOException;
  * User: jeckels
  * Date: 11/2/12
  */
-public class ExcelFormatException extends IOException
+public class ExcelFormatException extends IOException implements SkipMothershipLogging
 {
     public ExcelFormatException(InvalidFormatException e)
     {

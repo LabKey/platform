@@ -16,6 +16,7 @@
 
 package org.labkey.api.action;
 
+import jakarta.servlet.MultipartConfigElement;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -46,7 +47,9 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HttpUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
@@ -63,6 +66,8 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -544,16 +549,24 @@ public abstract class SpringActionController implements Controller, HasViewConte
         return null;
     }
 
-    private static File TEMP_UPLOAD_DIR;
+    private static FileLike TEMP_UPLOAD_DIR;
     /** Issue 46598 - use a directory of the primary temp dir for file uploads */
-    public static File getTempUploadDir()
+    public static FileLike getTempUploadDir()
     {
         if (TEMP_UPLOAD_DIR == null)
         {
-            TEMP_UPLOAD_DIR = new File(new File(System.getProperty("java.io.tmpdir")), "httpUploads").getAbsoluteFile();
-            TEMP_UPLOAD_DIR.mkdirs();
+            var httpUploads = FileUtil.appendName(new File(System.getProperty("java.io.tmpdir")), "httpUploads").getAbsoluteFile();
+            httpUploads.mkdirs();
+            if (!httpUploads.isDirectory())
+                throw new ConfigurationException("Can't create temp upload directory: " + httpUploads);
+            TEMP_UPLOAD_DIR = new FileSystemLike.Builder(httpUploads).readwrite().noMemCheck().root();
         }
         return TEMP_UPLOAD_DIR;
+    }
+
+    public static MultipartConfigElement getMultiPartConfigElement()
+    {
+        return new MultipartConfigElement(SpringActionController.getTempUploadDir().toNioPathForWrite().toString());
     }
 
     protected void handleException(Throwable x, ViewContext context, PageConfig pageConfig)

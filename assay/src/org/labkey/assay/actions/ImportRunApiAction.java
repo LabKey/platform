@@ -61,6 +61,8 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
@@ -96,6 +98,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         Map<String, Object> batchProperties = null;
         String targetStudy;
         Integer reRunId;
+        AssayRunUploadContext.ReImportOption reImportOption;
         String runFilePath;
         String moduleName;
         List<Map<String, Object>> rawData = null;
@@ -149,6 +152,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             // CONSIDER: Should we also look at the batch and run properties for the targetStudy?
             targetStudy = json.optString("targetStudy", null);
             reRunId = json.has("reRunId") ? json.optInt("reRunId") : null;
+            reImportOption = json.has("reImportOption") ? json.getEnum(AssayRunUploadContext.ReImportOption.class, "reImportOption") : AssayRunUploadContext.ReImportOption.REPLACE;
             runFilePath = json.optString("runFilePath", null);
             moduleName = json.optString("module", null);
             auditUserComment  = json.optString("auditUserComment", null);
@@ -170,6 +174,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             batchProperties = form.getBatchProperties();
             targetStudy = form.getTargetStudy();
             reRunId = form.getReRunId();
+            reImportOption = form.getReImportOption();
             runFilePath = form.getRunFilePath();
             moduleName = form.getModule();
             JSONArray dataRows = form.getDataRows();
@@ -231,6 +236,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
                 .setBatchProperties(batchProperties)
                 .setTargetStudy(targetStudy)
                 .setReRunId(reRunId)
+                .setReImportOption(reImportOption)
                 .setLogger(LOG)
                 .setAuditUserComment(auditUserComment)
                 .setJobDescription(jobDescription)
@@ -244,7 +250,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         if (file != null)
         {
             factory.setRawData(null);
-            factory.setUploadedData(Collections.singletonMap(PRIMARY_FILE, file));
+            factory.setUploadedData(Collections.singletonMap(PRIMARY_FILE, FileSystemLike.wrapFile(file)));
         }
         else if (rawData != null && !rawData.isEmpty())
         {
@@ -254,9 +260,9 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             {
                 // try to write out a tmp file containing the imported data so it can be used for transforms or for previewing
                 // the original (untransformed) data within, say, a sample management application.
-                File dir = AssayFileWriter.ensureUploadDirectory(getContainer());
+                FileLike dir = AssayFileWriter.ensureUploadDirectory(getContainer());
                 // NOTE: We use a 'tmp' file extension so that DataLoaderService will sniff the file type by parsing the file's header.
-                file = createFile(protocol, dir, "tmp");
+                var fileObject = createFile(protocol, dir, "tmp");
 
                 // Issue 50719: If the first column name starts with a #, the data loader will treat the header row as a comment
                 List<String> columns = provider.getResultsDomain(protocol).getProperties().stream().map(DomainProperty::getName).collect(Collectors.toList());
@@ -274,9 +280,9 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
 
                 try (TSVMapWriter tsvWriter = new TSVMapWriter(columns, rawData))
                 {
-                    tsvWriter.write(file);
+                    tsvWriter.write(fileObject.toNioPathForWrite().toFile());
                     factory.setRawData(null);
-                    factory.setUploadedData(Collections.singletonMap(PRIMARY_FILE, file));
+                    factory.setUploadedData(Collections.singletonMap(PRIMARY_FILE, fileObject));
                 }
                 catch (Exception e)
                 {
@@ -349,6 +355,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         private String _name;
         private Integer _workflowTask;
         private Integer _reRunId;
+        private AssayRunUploadContext.ReImportOption _reImportOption = AssayRunUploadContext.ReImportOption.REPLACE;
         private String _targetStudy;
         private Map<String, Object> _properties = new HashMap<>();
         private Map<String, Object> _batchProperties = new HashMap<>();
@@ -442,6 +449,16 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         public void setReRunId(Integer reRunId)
         {
             _reRunId = reRunId;
+        }
+
+        public AssayRunUploadContext.ReImportOption getReImportOption()
+        {
+            return _reImportOption;
+        }
+
+        public void setReImportOption(AssayRunUploadContext.ReImportOption reImportOption)
+        {
+            _reImportOption = reImportOption;
         }
 
         public Map<String, Object> getProperties()

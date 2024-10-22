@@ -20,6 +20,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CollectionUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.exp.ExperimentException;
@@ -32,6 +33,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HasHttpRequest;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.util.Map;
@@ -47,6 +49,13 @@ import static java.util.Collections.emptyMap;
 */
 public interface AssayRunUploadContext<ProviderType extends AssayProvider> extends ContainerUser, HasHttpRequest
 {
+    // options for how re-imported data is handled, default is REPLACE
+    enum ReImportOption
+    {
+        REPLACE,                // existing behavior where all results are replaced with new incoming data
+        MERGE_DATA              // can be interpreted by the data handler what this means, but for plate based assays merge on a plate boundary within the same plate set
+    }
+
     @NotNull
     ExpProtocol getProtocol();
 
@@ -85,7 +94,7 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
      * Map of file name to uploaded file that will be parsed and imported by the assay's DataHandler.
      */
     @NotNull
-    Map<String, File> getUploadedData() throws ExperimentException;
+    Map<String, FileLike> getUploadedData() throws ExperimentException;
 
     @Nullable
     default DataIteratorBuilder getRawData()
@@ -150,6 +159,11 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
     /** The RowId for the run that is being deleted and reuploaded, or null if this is a new run */
     Integer getReRunId();
 
+    default ReImportOption getReImportOption()
+    {
+        return ReImportOption.REPLACE;
+    }
+
     void uploadComplete(ExpRun run) throws ExperimentException;
 
     default String getJobDescription()
@@ -213,6 +227,7 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
         protected Integer _workflowTask;
         protected String _targetStudy;
         protected Integer _reRunId;
+        protected AssayRunUploadContext.ReImportOption _reImportOption;
         protected Map<String, Object> _rawRunProperties;
         protected Map<String, Object> _rawBatchProperties;
         protected Map<?, String> _inputDatas;
@@ -222,7 +237,7 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
         protected boolean _allowCrossRunFileInputs;
         protected boolean _allowLookupByAlternateKey = true;
         protected DataIteratorBuilder _rawData;
-        protected Map<String, File> _uploadedData;
+        protected Map<String, FileLike> _uploadedData;
         protected String _jobDescription;
         protected String _jobNotificationProvider;
         protected String _auditUserComment;
@@ -287,6 +302,12 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
         public final FACTORY setReRunId(Integer reRunId)
         {
             _reRunId = reRunId;
+            return self();
+        }
+
+        public final FACTORY setReImportOption(AssayRunUploadContext.ReImportOption option)
+        {
+            _reImportOption = option;
             return self();
         }
 
@@ -355,9 +376,9 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
          * Map of file name to uploaded file that will be parsed and imported by the assay's DataHandler.
          * One of either uploadedData or rawData can be used, not both.
          */
-        public final FACTORY setUploadedData(Map<String, File> uploadedData)
+        public final FACTORY setUploadedData(Map<String, FileLike> uploadedData)
         {
-            _uploadedData = uploadedData;
+            _uploadedData = CollectionUtils.checkValueClass(uploadedData,FileLike.class);
             return self();
         }
 

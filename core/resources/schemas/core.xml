@@ -33,8 +33,18 @@
       <column columnName="Type"/>
       <column columnName="Title"/>
       <column columnName="Searchable"/>
-      <column columnName="LockState"/>
-      <column columnName="ExpirationDate"/>
+      <column columnName="LockState">
+        <isUserEditable>false</isUserEditable>
+      </column>
+      <column columnName="ExpirationDate">
+        <isUserEditable>false</isUserEditable>
+      </column>
+      <column columnName="FileRootSize">
+        <isUserEditable>false</isUserEditable>
+      </column>
+      <column columnName="FileRootLastCrawled">
+        <isUserEditable>false</isUserEditable>
+      </column>
     </columns>
   </table>
   <table tableName="Documents" tableDbType="TABLE">

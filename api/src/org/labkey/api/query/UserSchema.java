@@ -164,13 +164,20 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
     @Nullable
     final public TableInfo getTable(String name, @Nullable ContainerFilter cf)
     {
-        return getTable(name, cf, true, false);
+        return getTable(name, cf, true);
+    }
+
+    @Override
+    @Nullable
+    final public TableInfo getTable(String name, @Nullable ContainerFilter cf, boolean allowCalculatedColumns)
+    {
+        return getTable(name, cf, true, false, false, allowCalculatedColumns);
     }
 
     @Nullable
     public TableInfo getTable(String name, @Nullable ContainerFilter cf, boolean includeExtraMetadata, boolean forWrite)
     {
-        return getTable(name, cf, includeExtraMetadata, forWrite, false);
+        return getTable(name, cf, includeExtraMetadata, forWrite, false, true);
     }
 
     /**
@@ -178,7 +185,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
      * @param forWrite true means do not return a cached version
      */
     @Nullable
-    public TableInfo getTable(String name, @Nullable ContainerFilter cf, boolean includeExtraMetadata, boolean forWrite, boolean skipSuggestedColumns)
+    public TableInfo getTable(String name, @Nullable ContainerFilter cf, boolean includeExtraMetadata, boolean forWrite, boolean skipSuggestedColumns, boolean allowCalculatedColumns)
     {
         TableInfo table = null;
         String cacheKey = cacheKey(name, cf, includeExtraMetadata, forWrite);
@@ -190,7 +197,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
             return table;
 
         ArrayList<QueryException> errors = new ArrayList<>();
-        Object o = _getTableOrQuery(name, cf, includeExtraMetadata, forWrite, errors);
+        Object o = _getTableOrQuery(name, cf, includeExtraMetadata, forWrite, allowCalculatedColumns, errors);
         if (o instanceof TableInfo ti)
         {
             table = ti;
@@ -263,7 +270,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
      * to benefit from caching of calls to UserSchema.createTable().  Everyone else uses getTable() and want to benefit
      * from caching of UserSchema.createTable() AND QueryDefinition)o).getTable().  So both methods check the table cache
      */
-    public Object _getTableOrQuery(String name, ContainerFilter cf, boolean includeExtraMetadata, boolean forWrite, Collection<QueryException> errors)
+    public Object _getTableOrQuery(String name, ContainerFilter cf, boolean includeExtraMetadata, boolean forWrite, boolean allowCalculatedColumns, Collection<QueryException> errors)
     {
         if (name == null)
             return null;
@@ -288,6 +295,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
             assert !table.isLocked();
             if (includeExtraMetadata)
             {
+                table.setAllowCalculatedColumns(allowCalculatedColumns);
                 table.overlayMetadata(name, this, errors);
             }
             afterConstruct(table);

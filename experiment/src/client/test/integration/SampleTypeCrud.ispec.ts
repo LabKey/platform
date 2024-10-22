@@ -249,14 +249,25 @@ describe('Sample Type Designer - Permissions', () => {
 
             // verify cannot add a required import alias with existing data that don't have such parent
             updatedDomainPayload.options.importAliases = {
+                'legacyupdate': 'MaterialInputs/' + sampleType,
+                'newAliasUpdate': {
+                    inputType: 'MaterialInputs/' + sampleType, // verify MaterialInputs/ and materialInputs/
+                    required: true,
+                }
+            };
+
+            let requiredNotAllowedResp = await server.post('property', 'saveDomain', updatedDomainPayload, {...topFolderOptions, ...designerReaderOptions});
+            expect(requiredNotAllowedResp['body']['success']).toBeFalsy();
+            expect(requiredNotAllowedResp['body']['exception']).toBe("'FailedDelete' cannot be required as a parent type when there are existing samples without a parent of this type.");
+
+            updatedDomainPayload.options.importAliases = {
                 'legacyupdate': 'materialInputs/' + sampleType,
                 'newAliasUpdate': {
                     inputType: 'materialInputs/' + sampleType,
                     required: true,
                 }
             };
-
-            const requiredNotAllowedResp = await server.post('property', 'saveDomain', updatedDomainPayload, {...topFolderOptions, ...designerReaderOptions});
+            requiredNotAllowedResp = await server.post('property', 'saveDomain', updatedDomainPayload, {...topFolderOptions, ...designerReaderOptions});
             expect(requiredNotAllowedResp['body']['success']).toBeFalsy();
             expect(requiredNotAllowedResp['body']['exception']).toBe("'FailedDelete' cannot be required as a parent type when there are existing samples without a parent of this type.");
 
@@ -850,11 +861,11 @@ describe('Aliquot crud', () => {
 
     describe('Sample Type - Required Lineage', () => {
         it('Test sample type with required dataclass parents', async () => {
-            await verifyRequiredLineageInsertUpdate(server, false, true, topFolderOptions, subfolder1Options, adminOptions /* so user can create both dataclass and sample type*/, readerUserOptions, editorUserOptions);
+            await verifyRequiredLineageInsertUpdate(server, false, true, topFolderOptions, subfolder1Options, adminOptions /* so user can create both dataclass and sample type*/, readerUserOptions, editorUserOptions, adminOptions);
         });
 
         it('Test sample type with required sample parents', async () => {
-            await verifyRequiredLineageInsertUpdate(server, true, true, topFolderOptions, subfolder1Options, designerReaderOptions, readerUserOptions, editorUserOptions);
+            await verifyRequiredLineageInsertUpdate(server, true, true, topFolderOptions, subfolder1Options, designerReaderOptions, readerUserOptions, editorUserOptions, adminOptions);
         });
     });
 

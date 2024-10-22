@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayRunUploadContext;
 import org.labkey.api.assay.AssayService;
+import org.labkey.api.collections.CollectionUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.ExperimentException;
@@ -37,6 +38,8 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.view.ActionURL;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.labkey.vfs.FileLike;
+
 import java.io.File;
 import java.io.Serializable;
 import java.util.Collections;
@@ -63,13 +66,13 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
     private String _runComments;
     private Integer _runWorkflowTask;
     private ActionURL _actionURL;
-    private Map<String, File> _uploadedData;
+    private Map<String, FileLike> _uploadedData;
     /** propertyId -> value */
     private Map<Integer, String> _runPropertiesById;
     /** propertyId -> value */
     private Map<Integer, String> _batchPropertiesById;
     /** RowIds for all the domains associated with properties we need to remember */
-    private Set<Integer> _domainIds = new HashSet<>();
+    private final Set<Integer> _domainIds = new HashSet<>();
     private Integer _reRunId;
     private boolean _allowCrossRunFileInputs;
 
@@ -111,7 +114,7 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
         if (_container != null)
             _containerId = _container.getId();
         _actionURL = originalContext.getActionURL();
-        _uploadedData = originalContext.getUploadedData();
+        _uploadedData = CollectionUtils.checkValueClass(originalContext.getUploadedData(),FileLike.class);
         _reRunId = originalContext.getReRunId();
         _originalFileLocation = originalContext.getOriginalFileLocation();
 
@@ -216,7 +219,7 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
         logger.info("----- Start Run Properties -----");
         logger.info("\tUploaded Files:");
 
-        for(Map.Entry<String, File> entry : getUploadedData().entrySet())
+        for(Map.Entry<String, FileLike> entry : getUploadedData().entrySet())
         {
             logger.info("\t\t* " + entry.getValue().getName());
         }
@@ -330,7 +333,7 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
 
     @NotNull
     @Override
-    public Map<String, File> getUploadedData()
+    public Map<String, FileLike> getUploadedData()
     {
         return _uploadedData;
     }

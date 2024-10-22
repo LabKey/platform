@@ -34,7 +34,6 @@ import org.labkey.api.webdav.WebdavService;
 import org.labkey.pipeline.api.PipeRootImpl;
 import org.labkey.pipeline.api.PipelineServiceImpl;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -51,9 +50,8 @@ public class PipelineWebdavProvider implements WebdavService.Provider
     @Nullable
     public Set<String> addChildren(@NotNull WebdavResource target, boolean isListing)
     {
-        if (!(target instanceof WebdavResolverImpl.WebFolderResource))
+        if (!(target instanceof WebdavResolverImpl.WebFolderResource folder))
             return null;
-        WebdavResolverImpl.WebFolderResource folder = (WebdavResolverImpl.WebFolderResource) target;
         Container c = folder.getContainer();
 
         PipeRoot root = PipelineService.get().findPipelineRoot(c);
@@ -73,9 +71,8 @@ public class PipelineWebdavProvider implements WebdavService.Provider
     {
         if (!FileContentService.PIPELINE_LINK.equalsIgnoreCase(name))
             return null;
-        if (!(parent instanceof WebdavResolverImpl.WebFolderResource))
+        if (!(parent instanceof WebdavResolverImpl.WebFolderResource folder))
             return null;
-        WebdavResolverImpl.WebFolderResource folder = (WebdavResolverImpl.WebFolderResource) parent;
         Container c = folder.getContainer();
         if (null == c)
             return null;
@@ -86,7 +83,7 @@ public class PipelineWebdavProvider implements WebdavService.Provider
     }
 
 
-    private class PipelineFolderResource extends FileSystemResource
+    private static class PipelineFolderResource extends FileSystemResource
     {
         Container c;
 
@@ -98,13 +95,7 @@ public class PipelineWebdavProvider implements WebdavService.Provider
             _containerId = c.getId();
             _shouldIndex = root.isSearchable();
             setSecurableResource(root);
-
-            _files = new ArrayList<>();
-            for (File file : root.getRootPaths())
-            {
-                _files.add(new FileInfo(file));
-            }
-
+            _files = new ArrayList<>(root.getRootFileLikePaths(true));
             this.setSearchProperty(SearchService.PROPERTY.securableResourceId, root.getResourceId());
         }
 

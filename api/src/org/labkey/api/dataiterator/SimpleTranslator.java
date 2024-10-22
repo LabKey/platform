@@ -71,6 +71,8 @@ import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.UnexpectedException;
+import org.labkey.vfs.FileLike;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -1816,9 +1818,14 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
                 try
                 {
+                    // Why does this return Object???
                     Object file = AbstractQueryUpdateService.saveFile(_user, _container, _name, value, _dirName);
-                    assert file instanceof File;
-                    value = ((File)file).getPath();
+                    if (file instanceof File ioFile)
+                        value = ioFile.getPath();
+                    else if (file instanceof FileLike fl)
+                        value = fl.toNioPathForRead().toString();
+                    else
+                        throw UnexpectedException.wrap(null,"Unexpected type returned from saveFile");
                     _savedFiles.put(origFileName, (String)value);
                 }
                 catch (QueryUpdateServiceException | ValidationException ex)

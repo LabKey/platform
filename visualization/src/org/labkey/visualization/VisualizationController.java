@@ -984,10 +984,20 @@ public class VisualizationController extends SpringActionController
                 errors.reject(ERROR_MSG, "Visualization \"" + form.getName() + "\" does not exist in " + getContainer().getPath() + ".");
             }
 
-            if (report == null || report.getDescriptor().getContainerId() == null || !report.getDescriptor().getContainerId().equals(getContainer().getId()))
+            if (report == null)
             {
-                errors.reject(ERROR_MSG, "Visualization \"" + form.getName() + "\" does not exist in " + getContainer().getPath() + ".");
+                String reportId = form.getReportId() != null ? form.getReportId().toString() : form.getName();
+                errors.reject(ERROR_MSG, "Visualization for \"" + reportId + "\" does not exist in " + getContainer().getPath() + ".");
                 return;
+            }
+
+            if (report.getDescriptor().getContainerId() == null || !report.getDescriptor().getContainerId().equals(getContainer().getId()))
+            {
+                if (!report.getDescriptor().isInherited(getContainer()))
+                {
+                    errors.reject(ERROR_MSG, "Visualization \"" + report.getDescriptor().getReportName() + "\" does not exist in " + getContainer().getPath() + ".");
+                    return;
+                }
             }
 
             if (!report.getDescriptor().isShared() && report.getDescriptor().getOwner() != getUser().getUserId())
@@ -1019,6 +1029,7 @@ public class VisualizationController extends SpringActionController
             resp.put("viewName", vizDescriptor.getProperty(ReportDescriptor.Prop.viewName));
             resp.put("type", vizDescriptor.getReportType());
             resp.put("shared", vizDescriptor.isShared());
+            resp.put("inheritable", vizDescriptor.isInheritable());
             resp.put("ownerId", !vizDescriptor.isShared() ? vizDescriptor.getOwner() : null);
             resp.put("createdBy", vizDescriptor.getCreatedBy());
             resp.put("reportProps", vizDescriptor.getReportProps());
@@ -1312,6 +1323,11 @@ public class VisualizationController extends SpringActionController
                     descriptor.setOwner(getUser().getUserId());
                 else
                     descriptor.setOwner(null);
+
+                if (form.isInheritable())
+                    descriptor.setFlags(descriptor.getFlags() | ReportDescriptor.FLAG_INHERITABLE);
+                else
+                    descriptor.setFlags(descriptor.getFlags() & ~ReportDescriptor.FLAG_INHERITABLE);
             }
             return report;
         }
@@ -1444,6 +1460,7 @@ public class VisualizationController extends SpringActionController
         private String _autoColumnXName;
         private String _svg;
         private String _thumbnailType;
+        private boolean _inheritable;
         private boolean _allowToggleMode = false; // view vs. edit mode
 
         public String getRenderType()
@@ -1528,6 +1545,16 @@ public class VisualizationController extends SpringActionController
             _thumbnailType = thumbnailType;
         }
 
+        public boolean isInheritable()
+        {
+            return _inheritable;
+        }
+
+        public void setInheritable(boolean inheritable)
+        {
+            _inheritable = inheritable;
+        }
+
         public boolean allowToggleMode()
         {
             return _allowToggleMode;
@@ -1547,6 +1574,7 @@ public class VisualizationController extends SpringActionController
             _dataRegionName = json.optString("dataRegionName", null);
             _svg = json.optString("svg", null);
             _thumbnailType = json.optString("thumbnailType", null);
+            _inheritable = json.optBoolean("inheritable", false);
 
             Object jsonData = json.opt("jsonData");
             if (jsonData != null)

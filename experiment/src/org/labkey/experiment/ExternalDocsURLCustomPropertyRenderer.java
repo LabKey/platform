@@ -18,6 +18,7 @@ package org.labkey.experiment;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ObjectProperty;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
@@ -65,7 +66,7 @@ public class ExternalDocsURLCustomPropertyRenderer implements CustomPropertyRend
         try
         {
             URL url = new URL(prop.getStringValue());
-            if (url.getProtocol().equals("file"))
+            if (url.getProtocol().equals(FileUtil.FILE_SCHEME))
             {
                 ActionURL h = new ActionURL(ExperimentController.ShowExternalDocsAction.class, c);
                 h.addParameter("objectURI", prop.getObjectURI());
