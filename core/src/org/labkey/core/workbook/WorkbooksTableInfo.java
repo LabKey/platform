@@ -225,7 +225,7 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
         @Override
         public DataIteratorBuilder createImportDIB(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
         {
-            // NOTE: we aren't using the StardardETL since it Path column is overriding the Name column
+            // NOTE: we aren't using the StandardETL since its Path column is overriding the Name column
             DataIteratorBuilder etl = LessThanStandardDIB.forInsert(getQueryTable(), data, container, user, context);
             return ((UpdateableTableInfo)getQueryTable()).persistRows(etl, context);
         }
