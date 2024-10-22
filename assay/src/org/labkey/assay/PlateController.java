@@ -58,6 +58,7 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.ContainerTree;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
@@ -1437,6 +1438,7 @@ public class PlateController extends SpringActionController
                 String fullFileName = plateSetSource.getName() + " - " + plateSetDestination.getName();
 
                 PlateManager.get().getPlateSetExportFile(fullFileName, xlCols, plateDataRows, form.getFileType(), getViewContext().getResponse());
+                SimpleMetricsService.get().increment(AssayModule.NAME, "plateSet", "exportWorklist");
 
                 return null; // Returning anything here will cause error as excel writer will close the response stream
             }
@@ -1606,19 +1608,23 @@ public class PlateController extends SpringActionController
             List<PlateManager.PlateFileBytes> fileBytes;
             String fileExtension;
             String mapSuffix = form.getExportType() == PlateExportType.Map ? "-map" : "";
+            SimpleMetricsService metricsService = SimpleMetricsService.get();
 
             if (form.getExportType() == PlateExportType.CSV)
             {
+                metricsService.increment(AssayModule.NAME, "plate", "exportCSV");
                 fileBytes = PlateManager.get().exportPlateData(getContainer(), getUser(), cf, form.getPlateIds(), TSVWriter.DELIM.COMMA);
                 fileExtension = TSVWriter.DELIM.COMMA.extension;
             }
             else if (form.getExportType() == PlateExportType.TSV)
             {
+                metricsService.increment(AssayModule.NAME, "plate", "exportTSV");
                 fileBytes = PlateManager.get().exportPlateData(getContainer(), getUser(), cf, form.getPlateIds(), TSVWriter.DELIM.TAB);
                 fileExtension = TSVWriter.DELIM.TAB.extension;
             }
             else
             {
+                metricsService.increment(AssayModule.NAME, "plate", "exportMAP");
                 fileBytes = PlateManager.get().exportPlateMaps(getContainer(), getUser(), cf, form.getPlateIds());
                 fileExtension = "xlsx";
             }
