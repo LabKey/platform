@@ -37,11 +37,13 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.data.xml.queryCustomView.FilterType;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -52,7 +54,21 @@ public class JsonWriter
 {
     private static final Logger LOG = LogManager.getLogger(JsonWriter.class);
 
-    public static Map<FieldKey, Map<String,Object>> getNativeColProps(TableInfo tableInfo, Collection<FieldKey> fields, FieldKey fieldKeyPrefix, boolean includeDomainFormat, boolean includeAdditionalQueryColumns)
+    public static Map<String,Object> getTemplateColProps(TableInfo tableInfo)
+    {
+        ColumnInfo col = new BaseColumnInfo("__template", tableInfo, JdbcType.VARCHAR);
+        DisplayColumn dc = col.getDisplayColumnFactory().createRenderer(col);
+        Map<String,Object> template = getNativeColProps(List.of(dc), null, false).get(col.getFieldKey());
+        template.remove("name");
+        template.remove("fieldKey");
+        template.remove("fieldKeyArray");
+        template.remove("fieldKeyPath");
+        template.remove("shortCaption");
+        template.remove("caption");
+        return template;
+    }
+
+    public static Map<FieldKey, Map<String,Object>> getNativeColProps(TableInfo tableInfo, Collection<FieldKey> fields, FieldKey fieldKeyPrefix, @Nullable Map<String,Object> template, boolean includeDomainFormat, boolean includeAdditionalQueryColumns)
     {
         List<DisplayColumn> displayColumns = QueryService.get().getColumns(tableInfo, fields, tableInfo.getColumns())
                 .values()
@@ -61,10 +77,15 @@ public class JsonWriter
                 .map(cinfo -> cinfo.getDisplayColumnFactory().createRenderer(cinfo))
                 .collect(Collectors.toList());
 
-        return getNativeColProps(displayColumns, fieldKeyPrefix, includeDomainFormat);
+        return getNativeColProps(displayColumns, fieldKeyPrefix, template, includeDomainFormat);
     }
 
     public static Map<FieldKey, Map<String,Object>> getNativeColProps(Collection<DisplayColumn> columns, FieldKey fieldKeyPrefix, boolean includeDomainFormat)
+    {
+        return getNativeColProps(columns, fieldKeyPrefix, null, includeDomainFormat);
+    }
+
+    public static Map<FieldKey, Map<String,Object>> getNativeColProps(Collection<DisplayColumn> columns, FieldKey fieldKeyPrefix, @Nullable Map<String,Object> template, boolean includeDomainFormat)
     {
         Map<FieldKey, Map<String,Object>> colProps = new LinkedHashMap<>();
         for (DisplayColumn displayColumn : columns)
@@ -76,15 +97,53 @@ public class JsonWriter
             else
                 fieldKey = new FieldKey(fieldKeyPrefix, displayColumn.getName());
 
-            colProps.put(fieldKey, JsonWriter.getMetaData(displayColumn, fieldKeyPrefix, true, true, includeDomainFormat));
+            colProps.put(fieldKey, JsonWriter.getMetaData(displayColumn, fieldKeyPrefix, template, true, true, includeDomainFormat));
         }
         return colProps;
     }
 
     public static Map<String, Object> getMetaData(DisplayColumn dc, FieldKey fieldKeyPrefix, boolean useFriendlyAsType, boolean includeLookup, boolean includeDomainFormat)
     {
+        return getMetaData(dc, fieldKeyPrefix, null, useFriendlyAsType, includeLookup, includeDomainFormat );
+    }
+
+
+    // use helper map class to avoid making the code in getMetaData() less readable */
+    static class TemplateMap
+    {
+        final Map<String,Object> _template;
+        final LinkedHashMap<String,Object> _map;
+        TemplateMap(Map<String, Object> template)
+        {
+            _template = null == template || template.isEmpty() ? Map.of() : template;
+            _map = new LinkedHashMap<String,Object>();
+        }
+
+        void put(String key, Object value)
+        {
+            if (!_template.containsKey(key) || !Objects.equals(_template.get(key), value))
+                _map.put(key, value);
+        }
+
+        Map<String,Object> getMap()
+        {
+            return _map;
+        }
+    }
+
+    /** put property into props map if value differs from template */
+    void templatePut(Map<String, Object> props, String key, Object value, Map<String, Object> template)
+    {
+        if (template == null || !template.containsKey(key) || Objects.equals(template.get(key), value))
+            props.put(key, value);
+    }
+
+    public static Map<String, Object> getMetaData(DisplayColumn dc, FieldKey fieldKeyPrefix, @Nullable Map<String,Object> template, boolean useFriendlyAsType, boolean includeLookup, boolean includeDomainFormat)
+    {
+        /* there are already a lot of parameters so use null!=template to indicate that we are "compression" the response */
+        boolean compressed = null != template;
         @Nullable ColumnInfo cinfo = dc.getColumnInfo();
-        Map<String, Object> props = new LinkedHashMap<>();
+        var props = new TemplateMap(template);
         JSONObject ext = new JSONObject();
         props.put("ext", ext);
 
@@ -317,7 +376,18 @@ public class JsonWriter
                 props.put("conceptLabelColumn", cinfo.getConceptLabelColumn());
         }
 
-        return props;
+        var ret = props.getMap();
+        if (compressed)
+        {
+            if (ret.get("ext") instanceof JSONObject extProp && extProp.isEmpty())
+                ret.remove("ext");
+            for (String key : List.of("fieldKey", "fieldKeyPath", "shortCaption", "caption"))
+            {
+                if (name.equals(ret.get(key)))
+                    ret.remove(key);
+            }
+        }
+        return ret;
     }
 
     @Nullable
