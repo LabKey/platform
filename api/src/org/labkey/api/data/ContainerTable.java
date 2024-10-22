@@ -31,7 +31,6 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
@@ -51,8 +50,6 @@ import java.util.TreeMap;
 /**
  * Wrapper class around the underlying database's core.containers table that adds virtual columns and sets up
  * custom rendering.
- * User: jeckels
- * Date: Feb 22, 2007
  */
 public class ContainerTable extends FilteredTable<UserSchema>
 {
@@ -83,14 +80,11 @@ public class ContainerTable extends FilteredTable<UserSchema>
 
         var entityIdColumn = getMutableColumn("EntityId");
         entityIdColumn.setHidden(true);
-        entityIdColumn.setKeyField(true);
         entityIdColumn.setReadOnly(true);
 
         getMutableColumn("RowId").setHidden(true);
         getMutableColumn("RowId").setReadOnly(true);
         getMutableColumn("RowId").setUserEditable(true);
-
-        var parentColumn = getMutableColumn("Parent");
 
         if (url == null)
             url = PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(ContainerManager.getRoot());
@@ -100,6 +94,7 @@ public class ContainerTable extends FilteredTable<UserSchema>
         MutableColumnInfo col = this.wrapColumn("ID", getRealTable().getColumn("RowId"));
         col.setReadOnly(true);
         col.setURL(detailsURL);
+        col.setKeyField(false); // RowId column is a key. We don't want to double post this value on delete, etc.
         this.addColumn(col);
 
         var name = getMutableColumn("Name");
@@ -177,9 +172,10 @@ public class ContainerTable extends FilteredTable<UserSchema>
         title.setURL(detailsURL);
 
         var activeModules = new AliasedColumn("ActiveModules", getColumn("RowId"));
-        activeModules.setDisplayColumnFactory(rowIdCol -> new ActiveModulesDisplayColumn(rowIdCol));
+        activeModules.setDisplayColumnFactory(ActiveModulesDisplayColumn::new);
         activeModules.setReadOnly(true);
         activeModules.setHidden(true);
+        activeModules.setKeyField(false);
         addColumn(activeModules);
 
         setTitleColumn("DisplayName");
