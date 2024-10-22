@@ -53,6 +53,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -108,20 +109,43 @@ public class DateUtil
         return STANDARD_DATE_DISPLAY_FORMATS.contains(dateFormat);
     }
 
+    public record DateTimeFormat(String datePortion, @Nullable String timePortion) {};
+
+    // Splits the date and time portions of a standard date-time format, where date portion is required and time portion
+    // is optional. Returns null if the format is non-standard, which means we can't split it.
+    public static DateTimeFormat splitDateTimeFormat(String dateTimeFormat)
+    {
+        dateTimeFormat = dateTimeFormat.trim();
+        String datePortion = null;
+
+        // We can't just split on whitespace because non-standard formats could: have any amount of whitespace between
+        // characters, put the time portion before the date portion, or even intermingle date and time characters.
+
+        for (String format : STANDARD_DATE_DISPLAY_FORMATS)
+        {
+            if (dateTimeFormat.startsWith(format))
+            {
+                datePortion = format;
+                break;
+            }
+        }
+
+        // If it starts with a standard date format pattern then check for standard time portion (or none)
+        if (datePortion != null)
+        {
+            String timePortion = dateTimeFormat.substring(datePortion.length()).trim();
+            if (timePortion.isEmpty())
+                return new DateTimeFormat(datePortion, null);
+            else if (isStandardTimeDisplayFormat(timePortion))
+                return new DateTimeFormat(datePortion, timePortion);
+        }
+
+        return null; // Non-standard format
+    }
+
     public static boolean isStandardDateTimeDisplayFormat(String dateTimeFormat)
     {
-        // Tolerate any amount of whitespace between the parts
-        String[] parts = dateTimeFormat.split("\\s+");
-
-        // If one part, must be standard date format
-        // If two parts, must be standard date format followed by standard time format
-        // Otherwise, it's non-standard
-        return switch (parts.length)
-        {
-            case 1 -> isStandardDateDisplayFormat(parts[0]);
-            case 2 -> isStandardDateDisplayFormat(parts[0]) && isStandardTimeDisplayFormat(parts[1]);
-            default -> false;
-        };
+        return splitDateTimeFormat(dateTimeFormat) != null;
     }
 
     public static boolean isStandardTimeDisplayFormat(String timeFormat)
@@ -2351,6 +2375,69 @@ Parse:
             assertEquals( 9, h(parseDateTime("2020/6/1 12:00pm EET")));
             assertEquals( 9, h(parseDateTime("2020/1/1 12:00pm EEST")));
             assertEquals( 9, h(parseDateTime("2020/6/1 12:00pm EEST")));
+        }
+
+        @Test
+        public void testStandardDateTimeFormats()
+        {
+            STANDARD_DATE_DISPLAY_FORMATS.forEach(dateFormat -> {
+                assertTrue(isStandardDateDisplayFormat(dateFormat));
+                assertTrue(isStandardDateTimeDisplayFormat(dateFormat));
+                assertTrue(isStandardDateTimeDisplayFormat("  " + dateFormat + "  "));
+                DateTimeFormat dateSplit = splitDateTimeFormat(dateFormat);
+                assertNotNull(dateSplit);
+                assertEquals(dateFormat, dateSplit.datePortion);
+                assertNull(dateSplit.timePortion);
+
+                STANDARD_TIME_DISPLAY_FORMATS.forEach(timeFormat -> {
+                    testGoodDateTimeFormat(dateFormat + " " + timeFormat, dateFormat, timeFormat);
+                    testGoodDateTimeFormat("  " + dateFormat + "  " + timeFormat + "  ", dateFormat, timeFormat);
+                });
+            });
+
+            STANDARD_TIME_DISPLAY_FORMATS.forEach(timeFormat -> assertTrue(isStandardTimeDisplayFormat(timeFormat)));
+        }
+
+        private void testGoodDateTimeFormat(String combined, String dateFormat, String timeFormat)
+        {
+            assertTrue(isStandardDateTimeDisplayFormat(combined));
+            DateTimeFormat split = splitDateTimeFormat(combined);
+            assertNotNull(split);
+            assertEquals(dateFormat, split.datePortion);
+            assertEquals(timeFormat, split.timePortion);
+        }
+
+        @Test
+        public void testNonStandardDateTimeFormats()
+        {
+            List<String> nonStandardDateFormats = List.of("MM/dd/yyy", "dd/MM/yyy", "yyyy.MM.dd", "MMMM dd, yyyy");
+            List<String> nonStandardTimeFormats = List.of("kk:mm", "hh:mm aa", "hh:mm");
+
+            nonStandardDateFormats.forEach(this::testBadDateFormat);
+            nonStandardTimeFormats.forEach(this::testBadTimeFormat);
+
+            nonStandardDateFormats.forEach(dateFormat -> nonStandardTimeFormats.forEach(timeFormat -> testBadDateTimeFormat(dateFormat + " " + timeFormat)));
+            STANDARD_DATE_DISPLAY_FORMATS.forEach(dateFormat -> nonStandardTimeFormats.forEach(timeFormat -> testBadDateTimeFormat(dateFormat + " " + timeFormat)));
+            STANDARD_TIME_DISPLAY_FORMATS.forEach(timeFormat -> nonStandardDateFormats.forEach(dateFormat -> testBadDateTimeFormat(dateFormat + " " + timeFormat)));
+        }
+
+        private void testBadDateFormat(String dateFormat)
+        {
+            assertFalse(isStandardDateDisplayFormat(dateFormat));
+            assertFalse(isStandardDateTimeDisplayFormat(dateFormat));
+            assertNull(splitDateTimeFormat(dateFormat));
+        }
+
+        private void testBadTimeFormat(String timeFormat)
+        {
+            assertFalse(isStandardTimeDisplayFormat(timeFormat));
+            assertNull(splitDateTimeFormat(timeFormat));
+        }
+
+        private void testBadDateTimeFormat(String dateTimeFormat)
+        {
+            assertFalse(isStandardDateTimeDisplayFormat(dateTimeFormat));
+            assertNull(splitDateTimeFormat(dateTimeFormat));
         }
     }
 }

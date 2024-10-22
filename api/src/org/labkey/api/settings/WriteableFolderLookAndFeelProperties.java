@@ -86,19 +86,19 @@ public class WriteableFolderLookAndFeelProperties extends AbstractWriteableSetti
         storeStringValue(defaultDateTimeFormatString, defaultDateTimeFormat);
     }
 
-    // Allows clearing the property to allow inheriting of this property alone. Should make this more obvious and universal, via "inherit/override" checkboxes and highlighting in the UI
+    // Allows clearing the property to allow inheriting of this property alone
     public void clearDefaultDateFormat()
     {
         remove(defaultDateFormatString);
     }
 
-    // Allows clearing the property to allow inheriting of this property alone. Should make this more obvious and universal, via "inherit/override" checkboxes and highlighting in the UI
+    // Allows clearing the property to allow inheriting of this property alone
     public void clearDefaultDateTimeFormat()
     {
         remove(defaultDateTimeFormatString);
     }
 
-    // Allows clearing the property to allow inheriting of this property alone. Should make this more obvious and universal, via "inherit/override" checkboxes and highlighting in the UI
+    // Allows clearing the property to allow inheriting of this property alone
     public void clearDefaultTimeFormat()
     {
         remove(defaultTimeFormatString);
@@ -128,7 +128,7 @@ public class WriteableFolderLookAndFeelProperties extends AbstractWriteableSetti
         props.save();
     }
 
-    // Allows clearing the property to allow inheriting of this property alone. Should make this more obvious and universal, via "inherit/override" checkboxes and highlighting in the UI
+    // Allows clearing the property to allow inheriting of this property alone
     public void clearDefaultNumberFormat()
     {
         remove(defaultNumberFormatString);
@@ -137,7 +137,8 @@ public class WriteableFolderLookAndFeelProperties extends AbstractWriteableSetti
     // Validate inside the set method, since this is called from multiple places
     public void setDefaultNumberFormat(String defaultNumberFormat) throws IllegalArgumentException
     {
-        new DecimalFormat(defaultNumberFormat);
+        if (null != defaultNumberFormat)
+            new DecimalFormat(defaultNumberFormat);
         storeStringValue(defaultNumberFormatString, defaultNumberFormat);
     }
 
@@ -153,7 +154,8 @@ public class WriteableFolderLookAndFeelProperties extends AbstractWriteableSetti
     public void setExtraDateParsingPattern(String pattern) throws IllegalArgumentException
     {
         // Check for legal format
-        FastDateFormat.getInstance(pattern);
+        if (null != pattern)
+            FastDateFormat.getInstance(pattern);
         storeStringValue(extraDateParsingPattern, pattern);
     }
 
@@ -161,7 +163,8 @@ public class WriteableFolderLookAndFeelProperties extends AbstractWriteableSetti
     public void setExtraDateTimeParsingPattern(String pattern) throws IllegalArgumentException
     {
         // Check for legal format
-        FastDateFormat.getInstance(pattern);
+        if (null != pattern)
+            FastDateFormat.getInstance(pattern);
         storeStringValue(extraDateTimeParsingPattern, pattern);
     }
 
@@ -169,23 +172,24 @@ public class WriteableFolderLookAndFeelProperties extends AbstractWriteableSetti
     public void setExtraTimeParsingPattern(String pattern) throws IllegalArgumentException
     {
         // Check for legal format
-        FastDateFormat.getInstance(pattern);
+        if (null != pattern)
+            FastDateFormat.getInstance(pattern);
         storeStringValue(extraTimeParsingPattern, pattern);
     }
 
-    // Allows clearing the property to allow inheriting of this property alone. Should make this more obvious and universal, via "inherit/override" checkboxes and highlighting in the UI
+    // Allows clearing the property to allow inheriting of this property alone
     public void clearExtraDateParsingPattern()
     {
         remove(extraDateParsingPattern);
     }
 
-    // Allows clearing the property to allow inheriting of this property alone. Should make this more obvious and universal, via "inherit/override" checkboxes and highlighting in the UI
+    // Allows clearing the property to allow inheriting of this property alone
     public void clearExtraDateTimeParsingPattern()
     {
         remove(extraDateTimeParsingPattern);
     }
 
-    // Allows clearing the property to allow inheriting of this property alone. Should make this more obvious and universal, via "inherit/override" checkboxes and highlighting in the UI
+    // Allows clearing the property to allow inheriting of this property alone
     public void clearExtraTimeParsingPattern()
     {
         remove(extraTimeParsingPattern);
@@ -214,7 +218,6 @@ public class WriteableFolderLookAndFeelProperties extends AbstractWriteableSetti
         props.setExtraTimeParsingPattern(extraTimeParsingPattern);
         props.save();
     }
-
 
     public void clearRestrictedColumnsEnabled()
     {

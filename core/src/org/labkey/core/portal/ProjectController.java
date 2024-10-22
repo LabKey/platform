@@ -1388,6 +1388,7 @@ public class ProjectController extends SpringActionController
         private ContainerFilter.Type _containerFilter = null;
         private boolean _includeWorkbookChildren = true;
         private boolean _includeStandardProperties = true;
+        private boolean _includeInheritableFormats = false;
 
         public boolean isMultipleContainers()
         {
@@ -1448,6 +1449,17 @@ public class ProjectController extends SpringActionController
         {
             _includeStandardProperties = includeStandardProperties;
         }
+
+        public boolean isIncludeInheritableFormats()
+        {
+            return _includeInheritableFormats;
+        }
+
+        public void setIncludeInheritableFormats(boolean includeInheritableFormats)
+        {
+            _includeInheritableFormats = includeInheritableFormats;
+        }
+
     }
 
     /**
@@ -1572,7 +1584,7 @@ public class ProjectController extends SpringActionController
             Map<String, Object> resultMap = new HashMap<>();
             if (container.hasPermission(user, ReadPermission.class)) // 43853
             {
-                resultMap = container.toJSON(user, form.isIncludeEffectivePermissions(), form.isIncludeStandardProperties());
+                resultMap = container.toJSON(user, form.isIncludeEffectivePermissions(), form.isIncludeStandardProperties(), form.isIncludeInheritableFormats());
                 addModuleProperties(container, propertiesToSerialize, resultMap);
             }
 
@@ -1624,7 +1636,7 @@ public class ProjectController extends SpringActionController
                     List<Map<String, Object>> theseChildren = getVisibleChildren(child, user, propertiesToSerialize, depth + 1, form);
                     if ((child.hasPermission(user, ReadPermission.class) && child.getContainerType().includeInAPIResponse()) || !theseChildren.isEmpty())
                     {
-                        Map<String, Object> visibleChild = child.toJSON(user, form.isIncludeEffectivePermissions(), form.isIncludeStandardProperties());
+                        Map<String, Object> visibleChild = child.toJSON(user, form.isIncludeEffectivePermissions(), form.isIncludeStandardProperties(), form.isIncludeInheritableFormats());
                         addModuleProperties(child, propertiesToSerialize, visibleChild);
                         visibleChild.put("children", theseChildren);
                         visibleChildren.add(visibleChild);
