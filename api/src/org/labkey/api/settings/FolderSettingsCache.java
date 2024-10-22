@@ -98,14 +98,14 @@ public class FolderSettingsCache
         FolderSettings(Container c)
         {
             LookAndFeelProperties props = LookAndFeelProperties.getInstance(c);
-            _defaultDateFormat = props.getDefaultDateFormat();
-            _defaultDateTimeFormat = props.getDefaultDateTimeFormat();
-            _defaultTimeFormat = props.getDefaultTimeFormat();
-            _defaultNumberFormat = props.getDefaultNumberFormat();
-            _extraDateParsingPattern = props.getExtraDateParsingPattern();
-            _extraDateTimeParsingPattern = props.getExtraDateTimeParsingPattern();
-            _extraTimeParsingPattern = props.getExtraTimeParsingPattern();
-            _restrictedColumnsEnabled = props.areRestrictedColumnsEnabled();
+            _defaultDateFormat = props.calculateDefaultDateFormat();
+            _defaultDateTimeFormat = props.calculateDefaultDateTimeFormat();
+            _defaultTimeFormat = props.calculateDefaultTimeFormat();
+            _defaultNumberFormat = props.calculateDefaultNumberFormat();
+            _extraDateParsingPattern = props.calculateExtraDateParsingPattern();
+            _extraDateTimeParsingPattern = props.calculateExtraDateTimeParsingPattern();
+            _extraTimeParsingPattern = props.calculateExtraTimeParsingPattern();
+            _restrictedColumnsEnabled = props.calculateRestrictedColumnsEnabled();
         }
 
         public String getDefaultNumberFormat()

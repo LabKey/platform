@@ -15,9 +15,12 @@
  */
 package org.labkey.api.settings;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.DateUtil;
+
+import java.util.Map;
 
 import static org.labkey.api.settings.LookAndFeelProperties.Properties.extraDateParsingPattern;
 import static org.labkey.api.settings.LookAndFeelProperties.Properties.extraDateTimeParsingPattern;
@@ -38,7 +41,6 @@ public class LookAndFeelFolderProperties extends AbstractWriteableSettingsGroup
     protected static final String defaultNumberFormatString = "defaultNumberFormatString";
     protected static final String defaultTimeFormatString = "defaultTimeFormatString";
 
-
     protected final Container _c;
 
     protected LookAndFeelFolderProperties(Container c)
@@ -56,12 +58,6 @@ public class LookAndFeelFolderProperties extends AbstractWriteableSettingsGroup
     protected String getGroupName()
     {
         return LOOK_AND_FEEL_SET_NAME;
-    }
-
-    public boolean isPropertyInherited(Container c, String name)
-    {
-        String value = super.lookupStringValue(c, name, null);
-        return null == value;
     }
 
     @Override
@@ -84,6 +80,19 @@ public class LookAndFeelFolderProperties extends AbstractWriteableSettingsGroup
         return value;
     }
 
+    // Get the actual stored value in this container; no default handling, no walking the hierarchy
+    protected String getStoredValue(Container c, String name)
+    {
+        Map<String, String> props = getProperties(c);
+        return props.get(name);
+    }
+
+    // Get the actual stored value in this container; no default handling, no walking the hierarchy
+    protected String getStoredValue(Container c, Enum<?> e)
+    {
+        return getStoredValue(c, e.name());
+    }
+
     // TODO: consider enforcing usage of lookupBooleanValue with container
     /*@Override
     protected boolean lookupBooleanValue(String name, boolean defaultValue)
@@ -91,93 +100,166 @@ public class LookAndFeelFolderProperties extends AbstractWriteableSettingsGroup
         throw new IllegalStateException("Must provide a container");
     }*/
 
+    // Returns inherited value from the cache. Same as DateUtil.getDateFormatString(Container).
     public String getDefaultDateFormat()
     {
-        // Look up this value starting from the current container (unlike most look & feel settings)
+        return FolderSettingsCache.getDefaultDateFormat(_c);
+    }
+
+    // Get the value that's actually stored in this container or null if inherited; don't look up the hierarchy
+    // This is useful for export and showing inheritance status in the UI.
+    public String getDefaultDateFormatStored()
+    {
+        return getStoredValue(_c, defaultDateFormatString);
+    }
+
+    // Note: Should be called only by FolderSettingsCache; other callers use getDefaultDateFormat() instead.
+    public String calculateDefaultDateFormat()
+    {
+        // Look up this value starting from the current container
         return lookupStringValue(_c, defaultDateFormatString, DateUtil.getStandardDateFormatString());
     }
 
+    // Returns inherited value from the cache. Same as DateUtil.getDateTimeFormatString(Container).
     public String getDefaultDateTimeFormat()
     {
-        // Look up this value starting from the current container (unlike most look & feel settings)
+        return FolderSettingsCache.getDefaultDateTimeFormat(_c);
+    }
+
+    // Note: Should be called only by FolderSettingsCache; other callers use getDefaultDateTimeFormat() instead.
+    public String calculateDefaultDateTimeFormat()
+    {
+        // Look up this value starting from the current container
         return lookupStringValue(_c, defaultDateTimeFormatString, DateUtil.getStandardDateTimeFormatString());
     }
 
+    // Get the value that's actually stored in this container or null if inherited; don't look up the hierarchy.
+    // This is useful for export and showing inheritance status in the UI.
+    public String getDefaultDateTimeFormatStored()
+    {
+        return getStoredValue(_c, defaultDateTimeFormatString);
+    }
+
+    // Returns inherited value from the cache. Same as DateUtil.getTimeFormatString(Container).
     public String getDefaultTimeFormat()
     {
-        // Look up this value starting from the current container (unlike most look & feel settings)
+        return FolderSettingsCache.getDefaultTimeFormat(_c);
+    }
+
+    // Note: Should be called only by FolderSettingsCache; other callers use getDefaultTimeFormat() instead.
+    public String calculateDefaultTimeFormat()
+    {
+        // Look up this value starting from the current container
         return lookupStringValue(_c, defaultTimeFormatString, DateUtil.getStandardTimeFormatString());
     }
 
-    public String getDefaultNumberFormat()
+    // Get the value that's actually stored in this container or null if inherited; don't look up the hierarchy.
+    // This is useful for export and showing inheritance status in the UI.
+    public String getDefaultTimeFormatStored()
     {
-        // Look up this value starting from the current container (unlike most look & feel settings)
-        return lookupStringValue(_c, defaultNumberFormatString, null);
+        return getStoredValue(_c, defaultTimeFormatString);
     }
 
+    // Returns inherited value from the cache. Same as Formats.getNumberFormatString(Container).
+    public String getDefaultNumberFormat()
+    {
+        return FolderSettingsCache.getDefaultNumberFormat(_c);
+    }
+
+    // Note: Should be called only by FolderSettingsCache; other callers use getDefaultNumberFormat() instead.
+    public String calculateDefaultNumberFormat()
+    {
+        // Look up this value starting from the current container.
+        // Note: Unchecking "Inherit" and saving an empty number format saves the empty string (""). Unfortunately,
+        // new DateFormat("") happily provides a format with thousands separators (??), so without this trimToNull()
+        // call, all numbers are displayed with commas, including RowIds.
+        return StringUtils.trimToNull(lookupStringValue(_c, defaultNumberFormatString, null));
+    }
+
+    // Get the value that's actually stored in this container or null if inherited; don't look up the hierarchy.
+    // This is useful for export and showing inheritance status in the UI.
+    public String getDefaultNumberFormatStored()
+    {
+        return getStoredValue(_c, defaultNumberFormatString);
+    }
+
+    // Returns inherited value from the cache
     public String getExtraDateParsingPattern()
     {
-        // Look up this value starting from the current container (unlike most look & feel settings)
+        return FolderSettingsCache.getExtraDateParsingPattern(_c);
+    }
+
+    // Note: Should be called only by FolderSettingsCache; other callers use getExtraDateParsingPattern() instead.
+    public String calculateExtraDateParsingPattern()
+    {
+        // Look up this value starting from the current container
         return lookupStringValue(_c, extraDateParsingPattern, null);
     }
 
+    // Get the value that's actually stored in this container or null if inherited; don't look up the hierarchy.
+    // This is useful for export and showing inheritance status in the UI.
+    public String getExtraDateParsingPatternStored()
+    {
+        return getStoredValue(_c, extraDateParsingPattern);
+    }
+
+    // Returns inherited value from the cache
     public String getExtraDateTimeParsingPattern()
     {
-        // Look up this value starting from the current container (unlike most look & feel settings)
+        return FolderSettingsCache.getExtraDateTimeParsingPattern(_c);
+    }
+
+    // Note: Should be called only by FolderSettingsCache; other callers use getExtraDateTimeParsingPattern() instead.
+    public String calculateExtraDateTimeParsingPattern()
+    {
+        // Look up this value starting from the current container
         return lookupStringValue(_c, extraDateTimeParsingPattern, null);
     }
 
+    // Get the value that's actually stored in this container or null if inherited; don't look up the hierarchy.
+    // This is useful for export and showing inheritance status in the UI.
+    public String getExtraDateTimeParsingPatternStored()
+    {
+        return getStoredValue(_c, extraDateTimeParsingPattern);
+    }
+
+    // Returns inherited value from the cache
     public String getExtraTimeParsingPattern()
     {
-        // Look up this value starting from the current container (unlike most look & feel settings)
+        return FolderSettingsCache.getExtraTimeParsingPattern(_c);
+    }
+
+    // Note: Should be called only by FolderSettingsCache; other callers use getExtraTimeParsingPattern() instead.
+    public String calculateExtraTimeParsingPattern()
+    {
+        // Look up this value starting from the current container
         return lookupStringValue(_c, extraTimeParsingPattern, null);
     }
 
+    // Get the value that's actually stored in this container or null if inherited; don't look up the hierarchy.
+    // This is useful for export and showing inheritance status in the UI.
+    public String getExtraTimeParsingPatternStored()
+    {
+        return getStoredValue(_c, extraTimeParsingPattern);
+    }
+
+    // Returns inherited value from the cache
     public boolean areRestrictedColumnsEnabled()
+    {
+        return FolderSettingsCache.areRestrictedColumnsEnabled(_c);
+    }
+
+    // Note: Should be called only by FolderSettingsCache; other callers use getExtraTimeParsingPattern() instead.
+    public boolean calculateRestrictedColumnsEnabled()
     {
         return lookupBooleanValue(_c, restrictedColumnsEnabled, false);
     }
 
-    // Get the value that's actually stored in this container; don't look up the hierarchy. This is useful only for export.
-    public String getDefaultDateFormatStored()
+    // Get the value that's actually stored in this container or null if inherited; don't look up the hierarchy.
+    // This is useful for export and showing inheritance status in the UI.
+    public Boolean areRestrictedColumnsEnabledStored()
     {
-        return super.lookupStringValue(_c, defaultDateFormatString, null);
-    }
-
-    // Get the value that's actually stored in this container; don't look up the hierarchy. This is useful only for export.
-    public String getDefaultDateTimeFormatStored()
-    {
-        return super.lookupStringValue(_c, defaultDateTimeFormatString, null);
-    }
-
-    // Get the value that's actually stored in this container; don't look up the hierarchy. This is useful only for export.
-    public String getDefaultNumberFormatStored()
-    {
-        return super.lookupStringValue(_c, defaultNumberFormatString, null);
-    }
-
-    // Get the value that's actually stored in this container; don't look up the hierarchy. This is useful only for export.
-    public String getDefaultTimeFormatStored()
-    {
-        return super.lookupStringValue(_c, defaultTimeFormatString, null);
-    }
-
-
-    // Get the value that's actually stored in this container; don't look up the hierarchy. This is useful only for export.
-    public String getExtraDateParsingPatternStored()
-    {
-        return super.lookupStringValue(_c, extraDateParsingPattern, null);
-    }
-
-    // Get the value that's actually stored in this container; don't look up the hierarchy. This is useful only for export.
-    public String getExtraDateTimeParsingPatternStored()
-    {
-        return super.lookupStringValue(_c, extraDateTimeParsingPattern, null);
-    }
-
-    // Get the value that's actually stored in this container; don't look up the hierarchy. This is useful only for export.
-    public String getExtraTimeParsingPatternStored()
-    {
-        return super.lookupStringValue(_c, extraTimeParsingPattern, null);
+        String stored = getStoredValue(_c, restrictedColumnsEnabled);
+        return null == stored ? null : "TRUE".equals(stored);
     }
 }

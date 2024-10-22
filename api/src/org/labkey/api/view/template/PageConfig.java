@@ -153,6 +153,7 @@ public class PageConfig
     private String _canonicalLink = null;
     private boolean _includePostParameters = false;
     private boolean _includePermissions = false;
+    private boolean _includeInheritableFormats = false;
 
     public final Date createTime = new Date();
     public final Throwable createThrowable = new Throwable();
@@ -362,6 +363,11 @@ public class PageConfig
     public boolean isIncludePermissions()
     {
         return _includePermissions;
+    }
+
+    public boolean isIncludeInheritableFormats()
+    {
+        return _includeInheritableFormats;
     }
 
     public void setIncludePermissions(boolean includePermissions)
