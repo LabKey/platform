@@ -12,16 +12,6 @@ import { reorder, isEquivalent, addOrUpdateAnAuthConfig } from './utils';
 const UNSAVED_ALERT =
     'You have unsaved changes to your authentication configurations. Click "Save and Finish" to apply these changes.';
 
-export const App: FC = memo(() => {
-    const initialServerContext = useMemo(() => withAppUser(getServerContext()), []);
-
-    return (
-        <ServerContextProvider initialContext={initialServerContext}>
-            <AuthenticationConfiguration />
-        </ServerContextProvider>
-    );
-});
-
 interface State {
     authCount: number;
     canEdit: boolean;
@@ -356,3 +346,13 @@ class AuthenticationConfiguration extends PureComponent<{}, Partial<State>> {
         );
     }
 }
+
+export const App: FC = memo(() => {
+    const initialServerContext = useMemo(() => withAppUser(getServerContext()), []);
+
+    return (
+        <ServerContextProvider initialContext={initialServerContext}>
+            <AuthenticationConfiguration />
+        </ServerContextProvider>
+    );
+});
