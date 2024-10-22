@@ -826,7 +826,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
                 _relativePath = relativePath;
             }
 
-            public URI getUrl()
+            public String getUrl()
             {
                 if (_relativePath == null)
                 {
@@ -835,7 +835,8 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
 
                 PipeRoot pr = PipelineService.get().getPipelineRootSetting(getProject());
 
-                return pr.getWebdavURL().resolve(getUrlRelative());
+                URI uri = pr.getWebdavURL().resolve(getUrlRelative());
+                return uri == null ? null : uri.toString();
             }
 
             public String getUrlRelative()
@@ -892,7 +893,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
                 String webDavUrlRelative = row.getJSONObject("WebDavUrlRelative").optString("value", null);
 
                 assertEquals("Incorrect WebDavUrlRelative", tc.getUrlRelative(), webDavUrlRelative);
-                assertEquals("Incorrect WebDavUrl", tc.getUrl(), new URI(webDavUrl));
+                assertEquals("Incorrect WebDavUrl", tc.getUrl(), webDavUrl);
 
                 ExcelWriter excel = view.getExcelWriter(ExcelWriter.ExcelDocumentType.xlsx);
                 try (VirtualFile f = new MemoryVirtualFile())
