@@ -1,6 +1,5 @@
 package org.labkey.assay.plate;
 
-import org.checkerframework.checker.units.qual.A;
 import org.labkey.api.assay.AssayProtocolSchema;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
