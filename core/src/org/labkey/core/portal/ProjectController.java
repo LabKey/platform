@@ -1688,14 +1688,10 @@ public class ProjectController extends SpringActionController
             Portal.WebPart webPart = Portal.getPart(getContainer(), form.getWebPartId());
             if (webPart != null)
             {
-                if (form.getPermission() != null)
+                if (form.getPermission() != null && RoleManager.getPermission(form.getPermission()) == null)
                 {
-                    Permission permission = RoleManager.getPermission(form.getPermission());
-                    if (permission == null)
-                    {
-                        throw new NotFoundException("Could not resolve the permission " + form.getPermission() +
-                                ". The permission may no longer exist, or may not yet be registered.");
-                    }
+                    throw new NotFoundException("Could not resolve the permission " + form.getPermission() +
+                            ". The permission may no longer exist, or may not yet be registered.");
                 }
 
                 Container permissionContainer = null;
