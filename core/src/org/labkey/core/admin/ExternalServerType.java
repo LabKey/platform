@@ -1,6 +1,15 @@
 package org.labkey.core.admin;
 
+import org.labkey.api.data.Container;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
+import org.labkey.filters.ContentSecurityPolicyFilter;
+
+import java.util.Collection;
+import java.util.List;
 
 public enum ExternalServerType
 {
@@ -21,6 +30,30 @@ public enum ExternalServerType
                 </div>
                 """);
         }
+
+        @Override
+        public List<String> getHosts()
+        {
+            return AppProps.getInstance().getExternalSourceHosts();
+        }
+
+        @Override
+        public void setHosts(Collection<String> hosts)
+        {
+            WriteableAppProps props = AppProps.getWriteableInstance();
+            props.setExternalSourceHosts(hosts);
+            props.save(null);
+
+            // Refresh the CSP with new values.
+            ContentSecurityPolicyFilter.unregisterAllowedConnectionSource(EXTERNAL_SOURCE_HOSTS_KEY);
+            ContentSecurityPolicyFilter.registerAllowedConnectionSource(EXTERNAL_SOURCE_HOSTS_KEY, getHosts().toArray(new String[0]));
+        }
+
+        @Override
+        public String getHelpTopic()
+        {
+            return "externalSourceHosts";
+        }   // TODO confirm with Docs
     },
     Redirect {
         @Override
@@ -42,7 +75,42 @@ public enum ExternalServerType
                 </div>
                 """);
         }
+
+        @Override
+        public List<String> getHosts()
+        {
+            return AppProps.getInstance().getExternalRedirectHosts();
+        }
+
+        @Override
+        public void setHosts(Collection<String> hosts)
+        {
+            WriteableAppProps props = AppProps.getWriteableInstance();
+            props.setExternalRedirectHosts(hosts);
+            props.save(null);
+        }
+
+        @Override
+        public String getHelpTopic()
+        {
+            return "externalRedirectsURL";
+        }
     };
 
+    private static final String EXTERNAL_SOURCE_HOSTS_KEY = "External Sources";
+    public static String getExternalSourceHostsKey()
+    {
+        return EXTERNAL_SOURCE_HOSTS_KEY;
+    }
+
     public abstract HtmlString getDescription();
+    public abstract List<String> getHosts();
+
+    public abstract void setHosts(Collection<String> redirectHosts);
+    public abstract String getHelpTopic();
+
+    public URLHelper getSuccessURL(Container container)
+    {
+        return new ActionURL(AdminController.ExternalHostsAdminAction .class, container).addParameter("type", name());
+    }
 }

@@ -622,19 +622,19 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     @NotNull
     public List<String> getExternalRedirectHosts()
     {
-        String urls = lookupStringValue(externalRedirectHostURLs, "");
-        if (StringUtils.isNotBlank(urls))
-        {
-            return new ArrayList<>(Arrays.asList(urls.split(EXTERNAL_HOST_DELIMITER)));
-        }
-        return new ArrayList<>();
+        return getExternalHosts(externalRedirectHostURLs);
     }
 
     @Override
     @NotNull
     public List<String> getExternalSourceHosts()
     {
-        String urls = lookupStringValue(externalSourceHostURLs, "");
+        return getExternalHosts(externalSourceHostURLs);
+    }
+
+    private List<String> getExternalHosts(RandomStartupProperties propName)
+    {
+        String urls = lookupStringValue(propName, "");
         if (StringUtils.isNotBlank(urls))
         {
             return new ArrayList<>(Arrays.asList(urls.split(EXTERNAL_HOST_DELIMITER)));

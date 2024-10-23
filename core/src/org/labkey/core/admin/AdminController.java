@@ -15,6 +15,7 @@
  */
 package org.labkey.core.admin;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
@@ -28,6 +29,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.validator.routines.UrlValidator;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -87,6 +89,7 @@ import org.labkey.api.cache.CacheStats;
 import org.labkey.api.cache.TrackingCache;
 import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.compliance.ComplianceFolderSettings;
 import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.compliance.PhiColumnBehavior;
@@ -313,7 +316,6 @@ import org.labkey.core.reports.ExternalScriptEngineDefinitionImpl;
 import org.labkey.core.security.BlockListFilter;
 import org.labkey.core.security.SecurityController;
 import org.labkey.data.xml.TablesDocument;
-import org.labkey.filters.ContentSecurityPolicyFilter;
 import org.labkey.security.xml.GroupEnumType;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BindException;
@@ -420,15 +422,9 @@ public class AdminController extends SpringActionController
     private static final Logger LOG = LogHelper.getLogger(AdminController.class, "Admin-related UI and APIs");
     private static final Logger CLIENT_LOG = LogHelper.getLogger(LogAction.class, "Client/browser logging submitted to server");
     private static final String HEAP_MEMORY_KEY = "Total Heap Memory";
-    private static final String EXTERNAL_SOURCE_HOSTS_KEY = "External Sources";
 
     private static long _errorMark = 0;
     private static long _primaryLogMark = 0;
-
-    public static String getExternalSourceHostsKey()
-    {
-        return EXTERNAL_SOURCE_HOSTS_KEY;
-    }
 
     public static void registerAdminConsoleLinks()
     {
@@ -451,8 +447,8 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(Configuration, "short urls", new ActionURL(ShortURLAdminAction.class, root), AdminPermission.class);
         AdminConsole.addLink(Configuration, "site settings", new AdminUrlsImpl().getCustomizeSiteURL());
         AdminConsole.addLink(Configuration, "system maintenance", new ActionURL(ConfigureSystemMaintenanceAction.class, root));
-        AdminConsole.addLink(Configuration, "external redirect hosts", new ActionURL(ExternalRedirectAdminAction.class, root).addParameter("type", ExternalServerType.Redirect.name()), TroubleshooterPermission.class);
-        AdminConsole.addLink(Configuration, "external allowed sources", new ActionURL(ExternalRedirectAdminAction.class, root).addParameter("type", ExternalServerType.Source.name()), TroubleshooterPermission.class);
+        AdminConsole.addLink(Configuration, "external redirect hosts", new ActionURL(ExternalHostsAdminAction.class, root).addParameter("type", ExternalServerType.Redirect.name()), TroubleshooterPermission.class);
+        AdminConsole.addLink(Configuration, "external allowed sources", new ActionURL(ExternalHostsAdminAction.class, root).addParameter("type", ExternalServerType.Source.name()), TroubleshooterPermission.class);
 
         // Diagnostics
         AdminConsole.addLink(Diagnostics, "actions", new ActionURL(ActionsAction.class, root));
@@ -10733,8 +10729,9 @@ public class AdminController extends SpringActionController
     }
 
     @AdminConsoleAction()
-    public class ExternalRedirectAdminAction extends FormViewAction<ExternalHostsForm>
+    public class ExternalHostsAdminAction extends FormViewAction<ExternalHostsForm>
     {
+        private ExternalServerType _type;
         @Override
         public void validateCommand(ExternalHostsForm target, Errors errors)
         {
@@ -10743,12 +10740,14 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getView(ExternalHostsForm form, boolean reshow, BindException errors)
         {
-            form.setExistingHostsList(form.getTypeEnum() == ExternalServerType.Source ? AppProps.getInstance().getExternalSourceHosts() : AppProps.getInstance().getExternalRedirectHosts());
+            _type = form.getTypeEnum();
 
-            JspView<ExternalHostsForm> newView = new JspView<>("/org/labkey/core/admin/addNewExternalRedirectHost.jsp", form, errors);
+            form.setExistingHostsList(form.getTypeEnum().getHosts());
+
+            JspView<ExternalHostsForm> newView = new JspView<>("/org/labkey/core/admin/addNewExternalHost.jsp", form, errors);
             newView.setTitle(String.format("Register New External %1$s Host", form.getTypeEnum().name()));
             newView.setFrame(WebPartView.FrameType.PORTAL);
-            JspView<ExternalHostsForm> existingView = new JspView<>("/org/labkey/core/admin/existingExternalRedirectHosts.jsp", form, errors);
+            JspView<ExternalHostsForm> existingView = new JspView<>("/org/labkey/core/admin/existingExternalHosts.jsp", form, errors);
             existingView.setTitle(String.format("Existing External %1$s Hosts", form.getTypeEnum().name()));
             existingView.setFrame(WebPartView.FrameType.PORTAL);
 
@@ -10758,41 +10757,18 @@ public class AdminController extends SpringActionController
         @Override
         public boolean handlePost(ExternalHostsForm form, BindException errors) throws Exception
         {
-            WriteableAppProps appProps = AppProps.getWriteableInstance();
-            boolean update;
-
-            if (form.getTypeEnum() == ExternalServerType.Source)
-                update = handleHostPost(form, appProps::getExternalSourceHosts, appProps::setExternalSourceHosts, errors);
-            else
-                update = handleHostPost(form, appProps::getExternalRedirectHosts, appProps::setExternalRedirectHosts,  errors);
-
-            if (update)
-            {
-                appProps.save(getUser());
-                if (form.getTypeEnum() == ExternalServerType.Source)
-                {
-                    // Refresh the CSP with new values.
-                    ContentSecurityPolicyFilter.unregisterAllowedConnectionSource(getExternalSourceHostsKey());
-                    ContentSecurityPolicyFilter.registerAllowedConnectionSource(getExternalSourceHostsKey(), appProps.getExternalSourceHosts().toArray(new String[0]));
-                }
-            }
-
-            return update;
-        }
-
-        private boolean handleHostPost(ExternalHostsForm form, Supplier<List<String>> getHosts, Consumer<List<String>> setHosts, BindException errors) throws Exception
-        {
+            ExternalServerType hostType = form.getTypeEnum();
             //handle delete of existing external redirect host
             if (form.isDelete())
             {
                 String urlToDelete = form.getExistingExternalHost();
-                List<String> redirectHosts = getHosts.get();
-                for (String externalRedirectHost : redirectHosts)
+                List<String> hosts = hostType.getHosts();
+                for (String externalHost : hosts)
                 {
-                    if (null != urlToDelete && urlToDelete.trim().equalsIgnoreCase(externalRedirectHost.trim()))
+                    if (null != urlToDelete && urlToDelete.trim().equalsIgnoreCase(externalHost.trim()))
                     {
-                        redirectHosts.remove(externalRedirectHost);
-                        setHosts.accept(redirectHosts);
+                        hosts.remove(externalHost);
+                        hostType.setHosts(hosts);
                         break;
                     }
                 }
@@ -10800,90 +10776,59 @@ public class AdminController extends SpringActionController
             //handle updates - clicking on Save button under Existing will save the updated urls
             else if (form.isSaveAll())
             {
-                List<String> redirectHosts = form.getExistingHostList(); //get hosts from the form, this includes updated hosts
-                if (null != redirectHosts && !redirectHosts.isEmpty())
-                {
-                    if (!hasDuplicates(redirectHosts, errors))
-                    {
-                        setHosts.accept(form.getExistingHostList());
-                    }
-                    else
-                        return false;
-                }
+                Set<String> validatedHosts = form.validateHostList(errors);
+                if (errors.hasErrors())
+                    return false;
+
+                hostType.setHosts(validatedHosts.stream().toList());
             }
-            //save new external redirect host
+            //save new external host
             else if (form.isSaveNew())
             {
-                String newExternalRedirectHost = StringUtils.trimToEmpty(form.getNewExternalHost());
-
-                if (StringUtils.isEmpty(newExternalRedirectHost))
-                {
-                    errors.addError(new LabKeyError("External redirect host name must not be blank."));
+                Set<String> hostSet = form.validateNewExternalHost(errors);
+                if (errors.hasErrors())
                     return false;
-                }
-                else if (StringUtils.isNotEmpty(newExternalRedirectHost))
-                {
-                    List<String> existingRedirectHosts = getHosts.get();
-                    if (!isDuplicate(existingRedirectHosts, newExternalRedirectHost, errors))
-                    {
-                        existingRedirectHosts.add(newExternalRedirectHost);
-                        setHosts.accept(existingRedirectHosts);
-                    }
-                    else
-                        return false;
-                }
+
+                hostType.setHosts(hostSet);
             }
 
             return true;
         }
 
-        private boolean hasDuplicates(List<String> redirectURLs, BindException errors)
-        {
-            boolean foundDuplicates = false;
-            Map<String, String> urlMap = new HashMap<>();
-
-            for (String redirectURL : redirectURLs)
-            {
-                if (urlMap.containsKey(redirectURL.trim()))
-                {
-                    errors.addError(new LabKeyError("'" + redirectURL + "' already exists. Duplicate hosts not allowed."));
-                    foundDuplicates = true;
-                }
-                else
-                    urlMap.put(redirectURL.trim(), null);
-            }
-            return foundDuplicates;
-        }
-
-        private boolean isDuplicate(List<String> existingURLs, String newExternalRedirectURL, BindException errors)
-        {
-            for (String redirectURL : existingURLs)
-            {
-                if (newExternalRedirectURL.equalsIgnoreCase(redirectURL))
-                {
-                    errors.addError(new LabKeyError("'" + redirectURL + "' already exists. Duplicate hosts not allowed."));
-                    return true; //its a dupe!
-                }
-            }
-            return false; //its not a dupe!
-        }
-
         @Override
         public URLHelper getSuccessURL(ExternalHostsForm form)
         {
-            return new ActionURL(ExternalRedirectAdminAction.class, getContainer()).addParameter("type", form.getTypeEnum().name());
+            return form.getTypeEnum().getSuccessURL(getContainer());
         }
 
         @Override
         public void addNavTrail(NavTree root)
         {
-            setHelpTopic("externalRedirectsURL");
-            addAdminNavTrail(root, "External Redirect Host Admin", getClass());
+            setHelpTopic(_type.getHelpTopic());
+            addAdminNavTrail(root, String.format("External %1$s Host Admin", _type.name()), getClass());
         }
     }
 
+    private static class AuthorityValidator extends UrlValidator
+    {
+        public AuthorityValidator(long options)
+        {
+            super(options);
+        }
+
+        @Override
+        public boolean isValidAuthority(String authority)
+        {
+            String base = authority.startsWith("*.") ? authority.substring(2) : authority;
+            return super.isValidAuthority(base);
+        }
+    };
+
     public static class ExternalHostsForm
     {
+        @JsonIgnore
+        private static final AuthorityValidator AUTHORITY_VALIDATOR = new AuthorityValidator(UrlValidator.ALLOW_LOCAL_URLS);
+
         private String _newExternalHost;
         private String _existingExternalHost;
         private boolean _delete;
@@ -10984,6 +10929,68 @@ public class AdminController extends SpringActionController
         public ExternalServerType getTypeEnum()
         {
             return EnumUtils.getEnum(ExternalServerType.class, getType(), ExternalServerType.Redirect);
+        }
+
+        @JsonIgnore
+        public Set<String> validateNewExternalHost(BindException errors)
+        {
+            String newExternalHost = StringUtils.trimToEmpty(getNewExternalHost());
+            validateHostFormat(newExternalHost, errors);
+            if (errors.hasErrors())
+                return null;
+
+            Set<String> hostSet = new CaseInsensitiveHashSet(getTypeEnum().getHosts());
+            checkDuplicatesByAddition(newExternalHost, hostSet, errors);
+            return hostSet;
+        }
+
+        @JsonIgnore
+        public Set<String> validateHostList(BindException errors)
+        {
+            List<String> hosts = getExistingHostList(); //get hosts from the form, this includes updated hosts
+            Set<String> hostSet = new CaseInsensitiveHashSet();
+
+            if (null != hosts && !hosts.isEmpty())
+            {
+                for (String host : hosts)
+                {
+                    validateHostFormat(host, errors);
+                    if (errors.hasErrors())
+                        continue;
+
+                    checkDuplicatesByAddition(host, hostSet, errors);
+                }
+            }
+
+            return hostSet;
+        }
+
+        @JsonIgnore
+        private void validateHostFormat(String externalHost, BindException errors)
+        {
+            if (StringUtils.isEmpty(externalHost))
+            {
+                errors.addError(new LabKeyError("External host name must not be blank."));
+            }
+            else if (!AUTHORITY_VALIDATOR.isValidAuthority(externalHost))
+            {
+                errors.addError(new LabKeyError(String.format("External host name %1$s is not formatted correctly", externalHost)));
+            }
+        }
+
+        /**
+         * Adds host to host set unless it is a duplicate, in which case it adds an error
+         * Note: Attempts to validate host string using URLHelper
+         * @param host to check
+         * @param hostSet of existing hosts
+         * @param errors collections of errors observed
+         */
+        @JsonIgnore
+        private void checkDuplicatesByAddition(String host, Set<String> hostSet, BindException errors)
+        {
+            String trimHost = StringUtils.trimToEmpty(host);
+            if (!hostSet.add(trimHost))
+                errors.addError(new LabKeyError(String.format("'%1$s' already exists. Duplicate hosts not allowed.", trimHost)));
         }
     }
 

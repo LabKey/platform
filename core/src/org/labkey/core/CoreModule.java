@@ -211,6 +211,7 @@ import org.labkey.core.admin.CopyFileRootPipelineJob;
 import org.labkey.core.admin.CustomizeMenuForm;
 import org.labkey.core.admin.DisplayFormatAnalyzer;
 import org.labkey.core.admin.DisplayFormatValidationProviderFactory;
+import org.labkey.core.admin.ExternalServerType;
 import org.labkey.core.admin.FilesSiteSettingsAction;
 import org.labkey.core.admin.MenuViewFactory;
 import org.labkey.core.admin.importer.FolderTypeImporterFactory;
@@ -1253,10 +1254,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     private void registerAllowedConnectionSources()
     {
         ContentSecurityPolicyFilter.registerAllowedConnectionSource(
-                AdminController.getExternalSourceHostsKey(),
-                AppProps.getInstance().getExternalSourceHosts().toArray(new String[0]));
+                ExternalServerType.getExternalSourceHostsKey(),
+                ExternalServerType.Source.getHosts().toArray(new String[0]));
 
-        LOG.debug("Registered [{}] as an allowed connection source", String.join(", ", AppProps.getInstance().getExternalSourceHosts()));
+        LOG.debug("Registered [{}] as an allowed connection source", () -> String.join(", ", AppProps.getInstance().getExternalSourceHosts()));
     }
 
     // Issue 7527: Auto-detect missing sql views and attempt to recreate

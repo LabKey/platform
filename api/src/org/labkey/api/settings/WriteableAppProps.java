@@ -25,7 +25,7 @@ import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.view.NavTreeManager;
 
 import java.net.URISyntaxException;
-import java.util.List;
+import java.util.Collection;
 import java.util.Objects;
 
 import static org.labkey.api.settings.SiteSettingsProperties.*;
@@ -216,23 +216,18 @@ public class WriteableAppProps extends AppPropsImpl
         storeStringValue(XFrameOption, option);
     }
 
-    public void setExternalRedirectHosts(@NotNull List<String> externalRedirectHosts)
+    public void setExternalRedirectHosts(@NotNull Collection<String> externalRedirectHosts)
     {
-        StringBuilder urls = new StringBuilder();
-        for (String externalRedirectURL : externalRedirectHosts)
-        {
-            urls.append(externalRedirectURL.trim()).append(EXTERNAL_HOST_DELIMITER);
-        }
-        storeStringValue(externalRedirectHostURLs, urls.toString());
+        setExternalHosts(externalRedirectHostURLs, externalRedirectHosts);
     }
 
-    public void setExternalSourceHosts(@NotNull List<String> externalSourceHosts)
+    public void setExternalSourceHosts(@NotNull Collection<String> externalSourceHosts)
     {
-        StringBuilder urls = new StringBuilder();
-        for (String externalSourceURL : externalSourceHosts)
-        {
-            urls.append(externalSourceURL.trim()).append(EXTERNAL_HOST_DELIMITER);
-        }
-        storeStringValue(externalSourceHostURLs, urls.toString());
+        setExternalHosts(externalSourceHostURLs, externalSourceHosts);
+    }
+
+    private void setExternalHosts(RandomStartupProperties propName, @NotNull Collection<String> externalSourceHosts)
+    {
+        storeStringValue(propName, String.join(EXTERNAL_HOST_DELIMITER, externalSourceHosts));
     }
 }
