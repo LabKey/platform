@@ -17,6 +17,7 @@ package org.labkey.api.util;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hc.core5.net.URIBuilder;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
@@ -34,7 +35,7 @@ import static org.labkey.api.util.FileUtil.FILE_SCHEME;
  */
 public class URIUtil
 {
-    static public boolean isDescendant(URI base, URI descendant)
+    static public boolean isDescendant(@NotNull URI base, @NotNull URI descendant)
     {
         var baseSchema = StringUtils.defaultString(base.getScheme(), FILE_SCHEME);
         var descendantSchema = StringUtils.defaultString(descendant.getScheme(), FILE_SCHEME);
