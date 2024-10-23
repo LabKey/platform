@@ -74,15 +74,15 @@ public class LinkMacro extends BaseLocaleMacro {
         if (url != null && text != null) {
             writer.write("<span class=\"nobr\"");
             if(style != null)
-                writer.write(" style=\"" + PageFlowUtil.filter(style) + "\"");
+                writer.write(" style=\"" + style + "\"");
             writer.write(">");
-            if (!"none".equals(img) && engine instanceof ImageRenderEngine) {
-                writer.write(((ImageRenderEngine) engine).getExternalImageLink());
+            if (!"none".equals(img) && engine instanceof ImageRenderEngine irEngine) {
+                writer.write(irEngine.getExternalImageLink());
             }
             writer.write("<a href=\"");
-            writer.write(PageFlowUtil.filter(url));
+            writer.write(url);
             writer.write("\">");
-            writer.write(PageFlowUtil.filter(text));
+            writer.write(text);
             writer.write("</a></span>");
         } else {
             throw new IllegalArgumentException("link needs a name and a url as argument");
