@@ -1,6 +1,6 @@
-import React, { PureComponent } from 'react';
-import { ActionURL, Ajax, Utils } from '@labkey/api';
-import { LoadingSpinner, resolveErrorMessage, Alert } from '@labkey/components';
+import React, { FC, memo, PureComponent, useMemo } from 'react';
+import { ActionURL, Ajax, getServerContext, Utils } from '@labkey/api';
+import { LoadingSpinner, resolveErrorMessage, Alert, withAppUser, ServerContextProvider } from '@labkey/components';
 
 import { GlobalSettings } from '../components/GlobalSettings';
 import AuthConfigMasterPanel from '../components/AuthConfigMasterPanel';
@@ -29,7 +29,7 @@ interface State {
     ssoConfigurations: AuthConfig[];
 }
 
-export class App extends PureComponent<{}, Partial<State>> {
+class AuthenticationConfiguration extends PureComponent<{}, Partial<State>> {
     actions: Actions;
     constructor(props) {
         super(props);
@@ -346,3 +346,13 @@ export class App extends PureComponent<{}, Partial<State>> {
         );
     }
 }
+
+export const App: FC = memo(() => {
+    const initialServerContext = useMemo(() => withAppUser(getServerContext()), []);
+
+    return (
+        <ServerContextProvider initialContext={initialServerContext}>
+            <AuthenticationConfiguration />
+        </ServerContextProvider>
+    );
+});

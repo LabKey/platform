@@ -239,7 +239,7 @@
 
             if (selections.length == 0)
             {
-                Ext4.Msg.alert("Delete Engine Configuration", "There is no engine selected");
+                Ext4.Msg.show({title: 'Delete Engine Configuration', msg: 'There is no engine selected.', buttons: Ext4.Msg.OK, width: 200});
                 return false;
             }
 
@@ -248,13 +248,13 @@
 
             if (!record.external)
             {
-                Ext4.Msg.alert("Delete Engine Configuration", "JVM script engines cannot be deleted but you can disable them.");
+                Ext4.Msg.show({title: 'Delete Engine Configuration', msg: 'JVM script engines cannot be deleted but you can disable them.', buttons: Ext4.Msg.OK, width: 300});
                 return false;
             }
 
             if (record.default && countR > 1) {
                 // deletion of site default engine is not allowed, unless there is only one engine present
-                Ext4.Msg.alert("Delete Engine Configuration", "The site default R engine cannot be deleted. Please choose another engine as the site default prior to deleting this configuration.");
+                Ext4.Msg.show({title: 'Delete Engine Configuration', msg: 'The site default R engine cannot be deleted. Please choose another engine as the site default prior to deleting this configuration.', buttons: Ext4.Msg.OK, width: 400});
                 return false;
             }
 
@@ -282,7 +282,7 @@
             var selections = grid.getSelectionModel().getSelection();
             if (selections.length == 0)
             {
-                Ext4.Msg.alert("Edit Engine Configuration", "There is no engine selected");
+                Ext4.Msg.show({title: 'Edit Engine Configuration', msg: 'There is no engine selected.', buttons: Ext4.Msg.OK, width: 200});
                 return false;
             }
 
@@ -621,7 +621,7 @@
             var form = panel.getForm();
             if (form && !form.isValid())
             {
-                Ext4.Msg.alert('Engine Definition', 'Not all fields have been properly completed');
+                Ext4.Msg.show({title: 'Engine Definition', msg: 'Not all fields have been properly completed.', buttons: Ext4.Msg.OK, width: 300});
                 return false;
             }
 
@@ -631,12 +631,12 @@
             if (values.extensions  === R_EXTENSIONS) {
                 var rowId = values.rowId ? parseInt(values.rowId) : -1;
                 if (values.default && !values.enabled) {
-                    Ext4.Msg.alert("Engine Definition", "Site default engine must be enabled.");
+                    Ext4.Msg.show({title: 'Engine Definition', msg: 'Site default engine must be enabled.', buttons: Ext4.Msg.OK, width: 200});
                     return false;
                 }
 
                 if (!values.default && (defaultR && (rowId === defaultR.rowId))) {
-                    Ext4.Msg.alert("Engine Definition", "This engine is used as the site default. To change the site default, select another engine to use as the default.");
+                    Ext4.Msg.show({title: 'Engine Definition', msg: 'This engine is used as the site default. To change the site default, select another engine to use as the default.', buttons: Ext4.Msg.OK, width: 400});
                     return false;
                 }
 
@@ -647,7 +647,7 @@
                     }
                 }
                 else if (!values.default) {
-                    Ext4.Msg.alert('Engine Definition', 'Site default R engine missing. You must specify one R engine to be the site default.');
+                    Ext4.Msg.show({title: 'Engine Definition', msg: 'Site default R engine missing. You must specify one R engine to be the site default.', buttons: Ext4.Msg.OK, width: 300});
                     return false;
                 }
                 if (confirmChange && !confirm(confirmChange))

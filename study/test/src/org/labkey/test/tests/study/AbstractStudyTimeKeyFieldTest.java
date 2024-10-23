@@ -22,6 +22,7 @@ import org.labkey.test.pages.DatasetInsertPage;
 import org.labkey.test.pages.DatasetPropertiesPage;
 import org.labkey.test.pages.ImportDataPage;
 import org.labkey.test.pages.ViewDatasetDataPage;
+import org.labkey.test.pages.core.admin.BaseSettingsPage;
 import org.labkey.test.pages.core.admin.LookAndFeelSettingsPage;
 import org.labkey.test.pages.study.DatasetDesignerPage;
 
@@ -48,9 +49,7 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
     protected static final File HAS_TIMESTAMP = TestFileUtils.getSampleData("study/commondata/RCB-1.tsv");
     protected static final File RCE_APPEND = TestFileUtils.getSampleData("study/commondata/RCE-1-2.tsv");
     protected static final String DATE_REGEX = "\\d{4}-\\d{2}\\d{2}";
-    protected static final String DATETIME_REGEX = "\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}";
-    protected static final String DEFAULT_DATE_FORMAT = "yyyy-MM-dd";
-    protected static final String DEFAULT_DATETIME_FORMAT = "yyyy-MM-dd HH:mm";
+    protected static final String DATETIME_REGEX = "\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}";
 
     @Override
     protected String getDemographicsDescription()
@@ -154,19 +153,19 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
     {
         goToAdminConsole().clickLookAndFeelSettings();
         LookAndFeelSettingsPage lookAndFeelSettingsPage = new LookAndFeelSettingsPage(getDriver());
-        lookAndFeelSettingsPage.setDefaultDateDisplay(DEFAULT_DATE_FORMAT);
-        lookAndFeelSettingsPage.setDefaultDateTimeDisplay(DEFAULT_DATETIME_FORMAT);
+        lookAndFeelSettingsPage.setDefaultDateDisplay(BaseSettingsPage.DATE_FORMAT.Default);
+        lookAndFeelSettingsPage.setDefaultDateTimeDisplay(BaseSettingsPage.DATE_FORMAT.Default, BaseSettingsPage.TIME_FORMAT.Default);
         lookAndFeelSettingsPage.save();
         //should be default, just date for now
         ViewDatasetDataPage dataPage = goToDataset(getFolderName(),"AE-1:(VTN) AE Log");
         List<String> dates = dataPage.getColumnData("Date");
-        dates.forEach((d) -> assertTrue("date was in wrong format", !isDate(d) && isDateTime(d)));
+        dates.forEach(d-> assertTrue("date was in wrong format", !isDate(d) && isDateTime(d)));
         DatasetPropertiesPage propertiesPage = dataPage.clickManageDataset();
         DatasetDesignerPage definitionPage = propertiesPage.clickEditDefinition();
         definitionPage.setAdditionalKeyColDataField("Time (from Date/Time)");
         propertiesPage = definitionPage.clickSave();
-        dataPage = propertiesPage.clickViewData();
-        dates.forEach((d) -> assertTrue("date was in wrong format", isDateTime(d)));
+        propertiesPage.clickViewData();
+        dates.forEach(d-> assertTrue("date was in wrong format", isDateTime(d)));
     }
 
     protected void testCannotTurnOffExtraTimeKeyIfViolatesUnique(String folder, String dataset)

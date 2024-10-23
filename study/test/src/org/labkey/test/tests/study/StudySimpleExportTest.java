@@ -21,6 +21,7 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.labkey.api.data.DataRegion;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
@@ -29,7 +30,9 @@ import org.labkey.test.categories.Daily;
 import org.labkey.test.components.DomainDesignerPage;
 import org.labkey.test.components.domain.DomainFormPanel;
 import org.labkey.test.components.ext4.Window;
+import org.labkey.test.components.html.Checkbox;
 import org.labkey.test.pages.ImportDataPage;
+import org.labkey.test.pages.core.admin.BaseSettingsPage;
 import org.labkey.test.pages.files.FileContentPage;
 import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.pages.study.ManageDatasetQCStatesPage;
@@ -278,8 +281,15 @@ public class StudySimpleExportTest extends StudyBaseTest
         // Default date & number formats are now on the folder management "Formats" tab
         goToFolderManagement();
         clickAndWait(Locator.linkWithText("Formats"));
-        setFormElement(Locator.name("defaultDateFormat"), "MMM dd, yyyy");
-        setFormElement(Locator.name("defaultDateTimeFormat"), "MMM dd, yyyy HH:mm");
+
+        new Checkbox(Locator.name("defaultDateFormatInherited").findElement(getDriver())).set(false);
+        new Checkbox(Locator.name("defaultDateTimeFormatInherited").findElement(getDriver())).set(false);
+        new Checkbox(Locator.name("defaultNumberFormatInherited").findElement(getDriver())).set(false);
+        new Checkbox(Locator.name("restrictedColumnsEnabledInherited").findElement(getDriver())).set(false);
+
+        selectOptionByValue(Locator.name("defaultDateFormat"), BaseSettingsPage.DATE_FORMAT.dd_MMM_yyyy.toString());
+        selectOptionByValue(Locator.name("dateSelect"), BaseSettingsPage.DATE_FORMAT.dd_MMM_yyyy.toString());
+        selectOptionByValue(Locator.name("timeSelect"), BaseSettingsPage.TIME_FORMAT.HH_mm.toString());
         setFormElement(Locator.name("defaultNumberFormat"), "#.000");
         checkCheckbox(Locator.name("restrictedColumnsEnabled"));
         clickButton("Save");
@@ -297,14 +307,34 @@ public class StudySimpleExportTest extends StudyBaseTest
         clickFolder("Default Dataset Formats");
         goToFolderManagement();
         clickAndWait(Locator.linkWithText("Formats"));
-        assertEquals("MMM dd, yyyy", getFormElement(Locator.name("defaultDateFormat")));
-        assertEquals("MMM dd, yyyy HH:mm", getFormElement(Locator.name("defaultDateTimeFormat")));
-        assertEquals("#.000", getFormElement(Locator.name("defaultNumberFormat")));
-        assertChecked(Locator.name("restrictedColumnsEnabled"));
+
+        checker().verifyEquals("Date format not as expected.",
+                BaseSettingsPage.DATE_FORMAT.dd_MMM_yyyy.toString(), getSelectedOptionValue(Locator.name("defaultDateFormat")));
+        checker().verifyEquals("DateTime(Date) format not as expected.",
+                BaseSettingsPage.DATE_FORMAT.dd_MMM_yyyy.toString(), getSelectedOptionValue(Locator.name("dateSelect")));
+        checker().verifyEquals("DateTime(Time) format not as expected.",
+                BaseSettingsPage.TIME_FORMAT.HH_mm.toString(), getSelectedOptionValue(Locator.name("timeSelect")));
+        checker().verifyEquals("Number format not as expected.",
+                "#.000", getFormElement(Locator.name("defaultNumberFormat")));
+
+        checker().verifyFalse("Restricted Charting Columns is should not be inherited.",
+                new Checkbox(Locator.name("restrictedColumnsEnabledInherited").findElement(getDriver())).isChecked());
+
+        checker().verifyTrue("Restricted Charting Columns should be checked.",
+                new Checkbox(Locator.name("restrictedColumnsEnabled").findElement(getDriver())).isChecked());
 
         clickTab("Clinical and Assay Data");
         waitAndClickAndWait(Locator.linkWithText(TEST_DATASET_NAME));
-        assertTextPresentInThisOrder("999.000", "Oct 29, 2013");
+        DataRegionTable drt = new DataRegionTable("Dataset", getDriver());
+        checker().verifyEquals("Number in data region not as expected.",
+                "999.000", drt.getDataAsText(0, "TestInt"));
+
+        checker().verifyEquals("Date in data region not as expected.",
+                "29-Oct-2013 00:00", drt.getDataAsText(0, "TestDate"));
+
+        checker().verifyEquals("DateTime in data region not as expected.",
+                "28-Oct-2013 01:23", drt.getDataAsText(0, "TestDateTime"));
+
     }
 
     @Test

@@ -690,6 +690,9 @@ const TabNames = Object.freeze({
     };
 
     var switchToSource = function() {
+        if (tinymce.activeEditor?.isDirty())
+            LABKEY.setDirty(true);
+
         setTabStripVisible(true);
         getVisualTab().attr('class', 'labkey-tab-inactive');
         getSourceTab().attr('class', 'labkey-tab-active');
