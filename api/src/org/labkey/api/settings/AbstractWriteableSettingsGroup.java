@@ -186,7 +186,7 @@ public abstract class AbstractWriteableSettingsGroup extends AbstractSettingsGro
 
     private static String obscureValue(String value)
     {
-        if(null == value || value.length() == 0)
+        if(null == value || value.isEmpty())
             return "";
         else
             return "*******"; //use fixed number to obscure num characters

@@ -1388,6 +1388,7 @@ public class ProjectController extends SpringActionController
         private ContainerFilter.Type _containerFilter = null;
         private boolean _includeWorkbookChildren = true;
         private boolean _includeStandardProperties = true;
+        private boolean _includeInheritableFormats = false;
 
         public boolean isMultipleContainers()
         {
@@ -1448,6 +1449,17 @@ public class ProjectController extends SpringActionController
         {
             _includeStandardProperties = includeStandardProperties;
         }
+
+        public boolean isIncludeInheritableFormats()
+        {
+            return _includeInheritableFormats;
+        }
+
+        public void setIncludeInheritableFormats(boolean includeInheritableFormats)
+        {
+            _includeInheritableFormats = includeInheritableFormats;
+        }
+
     }
 
     /**
@@ -1572,7 +1584,7 @@ public class ProjectController extends SpringActionController
             Map<String, Object> resultMap = new HashMap<>();
             if (container.hasPermission(user, ReadPermission.class)) // 43853
             {
-                resultMap = container.toJSON(user, form.isIncludeEffectivePermissions(), form.isIncludeStandardProperties());
+                resultMap = container.toJSON(user, form.isIncludeEffectivePermissions(), form.isIncludeStandardProperties(), form.isIncludeInheritableFormats());
                 addModuleProperties(container, propertiesToSerialize, resultMap);
             }
 
@@ -1624,7 +1636,7 @@ public class ProjectController extends SpringActionController
                     List<Map<String, Object>> theseChildren = getVisibleChildren(child, user, propertiesToSerialize, depth + 1, form);
                     if ((child.hasPermission(user, ReadPermission.class) && child.getContainerType().includeInAPIResponse()) || !theseChildren.isEmpty())
                     {
-                        Map<String, Object> visibleChild = child.toJSON(user, form.isIncludeEffectivePermissions(), form.isIncludeStandardProperties());
+                        Map<String, Object> visibleChild = child.toJSON(user, form.isIncludeEffectivePermissions(), form.isIncludeStandardProperties(), form.isIncludeInheritableFormats());
                         addModuleProperties(child, propertiesToSerialize, visibleChild);
                         visibleChild.put("children", theseChildren);
                         visibleChildren.add(visibleChild);
@@ -1676,10 +1688,15 @@ public class ProjectController extends SpringActionController
             Portal.WebPart webPart = Portal.getPart(getContainer(), form.getWebPartId());
             if (webPart != null)
             {
-                Permission permission = RoleManager.getPermission(form.getPermission());
+                if (form.getPermission() != null && RoleManager.getPermission(form.getPermission()) == null)
+                {
+                    throw new NotFoundException("Could not resolve the permission " + form.getPermission() +
+                            ". The permission may no longer exist, or may not yet be registered.");
+                }
+
                 Container permissionContainer = null;
                 
-                if(form.getContainerPath() != null)
+                if (form.getContainerPath() != null)
                 {
                     permissionContainer = ContainerManager.getForPath(form.getContainerPath());
 
@@ -1690,12 +1707,6 @@ public class ProjectController extends SpringActionController
                         throw new NotFoundException("Could not resolve the folder for path: \"" + form.getContainerPath() +
                                 "\". The path may be incorrect or the folder may no longer exist.");
                     }
-                }
-
-                if(permission == null)
-                {
-                    throw new NotFoundException("Could not resolve the permission " + form.getPermission() +
-                            ". The permission may no longer exist, or may not yet be registered.");
                 }
 
                 webPart.setPermission(form.getPermission());

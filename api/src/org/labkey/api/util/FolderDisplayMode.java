@@ -18,11 +18,6 @@ package org.labkey.api.util;
 
 import org.apache.commons.lang3.StringUtils;
 
-/**
- * User: Mark Igra
- * Date: Jul 3, 2007
- * Time: 12:49:57 PM
- */
 public enum FolderDisplayMode implements SafeToRenderEnum
 {
     ALWAYS("Always"),
@@ -41,7 +36,7 @@ public enum FolderDisplayMode implements SafeToRenderEnum
     }
 
     /**
-     * Will return FolderDisplayMode.ALWAYS for any non legal enum value.
+     * Will return FolderDisplayMode.ALWAYS for any illegal enum value.
      * @param str String value of the enumeration
      * @return FolderDisplayMode
      */

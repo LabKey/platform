@@ -68,6 +68,7 @@ import org.labkey.api.security.permissions.BrowserDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.*;
 import org.labkey.api.util.logging.LogHelper;
@@ -146,6 +147,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.SocketException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
@@ -5005,6 +5007,8 @@ public class DavController extends SpringActionController
         return name.contains(".cache.") || name.endsWith(".ttf") || name.endsWith(".woff") || name.endsWith(".woff2");
     }
 
+    private static final URI PROJECT_ROOT = AppProps.getInstance().getProjectRoot() == null ? null : new File(AppProps.getInstance().getProjectRoot()).toURI();
+
     private WebdavStatus serveResource(WebdavResource resource, boolean content)
             throws DavException, IOException
     {
@@ -5128,11 +5132,18 @@ public class DavController extends SpringActionController
                     }
                 }
 
+                // Issue 51344 - slow downloads from remote file system. Only for files that aren't part of the
+                // webapp itself, or under the source root (for development machines)
+                boolean avoidSendFile = file != null &&
+                        OptionalFeatureService.get().isFeatureEnabled(FileStream.STAGE_FILE_TRANSFERS) &&
+                        !URIUtil.isDescendant(ModuleLoader.getInstance().getWebappDir().toURI(), file.toUri()) &&
+                        (PROJECT_ROOT == null || !URIUtil.isDescendant(PROJECT_ROOT, file.toUri()));
+
                 HttpServletRequest request = getRequest();
-                if (null != file && !FileUtil.hasCloudScheme(file) && Boolean.TRUE == request.getAttribute("org.apache.tomcat.sendfile.support"))
+                if (!avoidSendFile && null != file && !FileUtil.hasCloudScheme(file) && Boolean.TRUE == request.getAttribute("org.apache.tomcat.sendfile.support"))
                 {
-                    String absolutePath = file.toFile().getAbsolutePath();     // TODO: can this code be used for cloud?
-                    long length  = Files.size(file);
+                    String absolutePath = file.toFile().getAbsolutePath();
+                    long length = Files.size(file);
                     request.setAttribute("org.apache.tomcat.sendfile.filename", absolutePath);
                     request.setAttribute("org.apache.tomcat.sendfile.start", Long.valueOf(0L));
                     request.setAttribute("org.apache.tomcat.sendfile.end", Long.valueOf(length));
@@ -6470,7 +6481,7 @@ public class DavController extends SpringActionController
 
 
     /** Converts FileNotFound into SC_NOT_FOUND */
-    private InputStream getResourceInputStream(WebdavResource r, User user) throws IOException, DavException
+    @NotNull private InputStream getResourceInputStream(WebdavResource r, User user) throws IOException, DavException
     {
         try
         {

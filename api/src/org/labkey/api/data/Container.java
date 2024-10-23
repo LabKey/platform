@@ -61,7 +61,6 @@ import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.settings.ProductFeature;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.ContainerContext;
-import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.NetworkDrive;
@@ -1371,10 +1370,10 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public Map<String, Object> toJSON(User user)
     {
-        return toJSON(user, true, true);
+        return toJSON(user, true, true, false);
     }
 
-    public Map<String, Object> toJSON(User user, boolean includePermissions, boolean includeStandardProps)
+    public Map<String, Object> toJSON(User user, boolean includePermissions, boolean includeStandardProps, boolean includeParentFormatProps)
     {
         Map<String, Object> containerProps = new HashMap<>();
         Container parent = getParent();
@@ -1387,10 +1386,28 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
             LookAndFeelProperties props = LookAndFeelProperties.getInstance(this);
             Map<String, Object> formats = new HashMap<>();
-            formats.put("dateFormat", DateUtil.getDateFormatString(this));
+            formats.put("dateFormat", props.getDefaultDateFormat());
             formats.put("dateTimeFormat", props.getDefaultDateTimeFormat());
+            formats.put("timeFormat", props.getDefaultTimeFormat());
             formats.put("numberFormat", props.getDefaultNumberFormat());
-            formats.put("timeFormat", DateUtil.getTimeFormatString(this));
+
+            if (includeParentFormatProps)
+            {
+                formats.put("dateFormatInherited", props.getDefaultDateFormatStored() == null);
+                formats.put("dateTimeFormatInherited", props.getDefaultDateTimeFormatStored() == null);
+                formats.put("timeFormatInherited", props.getDefaultTimeFormatStored() == null);
+                formats.put("numberFormatInherited", props.getDefaultNumberFormatStored() == null);
+
+                if (!isRoot())
+                {
+                    Container parentContainer = getParent();
+                    LookAndFeelProperties parentProps = LookAndFeelProperties.getInstance(parentContainer);
+                    formats.put("parentDateFormat", parentProps.getDefaultDateFormat());
+                    formats.put("parentDateTimeFormat", parentProps.getDefaultDateTimeFormat());
+                    formats.put("parentTimeFormat", parentProps.getDefaultTimeFormat());
+                    formats.put("parentNumberFormat", parentProps.getDefaultNumberFormat());
+                }
+            }
             containerProps.put("formats", formats);
         }
 

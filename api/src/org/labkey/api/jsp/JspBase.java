@@ -825,7 +825,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return _pageConfig.getScriptNonce();
     }
 
-    protected void addHandler(String id, String event, String handler)
+    public void addHandler(String id, String event, String handler)
     {
         _pageConfig.addHandler(id,event,handler);
     }

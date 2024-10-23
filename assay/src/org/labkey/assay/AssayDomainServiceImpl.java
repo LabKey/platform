@@ -467,6 +467,10 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                 }
                 protocol.setProtocolParameters(newParams.values());
 
+                // Issue 51321: check reserved sample type name: First
+                if ("First".equalsIgnoreCase(assay.getName()) || "All".equalsIgnoreCase(assay.getName()))
+                    throw new ValidationException("Assay design name '" + assay.getName() + "' is reserved.");
+
                 if (hasNameChange)
                 {
                     if (AssayManager.get().getAssayProtocolByName(getContainer(), assay.getName()) != null)
