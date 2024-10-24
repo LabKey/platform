@@ -56,6 +56,7 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.Writer;
+import java.net.URI;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -267,6 +268,16 @@ public abstract class JspBase extends JspContext implements HasViewContext
     final protected JavaScriptFragment q(@Nullable URLHelper url)
     {
         return q(null != url ? url.toString() : null);
+    }
+
+    /**
+     * Convenience method that returns a local URL as a properly escaped JavaScript identifier.
+     * @param uri the URI
+     * @return A relative URL in a properly escaped single-quoted string literal JavaScriptFragment
+     */
+    final protected JavaScriptFragment q(@Nullable URI uri)
+    {
+        return q(null != uri ? uri.toString() : null);
     }
 
     final protected JavaScriptFragment q(SafeToRender str)

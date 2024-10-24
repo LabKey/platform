@@ -217,9 +217,7 @@ public class FileSystemResource extends AbstractWebdavResource
     public File getFile()
     {
         FileLike f = getFileLike();
-        if (null == f)
-            return null;
-        return f.toNioPathForRead().toFile();
+        return FileUtil.toFileForRead(f);
     }
 
     @Override

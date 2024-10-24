@@ -63,6 +63,7 @@ import org.labkey.api.assay.plate.PlateBasedAssayProvider;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.vfs.FileLike;
 
@@ -341,8 +342,12 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
     {
         ExpProtocol protocol = ExperimentService.get().getExpProtocol(run.getProtocol().getLSID());
         Container container = run.getContainer();
-        DilutionAssayProvider provider = (DilutionAssayProvider) AssayService.get().getProvider(protocol);
+        DilutionAssayProvider<?> provider = (DilutionAssayProvider<?>) AssayService.get().getProvider(protocol);
         Plate nabTemplate = provider.getPlate(container, protocol);
+        if (nabTemplate == null)
+        {
+            throw new ExperimentException("Could not find plate template associated with assay design");
+        }
 
         Map<String, DomainProperty> runProperties = getRunProperties(provider, protocol);
 

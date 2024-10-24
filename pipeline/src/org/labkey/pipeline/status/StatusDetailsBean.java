@@ -15,7 +15,6 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.LimitedSizeInputStream;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.pipeline.api.PipelineStatusFileImpl;
 import org.labkey.pipeline.api.PipelineStatusManager;
@@ -24,7 +23,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.net.URISyntaxException;
+import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -58,7 +57,7 @@ public class StatusDetailsBean
     public final String activeHostName;
     public final String filePath;
 
-    public final String webDavURL;
+    public final URI webDavURL;
 
     public final StatusDetailsBean parentStatus;
     public final List<StatusDetailsBean> splitStatus;
@@ -103,7 +102,7 @@ public class StatusDetailsBean
         this.webDavURL = createWebDavURL(psf.lookupContainer());
     }
 
-    private String createWebDavURL(Container container)
+    private URI createWebDavURL(Container container)
     {
         if (filePath != null && container != null)
         {
@@ -289,13 +288,6 @@ public class StatusDetailsBean
 
     public @Nullable URLHelper getWebDavUrl()
     {
-        try
-        {
-            return webDavURL == null ? null : new URLHelper(webDavURL);
-        }
-        catch (URISyntaxException e)
-        {
-            throw UnexpectedException.wrap(e);
-        }
+        return webDavURL == null ? null : new URLHelper(webDavURL);
     }
 }

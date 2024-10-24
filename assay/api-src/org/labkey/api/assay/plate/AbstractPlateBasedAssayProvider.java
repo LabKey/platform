@@ -177,12 +177,9 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
     public SampleMetadataInputFormat getMetadataInputFormat(ExpProtocol protocol)
     {
         ObjectProperty prop = protocol.getObjectProperties().get(protocol.getLSID() + METADATA_INPUT_FORMAT_SUFFIX);
-        if (prop != null)
+        if (prop != null && prop.getStringValue() != null)
         {
-            SampleMetadataInputFormat format = SampleMetadataInputFormat.valueOf(prop.getStringValue());
-
-            if (format != null)
-                return format;
+            return SampleMetadataInputFormat.valueOf(prop.getStringValue());
         }
         return getDefaultMetadataInputFormat();
     }

@@ -275,7 +275,7 @@ Ext4.define('File.panel.Browser', {
          * @private
          */
         _getActions : function(cb, containerPath, scope) {
-            var params = {path : scope.getFullFolderOffset() };
+            var params = {path : decodeURIComponent(scope.getFullFolderOffset()) };
             var returnUrl = LABKEY.ActionURL.getReturnUrl();
             if (returnUrl) {
                 params.returnUrl = returnUrl;
@@ -1385,7 +1385,7 @@ Ext4.define('File.panel.Browser', {
                     this.getGrid().getSelectionModel().select([]);
                 }
                 var fileStore = this.getFileStore();
-                fileStore.getProxy().url = LABKEY.ActionURL.encodePath(this.getFolderURL());
+                fileStore.getProxy().url = this.getFolderURL();
                 fileStore.load();
             }, this);
         }
@@ -1397,7 +1397,7 @@ Ext4.define('File.panel.Browser', {
     },
 
     getFolderURL : function() {
-        return this.fileSystem.getURLWithCharsReplaced(this.fileSystem.concatPaths(this.fileSystem.getContextBaseURL(), this.getFolderOffset()));
+        return this.fileSystem.concatPaths(this.fileSystem.getContextBaseURL(), this.getFolderOffset());
     },
 
     getFolderOffset : function() {
@@ -1419,14 +1419,14 @@ Ext4.define('File.panel.Browser', {
         var prefixes = ['filesets', 'files', 'pipeline', 'wiki', 'cloud']; //filesets needs to be before files since it contains 'files' substring
         Ext4.each(prefixes, function(prefix) {
             var found = false;
-            if (relativePath.indexOf('@' + prefix) === 0)
+            if (relativePath.indexOf('%40' + prefix) === 0)
             {
-                relativePath = relativePath.replace('@' + prefix, '');
+                relativePath = relativePath.replace('%40' + prefix, '');
                 found = true;
             }
-            else if (relativePath.indexOf('/@' + prefix) === 0)
+            else if (relativePath.indexOf('/%40' + prefix) === 0)
             {
-                relativePath = relativePath.replace('/@' + prefix, '');
+                relativePath = relativePath.replace('/%40' + prefix, '');
                 found = true;
             }
             if (found)
@@ -1446,7 +1446,7 @@ Ext4.define('File.panel.Browser', {
     },
 
     getCurrentDirectory : function() {
-        return this.fileSystem.getURLWithCharsReplaced(this.fileSystem.concatPaths(this.fileSystem.getBaseURL(), this.getFolderOffset()));
+        return this.fileSystem.concatPaths(this.fileSystem.getBaseURL(), this.getFolderOffset());
     },
 
     /**
@@ -1459,7 +1459,7 @@ Ext4.define('File.panel.Browser', {
         var path = offsetPath.replace(this.fileSystem.getBaseURL(), this.folderSeparator);
 
         // If we don't go anywhere, don't fire a folder change
-        if (this.rootOffset != path) {
+        if (this.rootOffset !== path) {
             this.rootOffset = path;
         }
     },
@@ -1529,7 +1529,7 @@ Ext4.define('File.panel.Browser', {
                             var containerPath = LABKEY.container.path;
                             if (id === containerPath || id === containerPath + '/') // root: current container
                                 return true;
-                            else if (id.indexOf(LABKEY.container.path + '/@') === 0) // if any of @files, @filesets, @pipeline, @wiki, @cloud
+                            else if (id.indexOf(LABKEY.container.path + '/%40') === 0) // if any of @files, @filesets, @pipeline, @wiki, @cloud
                                 return true;
 
                             return false; // filter out child containers
@@ -2236,7 +2236,7 @@ Ext4.define('File.panel.Browser', {
                     var foundMatch = false;
                     for (var j = 0; j < files.length; j++)
                     {
-                        if (files[j] == selections[i].data.name)
+                        if (files[j] === selections[i].data.name)
                         {
                             var fileField = document.createElement("input");
                             fileField.setAttribute("type", "hidden");
@@ -2556,8 +2556,7 @@ Ext4.define('File.panel.Browser', {
      * @param {boolean} [skipHistory=false]
      */
     changeFolder : function(model, skipHistory) {
-        var url = this.fileSystem.getURLWithCharsReplaced(model.data.id);
-        this.setFolderOffset(url, model, skipHistory);
+        this.setFolderOffset(model.data.id, model, skipHistory);
     },
 
     /**
@@ -2776,7 +2775,7 @@ Ext4.define('File.panel.Browser', {
                     var folder = values.folderName;
                     var browser = this;
                     this.fileSystem.createDirectory({
-                        path : this.fileSystem.encodeForURL(path + folder),
+                        path : path + this.fileSystem.encodeForURL(folder),
                         success : function(path) {
                             win.close();
                             this.afterFileSystemChange();
@@ -3005,7 +3004,7 @@ Ext4.define('File.panel.Browser', {
         if (recs.length >= 1) {
             this.fileSystem.downloadResource({
                 record: recs,
-                directoryURL : LABKEY.ActionURL.getBaseURL(true) + LABKEY.ActionURL.encodePath(this.getFolderURL())
+                directoryURL : LABKEY.ActionURL.getBaseURL(true) + this.getFolderURL()
             });
         }
         else {
@@ -3152,13 +3151,13 @@ Ext4.define('File.panel.Browser', {
         for (var i = 0; i < toMove.length; i++) {
             var selected = toMove[i];
 
-            var dest = this.fileSystem.concatPaths(destination, (selected.newName || selected.record.data.name));
+            var dest = this.fileSystem.concatPaths(destination, encodeURIComponent(selected.newName || selected.record.data.name));
 
             // WebDav.movePath handles the "do you want to overwrite" case
             this.fileSystem.movePath({
                 fileRecord : selected,
-                source: LABKEY.ActionURL.encodePath(selected.record.data.id),
-                destination: LABKEY.ActionURL.encodePath(dest),
+                source: selected.record.data.id,
+                destination: dest,
                 isFile: !selected.record.data.collection,
                 success: function() {
                     this.afterFileSystemChange();

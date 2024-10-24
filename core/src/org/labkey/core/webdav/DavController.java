@@ -2084,9 +2084,7 @@ public class DavController extends SpringActionController
                     xml.writeElement(null, "prop", XMLWriter.OPENING);
 
                     Path path = resource.getPath();
-                    String pathStr = path.toString();
-                    if (!isFile && !pathStr.endsWith("/"))
-                        pathStr = pathStr + "/";
+                    String pathStr = path.encode("/", isFile ? "" : "/");
                     xml.writeProperty(null, "path", pathStr);
 
                     long created = resource.getCreated();
@@ -2219,9 +2217,7 @@ public class DavController extends SpringActionController
                         if (property.equals("path"))
                         {
                             Path path = resource.getPath();
-                            String pathStr = path.toString();
-                            if (!isFile && !pathStr.endsWith("/"))
-                                pathStr = pathStr + "/";
+                            String pathStr = path.encode("/", isFile ? "" : "/");
                             xml.writeProperty(null, "path", pathStr);
                         }
                         else if (property.equals("actions"))
@@ -2766,7 +2762,7 @@ public class DavController extends SpringActionController
         public void writeProperties(WebdavResource resource, Find type, List<String> propertiesVector) throws Exception
         {
             json.object();
-            json.key("id").value(resource.getPath());
+            json.key("id").value(resource.getPath().encode());
             String displayName = resource.getPath().isEmpty() ? "/" : resource.getName();
             json.key("href").value(resource.getLocalHref(getViewContext()));
             if (resource.getNioPath() != null)
@@ -2937,8 +2933,8 @@ public class DavController extends SpringActionController
 
             Path path = getResourcePath();
             WebdavResource resource = resolvePath();
-            if (null == resource || path.size()==0)
-                throw new DavException(WebdavStatus.SC_FORBIDDEN, "Unauthorized: " + String.valueOf(path));
+            if (null == resource || path.isEmpty())
+                throw new DavException(WebdavStatus.SC_FORBIDDEN, "Unauthorized: " + path);
 
             if (StringUtils.trim(path.getName()).length() != path.getName().length())
                 throw new DavException(WebdavStatus.SC_CONFLICT, "Folder name may not have leading or trailing whitespace: '" + path.getName() + "'");
@@ -2948,7 +2944,7 @@ public class DavController extends SpringActionController
             Boolean createIntermediates = getBooleanParameter("createIntermediates");
             createIntermediates = createIntermediates != null ? createIntermediates : false;
             if (!createIntermediates && (null == parent || !parent.isCollection()))
-                throw new DavException(WebdavStatus.SC_CONFLICT, String.valueOf(path.getParent()) + " is not a collection");
+                throw new DavException(WebdavStatus.SC_CONFLICT, path.getParent() + " is not a collection");
 
             boolean exists = resource.exists();
 
@@ -5424,7 +5420,7 @@ public class DavController extends SpringActionController
         {
             ActionURL url = getViewContext().getActionURL();
             String path = trimToEmpty(url.getParameter("path"));
-            if (path == null || path.length() == 0)
+            if (path == null || path.isEmpty())
                 path = "/";
             _urlResourcePathStr = path;
         }
@@ -5552,7 +5548,7 @@ public class DavController extends SpringActionController
 */
 
         Path path = Path.parse(destinationPath).normalize();
-        log("Dest path: " + String.valueOf(path));
+        log("Dest path: " + path);
 
         // some user agents incorrectly double encode!  check here
         if (destinationPath.contains("%") && StringUtils.contains(request.getHeader("User-Agent"),"cadaver"))
@@ -5573,7 +5569,7 @@ public class DavController extends SpringActionController
     }
 
 
-    static Pattern nameVersionExtension = Pattern.compile("(.*)\\{.*\\}(\\.[^\\.]*)");
+    static Pattern nameVersionExtension = Pattern.compile("(.*)\\{.*}(\\.[^.]*)");
 
     @Nullable WebdavResource resolvePath()
     {
@@ -5652,7 +5648,7 @@ public class DavController extends SpringActionController
         if (null == result || nullDavFileInfo == result || null == result.resource)
             return null;
 
-        boolean isRoot = path.size() == 0;
+        boolean isRoot = path.isEmpty();
         if (!isRoot && path.isDirectory() && result.resource.isFile())
             return null;
         return result;
@@ -5879,7 +5875,7 @@ public class DavController extends SpringActionController
     }
 
 
-    public class ListPage
+    public static class ListPage
     {
         public Path root = Path.emptyPath;
         public WebdavResource resource;
@@ -5930,7 +5926,7 @@ public class DavController extends SpringActionController
                 JspView<ListPage> v = new JspView<>("/org/labkey/core/webdav/davListing.jsp", page);
                 config.addClientDependencies(v.getClientDependencies());
 
-                DefaultModelAndView template = new AppTemplate(getViewContext(), v, config);
+                DefaultModelAndView<?> template = new AppTemplate(getViewContext(), v, config);
                 template.render(getViewContext().getRequest(), getViewContext().getResponse());
             }
             return WebdavStatus.SC_OK;

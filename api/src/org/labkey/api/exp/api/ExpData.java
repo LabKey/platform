@@ -108,9 +108,10 @@ public interface ExpData extends ExpRunItem
     @Override
     void save(User user);
 
-    /** If this file is under the file root for its parent container, return the WebDAV URL that can be used to interact with it */
-    @Nullable
-    String getWebDavURL(@NotNull FileContentService.PathType type);
+    /**
+     * If this file is under the file root for its parent container, return the WebDAV URL that can be used to interact with it
+     */
+    @Nullable URI getWebDavURL(@NotNull FileContentService.PathType type);
 
     static String normalizeDataFileURI(URI uri)
     {

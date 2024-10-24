@@ -34,6 +34,7 @@ import org.labkey.api.webdav.WebdavService;
 import org.labkey.pipeline.api.PipeRootImpl;
 import org.labkey.pipeline.api.PipelineServiceImpl;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -58,8 +59,8 @@ public class PipelineWebdavProvider implements WebdavService.Provider
         if (null == root || !root.isValid())
             return null;
 
-        String webdavURL = root.getWebdavURL();
-        if (null != webdavURL && webdavURL.contains(FileContentService.PIPELINE_LINK) && root.getContainer().equals(c))
+        URI webdavURL = root.getWebdavURL();
+        if (null != webdavURL && webdavURL.getPath().contains(FileContentService.PIPELINE_LINK) && root.getContainer().equals(c))
             return PageFlowUtil.set(FileContentService.PIPELINE_LINK);
 
         return null;
