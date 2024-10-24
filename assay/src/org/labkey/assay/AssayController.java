@@ -1577,7 +1577,7 @@ public class AssayController extends SpringActionController
         {
             if (form.getState() == null)
                 errors.reject(ERROR_MSG, "QC State cannot be blank");
-            if (form.getRuns().isEmpty())
+            if (form.getRuns() == null || form.getRuns().isEmpty())
                 errors.reject(ERROR_MSG, "No runs were selected to update their QC State");
             else
             {
