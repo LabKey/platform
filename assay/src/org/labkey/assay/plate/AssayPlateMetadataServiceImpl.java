@@ -154,69 +154,66 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 if (wellLocation == null)
                     throw new RuntimeValidationException("Imported data must contain a WellLocation column to support plate metadata integration.");
 
-                if (AssayPlateMetadataService.isExperimentalAppPlateEnabled())
+                // Copy so we can put new values
+                row = new CaseInsensitiveMapWrapper<>(new HashMap<>(row), sharedCasing);
+
+                // include metadata that may have been applied directly to the plate
+                rowCounter++;
+
+                Object plateIdentifier = PropertyService.get().getDomainPropertyValueFromRow(plateProperty, row);
+                if (plateIdentifier == null)
+                    throw new RuntimeValidationException("Unable to resolve plate identifier for results row (" + rowCounter + ").");
+
+                Plate plate = PlateService.get().getPlate(cf, plateSetId, plateIdentifier);
+                if (plate == null)
+                    throw new RuntimeValidationException("Unable to resolve the plate \"" + plateIdentifier + "\" for the results row (" + rowCounter + ").");
+
+                plateIdentifierMap.putIfAbsent(plateIdentifier, new Pair<>(plate, new HashMap<>()));
+
+                // if the plate identifier is the plate name, we need to make sure it resolves during importRows
+                // so replace it with the plateId (which will be unique)
+                if (!StringUtils.isNumeric(plateIdentifier.toString()))
+                    PropertyService.get().replaceDomainPropertyValue(plateProperty, row, plate.getPlateId());
+
+                // create the map of well locations to the well for the given plate
+                Map<Position, WellBean> positionToWell = plateIdentifierMap.get(plateIdentifier).second;
+                if (positionToWell.isEmpty())
                 {
-                    // Copy so we can put new values
-                    row = new CaseInsensitiveMapWrapper<>(new HashMap<>(row), sharedCasing);
-
-                    // include metadata that may have been applied directly to the plate
-                    rowCounter++;
-
-                    Object plateIdentifier = PropertyService.get().getDomainPropertyValueFromRow(plateProperty, row);
-                    if (plateIdentifier == null)
-                        throw new RuntimeValidationException("Unable to resolve plate identifier for results row (" + rowCounter + ").");
-
-                    Plate plate = PlateService.get().getPlate(cf, plateSetId, plateIdentifier);
-                    if (plate == null)
-                        throw new RuntimeValidationException("Unable to resolve the plate \"" + plateIdentifier + "\" for the results row (" + rowCounter + ").");
-
-                    plateIdentifierMap.putIfAbsent(plateIdentifier, new Pair<>(plate, new HashMap<>()));
-
-                    // if the plate identifier is the plate name, we need to make sure it resolves during importRows
-                    // so replace it with the plateId (which will be unique)
-                    if (!StringUtils.isNumeric(plateIdentifier.toString()))
-                        PropertyService.get().replaceDomainPropertyValue(plateProperty, row, plate.getPlateId());
-
-                    // create the map of well locations to the well for the given plate
-                    Map<Position, WellBean> positionToWell = plateIdentifierMap.get(plateIdentifier).second;
-                    if (positionToWell.isEmpty())
+                    SimpleFilter filter = SimpleFilter.createContainerFilter(plate.getContainer());
+                    filter.addCondition(FieldKey.fromParts("PlateId"), plate.getRowId());
+                    Set<Integer> wellSamples = new HashSet<>();
+                    for (WellBean well : new TableSelector(AssayDbSchema.getInstance().getTableInfoWell(), filter, null).getArrayList(WellBean.class))
                     {
-                        SimpleFilter filter = SimpleFilter.createContainerFilter(plate.getContainer());
-                        filter.addCondition(FieldKey.fromParts("PlateId"), plate.getRowId());
-                        Set<Integer> wellSamples = new HashSet<>();
-                        for (WellBean well : new TableSelector(AssayDbSchema.getInstance().getTableInfoWell(), filter, null).getArrayList(WellBean.class))
-                        {
-                            positionToWell.put(new PositionImpl(plate.getContainer(), well.getRow(), well.getCol()), well);
-                            if (well.getSampleId() != null && !sampleMap.containsKey(well.getSampleId()))
-                                wellSamples.add(well.getSampleId());
-                        }
-
-                        if (!wellSamples.isEmpty())
-                            // stash away any samples associated with the plate
-                            ExperimentService.get().getExpMaterials(wellSamples).forEach(s -> sampleMap.put(s.getRowId(), s));
+                        positionToWell.put(new PositionImpl(plate.getContainer(), well.getRow(), well.getCol()), well);
+                        if (well.getSampleId() != null && !sampleMap.containsKey(well.getSampleId()))
+                            wellSamples.add(well.getSampleId());
                     }
 
-                    PositionImpl well = new PositionImpl(null, String.valueOf(wellLocation));
-                    // need to adjust the column value to be 0 based to match the template locations
-                    well.setColumn(well.getColumn() - 1);
-
-                    if (positionToWell.containsKey(well))
-                    {
-                        WellBean wellBean = positionToWell.get(well);
-                        for (WellCustomField customField : PlateManager.get().getWellCustomFields(user, plate, wellBean.getRowId()))
-                            row.put(customField.getName(), customField.getValue());
-
-                        // include the sample information from the well (Issue 50276)
-                        if (!sampleMap.isEmpty())
-                        {
-                            ExpMaterial sample = sampleMap.get(wellBean.getSampleId());
-                            row.put("SampleID", sample != null ? sample.getRowId() : null);
-                            row.put("SampleName", sample != null ? sample.getName() : null);
-                        }
-                    }
-                    else
-                        throw new RuntimeValidationException("Unable to resolve well \"" + wellLocation + "\" for plate \"" + plate.getName() + "\".");
+                    if (!wellSamples.isEmpty())
+                        // stash away any samples associated with the plate
+                        ExperimentService.get().getExpMaterials(wellSamples).forEach(s -> sampleMap.put(s.getRowId(), s));
                 }
+
+                PositionImpl well = new PositionImpl(null, String.valueOf(wellLocation));
+                // need to adjust the column value to be 0 based to match the template locations
+                well.setColumn(well.getColumn() - 1);
+
+                if (positionToWell.containsKey(well))
+                {
+                    WellBean wellBean = positionToWell.get(well);
+                    for (WellCustomField customField : PlateManager.get().getWellCustomFields(user, plate, wellBean.getRowId()))
+                        row.put(customField.getName(), customField.getValue());
+
+                    // include the sample information from the well (Issue 50276)
+                    if (!sampleMap.isEmpty())
+                    {
+                        ExpMaterial sample = sampleMap.get(wellBean.getSampleId());
+                        row.put("SampleID", sample != null ? sample.getRowId() : null);
+                        row.put("SampleName", sample != null ? sample.getName() : null);
+                    }
+                }
+                else
+                    throw new RuntimeValidationException("Unable to resolve well \"" + wellLocation + "\" for plate \"" + plate.getName() + "\".");
 
                 return row;
             }
