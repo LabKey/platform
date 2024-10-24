@@ -1488,7 +1488,7 @@ abstract public class PipelineJob extends Job implements Serializable
 
         public void setErrorStatus(Object message)
         {
-            if (_isSettingStatus)
+            if (_isSettingStatus || _job._activeTaskStatus == TaskStatus.cancelled)
                 return;
 
             _isSettingStatus = true;

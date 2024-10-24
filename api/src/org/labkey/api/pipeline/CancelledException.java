@@ -15,14 +15,18 @@
  */
 package org.labkey.api.pipeline;
 
+import org.apache.logging.log4j.LoggingException;
+
 /**
  * Indicates that a pipeline job has been cancelled and no further work should be done for it.
  *
- * It would be reasonable to convert this to a checked exception, but it would involve changing a lot of method
- * signatures.
- * User: jeckels
- * Date: Feb 15, 2012
+ * Extend LoggingException so that Log4J lets it through. Otherwise, the exception can be suppressed in
+ * AbstractLogger.handleLogMessageException() when it happens in the context of a call to PipelineJob.error() or fatal()
  */
-public class CancelledException extends RuntimeException
+public class CancelledException extends LoggingException
 {
+    public CancelledException()
+    {
+        super((String)null);
+    }
 }

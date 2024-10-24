@@ -207,7 +207,7 @@ public class PipelineStatusManager
             else
             {
                 boolean cancelled = false;
-                if ((PipelineJob.TaskStatus.cancelling.matches(sfExist.getStatus()) || PipelineJob.TaskStatus.cancelled.matches(sfExist.getStatus())) &&
+                if ((PipelineJob.TaskStatus.cancelling.matches(sfExist.getStatus())) &&
                         (sfSet.isActive() || PipelineJob.TaskStatus.error.matches(sfSet.getStatus())))
                 {
                     // Mark as officially dead
