@@ -29,12 +29,6 @@ public class PlateReplicateStatsDomainKind extends AssayDomainKind
     public static final String ASSAY_PLATE_REPLICATE = ExpProtocol.ASSAY_DOMAIN_PREFIX + NAME;
     public static final String KIND_NAME = NAME + "DomainKind";
 
-    private static String XAR_SUBSTITUTION_SCHEMA_NAME = "SchemaName";
-    private static String XAR_SUBSTITUTION_TABLE_NAME = "TableName";
-
-    private static String DOMAIN_NAMESPACE_PREFIX_TEMPLATE = "%s-${SchemaName}";
-    private static String DOMAIN_LSID_TEMPLATE = "${FolderLSIDBase}:${TableName}";
-
     // replicate stats columns suffixes
     public static final String REPLICATE_MEAN_SUFFIX = "_Mean";
     public static final String REPLICATE_STD_DEV_SUFFIX = "_Standard_Deviation";
@@ -105,11 +99,11 @@ public class PlateReplicateStatsDomainKind extends AssayDomainKind
         try
         {
             XarContext xc = new XarContext("Domains", c, u);
-            xc.addSubstitution(XAR_SUBSTITUTION_SCHEMA_NAME, schemaName);
-            xc.addSubstitution(XAR_SUBSTITUTION_TABLE_NAME, PageFlowUtil.encode(tableName));
+            xc.addSubstitution("SchemaName", schemaName);
+            xc.addSubstitution("TableName", PageFlowUtil.encode(tableName));
 
-            String template = String.format(DOMAIN_NAMESPACE_PREFIX_TEMPLATE, namespacePrefix);
-            return LsidUtils.resolveLsidFromTemplate(DOMAIN_LSID_TEMPLATE, xc, template);
+            String template = String.format("%s-${SchemaName}", namespacePrefix);
+            return LsidUtils.resolveLsidFromTemplate("${FolderLSIDBase}:${TableName}", xc, template);
         }
         catch (XarFormatException xfe)
         {
@@ -133,8 +127,6 @@ public class PlateReplicateStatsDomainKind extends AssayDomainKind
      */
     public static List<String> getStatsFieldNames(String colName)
     {
-        return List.of(
-                colName + REPLICATE_MEAN_SUFFIX,
-                colName + REPLICATE_STD_DEV_SUFFIX);
+        return List.of(colName + REPLICATE_MEAN_SUFFIX, colName + REPLICATE_STD_DEV_SUFFIX);
     }
 }

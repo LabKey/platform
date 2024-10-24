@@ -188,8 +188,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     {
         try
         {
-            DataLoaderSettings settings = new DataLoaderSettings();
-            importRows(data, context.getUser(), run, context.getProtocol(), context.getProvider(), dataMap, settings, context.shouldAutoFillDefaultResultColumns(), context);
+            importRows(data, context.getUser(), run, context.getProtocol(), context.getProvider(), dataMap, null, context.shouldAutoFillDefaultResultColumns(), context);
         }
         catch (BatchValidationException e)
         {
@@ -199,43 +198,45 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
     @Override
     public Map<DataType, DataIteratorBuilder> getValidationDataMap(
-            ExpData data,
-            FileLike dataFile,
-            ViewBackgroundInfo info,
-            Logger log,
-            XarContext context,
-            DataLoaderSettings settings) throws ExperimentException
+        ExpData data,
+        FileLike dataFile,
+        ViewBackgroundInfo info,
+        Logger log,
+        XarContext context,
+        DataLoaderSettings settings
+    ) throws ExperimentException
     {
         ExpProtocol protocol = data.getRun().getProtocol();
         AssayProvider provider = AssayService.get().getProvider(protocol);
-        Domain dataDomain = provider.getResultsDomain(protocol);
-        boolean plateMetadataEnabled = provider.isPlateMetadataEnabled(protocol);
         DataIteratorBuilder dataRows;
 
-        if (plateMetadataEnabled && AssayPlateMetadataService.isExperimentalAppPlateEnabled())
+        if (provider.isPlateMetadataEnabled(protocol) && AssayPlateMetadataService.isExperimentalAppPlateEnabled())
         {
-            dataRows = parsePlateData(context.getContainer(), context.getUser(), protocol, data, dataFile, context, settings);
+            dataRows = parsePlateData(provider, protocol, data, dataFile, context, settings);
         }
         else
         {
-            try (DataLoader loader = createLoaderForImport(dataFile, data.getRun(), dataDomain, settings, true))
+            try (DataLoader loader = createLoaderForImport(dataFile, data.getRun(), provider.getResultsDomain(protocol), settings, true))
             {
                 dataRows = (diContext) -> loader.getDataIterator(diContext);
             }
         }
+
         return Map.of(getDataType(), dataRows);
     }
 
     private DataIteratorBuilder parsePlateData(
-            Container container,
-            User user,
-            ExpProtocol protocol,
-            ExpData data,
-            FileLike dataFile,
-            XarContext context,
-            DataLoaderSettings settings) throws ExperimentException
+        AssayProvider provider,
+        ExpProtocol protocol,
+        ExpData data,
+        FileLike dataFile,
+        XarContext context,
+        DataLoaderSettings settings
+    ) throws ExperimentException
     {
-        AssayProvider provider = AssayService.get().getProvider(protocol);
+        Container container = context.getContainer();
+        User user = context.getUser();
+
         Integer plateSetId = getPlateSetValueFromRunProps(context, provider, protocol);
         DataIteratorBuilder dataRows = AssayPlateMetadataService.get().parsePlateData(container, user, ((AssayUploadXarContext)context).getContext(), data, provider,
                 protocol, plateSetId, dataFile, settings);
@@ -477,17 +478,16 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     }
 
     public void importRows(
-            ExpData data,
-            User user,
-            ExpRun run,
-            ExpProtocol protocol,
-            AssayProvider provider,
-            DataIteratorBuilder rawData,
-            @Nullable DataLoaderSettings settings,
-            boolean autoFillDefaultResultColumns,
-            @Nullable AssayRunUploadContext<?> context
-    )
-            throws ExperimentException, BatchValidationException
+        ExpData data,
+        User user,
+        ExpRun run,
+        ExpProtocol protocol,
+        AssayProvider provider,
+        DataIteratorBuilder rawData,
+        @Nullable DataLoaderSettings settings,
+        boolean autoFillDefaultResultColumns,
+        @Nullable AssayRunUploadContext<?> context
+    ) throws ExperimentException, BatchValidationException
     {
         if (settings == null)
             settings = new DataLoaderSettings();
