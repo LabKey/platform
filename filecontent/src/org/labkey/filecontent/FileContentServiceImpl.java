@@ -1058,28 +1058,32 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
         return new Lsid("urn:lsid:labkey.com:" + NAMESPACE_PREFIX + ".Folder-" + container.getRowId() + ':' + TYPE_PROPERTIES).toString();
     }
 
-    @Override
+    @Override @Nullable
     public ExpData getDataObject(WebdavResource resource, Container c)
     {
         return getDataObject(resource, c, null, false);
     }
 
+    @Nullable
     private static ExpData getDataObject(WebdavResource resource, Container c, User user, boolean create)
     {
         // TODO: S3: seems to only be called from Search and currently we're not searching in cloud. SaveCustomPropsAction seems unused
         if (resource != null)
         {
             File file = resource.getFile();
-            ExpData data = ExperimentService.get().getExpDataByURL(file, c);
-
-            if (data == null && create)
+            if (file != null)
             {
-                data = ExperimentService.get().createData(c, FileContentService.UPLOADED_FILE);
-                data.setName(file.getName());
-                data.setDataFileURI(file.toURI());
-                data.save(user);
+                ExpData data = ExperimentService.get().getExpDataByURL(file, c);
+
+                if (data == null && create)
+                {
+                    data = ExperimentService.get().createData(c, FileContentService.UPLOADED_FILE);
+                    data.setName(file.getName());
+                    data.setDataFileURI(file.toURI());
+                    data.save(user);
+                }
+                return data;
             }
-            return data;
         }
         return null;
     }
