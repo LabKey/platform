@@ -206,19 +206,22 @@ public class Container implements Serializable, Comparable<Container>, Securable
     // Might add others in the future (e.g., ReadOnly)
     public enum LockState
     {
-        Unlocked("unlocked", false, false),
-        Inaccessible("locked, making it inaccessible to everyone except administrators", true, false),
-        Excluded("excluded from project locking and review", false, true);
+        Unlocked("unlocked", false, false, false),
+        Archived("archived", false, false, true),
+        Inaccessible("locked, making it inaccessible to everyone except administrators", true, false, false),
+        Excluded("excluded from project locking and review", false, true, false);
 
         private final String _description;
         private final boolean _locked;
         private final boolean _excluded;
+        private final boolean _archived;
 
-        LockState(String description, boolean locked, boolean excluded)
+        LockState(String description, boolean locked, boolean excluded, boolean archived)
         {
             _description = description;
             _locked = locked;
             _excluded = excluded;
+            _archived = archived;
         }
 
         public String getDescription()
@@ -234,6 +237,11 @@ public class Container implements Serializable, Comparable<Container>, Securable
         public boolean isExcluded()
         {
             return _excluded;
+        }
+
+        public boolean isArchived()
+        {
+            return _archived;
         }
     }
 
@@ -629,6 +637,10 @@ public class Container implements Serializable, Comparable<Container>, Securable
         }
     }
 
+    public boolean isArchived()
+    {
+        return LockState.Archived.equals(getLockState());
+    }
 
     /**
      * Should use property check in the ContainerType interface instead of this explicit check
@@ -1434,6 +1446,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
                     containerProps.put("description", getDescription());
                 containerProps.put("isWorkbook", isWorkbook());
                 containerProps.put("isContainerTab", isContainerTab());
+                containerProps.put("isArchived", isArchived());
                 containerProps.put("type", getContainerNoun());
                 List<String> activeModuleNames = new ArrayList<>();
                 Set<Module> activeModules = getActiveModules(user);
