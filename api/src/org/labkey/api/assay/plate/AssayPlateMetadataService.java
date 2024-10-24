@@ -22,7 +22,6 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.vfs.FileLike;
 
-import java.io.File;
 import java.util.List;
 import java.util.Map;
 
@@ -119,23 +118,28 @@ public interface AssayPlateMetadataService
     /**
      * Computes and inserts replicate statistics into the protocol schema table.
      *
-     * @param run The run associated with the replicate values, only required in the insert case
-     * @param forInsert Boolean value to indicate insert or update of the table rows
+     * @param run The run associated with the replicate values
      * @param replicateRows The assay result rows grouped by replicate well lsid.
      */
     void insertReplicateStats(
-            Container container,
-            User user,
-            ExpProtocol protocol,
-            @Nullable ExpRun run,
-            boolean forInsert,
-            Map<Lsid, List<Map<String, Object>>> replicateRows
+        Container container,
+        User user,
+        ExpProtocol protocol,
+        @NotNull ExpRun run,
+        Map<Lsid, List<Map<String, Object>>> replicateRows
+    ) throws ExperimentException;
+
+    void updateReplicateStats(
+        Container container,
+        User user,
+        ExpProtocol protocol,
+        Map<Lsid, List<Map<String, Object>>> replicateRows
     ) throws ExperimentException;
 
     void deleteReplicateStats(
-            Container container,
-            User user,
-            ExpProtocol protocol,
-            List<Map<String, Object>> keys
+        Container container,
+        User user,
+        ExpProtocol protocol,
+        List<Map<String, Object>> keys
     ) throws ExperimentException;
 }
