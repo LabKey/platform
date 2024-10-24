@@ -880,6 +880,33 @@ public class ContainerManager
         auditRunnable.run();
     }
 
+    public static void archiveContainer(User user, Container container, boolean archive)
+    {
+        if (container.isRoot() || container.isAppHomeFolder())
+            throw new ApiUsageException("Archive action not supported for this folder.");
+
+        SQLFragment sql = new SQLFragment("UPDATE ");
+        sql.append(CORE.getTableInfoContainers().getSelectName());
+        if (archive)
+        {
+            sql.append(" SET LockState = ? ");
+            sql.add(LockState.Archived);
+            sql.append(" WHERE LockState IS NULL ");
+        }
+        else
+        {
+            sql.append(" SET LockState = NULL WHERE LockState = ? ");
+            sql.add(LockState.Archived);
+        }
+        sql.append("AND EntityId = ? ");
+        sql.add(container.getEntityId());
+        new SqlExecutor(CORE.getSchema()).execute(sql);
+
+        clearCache();
+
+        addAuditEvent(user, container, archive ? "Container has been archived." : "Archived container has been restored.");
+    }
+
     public static void updateExpirationDate(Container container, LocalDate expirationDate, @NotNull Runnable auditRunnable)
     {
         //For some reason there is no primary key defined on core.containers
