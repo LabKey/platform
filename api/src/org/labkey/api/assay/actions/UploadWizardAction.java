@@ -713,8 +713,12 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
     protected @Nullable ModelAndView getAssayLinkedDataWarningView(ExpRun run)
     {
+        StudyPublishService service = StudyPublishService.get();
+        if (service == null) // Issue 51529
+            return null;
+
         final User user = getUser();
-        Set<? extends Dataset> datasets = StudyPublishService.get().getDatasetsForAssayRuns(Collections.singleton(run), user);
+        Set<? extends Dataset> datasets = service.getDatasetsForAssayRuns(Collections.singleton(run), user);
 
         if (!datasets.isEmpty())
         {
