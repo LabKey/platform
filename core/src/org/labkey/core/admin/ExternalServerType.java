@@ -48,12 +48,6 @@ public enum ExternalServerType
             ContentSecurityPolicyFilter.unregisterAllowedConnectionSource(EXTERNAL_SOURCE_HOSTS_KEY);
             ContentSecurityPolicyFilter.registerAllowedConnectionSource(EXTERNAL_SOURCE_HOSTS_KEY, getHosts().toArray(new String[0]));
         }
-
-        @Override
-        public String getHelpTopic()
-        {
-            return "externalSourceHosts";
-        }   // TODO confirm with Docs
     },
     Redirect {
         @Override
@@ -89,12 +83,6 @@ public enum ExternalServerType
             props.setExternalRedirectHosts(hosts);
             props.save(null);
         }
-
-        @Override
-        public String getHelpTopic()
-        {
-            return "externalRedirectsURL";
-        }
     };
 
     private static final String EXTERNAL_SOURCE_HOSTS_KEY = "External Sources";
@@ -105,9 +93,12 @@ public enum ExternalServerType
 
     public abstract HtmlString getDescription();
     public abstract List<String> getHosts();
-
     public abstract void setHosts(Collection<String> redirectHosts);
-    public abstract String getHelpTopic();
+
+    public String getHelpTopic()
+    {
+        return "externalHosts#" + name().toLowerCase();
+    }
 
     public URLHelper getSuccessURL(Container container)
     {
