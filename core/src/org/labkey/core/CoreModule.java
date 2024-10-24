@@ -211,6 +211,7 @@ import org.labkey.core.admin.CopyFileRootPipelineJob;
 import org.labkey.core.admin.CustomizeMenuForm;
 import org.labkey.core.admin.DisplayFormatAnalyzer;
 import org.labkey.core.admin.DisplayFormatValidationProviderFactory;
+import org.labkey.core.admin.ExternalServerType;
 import org.labkey.core.admin.FilesSiteSettingsAction;
 import org.labkey.core.admin.MenuViewFactory;
 import org.labkey.core.admin.importer.FolderTypeImporterFactory;
@@ -1036,6 +1037,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         // populate look and feel settings and site settings with values read from startup properties as appropriate for not bootstrap
         populateLookAndFeelResourcesWithStartupProps();
+        registerAllowedConnectionSources();
         WriteableLookAndFeelProperties.populateLookAndFeelWithStartupProps();
         WriteableAppProps.populateSiteSettingsWithStartupProps();
         // create users and groups and assign roles with values read from startup properties as appropriate for not bootstrap
@@ -1247,6 +1249,15 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         MessageConfigService.setInstance(new EmailPreferenceConfigServiceImpl());
         ContainerManager.addContainerListener(new EmailPreferenceContainerListener());
         UserManager.addUserListener(new EmailPreferenceUserListener());
+    }
+
+    private void registerAllowedConnectionSources()
+    {
+        ContentSecurityPolicyFilter.registerAllowedConnectionSource(
+                ExternalServerType.getExternalSourceHostsKey(),
+                ExternalServerType.Source.getHosts().toArray(new String[0]));
+
+        LOG.debug("Registered [{}] as an allowed connection source", () -> String.join(", ", AppProps.getInstance().getExternalSourceHosts()));
     }
 
     // Issue 7527: Auto-detect missing sql views and attempt to recreate

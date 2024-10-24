@@ -25,7 +25,15 @@ public enum RandomStartupProperties implements StartupProperty, SafeToRenderEnum
         @Override
         public void setValue(WriteableAppProps writeable, String value)
         {
-            writeable.setExternalRedirectHosts(Arrays.asList(StringUtils.split(value, AppPropsImpl.EXTERNAL_REDIRECT_HOST_DELIMITER)));
+            writeable.setExternalRedirectHosts(Arrays.asList(StringUtils.split(value, AppPropsImpl.EXTERNAL_HOST_DELIMITER)));
+        }
+    },
+    externalSourceHostURLs("Allowed external source hosts")
+    {
+        @Override
+        public void setValue(WriteableAppProps writeable, String value)
+        {
+            writeable.setExternalSourceHosts(Arrays.asList(StringUtils.split(value, AppPropsImpl.EXTERNAL_HOST_DELIMITER)));
         }
     },
     fileUploadDisabled("Disable file upload")

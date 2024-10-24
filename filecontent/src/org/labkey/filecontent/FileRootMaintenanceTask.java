@@ -9,19 +9,16 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.StopIteratingException;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.files.FileContentService;
-import org.labkey.api.security.User;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.SystemMaintenance.MaintenanceTask;
 
 import java.io.File;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
 
 public class FileRootMaintenanceTask implements MaintenanceTask
@@ -58,28 +55,31 @@ public class FileRootMaintenanceTask implements MaintenanceTask
             MutableInt rootCount = new MutableInt();
             MutableBoolean finished = new MutableBoolean(true);
             TableInfo containers = CoreSchema.getInstance().getTableInfoContainers();
-            String orderBy = " ORDER BY FileRootLastCrawled" + (containers.getSqlDialect().isPostgreSQL() ? " NULLS FIRST" : "");
-            SQLFragment sql = new SQLFragment("SELECT RowId, EntityId, FileRootSize FROM " + containers.getSelectName() + orderBy);
 
-            new SqlSelector(containers.getSchema(), sql)
+            String updateLastCrawledSql = "UPDATE " + containers.getSelectName() + " SET FileRootLastCrawled = ? WHERE EntityId = ?";
+            String updateLastCrawledAndSizeSql = "UPDATE " + containers.getSelectName() + " SET FileRootLastCrawled = ?, FileRootSize = ? WHERE EntityId = ?";
+            SqlExecutor executor = new SqlExecutor(containers.getSchema());
+            String orderBy = " ORDER BY FileRootLastCrawled" + (containers.getSqlDialect().isPostgreSQL() ? " NULLS FIRST" : "");
+            SQLFragment selectSql = new SQLFragment("SELECT RowId, EntityId, FileRootSize FROM " + containers.getSelectName() + orderBy);
+
+            new SqlSelector(containers.getSchema(), selectSql)
                 .forEach(FileRootRecord.class, record -> {
                     Container c = ContainerManager.getForId(record.entityId());
                     if (c != null)
                     {
                         File root = service.getFileRoot(c);
                         Long size = null != root && root.isDirectory() ? FileUtils.sizeOfDirectory(root) : null;
-
-                        // Always update LastCrawled, even for invalid file roots and non-changing sizes
-                        Map<String, Object> map = new HashMap<>();
                         long current = HeartBeat.currentTimeMillis();
-                        map.put("FileRootLastCrawled", new Date(current));
 
-                        // Update FileRootSize if it changed
+                        // Update FileRootSize only if it changed. Always update LastCrawled, even for invalid file
+                        // roots and non-changing sizes.
                         boolean sizeChanged = !Objects.equals(record.fileRootSize(), size);
-                        if (sizeChanged)
-                            map.put("FileRootSize", size);
+                        SQLFragment updateSql = sizeChanged ?
+                            new SQLFragment(updateLastCrawledAndSizeSql, new Date(current), size, record.entityId()) :
+                            new SQLFragment(updateLastCrawledSql, new Date(current), record.entityId());
 
-                        Table.update(User.getAdminServiceUser(), containers, map, record.rowId());
+                        // core.Containers has no PK, so Table.update() is not an option
+                        executor.execute(updateSql);
                         ContainerManager.uncache(c);  // Container stashes FileRootLastCrawled & FileRootSize
 
                         rootCount.increment();

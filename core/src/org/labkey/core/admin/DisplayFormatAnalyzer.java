@@ -5,6 +5,7 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.admin.AdminUrls;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.PropertyManager;
@@ -73,7 +74,7 @@ public class DisplayFormatAnalyzer
                 Arrays.stream(DateDisplayFormatType.values())
                     .forEach(type -> {
                         String format = type.getStoredFormat(laf);
-                        if (format != null && !type.isStandardFormat(format))
+                        if (format != null && !type.isStandardFormat(format)) // Meta formats are not valid here
                             _defaultFormatsMap.put(c, new NonStandardDefaultFormat(c, type, format));
                     });
             });
@@ -93,8 +94,16 @@ public class DisplayFormatAnalyzer
             .addAll(DateDisplayFormatType.getTypeUris());
         new SqlSelector(CoreSchema.getInstance().getSchema(), sql)
             .stream(PropertyCandidate.class)
-            .filter(candidate -> !candidate.type().isStandardFormat(candidate.format()))
+            .filter(candidate -> isNonStandardFormat(candidate.type(), candidate.format()))
             .forEach(candidate -> _propertyCandidateMap.put(candidate.container(), candidate));
+    }
+
+    private static final Set<String> META_FORMATS = CaseInsensitiveHashSet.of("Date", "DateTime", "Time");
+
+    // Allows standard formats and standard meta formats
+    private boolean isNonStandardFormat(DateDisplayFormatType type, String format)
+    {
+        return !type.isStandardFormat(format) && !META_FORMATS.contains(format);
     }
 
     public void handle(Container c, User user, DisplayFormatHandler handler)
@@ -135,7 +144,7 @@ public class DisplayFormatAnalyzer
                                     table.getColumns(columnsWithDisplayFormats)
                                         .forEach(column -> {
                                             DateDisplayFormatType type = DateDisplayFormatType.getForJdbcType(column.getJdbcType());
-                                            if (type != null && !type.isStandardFormat(column.getFormat()))
+                                            if (type != null && isNonStandardFormat(type, column.getFormat()))
                                                 handler.handle(c, type, column.getFormat(),
                                                     () -> new DisplayFormatContext(
                                                         "Metadata for \"" + table.getSchema().getDisplayName() + "." + table.getName() + "." + column.getName() + "\" " + type.name() + " column",
