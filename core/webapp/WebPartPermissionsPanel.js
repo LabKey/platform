@@ -136,14 +136,19 @@ Ext4.define('LABKEY.Portal.WebPartPermissionsPanel', {
             });
 
             store.on('load', function(store, records){
+                // Issue 50348: add empty record to allow user to select no permission
+                store.insert(0, Ext4.create('LABKEY.Portal.WebPartPermissionModel', {
+                    name: '[None]',
+                    type: null
+                }));
+
                 // Change type on Administrate, Read, and Insert so they appear at the top after grouping.
                 store.findRecord('name', 'Administrate').set('type', 'base');
                 store.findRecord('name', 'Read').set('type', 'base');
                 store.findRecord('name', 'Insert').set('type', 'base');
                 store.findRecord('name', 'Update').set('type', 'base');
                 
-                store.group('type');
-                store.sort([{property: 'name', direction : 'ASC'}]);
+                store.sort([{property: 'type', direction : 'ASC'}, {property: 'name', direction : 'ASC'}]);
             }, this);
 
             return store;

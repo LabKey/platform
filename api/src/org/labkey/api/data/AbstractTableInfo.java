@@ -1412,6 +1412,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             }
 
             Map<FieldKey,ColumnInfo> existingColumns = new HashMap<>();
+            List<FieldKey> calculatedFieldKeys = new ArrayList<>();
             for (var col : _columnMap.values())
                 existingColumns.put(col.getFieldKey(), col);
 
@@ -1441,6 +1442,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
                     HashSet<FieldKey> referencedColumns = new HashSet<>();
                     QueryService.get().bindQueryExpressionColumn(wrappedColumn, existingColumns, true, referencedColumns);
                     _referencedColumns.put(wrappedColumn.getFieldKey(), referencedColumns);
+                    calculatedFieldKeys.add(wrappedColumn.getFieldKey());
                     addColumn(wrappedColumn);
                 }
                 catch (QueryParseException qpe)
@@ -1451,32 +1453,9 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             }
 
             if (xmlTable.getUseColumnOrder())
-            {
-                // Reorder based on the sequence of columns in XML
-                Map<String, ColumnInfo> originalColumns = constructColumnMap();
-                assert initialColumnsAreAdded(); // getColumnNameSet() call above should have initialized the columns
-                originalColumns.putAll(_columnMap);
-                for (ColumnInfo columnInfo : originalColumns.values())
-                {
-                    // Remove all the existing columns
-                    removeColumn(columnInfo);
-                }
-                for (ColumnType xmlColumn : xmlTable.getColumns().getColumnArray())
-                {
-                    // Iterate through the ones in the XML and add them in the right order
-                    BaseColumnInfo column = (BaseColumnInfo)originalColumns.remove(xmlColumn.getColumnName());
-                    if (column != null)
-                    {
-                        addColumn(column);
-                    }
-                }
-                for (ColumnInfo column : originalColumns.values())
-                {
-                    // Read the rest of the columns that weren't in the XML. It's backed by a LinkedHashMap, so they'll
-                    // be in the same order they were in originally
-                    addColumn((BaseColumnInfo) column);
-                }
-            }
+                reorderColumnsByXML(xmlTable);
+            else if (!calculatedFieldKeys.isEmpty())
+                reorderColumnsForCalculatedFks(calculatedFieldKeys);
         }
 
         if (xmlTable.getButtonBarOptions() != null)
@@ -1494,6 +1473,75 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         }
 
         _warnings.addAll(warnings);
+    }
+
+    private void reorderColumnsByXML(TableType xmlTable)
+    {
+        // Reorder based on the sequence of columns in XML
+        Map<String, ColumnInfo> originalColumns = constructColumnMap();
+        assert initialColumnsAreAdded(); // getColumnNameSet() call above should have initialized the columns
+        originalColumns.putAll(_columnMap);
+
+        // Remove all the existing columns
+        for (ColumnInfo columnInfo : originalColumns.values())
+            removeColumn(columnInfo);
+
+        for (ColumnType xmlColumn : xmlTable.getColumns().getColumnArray())
+        {
+            // Iterate through the ones in the XML and add them in the right order
+            BaseColumnInfo column = (BaseColumnInfo)originalColumns.remove(xmlColumn.getColumnName());
+            if (column != null)
+                addColumn(column);
+        }
+
+        // Read the rest of the columns that weren't in the XML. It's backed by a LinkedHashMap, so they'll
+        // be in the same order they were in originally
+        for (ColumnInfo column : originalColumns.values())
+            addColumn((BaseColumnInfo) column);
+    }
+
+    private void reorderColumnsForCalculatedFks(List<FieldKey> calculatedFieldKeys)
+    {
+        Map<String, ColumnInfo> originalColumns = constructColumnMap();
+        assert initialColumnsAreAdded(); // getColumnNameSet() call above should have initialized the columns
+        originalColumns.putAll(_columnMap);
+
+        // Remove all the existing columns
+        for (ColumnInfo columnInfo : originalColumns.values())
+            removeColumn(columnInfo);
+
+        // Issue 51136: insert calculated columns to match their index within defaultVisibleColumns (so that calc fields are closer to domain custom fields)
+        if (!getDefaultVisibleColumns().isEmpty())
+        {
+            // find the index of the first calculated column
+            int index = 0;
+            for (FieldKey defaultVisibleColumn : getDefaultVisibleColumns())
+            {
+                if (calculatedFieldKeys.contains(defaultVisibleColumn))
+                    break;
+                index++;
+            }
+            // add all columns up until the first calculated column
+            for (ColumnInfo column : originalColumns.values())
+            {
+                addColumn((BaseColumnInfo) column);
+                if (column.getFieldKey().equals(getDefaultVisibleColumns().get(index - 1)))
+                    break;
+            }
+            // add the calculated columns in the order they were defined
+            for (FieldKey calculatedFieldKey : calculatedFieldKeys)
+            {
+                ColumnInfo column = originalColumns.get(calculatedFieldKey.toString());
+                if (column != null && !_columnMap.containsKey(column.getName()))
+                    addColumn((BaseColumnInfo) column);
+            }
+        }
+
+        // Read the rest of the columns that weren't added back yet. It's backed by a LinkedHashMap, so they'll
+        // be in the same order they were in originally
+        for (ColumnInfo column : originalColumns.values())
+            if (!_columnMap.containsKey(column.getName()))
+                addColumn((BaseColumnInfo) column);
     }
 
     protected void configureViaTableCustomizer(Collection<QueryException> errors, TableCustomizerType xmlCustomizer)

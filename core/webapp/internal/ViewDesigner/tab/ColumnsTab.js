@@ -266,7 +266,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
 
     validate : function() {
         if (this.getColumnStore().getCount() == 0) {
-            LABKEY.Utils.alert('Selection required', 'You must select at least one field to display in the grid.');
+            Ext4.Msg.show({title: 'Selection required', msg: 'You must select at least one field to display in the grid.', buttons: Ext4.Msg.OK, width: 320});
             return false;
 
             // XXX: check each fieldKey is selected only once

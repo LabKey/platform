@@ -228,12 +228,14 @@ public class ApiModule extends CodeOnlyModule
 
         LabKeyManagement.register(new StandardMBean(new OperationsMXBeanImpl(), OperationsMXBean.class, true), "Operations");
 
-        AdminConsole.addExperimentalFeatureFlag(FileStream.STAGE_FILE_UPLOADS, "Stage file uploads before moving to final destination", "When using a non-local file system, using a specific API that requires a locally staged copy of the file as the source can sometimes be significantly faster than streaming the uploaded file directly", false);
         AdminConsole.addOptionalFeatureFlag(new AdminConsole.OptionalFeatureFlag(RESTORE_USE_OF_ACLS,
-            "Restore ability to use deprecated bitmask-based permissions",
-            "If enabled, module HTML view metadata (.view.xml) files with \"<permission name='read'>\"-type elements will be accepted and specific API responses will include user permissions as integer bitmasks. This option and all support for bitmask based permissions will be removed in LabKey Server v24.12.",
-            false, false, OptionalFeatureService.FeatureType.Deprecated));
-    }
+                "Restore ability to use deprecated bitmask-based permissions",
+                "If enabled, module HTML view metadata (.view.xml) files with \"<permission name='read'>\"-type elements will be accepted and specific API responses will include user permissions as integer bitmasks. This option and all support for bitmask based permissions will be removed in LabKey Server v24.12.",
+                false, false, OptionalFeatureService.FeatureType.Deprecated));
+        AdminConsole.addOptionalFeatureFlag(new AdminConsole.OptionalFeatureFlag(FileStream.STAGE_FILE_TRANSFERS,
+                "Stage file uploads and downloads to temporary local file",
+                "When using a non-local file system, using a specific API that requires a locally staged copy of the file as the source can sometimes be significantly faster than streaming the file directly to/from storage",
+                false, false, OptionalFeatureService.FeatureType.Optional));    }
 
     @NotNull
     @Override

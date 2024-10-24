@@ -33,7 +33,10 @@ public class PlateMetricsProvider implements UsageMetricsProvider
                 .append(plateSetTable, "ps")
                 .append(" LEFT OUTER JOIN ").append(plateTable, "p")
                 .append(" ON ps.rowid = p.plateset")
-                .append(" GROUP BY ps.rowId");
+                .append(" WHERE ps.template = ? AND ps.archived = ?")
+                .append(" GROUP BY ps.rowId")
+                .add(false)
+                .add(false);
     }
 
     private SQLFragment plateSetsPlateCountBetweenSQL(TableInfo plateSetTable, TableInfo plateTable, int above, int below)
@@ -46,6 +49,35 @@ public class PlateMetricsProvider implements UsageMetricsProvider
     private Long plateSetPlatesCountBetween(DbSchema schema, TableInfo plateSetTable, TableInfo plateTable, int above, int below)
     {
         return new SqlSelector(schema, plateSetsPlateCountBetweenSQL(plateSetTable, plateTable, above, below)).getObject(Long.class);
+    }
+
+    private Long plateSetPlatesCount(DbSchema schema, TableInfo plateSetTable, TableInfo plateTable, int count)
+    {
+        SQLFragment platesSQL = plateSetPlatesSQL(plateSetTable, plateTable)
+                .append(" HAVING COUNT(p.rowId) = ?")
+                .add(count);
+        SQLFragment outer = new SQLFragment("SELECT COUNT(*) FROM (").append(platesSQL).append(") as pc");
+        return new SqlSelector(schema, outer).getObject(Long.class);
+    }
+
+    private Long plateCount(DbSchema schema, TableInfo plateTable, boolean template, boolean archived)
+    {
+        SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM ")
+                .append(plateTable, "p")
+                .append(" WHERE p.template = ? AND p.archived = ?")
+                .add(template)
+                .add(archived);
+        return new SqlSelector(schema, sql).getObject(Long.class);
+    }
+
+    private Long plateSetCount(DbSchema schema, TableInfo plateSetTable, boolean archived)
+    {
+        SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM ")
+                .append(plateSetTable, "ps")
+                .append(" WHERE archived = ? AND template = ?")
+                .add(archived)
+                .add(false);
+        return new SqlSelector(schema, sql).getObject(Long.class);
     }
 
     private Long plateTypeCount(DbSchema schema, TableInfo plateTable, TableInfo plateTypeTable, int cols, int rows)
@@ -152,29 +184,41 @@ public class PlateMetricsProvider implements UsageMetricsProvider
         var schema = AssayDbSchema.getInstance();
         TableInfo plateSetTable = schema.getTableInfoPlateSet();
         TableInfo plateTable = schema.getTableInfoPlate();
-        Long plateSetCount = new SqlSelector(schema.getSchema(), new SQLFragment("SELECT COUNT(*) FROM ").append(plateSetTable, "ps")).getObject(Long.class);
+        Long plateSetCount = plateSetCount(schema.getSchema(), plateSetTable, false);
+        Long archivedPlateSetCount = plateSetCount(schema.getSchema(), plateSetTable, true);
         Long primaryPlateSetCount = new SqlSelector(schema.getSchema(), new SQLFragment("SELECT COUNT(*) FROM ").append(plateSetTable, "ps").append(" WHERE type =?").add(PlateSetType.primary)).getObject(Long.class);
         Long assayPlateSetCount = new SqlSelector(schema.getSchema(), new SQLFragment("SELECT COUNT(*) FROM ").append(plateSetTable, "ps").append(" WHERE type =?").add(PlateSetType.assay)).getObject(Long.class);
         Long standAlonePlateSetCount = new SqlSelector(schema.getSchema(), new SQLFragment("SELECT COUNT(*) FROM ").append(plateSetTable, "ps").append(" WHERE type =?").add(PlateSetType.assay).append(" AND rootplatesetid IS NULL")).getObject(Long.class);
-        SQLFragment plateSetNoPlates = plateSetPlatesSQL(plateSetTable, plateTable).append(" HAVING COUNT(p.rowId) = ?").add(0);
-        Long plateSetNoPlatesCount = new SqlSelector(schema.getSchema(), new SQLFragment("SELECT COUNT(*) FROM (").append(plateSetNoPlates).append(") as np")).getObject(Long.class);
+        Long plateSetNoPlatesCount = plateSetPlatesCount(schema.getSchema(), plateSetTable, plateTable, 0);
+        Long plateSetOnePlateCount = plateSetPlatesCount(schema.getSchema(), plateSetTable, plateTable, 1);
+        SQLFragment maxPlatesSql = new SQLFragment("SELECT MAX(count) FROM (").append(plateSetPlatesSQL(plateSetTable, plateTable)).append(")");
+        Long maxPlatesCount = new SqlSelector(schema.getSchema(), maxPlatesSql).getObject(Long.class);
+        // too many items to use Map.of()
+        Map<String, Long> plateSets = new HashMap<>();
+        plateSets.put("archivedPlateSetCount", archivedPlateSetCount);
+        plateSets.put("plateSetCount", plateSetCount);
+        plateSets.put("primaryPlateSetCount", primaryPlateSetCount);
+        plateSets.put("assayPlateSetCount", assayPlateSetCount);
+        plateSets.put("standAloneAssayPlateSetCount", standAlonePlateSetCount);
+        plateSets.put("plateSetsWithNoPlatesCount", plateSetNoPlatesCount);
+        plateSets.put("plateSetsWithOnePlateCount", plateSetOnePlateCount);
+        plateSets.put("maximumPlatesInPlateSet", maxPlatesCount);
+        plateSets.put("plateSetsWith1To10PlatesCount", plateSetPlatesCountBetween(schema.getSchema(), plateSetTable, plateTable, 0, 11));
+        plateSets.put("plateSetsWith11to30PlatesCount", plateSetPlatesCountBetween(schema.getSchema(), plateSetTable, plateTable, 10, 31));
+        plateSets.put("plateSetsWith31to60PlatesCount", plateSetPlatesCountBetween(schema.getSchema(), plateSetTable, plateTable, 30, 61));
+        plateMetrics.put("plateSets", plateSets);
 
-        plateMetrics.put("plateSets", Map.of(
-                "plateSetCount", plateSetCount,
-                "primaryPlateSetCount", primaryPlateSetCount,
-                "assayPlateSetCount", assayPlateSetCount,
-                "standAloneAssayPlateSetCount", standAlonePlateSetCount,
-                "plateSetsWithNoPlatesCount", plateSetNoPlatesCount,
-                "plateSetsWith1To10PlatesCount", plateSetPlatesCountBetween(schema.getSchema(), plateSetTable, plateTable, 0, 11),
-                "plateSetsWith11to30PlatesCount", plateSetPlatesCountBetween(schema.getSchema(), plateSetTable, plateTable, 10, 31),
-                "plateSetsWith31to60PlatesCount", plateSetPlatesCountBetween(schema.getSchema(), plateSetTable, plateTable, 30, 61)
-        ));
-
-        Long platesCount = new SqlSelector(schema.getSchema(), new SQLFragment("SELECT COUNT(*) FROM ").append(plateTable, "p")).getObject(Long.class);
+        Long platesCount = plateCount(schema.getSchema(), plateTable, false, false);
+        Long archivedPlatesCount = plateCount(schema.getSchema(), plateTable, false, true);
+        Long plateTemplateCount = plateCount(schema.getSchema(), plateTable, true, false);
+        Long archivedPlateTemplates = plateCount(schema.getSchema(), plateTable, true, true);
         TableInfo plateTypeTable = schema.getTableInfoPlateType();
         TableInfo wellTable = schema.getTableInfoWell();
         plateMetrics.put("plates", Map.of(
                 "platesCount", platesCount,
+                "archivedPlatesCount", archivedPlatesCount,
+                "plateTemplateCount", plateTemplateCount,
+                "archivedTemplatesCount", archivedPlateTemplates,
                 "distinctPlatedSamples", new SqlSelector(schema.getSchema(), new SQLFragment("SELECT COUNT(*) FROM (SELECT DISTINCT sampleId FROM ").append(wellTable, "w").append(" WHERE sampleId IS NOT NULL) as ds")).getObject(Long.class),
                 "12WellCount", plateTypeCount(schema.getSchema(), plateTable, plateTypeTable, 4, 3),
                 "24WellCount", plateTypeCount(schema.getSchema(), plateTable, plateTypeTable, 6, 4),
@@ -187,6 +231,7 @@ public class PlateMetricsProvider implements UsageMetricsProvider
         List<ExpProtocol> plateEnabledProtocols = getPlateEnabledAssayProtocols();
         plateMetrics.put("assays", Map.of(
                 "hitCount", new SqlSelector(schema.getSchema(), new SQLFragment("SELECT COUNT(*) FROM ").append(hitTable, "h")).getObject(Long.class),
+                "plateSetsWithHits", new SqlSelector(schema.getSchema(), new SQLFragment("SELECT COUNT(DISTINCT platesetpath) FROM ").append(hitTable, "h")).getObject(Long.class),
                 "assaysWithPlateMetadataEnabled", plateEnabledProtocols.size(),
                 "assayRunsCount", getPlateBasedAssayRunsCount(plateEnabledProtocols),
                 "assayResultsCount", getPlateBasedAssayResultsCount(plateEnabledProtocols)

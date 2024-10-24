@@ -1688,10 +1688,15 @@ public class ProjectController extends SpringActionController
             Portal.WebPart webPart = Portal.getPart(getContainer(), form.getWebPartId());
             if (webPart != null)
             {
-                Permission permission = RoleManager.getPermission(form.getPermission());
+                if (form.getPermission() != null && RoleManager.getPermission(form.getPermission()) == null)
+                {
+                    throw new NotFoundException("Could not resolve the permission " + form.getPermission() +
+                            ". The permission may no longer exist, or may not yet be registered.");
+                }
+
                 Container permissionContainer = null;
                 
-                if(form.getContainerPath() != null)
+                if (form.getContainerPath() != null)
                 {
                     permissionContainer = ContainerManager.getForPath(form.getContainerPath());
 
@@ -1702,12 +1707,6 @@ public class ProjectController extends SpringActionController
                         throw new NotFoundException("Could not resolve the folder for path: \"" + form.getContainerPath() +
                                 "\". The path may be incorrect or the folder may no longer exist.");
                     }
-                }
-
-                if(permission == null)
-                {
-                    throw new NotFoundException("Could not resolve the permission " + form.getPermission() +
-                            ". The permission may no longer exist, or may not yet be registered.");
                 }
 
                 webPart.setPermission(form.getPermission());

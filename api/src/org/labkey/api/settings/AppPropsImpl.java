@@ -72,7 +72,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     static final String LOOK_AND_FEEL_REVISION = "logoRevision";
     static final String DEFAULT_LSID_AUTHORITY_PROP = "defaultLsidAuthority";
     static final String OPTIONAL_FEATURE_PREFIX = OPTIONAL_FEATURE + ".";
-    static final String EXTERNAL_REDIRECT_HOST_DELIMITER = "\n";
+    static final String EXTERNAL_HOST_DELIMITER = "\n";
 
     private static final String SITE_CONFIG_NAME = "SiteConfig";
     private static final String SERVER_GUID = "serverGUID";
@@ -622,10 +622,22 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     @NotNull
     public List<String> getExternalRedirectHosts()
     {
-        String urls = lookupStringValue(externalRedirectHostURLs, "");
+        return getExternalHosts(externalRedirectHostURLs);
+    }
+
+    @Override
+    @NotNull
+    public List<String> getExternalSourceHosts()
+    {
+        return getExternalHosts(externalSourceHostURLs);
+    }
+
+    private List<String> getExternalHosts(RandomStartupProperties propName)
+    {
+        String urls = lookupStringValue(propName, "");
         if (StringUtils.isNotBlank(urls))
         {
-            return new ArrayList<>(Arrays.asList(urls.split(EXTERNAL_REDIRECT_HOST_DELIMITER)));
+            return new ArrayList<>(Arrays.asList(urls.split(EXTERNAL_HOST_DELIMITER)));
         }
         return new ArrayList<>();
     }
