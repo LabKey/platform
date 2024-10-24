@@ -149,31 +149,7 @@ public class WebdavResolverImpl extends AbstractWebdavResolver
 
     // Cache with short-lived entries to make webdav perform reasonably.  WebdavResolverImpl is a singleton, so we
     // end up with just one of these.
-    private Cache<Path, WebdavResource> _folderCache = CacheManager.getBlockingCache(CacheManager.UNLIMITED, 5 * CacheManager.MINUTE, "WebDAV folders", (path, argument) ->
-    {
-        if (null == path || !(argument instanceof CacheArgument))
-            throw new IllegalArgumentException();
-
-        WebdavResource resource = null;
-        CacheArgument cacheArgument = (CacheArgument)argument;
-        Container c = cacheArgument.childContainer;
-        String name = path.getName();
-        if (c != null)
-        {
-            resource = new WebFolderResource(cacheArgument.resolver, c);
-        }
-        else
-        {
-            for (WebdavService.Provider p : WebdavService.get().getProviders())
-            {
-                resource = p.resolve(cacheArgument.webFolderResource, name);
-                if (null != resource)
-                    break;
-            }
-        }
-
-        return resource;
-    });
+    private Cache<Path, WebdavResource> _folderCache = CacheManager.getBlockingCache(CacheManager.UNLIMITED, 5 * CacheManager.MINUTE, "WebDAV folders", null);
 
     public class WebFolderResource extends AbstractWebFolderResource
     {
@@ -192,30 +168,25 @@ public class WebdavResolverImpl extends AbstractWebdavResolver
         }
 
         @Override
-        public WebdavResource find(Path.Part child)
+        public WebdavResource find(Path.Part childPart)
         {
-            String name = null;
-            for (String folder : getWebFoldersNames(false))
+            String child = childPart.toString();
+
+            if (child.startsWith("@"))
             {
-                if (folder.equalsIgnoreCase(child.toString()))
+                for (WebdavService.Provider p : WebdavService.get().getProviders())
                 {
-                    name = folder;
-                    break;
+                    var r = p.resolve(this, child);
+                    if (null != r)
+                        return r;
                 }
             }
 
-            Container c = getContainer().getChild(child.toString());
-            if (name == null && c != null)
-                name = c.getName();
-
-            if (name != null)
+            Container c = getContainer().getChild(child);
+            if (null != c)
             {
-                Path path = getPath().append(name);
-                // check in webfolder cache
-                WebdavResource resource = _folderCache.get(path, new CacheArgument(this, _resolver, c), null);
-                if (null != resource)
-                    return resource;
-
+                Path path = getPath().append(c.getName());
+                return _folderCache.get(path, null, (p,a) -> new WebFolderResource(WebdavResolverImpl.this, c));
             }
 
             return new UnboundResource(this.getPath().append(child));
