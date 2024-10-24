@@ -416,7 +416,7 @@ abstract public class PipelineJob extends Job implements Serializable
         return _activeTaskStatus;
     }
 
-    /** @return whether or not the status was set successfully */
+    /** @return whether the status was set successfully */
     public boolean setActiveTaskStatus(@NotNull TaskStatus activeTaskStatus)
     {
         _activeTaskStatus = activeTaskStatus;
@@ -630,6 +630,7 @@ abstract public class PipelineJob extends Job implements Serializable
         // Rethrow so it doesn't get handled like other RuntimeExceptions
         catch (CancelledException e)
         {
+            _activeTaskStatus = TaskStatus.cancelled;
             throw e;
         }
         catch (RuntimeException e)
@@ -882,7 +883,7 @@ abstract public class PipelineJob extends Job implements Serializable
             getLogger().info("Skipping already completed task '" + factory.getId() + "' at location '" + factory.getExecutionLocation() + "'");
         }
 
-        if (getActiveTaskStatus() != TaskStatus.complete)
+        if (getActiveTaskStatus() != TaskStatus.complete && getActiveTaskStatus() != TaskStatus.cancelled)
             setActiveTaskStatus(TaskStatus.complete);
     }
 
@@ -1487,7 +1488,7 @@ abstract public class PipelineJob extends Job implements Serializable
 
         public void setErrorStatus(Object message)
         {
-            if (_isSettingStatus)
+            if (_isSettingStatus || _job._activeTaskStatus == TaskStatus.cancelled)
                 return;
 
             _isSettingStatus = true;
@@ -1527,11 +1528,15 @@ abstract public class PipelineJob extends Job implements Serializable
                     }
                 }, throwable);
             }
+
+            // Write to the job's log before setting the error status, which may end up throwing a CancelledException
+            // to signal that we need to bail out right away
+            write(msg.getFormattedMessage(), throwable, mgsLevel.getStandardLevel().name());
+
             if (mgsLevel.isMoreSpecificThan(Level.ERROR))
             {
                 setErrorStatus(msg.getFormattedMessage());
             }
-            write(msg.getFormattedMessage(), throwable, mgsLevel.getStandardLevel().name());
         }
 
         private void write(String message, @Nullable Throwable t, String level)
