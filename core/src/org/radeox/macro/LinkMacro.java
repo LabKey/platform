@@ -59,6 +59,7 @@ public class LinkMacro extends BaseLocaleMacro {
         RenderContext context = params.getContext();
         RenderEngine engine = context.getRenderEngine();
 
+        // We are relying on the upstream macro to appropriately HTML encode these parameters. See issue 51488
         String text = params.get("text", 0);
         String url = params.get("url", 1);
         String img = params.get("img", 2);
