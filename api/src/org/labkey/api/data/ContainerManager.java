@@ -194,6 +194,7 @@ public class ContainerManager
         SiteRoot,
         StudyChange,
         EndpointDirectory,
+        CloudStores
     }
 
     static Path makePath(Container parent, String name)

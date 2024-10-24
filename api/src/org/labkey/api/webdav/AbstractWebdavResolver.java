@@ -359,8 +359,15 @@ public abstract class AbstractWebdavResolver implements WebdavResolver
                         break;
                     }
                     case SiteRoot:
+                    {
                         clearFolderCache();
                         break;
+                    }
+                    case CloudStores:
+                    {
+                        invalidate(c.getParsedPath(), false);
+                        break;
+                    }
                 }
             }
             catch (Exception x)
