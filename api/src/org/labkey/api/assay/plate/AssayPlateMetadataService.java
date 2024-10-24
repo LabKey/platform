@@ -19,26 +19,18 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.qc.DataLoaderSettings;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.vfs.FileLike;
 
-import java.io.File;
 import java.util.List;
 import java.util.Map;
 
 public interface AssayPlateMetadataService
 {
     String PLATE_SET_COLUMN_NAME = "PlateSet";
-    String EXPERIMENTAL_APP_PLATE_SUPPORT = "experimental-app-plate-support";
 
     static void setInstance(AssayPlateMetadataService serviceImpl)
     {
         ServiceRegistry.get().registerService(AssayPlateMetadataService.class, serviceImpl);
-    }
-
-    static boolean isExperimentalAppPlateEnabled()
-    {
-        return OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_APP_PLATE_SUPPORT);
     }
 
     static boolean isBiologicsFolder(Container container)
