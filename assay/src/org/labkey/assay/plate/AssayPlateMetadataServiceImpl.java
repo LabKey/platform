@@ -360,23 +360,25 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         if (resultsTable == null)
             throw new ExperimentException(String.format("Unable to query the assay results for protocol : %s", protocol.getName()));
 
-        // The plate identifier is either a row ID or plate ID on incoming data, need to match that when merging
-        // existing data
-        Object plateObj = rows.get(0).get(AssayResultDomainKind.PLATE_COLUMN_NAME);
-        final FieldKey plateFieldKey;
-        if (plateObj instanceof String)
-            plateFieldKey = FieldKey.fromParts(AssayResultDomainKind.PLATE_COLUMN_NAME, PlateTable.Column.PlateId.name());
-        else
-            plateFieldKey = FieldKey.fromParts(AssayResultDomainKind.PLATE_COLUMN_NAME);
+        // The plate identifier is either a row ID or plate ID on incoming data, need to match that when merging existing data.
+        FieldKey plateFieldKey = FieldKey.fromParts(AssayResultDomainKind.PLATE_COLUMN_NAME);
+        // Note that in the case where there is a transform script on the assay design, the LK data parsing might not have
+        // found any rows and we might be deferring to the transform script to do that parsing. This block of code should
+        // be able to proceed in that case by just passing through all run results to the transform script for the run being replaced.
+        if (!rows.isEmpty())
+        {
+            Object plateObj = rows.get(0).get(AssayResultDomainKind.PLATE_COLUMN_NAME);
+            if (plateObj instanceof String)
+                plateFieldKey = FieldKey.fromParts(AssayResultDomainKind.PLATE_COLUMN_NAME, PlateTable.Column.PlateId.name());
+        }
 
+        FieldKey finalPlateFieldKey = plateFieldKey;
         List<FieldKey> columns = resultsTable.getDomain().getProperties().stream().map(dp -> {
             if (dp.getName().equalsIgnoreCase(AssayResultDomainKind.PLATE_COLUMN_NAME))
-                return plateFieldKey;
+                return finalPlateFieldKey;
             return FieldKey.fromParts(dp.getName());
         }).toList();
         Map<FieldKey, ColumnInfo> columnInfoMap = QueryService.get().getColumns(resultsTable, columns);
-        if (!columnInfoMap.containsKey(plateFieldKey))
-            throw new ExperimentException("The assay results doesn't have a plate column");
 
         List<Map<String, Object>> newRows = new ArrayList<>();
         Set<Integer> prevPlateRowIDs = new HashSet<>();
