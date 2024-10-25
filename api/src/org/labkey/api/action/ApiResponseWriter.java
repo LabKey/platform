@@ -349,11 +349,7 @@ public abstract class ApiResponseWriter implements AutoCloseable
     {
         try
         {
-            if (ExceptionUtil.isClientAbortException(e))
-            {
-                close();
-            }
-            else
+            if (!ExceptionUtil.isClientAbortException(e))
             {
                 if (!(e instanceof ExpectedException))
                 {
