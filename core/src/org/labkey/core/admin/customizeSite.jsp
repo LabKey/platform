@@ -433,6 +433,11 @@ Click the Save button at any time to accept the current settings and continue.</
         <option value="SAMEORIGIN" <%=selectedEq("SAMEORIGIN",option)%>>SAMEORIGIN</option>
         <option value="ALLOW" <%=selectedEq("ALLOW",option)%>>Allow</option></select></td>
 </tr>
+<tr><td colspan=3 class=labkey-title-area-line></td></tr>
+<tr>
+    <td class="labkey-form-label">Include a <code>Server</code> HTTP header in responses</td>
+    <td><labkey:checkbox id="<%=includeServerHttpHeader.name()%>" name="<%=includeServerHttpHeader.name()%>" checked="<%=AppProps.getInstance().isIncludeServerHttpHeader()%>" value="true"/></td>
+</tr>
 <tr>
     <td>&nbsp;</td>
 </tr>
