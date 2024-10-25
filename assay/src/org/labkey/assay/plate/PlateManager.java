@@ -508,7 +508,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 .stream().filter(provider::isPlateMetadataEnabled).toList();
 
         // get the runIds for each protocol, query against its assay results table
-        List<Integer> runIds = new ArrayList<>();
+        List<SQLFragment> fragments = new ArrayList<>();
         for (ExpProtocol protocol : protocols)
         {
             AssayProtocolSchema assayProtocolSchema = provider.createProtocolSchema(user, protocol.getContainer(), protocol, null);
@@ -518,23 +518,38 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 ColumnInfo dataIdCol = assayDataTable.getColumn("DataId");
                 if (dataIdCol != null)
                 {
-                    SQLFragment subSelectSql = new SQLFragment("SELECT DISTINCT dataid FROM ")
-                            .append(assayDataTable)
-                            .append(" WHERE plate = ?")
+                    SQLFragment subSelectSql = new SQLFragment("SELECT DISTINCT AD.DataId FROM ")
+                            .append(assayDataTable.getFromSQL("AD", Set.of(FieldKey.fromParts("DataId"), FieldKey.fromParts("Plate"))))
+                            .append(" WHERE AD.Plate = ?")
                             .add(plate.getRowId());
 
-                    SQLFragment sql = new SQLFragment("SELECT DISTINCT runid FROM ")
-                            .append(ExperimentService.get().getTinfoData())
-                            .append(" WHERE rowid IN (").append(subSelectSql).append(")");
+                    SQLFragment sql = new SQLFragment("SELECT DISTINCT D.RunId FROM\n")
+                            .append(ExperimentService.get().getTinfoData(), "D")
+                            .append(" INNER JOIN ")
+                            .append(ExperimentService.get().getTinfoExperimentRun(), "R")
+                            .append(" ON D.RunId = R.RowId\n")
+                            .append(" WHERE R.ReplacedByRunId IS NULL AND D.RowId IN (").append(subSelectSql).append(")\n");
 
-                    Collection<Integer> assayRunIds = new SqlSelector(ExperimentService.get().getSchema(), sql).getCollection(Integer.class);
-                    if (!assayRunIds.isEmpty())
-                        runIds.addAll(assayRunIds);
+                    fragments.add(sql);
                 }
             }
         }
 
-        return runIds;
+        if (fragments.isEmpty())
+            return emptyList();
+
+        SQLFragment sql = new SQLFragment();
+        String union = null;
+        for (SQLFragment fragment : fragments)
+        {
+            if (union == null)
+                union = "UNION\n";
+            else
+                sql.append(union);
+            sql.append(fragment);
+        }
+
+        return new SqlSelector(ExperimentService.get().getSchema(), sql).getArrayList(Integer.class);
     }
 
     private @Nullable SqlSelector selectRunUsingPlateTemplate(@NotNull Container c, @NotNull User user, @NotNull Plate plate)
