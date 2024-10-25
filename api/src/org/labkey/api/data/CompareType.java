@@ -1624,6 +1624,9 @@ public abstract class CompareType
         private final String _filterTextDate;
         private final String _filterTextOperator;
 
+        // See Issue 51472
+        protected final String SS_CAST = "CAST(? AS DateTime)";
+
         DateCompareClause(FieldKey fieldKey, CompareType t, String op, Object rawFilterValue, Calendar param0)
         {
             super(fieldKey, t, param0.getTime());
@@ -1650,7 +1653,15 @@ public abstract class CompareType
         @Override
         String toWhereClause(SqlDialect dialect, String alias)
         {
-            return super.toWhereClause(dialect, alias);
+            return dialect.isSqlServer() ?
+                dialect.getColumnSelectName(alias) + getSqlServerComparison() :
+                super.toWhereClause(dialect, alias);
+        }
+
+        // See Issue 51472
+        protected String getSqlServerComparison()
+        {
+            throw new IllegalStateException("Must override either toWhereClause() or getSqlServerComparison()");
         }
 
         @Override
@@ -1687,7 +1698,8 @@ public abstract class CompareType
         String toWhereClause(SqlDialect dialect, String alias)
         {
             String selectName = dialect.getColumnSelectName(alias);
-            return selectName + " >= ? AND " + selectName + " < ?";
+            String q = dialect.isSqlServer() ? SS_CAST : "?";
+            return selectName + " >= " + q + " AND " + selectName + " < " + q;
         }
 
         @Override
@@ -1727,7 +1739,8 @@ public abstract class CompareType
         String toWhereClause(SqlDialect dialect, String alias)
         {
             String selectName = dialect.getColumnSelectName(alias);
-            return selectName + " < ? OR " + selectName + " >= ?";
+            String q = dialect.isSqlServer() ? SS_CAST : "?";
+            return selectName + " < " + q + " OR " + selectName + " >= " + q;
         }
 
         @Override
@@ -1764,6 +1777,12 @@ public abstract class CompareType
         }
 
         @Override
+        protected String getSqlServerComparison()
+        {
+            return " > " + SS_CAST;
+        }
+
+        @Override
         protected boolean meetsCriteria(ColumnRenderProperties col, Object value)
         {
             if (value == null)
@@ -1785,6 +1804,12 @@ public abstract class CompareType
         DateGteCompareClause(FieldKey fieldKey, Object rawFilterValue, Calendar startValue)
         {
             super(fieldKey, DATE_GTE, " >= ", rawFilterValue, startValue);
+        }
+
+        @Override
+        protected String getSqlServerComparison()
+        {
+            return " >= " + SS_CAST;
         }
 
         @Override
@@ -1812,6 +1837,12 @@ public abstract class CompareType
         }
 
         @Override
+        protected String getSqlServerComparison()
+        {
+            return " < " + SS_CAST;
+        }
+
+        @Override
         protected boolean meetsCriteria(ColumnRenderProperties col, Object value)
         {
             if (value == null)
@@ -1833,6 +1864,12 @@ public abstract class CompareType
         DateLteCompareClause(FieldKey fieldKey, Object rawFilterValue, Calendar startValue)
         {
             super(fieldKey, DATE_LTE, " <= ", rawFilterValue, addOneDay(startValue));
+        }
+
+        @Override
+        protected String getSqlServerComparison()
+        {
+            return " <= " + SS_CAST;
         }
 
         @Override

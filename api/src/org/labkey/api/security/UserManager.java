@@ -424,7 +424,7 @@ public class UserManager
         SimpleFilter f = new SimpleFilter(FieldKey.fromParts("Comment"), "logged " + inOrOut.toString(), CompareType.CONTAINS);
         if (since != null)
         {
-            f.addCondition(FieldKey.fromParts("Created"), since, CompareType.GTE);
+            f.addCondition(FieldKey.fromParts("Created"), since, CompareType.DATE_GTE);
         }
         if (null == userAuditTable)
             userAuditTable = getUserAuditSchemaTableInfo();
