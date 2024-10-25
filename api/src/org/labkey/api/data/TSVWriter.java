@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.util.FileUtil;
@@ -156,7 +157,7 @@ public abstract class TSVWriter extends TextWriter
      * To not perform any quoting, set the quote character to <code>Character.UNASSIGNED</code>.
      * <p>
      * Note: Excel will always quote a field if it includes comma even if it isn't the delimiter, but
-     * this algorithm doesn't to avoid unnecessary quoting.
+     * this algorithm doesn't avoid unnecessary quoting.
      * 
      * @param value The raw value.
      * @return The quoted value.
@@ -174,6 +175,12 @@ public abstract class TSVWriter extends TextWriter
         {
             StringBuilder sb = new StringBuilder(value.length() + 10);
             sb.append(_chQuote);
+
+            if (isCsvInjectionRisk(value))
+            {
+                sb.append("'");
+            }
+
             int i;
             int lastMatch = 0;
 
@@ -194,7 +201,17 @@ public abstract class TSVWriter extends TextWriter
         return escaped;
     }
 
-    protected boolean shouldQuote(String value)
+    // Issue 51522, https://owasp.org/www-community/attacks/CSV_Injection
+    protected boolean isCsvInjectionRisk(@NotNull String value)
+    {
+        return switch (value.charAt(0))
+        {
+            case '=', '+', '-', '@', '\t', '\r' -> true;
+            default -> false;
+        };
+    }
+
+    protected boolean shouldQuote(@NotNull String value)
     {
         if (_escapedCharsString == null)
         {
@@ -210,6 +227,8 @@ public abstract class TSVWriter extends TextWriter
         char firstCh = value.charAt(0);
         char lastCh = value.charAt(len-1);
         if (Character.isSpaceChar(firstCh) || Character.isSpaceChar(lastCh))
+            return true;
+        if (isCsvInjectionRisk(value))
             return true;
         return StringUtils.containsAny(value,_escapedCharsString);
     }
@@ -432,6 +451,23 @@ public abstract class TSVWriter extends TextWriter
                 w.writeLine(Arrays.asList("three", "es\"caped", "four"));
 
                 assertEquals("one\t\"es@@caped\"\ttwo@@three\t\"es\"\"caped\"\tfour@@", sw.getBuffer().toString());
+            }
+        }
+
+        // https://owasp.org/www-community/attacks/CSV_Injection
+        @Test
+        public void testCsvInjectionEscaping() throws IOException
+        {
+            try (FakeTSVWriter w = new FakeTSVWriter())
+            {
+                assertEquals("\"'=1+2\"", w.quoteValue("=1+2"));
+                assertEquals("\"'-minus\"", w.quoteValue("-minus"));
+                assertEquals("\"'+plus\"", w.quoteValue("+plus"));
+                assertEquals("\"'@user\"", w.quoteValue("@user"));
+                assertEquals("\"'\tdata\"", w.quoteValue("\tdata"));
+                assertEquals("\"'\rdata\"", w.quoteValue("\rdata"));
+                assertEquals("\"'=1+2\"\";=1+2\"", w.quoteValue("=1+2\";=1+2"));
+                assertEquals("\"'=1+2'\"\" ;,=1+2\"", w.quoteValue("=1+2'\" ;,=1+2"));
             }
         }
     }
