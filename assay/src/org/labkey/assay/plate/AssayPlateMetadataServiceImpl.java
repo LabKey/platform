@@ -480,7 +480,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         {
             for (ExpData data : expData.getRun().getDataOutputs())
             {
-                if (data.getDataType().getNamespacePrefix().equalsIgnoreCase(TsvDataHandler.NAMESPACE))
+                if (data.getDataType()!= null && data.getDataType().getNamespacePrefix().equalsIgnoreCase(TsvDataHandler.NAMESPACE))
                 {
                     if (data.getSourceApplication() != null)
                         return data;
