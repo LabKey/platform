@@ -174,6 +174,11 @@ public class WriteableAppProps extends AppPropsImpl
         storeBooleanValue(invalidFilenameBlocked, b);
     }
 
+    public void setIncludeServerHttpHeader(boolean b)
+    {
+        storeBooleanValue(includeServerHttpHeader, b);
+    }
+
     public void setAdministratorContactEmail(String email)
     {
         storeStringValue(administratorContactEmail, email);

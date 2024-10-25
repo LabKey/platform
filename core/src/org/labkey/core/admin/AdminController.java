@@ -1378,6 +1378,7 @@ public class AdminController extends SpringActionController
                 return false;
             }
             props.setXFrameOption(frameOption);
+            props.setIncludeServerHttpHeader(form.isIncludeServerHttpHeader());
 
             props.save(getViewContext().getUser());
             UsageReportingLevel.reportNow();
@@ -2239,6 +2240,7 @@ public class AdminController extends SpringActionController
         private boolean _navAccessOpen;
 
         private String _XFrameOption;
+        private boolean _includeServerHttpHeader;
 
         public String getPipelineToolsDirectory()
         {
@@ -2478,6 +2480,16 @@ public class AdminController extends SpringActionController
         public void setXFrameOption(String XFrameOption)
         {
             _XFrameOption = XFrameOption;
+        }
+
+        public boolean isIncludeServerHttpHeader()
+        {
+            return _includeServerHttpHeader;
+        }
+
+        public void setIncludeServerHttpHeader(boolean includeServerHttpHeader)
+        {
+            _includeServerHttpHeader = includeServerHttpHeader;
         }
     }
 
