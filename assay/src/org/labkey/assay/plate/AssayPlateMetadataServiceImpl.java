@@ -729,10 +729,15 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             }
         }
 
-        if (!multipleMeasures && measureProperties.size() != 1)
-            throw new ExperimentException("The assay protocol must have exactly one measure property to support graphical plate layout file parsing.");
-        else if (multipleMeasures && measureProperties.isEmpty())
-            throw new ExperimentException("There are multiple measures specified in the data file but the assay protocol does not define any measures");
+        // if we didn't parse any plate data from the input file, it is possible that a transform script might be
+        //  handling the file parsing so we don't want to error out here
+        if (!plateTypeGrids.isEmpty())
+        {
+            if (!multipleMeasures && measureProperties.size() != 1)
+                throw new ExperimentException("The assay protocol must have exactly one measure property to support graphical plate layout file parsing.");
+            else if (multipleMeasures && measureProperties.isEmpty())
+                throw new ExperimentException("There are multiple measures specified in the data file but the assay protocol does not define any measures");
+        }
 
         String defaultMeasureName = measureProperties.get(0).getName();
 
