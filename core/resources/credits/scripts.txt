@@ -19,6 +19,6 @@ markdown-it|8.3.1|{link:markdown-it|https://github.com//markdown-it/markdown-it}
 MultiSelectTreePanel|1.1|{link:Ext.ux.MultiSelectTreePanel|http://www.users.on.net/~clear/ext/}|{link:GPL v3|http://www.gnu.org/licenses/gpl.html} with {link:Ext FLOSS Exception|http://www.sencha.com/legal/open-source-faq/open-source-license-exception-for-applications/}|nicka|Multi-select tree panel that includes "drag and drop" capabilities for Ext JS
 Slider|1.0|{link:Slider|http://webfx.eae.net/dhtml/slider/slider.html}|{link:Apache 2.0|http://webfx.eae.net/license/asl2}|nicka|Basis for the range slider used for m/z range filter
 stacktrace.js|2.0.2|{link:stacktrace.js|https://www.stacktracejs.com}|{link:Public Domain|https://github.com/stacktracejs/stacktrace.js/blob/master/LICENSE}|kevink|Framework-agnostic, micro-library for getting stack traces in all web browsers
-TinyMCE|6.7.3|{link:TinyMCE|https://www.tiny.cloud/tinymce/}|{link:MIT|https://github.com/tinymce/tinymce/blob/develop/LICENSE.TXT}|ians|HTML WYSIWYG editor
+TinyMCE|6.8.5|{link:TinyMCE|https://www.tiny.cloud/tinymce/}|{link:MIT|https://github.com/tinymce/tinymce/blob/develop/LICENSE.TXT}|ians|HTML WYSIWYG editor
 {table}
 
