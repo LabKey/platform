@@ -191,7 +191,7 @@ public class PlateMetricsProvider implements UsageMetricsProvider
         Long standAlonePlateSetCount = new SqlSelector(schema.getSchema(), new SQLFragment("SELECT COUNT(*) FROM ").append(plateSetTable, "ps").append(" WHERE type =?").add(PlateSetType.assay).append(" AND rootplatesetid IS NULL")).getObject(Long.class);
         Long plateSetNoPlatesCount = plateSetPlatesCount(schema.getSchema(), plateSetTable, plateTable, 0);
         Long plateSetOnePlateCount = plateSetPlatesCount(schema.getSchema(), plateSetTable, plateTable, 1);
-        SQLFragment maxPlatesSql = new SQLFragment("SELECT MAX(count) FROM (").append(plateSetPlatesSQL(plateSetTable, plateTable)).append(")");
+        SQLFragment maxPlatesSql = new SQLFragment("SELECT MAX(count) FROM (").append(plateSetPlatesSQL(plateSetTable, plateTable)).append(") x");
         Long maxPlatesCount = new SqlSelector(schema.getSchema(), maxPlatesSql).getObject(Long.class);
         // too many items to use Map.of()
         Map<String, Long> plateSets = new HashMap<>();

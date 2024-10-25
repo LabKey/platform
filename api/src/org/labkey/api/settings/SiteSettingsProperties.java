@@ -196,6 +196,14 @@ public enum SiteSettingsProperties implements StartupProperty, SafeToRenderEnum
         {
             writeable.setNavAccessOpen(Boolean.parseBoolean(value));
         }
+    },
+    includeServerHttpHeader("If set to false, do not include a 'Server' header in HTTP responses")
+    {
+        @Override
+        public void setValue(WriteableAppProps writeable, String value)
+        {
+            writeable.setIncludeServerHttpHeader(Boolean.parseBoolean(value));
+        }
     };
 
     private final static Logger LOG = LogHelper.getLogger(SiteSettingsProperties.class, "Warnings about setting properties");

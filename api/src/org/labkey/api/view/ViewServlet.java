@@ -102,7 +102,6 @@ public class ViewServlet extends HttpServlet
     public static final String MOCK_REQUEST_CSRF = "Mock-Request-Inherently-Trusted-For-CSRF";
 
     private static ServletContext _servletContext = null;
-    private static String _serverHeader = null;
 
     private static final AtomicInteger _requestCount = new AtomicInteger();
     // NOTE: can't use ThreadLocal for this as you can't inspect the values for other threads
@@ -180,7 +179,6 @@ public class ViewServlet extends HttpServlet
 
         request.setAttribute(REQUEST_STARTTIME, startTime);
         UniqueID.initializeRequestScopedUID(request);
-        response.setHeader("Server", _serverHeader);
         HttpSession session = request.getSession(true);
 
         boolean isDebugEnabled = _log.isDebugEnabled();
@@ -321,8 +319,6 @@ public class ViewServlet extends HttpServlet
         initializeControllerMaps();
         initializeAllSpringControllers();
         securityPointcut = SecurityPointcutService.get();
-
-        _serverHeader =  "LabKey/" + AppProps.getInstance().getReleaseVersion();
     }
 
 
