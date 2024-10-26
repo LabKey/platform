@@ -401,7 +401,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
             update.setName(protocol.getName() + getDomainNameSuffix(orig));
         }
 
-        if (isPlateMetadataEnabled(protocol) && AssayPlateMetadataService.isExperimentalAppPlateEnabled())
+        if (isPlateMetadataEnabled(protocol))
         {
             Set<String> existingFields = update.getFields().stream().map(GWTPropertyDescriptor::getName).collect(Collectors.toSet());
             boolean hasRuns = !protocol.getExpRuns().isEmpty();

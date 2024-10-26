@@ -210,7 +210,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         AssayProvider provider = AssayService.get().getProvider(protocol);
         DataIteratorBuilder dataRows;
 
-        if (provider.isPlateMetadataEnabled(protocol) && AssayPlateMetadataService.isExperimentalAppPlateEnabled())
+        if (provider.isPlateMetadataEnabled(protocol))
         {
             dataRows = parsePlateData(provider, protocol, data, dataFile, context, settings);
         }
@@ -256,7 +256,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     {
         Domain runDomain = provider.getRunDomain(protocol);
         DomainProperty propertyPlateSet = runDomain.getPropertyByName(AssayPlateMetadataService.PLATE_SET_COLUMN_NAME);
-        if (AssayPlateMetadataService.isExperimentalAppPlateEnabled() && propertyPlateSet == null)
+        if (propertyPlateSet == null)
         {
             throw new ExperimentException("The assay run domain for the assay '" + protocol.getName() + "' does not contain a plate set property.");
         }
