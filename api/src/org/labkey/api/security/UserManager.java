@@ -536,8 +536,7 @@ public class UserManager
             if (null != userId && getGuestUser().getUserId() != userId)
             {
                 if (_activeSessions.put(userId, s))
-                    // TODO: Switch to debug
-                    LOG.info("Tracking a new session. {} active.", StringUtilsLabKey.pluralize(getActiveUserSessionCount(), "session"));
+                    LOG.debug("Tracking a new session. {} active.", StringUtilsLabKey.pluralize(getActiveUserSessionCount(), "session"));
             }
         }
     }
@@ -560,8 +559,7 @@ public class UserManager
                 _activeSessions.removeMapping(user.getUserId(), event.getSession());
 
                 long duration = TimeUnit.MILLISECONDS.toMinutes(event.getSession().getLastAccessedTime() - event.getSession().getCreationTime());
-                // TODO: Switch to debug
-                LOG.info("Destroyed session for {}. Adding session duration of {} minutes to tally. {} active.", user.getEmail(), duration, StringUtilsLabKey.pluralize(getActiveUserSessionCount(), "session"));
+                LOG.debug("Destroyed session for {}. Adding session duration of {} minutes to tally. {} active.", user.getEmail(), duration, StringUtilsLabKey.pluralize(getActiveUserSessionCount(), "session"));
                 _sessionCount.incrementAndGet();
                 _totalSessionDuration.addAndGet(duration);
             }
@@ -582,7 +580,7 @@ public class UserManager
                 httpSession.invalidate();
             });
 
-            LOG.info("Invalidated {} for {}.", StringUtilsLabKey.pluralize(count.getValue(), "session"), user.getEmail());
+            LOG.debug("Invalidated {} for {}.", StringUtilsLabKey.pluralize(count.getValue(), "session"), user.getEmail());
         }
     }
 
