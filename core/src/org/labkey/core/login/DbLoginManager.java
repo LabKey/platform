@@ -95,6 +95,7 @@ public class DbLoginManager implements DbLoginService
         try
         {
             SecurityManager.setPassword(email, password);
+            UserManager.terminateAllSessionsForUser(user);
         }
         catch (SecurityManager.UserManagementException e)
         {
@@ -114,9 +115,10 @@ public class DbLoginManager implements DbLoginService
             return null;
         }
 
-        // Should log user in only for initial user, choose password, and forced change password scenarios, but not for scenarios
-        // where a user is already logged in (normal change password, admins initializing another user's password, etc.)
-        if (currentUser.isGuest())
+        // The affected user's sessions were all terminated above. If the request's session doesn't exist or is a guest
+        // session then log the user in using the just-entered credentials. An admin resetting a password won't be
+        // affected. This check should be equivalent to currentUser.equals(user).
+        if (SecurityManager.getSessionUser(request.getSession()) == null)
         {
             AuthenticationManager.PrimaryAuthenticationResult result = AuthenticationManager.authenticate(request, email.getEmailAddress(), password, returnUrlHelper, true);
 
