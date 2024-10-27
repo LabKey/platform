@@ -16,13 +16,16 @@
 package org.labkey.core.login;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.WritablePropertyMap;
+import org.labkey.api.security.AuthenticationConfiguration.PrimaryAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationConfigurationCache;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationManager.AuthenticationResult;
@@ -33,6 +36,7 @@ import org.labkey.api.security.PasswordRule;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.UserManager.SessionHandler;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.settings.LookAndFeelProperties;
@@ -40,6 +44,7 @@ import org.labkey.api.settings.StartupProperty;
 import org.labkey.api.usageMetrics.UsageMetricsProvider;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.core.login.LoginController.SaveDbLoginPropertiesForm;
 import org.springframework.validation.BindException;
 
@@ -53,6 +58,8 @@ import static org.labkey.api.security.AuthenticationManager.AuthenticationStatus
 public class DbLoginManager implements DbLoginService
 {
     // TODO: Move Logins table operations here
+
+    private static final Logger LOG = LogHelper.getLogger(DbLoginManager.class, "Database login information");
 
     public static DbLoginConfiguration getConfiguration()
     {
@@ -95,7 +102,30 @@ public class DbLoginManager implements DbLoginService
         try
         {
             SecurityManager.setPassword(email, password);
-            UserManager.terminateAllSessionsForUser(user);
+            // Invalidate all sessions belonging to this user that were authenticated via database authentication
+            UserManager.handleSessionsForUser(user, new SessionHandler()
+            {
+                @Override
+                public boolean handleSession(HttpSession session)
+                {
+                    PrimaryAuthenticationConfiguration<?> configuration = AuthenticationManager.getConfiguration(session);
+
+                    if (configuration instanceof DbLoginConfiguration)
+                    {
+                        session.invalidate();
+                        return true;
+                    }
+
+                    return false;
+                }
+
+                @Override
+                public void complete(int count)
+                {
+                    //noinspection DataFlowIssue
+                    LOG.debug("Invalidated {} for {}.", StringUtilsLabKey.pluralize(count, "session"), user.getEmail());
+                }
+            });
         }
         catch (SecurityManager.UserManagementException e)
         {

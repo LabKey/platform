@@ -492,14 +492,14 @@ public class UserManager
         {
             sql.append(" INNER JOIN ");
             sql.append(CoreSchema.getInstance().getTableInfoUsersData(), "ud");
-            sql.append(" ON uat.CreatedBy = ud.UserId ");
-            sql.append(" WHERE ud.System = ? ");
+            sql.append(" ON uat.CreatedBy = ud.UserId");
+            sql.append(" WHERE ud.System = ?");
             sql.add(false);
         }
         else
         {
             // Make string concat easy
-            sql.append(" WHERE 1=1 ");
+            sql.append(" WHERE 1=1");
         }
 
         sql.append(" AND uat.Comment LIKE ");
@@ -568,19 +568,47 @@ public class UserManager
 
     public static void terminateAllSessionsForUser(@Nullable User user)
     {
+        handleSessionsForUser(user, new SessionHandler()
+        {
+            @Override
+            public boolean handleSession(HttpSession session)
+            {
+                session.invalidate();
+                return true;
+            }
+
+            @Override
+            public void complete(int count)
+            {
+                //noinspection DataFlowIssue
+                LOG.debug("Invalidated {} for {}.", StringUtilsLabKey.pluralize(count, "session"), user.getEmail());
+            }
+        });
+    }
+
+    public interface SessionHandler
+    {
+        // Return true to increment the count passed to complete()
+        boolean handleSession(HttpSession session);
+        // Called after all sessions have been passed to handleSession(), only if user is non-null and was logged in
+        void complete(int count);
+    }
+
+    public static void handleSessionsForUser(@Nullable User user, SessionHandler handler)
+    {
         if (user != null && !user.isGuest())
         {
             MutableInt count = new MutableInt();
 
-            // The SessionListener above will mutate this user's session set after very invalidate, so enumerate a copy
-            // to avoid concurrent modification exceptions.
+            // The SessionHandler may directly or indirectly mutate this user's session set, so enumerate a copy to avoid
+            // concurrent modification exceptions.
             Set<HttpSession> sessions = new HashSet<>(_activeSessions.get(user.getUserId()));
-            sessions.forEach(httpSession -> {
-                count.increment();
-                httpSession.invalidate();
+            sessions.forEach(session -> {
+                if (handler.handleSession(session))
+                    count.increment();
             });
 
-            LOG.debug("Invalidated {} for {}.", StringUtilsLabKey.pluralize(count.getValue(), "session"), user.getEmail());
+            handler.complete(count.intValue());
         }
     }
 
