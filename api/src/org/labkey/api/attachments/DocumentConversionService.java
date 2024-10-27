@@ -22,14 +22,9 @@ import org.labkey.api.services.ServiceRegistry;
 import jakarta.servlet.http.HttpServletResponse;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.File;
 import java.io.OutputStream;
 
-/**
- * User: adam
- * Date: 10/12/11
- * Time: 4:24 PM
- */
 // Expose some interesting conversion methods via this service.
 public interface DocumentConversionService
 {
@@ -43,10 +38,10 @@ public interface DocumentConversionService
         ServiceRegistry.get().registerService(DocumentConversionService.class, impl);
     }
 
-    // Closes the passed in pdfStream. Returns null if requested page doesn't exist.
-    @Nullable BufferedImage pdfToImage(InputStream pdfStream, int page);
-    // Closes the passed in pdfStream. Returns null if requested page doesn't exist.
-    @Nullable BufferedImage pdfToImage(InputStream pdfStream, int page, int bufferedImageType, int resolution);
+    // Returns null if requested page doesn't exist.
+    @Nullable BufferedImage pdfToImage(File file, int page);
+    // Returns null if requested page doesn't exist.
+    @Nullable BufferedImage pdfToImage(File file, int page, int bufferedImageType, int resolution);
 
     // Use the dimensions in the SVG
     void svgToPng(SvgSource svgSource, OutputStream os) throws TranscoderException;
