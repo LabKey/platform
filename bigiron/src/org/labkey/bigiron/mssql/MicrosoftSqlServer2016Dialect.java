@@ -28,6 +28,7 @@ import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Filter;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
@@ -75,7 +76,7 @@ public class MicrosoftSqlServer2016Dialect extends MicrosoftSqlServer2014Dialect
         }
         catch (SQLException e)
         {
-            throw new RuntimeException(e);
+            throw new RuntimeSQLException(e);
         }
 
         // This seems to be the only string format acceptable for sending Timestamps, but unfortunately it's ambiguous;
