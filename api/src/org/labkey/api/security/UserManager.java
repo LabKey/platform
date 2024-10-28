@@ -588,7 +588,7 @@ public class UserManager
 
     public interface SessionHandler
     {
-        // Return true to increment the count passed to complete()
+        // Return true to increment the count passed to complete() after handleSession() has been invoked for each active session
         boolean handleSession(HttpSession session);
         // Called after all sessions have been passed to handleSession(), only if user is non-null and was logged in
         void complete(int count);
