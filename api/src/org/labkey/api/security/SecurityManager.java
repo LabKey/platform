@@ -533,7 +533,7 @@ public class SecurityManager
         return sessionUser;
     }
 
-    public static User getSessionUser(HttpSession session)
+    public static @Nullable User getSessionUser(@Nullable HttpSession session)
     {
         User sessionUser = null;
 
