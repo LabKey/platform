@@ -74,6 +74,7 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
     /** RowIds for all the domains associated with properties we need to remember */
     private final Set<Integer> _domainIds = new HashSet<>();
     private Integer _reRunId;
+    private ReImportOption _reImportOption;
     private boolean _allowCrossRunFileInputs;
 
     private File _originalFileLocation;
@@ -116,6 +117,7 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
         _actionURL = originalContext.getActionURL();
         _uploadedData = CollectionUtils.checkValueClass(originalContext.getUploadedData(),FileLike.class);
         _reRunId = originalContext.getReRunId();
+        _reImportOption = originalContext.getReImportOption();
         _originalFileLocation = originalContext.getOriginalFileLocation();
 
         _batchProperties = originalContext.getBatchProperties();
@@ -383,6 +385,12 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
     public Integer getReRunId()
     {
         return _reRunId;
+    }
+
+    @Override
+    public ReImportOption getReImportOption()
+    {
+        return _reImportOption;
     }
 
     @Override

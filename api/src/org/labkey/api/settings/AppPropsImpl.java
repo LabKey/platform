@@ -619,6 +619,12 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     }
 
     @Override
+    public boolean isIncludeServerHttpHeader()
+    {
+        return lookupBooleanValue(includeServerHttpHeader, true);
+    }
+
+    @Override
     @NotNull
     public List<String> getExternalRedirectHosts()
     {

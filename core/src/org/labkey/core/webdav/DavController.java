@@ -1575,14 +1575,6 @@ public class DavController extends SpringActionController
                             Collection<String> listPaths = resource.listNames();
                             for (String listPath : listPaths)
                             {
-                                // Don't show @cloud if no configs are enabled
-                                if (FileContentService.CLOUD_LINK.equals(listPath))
-                                {
-                                    CloudStoreService cloudStoreService = CloudStoreService.get();
-                                    Container resourceContainer = ContainerManager.getForId(resource.getContainerId());
-                                    if (null != cloudStoreService && null != resourceContainer && cloudStoreService.getEnabledCloudStores(resourceContainer, true).isEmpty())
-                                        continue;
-                                }
                                 Path newPath = currentPath.append(listPath);
                                 stackBelow.addLast(newPath);
                             }
