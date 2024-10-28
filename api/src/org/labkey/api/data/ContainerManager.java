@@ -2195,6 +2195,11 @@ public class ContainerManager
         return new TableSelector(CORE.getTableInfoContainers(), new SimpleFilter(FieldKey.fromParts("type"), "workbook"), null).getRowCount();
     }
 
+    public static long getArchivedContainerCount()
+    {
+        return new TableSelector(CORE.getTableInfoContainers(), new SimpleFilter(FieldKey.fromParts("lockstate"), "Archived"), null).getRowCount();
+    }
+
     public static long getAuditCommentRequiredCount()
     {
         SQLFragment sql = new SQLFragment(
