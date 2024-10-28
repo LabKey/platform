@@ -1265,20 +1265,23 @@ public class AuthenticationManager
         {
             addAuditEvent(user, request, user.getEmail() + " " + UserManager.UserAuditEvent.LOGGED_OUT + ".");
 
-            Integer configurationId = (Integer)session.getAttribute(SecurityManager.PRIMARY_AUTHENTICATION_CONFIGURATION);
+            PrimaryAuthenticationConfiguration<?> configuration = getConfiguration(session);
 
-            if (null != configurationId)
+            if (null != configuration)
             {
-                PrimaryAuthenticationConfiguration<?> configuration = AuthenticationConfigurationCache.getConfiguration(PrimaryAuthenticationConfiguration.class, configurationId);
-
-                if (null != configuration)
-                {
-                    ret = configuration.logout(request, returnURL);
-                }
+                ret = configuration.logout(request, returnURL);
             }
         }
 
         return ret;
+    }
+
+    // Returns null if configuration ID is not present (user not logged in) or configuration no longer exists
+    public static @Nullable PrimaryAuthenticationConfiguration<?> getConfiguration(@NotNull HttpSession session)
+    {
+        Integer configurationId = (Integer) session.getAttribute(SecurityManager.PRIMARY_AUTHENTICATION_CONFIGURATION);
+
+        return null != configurationId ? AuthenticationConfigurationCache.getConfiguration(PrimaryAuthenticationConfiguration.class, configurationId) : null;
     }
 
     /**
