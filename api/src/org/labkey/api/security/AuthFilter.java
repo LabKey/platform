@@ -57,6 +57,8 @@ public class AuthFilter implements Filter
     private static boolean _firstRequestHandled = false;
     private static volatile boolean _sslChecked = false;
     private static SecurityPointcutService _securityPointcut = null;
+    private static String _serverHeader = null;
+
 
     @Override
     public void init(FilterConfig filterConfig)
@@ -83,6 +85,15 @@ public class AuthFilter implements Filter
                 resp.setHeader("X-Frame-Options", AppProps.getInstance().getXFrameOption());
             resp.setHeader("X-Content-Type-Options", "nosniff");
             resp.setHeader("Referrer-Policy", "origin-when-cross-origin" );
+
+            if (AppProps.getInstance().isIncludeServerHttpHeader())
+            {
+                if (_serverHeader == null)
+                {
+                    _serverHeader =  "LabKey/" + AppProps.getInstance().getReleaseVersion();
+                }
+                resp.setHeader("Server", _serverHeader);
+            }
         }
 
         Throwable t = ModuleLoader.getInstance().getStartupFailure();

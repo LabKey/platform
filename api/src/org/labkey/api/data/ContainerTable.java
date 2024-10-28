@@ -78,8 +78,10 @@ public class ContainerTable extends FilteredTable<UserSchema>
         wrapAllColumns(true);
         getMutableColumn("_ts").setHidden(true);
 
+        // Although not designated as such in the DB (plus it's a nullable column), we treat EntityId as the PK
         var entityIdColumn = getMutableColumn("EntityId");
         entityIdColumn.setHidden(true);
+        entityIdColumn.setKeyField(true);
         entityIdColumn.setReadOnly(true);
 
         getMutableColumn("RowId").setHidden(true);
@@ -94,7 +96,6 @@ public class ContainerTable extends FilteredTable<UserSchema>
         MutableColumnInfo col = this.wrapColumn("ID", getRealTable().getColumn("RowId"));
         col.setReadOnly(true);
         col.setURL(detailsURL);
-        col.setKeyField(false); // RowId column is a key. We don't want to double post this value on delete, etc.
         this.addColumn(col);
 
         var name = getMutableColumn("Name");
@@ -175,7 +176,6 @@ public class ContainerTable extends FilteredTable<UserSchema>
         activeModules.setDisplayColumnFactory(ActiveModulesDisplayColumn::new);
         activeModules.setReadOnly(true);
         activeModules.setHidden(true);
-        activeModules.setKeyField(false);
         addColumn(activeModules);
 
         setTitleColumn("DisplayName");

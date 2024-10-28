@@ -3299,7 +3299,7 @@ public class DbScope
             final User user = TestContext.get().getUser();
 
             Lock lockUser = new ServerPrimaryKeyLock(true, CoreSchema.getInstance().getTableInfoUsersData(), user.getUserId());
-            Lock lockHome = new ServerPrimaryKeyLock(true, CoreSchema.getInstance().getTableInfoContainers(), ContainerManager.getHomeContainer().getRowId());
+            Lock lockHome = new ServerPrimaryKeyLock(true, CoreSchema.getInstance().getTableInfoContainers(), ContainerManager.getHomeContainer().getId());
 
             Pair<Throwable, Throwable> throwables = attemptToDeadlock(lockUser, lockHome, (x) -> {});
 

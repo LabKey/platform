@@ -3,7 +3,6 @@ package org.labkey.assay.plate;
 import org.labkey.api.assay.AssayProtocolSchema;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
-import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.plate.PlateSetType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -177,9 +176,6 @@ public class PlateMetricsProvider implements UsageMetricsProvider
     @Override
     public Map<String, Object> getUsageMetrics()
     {
-        if (!AssayPlateMetadataService.isExperimentalAppPlateEnabled())
-            return Map.of("plates", new HashMap<String, Object>());
-
         var plateMetrics = new HashMap<String, Object>();
         var schema = AssayDbSchema.getInstance();
         TableInfo plateSetTable = schema.getTableInfoPlateSet();
@@ -191,7 +187,7 @@ public class PlateMetricsProvider implements UsageMetricsProvider
         Long standAlonePlateSetCount = new SqlSelector(schema.getSchema(), new SQLFragment("SELECT COUNT(*) FROM ").append(plateSetTable, "ps").append(" WHERE type =?").add(PlateSetType.assay).append(" AND rootplatesetid IS NULL")).getObject(Long.class);
         Long plateSetNoPlatesCount = plateSetPlatesCount(schema.getSchema(), plateSetTable, plateTable, 0);
         Long plateSetOnePlateCount = plateSetPlatesCount(schema.getSchema(), plateSetTable, plateTable, 1);
-        SQLFragment maxPlatesSql = new SQLFragment("SELECT MAX(count) FROM (").append(plateSetPlatesSQL(plateSetTable, plateTable)).append(")");
+        SQLFragment maxPlatesSql = new SQLFragment("SELECT MAX(count) FROM (").append(plateSetPlatesSQL(plateSetTable, plateTable)).append(") x");
         Long maxPlatesCount = new SqlSelector(schema.getSchema(), maxPlatesSql).getObject(Long.class);
         // too many items to use Map.of()
         Map<String, Long> plateSets = new HashMap<>();

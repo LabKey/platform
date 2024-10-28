@@ -59,6 +59,7 @@ public class LinkMacro extends BaseLocaleMacro {
         RenderContext context = params.getContext();
         RenderEngine engine = context.getRenderEngine();
 
+        // We are relying on the upstream macro to appropriately HTML encode these parameters. See issue 51488
         String text = params.get("text", 0);
         String url = params.get("url", 1);
         String img = params.get("img", 2);
@@ -74,15 +75,15 @@ public class LinkMacro extends BaseLocaleMacro {
         if (url != null && text != null) {
             writer.write("<span class=\"nobr\"");
             if(style != null)
-                writer.write(" style=\"" + PageFlowUtil.filter(style) + "\"");
+                writer.write(" style=\"" + style + "\"");
             writer.write(">");
-            if (!"none".equals(img) && engine instanceof ImageRenderEngine) {
-                writer.write(((ImageRenderEngine) engine).getExternalImageLink());
+            if (!"none".equals(img) && engine instanceof ImageRenderEngine irEngine) {
+                writer.write(irEngine.getExternalImageLink());
             }
             writer.write("<a href=\"");
-            writer.write(PageFlowUtil.filter(url));
+            writer.write(url);
             writer.write("\">");
-            writer.write(PageFlowUtil.filter(text));
+            writer.write(text);
             writer.write("</a></span>");
         } else {
             throw new IllegalArgumentException("link needs a name and a url as argument");

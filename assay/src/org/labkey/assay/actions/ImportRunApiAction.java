@@ -98,7 +98,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         Map<String, Object> batchProperties = null;
         String targetStudy;
         Integer reRunId;
-        AssayRunUploadContext.ReImportOption reImportOption;
+        AssayRunUploadContext.ReImportOption reImportOption = null;
         String runFilePath;
         String moduleName;
         List<Map<String, Object>> rawData = null;
@@ -152,7 +152,8 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             // CONSIDER: Should we also look at the batch and run properties for the targetStudy?
             targetStudy = json.optString("targetStudy", null);
             reRunId = json.has("reRunId") ? json.optInt("reRunId") : null;
-            reImportOption = json.has("reImportOption") ? json.getEnum(AssayRunUploadContext.ReImportOption.class, "reImportOption") : AssayRunUploadContext.ReImportOption.REPLACE;
+            if (json.has("reImportOption"))
+                reImportOption = json.getEnum(AssayRunUploadContext.ReImportOption.class, "reImportOption");
             runFilePath = json.optString("runFilePath", null);
             moduleName = json.optString("module", null);
             auditUserComment  = json.optString("auditUserComment", null);
@@ -187,6 +188,14 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             allowCrossRunFileInputs = form.isAllowCrossRunFileInputs();
             allowLookupByAlternateKey = form.isAllowLookupByAlternateKey();
             auditUserComment = form.getAuditUserComment();
+        }
+
+        if (reImportOption == null)
+        {
+            if (provider != null && protocol != null && provider.isPlateMetadataEnabled(protocol))
+                reImportOption = AssayRunUploadContext.ReImportOption.MERGE_DATA;
+            else
+                reImportOption = AssayRunUploadContext.ReImportOption.REPLACE;
         }
 
         // Import the file at runFilePath if it is available, otherwise AssayRunUploadContextImpl.getUploadedData() will use the multi-part form POSTed file
@@ -355,7 +364,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         private String _name;
         private Integer _workflowTask;
         private Integer _reRunId;
-        private AssayRunUploadContext.ReImportOption _reImportOption = AssayRunUploadContext.ReImportOption.REPLACE;
+        private AssayRunUploadContext.ReImportOption _reImportOption;
         private String _targetStudy;
         private Map<String, Object> _properties = new HashMap<>();
         private Map<String, Object> _batchProperties = new HashMap<>();

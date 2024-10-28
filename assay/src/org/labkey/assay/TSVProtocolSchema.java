@@ -236,7 +236,7 @@ public class TSVProtocolSchema extends AssayProtocolSchema
     }
 
     @Nullable
-    public TableInfo createPlateReplicateStatsTable(ContainerFilter cf, boolean allowInsertUpdate)
+    public TableInfo createPlateReplicateStatsTable(@Nullable ContainerFilter cf, boolean allowInsertUpdate)
     {
         Domain domain = AssayPlateMetadataService.get().getPlateReplicateStatsDomain(getProtocol());
         if (domain != null)

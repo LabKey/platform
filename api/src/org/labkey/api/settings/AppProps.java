@@ -231,12 +231,22 @@ public interface AppProps
 
     boolean isInvalidFilenameBlocked();
 
+    /** @return whether the server should include its name and version as a header in HTTP responses */
+    boolean isIncludeServerHttpHeader();
+
     /**
      *
      * @return List of configured external redirect hosts
      */
     @NotNull
     List<String> getExternalRedirectHosts();
+
+    /**
+     *
+     * @return List of configured external resource hosts
+     */
+    @NotNull
+    List<String> getExternalSourceHosts();
 
     Map<StashedStartupProperties, StartupPropertyEntry> getStashedStartupProperties();
 
