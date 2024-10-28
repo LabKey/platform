@@ -25,6 +25,7 @@ import org.labkey.api.util.FileUtil;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -206,7 +207,19 @@ public abstract class TSVWriter extends TextWriter
     {
         return switch (value.charAt(0))
         {
-            case '=', '+', '-', '@', '\t', '\r' -> true;
+            case '=', '@', '\t', '\r' -> true;
+            case '+', '-' -> {
+                try
+                {
+                    // Strip the leading sign and any dots and commas to be a tolerant number parser
+                    new BigDecimal(value.substring(1).replace(".", "").replace(",", ""));
+                    yield false;
+                }
+                catch (NumberFormatException e)
+                {
+                    yield true;
+                }
+            }
             default -> false;
         };
     }
@@ -468,6 +481,13 @@ public abstract class TSVWriter extends TextWriter
                 assertEquals("\"'\rdata\"", w.quoteValue("\rdata"));
                 assertEquals("\"'=1+2\"\";=1+2\"", w.quoteValue("=1+2\";=1+2"));
                 assertEquals("\"'=1+2'\"\" ;,=1+2\"", w.quoteValue("=1+2'\" ;,=1+2"));
+
+                // Don't quote numbers - they're no risk, and we want to export them exactly as-is
+                assertEquals("-200.4", w.quoteValue("-200.4"));
+                assertEquals("+1432", w.quoteValue("+1432"));
+                assertEquals("+1432e9999999", w.quoteValue("+1432e9999999"));
+                assertEquals("-6.577e-7", w.quoteValue("-6.577e-7"));
+                assertEquals("-5,567,543,667,376,878.776768", w.quoteValue("-5,567,543,667,376,878.776768"));
             }
         }
     }
