@@ -150,7 +150,8 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
 
                         Map<String, String> paramMap = new HashMap<>();
 
-                        paramMap.put(RUN_INFO_REPLACEMENT, runInfo.toNioPathForWrite().toFile().getAbsolutePath());
+                        // Issue 51543: Resolve windows path to run properties
+                        paramMap.put(RUN_INFO_REPLACEMENT, runInfo.toNioPathForWrite().toFile().getAbsolutePath().replaceAll("\\\\", "/"));
 
                         addStandardParameters(context.getRequest(), context.getContainer(), scriptFile, session.getApiKey(), paramMap);
 

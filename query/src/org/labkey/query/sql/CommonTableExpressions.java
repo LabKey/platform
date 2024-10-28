@@ -22,6 +22,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryException;
+import org.labkey.api.util.GUID;
 import org.labkey.data.xml.ColumnType;
 import org.springframework.util.LinkedCaseInsensitiveMap;
 
@@ -154,7 +155,10 @@ public class CommonTableExpressions
 
     private String makeCteKey(String legalName)
     {
-        return "_with003388_%$&_" + legalName;
+        // NOTE: Since CTE's get "hoisted" these tokens need to be globally unique.
+        // Unfortunately _query.incrementAliasCounter() is not a good uniquifier.  It is only unique within the
+        // the "scope" of one query.  E.g. it is not unique when queries SELECT from other queries.
+        return "__with_" + legalName + "_" + GUID.makeGUID();
     }
 
     public static String getLegalName(SqlDialect dialect, String name)

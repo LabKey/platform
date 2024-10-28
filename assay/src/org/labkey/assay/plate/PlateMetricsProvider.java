@@ -3,7 +3,6 @@ package org.labkey.assay.plate;
 import org.labkey.api.assay.AssayProtocolSchema;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
-import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.plate.PlateSetType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -177,9 +176,6 @@ public class PlateMetricsProvider implements UsageMetricsProvider
     @Override
     public Map<String, Object> getUsageMetrics()
     {
-        if (!AssayPlateMetadataService.isExperimentalAppPlateEnabled())
-            return Map.of("plates", new HashMap<String, Object>());
-
         var plateMetrics = new HashMap<String, Object>();
         var schema = AssayDbSchema.getInstance();
         TableInfo plateSetTable = schema.getTableInfoPlateSet();
