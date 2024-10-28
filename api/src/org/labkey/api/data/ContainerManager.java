@@ -883,7 +883,7 @@ public class ContainerManager
 
     public static void archiveContainer(User user, Container container, boolean archive)
     {
-        if (container.isRoot() || container.isAppHomeFolder())
+        if (container.isRoot() || container.isProject() || container.isAppHomeFolder())
             throw new ApiUsageException("Archive action not supported for this folder.");
 
         SQLFragment sql = new SQLFragment("UPDATE ");
