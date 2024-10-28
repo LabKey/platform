@@ -31,6 +31,7 @@ import org.labkey.api.util.logging.LogHelper;
 
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -62,9 +63,9 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
     private boolean _forceSortForDisplay = false;
 
     // Primary constructor
-    private TableSelector(@NotNull TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, boolean stableColumnOrdering)
+    protected TableSelector(@NotNull TableInfo table, @Nullable Connection conn, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, boolean stableColumnOrdering)
     {
-        super(table.getSchema().getScope());
+        super(table.getSchema().getScope(), conn);
         _table = Objects.requireNonNull(table);
         _columns = columns;
         _filter = filter;
@@ -81,7 +82,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
      */
     public TableSelector(@NotNull TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort)
     {
-        this(table, columns, filter, sort, isStableOrdered(columns));
+        this(table, null, columns, filter, sort, isStableOrdered(columns));
     }
 
     // Select all columns from a table, with no filter or sort
@@ -111,13 +112,13 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
     */
     public TableSelector(@NotNull TableInfo table, Set<String> columnNames, @Nullable Filter filter, @Nullable Sort sort)
     {
-        this(table, columnInfosList(table, columnNames), filter, sort, isStableOrdered(columnNames));
+        this(table, null, columnInfosList(table, columnNames), filter, sort, isStableOrdered(columnNames));
     }
 
     // Select a single column
     public TableSelector(@NotNull ColumnInfo column, @Nullable Filter filter, @Nullable Sort sort)
     {
-        this(column.getParentTable(), Collections.singleton(column), filter, sort, true);  // Single column is stable ordered
+        this(column.getParentTable(), null, Collections.singleton(column), filter, sort, true);  // Single column is stable ordered
     }
 
     // Select a single column from all rows

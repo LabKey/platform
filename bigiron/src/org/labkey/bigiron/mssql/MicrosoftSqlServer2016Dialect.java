@@ -15,16 +15,30 @@
  */
 package org.labkey.bigiron.mssql;
 
+import jakarta.servlet.ServletException;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.ConnectionWrapper;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.Filter;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.StatementWrapper;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.logging.LogHelper;
 
 import java.sql.CallableStatement;
@@ -35,8 +49,10 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
-import java.util.Map;
+import java.util.GregorianCalendar;
+import java.util.Set;
 
 public class MicrosoftSqlServer2016Dialect extends MicrosoftSqlServer2014Dialect
 {
@@ -51,9 +67,16 @@ public class MicrosoftSqlServer2016Dialect extends MicrosoftSqlServer2014Dialect
     {
         super.prepare(scope);
 
-        Map<String, Object> map = new SqlSelector(scope, "SELECT language, date_format FROM sys.dm_exec_sessions WHERE session_id = @@spid").getMap();
-        _language = (String) map.get("language");
-        _dateFormat = (String) map.get("date_format");
+        try
+        {
+            LanguageSettings settings = getLanguageSettings(scope, scope.getConnection());
+            _language = settings.getLanguage();
+            _dateFormat = settings.getDate_format();
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeException(e);
+        }
 
         // This seems to be the only string format acceptable for sending Timestamps, but unfortunately it's ambiguous;
         // SQL Server interprets the "MM-dd" portion based on the database's regional settings. So we must query the
@@ -68,6 +91,48 @@ public class MicrosoftSqlServer2016Dialect extends MicrosoftSqlServer2014Dialect
         _timestampFormatter = FastDateFormat.getInstance("yyyy-" + mdFormat + " HH:mm:ss.SSS");
 
         LOG.info("\n    Language:                 {}\n    DateFormat:               {}", _language, _dateFormat);
+    }
+
+    // TODO: Turn this into a record on 24.11 (24.7 SqlSelector doesn't support records)
+    public static class LanguageSettings
+    {
+        String _language;
+        String _date_format;
+
+        public String getLanguage()
+        {
+            return _language;
+        }
+
+        public void setLanguage(String language)
+        {
+            _language = language;
+        }
+
+        public String getDate_format()
+        {
+            return _date_format;
+        }
+
+        public void setDate_format(String date_format)
+        {
+            _date_format = date_format;
+        }
+
+        @Override
+        public String toString()
+        {
+            return "LanguageSettings{" +
+                    "_language='" + _language + '\'' +
+                    ", _date_format='" + _date_format + '\'' +
+                    '}';
+        }
+    }
+
+    private static LanguageSettings getLanguageSettings(DbScope scope, Connection conn)
+    {
+        return new SqlSelector(scope, conn, "SELECT language, date_format FROM sys.dm_exec_sessions WHERE session_id = @@spid")
+            .getObject(LanguageSettings.class);
     }
 
     @Override
@@ -273,6 +338,100 @@ public class MicrosoftSqlServer2016Dialect extends MicrosoftSqlServer2014Dialect
         {
             Timestamp ts = Timestamp.valueOf(test);
             Assert.assertEquals(expected, wrapper.convert(ts));
+        }
+
+        @Test
+        public void testCompareClauses() throws SQLException, ServletException
+        {
+            // Issue 51472 pointed out issues with Timestamp conversions on French SQL Server. Primary fixes were in
+            // the DateCompareClause subclasses, so put them through their paces here.
+
+            DbScope labKeyScope = DbScope.getLabKeyScope();
+            // Clone the LabKey scope so it has its own SqlDialect that we can prepare every time we set the language
+            DbScope scope = new DbScope(labKeyScope.getDataSourceName(), labKeyScope.getLabKeyDataSource())
+            {
+                private final Connection _connection = getWrapped();
+
+                @Override
+                public Connection getConnection()
+                {
+                    // Hand out an un-pooled connection since we might set language and don't want that to persist outside this test
+                    return _connection;
+                }
+
+                private Connection getWrapped() throws SQLException
+                {
+                    return new ConnectionWrapper(getUnpooledConnection(), this, null, DbScope.ConnectionType.Transaction, null);
+                }
+            };
+
+            TableInfo containers = CoreSchema.getInstance().getTableInfoContainers();
+            ColumnInfo created = containers.getColumn("Created");
+
+            try (Connection conn = scope.getConnection())
+            {
+                setLanguage(scope, conn, "English");
+                testMultipleFilters(conn, containers, created.getFieldKey());
+
+                if (scope.getSqlDialect().isSqlServer())
+                {
+                    setLanguage(scope, conn, "French");
+                    testMultipleFilters(conn, containers, created.getFieldKey());
+                }
+            }
+        }
+
+        private void setLanguage(DbScope scope, Connection conn, String language)
+        {
+            SqlDialect dialect = scope.getSqlDialect();
+            if (dialect.isSqlServer())
+            {
+                new SqlExecutor(scope, conn).execute("SET LANGUAGE " + language);
+                dialect.prepare(scope);
+                LOG.info(getLanguageSettings(DbScope.getLabKeyScope(), conn));
+            }
+        }
+
+        private void testMultipleFilters(Connection conn, TableInfo table, FieldKey date)
+        {
+            Calendar cal = new GregorianCalendar();
+            cal.add(Calendar.DATE, -30);
+            Date startDate = cal.getTime();
+
+            testFilter(conn, table, date, startDate, CompareType.DATE_EQUAL);
+            testFilter(conn, table, date, startDate, CompareType.DATE_NOT_EQUAL);
+            testFilter(conn, table, date, startDate, CompareType.DATE_GTE);
+            testFilter(conn, table, date, startDate, CompareType.DATE_GT);
+            testFilter(conn, table, date, startDate, CompareType.DATE_LT);
+            testFilter(conn, table, date, startDate, CompareType.DATE_LTE);
+        }
+
+        // We don't care about the row counts, just that each query executes without any exceptions
+        private void testFilter(Connection conn, TableInfo table, FieldKey fk, Object value, CompareType type)
+        {
+            SimpleFilter filter = new SimpleFilter(fk, value, type);
+
+            new TestTableSelector(table, conn, Collections.singleton(table.getColumn(fk)), filter, null).getRowCount();
+
+            // This mimics the query that UserManager.getActiveDaysCount() generates
+            SQLFragment sql = new SQLFragment("SELECT * FROM (SELECT CAST(")
+                .append(fk.getName())
+                .append(" AS DATE) AS ")
+                .append(fk.getName())
+                .append(" FROM ")
+                .append(table.getSelectName())
+                .append(") x ")
+                .append(filter.getSQLFragment(table.getSqlDialect()));
+
+            new SqlSelector(table.getSchema().getScope(), conn, sql).getRowCount();
+        }
+
+        private static class TestTableSelector extends TableSelector
+        {
+            public TestTableSelector(@NotNull TableInfo table, @NotNull Connection conn, Set<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort)
+            {
+                super(table, conn, columns, filter, sort, true);
+            }
         }
     }
 }
