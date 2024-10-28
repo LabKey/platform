@@ -206,10 +206,10 @@ public class Container implements Serializable, Comparable<Container>, Securable
     // Might add others in the future (e.g., ReadOnly)
     public enum LockState
     {
-        Unlocked("unlocked", false, false, false),
-        Archived("archived", false, false, true),
-        Inaccessible("locked, making it inaccessible to everyone except administrators", true, false, false),
-        Excluded("excluded from project locking and review", false, true, false);
+        Unlocked("unlocked", false, false, false), // used for projects only
+        Archived("archived", false, false, true), // child containers only
+        Inaccessible("locked, making it inaccessible to everyone except administrators", true, false, false), // projects only
+        Excluded("excluded from project locking and review", false, true, false); // projects only
 
         private final String _description;
         private final boolean _locked;
