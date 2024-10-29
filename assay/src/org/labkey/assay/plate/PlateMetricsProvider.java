@@ -28,7 +28,7 @@ public class PlateMetricsProvider implements UsageMetricsProvider
 {
     private SQLFragment plateSetPlatesSQL(TableInfo plateSetTable, TableInfo plateTable)
     {
-        return new SQLFragment("SELECT ps.name, COUNT(p.rowid) FROM ")
+        return new SQLFragment("SELECT ps.rowId, COUNT(p.rowid) AS plateCount FROM ")
                 .append(plateSetTable, "ps")
                 .append(" LEFT OUTER JOIN ").append(plateTable, "p")
                 .append(" ON ps.rowid = p.plateset")
@@ -187,7 +187,7 @@ public class PlateMetricsProvider implements UsageMetricsProvider
         Long standAlonePlateSetCount = new SqlSelector(schema.getSchema(), new SQLFragment("SELECT COUNT(*) FROM ").append(plateSetTable, "ps").append(" WHERE type =?").add(PlateSetType.assay).append(" AND rootplatesetid IS NULL")).getObject(Long.class);
         Long plateSetNoPlatesCount = plateSetPlatesCount(schema.getSchema(), plateSetTable, plateTable, 0);
         Long plateSetOnePlateCount = plateSetPlatesCount(schema.getSchema(), plateSetTable, plateTable, 1);
-        SQLFragment maxPlatesSql = new SQLFragment("SELECT MAX(count) FROM (").append(plateSetPlatesSQL(plateSetTable, plateTable)).append(") x");
+        SQLFragment maxPlatesSql = new SQLFragment("SELECT MAX(plateCount) FROM (").append(plateSetPlatesSQL(plateSetTable, plateTable)).append(") x");
         Long maxPlatesCount = new SqlSelector(schema.getSchema(), maxPlatesSql).getObject(Long.class);
         // too many items to use Map.of()
         Map<String, Long> plateSets = new HashMap<>();

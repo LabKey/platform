@@ -1696,6 +1696,9 @@ public class LoginController extends SpringActionController
     private AuthenticationResult attemptSetPassword(ValidEmail email, URLHelper returnUrlHelper, String auditMessage, boolean clearVerification, BindException errors) throws InvalidEmailException
     {
         HttpServletRequest request = getViewContext().getRequest();
+        // TODO: This is unreliable... e.g., the "change password via email validation" scenario isn't considered a
+        // change, so messaging and audit text is off. Actions should explicitly determine whether this is a change
+        // operation vs. an initial password. Need a flag or perhaps separate actions.
         boolean changeOperation = StringUtils.startsWithIgnoreCase(auditMessage, "change");
 
         return DbLoginService.get().attemptSetPassword(getContainer(), getUser(), request.getParameter("password"), request.getParameter("password2"), request, email, returnUrlHelper, auditMessage, clearVerification, changeOperation, errors);
