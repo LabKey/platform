@@ -189,7 +189,7 @@ abstract public class ExpTableImpl<C extends Enum>
     protected MutableColumnInfo addContainerColumn(C containerCol, ActionURL url)
     {
         var result = addColumn(containerCol);
-        Set<String> set = new LinkedHashSet(result.getImportAliasSet());
+        Set<String> set = new LinkedHashSet<>(result.getImportAliasSet());
         set.add("container");
         result.setImportAliasesSet(set);
         if (null != url)

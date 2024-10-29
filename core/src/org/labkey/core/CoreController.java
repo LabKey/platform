@@ -201,7 +201,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNER_KEY;
@@ -1674,11 +1673,11 @@ public class CoreController extends SpringActionController
 
             for (Module m : ModuleLoader.getInstance().getModules())
             {
-                List<Summary> summaries = m.getDetailedSummary(getContainer());
+                List<Summary> summaries = m.getDetailedSummary(getContainer(), getUser());
                 allSummaries.addAll(summaries);
             }
 
-            return new ApiSimpleResponse("moduleSummary", allSummaries.stream().map(Summary::toJSON).collect(Collectors.toList()));
+            return new ApiSimpleResponse("moduleSummary", allSummaries.stream().map(Summary::toJSON).toList());
         }
     }
 
