@@ -349,22 +349,7 @@ public class MicrosoftSqlServer2016Dialect extends MicrosoftSqlServer2014Dialect
 
             DbScope labKeyScope = DbScope.getLabKeyScope();
             // Clone the LabKey scope so it has its own SqlDialect that we can prepare every time we set the language
-            DbScope scope = new DbScope(labKeyScope.getDataSourceName(), labKeyScope.getLabKeyDataSource())
-            {
-                private final Connection _connection = getWrapped();
-
-                @Override
-                public Connection getConnection()
-                {
-                    // Hand out an un-pooled connection since we might set language and don't want that to persist outside this test
-                    return _connection;
-                }
-
-                private Connection getWrapped() throws SQLException
-                {
-                    return new ConnectionWrapper(getUnpooledConnection(), this, null, DbScope.ConnectionType.Transaction, null);
-                }
-            };
+            TestScope scope = new TestScope(labKeyScope);
 
             TableInfo containers = CoreSchema.getInstance().getTableInfoContainers();
             ColumnInfo created = containers.getColumn("Created");
@@ -379,6 +364,36 @@ public class MicrosoftSqlServer2016Dialect extends MicrosoftSqlServer2014Dialect
                     setLanguage(scope, conn, "French");
                     testMultipleFilters(conn, containers, created.getFieldKey());
                 }
+            }
+
+            // Null out connection to prevent query profiler from holding onto it via this scope
+            scope.clearConnection();
+        }
+
+        private static class TestScope extends DbScope
+        {
+            private Connection _connection = getWrapped();
+
+            public TestScope(DbScope scope) throws ServletException, SQLException
+            {
+                super(scope.getDataSourceName(), scope.getLabKeyDataSource());
+            }
+
+            @Override
+            public Connection getConnection()
+            {
+                return _connection;
+            }
+
+            private Connection getWrapped() throws SQLException
+            {
+                // Hand out an un-pooled connection since we might set language and don't want that to persist outside this test
+                return new ConnectionWrapper(getUnpooledConnection(), this, null, DbScope.ConnectionType.Transaction, null);
+            }
+
+            private void clearConnection()
+            {
+                _connection = null;
             }
         }
 
