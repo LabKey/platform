@@ -400,7 +400,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         if (user.isGuest() || !hasAccess(user))
             return false;
         Set<Class<? extends Permission>> perms = getPermissions(user);
-        return perms.contains(UpdatePermission.class) || perms.contains(DeletePermission.class);
+        return perms.contains(DeletePermission.class);
     }
 
     @Override
