@@ -36,6 +36,7 @@ import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewContext;
@@ -133,6 +134,7 @@ public class ApiQueryResponse implements ApiResponse
     @Override
     public void render(ApiResponseWriter writer) throws Exception
     {
+        Exception thrownException = null;
         writer.startResponse();
         try
         {
@@ -210,12 +212,25 @@ public class ApiQueryResponse implements ApiResponse
         }
         catch (Exception ex)
         {
+            thrownException = ex;
             handleRenderException(writer, ex);
         }
         finally
         {
-            writer.endResponse();
-            writer.close();
+            if (ExceptionUtil.isClientAbortException(thrownException))
+                return;
+            try
+            {
+                writer.endResponse();
+                writer.close();
+            }
+            catch (Exception end)
+            {
+                if (ExceptionUtil.isClientAbortException(end))
+                    return;
+                // Is it useful to throw this exception...
+                throw end;
+            }
         }
     }
 
