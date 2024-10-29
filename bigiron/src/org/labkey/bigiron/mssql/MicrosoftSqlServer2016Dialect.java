@@ -68,9 +68,9 @@ public class MicrosoftSqlServer2016Dialect extends MicrosoftSqlServer2014Dialect
     {
         super.prepare(scope);
 
-        try
+        try (Connection conn = scope.getConnection())
         {
-            LanguageSettings settings = getLanguageSettings(scope, scope.getConnection());
+            LanguageSettings settings = getLanguageSettings(scope, conn);
             _language = settings.getLanguage();
             _dateFormat = settings.getDate_format();
         }
@@ -347,32 +347,30 @@ public class MicrosoftSqlServer2016Dialect extends MicrosoftSqlServer2014Dialect
             // Issue 51472 pointed out issues with Timestamp conversions on French SQL Server. Primary fixes were in
             // the DateCompareClause subclasses, so put them through their paces here.
 
-            DbScope labKeyScope = DbScope.getLabKeyScope();
-            // Clone the LabKey scope so it has its own SqlDialect that we can prepare every time we set the language
-            TestScope scope = new TestScope(labKeyScope);
-
-            TableInfo containers = CoreSchema.getInstance().getTableInfoContainers();
-            ColumnInfo created = containers.getColumn("Created");
-
-            try (Connection conn = scope.getConnection())
+            // Use a test scope that passes out an un-pooled connection so changing the language settings don't affect
+            // connections in the pool. This also gives us a SqlDialect we can prepare every time we set the language.
+            try (TestScope scope = new TestScope(DbScope.getLabKeyScope()))
             {
-                setLanguage(scope, conn, "English");
-                testMultipleFilters(conn, containers, created.getFieldKey());
+                TableInfo containers = CoreSchema.getInstance().getTableInfoContainers();
+                ColumnInfo created = containers.getColumn("Created");
 
-                if (scope.getSqlDialect().isSqlServer())
+                try (Connection conn = scope.getConnection())
                 {
-                    setLanguage(scope, conn, "French");
+                    setLanguage(scope, conn, "English");
                     testMultipleFilters(conn, containers, created.getFieldKey());
+
+                    if (scope.getSqlDialect().isSqlServer())
+                    {
+                        setLanguage(scope, conn, "French");
+                        testMultipleFilters(conn, containers, created.getFieldKey());
+                    }
                 }
             }
-
-            // Null out connection to prevent query profiler from holding onto it via this scope
-            scope.clearConnection();
         }
 
-        private static class TestScope extends DbScope
+        private static class TestScope extends DbScope implements AutoCloseable
         {
-            private Connection _connection = getWrapped();
+            private TestConnectionWrapper _connection = getWrapped();
 
             public TestScope(DbScope scope) throws ServletException, SQLException
             {
@@ -385,15 +383,36 @@ public class MicrosoftSqlServer2016Dialect extends MicrosoftSqlServer2014Dialect
                 return _connection;
             }
 
-            private Connection getWrapped() throws SQLException
+            private TestConnectionWrapper getWrapped() throws SQLException
             {
                 // Hand out an un-pooled connection since we might set language and don't want that to persist outside this test
-                return new ConnectionWrapper(getUnpooledConnection(), this, null, DbScope.ConnectionType.Transaction, null);
+                return new TestConnectionWrapper(getUnpooledConnection(), this);
             }
 
-            private void clearConnection()
+            @Override
+            public void close() throws SQLException
             {
+                _connection.closeConnection();
                 _connection = null;
+            }
+
+            private static class TestConnectionWrapper extends ConnectionWrapper
+            {
+                public TestConnectionWrapper(Connection conn, DbScope scope)
+                {
+                    super(conn, scope, null, DbScope.ConnectionType.Transaction, null);
+                }
+
+                @Override
+                public void close()
+                {
+                    // No-op
+                }
+
+                private void closeConnection() throws SQLException
+                {
+                    super.close();
+                }
             }
         }
 
@@ -404,7 +423,7 @@ public class MicrosoftSqlServer2016Dialect extends MicrosoftSqlServer2014Dialect
             {
                 new SqlExecutor(scope, conn).execute("SET LANGUAGE " + language);
                 dialect.prepare(scope);
-                LOG.info(getLanguageSettings(DbScope.getLabKeyScope(), conn));
+                LOG.info(getLanguageSettings(scope, conn));
             }
         }
 
