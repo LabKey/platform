@@ -19,7 +19,9 @@ package org.labkey.api.security;
 import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.http.HttpSessionEvent;
 import jakarta.servlet.http.HttpSessionListener;
+import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -29,6 +31,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
+import org.labkey.api.collections.ConcurrentSetValuedMap;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
@@ -66,6 +69,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Link;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
@@ -424,7 +428,7 @@ public class UserManager
         SimpleFilter f = new SimpleFilter(FieldKey.fromParts("Comment"), "logged " + inOrOut.toString(), CompareType.CONTAINS);
         if (since != null)
         {
-            f.addCondition(FieldKey.fromParts("Created"), since, CompareType.GTE);
+            f.addCondition(FieldKey.fromParts("Created"), since, CompareType.DATE_GTE);
         }
         if (null == userAuditTable)
             userAuditTable = getUserAuditSchemaTableInfo();
@@ -488,14 +492,14 @@ public class UserManager
         {
             sql.append(" INNER JOIN ");
             sql.append(CoreSchema.getInstance().getTableInfoUsersData(), "ud");
-            sql.append(" ON uat.CreatedBy = ud.UserId ");
-            sql.append(" WHERE ud.System = ? ");
+            sql.append(" ON uat.CreatedBy = ud.UserId");
+            sql.append(" WHERE ud.System = ?");
             sql.add(false);
         }
         else
         {
             // Make string concat easy
-            sql.append(" WHERE 1=1 ");
+            sql.append(" WHERE 1=1");
         }
 
         sql.append(" AND uat.Comment LIKE ");
@@ -522,7 +526,7 @@ public class UserManager
     /** In minutes */
     private static final AtomicLong _totalSessionDuration = new AtomicLong();
 
-    private static final Set<String> _activeSessions = Collections.synchronizedSet(new HashSet<>());
+    private static final MultiValuedMap<Integer, HttpSession> _activeSessions = new ConcurrentSetValuedMap<>();
 
     public static void ensureSessionTracked(HttpSession s)
     {
@@ -530,7 +534,10 @@ public class UserManager
         {
             Integer userId = (Integer)s.getAttribute(USER_ID_KEY);
             if (null != userId && getGuestUser().getUserId() != userId)
-               _activeSessions.add(s.getId());
+            {
+                if (_activeSessions.put(userId, s))
+                    LOG.debug("Tracking a new session. {} active.", StringUtilsLabKey.pluralize(getActiveUserSessionCount(), "session"));
+            }
         }
     }
 
@@ -545,17 +552,64 @@ public class UserManager
         @Override
         public void sessionDestroyed(HttpSessionEvent event)
         {
-            _activeSessions.remove(event.getSession().getId());
-
             // Issue 44761 - track session duration for authenticated users
             User user = SecurityManager.getSessionUser(event.getSession());
             if (user != null)
             {
+                _activeSessions.removeMapping(user.getUserId(), event.getSession());
+
                 long duration = TimeUnit.MILLISECONDS.toMinutes(event.getSession().getLastAccessedTime() - event.getSession().getCreationTime());
-                LOG.debug("Adding session duration to tally for " + user.getEmail() + ", " + duration + " minutes");
+                LOG.debug("Destroyed session for {}. Adding session duration of {} minutes to tally. {} active.", user.getEmail(), duration, StringUtilsLabKey.pluralize(getActiveUserSessionCount(), "session"));
                 _sessionCount.incrementAndGet();
                 _totalSessionDuration.addAndGet(duration);
             }
+        }
+    }
+
+    public static void terminateAllSessionsForUser(@Nullable User user)
+    {
+        handleSessionsForUser(user, new SessionHandler()
+        {
+            @Override
+            public boolean handleSession(HttpSession session)
+            {
+                session.invalidate();
+                return true;
+            }
+
+            @Override
+            public void complete(int count)
+            {
+                //noinspection DataFlowIssue
+                LOG.debug("Invalidated {} for {}.", StringUtilsLabKey.pluralize(count, "session"), user.getEmail());
+            }
+        });
+    }
+
+    public interface SessionHandler
+    {
+        // Return true to increment the count passed to complete() after handleSession() has been invoked for each active session
+        boolean handleSession(HttpSession session);
+        // Called after all sessions have been passed to handleSession(), only if user is non-null and was logged in.
+        // Useful for coalescing logging, for example.
+        void complete(int count);
+    }
+
+    public static void handleSessionsForUser(@Nullable User user, SessionHandler handler)
+    {
+        if (user != null && !user.isGuest())
+        {
+            MutableInt count = new MutableInt();
+
+            // The SessionHandler may directly or indirectly mutate this user's session set, so enumerate a copy to avoid
+            // concurrent modification exceptions.
+            Set<HttpSession> sessions = new HashSet<>(_activeSessions.get(user.getUserId()));
+            sessions.forEach(session -> {
+                if (handler.handleSession(session))
+                    count.increment();
+            });
+
+            handler.complete(count.intValue());
         }
     }
 
@@ -564,6 +618,7 @@ public class UserManager
         return _activeSessions.size();
     }
 
+    // Average duration of all sessions that have ended
     public static Integer getAverageSessionDuration()
     {
         return _sessionCount.get() == 0 ? null : (int)(_totalSessionDuration.get() / _sessionCount.get());
