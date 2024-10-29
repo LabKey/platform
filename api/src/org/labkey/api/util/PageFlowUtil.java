@@ -186,11 +186,6 @@ public class PageFlowUtil
 
     public static final String SESSION_PAGE_ADMIN_MODE = "session-page-admin-mode";
 
-    public static boolean useExperimentalCoreUI()
-    {
-        return true;
-    }
-
     /**
      * Whether the user has entered the "Page Admin Mode". Used for showing/hiding controls like adding/moving/removing webparts and tabs.
      * @return boolean
@@ -2143,7 +2138,6 @@ public class PageFlowUtil
         // Note: If you update this set of flags please update enum on client in @labkey/api
         JSONObject experimental = new JSONObject();
         experimental.put("containerRelativeURL", appProps.getUseContainerRelativeURL());
-        experimental.put("useExperimentalCoreUI", useExperimentalCoreUI());
         experimental.put(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP, AppProps.getInstance().isOptionalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP));
         experimental.put(AppProps.EXPERIMENTAL_JAVASCRIPT_SERVER, AppProps.getInstance().isOptionalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_SERVER));
         experimental.put(AppProps.EXPERIMENTAL_NO_GUESTS, AppProps.getInstance().isOptionalFeatureEnabled(AppProps.EXPERIMENTAL_NO_GUESTS));
