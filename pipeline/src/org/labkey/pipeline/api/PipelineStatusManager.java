@@ -180,6 +180,7 @@ public class PipelineStatusManager
             // We're shutting down so it's likely that failures are from us killing DB connections to interrupt
             // long-running queries. Don't put them in the error state so jobs will resume on startup (and can be
             // cancelled by admins then if desired)
+            // See issues 51483 and 51385
             return true;
         }
 
