@@ -16,6 +16,9 @@
 
 package org.labkey.api.util;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 /**
  * Callback to be notified when the server is shutting down. Complement to {@link StartupListener}.
  * User: brittp
@@ -32,10 +35,46 @@ public interface ShutdownListener
      * called first, should be used only for non-blocking operations (set _shuttingDown=true, interrupt threads)
      * also possible to launch an async shutdown task here!
      */
-    void shutdownPre();
+    default void shutdownPre() {}
 
     /**
      * perform shutdown tasks
      */
-    void shutdownStarted();
+    default void shutdownStarted() {}
+
+    static ShutdownListener of(@NotNull String name, Runnable preShutdown)
+    {
+        return of(name, preShutdown, null);
+    }
+
+    static ShutdownListener of(String name, @Nullable Runnable preShutdown, @Nullable Runnable shutdown)
+    {
+        return new ShutdownListener()
+        {
+            @Override
+            public String getName()
+            {
+                return name;
+            }
+
+            @Override
+            public void shutdownStarted()
+            {
+                if (shutdown != null)
+                {
+                    shutdown.run();
+                }
+
+            }
+
+            @Override
+            public void shutdownPre()
+            {
+                if (preShutdown != null)
+                {
+                    preShutdown.run();
+                }
+            }
+        };
+    }
 }

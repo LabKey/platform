@@ -958,24 +958,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         }
         ContextListener.addShutdownListener(TempTableTracker.getShutdownListener());
         ContextListener.addShutdownListener(DavController.getShutdownListener());
-        ContextListener.addShutdownListener(new ShutdownListener()
-        {
-            @Override
-            public String getName()
-            {
-                return "Temp file cleanup";
-            }
-
-            @Override
-            public void shutdownPre()
-            {}
-
-            @Override
-            public void shutdownStarted()
-            {
-                deleteTempFiles();
-            }
-        });
+        ContextListener.addShutdownListener(ShutdownListener.of("Temp file cleanup", null, this::deleteTempFiles));
 
         SimpleMetricsService.setInstance(new SimpleMetricsServiceImpl());
 

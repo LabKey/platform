@@ -48,7 +48,9 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
@@ -82,6 +84,13 @@ public class PipelineStatusManager
 
     private static final PipelineSchema _schema = PipelineSchema.getInstance();
     private static final Logger LOG = LogHelper.getLogger(PipelineStatusManager.class, "Manages setting states for pipeline jobs");
+
+    private static boolean _shuttingDown = false;
+
+    static
+    {
+        ContextListener.addShutdownListener(ShutdownListener.of("PipelineStatusManager", () -> _shuttingDown = true));
+    }
 
     public static TableInfo getTableInfo()
     {
@@ -166,6 +175,14 @@ public class PipelineStatusManager
 
     public static boolean setStatusFile(PipelineJob job, User user, String status, @Nullable String info, boolean allowInsert)
     {
+        if (_shuttingDown && PipelineJob.TaskStatus.error.matches(status))
+        {
+            // We're shutting down so it's likely that failures are from us killing DB connections to interrupt
+            // long-running queries. Don't put them in the error state so jobs will resume on startup (and can be
+            // cancelled by admins then if desired)
+            return true;
+        }
+
         try
         {
             PipelineStatusFileImpl sfExist = getJobStatusFile(job.getJobGUID());
