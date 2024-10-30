@@ -1524,12 +1524,12 @@ Ext4.define('File.panel.Browser', {
                     // skip child container nodes for customize files page
                     if (me.showFolderTreeOnly)
                     {
+                        var containerPath = encodeURI(LABKEY.container.path);
                         treeStore.filterBy(function(record) {
                             var id = record.get('id');
-                            var containerPath = encodeURI(LABKEY.container.path);
                             if (id === containerPath || id === containerPath + '/') // root: current container
                                 return true;
-                            else if (id.indexOf(LABKEY.container.path + '/%40') === 0) // if any of @files, @filesets, @pipeline, @wiki, @cloud
+                            else if (id.indexOf(containerPath + '/%40') === 0) // if any of @files, @filesets, @pipeline, @wiki, @cloud
                                 return true;
 
                             return false; // filter out child containers

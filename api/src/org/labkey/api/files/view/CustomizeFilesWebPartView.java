@@ -89,7 +89,7 @@ public class CustomizeFilesWebPartView extends JspView<CustomizeFilesWebPartView
 
             try
             {
-                fileRoot = getDavTreeFileRoot(davFileRoot == null ? null : new URI(PageFlowUtil.encode(davFileRoot)), fileSet, getContextContainer());
+                fileRoot = getDavTreeFileRoot(davFileRoot == null ? null : new URI(PageFlowUtil.encodePath(davFileRoot)), fileSet, getContextContainer());
             }
             catch (URISyntaxException e)
             {

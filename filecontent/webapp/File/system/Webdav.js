@@ -23,12 +23,11 @@
             rootOptions: ['_webdav', '_users', '_webfiles']
         },
 
-
         constructor: function (config)
         {
             Ext4.apply(this, config,
                     {
-                        containerPath: LABKEY.ActionURL.getContainer(),
+                        containerPath: encodeURI(LABKEY.container.path),
                         rootPath: LABKEY.contextPath + '/_webdav/',
                         rootName: (LABKEY.serverName || "LabKey Server")
                     });
@@ -156,7 +155,7 @@
         {
 
             Ext4.applyIf(this, {
-                containerPath: LABKEY.ActionURL.getContainer()
+                containerPath: encodeURI(LABKEY.container.path),
             });
 
             var prefix = this.concatPaths(this.baseUrl, this.rootPath);

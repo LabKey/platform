@@ -15,8 +15,6 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.attachments.AttachmentDirectory" %>
-<%@ page import="org.labkey.api.files.FileContentService" %>
 <%@ page import="org.labkey.api.files.FileUrls" %>
 <%@ page import="org.labkey.api.files.view.CustomizeFilesWebPartView" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
@@ -24,7 +22,6 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="java.util.Collection" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -111,7 +108,6 @@
                 else {
                     // We've historically used non-URI-encoded paths for saving the preferred root. Keep it that
                     // way for compatibility with existing installs and folder exports
-                    debugger;
                     let davNodeId = decodeURIComponent(selectedNodes[0].data.id);
                     // trim the container prefix so that property can be exported/imported independent of container name
                     davNodeId = davNodeId.replace(LABKEY.container.path + '/', '');
