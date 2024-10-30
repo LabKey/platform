@@ -958,24 +958,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         }
         ContextListener.addShutdownListener(TempTableTracker.getShutdownListener());
         ContextListener.addShutdownListener(DavController.getShutdownListener());
-        ContextListener.addShutdownListener(new ShutdownListener()
-        {
-            @Override
-            public String getName()
-            {
-                return "Temp file cleanup";
-            }
-
-            @Override
-            public void shutdownPre()
-            {}
-
-            @Override
-            public void shutdownStarted()
-            {
-                deleteTempFiles();
-            }
-        });
+        ContextListener.addShutdownListener(ShutdownListener.of("Temp file cleanup", null, this::deleteTempFiles));
 
         SimpleMetricsService.setInstance(new SimpleMetricsServiceImpl());
 
@@ -1195,6 +1178,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             results.put("userLimits", new LimitActiveUsersSettings().getMetricsMap());
             results.put("systemUserCount", UserManager.getSystemUserCount());
             results.put("workbookCount", ContainerManager.getWorkbookCount());
+            results.put("archivedFolderCount", ContainerManager.getArchivedContainerCount());
             results.put("databaseSize", CoreSchema.getInstance().getSchema().getScope().getDatabaseSize());
             Calendar cal = new GregorianCalendar();
             cal.add(Calendar.DATE, -30);
