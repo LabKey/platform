@@ -190,7 +190,7 @@
     {
         // Just a smoke test. See URIUtil.TestCase
         var root = new FileSystemLike.Builder(tempUri).root();
-        String str = StringUtils.stripEnd(root.toNioPathForRead().toString(),"/");
+        String str =  StringUtils.stripEnd(StringUtils.replaceChars(root.toNioPathForRead().toString(), File.separatorChar, '/'), "/");
         assertTrue(root.isDescendant(URI.create(str)));
         assertTrue(root.isDescendant(URI.create(str+"/")));
         assertTrue(root.isDescendant(new File(str).toURI()));
