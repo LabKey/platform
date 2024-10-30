@@ -132,7 +132,6 @@
             if (fileRootName.substring(0, 1) !== '/')
                 rootOffset += '/';
             rootOffset += fileRootName;
-            debugger;
         }
 
         var fileSystem = Ext4.create('File.system.Webdav', {
