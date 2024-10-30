@@ -23,6 +23,7 @@
             rootOptions: ['_webdav', '_users', '_webfiles']
         },
 
+
         constructor: function (config)
         {
             Ext4.apply(this, config,
@@ -47,11 +48,15 @@
                     this.contextUrl = rootContextUrl;
             }
 
-            // '/home/@files' -- a stripped version of the rootPath
+            // A version of the rootPath stripped of the context path and the /_webdav (or similar) prefix
+            // For example: /home/%40files
+            // This is the root of the file browser
             this.baseUrl = this.rootPath.replace(this.contextUrl, '');
 
+            // The current path relative to the baseUrl
             this.offsetUrl = '/';
 
+            // rootOffset is the same as baseUrl + offsetUrl
             if (this.rootOffset)
             {
                 if (this.rootOffset.indexOf(this.contextUrl) === 0)

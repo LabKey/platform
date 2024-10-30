@@ -394,28 +394,38 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             {
                 relativePath += PageFlowUtil.encode(davName);
                 if (fileset != null)
-                    relativePath += "/" + PageFlowUtil.encode(fileset);
+                    relativePath += "/" + PageFlowUtil.encodePath(fileset);
             }
         }
 
-        return _getRootPath(c, relativePath, skipDavPrefix);
+        try
+        {
+            return _getRootPath(c, new URI(relativePath), skipDavPrefix);
+        }
+        catch (URISyntaxException e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
     }
 
     /**
-     * @param relativePath path to append to the container's WebDAV path, already URL-encoded
+     * @param relativePath path to append to the container's WebDAV path
      * @return optionally including the context path and _webdav, representing the WebDAV path to the container,
      * with a trailing slash.
      * Does not include protocol, host, or port */
     @NotNull
-    private static URI _getRootPath(Container c, @Nullable String relativePath, boolean skipDavPrefix)
+    private static URI _getRootPath(Container c, @Nullable URI relativePath, boolean skipDavPrefix)
     {
         try
         {
             String webdavPrefix = skipDavPrefix ? "" : PageFlowUtil.encode(AppProps.getInstance().getContextPath()) + "/" + PageFlowUtil.encode(WebdavService.getServletPath());
             URI rootPath = new URI(webdavPrefix + c.getEncodedPath());
+            relativePath = relativePath == null || relativePath.toString().endsWith("/") ?
+                    relativePath :
+                    new URI(relativePath + "/");
 
             if (null != relativePath)
-                rootPath = rootPath.resolve(relativePath.endsWith("/") ? relativePath : relativePath + "/");
+                rootPath = rootPath.resolve(relativePath);
 
             return rootPath;
         }
@@ -425,10 +435,19 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         }
     }
 
+    /** @param folderFileRoot not-yet-URI-encoded relative path */
     @NotNull
     public static URI getWebPartFolderRootPath(Container c, @Nullable String folderFileRoot)
     {
-        return _getRootPath(c, folderFileRoot, false);
+        try
+        {
+            return _getRootPath(c, folderFileRoot == null ? null : new URI(PageFlowUtil.encodePath(folderFileRoot)), false);
+        }
+        catch (URISyntaxException e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
+
     }
 
     protected boolean canDisplayPipelineActions()

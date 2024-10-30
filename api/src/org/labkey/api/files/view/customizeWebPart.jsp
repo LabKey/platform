@@ -39,8 +39,6 @@
     CustomizeFilesWebPartView.CustomizeWebPartForm form = me.getModelBean();
     ViewContext ctx = getViewContext();
     ActionURL postUrl = form.getWebPart().getCustomizePostURL(ctx);
-    FileContentService svc = FileContentService.get();
-    Collection<AttachmentDirectory> attDirs = svc.getRegisteredDirectories(getContainer());
 
     boolean small = false;
     boolean medium = false;
@@ -99,21 +97,24 @@
 </labkey:form>
 
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
-    var fileTree;
+    let fileTree;
 
     function setFileRoot() {
         if (fileTree) {
-            var tree = fileTree.items.items[0];
+            const tree = fileTree.items.items[0];
             if (tree) {
-                var selectedNodes = tree.getSelectionModel().getSelection();
-                if (!selectedNodes || selectedNodes.length == 0) {
+                const selectedNodes = tree.getSelectionModel().getSelection();
+                if (!selectedNodes || selectedNodes.length === 0) {
                     alert("Please select a node for File Root");
                     return false;
                 }
                 else {
-                    var davNodeId = selectedNodes[0].data.id;
+                    // We've historically used non-URI-encoded paths for saving the preferred root. Keep it that
+                    // way for compatibility with existing installs and folder exports
+                    debugger;
+                    let davNodeId = decodeURIComponent(selectedNodes[0].data.id);
                     // trim the container prefix so that property can be exported/imported independent of container name
-                    davNodeId = davNodeId.replace(encodeURI(LABKEY.container.path) + '/', '');
+                    davNodeId = davNodeId.replace(LABKEY.container.path + '/', '');
                     document.getElementById("hidden-fileRoot").value = davNodeId;
                 }
             }

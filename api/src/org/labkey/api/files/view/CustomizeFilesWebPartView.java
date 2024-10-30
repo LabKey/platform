@@ -19,6 +19,7 @@ package org.labkey.api.files.view;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.BooleanUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipeRoot;
@@ -56,8 +57,8 @@ public class CustomizeFilesWebPartView extends JspView<CustomizeFilesWebPartView
         private String path;
         private boolean useFileSet;
         private boolean _folderTreeVisible;
-        private String _location;
-        private Portal.WebPart _webPart;
+        private final String _location;
+        private final Portal.WebPart _webPart;
         private String _rootOffset;
         @Setter
         @Getter
@@ -82,8 +83,18 @@ public class CustomizeFilesWebPartView extends JspView<CustomizeFilesWebPartView
 
             _folderTreeVisible = BooleanUtils.toBoolean(propertyMap.get(FilesWebPart.FOLDER_TREE_VISIBLE_PROPERTY_NAME));
 
+            // We've historically used non-URI-encoded paths for saving the preferred root. Keep it that
+            // way for compatibility with existing installs and folder exports
             String davFileRoot = propertyMap.get(FilesWebPart.FILE_ROOT_PROPERTY_NAME);
-            fileRoot = getDavTreeFileRoot(davFileRoot, fileSet, getContextContainer());
+
+            try
+            {
+                fileRoot = getDavTreeFileRoot(davFileRoot == null ? null : new URI(PageFlowUtil.encode(davFileRoot)), fileSet, getContextContainer());
+            }
+            catch (URISyntaxException e)
+            {
+                throw UnexpectedException.wrap(e);
+            }
 
             useFileSet = fileSet != null;
         }
@@ -161,7 +172,10 @@ public class CustomizeFilesWebPartView extends JspView<CustomizeFilesWebPartView
         }
     }
 
-    private static URI getDavTreeFileRoot(String fileRoot, String legacyFileRoot, Container c)
+    /**
+     *
+     */
+    private static URI getDavTreeFileRoot(@Nullable URI fileRoot, String legacyFileRoot, Container c)
     {
         URI treeFileRoot = null;
         FileContentService service = FileContentService.get();
@@ -171,13 +185,13 @@ public class CustomizeFilesWebPartView extends JspView<CustomizeFilesWebPartView
             {
                 try
                 {
-                    if (fileRoot.startsWith(FileContentService.FILES_LINK) || fileRoot.startsWith("%40files"))
+                    if (fileRoot.getPath().startsWith(PageFlowUtil.encode(FileContentService.FILES_LINK)))
                     {
                         // @files disappears when root set to cloud, so make sure it exists before trying in expandPath there
                         Path path = service.getFileRootPath(c);
                         if (null != path)
                         {
-                            if (Files.exists(path.resolve(PageFlowUtil.decode(fileRoot))))
+                            if (Files.exists(path.resolve(fileRoot.getPath())))
                                 treeFileRoot = new URI(c.getParsedPath().encode("", "/") + fileRoot);
                         }
                     }
