@@ -288,7 +288,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
                     }
                 }
 
-                try (TSVMapWriter tsvWriter = saveMatchingColumnDataOnly ? new TSVMapWriter(columns, rawData) : new TSVMapWriter(rawData))
+                try (TSVMapWriter tsvWriter = saveMatchingColumnDataOnly ? new TSVMapWriter(columns, rawData) : new TSVMapWriter(columns, rawData, true))
                 {
                     tsvWriter.write(fileObject.toNioPathForWrite().toFile());
                     factory.setRawData(null);
