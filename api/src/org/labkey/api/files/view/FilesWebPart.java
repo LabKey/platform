@@ -114,7 +114,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
 
         if (fileRoot != null)
         {
-            if (fileRoot.startsWith(FileContentService.PIPELINE_LINK))
+            if (fileRoot.startsWith(FileContentService.PIPELINE_LINK) || fileRoot.startsWith(PageFlowUtil.encode(FileContentService.PIPELINE_LINK)))
             {
                 _isPipelineFiles = true;
             }
@@ -129,7 +129,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         }
         else if (legacyFileRoot != null) // legacy file root
         {
-            if (legacyFileRoot.equals(FileContentService.PIPELINE_LINK))
+            if (legacyFileRoot.equals(FileContentService.PIPELINE_LINK) || legacyFileRoot.equals(PageFlowUtil.encode(FileContentService.PIPELINE_LINK)))
             {
                 _isPipelineFiles = true;
                 PipeRoot root = PipelineService.get().findPipelineRoot(getViewContext().getContainer());
