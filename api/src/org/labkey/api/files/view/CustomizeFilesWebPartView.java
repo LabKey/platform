@@ -23,14 +23,13 @@ import org.labkey.api.data.Container;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.Portal;
 
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
@@ -172,13 +171,13 @@ public class CustomizeFilesWebPartView extends JspView<CustomizeFilesWebPartView
             {
                 try
                 {
-                    if (fileRoot.startsWith(FileContentService.FILES_LINK))
+                    if (fileRoot.startsWith(FileContentService.FILES_LINK) || fileRoot.startsWith("%40files"))
                     {
                         // @files disappears when root set to cloud, so make sure it exists before trying in expandPath there
                         Path path = service.getFileRootPath(c);
                         if (null != path)
                         {
-                            if (Files.exists(path.resolve(fileRoot)))
+                            if (Files.exists(path.resolve(PageFlowUtil.decode(fileRoot))))
                                 treeFileRoot = new URI(c.getParsedPath().encode("", "/") + fileRoot);
                         }
                     }

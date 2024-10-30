@@ -1526,7 +1526,7 @@ Ext4.define('File.panel.Browser', {
                     {
                         treeStore.filterBy(function(record) {
                             var id = record.get('id');
-                            var containerPath = LABKEY.container.path;
+                            var containerPath = encodeURI(LABKEY.container.path);
                             if (id === containerPath || id === containerPath + '/') // root: current container
                                 return true;
                             else if (id.indexOf(LABKEY.container.path + '/%40') === 0) // if any of @files, @filesets, @pipeline, @wiki, @cloud
@@ -2164,7 +2164,7 @@ Ext4.define('File.panel.Browser', {
     },
 
     getFileRelativePath : function(path) {
-        return path.split('@files').pop();
+        return path.split('files').pop();
     },
 
     submitCreateRunForm : function(panel) {

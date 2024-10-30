@@ -113,7 +113,7 @@
                 else {
                     var davNodeId = selectedNodes[0].data.id;
                     // trim the container prefix so that property can be exported/imported independent of container name
-                    davNodeId = davNodeId.replace(LABKEY.container.path + '/', '');
+                    davNodeId = davNodeId.replace(encodeURI(LABKEY.container.path) + '/', '');
                     document.getElementById("hidden-fileRoot").value = davNodeId;
                 }
             }
@@ -123,7 +123,7 @@
 
     Ext4.onReady(function() {
         var contextUrl = LABKEY.contextPath + "/_webdav";
-        var containerPath = LABKEY.container.path;
+        var containerPath = encodeURI(LABKEY.container.path);
         var rootPath = contextUrl + containerPath + '/';
         var rootOffset = null;
         var fileRootName = <%=q(form.getFileRoot())%>;
@@ -132,6 +132,7 @@
             if (fileRootName.substring(0, 1) !== '/')
                 rootOffset += '/';
             rootOffset += fileRootName;
+            debugger;
         }
 
         var fileSystem = Ext4.create('File.system.Webdav', {
