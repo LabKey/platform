@@ -41,6 +41,7 @@ import org.labkey.api.thumbnail.ThumbnailOutputStream;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.thumbnail.ThumbnailService.ImageType;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.ImageUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MimeMap;
@@ -57,17 +58,14 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-/**
- * User: Mark Igra
- * Date: Jul 6, 2006
- * Time: 5:08:19 PM
- */
 public class AttachmentReport extends BaseRedirectReport
 {
     public static final String TYPE = "Study.attachmentReport";     // Misnomer (it's no longer part of study), but keep this for backward compatibility
@@ -183,10 +181,35 @@ public class AttachmentReport extends BaseRedirectReport
 
                 if (null != svc)
                 {
-                    InputStream pdfStream = report.getInputStream();
-                    BufferedImage image = svc.pdfToImage(pdfStream, 0);
+                    final boolean deleteFile;
+                    final File file;
+                    String filePath = report.getFilePath();
+                    if (filePath != null)
+                    {
+                        file = new File(filePath);
+                        deleteFile = false;
+                    }
+                    else
+                    {
+                        file = FileUtil.createTempFile(null, ".pdf");
+                        try (InputStream is = report.getInputStream())
+                        {
+                            Files.copy(is, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                        }
+                        deleteFile = true;
+                    }
 
-                    return ImageUtil.renderThumbnail(image);
+                    try
+                    {
+                        BufferedImage image = svc.pdfToImage(file, 0);
+
+                        return ImageUtil.renderThumbnail(image);
+                    }
+                    finally
+                    {
+                        if (deleteFile)
+                            FileUtil.deleteTempFile(file);
+                    }
                 }
 
                 return null;
