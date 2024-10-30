@@ -27,9 +27,11 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.StatementWrapper;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.miniprofiler.MiniProfiler;
+import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.LoggerWriter;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.SimpleLoggerWriter;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ViewServlet;
@@ -52,7 +54,9 @@ import java.sql.Statement;
 import java.sql.Struct;
 import java.text.DateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -99,6 +103,43 @@ public class ConnectionWrapper implements java.sql.Connection
     private Throwable _suspiciousCloseStackTrace;
 
     private volatile boolean _allowClose = true;
+
+    static
+    {
+        // Issue 51483: DB query can be left running after shutting down server
+        ContextListener.addShutdownListener(ShutdownListener.of("DB connection closer", null, () -> {
+
+            // Only kill connections that have been open for more than two seconds to avoid
+            // interrupting work related to the shutdown
+            Calendar cutoffCal = Calendar.getInstance();
+            cutoffCal.add(Calendar.SECOND, -2);
+            Date cutoffDate = new Date(cutoffCal.getTimeInMillis());
+
+            // Build up the list and release the lock on _openConnections
+            List<ConnectionWrapper> toClose = new ArrayList<>();
+            for (ConnectionWrapper openConnection : _openConnections)
+            {
+                if (openConnection._allocationTime.before(cutoffDate))
+                {
+                    toClose.add(openConnection);
+                }
+            }
+
+            // Close the connections
+            for (ConnectionWrapper connectionWrapper : toClose)
+            {
+                try
+                {
+                    LOG.info("Forcibly closing DB connection prior to shut down: {}", connectionWrapper);
+                    connectionWrapper.close();
+                }
+                catch (Exception e)
+                {
+                    LOG.warn("Failed to cleanly shut down connection: {}", connectionWrapper, e);
+                }
+            }
+        }));
+    }
 
     private static boolean initializeExplicitLogger()
     {
@@ -885,7 +926,7 @@ public class ConnectionWrapper implements java.sql.Connection
     @Override
     public String toString()
     {
-        return "Connection wrapper " + _count + " for SPID " + _spid + ", originally allocated to thread " + _allocatingThread.getName() + " at " + DateFormat.getInstance().format(_allocationTime) + ", real connection: " + System.identityHashCode(_connection) + " - " + _connection.getClass() + (_referencingThreadNames.size() > 1 ? (", accessed by threads: " + _referencingThreadNames) : "");
+        return "Connection wrapper " + _count + " for SPID " + _spid + ", originally allocated to thread " + _allocatingThread.getName() + " at " + DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM).format(_allocationTime) + ", real connection: " + System.identityHashCode(_connection) + " - " + _connection.getClass() + (_referencingThreadNames.size() > 1 ? (", accessed by threads: " + _referencingThreadNames) : "");
     }
 
 

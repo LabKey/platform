@@ -29,14 +29,8 @@ import org.labkey.api.view.ViewContext;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 
-/**
- * User: Karl Lum
- * Date: May 7, 2008
- */
 public class PdfOutput extends DownloadParamReplacement
 {
     public static final String ID = "pdfout:";
@@ -92,8 +86,7 @@ public class PdfOutput extends DownloadParamReplacement
             // just render the first file, in most cases this is appropriate
             if (file.exists())
             {
-                InputStream pdfStream = new FileInputStream(file);
-                BufferedImage image = svc.pdfToImage(pdfStream, 0);
+                BufferedImage image = svc.pdfToImage(file, 0);
 
                 return ImageUtil.renderThumbnail(image);
             }

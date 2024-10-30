@@ -743,11 +743,6 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         {
             interrupt();
         }
-
-        @Override
-        public void shutdownStarted()
-        {
-        }
     }
 
     // Unfortunately complex generics here. In English, the container key of the outer map is the source

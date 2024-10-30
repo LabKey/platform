@@ -15,6 +15,7 @@
  */
 package org.labkey.core.reports;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.batik.transcoder.TranscoderException;
 import org.apache.batik.transcoder.TranscoderInput;
 import org.apache.batik.transcoder.TranscoderOutput;
@@ -22,6 +23,7 @@ import org.apache.batik.transcoder.image.ImageTranscoder;
 import org.apache.batik.transcoder.image.PNGTranscoder;
 import org.apache.batik.transcoder.wmf.tosvg.WMFTranscoder;
 import org.apache.fop.svg.PDFTranscoder;
+import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.ImageType;
 import org.apache.pdfbox.rendering.PDFRenderer;
@@ -30,18 +32,13 @@ import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.attachments.SvgSource;
 import org.labkey.api.util.ResponseHelper;
 
-import jakarta.servlet.http.HttpServletResponse;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Reader;
 
-/**
- * User: adam
- * Date: 10/12/11
- * Time: 5:33 PM
- */
 public class DocumentConversionServiceImpl implements DocumentConversionService
 {
     private static final int DEFAULT_USER_SPACE_UNIT_DPI = 72;     // From PDFBox PDPage
@@ -113,16 +110,16 @@ public class DocumentConversionServiceImpl implements DocumentConversionService
     }
 
     @Override
-    public BufferedImage pdfToImage(InputStream pdfStream, int page)
+    public BufferedImage pdfToImage(File file, int page)
     {
         // This matches the PDFBox PDPage.convertToImage defaults... these probably aren't ideal for all PDFs and target image formats
-        return pdfToImage(pdfStream, page, BufferedImage.TYPE_USHORT_565_RGB, 2 * DEFAULT_USER_SPACE_UNIT_DPI);
+        return pdfToImage(file, page, BufferedImage.TYPE_USHORT_565_RGB, 2 * DEFAULT_USER_SPACE_UNIT_DPI);
     }
 
     @Override
-    public BufferedImage pdfToImage(InputStream pdfStream, int page, int bufferedImageType, int resolution)
+    public BufferedImage pdfToImage(File file, int page, int bufferedImageType, int resolution)
     {
-        try (InputStream is = pdfStream; PDDocument document = PDDocument.load(is))
+        try (PDDocument document = Loader.loadPDF(file))
         {
             // PDFBox extracts secure PDFs as blank images; detect and use static thumbnail instead
             if (document.isEncrypted())

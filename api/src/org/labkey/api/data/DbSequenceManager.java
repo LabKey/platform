@@ -76,30 +76,13 @@ public class DbSequenceManager
     // we are totally 'leaking' these sequences, however a) they are small b) we leak < 2 a day, so...
     static final ConcurrentHashMap<String, DbSequence.Preallocate> _sequences = new ConcurrentHashMap<>();
 
-    static final ShutdownListener shutdownListener = new ShutdownListener()
-    {
-        @Override
-        public String getName()
+    static final ShutdownListener shutdownListener = ShutdownListener.of("DbSequenceManager", null, () -> {
+        synchronized (_sequences)
         {
-            return "DbSequenceManager";
+            for (var seq : _sequences.values())
+                seq.sync();
         }
-
-        @Override
-        public void shutdownPre()
-        {
-            // pass
-        }
-
-        @Override
-        public void shutdownStarted()
-        {
-            synchronized (_sequences)
-            {
-                for (var seq : _sequences.values())
-                    seq.sync();
-            }
-        }
-    };
+    });
 
     static
     {

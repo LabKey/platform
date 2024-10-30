@@ -6582,26 +6582,10 @@ public class DavController extends SpringActionController
 
     public static ShutdownListener getShutdownListener()
     {
-        return new ShutdownListener()
-        {
-            @Override
-            public String getName()
-            {
-                return "Temp file deletion";
-            }
-
-            @Override
-            public void shutdownPre()
-            {
-            }
-
-            @Override
-            public void shutdownStarted()
-            {
-                for (Object path : _tempFiles.toArray())
-                    new File((String)path).delete();
-            }
-        };
+        return ShutdownListener.of("Temp file deletion", null, () -> {
+                for (String path : new ArrayList<>(_tempFiles))
+                    new File(path).delete();
+            });
     }
 
 
@@ -6731,14 +6715,14 @@ public class DavController extends SpringActionController
         }
 
         @Override
-        public int read(byte[] bytes) throws IOException
+        public int read(@NotNull byte[] bytes) throws IOException
         {
             access();
             return super.read(bytes, 0, bytes.length);
         }
 
         @Override
-         public int read(byte[] bytes, int i, int i1) throws IOException
+         public int read(byte @NotNull [] bytes, int i, int i1) throws IOException
         {
             access();
             return super.read(bytes, i, i1);
@@ -6766,23 +6750,25 @@ public class DavController extends SpringActionController
         {
             // Test that we don't blow up on bogus input
             assertNull(getLastModified(new ByteArrayInputStream("<badXML".getBytes(StringUtilsLabKey.DEFAULT_CHARSET))));
-            assertNull(getLastModified(new ByteArrayInputStream(("<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
-                    "<D:propertyupdate xmlns:D=\"DAV:\" xmlns:Z=\"urn:schemas-microsoft-com:\">\n" +
-                    " <D:set>\n" +
-                    "   <D:prop>\n" +
-                    "     <Z:Win32LastModifiedTime>BogusDate</Z:Win32LastModifiedTime>\n" +
-                    "   </D:prop>\n" +
-                    " </D:set>\n" +
-                    "</D:propertyupdate>").getBytes(StringUtilsLabKey.DEFAULT_CHARSET))));
+            assertNull(getLastModified(new ByteArrayInputStream(("""
+                    <?xml version="1.0" encoding="utf-8" ?>
+                    <D:propertyupdate xmlns:D="DAV:" xmlns:Z="urn:schemas-microsoft-com:">
+                     <D:set>
+                       <D:prop>
+                         <Z:Win32LastModifiedTime>BogusDate</Z:Win32LastModifiedTime>
+                       </D:prop>
+                     </D:set>
+                    </D:propertyupdate>""").getBytes(StringUtilsLabKey.DEFAULT_CHARSET))));
 
-            assertEquals(FileTime.fromMillis(1540256025000l), getLastModified(new ByteArrayInputStream(("<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
-                    "<D:propertyupdate xmlns:D=\"DAV:\" xmlns:Z=\"urn:schemas-microsoft-com:\">\n" +
-                    " <D:set>\n" +
-                    "   <D:prop>\n" +
-                    "     <Z:Win32LastModifiedTime>Tue, 23 Oct 2018 00:53:45 GMT</Z:Win32LastModifiedTime>\n" +
-                    "   </D:prop>\n" +
-                    " </D:set>\n" +
-                    "</D:propertyupdate>").getBytes(StringUtilsLabKey.DEFAULT_CHARSET))));
+            assertEquals(FileTime.fromMillis(1540256025000L), getLastModified(new ByteArrayInputStream(("""
+                    <?xml version="1.0" encoding="utf-8" ?>
+                    <D:propertyupdate xmlns:D="DAV:" xmlns:Z="urn:schemas-microsoft-com:">
+                     <D:set>
+                       <D:prop>
+                         <Z:Win32LastModifiedTime>Tue, 23 Oct 2018 00:53:45 GMT</Z:Win32LastModifiedTime>
+                       </D:prop>
+                     </D:set>
+                    </D:propertyupdate>""").getBytes(StringUtilsLabKey.DEFAULT_CHARSET))));
         }
 
         @Test

@@ -328,19 +328,6 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "org.ccil.cowan.tagsoup:tagsoup:1.2.1",
-            "TagSoup",
-            "TagSoup",
-            "http://vrici.lojban.org/~cowan/tagsoup/",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "Parser for HTML/XML"
-        )
-    )
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
             "org.codelibs:jhighlight:1.1.0",
             "JHighlight",
             "codelibs",
@@ -354,7 +341,7 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "org.apache.commons:commons-csv:1.10.0",
+            "org.apache.commons:commons-csv:1.12.0",
             "Commons CSV ™",
             "Apache",
             "http://commons.apache.org/proper/commons-csv/",

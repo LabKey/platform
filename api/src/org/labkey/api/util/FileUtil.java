@@ -19,9 +19,9 @@ package org.labkey.api.util;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.file.SimplePathVisitor;
+import org.apache.commons.io.input.LabKeyByteBufferCleaner;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
-import org.apache.tika.io.MappedBufferCleaner;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -1971,7 +1971,7 @@ quickScan:
                     FileUtil.deleteTempFile(_tmpFile);
                 _tmpFile = null;
                 if (null != _byteBuffer && _byteBuffer.isDirect())
-                    MappedBufferCleaner.freeBuffer(_byteBuffer);
+                    LabKeyByteBufferCleaner.clean(_byteBuffer);
             }
         }
     }
