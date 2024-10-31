@@ -284,13 +284,6 @@ public class AssayModule extends SpringModule
 
     @Override
     @NotNull
-    public Collection<String> getSummary(Container c)
-    {
-        return Collections.emptyList();
-    }
-
-    @Override
-    @NotNull
     public Set<String> getSchemaNames()
     {
         HashSet<String> set = new HashSet<>();

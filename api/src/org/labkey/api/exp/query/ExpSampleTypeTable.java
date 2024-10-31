@@ -16,10 +16,8 @@
 
 package org.labkey.api.exp.query;
 
-/**
- * User: jeckels
- * Date: Oct 17, 2007
- */
+import org.labkey.api.query.FieldKey;
+
 public interface ExpSampleTypeTable extends ExpTable<ExpSampleTypeTable.Column>
 {
     enum Column
@@ -58,6 +56,11 @@ public interface ExpSampleTypeTable extends ExpTable<ExpSampleTypeTable.Column>
         Alias,
         Inputs,
         Outputs,
-        Properties
+        Properties;
+
+        public FieldKey fieldKey()
+        {
+            return FieldKey.fromParts(name());
+        }
     }
 }

@@ -63,6 +63,7 @@ import org.labkey.api.exp.property.DomainPropertyAuditProvider;
 import org.labkey.api.exp.property.ExperimentProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.SystemProperty;
+import org.labkey.api.exp.query.ExpDataClassTable;
 import org.labkey.api.exp.query.ExpSampleTypeTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
@@ -77,7 +78,6 @@ import org.labkey.api.ontology.OntologyService;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
@@ -108,6 +108,7 @@ import org.labkey.experiment.api.ExpDataTableImpl;
 import org.labkey.experiment.api.ExpMaterialImpl;
 import org.labkey.experiment.api.ExpProtocolImpl;
 import org.labkey.experiment.api.ExpSampleTypeImpl;
+import org.labkey.experiment.api.ExpSampleTypeTableImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.ExperimentStressTest;
 import org.labkey.experiment.api.GraphAlgorithms;
@@ -154,6 +155,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -839,16 +841,6 @@ public class ExperimentModule extends SpringModule
                 list.add(runCount + " runs of type " + runType.getDescription());
         }
 
-        /*
-        ExpProtocol[] protocols = ExperimentService.get().getExpProtocols(c);
-        for (ExpProtocol protocol : protocols)
-        {
-            List<? extends ExpRun> runs = ExperimentService.get().getExpRunsForProtocolIds(true, protocol.getRowId());
-            if (runs != null && runs.size() > 0)
-                list.add(runs.size() + " runs of type " + protocol.getName());
-        }
-        */
-
         int dataClassCount = ExperimentService.get().getDataClasses(c, null, false).size();
         if (dataClassCount > 0)
             list.add(dataClassCount + " Data Class" + (dataClassCount > 1 ? "es" : ""));
@@ -861,18 +853,12 @@ public class ExperimentModule extends SpringModule
     }
 
     @Override
-    public ArrayList<Summary> getDetailedSummary(Container c)
+    public @NotNull ArrayList<Summary> getDetailedSummary(Container c, User user)
     {
         ArrayList<Summary> summaries = new ArrayList<>();
-        User user = HttpView.currentContext().getUser();
 
         // Assay types
-        int assayTypeCount = 0;
-        for (ExpProtocol protocol : AssayService.get().getAssayProtocols(c))
-        {
-            if (protocol.getContainer().equals(c))
-                assayTypeCount++;
-        }
+        long assayTypeCount = AssayService.get().getAssayProtocols(c).stream().filter(p -> p.getContainer().equals(c)).count();
         if (assayTypeCount > 0)
             summaries.add(new Summary(assayTypeCount, "Assay Type"));
 
@@ -887,23 +873,29 @@ public class ExperimentModule extends SpringModule
         if (dataClassCount > 0)
             summaries.add(new Summary(dataClassCount, "Data Class", "Data Classes"));
 
-        // Individual Data Class row counts
         ExpSchema expSchema = new ExpSchema(user, c);
 
-        // The table-level container filter is set to ensure data class types are included
-        // that may not be defined in the target container but may have rows of data in the target container
-        TableInfo dataClassesTable = ExpSchema.TableType.DataClasses.createTable(expSchema, null, ContainerFilter.Type.CurrentPlusProjectAndShared.create(c, user));
-
-        // Issue 47919: The "DataCounts" column is filtered to only count data in the target container
-        if (dataClassesTable instanceof ExpDataClassTableImpl)
-            ((ExpDataClassTableImpl) dataClassesTable).setDataCountContainerFilter(ContainerFilter.Type.Current.create(c, user));
-
-        Map<String, Object> dataClassResults = new TableSelector(dataClassesTable, dataClassesTable.getColumns("Name,DataCount"), null, null).getValueMap();
-        for (String k : dataClassResults.keySet())
+        // Individual Data Class row counts
         {
-            int count = ((Long) dataClassResults.get(k)).intValue();
-            if (count != 0)
-                summaries.add(new Summary(count, k));
+            // The table-level container filter is set to ensure data class types are included
+            // that may not be defined in the target container but may have rows of data in the target container
+            TableInfo table = ExpSchema.TableType.DataClasses.createTable(expSchema, null, ContainerFilter.Type.CurrentPlusProjectAndShared.create(c, user));
+
+            // Issue 47919: The "DataCount" column is filtered to only count data in the target container
+            if (table instanceof ExpDataClassTableImpl tableImpl)
+                tableImpl.setDataCountContainerFilter(ContainerFilter.Type.Current.create(c, user));
+
+            Set<String> columns = new LinkedHashSet<>();
+            columns.add(ExpDataClassTable.Column.Name.name());
+            columns.add(ExpDataClassTable.Column.DataCount.name());
+
+            Map<String, Long> results = new TableSelector(table, columns).getValueMap();
+            for (var entry : results.entrySet())
+            {
+                long count = entry.getValue();
+                if (count > 0)
+                    summaries.add(new Summary(count, entry.getKey()));
+            }
         }
 
         // Sample Types
@@ -912,19 +904,31 @@ public class ExperimentModule extends SpringModule
             summaries.add(new Summary(sampleTypeCount, "Sample Type"));
 
         // Individual Sample Type row counts
-        UserSchema userSchema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts(ExpSchema.SCHEMA_NAME));
-        ExpSampleTypeTable sampleTypeTable = ExperimentService.get().createSampleTypeTable(ExpSchema.TableType.SampleSets.toString(), userSchema, ContainerFilter.Type.CurrentPlusProjectAndShared.create(c, user));
-        sampleTypeTable.populate();
-        Map<String, Object> tsSamplesResults = new TableSelector(sampleTypeTable, sampleTypeTable.getColumns("Name,SampleCount"), null, null).getValueMap();
-        for (String k : tsSamplesResults.keySet())
         {
-            int count = ((Number) tsSamplesResults.get(k)).intValue();
-            if (count != 0)
+            // The table-level container filter is set to ensure data class types are included
+            // that may not be defined in the target container but may have rows of data in the target container
+            TableInfo table = ExpSchema.TableType.SampleSets.createTable(expSchema, null, ContainerFilter.Type.CurrentPlusProjectAndShared.create(c, user));
+
+            // Issue 51557: The "SampleCount" column is filtered to only count data in the target container
+            if (table instanceof ExpSampleTypeTableImpl tableImpl)
+                tableImpl.setSampleCountContainerFilter(ContainerFilter.Type.Current.create(c, user));
+
+            Set<String> columns = new LinkedHashSet<>();
+            columns.add(ExpSampleTypeTable.Column.Name.name());
+            columns.add(ExpSampleTypeTable.Column.SampleCount.name());
+
+            Map<String, Long> results = new TableSelector(table, columns).getValueMap();
+            for (var entry : results.entrySet())
             {
-                Summary s = k.equals("MixtureBatches")
-                        ? new Summary(count, "Batch", "Batches") // Special handling for name replacement + pluralization
-                        : new Summary(count, k);
-                summaries.add(s);
+                long count = entry.getValue();
+                if (count > 0)
+                {
+                    String name = entry.getKey();
+                    Summary s = name.equals("MixtureBatches")
+                            ? new Summary(count, "Batch", "Batches") // Special handling for name replacement + pluralization
+                            : new Summary(count, name);
+                    summaries.add(s);
+                }
             }
         }
 

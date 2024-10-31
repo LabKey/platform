@@ -9,7 +9,7 @@ import org.json.JSONObject;
  */
 public class Summary
 {
-    private final int count;
+    private final long count;
     private final String nounSingular;
     private final String nounPlural;
 
@@ -37,14 +37,14 @@ public class Summary
         return StringUtils.replaceEach(nounSingular, search, replacements);
     }
 
-    public Summary(final int count, final String nounSingular, final String nounPlural)
+    public Summary(final long count, final String nounSingular, final String nounPlural)
     {
         this.count = count;
         this.nounSingular = nounSingular;
         this.nounPlural = nounPlural;
     }
 
-    public Summary(final int count, final String nounSingular)
+    public Summary(final long count, final String nounSingular)
     {
         String nounName = replaceNounTitles(nounSingular);
 

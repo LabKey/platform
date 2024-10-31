@@ -16,6 +16,7 @@
 
 package org.labkey.experiment.api;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
@@ -38,10 +39,6 @@ import static org.labkey.api.exp.api.ExpData.DATA_INPUTS_PREFIX;
 import static org.labkey.api.exp.api.SampleTypeService.MATERIAL_INPUTS_PREFIX;
 import static org.labkey.api.exp.query.ExpSchema.SAMPLE_TYPE_CATEGORY_TABLE;
 
-/**
- * User: jeckels
- * Date: Oct 17, 2007
- */
 public class ExpSampleTypeTableImpl extends ExpTableImpl<ExpSampleTypeTable.Column> implements ExpSampleTypeTable
 {
     public ExpSampleTypeTableImpl(String name, UserSchema schema, ContainerFilter cf)
@@ -93,17 +90,7 @@ public class ExpSampleTypeTableImpl extends ExpTableImpl<ExpSampleTypeTable.Colu
                 return columnInfo;
             }
             case SampleCount:
-            {
-                SQLFragment sql = new SQLFragment("(SELECT COUNT(*) FROM " +
-                    ExperimentServiceImpl.get().getTinfoMaterial() +
-                    " m WHERE m.CpasType = " + ExprColumn.STR_TABLE_ALIAS + ".LSID" +
-                    " AND ")
-                        .append(getContainerFilter().getSQLFragment(getSchema(), new SQLFragment("m.container")))
-                        .append(")");
-                ExprColumn sampleCountColumnInfo = new ExprColumn(this, "SampleCount", sql, JdbcType.INTEGER);
-                sampleCountColumnInfo.setDescription("Contains the number of samples currently stored in this sample type");
-                return sampleCountColumnInfo;
-            }
+                return createSampleCountColumn(getContainerFilter());
             case ImportAliases:
                 return createImportAliasColumn("ImportAliases", null, "sample type");
             case MaterialInputImportAliases:
@@ -118,12 +105,31 @@ public class ExpSampleTypeTableImpl extends ExpTableImpl<ExpSampleTypeTable.Colu
                 var fk = QueryForeignKey.from(this.getUserSchema(), getContainerFilter())
                         .schema(ExpSchema.SCHEMA_NAME, getContainer())
                         .to(SAMPLE_TYPE_CATEGORY_TABLE, "Value", null);
-                col.setFk( fk );
+                col.setFk(fk);
                 return col;
             }
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
         }
+    }
+
+    private ExprColumn createSampleCountColumn(@NotNull ContainerFilter sampleCountContainerFilter)
+    {
+        SQLFragment sql = new SQLFragment("(SELECT COUNT(*) FROM ").append(ExperimentServiceImpl.get().getTinfoMaterial(), "m")
+                .append(" WHERE m.CpasType = ").append(ExprColumn.STR_TABLE_ALIAS + ".LSID")
+                .append(" AND ")
+                .append(sampleCountContainerFilter.getSQLFragment(getSchema(), new SQLFragment("m.container")))
+                .append(")");
+        ExprColumn column = new ExprColumn(this, "SampleCount", sql, JdbcType.INTEGER);
+        column.setDescription("Contains the number of samples currently stored in this sample type");
+
+        return column;
+    }
+
+    public void setSampleCountContainerFilter(@NotNull ContainerFilter sampleCountContainerFilter)
+    {
+        checkLocked();
+        replaceColumn(createSampleCountColumn(sampleCountContainerFilter), getColumn(Column.SampleCount.fieldKey()));
     }
 
     @Override
