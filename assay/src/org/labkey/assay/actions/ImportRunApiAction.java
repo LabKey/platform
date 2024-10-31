@@ -264,6 +264,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         else if (rawData != null && !rawData.isEmpty())
         {
             boolean saveDataAsFile = form.isSaveDataAsFile();
+            boolean saveMatchingColumnDataOnly = form.isSaveMatchingColumnDataOnly();
 
             if (saveDataAsFile)
             {
@@ -287,7 +288,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
                     }
                 }
 
-                try (TSVMapWriter tsvWriter = new TSVMapWriter(columns, rawData))
+                try (TSVMapWriter tsvWriter = saveMatchingColumnDataOnly ? new TSVMapWriter(columns, rawData) : new TSVMapWriter(columns, rawData, true))
                 {
                     tsvWriter.write(fileObject.toNioPathForWrite().toFile());
                     factory.setRawData(null);
@@ -372,6 +373,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         private String _runFilePath;
         private String _module;
         private boolean _saveDataAsFile;
+        private boolean _saveMatchingColumnDataOnly = true;
 
         private String _jobDescription;
         private String _jobNotificationProvider;
@@ -528,6 +530,16 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         public void setSaveDataAsFile(boolean saveDataAsFile)
         {
             _saveDataAsFile = saveDataAsFile;
+        }
+
+        public boolean isSaveMatchingColumnDataOnly()
+        {
+            return _saveMatchingColumnDataOnly;
+        }
+
+        public void setSaveMatchingColumnDataOnly(boolean saveMatchingColumnDataOnly)
+        {
+            _saveMatchingColumnDataOnly = saveMatchingColumnDataOnly;
         }
 
         public String getJobDescription()
