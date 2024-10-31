@@ -76,6 +76,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DebugInfoDumper;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MemTrackerListener;
@@ -254,6 +255,7 @@ public class ModuleLoader implements MemTrackerListener
             if (_modules.isEmpty())
             {
                 _log.fatal("Failure occurred during ModuleLoader init.", t);
+                //noinspection SSBasedInspection
                 System.err.println("The server cannot start. Check the server error log.");
                 System.exit(1);
             }
@@ -784,18 +786,23 @@ public class ModuleLoader implements MemTrackerListener
      * if a previous startup left the lock file in place. */
     private File createLockFile(File modulesDir) throws ConfigurationException
     {
-        File result = new File(modulesDir.getParentFile(), "labkeyUpgradeLockFile");
+        File result = FileUtil.appendName(modulesDir.getParentFile(), "labkeyUpgradeLockFile");
         if (result.exists())
         {
+            String sternLockFileMessage = "Lock file " + FileUtil.getAbsoluteCaseSensitiveFile(result) + " already exists. " +
+                    "A startup/upgrade attempt has left the server in an indeterminate state. " +
+                    "Review the logs carefully to determine the outcome of the previous upgrade attempt(s) before this " +
+                    "lock file prevented restart. Proceed with extreme caution as the database may not be properly " +
+                    "upgraded. More guidance at " + new HelpTopic("troubleshootingAdmin", "lock").getHelpTopicHref(HelpTopic.Referrer.log);
+
             if (AppProps.getInstance().isDevMode())
             {
-                _log.warn("Lock file " + FileUtil.getAbsoluteCaseSensitiveFile(result) + " already exists - a previous upgrade attempt may have left the server in an indeterminate state.");
+                _log.warn(sternLockFileMessage);
                 _log.warn("Bravely continuing because this server is running in Dev mode.");
             }
             else
             {
-                throw new ConfigurationException("Lock file " + FileUtil.getAbsoluteCaseSensitiveFile(result) + " already exists - a previous upgrade attempt may have left the server in an indeterminate state. Proceed with extreme caution as the database may not be properly upgraded. To continue, delete the file and restart Tomcat.");
-
+                throw new ConfigurationException(sternLockFileMessage);
             }
         }
         try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(result), StringUtilsLabKey.DEFAULT_CHARSET)))
@@ -867,10 +874,8 @@ public class ModuleLoader implements MemTrackerListener
          */
 
         //initialize each module in turn
-        ListIterator<Module> iterator = modules.listIterator();
-        while (iterator.hasNext())
+        for (Module module : modules)
         {
-            Module module = iterator.next();
             if (module == core)
                 continue;
 
@@ -892,7 +897,7 @@ public class ModuleLoader implements MemTrackerListener
                     removeModule(modules, module, false, e);
                 }
             }
-            catch(Throwable t)
+            catch (Throwable t)
             {
                 removeModule(modules, module, true, t);
             }
@@ -1002,7 +1007,7 @@ public class ModuleLoader implements MemTrackerListener
             File moduleDir = moduleSource.getKey();
             File moduleFile = moduleSource.getValue();
 
-            File moduleXml = new File(moduleDir, "config/module.xml");
+            File moduleXml = FileUtil.appendPath(moduleDir, Path.parse("config/module.xml"));
             try
             {
                 Module module;
@@ -1110,7 +1115,7 @@ public class ModuleLoader implements MemTrackerListener
     }
 
     /** Load module metadata from a .properties file */
-    private Module loadModuleFromProperties(ApplicationContext parentContext, File moduleDir) throws ClassNotFoundException, InstantiationException, IllegalAccessException, InvocationTargetException
+    private Module loadModuleFromProperties(ApplicationContext parentContext, File moduleDir) throws ClassNotFoundException, InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException
     {
         //check for simple .properties file
         File modulePropsFile = new File(moduleDir, "config/module.properties");
@@ -1143,7 +1148,7 @@ public class ModuleLoader implements MemTrackerListener
         {
             String moduleClassName = props.get("ModuleClass");
             Class<DefaultModule> moduleClass = (Class<DefaultModule>)Class.forName(moduleClassName);
-            simpleModule = moduleClass.newInstance();
+            simpleModule = moduleClass.getDeclaredConstructor().newInstance();
         }
         else
         {
