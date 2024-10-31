@@ -155,8 +155,6 @@ public class FileSystemLocal extends AbstractFileSystemLike
         @Override
         final public void _mkdirs() throws IOException
         {
-            if (!canWriteFiles())
-                throw new UnauthorizedException();
             try
             {
                 FileUtil.mkdirs(file);

@@ -6347,7 +6347,7 @@ public class DavController extends SpringActionController
         {
             String method = getRequest().getMethod();
             // GET, HEAD, and MKCOL request have no inputstream and are correctly 'available=0' in http, but in https were showing 'available>0' (fix for ISSUE: 25318 and 25437)
-            if ( !"GET".equals(method) && !"HEAD".equals(method) && !"MKCOL".equals(method)) {
+            if (!"GET".equals(method) && !"HEAD".equals(method)) {
                 return super.available();
             }
             return 0;
