@@ -171,7 +171,7 @@ public class ListModule extends SpringModule
     {
         Collection<String> results = new ArrayList<>();
         Collection<ListDef> lists = ListManager.get().getLists(c);
-        if(lists.size() > 0)
+        if (!lists.isEmpty())
         {
             results.add(lists.size() + " lists");
         }
@@ -179,7 +179,7 @@ public class ListModule extends SpringModule
     }
 
     @Override
-    public List<Summary> getDetailedSummary(Container c)
+    public @NotNull List<Summary> getDetailedSummary(Container c, User user)
     {
         ArrayList<Summary> summary = new ArrayList<>();
         int picklistCount = ListManager.get().getPicklists(c, false).size();

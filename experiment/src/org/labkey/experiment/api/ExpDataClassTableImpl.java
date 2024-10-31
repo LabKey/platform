@@ -185,9 +185,10 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
                 .append(" AND ")
                 .append(dataCountContainerFilter.getSQLFragment(getSchema(), new SQLFragment("d.container")))
                 .append(")");
-        ExprColumn sampleCountColumnInfo = new ExprColumn(this, "DataCount", sql, JdbcType.INTEGER);
-        sampleCountColumnInfo.setDescription("Contains the number of data currently stored in this data class");
-        return sampleCountColumnInfo;
+        ExprColumn column = new ExprColumn(this, "DataCount", sql, JdbcType.INTEGER);
+        column.setDescription("Contains the number of data currently stored in this data class");
+
+        return column;
     }
 
     public void setDataCountContainerFilter(@NotNull ContainerFilter dataCountContainerFilter)

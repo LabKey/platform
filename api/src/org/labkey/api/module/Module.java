@@ -197,9 +197,10 @@ public interface Module
 
     /**
      * @param c container in which the items would be stored
+     * @param user user requesting the detailed summary
      * @return Description of the objects that this module has stored in the container. Used for deletion summary report in the products.
      */
-    List<Summary> getDetailedSummary(Container c);
+    @NotNull List<Summary> getDetailedSummary(Container c, User user);
 
     /**
      * Returns a map of pageflow name to controller class (for example, "wiki" -> WikiController) whose
