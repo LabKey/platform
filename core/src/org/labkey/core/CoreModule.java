@@ -1332,12 +1332,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     }
 
     @Override
-    public List<Summary> getDetailedSummary(Container c)
+    public @NotNull List<Summary> getDetailedSummary(Container c, User user)
     {
-        int childContainerCount = ((Long) ContainerManager.getChildren(c).stream().filter(Container::isInFolderNav).count()).intValue();
-        return childContainerCount > 0
-                ? List.of(new Summary(childContainerCount, "Subfolder"))
-                : new ArrayList<>();
+        long childContainerCount = ContainerManager.getChildren(c).stream().filter(Container::isInFolderNav).count();
+        if (childContainerCount == 0)
+            return Collections.emptyList();
+        return List.of(new Summary(childContainerCount, "Subfolder"));
     }
 
     @Override

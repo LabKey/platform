@@ -92,7 +92,9 @@ public class HelpTopic
         /** Links in the main page or its tooltips */
         inPage,
         /** Links from exported script comments */
-        script
+        script,
+        /** Links written into server log files */
+        log
     }
 
     public String getHelpTopicHref(@NotNull Referrer referrer)

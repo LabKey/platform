@@ -46,26 +46,47 @@ public class TSVMapWriter extends TSVWriter
      */
     public TSVMapWriter(Iterable<Map<String, Object>> rows)
     {
-        // Using a MarkableIterator keeps us from generating the iterator() twice, which could be expensive
-        MarkableIterator<Map<String, Object>> iter = new MarkableIterator<>(rows.iterator());
-
-        // Infer columns from first map: mark the iterator, read the first map, reset the iterator
-        iter.mark();
-        Map<String, Object> firstRow;
-        _columns = (iter.hasNext() && null != (firstRow = iter.next())) ? firstRow.keySet() : null;
-        iter.reset();
-
-        _rows = iter;
+        this(new ArrayList<>(), rows, true);
     }
 
     /**
-     * Columns will be written in order of the columns collection.
+     * Columns will be written in order of the columns collection. Any additional columns in the first row will be ignored.
      * @param rows The data rows
      */
     public TSVMapWriter(Collection<String> columns, Iterable<Map<String, Object>> rows)
     {
+        this(columns, rows, false);
+    }
+
+    /**
+     * Columns will be written in order of the columns collection. Any additional columns in the first row will be optionally included.
+     * @param rows The data rows
+     */
+    public TSVMapWriter(Collection<String> columns, Iterable<Map<String, Object>> rows, boolean includeAdditionalColumns)
+    {
+        // Using a MarkableIterator keeps us from generating the iterator() twice, which could be expensive
+        MarkableIterator<Map<String, Object>> iter = new MarkableIterator<>(rows.iterator());
+
+        if (includeAdditionalColumns)
+        {
+            // Infer columns from first map: mark the iterator, read the first map, reset the iterator
+            iter.mark();
+            Map<String, Object> firstRow;
+            Collection<String> headerColumns = (iter.hasNext() && null != (firstRow = iter.next())) ? firstRow.keySet() : null;
+            iter.reset();
+
+            if (headerColumns != null)
+            {
+                for (String headerColumn : headerColumns)
+                {
+                    if (!columns.contains(headerColumn))
+                        columns.add(headerColumn);
+                }
+            }
+        }
+
         _columns = columns;
-        _rows = rows.iterator();
+        _rows = iter;
     }
 
     @Override
