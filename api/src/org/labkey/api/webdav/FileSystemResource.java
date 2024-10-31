@@ -125,7 +125,7 @@ public class FileSystemResource extends AbstractWebdavResource
         setSecurableResource(folder.getSecurableResource());
 
         _files = folder._files.stream()
-            .map(file -> file.resolveChild(name.toString()))
+            .map(file -> file.resolveChild(name))
             .toList();
     }
 

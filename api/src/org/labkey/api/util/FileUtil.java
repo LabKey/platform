@@ -435,6 +435,13 @@ public class FileUtil
     }
 
 
+    public static boolean renameTo(FileLike from, FileLike to)
+    {
+        // TODO FileLike.renameTo()
+        return toFileForRead(from).renameTo(toFileForWrite(to));
+    }
+
+
     public static boolean createNewFile(File file) throws IOException
     {
         return createNewFile(file, AppProps.getInstance().isInvalidFilenameBlocked());
@@ -588,6 +595,12 @@ public class FileUtil
     public static boolean hasCloudScheme(String url)
     {
         return url.toLowerCase().startsWith("s3://");
+    }
+
+
+    public static boolean hasCloudScheme(FileLike filelike)
+    {
+        return "s3".equals(filelike.getFileSystem().getScheme());
     }
 
 

@@ -20,13 +20,12 @@ abstract public class AbstractFileLike implements FileLike
             throw new IllegalArgumentException("Path must be normalized");
         if (!path.isAbsolute())
             throw new IllegalArgumentException("Path must be absolute");
-        this.path = path;
+        this.path = getFileSystem().pathOf(path);
     }
 
     @Override
     final public Path getPath()
     {
-
         return path;
     }
 

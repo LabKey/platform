@@ -36,9 +36,9 @@ public class FileSystemLocal extends AbstractFileSystemLike
 
     private FileSystemLocal(URI uri, boolean caching, boolean canRead, boolean canWrite, boolean canDeleteRoot)
     {
-        super(uri, canRead, canWrite, canDeleteRoot);
+        super(uri, !FileUtil.isCaseInsensitiveFileSystem(), canRead, canWrite, canDeleteRoot);
         this.nioRoot = java.nio.file.Path.of(uri);
-        this.root = createFileLike(Path.rootPath, new File(uri));
+        this.root = createFileLike(pathOf(Path.rootPath), new File(uri));
         this.caching = caching;
     }
 
@@ -192,6 +192,20 @@ public class FileSystemLocal extends AbstractFileSystemLike
         }
 
         @Override
+        public long getCreated()
+        {
+            try
+            {
+                var att = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
+                return att.creationTime().toMillis();
+            }
+            catch (IOException e)
+            {
+                return Long.MIN_VALUE;
+            }
+        }
+
+        @Override
         public long getLastModified()
         {
             return file.lastModified();
@@ -270,7 +284,7 @@ public class FileSystemLocal extends AbstractFileSystemLike
                 var att = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
                 synchronized (this)
                 {
-                    attributes = new MinimalFileAttributes(true, att.isRegularFile(), !att.isRegularFile(), att.size(), att.lastModifiedTime().toMillis());
+                    attributes = new MinimalFileAttributes(true, att.isRegularFile(), !att.isRegularFile(), att.size(), att.lastModifiedTime().toMillis(), att.creationTime().toMillis());
                     return attributes;
                 }
             }
@@ -320,6 +334,18 @@ public class FileSystemLocal extends AbstractFileSystemLike
         public long getSize()
         {
             return getAttributes().size();
+        }
+
+        @Override
+        public long getCreated()
+        {
+            return getAttributes().created();
+        }
+
+        @Override
+        public long getLastModified()
+        {
+            return getAttributes().lastModified();
         }
 
         @Override

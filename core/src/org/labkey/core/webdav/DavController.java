@@ -1546,18 +1546,17 @@ public class DavController extends SpringActionController
                 else
                 {
                     // The stack always contains the object of the current level
-                    LinkedList<Path> stack = new LinkedList<>();
-                    stack.addLast(root.getPath());
+                    LinkedList<WebdavResource> stack = new LinkedList<>();
+                    stack.addLast(root);
 
                     // Stack of the objects one level below
                     boolean skipFirst = noroot;
                     WebdavResource resource;
-                    LinkedList<Path> stackBelow = new LinkedList<>();
+                    LinkedList<WebdavResource> stackBelow = new LinkedList<>();
 
                     while ((!stack.isEmpty()) && (depth >= 0))
                     {
-                        Path currentPath = stack.removeFirst();
-                        resource = resolvePath(currentPath);
+                        resource = stack.removeFirst();
 
                         if (null == resource || !resource.canList(getUser(), true))
                             continue;
@@ -1572,16 +1571,13 @@ public class DavController extends SpringActionController
 
                         if (resource.isCollection() && depth > 0)
                         {
-                            Collection<String> listPaths = resource.listNames();
-                            for (String listPath : listPaths)
-                            {
-                                Path newPath = currentPath.append(listPath);
-                                stackBelow.addLast(newPath);
-                            }
+                            var listResources = resource.list();
+                            if (null != listResources)
+                                stackBelow.addAll(listResources);
 
                             // Displaying the lock-null resources present in that
                             // collection
-                            List<Path> currentLockNullResources = lockNullResources.get(currentPath);
+                            List<Path> currentLockNullResources = lockNullResources.get(resource.getPath());
                             if (currentLockNullResources != null)
                             {
                                 for (Path currentLockNullResource : currentLockNullResources)
@@ -1748,37 +1744,34 @@ public class DavController extends SpringActionController
                 resourceWriter = getResourceWriter(writer);
                 resourceWriter.beginResponse(getResponse());
 
-                WebdavResource resource = root;
-
                 Map<String, Boolean> rootPermissions = new HashMap<>();
-                rootPermissions.put("canRead", resource.canRead(getUser(), false));
-                rootPermissions.put("canUpload", resource.canCreate(getUser(), false));
-                rootPermissions.put("canEdit", resource.canWrite(getUser(), false));
-                rootPermissions.put("canDelete", resource.canDelete(getUser(), false));
-                rootPermissions.put("canRename", resource.canRename(getUser(), false));
+                rootPermissions.put("canRead", root.canRead(getUser(), false));
+                rootPermissions.put("canUpload", root.canCreate(getUser(), false));
+                rootPermissions.put("canEdit", root.canWrite(getUser(), false));
+                rootPermissions.put("canDelete", root.canDelete(getUser(), false));
+                rootPermissions.put("canRename", root.canRename(getUser(), false));
                 resourceWriter.writeProperty("permissions", rootPermissions);
 
-                if (resource.isCollection())
+                if (root.isCollection())
                 {
-                    Collection<String> listPaths = resource.listNames();  // 17749
                     ArrayList<WebdavResource> resources = new ArrayList<>();
+                    var children = root.list();  // 17749
 
                     // Build resource set
-                    for (String p : listPaths)
+                    for (var child : children)
                     {
-                        if (p.startsWith("."))
+                        if (child.getName().startsWith("."))
                             continue;
-                        resource = resolvePath(root.getPath().append(p));
-                        if (resource != null && resource.canList(getUser(), true))
+                        if (child.canList(getUser(), true))
                         {
-                            if (resource.isCollection())
+                            if (child.isCollection())
                             {
                                 if (form.includeCollections())
-                                    resources.add(resource);
+                                    resources.add(child);
                             }
-                            else
+                            else if (child.exists())
                             {
-                                resources.add(resource);
+                                resources.add(child);
                             }
                         }
                     }
@@ -2761,8 +2754,9 @@ public class DavController extends SpringActionController
             json.key("id").value(resource.getPath());
             String displayName = resource.getPath().isEmpty() ? "/" : resource.getName();
             json.key("href").value(resource.getLocalHref(getViewContext()));
-            if (resource.getNioPath() != null)
-                json.key("dataFileUrl").value(FileUtil.pathToString(resource.getNioPath()));
+            var nioPath = resource.getNioPath();
+            if (null != nioPath)
+                json.key("dataFileUrl").value(FileUtil.pathToString(nioPath));
             json.key("text").value(displayName);
             json.key("iconHref").value(resource.getIconHref());
             json.key("iconFontCls").value(resource.getIconFontCls());
@@ -5644,7 +5638,7 @@ public class DavController extends SpringActionController
         if (null == result || nullDavFileInfo == result || null == result.resource)
             return null;
 
-        boolean isRoot = path.size() == 0;
+        boolean isRoot = path.isEmpty();
         if (!isRoot && path.isDirectory() && result.resource.isFile())
             return null;
         return result;
