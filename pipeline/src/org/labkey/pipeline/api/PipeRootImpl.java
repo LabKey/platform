@@ -39,7 +39,6 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URIUtil;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.vfs.FileLike;
@@ -49,7 +48,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
@@ -136,18 +134,12 @@ public class PipeRootImpl implements PipeRoot
                 throw new IllegalStateException("Container missing");
         }
 
-        try
+        _uris.add(URIUtil.toURI(rootPath));
+        if (root.getSupplementalPath() != null)
         {
-            _uris.add(new URI(rootPath));
-            if (root.getSupplementalPath() != null)
-            {
-                _uris.add(new URI(root.getSupplementalPath()));
-            }
+            _uris.add(URIUtil.toURI(root.getSupplementalPath()));
         }
-        catch (URISyntaxException e)
-        {
-            throw UnexpectedException.wrap(e);
-        }
+
         _entityId = root.getEntityId();
         _searchable = root.isSearchable();
     }

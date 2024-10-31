@@ -44,6 +44,7 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
@@ -55,10 +56,7 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.WebdavService;
 
-import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -398,14 +396,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             }
         }
 
-        try
-        {
-            return _getRootPath(c, new URI(relativePath), skipDavPrefix);
-        }
-        catch (URISyntaxException e)
-        {
-            throw UnexpectedException.wrap(e);
-        }
+        return _getRootPath(c, URIUtil.toURI(relativePath), skipDavPrefix);
     }
 
     /**
@@ -416,38 +407,23 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
     @NotNull
     private static URI _getRootPath(Container c, @Nullable URI relativePath, boolean skipDavPrefix)
     {
-        try
-        {
-            String webdavPrefix = skipDavPrefix ? "" : PageFlowUtil.encode(AppProps.getInstance().getContextPath()) + "/" + PageFlowUtil.encode(WebdavService.getServletPath());
-            URI rootPath = new URI(webdavPrefix + c.getEncodedPath());
-            relativePath = relativePath == null || relativePath.toString().endsWith("/") ?
-                    relativePath :
-                    new URI(relativePath + "/");
+        String webdavPrefix = skipDavPrefix ? "" : PageFlowUtil.encode(AppProps.getInstance().getContextPath()) + "/" + PageFlowUtil.encode(WebdavService.getServletPath());
+        URI rootPath = URIUtil.toURI(webdavPrefix + c.getEncodedPath());
+        relativePath = relativePath == null || relativePath.toString().endsWith("/") ?
+                relativePath :
+                URIUtil.toURI(relativePath + "/");
 
-            if (null != relativePath)
-                rootPath = rootPath.resolve(relativePath);
+        if (null != relativePath)
+            rootPath = rootPath.resolve(relativePath);
 
-            return rootPath;
-        }
-        catch (URISyntaxException e)
-        {
-            throw UnexpectedException.wrap(e);
-        }
+        return rootPath;
     }
 
     /** @param folderFileRoot not-yet-URI-encoded relative path */
     @NotNull
     public static URI getWebPartFolderRootPath(Container c, @Nullable String folderFileRoot)
     {
-        try
-        {
-            return _getRootPath(c, folderFileRoot == null ? null : new URI(PageFlowUtil.encodePath(folderFileRoot)), false);
-        }
-        catch (URISyntaxException e)
-        {
-            throw UnexpectedException.wrap(e);
-        }
-
+        return _getRootPath(c, folderFileRoot == null ? null : URIUtil.toURI(PageFlowUtil.encodePath(folderFileRoot)), false);
     }
 
     protected boolean canDisplayPipelineActions()

@@ -275,7 +275,7 @@ Ext4.define('File.panel.Browser', {
          * @private
          */
         _getActions : function(cb, containerPath, scope) {
-            var params = {path : decodeURIComponent(scope.getFullFolderOffset()) };
+            var params = {path : decodeURI(scope.getFullFolderOffset()) };
             var returnUrl = LABKEY.ActionURL.getReturnUrl();
             if (returnUrl) {
                 params.returnUrl = returnUrl;
@@ -2164,7 +2164,7 @@ Ext4.define('File.panel.Browser', {
     },
 
     getFileRelativePath : function(path) {
-        return path.split('files').pop();
+        return path.split('%40files').pop();
     },
 
     submitCreateRunForm : function(panel) {

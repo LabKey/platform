@@ -25,12 +25,11 @@ import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.URIUtil;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.Portal;
 
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
@@ -87,14 +86,7 @@ public class CustomizeFilesWebPartView extends JspView<CustomizeFilesWebPartView
             // way for compatibility with existing installs and folder exports
             String davFileRoot = propertyMap.get(FilesWebPart.FILE_ROOT_PROPERTY_NAME);
 
-            try
-            {
-                fileRoot = getDavTreeFileRoot(davFileRoot == null ? null : new URI(PageFlowUtil.encodePath(davFileRoot)), fileSet, getContextContainer());
-            }
-            catch (URISyntaxException e)
-            {
-                throw UnexpectedException.wrap(e);
-            }
+            fileRoot = getDavTreeFileRoot(URIUtil.toURI(davFileRoot == null ? null : PageFlowUtil.encodePath(davFileRoot)), fileSet, getContextContainer());
 
             useFileSet = fileSet != null;
         }
@@ -183,26 +175,19 @@ public class CustomizeFilesWebPartView extends JspView<CustomizeFilesWebPartView
         {
             if (fileRoot != null)
             {
-                try
+                if (fileRoot.getPath().startsWith(PageFlowUtil.encode(FileContentService.FILES_LINK)))
                 {
-                    if (fileRoot.getPath().startsWith(PageFlowUtil.encode(FileContentService.FILES_LINK)))
+                    // @files disappears when root set to cloud, so make sure it exists before trying in expandPath there
+                    Path path = service.getFileRootPath(c);
+                    if (null != path)
                     {
-                        // @files disappears when root set to cloud, so make sure it exists before trying in expandPath there
-                        Path path = service.getFileRootPath(c);
-                        if (null != path)
-                        {
-                            if (Files.exists(path.resolve(fileRoot.getPath())))
-                                treeFileRoot = new URI(c.getParsedPath().encode("", "/") + fileRoot);
-                        }
-                    }
-                    else
-                    {
-                        treeFileRoot = new URI(c.getParsedPath().encode("", "/") + fileRoot);
+                        if (Files.exists(path.resolve(fileRoot.getPath())))
+                            treeFileRoot = URIUtil.toURI(c.getParsedPath().encode("", "/") + fileRoot);
                     }
                 }
-                catch (URISyntaxException e)
+                else
                 {
-                    throw UnexpectedException.wrap(e);
+                    treeFileRoot = URIUtil.toURI(c.getParsedPath().encode("", "/") + fileRoot);
                 }
             }
             else if (legacyFileRoot != null) // legacy file root
