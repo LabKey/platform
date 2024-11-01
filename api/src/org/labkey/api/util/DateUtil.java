@@ -89,12 +89,17 @@ public class DateUtil
     private static final String[] SIMPLE_TIME_FORMATS_NO_AMPM = {"HH:mm:ss.SSS", "HH:mm:ss", "HH:mm"};
 
     public static final Set<String> STANDARD_DATE_DISPLAY_FORMATS = PageFlowUtil.set(
-        "yyyy-MM-dd",
-        "yyyy-MMM-dd",
-        "dd-MMM-yyyy",
-        "dd-MMM-yy",
-        "ddMMMyyyy",
-        "ddMMMyy"
+            "yyyy-MM-dd",
+            "yyyy-MMM-dd",
+            "yyyy-MM",
+            "dd-MM-yyyy",
+            "dd-MMM-yyyy",
+            "dd-MMM-yy",
+            "ddMMMyyyy",
+            "ddMMMyy",
+            "MM/dd/yyyy",
+            "MM-dd-yyyy",
+            "MMMM dd yyyy"
     );
 
     public static final Set<String> STANDARD_TIME_DISPLAY_FORMATS = PageFlowUtil.set(
@@ -125,8 +130,11 @@ public class DateUtil
         {
             if (dateTimeFormat.startsWith(format))
             {
-                datePortion = format;
-                break;
+                if (dateTimeFormat.equals(format) || dateTimeFormat.charAt(format.length()) == ' ')
+                {
+                    datePortion = format;
+                    break;
+                }
             }
         }
 
@@ -2410,7 +2418,7 @@ Parse:
         @Test
         public void testNonStandardDateTimeFormats()
         {
-            List<String> nonStandardDateFormats = List.of("MM/dd/yyy", "dd/MM/yyy", "yyyy.MM.dd", "MMMM dd, yyyy");
+            List<String> nonStandardDateFormats = List.of("MM/dd/yyy", "ddMMMyyy", "yyyy.MM.dd", "MMMM dd", "MMMM dd yy", "MMMM dd, yyyy");
             List<String> nonStandardTimeFormats = List.of("kk:mm", "hh:mm aa", "hh:mm");
 
             nonStandardDateFormats.forEach(this::testBadDateFormat);
