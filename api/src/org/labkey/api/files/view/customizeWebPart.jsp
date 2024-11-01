@@ -119,7 +119,7 @@
     }
 
     Ext4.onReady(function() {
-        var contextUrl = LABKEY.contextPath + "/_webdav";
+        var contextUrl = LABKEY.contextPath + '/_webdav';
         var containerPath = encodeURI(LABKEY.container.path);
         var rootPath = contextUrl + containerPath + '/';
         var rootOffset = null;

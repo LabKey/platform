@@ -538,12 +538,12 @@ public class PageFlowUtil
                 continue;
             Object v = entry.getValue();
             String value = v == null ? "" : String.valueOf(v);
-            sb.append(encode(String.valueOf(key)));
+            sb.append(encodeURIComponent(String.valueOf(key)));
             sb.append('=');
             if (allowSubstSyntax && value.length()>3 && value.startsWith("${") && value.endsWith("}"))
                 sb.append(value);
             else
-                sb.append(encode(value));
+                sb.append(encodeURIComponent(value));
             strAnd = "&";
         }
         return sb.toString();
@@ -561,14 +561,14 @@ public class PageFlowUtil
             Object key = entry.getName();
             if (null == key)
                 continue;
-            String encKey = encode(String.valueOf(key));
+            String encKey = encodeURIComponent(String.valueOf(key));
             Object v = entry.getValue();
             if (v == null || v instanceof String || !v.getClass().isArray())
             {
                 sb.append(strAnd);
                 sb.append(encKey);
                 sb.append('=');
-                sb.append(encode(v==null?"":String.valueOf(v)));
+                sb.append(encodeURIComponent(v==null?"":String.valueOf(v)));
                 strAnd = "&";
             }
             else
@@ -579,7 +579,7 @@ public class PageFlowUtil
                     sb.append(strAnd);
                     sb.append(encKey);
                     sb.append('=');
-                    sb.append(encode(o==null?"":String.valueOf(o)));
+                    sb.append(encodeURIComponent(o==null?"":String.valueOf(o)));
                     strAnd = "&";
                 }
             }
@@ -678,23 +678,48 @@ public class PageFlowUtil
         return WAF_PREFIX + java.util.Base64.getEncoder().encodeToString(step2);
     }
 
+    // https://datatracker.ietf.org/doc/html/rfc2396#section-2.2
+    private static final String RESERVED_MARKS = ";/?:@&=+$,";
+
+    // https://datatracker.ietf.org/doc/html/rfc2396#section-2.3
+    private static final String UNRESERVED_MARKS = "-_.!~*'()";
+
+    // This maps a subset of unreserved marks to their hex encoding.
+    // The reason for this subset is that URLEncoder.encode() already
+    // skips encoding "-", "_", ".", "*" characters.
+    // See https://stackoverflow.com/a/607403.
+    private static final Map<String, String> DECODE_UNRESERVED_MARKS = Map.of(
+        "!", "%21",
+        "~", "%7E",
+        "'", "%27",
+        "(", "%28",
+        ")", "%29"
+    );
+
     /**
-     * URL Encode string.
-     * NOTE! this should be used on parts of a url, not an entire url
-     *
-     * Like JavaScript encodeURIComponent()
+     * URL encode string. Like JavaScript encodeURIComponent().
+     * NOTE! this should be used on parts of a url, not an entire url.
      */
-    public static String encode(String s)
+    public static @NotNull String encodeURIComponent(String s)
     {
         if (null == s)
             return "";
-        String enc = URLEncoder.encode(s, StringUtilsLabKey.DEFAULT_CHARSET);
-        return StringUtils.replace(enc, "+", "%20");
+
+        String encoded = URLEncoder.encode(s, StringUtilsLabKey.DEFAULT_CHARSET);
+        encoded = StringUtils.replace(encoded, "+", "%20");
+
+        // URLEncoder.encode() encodes some unreserved marks that JavaScript's encodeURIComponent()
+        // does not. Here we decode these marks so that we match encodeURIComponent() encoding.
+        // See https://stackoverflow.com/a/607403
+        for (var entry : DECODE_UNRESERVED_MARKS.entrySet())
+            encoded = StringUtils.replace(encoded, entry.getValue(), entry.getKey());
+
+        return encoded;
     }
 
-    public static String encodeURIComponent(String s)
+    public static @NotNull String encode(String s)
     {
-        return encode(s);
+        return encodeURIComponent(s);
     }
 
     /**
@@ -702,7 +727,8 @@ public class PageFlowUtil
      */
     static final BitSet dontEncode = new BitSet(256);
     static
-    {   String except = ",/?:@&=+$#_-.*";
+    {
+        String except = RESERVED_MARKS + UNRESERVED_MARKS;
         for (int i=0 ; i<except.length() ; i++)
             dontEncode.set(except.charAt(i));
         for (int i='a' ; i<='z' ; i++)
@@ -757,7 +783,7 @@ public class PageFlowUtil
         {
             if (i > 0)
                 ret += "/";
-            ret += encode(parts[i]);
+            ret += encodeURIComponent(parts[i]);
         }
         return ret;
     }
@@ -2546,14 +2572,76 @@ public class PageFlowUtil
         }
 
         @Test
-        public void testEncode()
+        public void testEncodeURI()
         {
-            assertEquals("%20", encode(" "));
             assertEquals("/hello/world?", encodeURI("/hello/world?"));
             assertEquals("/hel%20lo/wo%3Crld?", encodeURI("/hel lo/wo<rld?"));
             assertEquals("/hel%20lo/wo%3Crld?%3E", encodeURI("/hel lo/wo<rld?>"));
+            assertEquals("https://labkey.org/FilesWebpart%20%20%E2%98%83-.!~()/project-begin.view",
+                    encodeURI("https://labkey.org/FilesWebpart  ☃-.!~()/project-begin.view"));
+        }
+
+        @Test
+        public void testEncodeURIComponent()
+        {
+            assertEquals("%20", encodeURIComponent(" "));
             assertEquals("%2Fhello%2Fworld%3F", encodeURIComponent("/hello/world?"));
             assertEquals("%2Fhello%2Fworld", encodeURIComponent("/hello/world"));
+            assertEquals("FilesWebpart%20%20%E2%98%83-.!~()", encodeURIComponent("FilesWebpart  ☃-.!~()"));
+
+            // Additional test cases
+            assertEquals("hello", encodeURIComponent("hello"));
+            assertEquals("test123", encodeURIComponent("test123"));
+            assertEquals("encodeURI", encodeURIComponent("encodeURI"));
+
+            // Strings with spaces
+            assertEquals("hello%20world", encodeURIComponent("hello world"));
+            assertEquals("multiple%20%20%20%20spaces", encodeURIComponent("multiple    spaces"));
+            assertEquals("leading%20space%20", encodeURIComponent("leading space "));
+            assertEquals("%20trailing%20space", encodeURIComponent(" trailing space"));
+
+            // Strings with special characters
+            assertEquals("hello%40world.com", encodeURIComponent("hello@world.com"));
+            assertEquals("100%25%20sure", encodeURIComponent("100% sure"));
+            assertEquals("some%23hash", encodeURIComponent("some#hash"));
+            assertEquals("query%3Dstring", encodeURIComponent("query=string"));
+            assertEquals("foo%2Fbar%2Fbaz", encodeURIComponent("foo/bar/baz"));
+            assertEquals("hello%2Bworld", encodeURIComponent("hello+world"));
+
+            // Strings with reserved characters
+            assertEquals("!%20*%20'%20(%20)%20%3B%20%3A%20%40%20%26%20%3D%20%2B%20%24%20%2C%20%2F%20%3F%20%25%20%23%20%5B%20%5D",
+                    encodeURIComponent("! * ' ( ) ; : @ & = + $ , / ? % # [ ]"));
+
+            // URL with query parameters
+            assertEquals("https%3A%2F%2Fexample.com%2Fsearch%3Fq%3DencodeURIComponent%26lang%3Den%23section",
+                    encodeURIComponent("https://example.com/search?q=encodeURIComponent&lang=en#section"));
+
+            // Strings with Unicode characters
+            assertEquals("%E3%81%93%E3%82%93%E3%81%AB%E3%81%A1%E3%81%AF", encodeURIComponent("こんにちは")); // Japanese
+            assertEquals("%D0%9F%D1%80%D0%B8%D0%B2%D0%B5%D1%82", encodeURIComponent("Привет")); // Russian
+            assertEquals("%EC%95%88%EB%85%95%ED%95%98%EC%84%B8%EC%9A%94", encodeURIComponent("안녕하세요")); // Korean
+            assertEquals("%D9%85%D8%B1%D8%AD%D8%A8%D8%A7", encodeURIComponent("مرحبا")); // Arabic
+            assertEquals("%E4%BD%A0%E5%A5%BD", encodeURIComponent("你好")); // Chinese
+
+            // Strings with mixed characters
+            assertEquals("hello%2Bworld%3D42%26foo%23bar", encodeURIComponent("hello+world=42&foo#bar"));
+            assertEquals("John%20%26%20Jane's%20%40%20party!", encodeURIComponent("John & Jane's @ party!"));
+            assertEquals("some-url%2Fpath%3Fname%3Dfoo%26value%3Dbar", encodeURIComponent("some-url/path?name=foo&value=bar"));
+
+            // Strings with emojis
+            assertEquals("100%25%20complete%20%F0%9F%92%AF", encodeURIComponent("100% complete 💯"));
+            assertEquals("%F0%9F%8E%89%F0%9F%8E%8A%F0%9F%9A%80%F0%9F%8C%8C%F0%9F%8E%87", encodeURIComponent("🎉🎊🚀🌌🎇"));
+
+            // Newline and tab characters
+            assertEquals("line1%0Aline2", encodeURIComponent("line1\nline2"));
+            assertEquals("tab%09separated%09values", encodeURIComponent("tab\tseparated\tvalues"));
+
+            // Hexadecimal sequences
+            assertEquals("%2520%20%2523%20%252B%20%252F", encodeURIComponent("%20 %23 %2B %2F"));
+
+            // Combination of alphanumeric, special, and Unicode characters
+            assertEquals("abc123DEF456!%40%23%24%25%5E%26*()_%2B%E4%BD%A0%E5%A5%BD%E3%81%93%E3%82%93%E3%81%AB%E3%81%A1%E3%81%AF",
+                    encodeURIComponent("abc123DEF456!@#$%^&*()_+你好こんにちは"));
         }
 
         @Test
