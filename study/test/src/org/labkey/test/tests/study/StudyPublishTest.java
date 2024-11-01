@@ -42,6 +42,7 @@ import org.labkey.test.pages.TimeChartWizard;
 import org.labkey.test.pages.query.QueryMetadataEditorPage;
 import org.labkey.test.pages.search.SearchResultsPage;
 import org.labkey.test.params.FieldDefinition;
+import org.labkey.test.util.ApiPermissionsHelper;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
@@ -1070,7 +1071,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         if (location == PublishLocation.root)
         {
             Locator rootTreeNode = Locator.tagWithClass("a", "x-tree-node-anchor").withDescendant(Locator.tagWithText("span", "LabKey Server Projects"));
-            doubleClick(rootTreeNode);
+            doubleClick(scrollIntoView(rootTreeNode, true));
         }
         else if (location == PublishLocation.project)
         {
@@ -1241,9 +1242,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         // verify the case where a user has read access to a folder and admin access to a subfolder
         log("verify permissions for a sub level folder admin");
         navigateToFolder(getProjectName(), PUB1_NAME);
-        _permissionsHelper.setUserPermissions(PUBLISH_SUB_FOLDER_ADMIN, "Folder Administrator");
-        clickButton("Save and Finish");
-        clickFolder(getFolderName());
+        new ApiPermissionsHelper(this).setUserPermissions(PUBLISH_SUB_FOLDER_ADMIN, "Folder Administrator");
         goToSchemaBrowser();
         impersonate(PUBLISH_SUB_FOLDER_ADMIN);
         selectQuery("study", "StudySnapshot");
