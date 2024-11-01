@@ -827,6 +827,27 @@ public class DavController extends SpringActionController
             getResponse().setStatus(ret);
             return ret;
         }
+
+        protected Pair<Integer, Boolean> getDepthParameter(int defaultDepth, int maxDepth, boolean defaultListRoot)
+        {
+            String depthStr = getRequest().getHeader("Depth");
+            if (null == depthStr)
+                depthStr = getRequest().getParameter("depth");
+            if (null == depthStr)
+                return new Pair<>(defaultDepth, defaultListRoot);
+            int depth = defaultDepth;
+            boolean noroot = depthStr.endsWith(",noroot");
+            if (noroot)
+                depthStr = depthStr.substring(0,depthStr.length()-",noroot".length());
+            try
+            {
+                depth = Math.min(maxDepth, Math.max(0,Integer.parseInt(depthStr.trim())));
+            }
+            catch (NumberFormatException x)
+            {
+            }
+            return new Pair<>(depth, depth>0 && noroot);
+        }
     }
 
 
@@ -1267,7 +1288,7 @@ public class DavController extends SpringActionController
                         }
 
                         @Override
-                        protected Pair<Integer, Boolean> getDepthParameter()
+                        protected Pair<Integer, Boolean> getDepthParameter(int defaultDepth, int maxDepth, boolean defaultListRoot)
                         {
                             return new Pair<>(0,Boolean.FALSE);
                         }
@@ -1346,28 +1367,6 @@ public class DavController extends SpringActionController
             return getRequest().getInputStream();
         }
 
-        protected Pair<Integer, Boolean> getDepthParameter()
-        {
-            String depthStr = getRequest().getHeader("Depth");
-            if (null == depthStr)
-                depthStr = getRequest().getParameter("depth");
-            if (null == depthStr)
-                return new Pair<>(defaultDepth, defaultListRoot);
-            int depth = defaultDepth;
-            boolean noroot = depthStr.endsWith(",noroot");
-            if (noroot)
-                depthStr = depthStr.substring(0,depthStr.length()-",noroot".length());
-            try
-            {
-                depth = Math.min(INFINITY, Math.max(0,Integer.parseInt(depthStr.trim())));
-            }
-            catch (NumberFormatException x)
-            {
-            }
-            return new Pair<>(depth, depth>0 && noroot);
-        }
-
-
         protected ResourceFilter getResourceFilter()
         {
             Boolean isCollection = getBooleanParameter("isCollection");
@@ -1413,7 +1412,7 @@ public class DavController extends SpringActionController
 
             List<String> properties = null;
             Find type = null;
-            Pair<Integer, Boolean> depthParam = getDepthParameter();
+            Pair<Integer, Boolean> depthParam = getDepthParameter(defaultDepth, maxDepth, defaultListRoot);
             int depth = depthParam.first;
             boolean noroot = depthParam.second;
 
@@ -3798,10 +3797,10 @@ public class DavController extends SpringActionController
         WebdavStatus doMethod() throws DavException, IOException
         {
             checkReadOnly();
-//            checkLocked();
             checkLocked(getDestinationPath());
 
-            return copyResource();
+            var depth = getDepthParameter(Integer.MAX_VALUE, Integer.MAX_VALUE, true);
+            return copyResource(depth.getKey());
         }
     }
 
@@ -3856,7 +3855,7 @@ public class DavController extends SpringActionController
                     throw new DavException(WebdavStatus.SC_PRECONDITION_FAILED);
                 if (dest.isCollection())
                 {
-                    if (!_overwriteCollection)
+                    if (!_overwriteCollection || !src.isCollection())
                         throw new DavException(WebdavStatus.SC_FORBIDDEN, "Cannot overwrite folder");
                     WebdavStatus ret = deleteResource(destinationPath);
                     if (ret != WebdavStatus.SC_NO_CONTENT)
@@ -5972,7 +5971,7 @@ public class DavController extends SpringActionController
      *
      * @return boolean true if the copy is successful
      */
-    private WebdavStatus copyResource() throws DavException, IOException
+    private WebdavStatus copyResource(int depth) throws DavException, IOException
     {
         boolean overwrite = getOverwriteParameter(false);
         Path destinationPath = getDestinationPath();
@@ -5981,14 +5980,35 @@ public class DavController extends SpringActionController
         _log.debug("Dest path :" + destinationPath);
 
         WebdavResource resource = resolvePath();
-        if (null != resource && !resource.canRead(getUser(),true))
-           unauthorized(resource);
-        if (null == resource || !resource.exists())
-            throw new DavException(WebdavStatus.SC_NOT_FOUND);
-
         WebdavResource destination = resolvePath(destinationPath);
-        if (null == destination)
+
+        if (null == resource || null == destination)
             throw new DavException(WebdavStatus.SC_FORBIDDEN);
+
+        if (!resource.canRead(getUser(),true))
+           unauthorized(resource);
+        if (!destination.canWrite(getUser(),true))
+            unauthorized(destination);
+
+        if (destination.exists())
+        {
+            if (!overwrite)
+                throw new DavException(WebdavStatus.SC_PRECONDITION_FAILED);
+        }
+        else
+        {
+            var parent = destination.parent();
+            if (null != parent && !parent.isCollection())
+                throw new DavException(WebdavStatus.SC_CONFLICT);
+        }
+
+        if (!resource.exists())
+        {
+            // https://www.rfc-editor.org/rfc/rfc2518#section-8.8.4 implies that this should not fail if overwrite=T
+            // IMHO we can make users do RMCOL/DELETE if that is the intentsion
+            throw new DavException(WebdavStatus.SC_NOT_FOUND);
+        }
+
         checkAllowedFileName(destination.getName());
         WebdavStatus successStatus = destination.exists() ? WebdavStatus.SC_NO_CONTENT : WebdavStatus.SC_CREATED;
 
@@ -6021,7 +6041,7 @@ public class DavController extends SpringActionController
 
         // Copying source to destination
         LinkedHashMap<Path,WebdavStatus> errorList = new LinkedHashMap<>();
-        WebdavStatus ret = copyResource(resource, errorList, destinationPath);
+        WebdavStatus ret = copyResource(depth, resource, errorList, destinationPath);
         boolean result = ret == null;
 
         if ((!result) || (!errorList.isEmpty()))
@@ -6042,7 +6062,7 @@ public class DavController extends SpringActionController
      * during the copy operation
      * @param destPath Destination path
      */
-    private WebdavStatus copyResource(WebdavResource src, Map<Path,WebdavStatus> errorList, Path destPath) throws DavException
+    private WebdavStatus copyResource(int depth, WebdavResource src, Map<Path,WebdavStatus> errorList, Path destPath) throws DavException
     {
         _log.debug("Copy: " + src.getPath() + " To: " + destPath);
 
@@ -6055,6 +6075,8 @@ public class DavController extends SpringActionController
                 errorList.put(dest.getPath(), WebdavStatus.SC_CONFLICT);
                 return WebdavStatus.SC_CONFLICT;
             }
+            if (depth == 0)
+                return null;
 
             try
             {
@@ -6062,7 +6084,7 @@ public class DavController extends SpringActionController
                 for (WebdavResource child : children)
                 {
                     Path childDest = dest.getPath().append(child.getName());
-                    copyResource(child, errorList, childDest);
+                    copyResource(depth-1, child, errorList, childDest);
                 }
             }
             catch (Exception e)
@@ -6075,12 +6097,12 @@ public class DavController extends SpringActionController
         {
             try
             {
-                boolean exists = dest.getFile().exists();
-                FileUtil.copyFile(src.getFile(), dest.getFile());
+                boolean exists = dest.exists();
+                dest.copyFrom(getUser(), src);
                 if (exists)
-                    dest.notify(getViewContext(), "overwrite: copied from " + src.getFile().getPath());
+                    dest.notify(getViewContext(), "overwrite: copied from " + src.getPath());
                 else
-                    dest.notify(getViewContext(), "create: copied from " + src.getFile().getPath());
+                    dest.notify(getViewContext(), "create: copied from " + src.getPath());
                 addToIndex(dest);
             }
             catch (IOException ex)
@@ -6273,13 +6295,6 @@ public class DavController extends SpringActionController
             return "[" + start + "-" + end + "," + length + "]";
         }
     }
-
-
-    /**
-     * Default depth is infinite.
-     */
-    private static final int INFINITY = 3; // To limit tree browsing a bit
-
 
     enum Find
     {

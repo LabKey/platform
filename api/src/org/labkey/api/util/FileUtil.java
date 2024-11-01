@@ -388,6 +388,22 @@ public class FileUtil
         return file.mkdirs();
     }
 
+    public static boolean mkdirs(FileLike file, boolean checkFileName) throws IOException
+    {
+        FileLike parent = file;
+        var ret = false;
+        while (!Files.exists(parent.toNioPathForWrite()))
+        {
+            ret = true;
+            if (checkFileName)
+                checkAllowedFileName(parent.getName());
+            parent = parent.getParent();
+        }
+        //noinspection SSBasedInspection
+        file.mkdirs();
+        return ret;
+    }
+
 
     public static Path createDirectory(Path path) throws IOException
     {
@@ -454,6 +470,16 @@ public class FileUtil
             checkAllowedFileName(file.getName());
         //noinspection SSBasedInspection
         return file.createNewFile();
+    }
+
+
+    public static boolean createNewFile(FileLike file, boolean checkFileName) throws IOException
+    {
+        if (checkFileName)
+            checkAllowedFileName(file.getName());
+        var ret = !file.exists();
+        file.createFile();
+        return ret;
     }
 
 
