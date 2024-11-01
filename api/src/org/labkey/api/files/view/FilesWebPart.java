@@ -45,7 +45,6 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URIUtil;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
 import org.labkey.api.view.HttpView;
@@ -66,11 +65,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * User: Mark Igra
- * Date: Jul 9, 2007
- * Time: 2:13:18 PM
- */
 public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
 {
     public static final String PART_NAME = "Files";
