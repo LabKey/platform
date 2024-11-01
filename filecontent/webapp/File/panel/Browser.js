@@ -1524,7 +1524,7 @@ Ext4.define('File.panel.Browser', {
                     // skip child container nodes for customize files page
                     if (me.showFolderTreeOnly)
                     {
-                        var containerPath = encodeURI(LABKEY.container.path);
+                        var containerPath = LABKEY.ActionURL.encodePath(LABKEY.container.path);
                         treeStore.filterBy(function(record) {
                             var id = record.get('id');
                             if (id === containerPath || id === containerPath + '/') // root: current container

@@ -697,7 +697,7 @@ public class PageFlowUtil
     );
 
     /**
-     * URL encode string. Like JavaScript encodeURIComponent().
+     * URL encode string. Intended to be equivalent to JavaScript encodeURIComponent().
      * NOTE! this should be used on parts of a url, not an entire url.
      */
     public static @NotNull String encodeURIComponent(String s)
@@ -723,7 +723,7 @@ public class PageFlowUtil
     }
 
     /**
-     * Like JavaScript encodeURI()
+     * Intended to be equivalent to JavaScript encodeURI().
      */
     static final BitSet dontEncode = new BitSet(256);
     static

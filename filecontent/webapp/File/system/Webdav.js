@@ -27,7 +27,7 @@
         {
             Ext4.apply(this, config,
                     {
-                        containerPath: encodeURI(LABKEY.container.path),
+                        containerPath: LABKEY.ActionURL.encodePath(LABKEY.container.path),
                         rootPath: LABKEY.contextPath + '/_webdav/',
                         rootName: (LABKEY.serverName || "LabKey Server")
                     });
@@ -155,7 +155,7 @@
         {
 
             Ext4.applyIf(this, {
-                containerPath: encodeURI(LABKEY.container.path),
+                containerPath: LABKEY.ActionURL.encodePath(LABKEY.container.path),
             });
 
             var prefix = this.concatPaths(this.baseUrl, this.rootPath);
