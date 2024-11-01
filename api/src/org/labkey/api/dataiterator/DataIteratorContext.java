@@ -23,6 +23,7 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryImportPipelineJob;
 import org.labkey.api.query.QueryUpdateService;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -229,7 +230,12 @@ public class DataIteratorContext
     @NotNull
     public Set<String> getAlternateKeys()
     {
-        return _alternateKeys;
+         return  Collections.unmodifiableSet(_alternateKeys);
+    }
+
+    public void addAlternateKeys(Set<String> alternateKeys)
+    {
+        _alternateKeys.addAll(alternateKeys);
     }
 
     /** if this etl should be killed, will execute <code>throw _errors;</code> */

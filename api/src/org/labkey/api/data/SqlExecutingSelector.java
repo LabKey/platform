@@ -56,12 +56,7 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
     // optimizations won't mutate the ExecutingSelector's externally set state.
     abstract protected FACTORY getSqlFactory(boolean isResultSet);
 
-    SqlExecutingSelector(DbScope scope)
-    {
-        this(scope, null);
-    }
-
-    private SqlExecutingSelector(DbScope scope, Connection conn)
+    protected SqlExecutingSelector(DbScope scope, Connection conn)
     {
         this(scope, conn, new QueryLogging());
     }
