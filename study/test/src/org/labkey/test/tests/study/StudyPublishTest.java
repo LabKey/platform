@@ -1242,7 +1242,9 @@ public class StudyPublishTest extends StudyPHIExportTest
         // verify the case where a user has read access to a folder and admin access to a subfolder
         log("verify permissions for a sub level folder admin");
         navigateToFolder(getProjectName(), PUB1_NAME);
-        new ApiPermissionsHelper(this).setUserPermissions(PUBLISH_SUB_FOLDER_ADMIN, "Folder Administrator");
+        _permissionsHelper.setUserPermissions(PUBLISH_SUB_FOLDER_ADMIN, "Folder Administrator");
+        clickButton("Save and Finish");
+        clickFolder(getFolderName());
         goToSchemaBrowser();
         impersonate(PUBLISH_SUB_FOLDER_ADMIN);
         selectQuery("study", "StudySnapshot");
