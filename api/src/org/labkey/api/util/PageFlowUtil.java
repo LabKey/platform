@@ -682,7 +682,8 @@ public class PageFlowUtil
     private static final String RESERVED_MARKS = ";/?:@&=+$,";
 
     // https://datatracker.ietf.org/doc/html/rfc2396#section-2.3
-    private static final String UNRESERVED_MARKS = "-_.!~*'()";
+    // Note: The single-quote "'" character is not included in our mapping
+    private static final String UNRESERVED_MARKS = "-_.!~*()";
 
     // This maps a subset of unreserved marks to their hex encoding.
     // The reason for this subset is that URLEncoder.encode() already
@@ -691,35 +692,53 @@ public class PageFlowUtil
     private static final Map<String, String> DECODE_UNRESERVED_MARKS = Map.of(
         "!", "%21",
         "~", "%7E",
-        "'", "%27",
+        // "'", "%27", -- Intentionally keep the single-quote character encoded
         "(", "%28",
         ")", "%29"
     );
 
-    /**
-     * URL encode string. Intended to be equivalent to JavaScript encodeURIComponent().
-     * NOTE! this should be used on parts of a url, not an entire url.
-     */
-    public static @NotNull String encodeURIComponent(String s)
+    private static @NotNull String encode(String s, boolean decodeUnreservedMarks)
     {
+        // NOTE: If you are modifying this function, then be sure to keep the behavior of
+        // encodeURIComponent() consistent with the JavaScript implementation.
         if (null == s)
             return "";
 
         String encoded = URLEncoder.encode(s, StringUtilsLabKey.DEFAULT_CHARSET);
         encoded = StringUtils.replace(encoded, "+", "%20");
 
-        // URLEncoder.encode() encodes some unreserved marks that JavaScript's encodeURIComponent()
-        // does not. Here we decode these marks so that we match encodeURIComponent() encoding.
-        // See https://stackoverflow.com/a/607403
-        for (var entry : DECODE_UNRESERVED_MARKS.entrySet())
-            encoded = StringUtils.replace(encoded, entry.getValue(), entry.getKey());
+        if (decodeUnreservedMarks)
+        {
+            // URLEncoder.encode() encodes some unreserved marks that JavaScript's encodeURIComponent()
+            // does not. Here we decode these marks so that we match encodeURIComponent() encoding.
+            // See https://stackoverflow.com/a/607403
+            for (var entry : DECODE_UNRESERVED_MARKS.entrySet())
+                encoded = StringUtils.replace(encoded, entry.getValue(), entry.getKey());
+        }
 
         return encoded;
     }
 
+    /**
+     * URL encode string.
+     * NOTE: this should be used on parts of a url, not an entire url.
+     * NOTE: This is not equivalent to JavaScript encodeURIComponent().
+     * If you are looking for that, then use {@link PageFlowUtil#encodeURIComponent}.
+     */
     public static @NotNull String encode(String s)
     {
-        return encodeURIComponent(s);
+        return encode(s, false);
+    }
+
+    /**
+     * URL encode string. Intended to be equivalent to JavaScript encodeURIComponent() with
+     * the notable exception that it does encode the single-quote character "'". The reason being
+     * that we do not want to accidentally allow encoding of a URL to escape quotes in HTML generation.
+     * NOTE: this should be used on parts of a url, not an entire url.
+     */
+    public static @NotNull String encodeURIComponent(String s)
+    {
+        return encode(s, true);
     }
 
     /**
@@ -778,14 +797,14 @@ public class PageFlowUtil
     public static String encodePath(String path)
     {
         String[] parts = path.split("/");
-        String ret = "";
+        StringBuilder ret = new StringBuilder();
         for (int i = 0; i < parts.length; i++)
         {
             if (i > 0)
-                ret += "/";
-            ret += encodeURIComponent(parts[i]);
+                ret.append("/");
+            ret.append(encodeURIComponent(parts[i]));
         }
-        return ret;
+        return ret.toString();
     }
 
 
@@ -2608,8 +2627,8 @@ public class PageFlowUtil
             assertEquals("foo%2Fbar%2Fbaz", encodeURIComponent("foo/bar/baz"));
             assertEquals("hello%2Bworld", encodeURIComponent("hello+world"));
 
-            // Strings with reserved characters
-            assertEquals("!%20*%20'%20(%20)%20%3B%20%3A%20%40%20%26%20%3D%20%2B%20%24%20%2C%20%2F%20%3F%20%25%20%23%20%5B%20%5D",
+            // Strings with reserved characters (note: single-quote character is encoded)
+            assertEquals("!%20*%20%27%20(%20)%20%3B%20%3A%20%40%20%26%20%3D%20%2B%20%24%20%2C%20%2F%20%3F%20%25%20%23%20%5B%20%5D",
                     encodeURIComponent("! * ' ( ) ; : @ & = + $ , / ? % # [ ]"));
 
             // URL with query parameters
@@ -2625,7 +2644,7 @@ public class PageFlowUtil
 
             // Strings with mixed characters
             assertEquals("hello%2Bworld%3D42%26foo%23bar", encodeURIComponent("hello+world=42&foo#bar"));
-            assertEquals("John%20%26%20Jane's%20%40%20party!", encodeURIComponent("John & Jane's @ party!"));
+            assertEquals("John%20%26%20Jane%27s%20%40%20party!", encodeURIComponent("John & Jane's @ party!"));
             assertEquals("some-url%2Fpath%3Fname%3Dfoo%26value%3Dbar", encodeURIComponent("some-url/path?name=foo&value=bar"));
 
             // Strings with emojis

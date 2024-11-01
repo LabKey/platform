@@ -9,7 +9,7 @@ import org.labkey.api.view.ActionURL;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.labkey.api.util.PageFlowUtil.encode;
+import static org.labkey.api.util.PageFlowUtil.encodeURIComponent;
 
 /**
  * Reference a single row within a table by its query coordinates: container, schemaName, queryName, and a set of pk filters.
@@ -90,17 +90,17 @@ public class QueryRowReference
     {
         StringBuilder ret = new StringBuilder();
 
-        ret.append(QueryParam.schemaName).append("=").append(encode(_schemaKey.toString()));
+        ret.append(QueryParam.schemaName).append("=").append(encodeURIComponent(_schemaKey.toString()));
         ret.append("&");
-        ret.append(QueryParam.queryName).append("=").append(encode(_queryName));
+        ret.append(QueryParam.queryName).append("=").append(encodeURIComponent(_queryName));
         for (var f : _pkFilters)
         {
             ret.append("&");
-            ret.append(QueryView.DATAREGIONNAME_DEFAULT).append(".").append(encode(f.first.toString()));
+            ret.append(QueryView.DATAREGIONNAME_DEFAULT).append(".").append(encodeURIComponent(f.first.toString()));
             ret.append("~");
             ret.append(CompareType.EQUAL.getPreferredUrlKey());
             ret.append("=");
-            ret.append(encode(String.valueOf(f.second)));
+            ret.append(encodeURIComponent(String.valueOf(f.second)));
         }
 
         return ret.toString();
@@ -112,6 +112,6 @@ public class QueryRowReference
     @Override
     public String toString()
     {
-        return _schemaKey.toString() + "." + _queryName + "&" + _pkFilters.stream().map(f -> encode(f.first.toString()) + "=" + encode(String.valueOf(f.second))).collect(Collectors.joining("&"));
+        return _schemaKey.toString() + "." + _queryName + "&" + _pkFilters.stream().map(f -> encodeURIComponent(f.first.toString()) + "=" + encodeURIComponent(String.valueOf(f.second))).collect(Collectors.joining("&"));
     }
 }

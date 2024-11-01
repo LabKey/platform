@@ -253,8 +253,7 @@ import java.util.Objects;
         List<String> encodedParts = new ArrayList<>();
         for (String part : getParts())
         {
-            String encodedPart = PageFlowUtil.encode(part);
-            encodedParts.add(encodedPart);
+            encodedParts.add(PageFlowUtil.encodeURIComponent(part));
         }
         return StringUtils.join(encodedParts.iterator(), getDivider());
     }

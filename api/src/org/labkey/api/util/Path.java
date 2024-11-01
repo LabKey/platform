@@ -552,7 +552,7 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
 
     public String encode()
     {
-        return encode(null,null);
+        return encode(null, null);
     }
 
     public String encode(String start, String end)
@@ -569,7 +569,7 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
         for (int i=0 ; i<_length ; i++)
         {
             sb.append(slash);
-            sb.append(PageFlowUtil.encode(_path[i]));
+            sb.append(PageFlowUtil.encodeURIComponent(_path[i]));
             slash = "/";
         }
         sb.append(end);

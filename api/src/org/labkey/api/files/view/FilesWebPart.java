@@ -112,7 +112,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
 
         if (fileRoot != null)
         {
-            if (fileRoot.startsWith(FileContentService.PIPELINE_LINK) || fileRoot.startsWith(PageFlowUtil.encode(FileContentService.PIPELINE_LINK)))
+            if (fileRoot.startsWith(FileContentService.PIPELINE_LINK) || fileRoot.startsWith(PageFlowUtil.encodeURIComponent(FileContentService.PIPELINE_LINK)))
             {
                 _isPipelineFiles = true;
             }
@@ -127,7 +127,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         }
         else if (legacyFileRoot != null) // legacy file root
         {
-            if (legacyFileRoot.equals(FileContentService.PIPELINE_LINK) || legacyFileRoot.equals(PageFlowUtil.encode(FileContentService.PIPELINE_LINK)))
+            if (legacyFileRoot.equals(FileContentService.PIPELINE_LINK) || legacyFileRoot.equals(PageFlowUtil.encodeURIComponent(FileContentService.PIPELINE_LINK)))
             {
                 _isPipelineFiles = true;
                 PipeRoot root = PipelineService.get().findPipelineRoot(getViewContext().getContainer());
@@ -386,11 +386,11 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
 
             if (FileContentService.CLOUD_LINK.equalsIgnoreCase(davName) && FileContentService.get().getCloudRootName(c).equalsIgnoreCase(fileset))
             {
-                relativePath += PageFlowUtil.encode(FileContentService.FILES_LINK);
+                relativePath += PageFlowUtil.encodeURIComponent(FileContentService.FILES_LINK);
             }
             else
             {
-                relativePath += PageFlowUtil.encode(davName);
+                relativePath += PageFlowUtil.encodeURIComponent(davName);
                 if (fileset != null)
                     relativePath += "/" + PageFlowUtil.encodePath(fileset);
             }
@@ -407,7 +407,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
     @NotNull
     private static URI _getRootPath(Container c, @Nullable URI relativePath, boolean skipDavPrefix)
     {
-        String webdavPrefix = skipDavPrefix ? "" : PageFlowUtil.encode(AppProps.getInstance().getContextPath()) + "/" + PageFlowUtil.encode(WebdavService.getServletPath());
+        String webdavPrefix = skipDavPrefix ? "" : PageFlowUtil.encodeURIComponent(AppProps.getInstance().getContextPath()) + "/" + PageFlowUtil.encodeURIComponent(WebdavService.getServletPath());
         URI rootPath = URIUtil.toURI(webdavPrefix + c.getEncodedPath());
         relativePath = relativePath == null || relativePath.toString().endsWith("/") ?
                 relativePath :
