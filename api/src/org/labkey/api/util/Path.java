@@ -43,6 +43,7 @@ import java.util.stream.StreamSupport;
 
 public class Path implements Serializable, Comparable<Path>, Iterable<String>
 {
+    final private boolean _caseSensitive;
     final private int _hash;
     final private String[] _path;
     final private int _length;
@@ -58,17 +59,20 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
 
     transient private AtomicReference<Path> _parent;
 
-    final public static Path emptyPath = new Path(new String[0], 0, false, true);
-    final public static Path rootPath = new Path(new String[0], 0, true, true);
+    final public static Path emptyPath = new Path(new String[0], 0, false, true, false);
+    final public static Path rootPath = new Path(new String[0], 0, true, true, false);
 
 
     @JsonCreator
-    private Path(@JsonProperty("_hash") int hash,
+    private Path(
+                 @JsonProperty("_hash") int hash,
                  @JsonProperty("_path") String[] path,
                  @JsonProperty("_length") int length,
                  @JsonProperty("_isAbsolute") boolean abs,
-                 @JsonProperty("_isDirectory") boolean dir)
+                 @JsonProperty("_isDirectory") boolean dir,
+                 @JsonProperty("_caseSensitive") boolean caseSensitive)
     {
+        _caseSensitive = caseSensitive;
         _hash = hash;
         _path = path;
         _length = length;
@@ -77,7 +81,7 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
         _parent = new AtomicReference<>();
     }
 
-    protected Path(String[] path, int length, boolean abs, boolean dir)
+    protected Path(String[] path, int length, boolean abs, boolean dir, boolean caseSensitive)
     {
         _path = path;
         _length = length;
@@ -85,6 +89,7 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
         _isAbsolute = abs;
         _isDirectory = dir;
         _hash = computeHash(_path, _length);
+        _caseSensitive = caseSensitive;
     }
 
     // Create an instance from a java.nio.file.Path
@@ -93,14 +98,25 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
         this(getNames(nioPath));
     }
 
-    protected Path(Path anotherPath)
+    public Path(Path anotherPath)
     {
+        this(anotherPath, anotherPath.isAbsolute());
+    }
+
+    protected Path(Path anotherPath, boolean caseSensitive)
+    {
+        _caseSensitive = caseSensitive;
         _hash = anotherPath._hash;
         _path = anotherPath._path;
         _length = anotherPath._length;
         _isAbsolute = anotherPath._isAbsolute;
-        _isDirectory = anotherPath._isAbsolute;
+        _isDirectory = anotherPath._isDirectory;
         _parent = anotherPath._parent;
+    }
+
+    public boolean isCaseSensitive()
+    {
+        return _caseSensitive;
     }
 
     private static Collection<String> getNames(Iterable<java.nio.file.Path> it)
@@ -110,21 +126,19 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
             .collect(Collectors.toList());
     }
 
-
     public Path(Collection<String> names)
     {
         this(names.toArray(new String[0]));
     }
 
-
     public Path()
     {
-        this(new String[0], 0, false, false);
+        this(new String[0], 0, false, false, false);
     }
 
     public Path(String ... names)
     {
-        this(names, names.length, false, false);
+        this(names, names.length, false, false, false);
     }
 
     public Path(Path.Part ... names)
@@ -138,6 +152,7 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
         _isAbsolute = false;
         _isDirectory = false;
         _hash = computeHash(_path, _length);
+        _caseSensitive = false;
     }
 
     private static int computeHash(String[] names, int length)
@@ -157,7 +172,19 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
         String[] arr = strip.split("/");
         for (int i=0 ; i<arr.length ; i++)
             arr[i] = defaultDecodeName(arr[i]);
-        return new Path(arr, arr.length, _abs(path), _dir(path));
+        return new Path(arr, arr.length, _abs(path), _dir(path), false);
+    }
+
+
+    public static Path parseCaseSensitive(@NotNull String path)
+    {
+        String strip = StringUtils.strip(path,"/");
+        if (strip.isBlank())
+            return path.startsWith("/") ? rootPath.caseSensitive() : emptyPath.caseSensitive();
+        String[] arr = strip.split("/");
+        for (int i=0 ; i<arr.length ; i++)
+            arr[i] = defaultDecodeName(arr[i]);
+        return new Path(arr, arr.length, _abs(path), _dir(path), true);
     }
 
 
@@ -167,26 +194,54 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
         String[] arr = StringUtils.strip(path,"/").split("/");
         for (int i=0 ; i<arr.length ; i++)
             arr[i] = PageFlowUtil.decode(arr[i]);
-        return new Path(arr, arr.length, _abs(path), _dir(path));
+        return new Path(arr, arr.length, _abs(path), _dir(path), false);
     }
 
-    protected Path createPath(String[] path, int length, boolean abs, boolean dir)
+    protected Path createPath(String[] path, int length, boolean abs, boolean dir, boolean caseSensitive)
     {
-        return new Path(path,length,abs,dir);
+        return new Path(path,length,abs,dir,caseSensitive);
     }
 
     public Path absolute()
     {
         if (isAbsolute())
             return this;
-        return new Path(_path, _length, true, _isDirectory);
+        return new Path(_path, _length, true, _isDirectory, _caseSensitive);
     }
 
     public Path relative()
     {
         if (!isAbsolute())
             return this;
-        return new Path(_path, _length, false, _isDirectory);
+        return new Path(_path, _length, false, _isDirectory, _caseSensitive);
+    }
+
+    public Path directory()
+    {
+        if (isDirectory())
+            return this;
+        return new Path(_path, _length, false, true, _caseSensitive);
+    }
+
+    public Path file()
+    {
+        if (!isDirectory())
+            return this;
+        return new Path(_path, _length, false, false, _caseSensitive);
+    }
+
+    public Path caseSensitive()
+    {
+        if (isCaseSensitive())
+            return this;
+        return new Path(_path, _length, _isAbsolute, _isDirectory, true);
+    }
+
+    public Path caseInsensitive()
+    {
+        if (!isCaseSensitive())
+            return this;
+        return new Path(_path, _length, _isAbsolute, _isDirectory, false);
     }
 
     public boolean isAbsolute()
@@ -204,10 +259,12 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
     {
         if (this == other)
             return 0;
+        if (isCaseSensitive() != other.isCaseSensitive())
+            throw new UnsupportedOperationException("Cannot compare paths of different types");
         int shorter = Math.min(_length, other._length);
         for (int i=0 ; i<shorter ; i++)
         {
-            int c = compareName(_path[i],other._path[i]);
+            int c = compareName(other, _path[i], other._path[i]);
             if (0 != c)
                 return c;
         }
@@ -220,7 +277,7 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
             return false;
         for (int i=1 ; i<=other._length ; i++)
         {
-            int c = compareName(_path[_length-i], other._path[other._length-i]);
+            int c = compareName(other, _path[_length-i], other._path[other._length-i]);
             if (0 != c)
                 return false;
         }
@@ -240,7 +297,7 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
             return false;
         for (int i=_length-1 ; i>=0 ; i--)
         {
-            int c = compareName(_path[i], that._path[i]);
+            int c = compareName(that, _path[i], that._path[i]);
             if (0 != c)
                 return false;
         }
@@ -323,7 +380,7 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
         Path p = _parent.get();
         if (null != p)
             return p;
-        _parent.compareAndSet(null, createPath(_path, _length-1, isAbsolute(), true));
+        _parent.compareAndSet(null, createPath(_path, _length-1, isAbsolute(), true, _caseSensitive));
         return _parent.get();
     }
 
@@ -366,7 +423,7 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
                 normal[next++] = part;
             }
         }
-        return createPath(normal, next, isAbsolute(), isDirectory());
+        return createPath(normal, next, isAbsolute(), isDirectory(), isCaseSensitive());
     }
 
     /**
@@ -378,9 +435,9 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
             return other;
         int shorter = Math.min(_length, other._length);
         int i;
-        for (i=0 ; i<shorter && 0==compareName(_path[i],other._path[i]); i++)
+        for (i=0 ; i<shorter && 0==compareName(other, _path[i], other._path[i]); i++)
         {
-            /* pass */;
+            /* pass */
         }
 
         // used up all of _path
@@ -390,14 +447,14 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
                 return emptyPath;
             String[] path = new String[other._length - _length];
             System.arraycopy(other._path, _length, path, 0, path.length);
-            return createPath(path, path.length, false, other.isDirectory());
+            return createPath(path, path.length, false, other.isDirectory(), other.isCaseSensitive());
         }
 
         String[] path = new String[_length-i + other._length-i];
         for (int j=0 ; j<_length-i ; j++)
             path[j] = "..";
         System.arraycopy(other._path, i, path, _length-i, other._length-i);
-        return createPath(path, path.length, false, other.isDirectory());
+        return createPath(path, path.length, false, other.isDirectory(), other.isCaseSensitive());
     }
 
     /*
@@ -427,7 +484,7 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
         String[] path = new String[_length + other._length];
         System.arraycopy(_path, 0, path, 0, _length);
         System.arraycopy(other._path, 0, path, _length, other._length);
-        Path ret = createPath(path, _length + other._length, this.isAbsolute(), other.isDirectory());
+        Path ret = createPath(path, _length + other._length, this.isAbsolute(), other.isDirectory(), this.isCaseSensitive());
         if (other._length == 1)
             ret._parent.set(this);
         return ret;
@@ -439,7 +496,7 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
         String[] path = new String[_length+names.length];
         System.arraycopy(_path, 0, path, 0, _length);
         System.arraycopy(names, 0, path, _length, names.length);
-        Path ret = createPath(path, path.length, isAbsolute(), false);
+        Path ret = createPath(path, path.length, this.isAbsolute(), false, this.isCaseSensitive());
         if (names.length == 1)
             ret._parent.set(this);
         return ret;
@@ -451,7 +508,7 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
         System.arraycopy(_path, 0, path, 0, _length);
         for (int i=0 ; i<names.length ; i++)
             path[_length+i] = names[i].toString();
-        Path ret = createPath(path, path.length, isAbsolute(), false);
+        Path ret = createPath(path, path.length, isAbsolute(), false, this.isCaseSensitive());
         if (names.length == 1)
             ret._parent.set(this);
         return ret;
@@ -462,7 +519,7 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
         String[] path = new String[_length+1];
         System.arraycopy(_path, 0, path, 0, _length);
         path[_length] = name.toString();
-        Path ret = createPath(path, path.length, isAbsolute(), isDirectory);
+        Path ret = createPath(path, path.length, isAbsolute(), isDirectory, this.isCaseSensitive());
         ret._parent.set(this);
         return ret;
     }
@@ -472,7 +529,7 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
         String[] path = new String[_length+1];
         System.arraycopy(_path, 0, path, 0, _length);
         path[_length] = name;
-        Path ret = createPath(path, path.length, isAbsolute(), isDirectory);
+        Path ret = createPath(path, path.length, isAbsolute(), isDirectory, isCaseSensitive());
         ret._parent.set(this);
         return ret;
     }
@@ -483,7 +540,7 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
             return false;
         for (int i=0 ; i<other._length ; i++)
         {
-            int c = compareName(_path[i], other._path[i]);
+            int c = compareName(other, _path[i], other._path[i]);
             if (0 != c)
                 return false;
         }
@@ -498,7 +555,7 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
             return emptyPath;
         String[] path = new String[end-begin];
         System.arraycopy(_path, begin, path, 0, path.length);
-        return createPath(path, path.length, isAbsolute() && begin==0, end<_length||isDirectory());
+        return createPath(path, path.length, isAbsolute() && begin==0, end<_length||isDirectory(), isCaseSensitive());
     }
 
     public String extension()
@@ -576,9 +633,11 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
         return sb.toString();
     }
 
-    protected int compareName(String a, String b)
+    protected int compareName(Path other, String a, String b)
     {
-        return a.compareToIgnoreCase(b);
+        return _caseSensitive || other.isCaseSensitive() ?
+                a.compareTo(b) :
+                a.compareToIgnoreCase(b);
     }
 
     protected static String defaultDecodeName(String a)

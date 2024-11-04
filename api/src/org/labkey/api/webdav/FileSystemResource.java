@@ -60,6 +60,7 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.DefaultContainerUser;
 import org.labkey.vfs.FileLike;
 import org.labkey.vfs.FileSystemLike;
+import org.springframework.util.StreamUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -125,7 +126,7 @@ public class FileSystemResource extends AbstractWebdavResource
         setSecurableResource(folder.getSecurableResource());
 
         _files = folder._files.stream()
-            .map(file -> file.resolveChild(name.toString()))
+            .map(file -> file.resolveChild(name))
             .toList();
     }
 
@@ -259,14 +260,32 @@ public class FileSystemResource extends AbstractWebdavResource
         return null;
     }
 
+
+    @Override
+    public long copyFrom(User user, WebdavResource r) throws IOException, DavException
+    {
+        File from = r.getFile();
+        File to = getFile();
+        if (null != from && null != to)
+        {
+            FileUtil.createNewFile(to, AppProps.getInstance().isInvalidFilenameUploadBlocked());
+            FileUtil.copyFile(from, to);
+            to.setLastModified(from.lastModified());
+            return to.length();
+        }
+        return super.copyFrom(user, r);
+    }
+
+
     @Override
     public long copyFrom(User user, FileStream is) throws IOException
     {
-        File file = getFile();
+        FileLike file = getFileLike();
         boolean created = false;
         if (!file.exists())
         {
-            FileUtil.mkdirs(file.getParentFile(), AppProps.getInstance().isInvalidFilenameUploadBlocked());
+            var parent = file.getParent();
+            FileUtil.mkdirs(parent, AppProps.getInstance().isInvalidFilenameUploadBlocked());
             try
             {
                 FileUtil.createNewFile(file, AppProps.getInstance().isInvalidFilenameUploadBlocked());
@@ -277,18 +296,26 @@ public class FileSystemResource extends AbstractWebdavResource
                 _log.error("Couldn't create file on server: " + file.getPath(), x);
                 throw new ConfigurationException("Couldn't create file on server", x);
             }
-            resetMetadata();
         }
 
         try
         {
-            is.transferTo(file);
-            if (is.getLastModified() != null)
+            File ioFile = getFile();
+            if (null != ioFile)
             {
-                file.setLastModified(is.getLastModified().getTime());
+                is.transferTo(getFile());
+                if (is.getLastModified() != null)
+                    ioFile.setLastModified(is.getLastModified().getTime());
+            }
+            else
+            {
+                try (var out = file.openOutputStream())
+                {
+                    StreamUtils.copy(is.openInputStream(),out);
+                }
             }
             resetMetadata();
-            return file.length();
+            return file.getSize();
         }
         catch (IOException x)
         {
@@ -300,6 +327,7 @@ public class FileSystemResource extends AbstractWebdavResource
         finally
         {
             is.closeInputStream();
+            resetMetadata();
         }
     }
 
