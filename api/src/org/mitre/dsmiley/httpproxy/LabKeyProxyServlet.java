@@ -20,10 +20,13 @@ public class LabKeyProxyServlet extends ProxyServlet
     /** The source URI to proxy from , defaults to /{contextpath}/{servletpath}  */
     protected static final String P_SOURCE_PATH = "sourcePath";
     protected static final String FLEX_REDIRECT_PROTOCOL = "flexRedirectProtocol";
+    public static final String ALLOW_PROTOCOL_UPGRADE_PARAM_NAME = "LKS-protocolUpgradeEnabled";
 
     protected String sourcePath;
     private boolean flexRedirectProtocol;
+    private boolean _allowProtocolUpgradeLK;
 
+    @Override
     protected void initTarget() throws ServletException
     {
         super.initTarget();
@@ -35,6 +38,10 @@ public class LabKeyProxyServlet extends ProxyServlet
         {
             this.flexRedirectProtocol = Boolean.parseBoolean(flexRedirectProtocolString);
         }
+
+        // httpclient5 v5.4 protocolUpgradeEnabled default to true
+        // https://github.com/apache/httpcomponents-client/commit/3235f00
+        this._allowProtocolUpgradeLK = readBooleanConfigParam(ALLOW_PROTOCOL_UPGRADE_PARAM_NAME, true);
     }
 
     protected String getSourcePath(HttpServletRequest request)
@@ -160,6 +167,12 @@ public class LabKeyProxyServlet extends ProxyServlet
 
         }
         return theUrl;
+    }
+
+    @Override
+    protected boolean allowProtocolUpgrade()
+    {
+        return _allowProtocolUpgradeLK;
     }
 
 }
