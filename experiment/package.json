@@ -17,7 +17,7 @@
   },
   "devDependencies": {
     "@labkey/build": "8.2.1-fb-package-updates-1124.4",
-    "@labkey/test": "1.6.3-fb-package-updates-1124.0",
+    "@labkey/test": "1.6.3-fb-package-updates-1124.1",
     "@types/jest": "29.5.14",
     "@types/react": "18.3.12",
     "@types/react-dom": "18.3.1",
