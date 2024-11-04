@@ -130,6 +130,7 @@ public class DateUtil
         {
             if (dateTimeFormat.startsWith(format))
             {
+                // "ddMMMyyyy" vs ""ddMMMyy"
                 if (dateTimeFormat.equals(format) || dateTimeFormat.charAt(format.length()) == ' ')
                 {
                     datePortion = format;
