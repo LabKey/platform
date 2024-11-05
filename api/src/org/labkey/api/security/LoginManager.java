@@ -117,13 +117,6 @@ public class LoginManager
     @Deprecated
     private static String getPasswordHash(ValidEmail email)
     {
-        return getPasswordHash(email.getEmailAddress());
-    }
-
-    // For internal use only, plus database login and change email workflows, where existing email address could be invalid (i.e., non-conforming per RFC 822)
-    @Deprecated
-    private static String getPasswordHash(String email)
-    {
         SqlSelector selector = new SqlSelector(CORE.getSchema(), new SQLFragment("SELECT Crypt FROM " + CORE.getTableInfoLogins() + " WHERE Email = ?", email));
         return selector.getObject(String.class);
     }
@@ -132,6 +125,17 @@ public class LoginManager
     {
         return null != user ? new SqlSelector(CORE.getSchema(), new SQLFragment("SELECT Crypt FROM " + CORE.getTableInfoLogins() + " WHERE UserId = ?", user.getUserId()))
             .getObject(String.class) : null;
+    }
+
+    @Deprecated
+    public static boolean loginExists(ValidEmail email)
+    {
+        return (null != getPasswordHash(email));
+    }
+
+    public static boolean loginExists(User user)
+    {
+        return (null != getPasswordHash(user));
     }
 
     public static boolean matchPassword(String password, String hash)
@@ -146,17 +150,6 @@ public class LoginManager
             return Crypt.MD5.matchesWithPrefix(password, hash);
         else
             return Crypt.MD5.matches(password, hash);
-    }
-
-    @Deprecated
-    public static boolean loginExists(ValidEmail email)
-    {
-        return (null != getPasswordHash(email));
-    }
-
-    public static boolean loginExists(User user)
-    {
-        return (null != getPasswordHash(user));
     }
 
     public static String createTempPassword()
@@ -200,32 +193,17 @@ public class LoginManager
         return (null == getVerification(user));
     }
 
-    @Deprecated
-    public static boolean verify(ValidEmail email, String verification)
+    public static boolean verify(User user, String verification)
     {
-        String dbVerification = getVerification(email);
+        String dbVerification = getVerification(user);
         return (dbVerification != null && dbVerification.equals(verification));
-    }
-
-    @Deprecated
-    public static void setVerification(ValidEmail email, @Nullable String verification) throws SecurityManager.UserManagementException
-    {
-        int rows = new SqlExecutor(CORE.getSchema()).execute("UPDATE " + CORE.getTableInfoLogins() + " SET Verification=? WHERE LOWER(email)=LOWER(?)", verification, email.getEmailAddress());
-        if (1 != rows)
-            throw new SecurityManager.UserManagementException(email, "Unexpected number of rows returned when setting verification: " + rows);
     }
 
     public static void setVerification(User user, @Nullable String verification) throws SecurityManager.UserManagementException
     {
-        int rows = new SqlExecutor(CORE.getSchema()).execute("UPDATE " + CORE.getTableInfoLogins() + " SET Verification=? WHERE LOWER(email)=LOWER(?)", verification, user.getUserId());
+        int rows = new SqlExecutor(CORE.getSchema()).execute("UPDATE " + CORE.getTableInfoLogins() + " SET Verification = ? WHERE UserId = ?", verification, user.getUserId());
         if (1 != rows)
             throw new SecurityManager.UserManagementException(user.getEmail(), "Unexpected number of rows returned when setting verification: " + rows);
-    }
-
-    @Deprecated
-    public static String getVerification(ValidEmail email)
-    {
-        return new SqlSelector(CORE.getSchema(), "SELECT Verification FROM " + CORE.getTableInfoLogins() + " WHERE Email = ?", email.getEmailAddress()).getObject(String.class);
     }
 
     public static String getVerification(User user)

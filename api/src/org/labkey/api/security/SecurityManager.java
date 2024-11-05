@@ -3294,7 +3294,7 @@ public class SecurityManager
                 rawEmail = "test_" + Math.round(Math.random() * 10000) + "@localhost.xyz";
                 email = new ValidEmail(rawEmail);
             }
-            while (LoginManager.loginExists(email));
+            while (UserManager.getUser(email) != null);
 
             User user = null;
 
@@ -3305,10 +3305,10 @@ public class SecurityManager
                 user = status.getUser();
                 assertTrue("addUser", user.getUserId() != 0);
 
-                boolean success = LoginManager.verify(email, status.getVerification());
+                boolean success = LoginManager.verify(user, status.getVerification());
                 assertTrue("verify", success);
 
-                LoginManager.setVerification(email, null);
+                LoginManager.setVerification(user, null);
 
                 String password = generateStrongPassword(user);
                 LoginManager.setPassword(user, password);

@@ -1774,16 +1774,16 @@ public class LoginController extends SpringActionController
 
     private static boolean attemptVerification(SetPasswordForm form, ValidEmail email, Errors errors)
     {
+        User user = UserManager.getUser(email); // TODO
         String verification = form.getVerification();
-        boolean isVerified = LoginManager.verify(email, verification);
+        boolean isVerified = LoginManager.verify(user, verification);
 
-        User user = UserManager.getUser(email);
-        LoginController.checkVerificationErrors(isVerified, user, email.getEmailAddress(), verification, errors);
+        LoginController.checkVerificationErrors(isVerified, user, verification, errors);
 
         return isVerified && !errors.hasErrors();
     }
 
-    public static void checkVerificationErrors(boolean isVerified, User user, String email, String verification, Errors errors)
+    public static void checkVerificationErrors(boolean isVerified, User user, String verification, Errors errors)
     {
         if (isVerified)
         {
@@ -1801,7 +1801,7 @@ public class LoginController extends SpringActionController
         {
             if (!LoginManager.loginExists(user))
             {
-                if (AuthenticationManager.isLdapOrSsoEmail(email))
+                if (AuthenticationManager.isLdapOrSsoEmail(user.getEmail()))
                     errors.reject("setPassword", "You can authenticate your account using LDAP/SSO and you do not need to set a separate password.");
                 else
                     errors.reject("setPassword", "This email address is not associated with an account. Make sure you've copied the entire link into your browser's address bar.");

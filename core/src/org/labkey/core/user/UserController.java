@@ -1902,7 +1902,7 @@ public class UserController extends SpringActionController
                     String requestedEmail = verifyEmail.requestedEmail();
                     String verificationToken = form.getVerificationToken();
                     boolean isVerified = verifyEmail.isVerified(verificationToken);
-                    LoginController.checkVerificationErrors(isVerified, loggedInUser, oldEmail, verificationToken, errors);
+                    LoginController.checkVerificationErrors(isVerified, loggedInUser, verificationToken, errors);
 
                     if (errors.getErrorCount() == 0)  // verified and active
                     {

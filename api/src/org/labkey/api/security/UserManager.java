@@ -884,10 +884,9 @@ public class UserManager
                     throw new UserManagementException(oldEmail, "Unexpected number of rows returned when setting new display name: " + rows);
             }
 
-            ValidEmail validNewEmail = new ValidEmail(newEmail);
-            if (LoginManager.loginExists(validNewEmail))
+            if (LoginManager.loginExists(userToChange))
             {
-                LoginManager.setVerification(validNewEmail, null);  // so we don't let user use this link again
+                LoginManager.setVerification(userToChange, null);  // so we don't let user use this link again
             }
 
             transaction.commit();
