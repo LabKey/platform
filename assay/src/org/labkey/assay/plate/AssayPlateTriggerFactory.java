@@ -2,10 +2,7 @@ package org.labkey.assay.plate;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.assay.AssayProtocolSchema;
-import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayResultDomainKind;
-import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
@@ -88,21 +85,12 @@ public class AssayPlateTriggerFactory implements TriggerFactory
                 return;
 
             // recompute the stats for the changed replicate rows
-            AssayProvider provider = AssayService.get().getProvider(_protocol);
-            if (provider == null)
-                throw new IllegalStateException(String.format("Unable to find the provider for protocol : %s", _protocol.getName()));
-
-            AssayProtocolSchema schema = provider.createProtocolSchema(user, c, _protocol, null);
-            TableInfo dataTable = schema.createDataTable(null, false);
-            if (dataTable == null)
-                return;
-
             try
             {
                 SimpleFilter filter = new SimpleFilter().addInClause(FieldKey.fromParts(AssayResultDomainKind.REPLICATE_LSID_COLUMN_NAME), _replicateLsid.keySet());
                 Map<Lsid, List<Map<String, Object>>> replicates = new HashMap<>();
 
-                new TableSelector(dataTable, filter, null).getResults().forEach(row -> {
+                new TableSelector(table, filter, null).getResults().forEach(row -> {
                     var lsid = row.get(AssayResultDomainKind.REPLICATE_LSID_COLUMN_NAME);
                     replicates.computeIfAbsent(Lsid.parse(String.valueOf(lsid)), m -> new ArrayList<>()).add(row);
                     _replicateLsid.remove(lsid.toString());
