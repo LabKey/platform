@@ -16,8 +16,10 @@
 package org.labkey.test.tests.study;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.hc.core5.http.HttpStatus;
+import org.assertj.core.api.Assertions;
 import org.junit.Assert;
 import org.junit.experimental.categories.Category;
 import org.labkey.remoteapi.CommandException;
@@ -913,6 +915,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         verifyPublishWizardSelectedCheckboxes(StudyHelper.Panel.folderObjects,
                 "Categories",
                 "Container specific module properties",
+                (_containerHelper.getAllModules().contains("dataintegration") ? "ETL Definitions" : ""),
                 "External schema definitions",
                 "Folder type and active modules",
                 "Full-text search settings",
@@ -923,7 +926,7 @@ public class StudyPublishTest extends StudyPHIExportTest
                 "Wikis and their attachments",
                 "File Browser Settings",
                 "Files",
-                "QC State Settings",
+                (_containerHelper.getAllModules().contains("samplemanagement") ? "Sample Status and " : "") + "QC State Settings",
                 "Sample Type Designs",
                 "Sample Type Data",
                 "Data Class Designs",
@@ -1288,7 +1291,8 @@ public class StudyPublishTest extends StudyPHIExportTest
         int colIndex = getElementIndex(columnHeader);
         Locator selectedLabelLoc = gridLoc.append(Locator.css("div.x-grid3-row-selected div.x-grid3-col-" + colIndex));
         List<WebElement> selectedRows = selectedLabelLoc.findElements(getDriver());
-        Set<String> selectedLabels = new HashSet<>(getTexts(selectedRows));
-        assertEquals("Wizard has wrong checkboxes checked", new HashSet<>(Arrays.asList(expectedCheckboxes)), selectedLabels);
+        List<String> selectedLabels = getTexts(selectedRows);
+        Assertions.assertThat(selectedLabels).as("Selected " + grid.getPanelTitle() + " in study publish wizard")
+                .containsExactlyInAnyOrderElementsOf(Arrays.stream(expectedCheckboxes).filter(StringUtils::isNotBlank).toList());
     }
 }
