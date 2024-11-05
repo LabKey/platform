@@ -118,32 +118,27 @@ public class DateUtil
 
     // Splits the date and time portions of a standard date-time format, where date portion is required and time portion
     // is optional. Returns null if the format is non-standard, which means we can't split it.
-    public static DateTimeFormat splitDateTimeFormat(String dateTimeFormat)
+    public static DateTimeFormat splitDateTimeFormat(@NotNull String dateTimeFormat)
     {
         dateTimeFormat = dateTimeFormat.trim();
-        String datePortion = null;
+        String timePortion = null;
 
         // We can't just split on whitespace because non-standard formats could: have any amount of whitespace between
         // characters, put the time portion before the date portion, or even intermingle date and time characters.
-
-        for (String format : STANDARD_DATE_DISPLAY_FORMATS)
+        for (String format : STANDARD_TIME_DISPLAY_FORMATS)
         {
-            if (dateTimeFormat.startsWith(format))
-            {
-                // "ddMMMyyyy" vs ""ddMMMyy"
-                if (dateTimeFormat.equals(format) || dateTimeFormat.charAt(format.length()) == ' ')
-                {
-                    datePortion = format;
-                    break;
-                }
-            }
+            if (dateTimeFormat.endsWith(" " + format))
+                timePortion = format;
         }
 
+        String datePortion = dateTimeFormat;
+        if (timePortion != null)
+            datePortion = dateTimeFormat.substring(0, dateTimeFormat.length() - timePortion.length()).trim();
+
         // If it starts with a standard date format pattern then check for standard time portion (or none)
-        if (datePortion != null)
+        if (isStandardDateDisplayFormat(datePortion))
         {
-            String timePortion = dateTimeFormat.substring(datePortion.length()).trim();
-            if (timePortion.isEmpty())
+            if (timePortion == null || timePortion.isEmpty())
                 return new DateTimeFormat(datePortion, null);
             else if (isStandardTimeDisplayFormat(timePortion))
                 return new DateTimeFormat(datePortion, timePortion);
