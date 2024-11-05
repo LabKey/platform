@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Assume;
+import org.junit.AssumptionViolatedException;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -221,7 +222,7 @@ public class JunitUtil
             {
                 // Modules might have null sourcePath on TeamCity, so crawl for test/sampledata directories and populate
                 // a map the first time, then stash the map for future lookups.
-                String name = module.getExplodedPath().getName();
+                String name = module.getExplodedFileLike().getName();
 
                 synchronized (MAP_LOCK)
                 {
@@ -257,30 +258,29 @@ public class JunitUtil
         }
 
         File file = new File(sampleDataDir, relativePath);
+        if (file.exists())
+            return file;
 
-        String message = null;
+        String message = "No sample data found at [" + file.getAbsolutePath() + "].";
+
         if (null != module)
         {
             if (sampleDataDir == null || !sampleDataDir.exists())
             {
+                Assume.assumeTrue("Module source not present for [" + module.getName() + "] module.",
+                    !StringUtils.isBlank(module.getSourcePath()) && new File(module.getSourcePath()).exists());
+
                 message = "Sample data directory not found for [" + module.getName() + "] module.";
             }
-        }
-        if (message == null && !file.exists())
-        {
-            message = "No sample data found at [" + file.getAbsolutePath() + "].";
         }
 
         if (AppProps.getInstance().isDevMode())
         {
-            //noinspection SimplifiableJUnitAssertion
-            Assert.assertTrue(message, message == null);
+            throw new AssertionError(message);
         }
         else
         {
-            Assume.assumeTrue(message + " Skipping test in production mode.", message == null);
+            throw new AssumptionViolatedException(message + " Skipping test in production mode.");
         }
-
-        return file;
     }
 }
