@@ -147,11 +147,11 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView, Ed
         for (Map.Entry<FieldKey, Map<ColumnProperty, String>> entry : list)
         {
             ret.append(strAnd);
-            ret.append(PageFlowUtil.encode(entry.getKey().toString()));
+            ret.append(PageFlowUtil.encodeURIComponent(entry.getKey().toString()));
             if (!entry.getValue().isEmpty())
             {
                 ret.append("=");
-                ret.append(PageFlowUtil.encode(PageFlowUtil.toQueryString(entry.getValue().entrySet())));
+                ret.append(PageFlowUtil.encodeURIComponent(PageFlowUtil.toQueryString(entry.getValue().entrySet())));
             }
             strAnd = "&";
         }

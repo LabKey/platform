@@ -16,15 +16,20 @@
 
 package org.labkey.api.files.view;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.commons.lang3.BooleanUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.URIUtil;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.Portal;
 
-import java.net.URLDecoder;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
@@ -45,13 +50,17 @@ public class CustomizeFilesWebPartView extends JspView<CustomizeFilesWebPartView
     public static class CustomizeWebPartForm
     {
         private String fileSet;
-        private String fileRoot; // webdav node id
+        @Getter
+        @Setter
+        private URI fileRoot; // webdav node id
         private String path;
         private boolean useFileSet;
         private boolean _folderTreeVisible;
-        private String _location;
-        private Portal.WebPart _webPart;
+        private final String _location;
+        private final Portal.WebPart _webPart;
         private String _rootOffset;
+        @Setter
+        @Getter
         private int size = 350;
         private String _title;
 
@@ -73,8 +82,11 @@ public class CustomizeFilesWebPartView extends JspView<CustomizeFilesWebPartView
 
             _folderTreeVisible = BooleanUtils.toBoolean(propertyMap.get(FilesWebPart.FOLDER_TREE_VISIBLE_PROPERTY_NAME));
 
+            // We've historically used non-URI-encoded paths for saving the preferred root. Keep it that
+            // way for compatibility with existing installs and folder exports
             String davFileRoot = propertyMap.get(FilesWebPart.FILE_ROOT_PROPERTY_NAME);
-            fileRoot = getDavTreeFileRoot(davFileRoot, fileSet, getContextContainer());
+
+            fileRoot = getDavTreeFileRoot(URIUtil.toURI(davFileRoot == null ? null : PageFlowUtil.encodePath(davFileRoot)), fileSet, getContextContainer());
 
             useFileSet = fileSet != null;
         }
@@ -141,16 +153,6 @@ public class CustomizeFilesWebPartView extends JspView<CustomizeFilesWebPartView
             _rootOffset = rootOffset;
         }
 
-        public int getSize()
-        {
-            return size;
-        }
-
-        public void setSize(int size)
-        {
-            this.size = size;
-        }
-
         public String getTitle()
         {
             return _title;
@@ -160,44 +162,32 @@ public class CustomizeFilesWebPartView extends JspView<CustomizeFilesWebPartView
         {
             _title = title;
         }
-
-        public String getFileRoot()
-        {
-            return fileRoot;
-        }
-
-        public String getDecodedFileRoot()
-        {
-            return null != fileRoot ? URLDecoder.decode(fileRoot) : null;
-        }
-
-        public void setFileRoot(String fileRoot)
-        {
-            this.fileRoot = fileRoot;
-        }
     }
 
-    private static String getDavTreeFileRoot(String fileRoot, String legacyFileRoot, Container c)
+    /**
+     *
+     */
+    private static URI getDavTreeFileRoot(@Nullable URI fileRoot, String legacyFileRoot, Container c)
     {
-        String treeFileRoot = null;
+        URI treeFileRoot = null;
         FileContentService service = FileContentService.get();
         if (null != service)
         {
             if (fileRoot != null)
             {
-                if (fileRoot.startsWith(FileContentService.FILES_LINK))
+                if (fileRoot.getPath().startsWith(PageFlowUtil.encode(FileContentService.FILES_LINK)))
                 {
                     // @files disappears when root set to cloud, so make sure it exists before trying in expandPath there
                     Path path = service.getFileRootPath(c);
                     if (null != path)
                     {
-                        if (Files.exists(path.resolve(fileRoot)))
-                            treeFileRoot = c.getPath() + "/" + fileRoot;
+                        if (Files.exists(path.resolve(fileRoot.getPath())))
+                            treeFileRoot = URIUtil.toURI(c.getParsedPath().encode("", "/") + fileRoot);
                     }
                 }
                 else
                 {
-                    treeFileRoot = c.getPath() + "/" + fileRoot;
+                    treeFileRoot = URIUtil.toURI(c.getParsedPath().encode("", "/") + fileRoot);
                 }
             }
             else if (legacyFileRoot != null) // legacy file root

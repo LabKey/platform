@@ -56,8 +56,8 @@ Ext4.define('File.data.webdav.URI', {
             uri.hostname = uri.hostname || l.hostname;
             uri.host = uri.host || l.host;
         }
-        if (uri.protocol && uri.protocol.charAt(uri.protocol.length-1) == ":")
-            uri.protocol = uri.protocol.substr(0,uri.protocol.length - 1);
+        if (uri.protocol && uri.protocol.charAt(uri.protocol.length-1) === ":")
+            uri.protocol = uri.protocol.substring(0, uri.protocol.length - 1);
 
         uri[o.q.name] = {};
         uri[o.key[12]].replace(o.q.parser, function ($0, $1, $2)

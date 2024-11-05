@@ -15,8 +15,6 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.attachments.AttachmentDirectory" %>
-<%@ page import="org.labkey.api.files.FileContentService" %>
 <%@ page import="org.labkey.api.files.FileUrls" %>
 <%@ page import="org.labkey.api.files.view.CustomizeFilesWebPartView" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
@@ -24,7 +22,6 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="java.util.Collection" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -39,8 +36,6 @@
     CustomizeFilesWebPartView.CustomizeWebPartForm form = me.getModelBean();
     ViewContext ctx = getViewContext();
     ActionURL postUrl = form.getWebPart().getCustomizePostURL(ctx);
-    FileContentService svc = FileContentService.get();
-    Collection<AttachmentDirectory> attDirs = svc.getRegisteredDirectories(getContainer());
 
     boolean small = false;
     boolean medium = false;
@@ -99,19 +94,21 @@
 </labkey:form>
 
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
-    var fileTree;
+    let fileTree;
 
     function setFileRoot() {
         if (fileTree) {
-            var tree = fileTree.items.items[0];
+            const tree = fileTree.items.items[0];
             if (tree) {
-                var selectedNodes = tree.getSelectionModel().getSelection();
-                if (!selectedNodes || selectedNodes.length == 0) {
+                const selectedNodes = tree.getSelectionModel().getSelection();
+                if (!selectedNodes || selectedNodes.length === 0) {
                     alert("Please select a node for File Root");
                     return false;
                 }
                 else {
-                    var davNodeId = selectedNodes[0].data.id;
+                    // We've historically used non-URI-encoded paths for saving the preferred root. Keep it that
+                    // way for compatibility with existing installs and folder exports
+                    let davNodeId = decodeURIComponent(selectedNodes[0].data.id);
                     // trim the container prefix so that property can be exported/imported independent of container name
                     davNodeId = davNodeId.replace(LABKEY.container.path + '/', '');
                     document.getElementById("hidden-fileRoot").value = davNodeId;
@@ -122,8 +119,8 @@
     }
 
     Ext4.onReady(function() {
-        var contextUrl = LABKEY.contextPath + "/_webdav";
-        var containerPath = LABKEY.container.path;
+        var contextUrl = LABKEY.contextPath + '/_webdav';
+        var containerPath = LABKEY.ActionURL.encodePath(LABKEY.container.path);
         var rootPath = contextUrl + containerPath + '/';
         var rootOffset = null;
         var fileRootName = <%=q(form.getFileRoot())%>;

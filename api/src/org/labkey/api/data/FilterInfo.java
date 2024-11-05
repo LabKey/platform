@@ -22,7 +22,7 @@ import org.labkey.api.util.URLHelper;
 import java.io.Serializable;
 import java.util.Map;
 
-import static org.labkey.api.util.PageFlowUtil.encode;
+import static org.labkey.api.util.PageFlowUtil.encodeURIComponent;
 
 /**
  * Bean to capture a single filter on a single column.
@@ -109,6 +109,6 @@ public class FilterInfo implements Serializable
 
     public String toString()
     {
-        return encode(field.toString()) + "~" + (this.op != null ? this.op.getPreferredUrlKey() : "") + "=" + encode(value);
+        return encodeURIComponent(field.toString()) + "~" + (this.op != null ? this.op.getPreferredUrlKey() : "") + "=" + encodeURIComponent(value);
     }
 }

@@ -726,7 +726,7 @@ Ext4.define('Ext4.override.data.TreeStore', {
         },
         append: function(parentNode, appendedNode, index) {
             var me = this,
-                    snapshotParentNode = me.snapshot.findChild('id', parentNode.get('id'), true) || me.shapshot,
+                    snapshotParentNode = me.snapshot.findChild('id', parentNode.get('id'), true) || me.snapshot,
                     foundNode = me.snapshot.findChild('id', appendedNode.get('id'), true);
             snapshotParentNode.insertChild(index, foundNode || appendedNode.copy(null, true));
         },

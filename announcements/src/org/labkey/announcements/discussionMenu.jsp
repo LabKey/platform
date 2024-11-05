@@ -43,7 +43,7 @@
 
     String toggleId = "discussionAreaToggle" + getRequestScopedUID();
     URLHelper clonedUrl = pageURL.clone().deleteScopeParameters("discussion");
-    String emailUrl = "mailto:?subject=" + PageFlowUtil.encode(me.title) + "&body=" + PageFlowUtil.encode(me.pageURL.getURIString());
+    String emailUrl = "mailto:?subject=" + PageFlowUtil.encodeURIComponent(me.title) + "&body=" + PageFlowUtil.encodeURIComponent(me.pageURL.getURIString());
     String emailPreferencesUrl = me.emailPreferencesURL.getLocalURIString();
     String adminEmailUrl = me.adminEmailURL.getLocalURIString();
     String customizeUrl = me.customizeURL.getLocalURIString();
