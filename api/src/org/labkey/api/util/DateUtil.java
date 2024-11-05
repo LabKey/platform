@@ -89,12 +89,17 @@ public class DateUtil
     private static final String[] SIMPLE_TIME_FORMATS_NO_AMPM = {"HH:mm:ss.SSS", "HH:mm:ss", "HH:mm"};
 
     public static final Set<String> STANDARD_DATE_DISPLAY_FORMATS = PageFlowUtil.set(
-        "yyyy-MM-dd",
-        "yyyy-MMM-dd",
-        "dd-MMM-yyyy",
-        "dd-MMM-yy",
-        "ddMMMyyyy",
-        "ddMMMyy"
+            "yyyy-MM-dd",
+            "yyyy-MMM-dd",
+            "yyyy-MM",
+            "dd-MM-yyyy",
+            "dd-MMM-yyyy",
+            "dd-MMM-yy",
+            "ddMMMyyyy",
+            "ddMMMyy",
+            "MM/dd/yyyy",
+            "MM-dd-yyyy",
+            "MMMM dd yyyy"
     );
 
     public static final Set<String> STANDARD_TIME_DISPLAY_FORMATS = PageFlowUtil.set(
@@ -113,28 +118,27 @@ public class DateUtil
 
     // Splits the date and time portions of a standard date-time format, where date portion is required and time portion
     // is optional. Returns null if the format is non-standard, which means we can't split it.
-    public static DateTimeFormat splitDateTimeFormat(String dateTimeFormat)
+    public static DateTimeFormat splitDateTimeFormat(@NotNull String dateTimeFormat)
     {
         dateTimeFormat = dateTimeFormat.trim();
-        String datePortion = null;
+        String timePortion = null;
 
         // We can't just split on whitespace because non-standard formats could: have any amount of whitespace between
         // characters, put the time portion before the date portion, or even intermingle date and time characters.
-
-        for (String format : STANDARD_DATE_DISPLAY_FORMATS)
+        for (String format : STANDARD_TIME_DISPLAY_FORMATS)
         {
-            if (dateTimeFormat.startsWith(format))
-            {
-                datePortion = format;
-                break;
-            }
+            if (dateTimeFormat.endsWith(" " + format))
+                timePortion = format;
         }
 
+        String datePortion = dateTimeFormat;
+        if (timePortion != null)
+            datePortion = dateTimeFormat.substring(0, dateTimeFormat.length() - timePortion.length()).trim();
+
         // If it starts with a standard date format pattern then check for standard time portion (or none)
-        if (datePortion != null)
+        if (isStandardDateDisplayFormat(datePortion))
         {
-            String timePortion = dateTimeFormat.substring(datePortion.length()).trim();
-            if (timePortion.isEmpty())
+            if (timePortion == null || timePortion.isEmpty())
                 return new DateTimeFormat(datePortion, null);
             else if (isStandardTimeDisplayFormat(timePortion))
                 return new DateTimeFormat(datePortion, timePortion);
@@ -2410,7 +2414,7 @@ Parse:
         @Test
         public void testNonStandardDateTimeFormats()
         {
-            List<String> nonStandardDateFormats = List.of("MM/dd/yyy", "dd/MM/yyy", "yyyy.MM.dd", "MMMM dd, yyyy");
+            List<String> nonStandardDateFormats = List.of("MM/dd/yyy", "ddMMMyyy", "yyyy.MM.dd", "MMMM dd", "MMMM dd yy", "MMMM dd, yyyy");
             List<String> nonStandardTimeFormats = List.of("kk:mm", "hh:mm aa", "hh:mm");
 
             nonStandardDateFormats.forEach(this::testBadDateFormat);
