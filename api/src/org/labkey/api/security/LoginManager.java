@@ -31,7 +31,7 @@ public class LoginManager
     private static final String PASSWORD_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
     // Create record for database login, saving UserId and hashed password. Return verification token.
-    public static String createLogin(int userId, ValidEmail email /* Just for logging errors */) throws SecurityManager.UserManagementException
+    public static String createLogin(int userId, String email /* Just for logging errors */) throws SecurityManager.UserManagementException
     {
         // Create a placeholder password hash and a separate email verification key that will get emailed to the new user
         String tempPassword = createTempPassword();
@@ -45,7 +45,7 @@ public class LoginManager
             // Don't need to set LastChanged -- it defaults to current date/time.
             int rowCount = new SqlExecutor(CORE.getSchema()).execute("INSERT INTO " + CORE.getTableInfoLogins() +
                     " (UserId, Email, Crypt, LastChanged, Verification, PreviousCrypts) VALUES (?, ?, ?, ?, ?, ?)",
-                    userId, email.getEmailAddress(), crypt, new Date(), verification, crypt);
+                    userId, email, crypt, new Date(), verification, crypt);
             if (1 != rowCount)
                 throw new SecurityManager.UserManagementException(email, "Login creation statement affected " + rowCount + " rows.");
         }
@@ -113,24 +113,11 @@ public class LoginManager
         return selector.getObject(Date.class);
     }
 
-    // Look up email in Logins table and return the corresponding password hash
-    @Deprecated
-    private static String getPasswordHash(ValidEmail email)
-    {
-        SqlSelector selector = new SqlSelector(CORE.getSchema(), new SQLFragment("SELECT Crypt FROM " + CORE.getTableInfoLogins() + " WHERE Email = ?", email));
-        return selector.getObject(String.class);
-    }
-
+    // Look up user ID in core.Logins table and return the corresponding password hash
     public static @Nullable String getPasswordHash(@Nullable User user)
     {
         return null != user ? new SqlSelector(CORE.getSchema(), new SQLFragment("SELECT Crypt FROM " + CORE.getTableInfoLogins() + " WHERE UserId = ?", user.getUserId()))
             .getObject(String.class) : null;
-    }
-
-    @Deprecated
-    public static boolean loginExists(ValidEmail email)
-    {
-        return (null != getPasswordHash(email));
     }
 
     public static boolean loginExists(User user)

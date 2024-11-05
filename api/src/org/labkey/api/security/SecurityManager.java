@@ -993,12 +993,12 @@ public class SecurityManager
     {
         public UserAlreadyExistsException(ValidEmail email)
         {
-            this(email, "User already exists");
+            this(email.getEmailAddress());
         }
 
-        public UserAlreadyExistsException(ValidEmail email, String message)
+        public UserAlreadyExistsException(String email)
         {
-            super(email, message);
+            super(email, "User already exists");
         }
     }
 
@@ -1047,7 +1047,7 @@ public class SecurityManager
                 {
                     if (!"23000".equals(e.getSQLState()))
                     {
-                        LOG.debug("createUser: Something failed user: " + email, e);
+                        LOG.debug("createUser: Something failed user: {}", email, e);
                         throw e;
                     }
                 }
@@ -1061,7 +1061,7 @@ public class SecurityManager
                 if (null == userId)
                 {
                     assert false : "User should either exist or not; synchronization problem?";
-                    LOG.debug("createUser: Something failed user: " + email);
+                    LOG.debug("createUser: Something failed user: {}", email);
                     return null;
                 }
 
@@ -1070,7 +1070,7 @@ public class SecurityManager
                 //
                 if (createLogin && !status.isLdapOrSsoEmail())
                 {
-                    String verification = LoginManager.createLogin(userId, email);
+                    String verification = LoginManager.createLogin(userId, email.getEmailAddress());
                     status.setVerification(verification);
                 }
 
@@ -1147,28 +1147,28 @@ public class SecurityManager
         return displayName;
     }
 
-    public static void sendEmail(Container c, User user, SecurityMessage message, String to, ActionURL verificationURL) throws ConfigurationException, MessagingException
+    public static void sendEmail(Container c, User fromUser, SecurityMessage message, String to, ActionURL verificationURL) throws ConfigurationException, MessagingException
     {
-        MimeMessage m = createMessage(c, user, message, to, verificationURL);
-        MailHelper.send(m, user, c);
+        MimeMessage m = createMessage(c, fromUser, message, to, verificationURL);
+        MailHelper.send(m, fromUser, c);
     }
 
-    public static void renderEmail(Container c, User user, SecurityMessage message, String to, ActionURL verificationURL, Writer out) throws MessagingException
+    public static void renderEmail(Container c, User fromUser, SecurityMessage message, String to, ActionURL verificationURL, Writer out) throws MessagingException
     {
-        MimeMessage m = createMessage(c, user, message, to, verificationURL);
+        MimeMessage m = createMessage(c, fromUser, message, to, verificationURL);
         MailHelper.renderHtml(m, message.getType(), out);
     }
 
-    private static MimeMessage createMessage(Container c, User user, SecurityMessage message, String to, ActionURL verificationURL) throws MessagingException
+    private static MimeMessage createMessage(Container c, User fromUser, SecurityMessage message, String to, ActionURL verificationURL) throws MessagingException
     {
         try
         {
             // Issue 33254: only allow Site Admins to see the verification token
-            if (message.isMaskToken() && !user.hasSiteAdminPermission())
+            if (message.isMaskToken() && !fromUser.hasSiteAdminPermission())
                 verificationURL.replaceParameter("verification", "**********");
 
             message.setVerificationURL(verificationURL.getURIString());
-            message.setOriginatingUser(user);
+            message.setOriginatingUser(fromUser);
             if (message.getTo() == null)
                 message.setTo(to);
 
@@ -2695,21 +2695,16 @@ public class SecurityManager
         return (null!=c && c.hasPermission(user, SeeFilePathsPermission.class)) || user.hasRootPermission(SeeFilePathsPermission.class);
     }
 
-    public static void adminRotatePassword(ValidEmail email, BindException errors, Container c, User user)
+    public static void adminRotatePassword(User affectedUser, BindException errors, Container c, User user)
     {
-        adminRotatePassword(email, errors, c, user, HtmlString.EMPTY_STRING);
+        adminRotatePassword(affectedUser, errors, c, user, HtmlString.EMPTY_STRING);
     }
 
-    public static void adminRotatePassword(ValidEmail email, BindException errors, Container c, User currentUser, HtmlString mailErrorHtml)
+    public static void adminRotatePassword(User affectedUser, BindException errors, Container c, User currentUser, HtmlString mailErrorHtml)
     {
         // We let admins create passwords (i.e., entries in the logins table) if they don't already exist.
         // This addresses SSO and LDAP scenarios, see #10374.
-        User affectedUser = UserManager.getUser(email);
-        if (null == affectedUser)
-        {
-            errors.addError(new LabKeyError(new Exception("Failed to reset password; user not found")));
-            return;
-        }
+
         boolean loginExists = LoginManager.loginExists(affectedUser);
         String pastVerb = loginExists ? "reset" : "created";
         String infinitiveVerb = loginExists ? "reset" : "create";
@@ -2728,34 +2723,33 @@ public class SecurityManager
             }
             else
             {
-
-                verification = LoginManager.createLogin(affectedUser.getUserId(), email);
+                verification = LoginManager.createLogin(affectedUser.getUserId(), affectedUser.getEmail());
             }
 
             try
             {
                 ActionURL verificationURL = LoginManager.createVerificationURL(c, affectedUser, verification, null);
-                sendEmail(c, currentUser, getResetMessage(false), email.getEmailAddress(), verificationURL);
+                sendEmail(c, currentUser, getResetMessage(false), affectedUser.getEmail(), verificationURL);
 
-                if (!currentUser.getEmail().equals(email.getEmailAddress()))
+                if (!currentUser.equals(affectedUser))
                 {
                     SecurityMessage msg = getResetMessage(true);
-                    msg.setTo(email.getEmailAddress());
+                    msg.setTo(affectedUser.getEmail());
                     sendEmail(c, currentUser, msg, currentUser.getEmail(), verificationURL);
                 }
-                UserManager.addToUserHistory(UserManager.getUser(email), currentUser.getEmail() + " " + pastVerb + " the password.");
+                UserManager.addToUserHistory(affectedUser, currentUser.getEmail() + " " + pastVerb + " the password.");
             }
             catch (ConfigurationException | MessagingException e)
             {
                 String message = "Failed to send email due to: " + e.getMessage();
                 errors.addError(!mailErrorHtml.isEmpty() ? new LabKeyErrorWithHtml(message, mailErrorHtml) : new LabKeyError(message));
-                UserManager.addToUserHistory(UserManager.getUser(email), currentUser.getEmail() + " " + pastVerb + " the password, but sending the email failed.");
+                UserManager.addToUserHistory(affectedUser, currentUser.getEmail() + " " + pastVerb + " the password, but sending the email failed.");
             }
         }
         catch (UserManagementException e)
         {
             errors.addError(new LabKeyError(new Exception("Failed to reset password due to: " + e.getMessage(), e)));
-            UserManager.addToUserHistory(UserManager.getUser(email), currentUser.getEmail() + " attempted to " + infinitiveVerb + " the password, but the " + infinitiveVerb + " failed: " + e.getMessage());
+            UserManager.addToUserHistory(affectedUser, currentUser.getEmail() + " attempted to " + infinitiveVerb + " the password, but the " + infinitiveVerb + " failed: " + e.getMessage());
         }
     }
 
