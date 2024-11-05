@@ -2317,7 +2317,7 @@ public class SecurityManager
                 {
                     message.append("  Click ");
                     message.unsafeAppend("<a href=\"");
-                    message.append(LoginManager.createVerificationURL(context.getContainer(), email, newUserStatus.getVerification(), extraParameters).toString());
+                    message.append(LoginManager.createVerificationURL(context.getContainer(), newUser, newUserStatus.getVerification(), extraParameters).toString());
                     message.unsafeAppend("\" target=\"_blank\">here</a>");
                     message.append(" to change the password from the random one that was assigned.");
                 }
@@ -2371,11 +2371,12 @@ public class SecurityManager
     {
         Container c = context.getContainer();
         User currentUser = context.getUser();
+        User newUser = newUserStatus.getUser();
 
-        ActionURL verificationURL = LoginManager.createModuleVerificationURL(context.getContainer(), email, newUserStatus.getVerification(), extraParameters, provider, isAddUser);
+        ActionURL verificationURL = LoginManager.createModuleVerificationURL(context.getContainer(), newUser, newUserStatus.getVerification(), extraParameters, provider, isAddUser);
 
         sendEmail(c, currentUser, getRegistrationMessage(mailPrefix, false), email.getEmailAddress(), verificationURL);
-        if (!currentUser.isGuest() && !currentUser.getEmail().equals(email.getEmailAddress()))
+        if (!currentUser.isGuest() && !currentUser.equals(newUser))
         {
             SecurityMessage msg = getRegistrationMessage(mailPrefix, true);
             msg.setTo(email.getEmailAddress());
@@ -2704,6 +2705,11 @@ public class SecurityManager
         // We let admins create passwords (i.e., entries in the logins table) if they don't already exist.
         // This addresses SSO and LDAP scenarios, see #10374.
         User affectedUser = UserManager.getUser(email);
+        if (null == affectedUser)
+        {
+            errors.addError(new LabKeyError(new Exception("Failed to reset password; user not found")));
+            return;
+        }
         boolean loginExists = LoginManager.loginExists(affectedUser);
         String pastVerb = loginExists ? "reset" : "created";
         String infinitiveVerb = loginExists ? "reset" : "create";
@@ -2718,7 +2724,7 @@ public class SecurityManager
                 // verification key that gets emailed.
                 verification = LoginManager.createTempPassword();
                 LoginManager.setPassword(affectedUser, LoginManager.createTempPassword());
-                LoginManager.setVerification(email, verification);
+                LoginManager.setVerification(affectedUser, verification);
             }
             else
             {
@@ -2728,7 +2734,7 @@ public class SecurityManager
 
             try
             {
-                ActionURL verificationURL = LoginManager.createVerificationURL(c, email, verification, null);
+                ActionURL verificationURL = LoginManager.createVerificationURL(c, affectedUser, verification, null);
                 sendEmail(c, currentUser, getResetMessage(false), email.getEmailAddress(), verificationURL);
 
                 if (!currentUser.getEmail().equals(email.getEmailAddress()))

@@ -148,13 +148,6 @@ public class LoginManager
             return Crypt.MD5.matches(password, hash);
     }
 
-    // Used in the case of set password or email change... current email address could be invalid (i.e., non-conforming per RFC 822)
-    @Deprecated
-    public static boolean loginExists(String email)
-    {
-        return (null != getPasswordHash(email));
-    }
-
     @Deprecated
     public static boolean loginExists(ValidEmail email)
     {
@@ -176,14 +169,14 @@ public class LoginManager
         return tempPassword.toString();
     }
 
-    public static ActionURL createVerificationURL(Container c, ValidEmail email, String verification, @Nullable List<Pair<String, String>> extraParameters)
+    public static ActionURL createVerificationURL(Container c, User user, String verification, @Nullable List<Pair<String, String>> extraParameters)
     {
-        return PageFlowUtil.urlProvider(LoginUrls.class).getVerificationURL(c, email, verification, extraParameters);
+        return PageFlowUtil.urlProvider(LoginUrls.class).getVerificationURL(c, user, verification, extraParameters);
     }
 
-    public static ActionURL createModuleVerificationURL(Container c, ValidEmail email, String verification, @Nullable List<Pair<String, String>> extraParameters, String provider, boolean isAddUser)
+    public static ActionURL createModuleVerificationURL(Container c, User user, String verification, @Nullable List<Pair<String, String>> extraParameters, String provider, boolean isAddUser)
     {
-        ActionURL defaultUrl = createVerificationURL(c, email, verification, extraParameters);
+        ActionURL defaultUrl = createVerificationURL(c, user, verification, extraParameters);
         if (provider == null)
             return defaultUrl;
 
@@ -193,7 +186,7 @@ public class LoginManager
 
         ActionURL verificationUrl = urlProvider.getAPIVerificationURL(c, isAddUser);
         verificationUrl.addParameter("verification", verification);
-        verificationUrl.addParameter("email", email.getEmailAddress());
+        verificationUrl.addParameter("user", user.getUserId());
 
         if (null != extraParameters)
             verificationUrl.addParameters(extraParameters);
@@ -201,18 +194,10 @@ public class LoginManager
         return verificationUrl;
     }
 
-    // Test if user has been verified for database authentication
-    @Deprecated
-    public static boolean isVerified(ValidEmail email)
-    {
-        return (null == getVerification(email));
-    }
-
     // Test if user has been verified for database authentication. Use only when email address could be invalid ().
-    @Deprecated
-    public static boolean isVerified(String email)
+    public static boolean isVerified(User user)
     {
-        return (null == getVerification(email));
+        return (null == getVerification(user));
     }
 
     @Deprecated
@@ -240,12 +225,12 @@ public class LoginManager
     @Deprecated
     public static String getVerification(ValidEmail email)
     {
-        return getVerification(email.getEmailAddress());
+        return new SqlSelector(CORE.getSchema(), "SELECT Verification FROM " + CORE.getTableInfoLogins() + " WHERE Email = ?", email.getEmailAddress()).getObject(String.class);
     }
 
-    private static String getVerification(String email)
+    public static String getVerification(User user)
     {
-        return new SqlSelector(CORE.getSchema(), "SELECT Verification FROM " + CORE.getTableInfoLogins() + " WHERE Email = ?", email).getObject(String.class);
+        return new SqlSelector(CORE.getSchema(), "SELECT Verification FROM " + CORE.getTableInfoLogins() + " WHERE UserId = ?", user.getUserId()).getObject(String.class);
     }
 
     public record VerifyEmail(String requestedEmail, String verification, Date verificationTimeout)

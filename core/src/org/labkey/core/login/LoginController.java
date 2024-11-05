@@ -185,12 +185,12 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        public ActionURL getVerificationURL(Container c, ValidEmail email, String verification, @Nullable List<Pair<String, String>> extraParameters)
+        public ActionURL getVerificationURL(Container c, User user, String verification, @Nullable List<Pair<String, String>> extraParameters)
         {
-            //FIX: 6021, use project container for this URL so it remains short but maintains the project look & feel settings 
+            //FIX: 6021, use project container for this URL so it remains short but maintains the project look & feel settings
             ActionURL url = new ActionURL(SetPasswordAction.class, LookAndFeelProperties.getSettingsContainer(c));
             url.addParameter("verification", verification);
-            url.addParameter("email", email.getEmailAddress());
+            url.addParameter("user", user.getUserId());
 
             if (null != extraParameters)
                 url.addParameters(extraParameters);
@@ -877,7 +877,7 @@ public class LoginController extends SpringActionController
                 Container c = getContainer();
                 LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
                 final SecurityMessage message = SecurityManager.getResetMessage(false, user, providerName);
-                ActionURL verificationURL = LoginManager.createModuleVerificationURL(c, email, verification, null, providerName, false);
+                ActionURL verificationURL = LoginManager.createModuleVerificationURL(c, user, verification, null, providerName, false);
 
                 final User system = new User(laf.getSystemEmailAddress(), 0);
                 system.setFirstName(laf.getCompanyName());
@@ -1799,14 +1799,14 @@ public class LoginController extends SpringActionController
         }
         else
         {
-            if (!LoginManager.loginExists(email))
+            if (!LoginManager.loginExists(user))
             {
                 if (AuthenticationManager.isLdapOrSsoEmail(email))
                     errors.reject("setPassword", "You can authenticate your account using LDAP/SSO and you do not need to set a separate password.");
                 else
                     errors.reject("setPassword", "This email address is not associated with an account. Make sure you've copied the entire link into your browser's address bar.");
             }
-            else if (LoginManager.isVerified(email))
+            else if (LoginManager.isVerified(user))
                 errors.reject("setPassword", "This email address has already been verified.");
             else if (null == verification || verification.length() < LoginManager.TEMP_PASSWORD_LENGTH)
                 errors.reject("setPassword", "Make sure you've copied the entire link into your browser's address bar.");

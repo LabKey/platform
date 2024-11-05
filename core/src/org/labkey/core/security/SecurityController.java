@@ -1828,20 +1828,22 @@ public class SecurityController extends SpringActionController
             try
             {
                 ValidEmail email = new ValidEmail(rawEmail);
+                User affectedUser = UserManager.getUser(email);
+                // TODO: NULL check?
 
                 SecurityMessage message = createMessage(form);
 
                 // Issue 33254: only allow Site Admins to see the verification token
                 message.setMaskToken(true);
 
-                if (LoginManager.isVerified(email))
+                if (LoginManager.isVerified(affectedUser))
                 {
                     out.write("Can't display " + message.getType().toLowerCase() + "; " + PageFlowUtil.filter(email) + " has already chosen a password.");
                 }
                 else
                 {
-                    String verification = LoginManager.getVerification(email);
-                    ActionURL verificationURL = LoginManager.createVerificationURL(getContainer(), email, verification, null);
+                    String verification = LoginManager.getVerification(affectedUser);
+                    ActionURL verificationURL = LoginManager.createVerificationURL(getContainer(), affectedUser, verification, null);
                     SecurityManager.renderEmail(getContainer(), getUser(), message, email.getEmailAddress(), verificationURL, out);
                 }
             }
