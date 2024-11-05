@@ -111,7 +111,7 @@ public class StudyExportTest extends StudyManualTest
         _fileBrowserHelper.selectFileBrowserItem("export/");
         _fileBrowserHelper.sortFileBrowserColumn("Last Modified", SortDirection.DESC);
         // select the first exported zip archive file by row
-        Locator.XPathLocator gridRow = Locator.tag("tr").withClass("x4-grid-data-row").withAttributeContaining("data-recordid", "My Study_");
+        Locator.XPathLocator gridRow = Locator.tag("tr").withClass("x4-grid-data-row").withAttributeContaining("data-recordid", "My%20Study_");
         waitForElement(gridRow);
         click(gridRow);
         _fileBrowserHelper.selectImportDataAction("Import Folder");
