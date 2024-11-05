@@ -291,14 +291,23 @@ public class ProxyServlet extends HttpServlet {
      */
     protected CloseableHttpClient createHttpClient() {
         RequestConfig config = RequestConfig.custom()
-            .setRedirectsEnabled(readBooleanConfigParam("http.protocol.handle-redirects", false))
-            .setCookieSpec(StandardCookieSpec.IGNORE)
-            .build();
+                .setRedirectsEnabled(readBooleanConfigParam("http.protocol.handle-redirects", false))
+                .setCookieSpec(StandardCookieSpec.IGNORE)
+                .setProtocolUpgradeEnabled(allowProtocolUpgrade()) // LKS override
+                .build();
 
         return HttpClientBuilder.create()
             .useSystemProperties()
             .setDefaultRequestConfig(config)
             .build();
+    }
+
+    // LKS override
+    protected boolean allowProtocolUpgrade()
+    {
+        // httpclient5 v5.4 protocolUpgradeEnabled default to true
+        // https://github.com/apache/httpcomponents-client/commit/3235f00
+        return true;
     }
 
     /**
