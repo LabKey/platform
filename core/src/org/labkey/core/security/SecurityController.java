@@ -1786,32 +1786,20 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    public static class EmailForm extends ReturnUrlForm
+    public static class UserForm extends ReturnUrlForm
     {
         private User _user;
-        private String _email;
         private String _mailPrefix;
 
-        public Integer getUser()
+        public Integer getUserId()
         {
             return _user != null ? _user.getUserId() : null;
         }
 
         @SuppressWarnings({"UnusedDeclaration"})
-        public void setUser(Integer user)
+        public void setUserId(Integer user)
         {
             _user = user != null ? UserManager.getUser(user) : null;
-        }
-
-        public String getEmail()
-        {
-            return _email;
-        }
-
-        @SuppressWarnings({"UnusedDeclaration"})
-        public void setEmail(String email)
-        {
-            _email = email;
         }
 
         public String getMailPrefix()
@@ -1825,12 +1813,12 @@ public class SecurityController extends SpringActionController
             _mailPrefix = mailPrefix;
         }
 
-        public @Nullable User getUserObject()
+        public @Nullable User getUser()
         {
             return _user;
         }
 
-        public @NotNull User getUserObject(boolean throwIfNull)
+        public @NotNull User getUser(boolean throwIfNull)
         {
             if (throwIfNull && null == _user)
                 throw new IllegalStateException("User not found");
@@ -1839,15 +1827,15 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    private abstract static class AbstractEmailAction extends SimpleViewAction<EmailForm>
+    private abstract static class AbstractEmailAction extends SimpleViewAction<UserForm>
     {
-        protected abstract SecurityMessage createMessage(EmailForm form);
+        protected abstract SecurityMessage createMessage(UserForm form);
 
         @Override
-        public ModelAndView getView(EmailForm form, BindException errors) throws Exception
+        public ModelAndView getView(UserForm form, BindException errors) throws Exception
         {
             Writer out = getViewContext().getResponse().getWriter();
-            User affectedUser = form.getUserObject();
+            User affectedUser = form.getUser();
             if (null == affectedUser)
             {
                 out.write("User not found");
@@ -1884,12 +1872,12 @@ public class SecurityController extends SpringActionController
     public static class ShowRegistrationEmailAction extends AbstractEmailAction
     {
         @Override
-        protected SecurityMessage createMessage(EmailForm form)
+        protected SecurityMessage createMessage(UserForm form)
         {
             // Site admins can see the email for everyone, but project admins can only see it for users they added
             if (!getUser().hasRootPermission(AddUserPermission.class))
             {
-                User affectedUser = form.getUserObject(true);
+                User affectedUser = form.getUser(true);
                 if (affectedUser.getCreatedBy() == null || getUser().getUserId() != affectedUser.getCreatedBy().intValue())
                 {
                     throw new UnauthorizedException();
@@ -1904,7 +1892,7 @@ public class SecurityController extends SpringActionController
     public static class ShowResetEmailAction extends AbstractEmailAction
     {
         @Override
-        protected SecurityMessage createMessage(EmailForm form)
+        protected SecurityMessage createMessage(UserForm form)
         {
             return SecurityManager.getResetMessage(false);
         }
@@ -1914,26 +1902,27 @@ public class SecurityController extends SpringActionController
     /**
      * Base class for admin password actions
      */
-    private abstract static class AdminPasswordAction extends ConfirmAction<EmailForm>
+    private abstract static class AdminPasswordAction extends ConfirmAction<UserForm>
     {
         abstract String getTitle();
         abstract String getVerb();
         abstract HtmlString getConfirmationMessage(boolean loginExists, String emailAddress);
 
         @Override
-        public ModelAndView getConfirmView(EmailForm emailForm, BindException errors)
+        public ModelAndView getConfirmView(UserForm form, BindException errors)
         {
-            boolean loginExists = LoginManager.loginExists(emailForm.getUserObject(true));
+            User affectedUser = form.getUser(true);
+            boolean loginExists = LoginManager.loginExists(affectedUser);
             setTitle(getTitle());
 
-            return new HtmlView(getConfirmationMessage(loginExists, emailForm.getEmail()));
+            return new HtmlView(getConfirmationMessage(loginExists, affectedUser.getEmail()));
         }
 
         @Override
-        public void validateCommand(EmailForm form, Errors errors)
+        public void validateCommand(UserForm form, Errors errors)
         {
             // don't let non-site admin delete/reset password of site admin
-            User formUser = form.getUserObject();
+            User formUser = form.getUser();
             if (null == formUser)
                 errors.reject(ERROR_MSG, getVerb() + " failed: user not found.");
             else if (!getUser().hasSiteAdminPermission() && formUser.hasSiteAdminPermission())
@@ -1941,9 +1930,9 @@ public class SecurityController extends SpringActionController
         }
 
         @Override
-        public @NotNull URLHelper getSuccessURL(EmailForm emailForm)
+        public @NotNull URLHelper getSuccessURL(UserForm form)
         {
-            return emailForm.getReturnURLHelper(AppProps.getInstance().getHomePageActionURL());
+            return form.getReturnURLHelper(AppProps.getInstance().getHomePageActionURL());
         }
     }
 
@@ -1976,23 +1965,24 @@ public class SecurityController extends SpringActionController
         private boolean _loginExists;
 
         @Override
-        public boolean handlePost(EmailForm form, BindException errors) throws Exception
+        public boolean handlePost(UserForm form, BindException errors) throws Exception
         {
-            User affectedUser = form.getUserObject(true);
+            User affectedUser = form.getUser(true);
             _loginExists = LoginManager.loginExists(affectedUser);
-            SecurityManager.adminRotatePassword(affectedUser, errors, getContainer(), getUser(), getMailHelpText(form.getEmail()));
+            SecurityManager.adminRotatePassword(affectedUser, errors, getContainer(), getUser(), getMailHelpText(affectedUser));
 
             return !errors.hasErrors();
         }
 
         @Override
-        public ModelAndView getSuccessView(EmailForm form)
+        public ModelAndView getSuccessView(UserForm form)
         {
-            ActionURL actionURL = new ActionURL(ShowResetEmailAction.class, getContainer()).addParameter("email", form.getEmail());
+            User affectedUser = form.getUser(true);
+            ActionURL actionURL = new ActionURL(ShowResetEmailAction.class, getContainer()).addParameter("userId", affectedUser.getUserId());
 
             String page = String.format(
                 "<p>%1$s: Password %2$s.</p><p>Email sent. Click <a href=\"%3$s\" target=\"_blank\">here</a> to see the email.</p>%4$s",
-                PageFlowUtil.filter(form.getEmail()),
+                PageFlowUtil.filter(affectedUser.getEmail()),
                 _loginExists ? "reset" : "created",
                 PageFlowUtil.filter(actionURL.getLocalURIString()),
                 PageFlowUtil.button("Done").href(form.getReturnURLHelper(AppProps.getInstance().getHomePageActionURL()))
@@ -2005,11 +1995,11 @@ public class SecurityController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getFailView(EmailForm form, BindException errors)
+        public ModelAndView getFailView(UserForm form, BindException errors)
         {
             HtmlStringBuilder builder = HtmlStringBuilder.of()
                 .unsafeAppend("<p>")
-                .append(form.getEmail() + ": Password " + (_loginExists ? "reset" : "created") + ".")
+                .append(form.getUser(true).getEmail() + ": Password " + (_loginExists ? "reset" : "created") + ".")
                 .unsafeAppend("</p><p>")
                 .append(getErrorMessage(errors))
                 .unsafeAppend("</p>")
@@ -2035,9 +2025,9 @@ public class SecurityController extends SpringActionController
             return builder.getHtmlString();
         }
 
-        private HtmlString getMailHelpText(String emailAddress)
+        private HtmlString getMailHelpText(User user)
         {
-            ActionURL mailHref = new ActionURL(ShowResetEmailAction.class, getContainer()).addParameter("email", emailAddress);
+            ActionURL mailHref = new ActionURL(ShowResetEmailAction.class, getContainer()).addParameter("userId", user.getUserId());
 
             HtmlStringBuilder builder = HtmlStringBuilder.of()
                 .unsafeAppend("<p>")
@@ -2115,9 +2105,9 @@ public class SecurityController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(EmailForm form, BindException errors) throws Exception
+        public boolean handlePost(UserForm form, BindException errors) throws Exception
         {
-            User userToChange = form.getUserObject(true);
+            User userToChange = form.getUser(true);
             LoginManager.deleteLoginsRow(userToChange, getUser());
 
             return !errors.hasErrors();

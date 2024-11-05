@@ -81,6 +81,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
+import org.labkey.core.security.SecurityController.UserForm;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -1977,13 +1978,13 @@ public class SecurityApiActions
      * Invalidate existing password and send new password link
      */
     @RequiresPermission(UpdateUserPermission.class)
-    public static class AdminRotatePasswordAction extends MutatingApiAction<SecurityController.EmailForm>
+    public static class AdminRotatePasswordAction extends MutatingApiAction<UserForm>
     {
         @Override
-        public void validateForm(SecurityController.EmailForm form, Errors errors)
+        public void validateForm(UserForm form, Errors errors)
         {
             // don't let non-site admin reset password of site admin
-            User formUser = form.getUserObject();
+            User formUser = form.getUser();
             if (null == formUser)
                 errors.rejectValue("User", ERROR_MSG, "User not found");
             else if (!getUser().hasSiteAdminPermission() && formUser.hasSiteAdminPermission())
@@ -1991,9 +1992,9 @@ public class SecurityApiActions
         }
 
         @Override
-        public ApiSimpleResponse execute(SecurityController.EmailForm form, BindException errors)
+        public ApiSimpleResponse execute(UserForm form, BindException errors)
         {
-            User affectedUser = form.getUserObject(true);
+            User affectedUser = form.getUser(true);
             SecurityManager.adminRotatePassword(affectedUser, errors, getContainer(), getUser());
 
             ApiSimpleResponse response = new ApiSimpleResponse();

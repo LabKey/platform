@@ -190,7 +190,7 @@ public class LoginController extends SpringActionController
             //FIX: 6021, use project container for this URL so it remains short but maintains the project look & feel settings
             ActionURL url = new ActionURL(SetPasswordAction.class, LookAndFeelProperties.getSettingsContainer(c));
             url.addParameter("verification", verification);
-            url.addParameter("user", user.getUserId());
+            url.addParameter("userId", user.getUserId());
 
             if (null != extraParameters)
                 url.addParameters(extraParameters);

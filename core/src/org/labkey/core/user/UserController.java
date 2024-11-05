@@ -1646,7 +1646,7 @@ public class UserController extends SpringActionController
                     // with LDAP/SSO and later needing to use database authentication. Also allows site admin to have
                     // an alternate login, e.g., in case LDAP server goes down or configuration changes.
                     ActionURL resetURL = new ActionURL(AdminResetPasswordAction.class, c);
-                    resetURL.addParameter("user", detailsUser.getUserId());
+                    resetURL.addParameter("userId", detailsUser.getUserId());
                     resetURL.addReturnURL(currentUrl);
                     ActionButton reset = new ActionButton(resetURL, loginExists ? "Reset Password" : "Create Password");
                     reset.setActionType(ActionButton.Action.LINK);
@@ -1655,7 +1655,7 @@ public class UserController extends SpringActionController
                     if (loginExists)
                     {
                         ActionURL deleteURL = new ActionURL(AdminDeletePasswordAction.class, c);
-                        deleteURL.addParameter("user", detailsUser.getUserId());
+                        deleteURL.addParameter("userId", detailsUser.getUserId());
                         deleteURL.addReturnURL(currentUrl);
                         ActionButton delete = new ActionButton(deleteURL, "Delete Password");
                         delete.setActionType(ActionButton.Action.LINK);

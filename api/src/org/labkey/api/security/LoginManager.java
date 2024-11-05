@@ -166,7 +166,7 @@ public class LoginManager
 
         ActionURL verificationUrl = urlProvider.getAPIVerificationURL(c, isAddUser);
         verificationUrl.addParameter("verification", verification);
-        verificationUrl.addParameter("user", user.getUserId());
+        verificationUrl.addParameter("userId", user.getUserId());
 
         if (null != extraParameters)
             verificationUrl.addParameters(extraParameters);
