@@ -1,3 +1,5 @@
+@use "sass:color";
+
 .usage-stats ul.key-list {
   display: inline;
   list-style: none;
@@ -11,7 +13,7 @@
 
   &:hover {
     text-decoration: underline;
-    color: darken(#2980B9, 15);
+    color: color.adjust(#2980B9, $lightness: -15%);
   }
 
   &:after {
