@@ -1102,12 +1102,6 @@ public class SecurityManager
 
         try (Transaction transaction = scope.ensureTransaction())
         {
-            if (createLogin && !status.isLdapOrSsoEmail())
-            {
-                String verification = createLogin(email);
-                status.setVerification(verification);
-            }
-
             try
             {
                 Integer userId = null;
@@ -1142,6 +1136,15 @@ public class SecurityManager
                     assert false : "User should either exist or not; synchronization problem?";
                     LOG.debug("createUser: Something failed user: " + email);
                     return null;
+                }
+
+                //
+                // Add row to Logins table, if needed
+                //
+                if (createLogin && !status.isLdapOrSsoEmail())
+                {
+                    String verification = createLogin(userId, email);
+                    status.setVerification(verification);
                 }
 
                 //
@@ -1257,8 +1260,8 @@ public class SecurityManager
         }
     }
 
-    // Create record for database login, saving email address and hashed password. Return verification token.
-    public static String createLogin(ValidEmail email) throws UserManagementException
+    // Create record for database login, saving UserId and hashed password. Return verification token.
+    public static String createLogin(int userId, ValidEmail email /* Just for logging errors */) throws UserManagementException
     {
         // Create a placeholder password hash and a separate email verification key that will get emailed to the new user
         String tempPassword = createTempPassword();
@@ -1268,10 +1271,11 @@ public class SecurityManager
 
         try
         {
+            // TODO: Stop inserting Email after removing that column
             // Don't need to set LastChanged -- it defaults to current date/time.
             int rowCount = new SqlExecutor(core.getSchema()).execute("INSERT INTO " + core.getTableInfoLogins() +
-                    " (Email, Crypt, LastChanged, Verification, PreviousCrypts) VALUES (?, ?, ?, ?, ?)",
-                    email.getEmailAddress(), crypt, new Date(), verification, crypt);
+                    " (UserId, Email, Crypt, LastChanged, Verification, PreviousCrypts) VALUES (?, ?, ?, ?, ?, ?)",
+                    userId, email.getEmailAddress(), crypt, new Date(), verification, crypt);
             if (1 != rowCount)
                 throw new UserManagementException(email, "Login creation statement affected " + rowCount + " rows.");
         }
@@ -2889,11 +2893,12 @@ public class SecurityManager
         adminRotatePassword(email, errors, c, user, HtmlString.EMPTY_STRING);
     }
 
-    public static void adminRotatePassword(ValidEmail email, BindException errors, Container c, User user, HtmlString mailErrorHtml)
+    public static void adminRotatePassword(ValidEmail email, BindException errors, Container c, User currentUser, HtmlString mailErrorHtml)
     {
         // We let admins create passwords (i.e., entries in the logins table) if they don't already exist.
         // This addresses SSO and LDAP scenarios, see #10374.
         boolean loginExists = loginExists(email);
+        User affectedUser = UserManager.getUser(email);
         String pastVerb = loginExists ? "reset" : "created";
         String infinitiveVerb = loginExists ? "reset" : "create";
 
@@ -2911,33 +2916,34 @@ public class SecurityManager
             }
             else
             {
-                verification = createLogin(email);
+
+                verification = createLogin(affectedUser.getUserId(), email);
             }
 
             try
             {
                 ActionURL verificationURL = createVerificationURL(c, email, verification, null);
-                sendEmail(c, user, getResetMessage(false), email.getEmailAddress(), verificationURL);
+                sendEmail(c, currentUser, getResetMessage(false), email.getEmailAddress(), verificationURL);
 
-                if (!user.getEmail().equals(email.getEmailAddress()))
+                if (!currentUser.getEmail().equals(email.getEmailAddress()))
                 {
                     SecurityMessage msg = getResetMessage(true);
                     msg.setTo(email.getEmailAddress());
-                    sendEmail(c, user, msg, user.getEmail(), verificationURL);
+                    sendEmail(c, currentUser, msg, currentUser.getEmail(), verificationURL);
                 }
-                UserManager.addToUserHistory(UserManager.getUser(email), user.getEmail() + " " + pastVerb + " the password.");
+                UserManager.addToUserHistory(UserManager.getUser(email), currentUser.getEmail() + " " + pastVerb + " the password.");
             }
             catch (ConfigurationException | MessagingException e)
             {
                 String message = "Failed to send email due to: " + e.getMessage();
                 errors.addError(!mailErrorHtml.isEmpty() ? new LabKeyErrorWithHtml(message, mailErrorHtml) : new LabKeyError(message));
-                UserManager.addToUserHistory(UserManager.getUser(email), user.getEmail() + " " + pastVerb + " the password, but sending the email failed.");
+                UserManager.addToUserHistory(UserManager.getUser(email), currentUser.getEmail() + " " + pastVerb + " the password, but sending the email failed.");
             }
         }
         catch (UserManagementException e)
         {
             errors.addError(new LabKeyError(new Exception("Failed to reset password due to: " + e.getMessage(), e)));
-            UserManager.addToUserHistory(UserManager.getUser(email), user.getEmail() + " attempted to " + infinitiveVerb + " the password, but the " + infinitiveVerb + " failed: " + e.getMessage());
+            UserManager.addToUserHistory(UserManager.getUser(email), currentUser.getEmail() + " attempted to " + infinitiveVerb + " the password, but the " + infinitiveVerb + " failed: " + e.getMessage());
         }
     }
 
